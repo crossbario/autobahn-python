@@ -1,0 +1,91 @@
+<html>
+   <head>
+      <script type="text/javascript">
+
+         window.onload =
+            function()
+            {
+            }
+
+         function openWebSocket(cmd)
+         {
+               webSocket = new WebSocket("ws://localhost:9000");
+
+               webSocket.onopen =
+               function(e)
+               {
+                  console.log("webSocket.onopen");
+               }
+
+               webSocket.onclose =
+               function(e)
+               {
+                  console.log("webSocket.onclose");
+               }
+
+               webSocket.onmessage =
+               function(e)
+               {
+                  console.log("webSocket.onmessage : " + e.data);
+               }
+         }
+
+         function closeWebSocket(cmd)
+         {
+            webSocket.close();
+         }
+
+         function sendcmd(cmd)
+         {
+            webSocket.send(JSON.stringify(cmd));
+         }
+      </script>
+   </head>
+   <body>
+      <h1>Fuzzing Test</h1>
+      <table>
+         <tr>
+            <td>Open WebSocket</td>
+            <td><button onclick='openWebSocket();'>Open</button></td>
+         </tr>
+         <tr>
+            <td>Close WebSocket</td>
+            <td><button onclick='closeWebSocket();'>Close</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 0, OPCODE = 0, PAYLOAD = "foobar 1|"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 0, payload: "foobar 1|"}]);'>1</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 0, OPCODE = 1, PAYLOAD = "foobar 2|"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 1, payload: "foobar 2|"}]);'>2</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 1, OPCODE = 0, PAYLOAD = "foobar 3|"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 0, payload: "foobar 3|"}]);'>3</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 1, OPCODE = 1, PAYLOAD = "foobar 4|"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 1, payload: "foobar 4|"}]);'>4</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 1, OPCODE = 9, PAYLOAD = "ping_payload"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 9, payload: "ping_payload"}]);'>5</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 0, OPCODE = 9, PAYLOAD = "ping_payload"</td>
+            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 9, payload: "ping_payload"}]);'>6</button></td>
+         </tr>
+      </table>
+      <h2>Legal Sequences</h2>
+         <p>Open, 4</p>
+         <p>Open, 2, 3</p>
+         <p>Open, 2, 1, 1, ..., 3</p>
+      <h2>Illegal Sequences (correctly handled by FF7)</h2>
+         <p>Open, 2, 4</p>
+         <p>Open, 2, 2</p>
+      <h2>Illegal Sequences (NOT correctly handled by FF7)</h2>
+         <p>Open, 3, 3, .., 4</p>
+         <p>Open, 4, 3, 4, 3, ...</p>
+   </body>
+</html>

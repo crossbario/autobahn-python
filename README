@@ -1,0 +1,20 @@
+Autobahn is an asynchronous RPC/PubSub protocol built on JSON/WebSockets.
+
+This project provides Autobahn client libraries (Apache 2.0 license) for
+
+  * JavaScript/HTML5,
+
+  * Java/Android and
+
+  * Python,
+
+as well as
+
+  * a Python/Twisted based general WebSockets and Autobahn server, and
+
+  * a fuzzing[*] WebSocket server to test WebSocket client implementations
+    for protocol compliance and leaks/performance
+
+Initial code is contributed by Tavendo GmbH.
+
+[*] http://en.wikipedia.org/wiki/Fuzz_testing
