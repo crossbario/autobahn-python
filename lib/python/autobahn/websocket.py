@@ -75,7 +75,7 @@ class WebSocketServiceConnection(protocol.Protocol):
       """
       Override in derived class.
       """
-      pass
+      self.sendPing(payload)
 
    def onPong(self, payload):
       """
@@ -83,11 +83,14 @@ class WebSocketServiceConnection(protocol.Protocol):
       """
       pass
 
-   def onClose(self):
+   def onClose(self, code, reason):
       """
       Override in derived class.
       """
-      pass
+      if self.debug:
+         print self.peer, "received CLOSE", code, reason
+      self.sendClose(code, "ok, you asked me to close, I do;)")
+      self.transport.loseConnection()
 
 
    def __init__(self):
@@ -114,7 +117,7 @@ class WebSocketServiceConnection(protocol.Protocol):
 
    def dataReceived(self, data):
       if self.debug:
-         print self.peer, "data received", binascii.b2a_hex(data)
+         print self.peer, "RX", binascii.b2a_hex(data)
 
       self.data += data
 
@@ -134,7 +137,6 @@ class WebSocketServiceConnection(protocol.Protocol):
       ## should not arrive here (invalid state)
       ##
       else:
-         #print binascii.b2a_hex(data)
          raise Exception("invalid state")
 
 
@@ -308,11 +310,8 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def sendHttpRequestFailure(self, code, reason):
-      #print "HTTP Request Failure", code, reason
       response  = "HTTP/1.1 %d %s\n" % (code, reason)
       response += "\n"
-
-      #print response
       self.transport.write(response)
       self.transport.loseConnection()
 
@@ -345,12 +344,12 @@ class WebSocketServiceConnection(protocol.Protocol):
             ## the semantics of RSV has been negotiated
             ##
             if frame_rsv != 0:
-               self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "RSV != 0 and no extension negoiated")
+               self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "RSV != 0 and no extension negoiated")
 
             ## all client-to-server frames MUST be masked
             ##
             if not frame_masked:
-               self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "unmasked client to server frame")
+               self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "unmasked client to server frame")
 
             ## check frame
             ##
@@ -359,22 +358,22 @@ class WebSocketServiceConnection(protocol.Protocol):
                ## control frames MUST NOT be fragmented
                ##
                if not frame_fin:
-                  self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "fragmented control frame")
+                  self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "fragmented control frame")
                ## control frames MUST have payload 125 octets or less
                ##
                if frame_payload_len1 > 125:
-                  self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame with payload length > 125 octets")
+                  self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame with payload length > 125 octets")
                ## check for reserved control frame opcodes
                ##
                if frame_opcode not in [8, 9, 10]:
-                  self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame using reserved opcode %d" % frame_opcode)
+                  self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame using reserved opcode %d" % frame_opcode)
 
             else: # data frame
 
                ## check for reserved data frame opcodes
                ##
                if frame_opcode not in [0, 1, 2]:
-                  self.sendCloseFrame(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "data frame using reserved opcode %d" % frame_opcode)
+                  self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "data frame using reserved opcode %d" % frame_opcode)
 
             ## compute complete header length
             ##
@@ -448,9 +447,6 @@ class WebSocketServiceConnection(protocol.Protocol):
       else:
          return False # need more data
 
-               #print binascii.b2a_hex(data[2:2+4])
-               #print binascii.b2a_hex(data[6:])
-
 
    def onFrame(self, fin, opcode, payload):
 
@@ -491,7 +487,7 @@ class WebSocketServiceConnection(protocol.Protocol):
                except UnicodeDecodeError:
                   pass
 
-         self._onclose(code, reason)
+         self.onClose(code, reason)
 
       ## PING
       ##
@@ -505,79 +501,6 @@ class WebSocketServiceConnection(protocol.Protocol):
 
       else:
          raise Exception("logic error processing frame with opcode %d" % opcode)
-
-
-   def _onclose(self, status_code = None, status_reason = None):
-      print "CLOSE received", status_code, status_reason
-
-
-   def sendPing(self, payload):
-      l = len(payload)
-      if l > 125:
-         raise Exception("invalid payload for PING (payload length must be <= 125, was %d)" % l)
-      self.transport.write("\x89")
-      self.transport.write(chr(l))
-      if l > 0:
-         self.transport.write(payload)
-
-
-   def sendPong(self, payload):
-      l = len(payload)
-      if l > 125:
-         raise Exception("invalid payload for PONG (payload length must be <= 125, was %d)" % l)
-      self.transport.write("\x8a")
-      self.transport.write(chr(l))
-      if l > 0:
-         self.transport.write(payload)
-
-
-   def sendCloseFrame(self, status_code = None, status_reason = None):
-
-      plen = 0
-      code = None
-      reason = None
-
-      if status_code is not None:
-
-         if (not (status_code >= 3000 and status_code <= 3999)) and \
-            (not (status_code >= 4000 and status_code <= 4999)) and \
-            status_code not in [WebSocketServiceConnection.CLOSE_STATUS_CODE_NORMAL,
-                                WebSocketServiceConnection.CLOSE_STATUS_CODE_GOING_AWAY,
-                                WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
-                                WebSocketServiceConnection.CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED,
-                                WebSocketServiceConnection.CLOSE_STATUS_CODE_FRAME_TOO_LARGE,
-                                WebSocketServiceConnection.CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8]:
-            raise Exception("invalid status code %d for close frame" % status_code)
-
-         code = struct.pack("!H", status_code)
-         plen = len(code)
-
-         if status_reason is not None:
-            reason = status_reason.encode("UTF-8")
-            plen += len(reason)
-
-         if plen > 125:
-            raise Exception("close frame payload larger than 125 octets")
-
-      else:
-         if status_reason is not None:
-            raise Exception("status reason without status code in close frame")
-
-      self.transport.write("\x88")
-      self.transport.write(chr(plen))
-      if code:
-         self.transport.write(code)
-         if reason:
-            self.transport.write(reason)
-      #self.transport.loseConnection()
-
-
-   def sendMessage(self, payload, binary = False):
-
-      if binary:
-         self.sendFrame(opcode = 2, payload = payload)
-      else:
-         self.sendFrame(opcode = 1, payload = payload)
 
 
    def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None):
@@ -624,12 +547,70 @@ class WebSocketServiceConnection(protocol.Protocol):
       else:
          raise Exception("invalid payload length")
 
-      self.transport.write(chr(b0))
-      self.transport.write(chr(b1))
+      raw = ''.join([chr(b0), chr(b1), el, payload])
 
-      self.transport.write(el)
+      if self.debug:
+         print self.peer, "TX", binascii.b2a_hex(raw)
 
-      self.transport.write(payload)
+      self.transport.write(raw)
+
+
+   def sendPing(self, payload):
+      l = len(payload)
+      if l > 125:
+         raise Exception("invalid payload for PING (payload length must be <= 125, was %d)" % l)
+      self.sendFrame(opcode = 9, payload = payload)
+
+
+   def sendPong(self, payload):
+      l = len(payload)
+      if l > 125:
+         raise Exception("invalid payload for PONG (payload length must be <= 125, was %d)" % l)
+      self.sendFrame(opcode = 10, payload = payload)
+
+
+   def sendClose(self, status_code = None, status_reason = None):
+
+      plen = 0
+      payload = ""
+
+      if status_code is not None:
+
+         if (not (status_code >= 3000 and status_code <= 3999)) and \
+            (not (status_code >= 4000 and status_code <= 4999)) and \
+            status_code not in [WebSocketServiceConnection.CLOSE_STATUS_CODE_NORMAL,
+                                WebSocketServiceConnection.CLOSE_STATUS_CODE_GOING_AWAY,
+                                WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
+                                WebSocketServiceConnection.CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED,
+                                WebSocketServiceConnection.CLOSE_STATUS_CODE_FRAME_TOO_LARGE,
+                                WebSocketServiceConnection.CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8]:
+            raise Exception("invalid status code %d for close frame" % status_code)
+
+         payload = struct.pack("!H", status_code)
+         plen = 2
+
+         if status_reason is not None:
+            reason = status_reason.encode("UTF-8")
+            plen += len(reason)
+
+         if plen > 125:
+            raise Exception("close frame payload larger than 125 octets")
+
+         payload += reason
+
+      else:
+         if status_reason is not None:
+            raise Exception("status reason without status code in close frame")
+
+      self.sendFrame(opcode = 8, payload = payload)
+
+
+   def sendMessage(self, payload, binary = False):
+
+      if binary:
+         self.sendFrame(opcode = 2, payload = payload)
+      else:
+         self.sendFrame(opcode = 1, payload = payload)
 
 
 

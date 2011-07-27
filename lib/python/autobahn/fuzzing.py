@@ -21,25 +21,21 @@ import json
 
 class FuzzingServiceConnection(WebSocketServiceConnection):
 
-   def onConnect(self, host, uri, origin, protocols):
-      #print "Client connected", host, uri, origin, protocols
-      pass
-
-   def onOpen(self):
-      #print "Connection now open."
-      pass
-
-   def onClose(self):
-      #print "Client lost."
-      pass
+   def onPong(self, payload):
+      if self.debug:
+         #print self.peer, "PONG received", unicode(payload, "UTF-8")
+         print self.peer, "PONG received", payload
 
    def onMessage(self, msg, binary):
       if not binary:
          obj = json.loads(msg)
-         print obj
          if obj[0] == "sendframe":
-            pl = obj[1]["payload"].encode("UTF-8")
-            self.sendFrame(opcode = obj[1]["opcode"], payload = pl, fin = obj[1]["fin"])
+            pl = obj[1].get("payload", "")
+            self.sendFrame(opcode = obj[1]["opcode"],
+                           payload = pl.encode("UTF-8"),
+                           fin = obj[1].get("fin", True),
+                           rsv = obj[1].get("rsv", 0),
+                           mask = obj[1].get("mask", None))
 
 
 class FuzzingService(WebSocketService):
