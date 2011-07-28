@@ -9,18 +9,26 @@
 
          function openWebSocket(cmd)
          {
-               webSocket = new WebSocket("ws://localhost:9000");
+               webSocket = new MozWebSocket("ws://localhost:9000");
+               //webSocket = new WebSocket("ws://localhost:9000");
 
                webSocket.onopen =
                function(e)
                {
-                  console.log("webSocket.onopen");
+                  console.log("webSocket.onopen:");
+                  console.log("readyState = " + webSocket.readyState);
+                  console.log("extensions = " + webSocket.extensions);
+                  console.log("protocol = " + webSocket.protocol);
                }
 
                webSocket.onclose =
                function(e)
                {
-                  console.log("webSocket.onclose");
+                  console.log("webSocket.onclose:");
+                  console.log("readyState = " + webSocket.readyState);
+                  console.log("wasClean = " + e.wasClean)
+                  console.log("code = " + e.code)
+                  console.log("reason = " + e.reason)
                }
 
                webSocket.onmessage =
@@ -39,10 +47,47 @@
          {
             webSocket.send(JSON.stringify(cmd));
          }
+
       </script>
    </head>
    <body>
       <h1>Fuzzing Test</h1>
+
+      <h2>References</h2>
+         <ul>
+            <li>
+               [1] <a href="http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10">The WebSocket protocol</a>
+               (draft-ietf-hybi-thewebsocketprotocol-10 / July 11, 2011)
+            </li>
+            <li>
+               [2] <a href="http://dev.w3.org/html5/websockets/">The WebSocket API</a>
+               (Editor's Draft / 19 July 2011)
+            </li>
+         </ul>
+
+      <h2>Opcodes</h2>
+         <p>
+            [1] "If an unknown opcode is received, the receiving endpoint MUST _Fail the WebSocket Connection_.
+                 (%x3-7 are reserved for further non-control frames / %xB-F are reserved for further control frames)"
+         </p>
+         <p>
+            Select reserved Opcode:
+            <select id="reserved_opcode">
+               <option value="3">3</option>
+               <option value="4">4</option>
+               <option value="5">5</option>
+               <option value="6">6</option>
+               <option value="7">7</option>
+               <option value="11">11</option>
+               <option value="12">12</option>
+               <option value="13">13</option>
+               <option value="14">14</option>
+               <option value="15">15</option>
+            </select>
+            <button onclick='var e = document.getElementById("reserved_opcode"); var oc = e.options[e.selectedIndex].value; sendcmd(["sendframe", {opcode: parseInt(oc)}]);'>Send</button>
+         </p>
+         <p><b>FF7 correctly fails on opcodes 3-7, but silently discards 11-15.</b></p>
+
       <table>
          <tr>
             <td>Open WebSocket</td>
@@ -53,28 +98,40 @@
             <td><button onclick='closeWebSocket();'>Close</button></td>
          </tr>
          <tr>
+            <td>OPCODE = 13</td>
+            <td><button onclick='sendcmd(["sendframe", {opcode: 13}]);'>1</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 1, OPCODE = 9, RSV = 7</td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 7, payload: ""}]);'>1</button></td>
+         </tr>
+         <tr>
             <td>FIN = 0, OPCODE = 0, PAYLOAD = "foobar 1|"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 0, payload: "foobar 1|"}]);'>1</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 0, rsv: 0, payload: "foobar 1|"}]);'>1</button></td>
          </tr>
          <tr>
             <td>FIN = 0, OPCODE = 1, PAYLOAD = "foobar 2|"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 1, payload: "foobar 2|"}]);'>2</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 1, rsv: 0, payload: "foobar 2|"}]);'>2</button></td>
          </tr>
          <tr>
             <td>FIN = 1, OPCODE = 0, PAYLOAD = "foobar 3|"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 0, payload: "foobar 3|"}]);'>3</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 0, rsv: 0, payload: "foobar 3|"}]);'>3</button></td>
          </tr>
          <tr>
             <td>FIN = 1, OPCODE = 1, PAYLOAD = "foobar 4|"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 1, payload: "foobar 4|"}]);'>4</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 1, rsv: 0, payload: "foobar 4|"}]);'>4</button></td>
          </tr>
          <tr>
             <td>FIN = 1, OPCODE = 9, PAYLOAD = "ping_payload"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": true, opcode: 9, payload: "ping_payload"}]);'>5</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 0, payload: "ping_payload"}]);'>5</button></td>
+         </tr>
+         <tr>
+            <td>FIN = 1, OPCODE = 9, PAYLOAD = ""</td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9}]);'>5</button></td>
          </tr>
          <tr>
             <td>FIN = 0, OPCODE = 9, PAYLOAD = "ping_payload"</td>
-            <td><button onclick='sendcmd(["sendframe", {"fin": false, opcode: 9, payload: "ping_payload"}]);'>6</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 9, rsv: 0, payload: "ping_payload"}]);'>6</button></td>
          </tr>
       </table>
       <h2>Legal Sequences</h2>
