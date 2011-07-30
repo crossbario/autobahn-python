@@ -1,0 +1,33 @@
+<html>
+   <head>
+      <script type="text/javascript">
+         window.onload =
+            function()
+            {
+               webSocket = new MozWebSocket("ws://localhost:9000");
+
+               webSocket.onopen =
+               function(e)
+               {
+                  console.log("webSocket.onopen");
+               }
+
+               webSocket.onclose =
+               function(e)
+               {
+                  console.log("webSocket.onclose");
+               }
+
+               webSocket.onmessage =
+               function(e)
+               {
+                  console.log("webSocket.onmessage : " + e.data);
+               }
+            }
+      </script>
+   </head>
+   <body>
+      <h1>Echo Test</h1>
+      <button onclick='webSocket.send("Hello, world!");'>Send Hello</button>
+   </body>
+</html>
