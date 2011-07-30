@@ -17,6 +17,7 @@
 ###############################################################################
 
 from twisted.internet import reactor, protocol
+from twisted.python import log
 import binascii
 import hashlib
 import base64
@@ -53,6 +54,7 @@ class WebSocketServiceConnection(protocol.Protocol):
       """
       Callback when new WebSocket client connection is established.
       Throw HttpException when you don't want to accept WebSocket connection.
+      Return accepted protocol from list of protocols provided by client or None.
       Override in derived class.
       """
       pass
@@ -75,7 +77,7 @@ class WebSocketServiceConnection(protocol.Protocol):
       """
       Override in derived class.
       """
-      self.sendPing(payload)
+      self.sendPong(payload)
 
    def onPong(self, payload):
       """
@@ -88,7 +90,7 @@ class WebSocketServiceConnection(protocol.Protocol):
       Override in derived class.
       """
       if self.debug:
-         print self.peer, "received CLOSE", code, reason
+         log.msg("received CLOSE for %s (%d, %s)" % (self.peerstr, code, reason))
       self.sendClose(code, "ok, you asked me to close, I do;)")
       self.transport.loseConnection()
 
@@ -98,28 +100,30 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def connectionMade(self):
+      self.transport.setTcpNoDelay(True)
       self.debug = self.factory.debug
       self.peer = self.transport.getPeer()
+      self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
       if self.debug:
-         print self.peer, "connection accepted"
+         log.msg("connection accepted from %s" % self.peerstr)
       self.state = WebSocketServiceConnection.STATE_CONNECTING
       self.data = ""
-      self.msg_payload = []
       self.http_request = None
       self.http_headers = {}
 
 
    def connectionLost(self, reason):
       if self.debug:
-         print self.peer, "connection lost"
+         log.msg("connection from %s lost" % self.peerstr)
       self.state = WebSocketServiceConnection.STATE_CLOSED
 
 
    def dataReceived(self, data):
-      if self.debug:
-         print self.peer, "RX", binascii.b2a_hex(data)
 
-      self.data += data
+      if data:
+         if self.debug:
+            log.msg("RX from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+         self.data += data
 
       ## WebSocket is open (handshake was completed)
       ##
@@ -168,8 +172,9 @@ class WebSocketServiceConnection(protocol.Protocol):
          ## => validate WebSocket handshake
          ##
 
-         #print self.http_request
-         #print self.http_headers
+         if self.debug:
+            log.msg("received request line in handshake : %s" % str(self.http_request))
+            log.msg("received headers in handshake : %s" % str(self.http_headers))
 
          ## HTTP Request line : METHOD, VERSION
          ##
@@ -226,14 +231,21 @@ class WebSocketServiceConnection(protocol.Protocol):
             else:
                self.websocket_version = version
          except:
-            return self.sendHttpBadRequest("could not parse HTTP Sec-WebSocket-Version header ''" % self.http_headers["Sec-WebSocket-Version"])
+            return self.sendHttpBadRequest("could not parse HTTP Sec-WebSocket-Version header '%s'" % self.http_headers["Sec-WebSocket-Version"])
 
          ## Sec-WebSocket-Protocol
          ##
-         ## FIXME: checking
          ##
          if self.http_headers.has_key("Sec-WebSocket-Protocol"):
             protocols = self.http_headers["Sec-WebSocket-Protocol"].split(",")
+            # check for duplicates in protocol header
+            pp = {}
+            for p in protocols:
+               if pp.has_key(p):
+                  return self.sendHttpBadRequest("duplicate protocol '%s' specified in HTTP Sec-WebSocket-Protocol header" % p)
+               else:
+                  pp[p] = 1
+            # ok, no duplicates, save list in order the client sent it
             self.websocket_protocols = protocols
          else:
             self.websocket_protocols = []
@@ -245,7 +257,10 @@ class WebSocketServiceConnection(protocol.Protocol):
          ##
          if self.http_headers.has_key("Sec-WebSocket-Origin"):
             origin = self.http_headers["Sec-WebSocket-Origin"].strip()
-            self.websocket_origin = origin
+            if origin == "null":
+               self.websocket_origin = None
+            else:
+               self.websocket_origin = origin
          else:
             self.websocket_origin = None
 
@@ -271,9 +286,11 @@ class WebSocketServiceConnection(protocol.Protocol):
          ## WebSocket handshake validated
          ## => produce response
 
-         # request Host, request URI, origin, cookies, protocols
+         # request Host, request URI, origin, protocols
          try:
-            self.onConnect(self.http_request_host, self.http_request_uri, self.websocket_origin, self.websocket_protocols)
+            protocol = self.onConnect(self.http_request_host, self.http_request_uri, self.websocket_origin, self.websocket_protocols)
+            if protocol and not (protocol in self.websocket_protocols):
+               raise Exception("protocol accepted must be from the list client sent or null")
          except HttpException, e:
             return self.sendHttpRequestFailure(e.code, e.reason)
 
@@ -290,34 +307,45 @@ class WebSocketServiceConnection(protocol.Protocol):
          response += "Upgrade: websocket\n"
          response += "Connection: Upgrade\n"
          response += "Sec-WebSocket-Accept: %s\n" % sec_websocket_accept
-         response += "Sec-WebSocket-Protocol: foobar\n"
+         if protocol:
+            response += "Sec-WebSocket-Protocol: %s\n" % protocol
          response += "\n"
 
-         #print response
+         if self.debug:
+            log.msg("send handshake : %s" % response)
          self.transport.write(response)
 
          ## move into OPEN state
          ##
          self.state = WebSocketServiceConnection.STATE_OPEN
-         self.current_msg = None
          self.current_frame = None
+         self.msg_payload = []
+         self.msg_type = None
 
+         ## fire handler on derived class
+         ##
          self.onOpen()
+
+         ## process rest, if any
+         ##
+         if len(self.data) > 0:
+            self.dataReceived(None)
 
 
    def sendHttpBadRequest(self, reason):
-      self.sendHttpBadRequest(400, reason)
+      self.sendHttpRequestFailure(400, reason)
 
 
    def sendHttpRequestFailure(self, code, reason):
       response  = "HTTP/1.1 %d %s\n" % (code, reason)
       response += "\n"
+      if self.debug:
+         log.msg("send handshake failure : %s" % response)
       self.transport.write(response)
       self.transport.loseConnection()
 
 
    def processData(self):
-      #print "WebSocketServiceConnection.processData"
 
       if self.current_frame is None:
 
@@ -411,8 +439,14 @@ class WebSocketServiceConnection(protocol.Protocol):
                   frame_mask.append(ord(self.data[j]))
                i += 4
 
+               ## ok, got complete frame header
+               ##
                self.current_frame = (frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_payload_len)
+
+               ## remember rest (payload of current frame and everything thereafter)
+               ##
                self.data = self.data[i:]
+
             else:
                return False # need more data
          else:
@@ -454,11 +488,30 @@ class WebSocketServiceConnection(protocol.Protocol):
       ##
       if opcode in [0, 1, 2]:
 
+         ## check opcode vs protocol message state
+         ##
+         if self.msg_type is None:
+            if opcode in [1, 2]:
+               self.msg_type = opcode
+            else:
+               self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "received continuation frame outside fragmented message")
+         else:
+            if opcode == 0:
+               pass
+            else:
+               self.sendClose(WebSocketServiceConnection.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "received non-continuation frame while in fragmented message")
+
+         ## buffer message payload
+         ##
          self.msg_payload.append(payload)
+
+         ## final message fragment?
+         ##
          if fin:
             msg = ''.join(self.msg_payload)
-            self.onMessage(msg, False)
+            self.onMessage(msg, self.msg_type == 2)
             self.msg_payload = []
+            self.msg_type = None
 
       ## CLOSE
       ##
@@ -503,7 +556,7 @@ class WebSocketServiceConnection(protocol.Protocol):
          raise Exception("logic error processing frame with opcode %d" % opcode)
 
 
-   def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None):
+   def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None, chunksize = None):
 
       ## This method deliberately allows to send invalid frames (that is frames invalid
       ## per-se, or frames invalid because of protocol state). Other than in fuzzing servers,
@@ -550,9 +603,22 @@ class WebSocketServiceConnection(protocol.Protocol):
       raw = ''.join([chr(b0), chr(b1), el, payload])
 
       if self.debug:
-         print self.peer, "TX", binascii.b2a_hex(raw)
+         log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw)))
 
-      self.transport.write(raw)
+      if chunksize and chunksize > 0:
+         i = 0
+         n = len(raw)
+         done = False
+         while not done:
+            j = i + chunksize
+            if j > n:
+               done = True
+               j = n
+            self.transport.write(raw[i:j])
+            reactor.doSelect(0)
+            i += chunksize
+      else:
+         self.transport.write(raw)
 
 
    def sendPing(self, payload):
@@ -617,9 +683,10 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 class WebSocketService(protocol.ServerFactory):
 
+   protocol = WebSocketServiceConnection
+
    def __init__(self, debug = False):
       self.debug = debug
-      self.protocol = WebSocketServiceConnection
 
    def startFactory(self):
       pass

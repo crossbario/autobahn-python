@@ -17,9 +17,12 @@
 ###############################################################################
 
 from twisted.internet import reactor
+from twisted.python import log
+import sys
 from autobahn import *
 
 def main():
+   log.startLogging(sys.stdout)
    service = fuzzing.FuzzingService(debug = True)
    reactor.listenTCP(9000, service)
    reactor.run()

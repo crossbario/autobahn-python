@@ -9,7 +9,9 @@
 
          function openWebSocket(cmd)
          {
-               webSocket = new MozWebSocket("ws://localhost:9000");
+               webSocket = new MozWebSocket("ws://192.168.1.134:9000");
+               //webSocket = new MozWebSocket("ws://localhost:9000");
+               //webSocket = new MozWebSocket("ws://localhost:9000", ["autobahn", "foobar"]);
                //webSocket = new WebSocket("ws://localhost:9000");
 
                webSocket.onopen =
@@ -64,6 +66,20 @@
                (Editor's Draft / 19 July 2011)
             </li>
          </ul>
+
+      <button onclick='sendcmd(["case001"]);'>Case 001</button>
+      <button onclick='sendcmd(["case002"]);'>Case 002</button>
+      <button onclick='sendcmd(["case003"]);'>Case 003</button>
+      <button onclick='sendcmd(["case004a"]);'>Case 004a</button>
+      <button onclick='sendcmd(["case004b"]);'>Case 004b</button>
+<!--      <button onclick='sendcmd(["case005"]); sendcmd(["echo", "foobar"]);'>Case 005</button> -->
+      <button onclick='sendcmd(["case005"]);'>Case 005</button>
+      <button onclick='sendcmd(["case006"]);'>Case 006</button>
+      <button onclick='sendcmd(["case007a"]);'>Case 007a</button>
+      <button onclick='sendcmd(["case007b"]);'>Case 007b</button>
+      <button onclick='sendcmd(["case007c"]);'>Case 007c</button>
+      <button onclick='sendcmd(["case008"]);'>Case 008</button>
+      <button onclick='sendcmd(["case009"]);'>Case 009</button>
 
       <h2>Opcodes</h2>
          <p>
@@ -123,7 +139,7 @@
          </tr>
          <tr>
             <td>FIN = 1, OPCODE = 9, PAYLOAD = "ping_payload"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 0, payload: "ping_payload"}]);'>5</button></td>
+            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 0, payload: "ping"}]);'>5</button></td>
          </tr>
          <tr>
             <td>FIN = 1, OPCODE = 9, PAYLOAD = ""</td>
