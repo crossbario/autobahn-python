@@ -1,5 +1,10 @@
 <html>
    <head>
+      <style lang="css">
+         p.ok {color: green; font-weight: bold; margin-bottom: 3em;}
+         p.unclear {color: orange; font-weight: bold; margin-bottom: 3em;}
+         p.bug {color: red; font-weight: bold; margin-bottom: 3em;}
+      </style>
       <script type="text/javascript">
 
          window.onload =
@@ -9,8 +14,8 @@
 
          function openWebSocket(cmd)
          {
-               webSocket = new MozWebSocket("ws://192.168.1.134:9000");
-               //webSocket = new MozWebSocket("ws://localhost:9000");
+               //webSocket = new MozWebSocket("ws://192.168.1.134:9000");
+               webSocket = new MozWebSocket("ws://localhost:9000");
                //webSocket = new MozWebSocket("ws://localhost:9000", ["autobahn", "foobar"]);
                //webSocket = new WebSocket("ws://localhost:9000");
 
@@ -45,6 +50,12 @@
             webSocket.close();
          }
 
+         function sendframes(frames)
+         {
+            var msg = ["sendframes", frames]
+            webSocket.send(JSON.stringify(msg));
+         }
+
          function sendcmd(cmd)
          {
             webSocket.send(JSON.stringify(cmd));
@@ -67,98 +78,240 @@
             </li>
          </ul>
 
-      <button onclick='sendcmd(["case001"]);'>Case 001</button>
-      <button onclick='sendcmd(["case002"]);'>Case 002</button>
-      <button onclick='sendcmd(["case003"]);'>Case 003</button>
-      <button onclick='sendcmd(["case004a"]);'>Case 004a</button>
-      <button onclick='sendcmd(["case004b"]);'>Case 004b</button>
-<!--      <button onclick='sendcmd(["case005"]); sendcmd(["echo", "foobar"]);'>Case 005</button> -->
-      <button onclick='sendcmd(["case005"]);'>Case 005</button>
-      <button onclick='sendcmd(["case006"]);'>Case 006</button>
-      <button onclick='sendcmd(["case007a"]);'>Case 007a</button>
-      <button onclick='sendcmd(["case007b"]);'>Case 007b</button>
-      <button onclick='sendcmd(["case007c"]);'>Case 007c</button>
-      <button onclick='sendcmd(["case008"]);'>Case 008</button>
-      <button onclick='sendcmd(["case009"]);'>Case 009</button>
-
-      <h2>Opcodes</h2>
-         <p>
-            [1] "If an unknown opcode is received, the receiving endpoint MUST _Fail the WebSocket Connection_.
-                 (%x3-7 are reserved for further non-control frames / %xB-F are reserved for further control frames)"
-         </p>
-         <p>
-            Select reserved Opcode:
-            <select id="reserved_opcode">
-               <option value="3">3</option>
-               <option value="4">4</option>
-               <option value="5">5</option>
-               <option value="6">6</option>
-               <option value="7">7</option>
-               <option value="11">11</option>
-               <option value="12">12</option>
-               <option value="13">13</option>
-               <option value="14">14</option>
-               <option value="15">15</option>
-            </select>
-            <button onclick='var e = document.getElementById("reserved_opcode"); var oc = e.options[e.selectedIndex].value; sendcmd(["sendframe", {opcode: parseInt(oc)}]);'>Send</button>
-         </p>
-         <p><b>FF7 correctly fails on opcodes 3-7, but silently discards 11-15.</b></p>
-
       <table>
          <tr>
-            <td>Open WebSocket</td>
-            <td><button onclick='openWebSocket();'>Open</button></td>
-         </tr>
-         <tr>
-            <td>Close WebSocket</td>
-            <td><button onclick='closeWebSocket();'>Close</button></td>
-         </tr>
-         <tr>
-            <td>OPCODE = 13</td>
-            <td><button onclick='sendcmd(["sendframe", {opcode: 13}]);'>1</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 1, OPCODE = 9, RSV = 7</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 7, payload: ""}]);'>1</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 0, OPCODE = 0, PAYLOAD = "foobar 1|"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 0, rsv: 0, payload: "foobar 1|"}]);'>1</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 0, OPCODE = 1, PAYLOAD = "foobar 2|"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 1, rsv: 0, payload: "foobar 2|"}]);'>2</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 1, OPCODE = 0, PAYLOAD = "foobar 3|"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 0, rsv: 0, payload: "foobar 3|"}]);'>3</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 1, OPCODE = 1, PAYLOAD = "foobar 4|"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 1, rsv: 0, payload: "foobar 4|"}]);'>4</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 1, OPCODE = 9, PAYLOAD = "ping_payload"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9, rsv: 0, payload: "ping"}]);'>5</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 1, OPCODE = 9, PAYLOAD = ""</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: true, opcode: 9}]);'>5</button></td>
-         </tr>
-         <tr>
-            <td>FIN = 0, OPCODE = 9, PAYLOAD = "ping_payload"</td>
-            <td><button onclick='sendcmd(["sendframe", {fin: false, opcode: 9, rsv: 0, payload: "ping_payload"}]);'>6</button></td>
+            <td><button onclick='openWebSocket();'>Open WebSocket</button></td>
+            <td><button onclick='closeWebSocket();'>Close WebSocket</button></td>
          </tr>
       </table>
-      <h2>Legal Sequences</h2>
-         <p>Open, 4</p>
-         <p>Open, 2, 3</p>
-         <p>Open, 2, 1, 1, ..., 3</p>
-      <h2>Illegal Sequences (correctly handled by FF7)</h2>
-         <p>Open, 2, 4</p>
-         <p>Open, 2, 2</p>
-      <h2>Illegal Sequences (NOT correctly handled by FF7)</h2>
-         <p>Open, 3, 3, .., 4</p>
-         <p>Open, 4, 3, 4, 3, ...</p>
+
+      <h2>1. Reserved Opcodes</h2>
+
+         <h3>1.1 Frame with reserved control frame opcode (3)</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 3}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS closed immediately.
+            </p>
+
+         <h3>1.2 Frame with reserved data frame opcode (13)</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 11}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">
+               FF handles this incorrectly. The frame is silently ignored and subsequent communication succeeds. The connection MUST be closed immediately.
+            </p>
+
+         <h3>1.3 Reserved Opcodes</h3>
+            <p>
+               [1] "If an unknown opcode is received, the receiving endpoint MUST _Fail the WebSocket Connection_.
+                    (%x3-7 are reserved for further non-control frames / %xB-F are reserved for further control frames)"
+            </p>
+            <p>
+               Select reserved Opcode:
+               <select id="reserved_opcode">
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="11">11</option>
+                  <option value="12">12</option>
+                  <option value="13">13</option>
+                  <option value="14">14</option>
+                  <option value="15">15</option>
+               </select>
+               <button onclick='var e = document.getElementById("reserved_opcode"); var oc = e.options[e.selectedIndex].value; sendframes([{opcode: parseInt(oc)}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">FF7 correctly fails on opcodes 3-7, but silently discards 11-15.</p>
+
+      <h2>2. Ping/Pong</h2>
+
+         <h3>2.1 Ping without payload</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>2.2 Ping with payload</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9, payload: "PING!"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>2.3 Ping with payload 125 octets</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9, payload: "*", payload_len: 125}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>2.4 Ping with payload 126 octets</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9, payload: "*", payload_len: 126}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection is immediately dropped, since control frames are only allowed up to and including 125 octets.
+            </p>
+
+         <h3>2.5 Ping with payload 125 octets, sent in octet-wise chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9, payload: "*", payload_len: 125, chopsize: 1}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+      <h2>3. Message Fragmentation</h2>
+
+         <h3>3.1 Ping Message fragmented into 2 fragments, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 9, fin: false, payload: "fragment1"}, {opcode: 0, fin: true, payload: "fragment2"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection is immediately closed, since control message MUST NOT be fragmented.
+            </p>
+
+         <h3>3.2 Pong Message fragmented into 2 fragments, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 10, fin: false, payload: "fragment1"}, {opcode: 0, fin: true, payload: "fragment2"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection is immediately closed, since control message MUST NOT be fragmented.
+            </p>
+
+         <h3>3.1 Text Message fragmented into 2 fragments, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1"}, {opcode: 0, fin: true, payload: "fragment2"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>3.2 Text Message fragmented into 2 fragments, sent in octet-wise chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1", chopsize: 1}, {opcode: 0, fin: true, payload: "fragment2", chopsize: 1}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>3.3 Text Message fragmented into 2 fragments, one ping in-between, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1"}, {opcode: 9, payload: "ping"}, {opcode: 0, fin: true, payload: "fragment2"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly.
+            </p>
+
+         <h3>3.4 Text Message fragmented into 2 fragments, one ping in-between, sent in per-frame chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1", sync: true}, {opcode: 9, payload: "ping", sync: true}, {opcode: 0, fin: true, payload: "fragment2", sync: true}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">
+               FF handles this incorrectly. FF sends a first (correct) Pong, but after that sends one or more incorrect, bogus Pongs. Subsequent communication fails.
+            </p>
+
+         <h3>3.5 Text Message fragmented into 2 fragments, one ping in-between, sent in octet-wise chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1", chopsize: 1}, {opcode: 9, payload: "ping", chopsize: 1}, {opcode: 0, fin: true, payload: "fragment2", chopsize: 1}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">
+               FF handles this incorrectly. FF sends a first (correct) Pong, but after that sends one or more incorrect, bogus Pongs. Subsequent communication fails.
+            </p>
+
+         <h3>3.6 Unfragmented Text Message _after_ Continuation Frame with FIN = true where there is nothing to continue, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 0, fin: true, payload: "fragment2"}, {opcode: 1, fin: true, payload: "hello"}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">
+               FF handles this incorrectly. The connection MUST BE (my interpretation of spec) closed immediately, since there is no message to continue.
+            </p>
+
+         <h3>3.7 Unfragmented Text Message _after_ Continuation Frame with FIN = true where there is nothing to continue, sent in octet-wise chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 0, fin: true, payload: "fragment2", chopsize: 1}, {opcode: 1, fin: true, payload: "hello", chopsize: 1}]);'>Fuzz me!</button>
+            </p>
+            <p class="bug">
+               FF handles this incorrectly. The connection MUST BE (my interpretation of spec) closed immediately, since there is no message to continue.
+            </p>
+
+         <h3>3.7 Unfragmented Text Message _after_ Continuation Frame with FIN = false where there is nothing to continue, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 0, fin: false, payload: "fragment2"}, {opcode: 1, fin: true, payload: "hello"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS immediately closed, since there is no message to continue.
+            </p>
+
+         <h3>3.8 Unfragmented Text Message _after_ Continuation Frame with FIN = false where there is nothing to continue, sent in octet-wise chops</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 0, fin: false, payload: "fragment2", chopsize: 1}, {opcode: 1, fin: true, payload: "hello", chopsize: 1}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS immediately closed, since there is no message to continue.
+            </p>
+
+         <h3>3.9 Text Message fragmented into 2 fragments, with both frame opcodes set to text, sent in one chop</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: "fragment1"}, {opcode: 1, fin: true, payload: "fragment2"}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS immediately closed. All data frames after the initial data frame MUST HAVE opcode == 0.
+            </p>
+
+      <h2>4. RSV Bits</h2>
+
+         <h3>4.1 Text message with RSV == 7</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, payload: "hello", rsv: 7}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS immediately closed, since RSV MUST BE 0, when no extension defining RSV meaning has been negoiated.
+            </p>
+
+         <h3>4.2 Ping message with RSV Bits</h3>
+            <p>
+               Select RSV bits:
+               <select id="rsv_bits">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+               </select>
+               <button onclick='var e = document.getElementById("rsv_bits"); var oc = e.options[e.selectedIndex].value; sendframes([{opcode: 9, rsv: parseInt(oc)}]);'>Fuzz me!</button>
+            </p>
+            <p class="ok">
+               FF handles this correctly. The connection IS immediately closed, since RSV MUST BE 0, when no extension defining RSV meaning has been negoiated.
+            </p>
+
+      <h2>5. Misc</h2>
+
+         <h3>5.1 Text message of length 0</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, payload: ""}]);'>Fuzz me!</button>
+            </p>
+            <p class="unclear">
+               FF generates a JS onMessage() event. I am not sure if that is spec conform, since the spec does not seem to talk about it, and - in any case - if that is desirable.
+            </p>
+
+         <h3>5.2 Fragmented text message, 3 fragments each of length 0</h3>
+            <p>
+               <button onclick='sendframes([{opcode: 1, fin: false, payload: ""}, {opcode: 0, fin: false, payload: ""}, {opcode: 0, fin: true, payload: ""}]);'>Fuzz me!</button>
+            </p>
+            <p class="unclear">
+               FF generates a JS onMessage() event. I am not sure if that is spec conform, since the spec does not seem to talk about it, and - in any case - if that is desirable.
+            </p>
+
    </body>
 </html>

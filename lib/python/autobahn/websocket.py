@@ -32,6 +32,9 @@ class HttpException():
 
 
 class WebSocketServiceConnection(protocol.Protocol):
+   """
+   A Twisted Protocol class for WebSockets.
+   """
 
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
@@ -55,6 +58,7 @@ class WebSocketServiceConnection(protocol.Protocol):
       Callback when new WebSocket client connection is established.
       Throw HttpException when you don't want to accept WebSocket connection.
       Return accepted protocol from list of protocols provided by client or None.
+
       Override in derived class.
       """
       pass
@@ -62,6 +66,7 @@ class WebSocketServiceConnection(protocol.Protocol):
    def onOpen(self):
       """
       Callback when initial handshake was completed. Now you may send messages!
+
       Override in derived class.
       """
       pass
@@ -69,24 +74,32 @@ class WebSocketServiceConnection(protocol.Protocol):
    def onMessage(self, msg, binary):
       """
       Callback when message was received.
+
       Override in derived class.
       """
       pass
 
    def onPing(self, payload):
       """
+      Callback when Ping was received.
+
       Override in derived class.
       """
       self.sendPong(payload)
 
    def onPong(self, payload):
       """
+      Callback when Pong was received.
+
       Override in derived class.
       """
       pass
 
    def onClose(self, code, reason):
       """
+      Callback when Close was received. The default implementation answer with Close,
+      which is how a WebSockets server should behave.
+
       Override in derived class.
       """
       if self.debug:
@@ -100,6 +113,10 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def connectionMade(self):
+      """
+      This is called by Twisted framework when a new TCP connection has been accepted
+      and handed over to a Protocol instance (an instance of this class).
+      """
       self.transport.setTcpNoDelay(True)
       self.debug = self.factory.debug
       self.peer = self.transport.getPeer()
@@ -113,13 +130,18 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def connectionLost(self, reason):
+      """
+      This is called by Twisted framework when a TCP connection was lost.
+      """
       if self.debug:
          log.msg("connection from %s lost" % self.peerstr)
       self.state = WebSocketServiceConnection.STATE_CLOSED
 
 
    def dataReceived(self, data):
-
+      """
+      This is called by Twisted framework upon receiving data on TCP connection.
+      """
       if data:
          if self.debug:
             log.msg("RX from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
@@ -145,7 +167,9 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def processHandshake(self):
-
+      """
+      Process WebSockets handshake.
+      """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
       end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
@@ -313,7 +337,7 @@ class WebSocketServiceConnection(protocol.Protocol):
 
          if self.debug:
             log.msg("send handshake : %s" % response)
-         self.transport.write(response)
+         self.sendData(response)
 
          ## move into OPEN state
          ##
@@ -332,21 +356,68 @@ class WebSocketServiceConnection(protocol.Protocol):
             self.dataReceived(None)
 
 
+   def sendData(self, raw, chopsize = None):
+      """
+      Wrapper for self.transport.write which allows to give a chopsize.
+      When asked to chop up writing to TCP stream, we write only chopsize octets
+      and then give up control to select() in underlying reactor so that bytes
+      get onto wire immediately. Note that this is different from and unrelated
+      to WebSockets data message fragmentation. Note that this is also different
+      from the TcpNoDelay option which can be set on the socket.
+      """
+      if chopsize and chopsize > 0:
+         i = 0
+         n = len(raw)
+         done = False
+         while not done:
+            j = i + chopsize
+            if j >= n:
+               done = True
+               j = n
+            if self.debug:
+               log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw[i:j])))
+            self.transport.write(raw[i:j])
+
+            ## This is where the "magic" happens. We give up control to the
+            ## Twisted reactor, which calls into the OS Select(), which will
+            ## then send out outstanding data. I suspect this Twisted call is
+            ## probably not "intended" to be called by Twisted users, but it is
+            ## the only "way" I found to work to attain the intended result.
+            ##
+            reactor.doSelect(0)
+
+            i += chopsize
+      else:
+         if self.debug:
+            log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw)))
+         self.transport.write(raw)
+
+
    def sendHttpBadRequest(self, reason):
+      """
+      When problems/errors happen during WebSockets handshake, send HTTP
+      Bad Request Error and terminate.
+      """
       self.sendHttpRequestFailure(400, reason)
 
 
    def sendHttpRequestFailure(self, code, reason):
+      """
+      Send out HTTP error.
+      """
       response  = "HTTP/1.1 %d %s\n" % (code, reason)
       response += "\n"
       if self.debug:
          log.msg("send handshake failure : %s" % response)
-      self.transport.write(response)
+      self.sendData(response)
       self.transport.loseConnection()
 
 
    def processData(self):
-
+      """
+      After WebSockets handshake has been completed, this procedure will do all
+      subsequent processing of incoming bytes.
+      """
       if self.current_frame is None:
 
          buffered_len = len(self.data)
@@ -483,8 +554,10 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def onFrame(self, fin, opcode, payload):
-
-      ## DATA
+      """
+      Process a completely received frame.
+      """
+      ## DATA frame
       ##
       if opcode in [0, 1, 2]:
 
@@ -513,7 +586,7 @@ class WebSocketServiceConnection(protocol.Protocol):
             self.msg_payload = []
             self.msg_type = None
 
-      ## CLOSE
+      ## CLOSE frame
       ##
       elif opcode == 8:
 
@@ -542,12 +615,12 @@ class WebSocketServiceConnection(protocol.Protocol):
 
          self.onClose(code, reason)
 
-      ## PING
+      ## PING frame
       ##
       elif opcode == 9:
          self.onPing(payload)
 
-      ## PONG
+      ## PONG frame
       ##
       elif opcode == 10:
          self.onPong(payload)
@@ -556,23 +629,29 @@ class WebSocketServiceConnection(protocol.Protocol):
          raise Exception("logic error processing frame with opcode %d" % opcode)
 
 
-   def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None, chunksize = None):
+   def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None, chopsize = None, sync = False):
+      """
+      Send out frame. Normally only used internally via sendMessage(), sendPing(), sendPong() and sendClose().
 
-      ## This method deliberately allows to send invalid frames (that is frames invalid
-      ## per-se, or frames invalid because of protocol state). Other than in fuzzing servers,
-      ## calling methods will ensure that no invalid frames are sent.
+      This method deliberately allows to send invalid frames (that is frames invalid
+      per-se, or frames invalid because of protocol state). Other than in fuzzing servers,
+      calling methods will ensure that no invalid frames are sent.
 
-      ## In addition, this method supports explicit specification of payload length.
-      ## When payload_len is given, it will always write that many octets to the stream.
-      ## It'll wrap within payload, resending parts of that when more octets were requested
-      ## The use case is again for fuzzing server which want to sent increasing amounts
-      ## of payload data to clients without having to construct potentially large messges
-      ## themselfes.
-
+      In addition, this method supports explicit specification of payload length.
+      When payload_len is given, it will always write that many octets to the stream.
+      It'll wrap within payload, resending parts of that when more octets were requested
+      The use case is again for fuzzing server which want to sent increasing amounts
+      of payload data to clients without having to construct potentially large messges
+      themselfes.
+      """
       if payload_len:
+         if payload_len < 1 or len(payload) < 1:
+            raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
          l = payload_len
+         pl = ''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
       else:
          l = len(payload)
+         pl = payload
 
       ## first byte
       ##
@@ -600,28 +679,20 @@ class WebSocketServiceConnection(protocol.Protocol):
       else:
          raise Exception("invalid payload length")
 
-      raw = ''.join([chr(b0), chr(b1), el, payload])
+      raw = ''.join([chr(b0), chr(b1), el, pl])
 
-      if self.debug:
-         log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw)))
+      self.sendData(raw, chopsize)
 
-      if chunksize and chunksize > 0:
-         i = 0
-         n = len(raw)
-         done = False
-         while not done:
-            j = i + chunksize
-            if j > n:
-               done = True
-               j = n
-            self.transport.write(raw[i:j])
-            reactor.doSelect(0)
-            i += chunksize
-      else:
-         self.transport.write(raw)
+      if sync:
+         reactor.doSelect(0)
 
 
    def sendPing(self, payload):
+      """
+      Send out Ping to client. Payload can be arbitrary, but length must be less than 126 octets.
+      A client is expected to Pong back the payload a soon as "practical". When more than 1 Ping
+      is outstanding at the client, the client may elect to respond only to the last Ping.
+      """
       l = len(payload)
       if l > 125:
          raise Exception("invalid payload for PING (payload length must be <= 125, was %d)" % l)
@@ -629,6 +700,11 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def sendPong(self, payload):
+      """
+      Send out Pong to client. Payload can be arbitrary, but length must be less than 126 octets.
+      A Pong frame MAY be sent unsolicited.  This serves as a unidirectional heartbeat.
+      A response to an unsolicited pong is "not expected".
+      """
       l = len(payload)
       if l > 125:
          raise Exception("invalid payload for PONG (payload length must be <= 125, was %d)" % l)
@@ -636,7 +712,9 @@ class WebSocketServiceConnection(protocol.Protocol):
 
 
    def sendClose(self, status_code = None, status_reason = None):
-
+      """
+      Send out close to client.
+      """
       plen = 0
       payload = ""
 
@@ -671,14 +749,44 @@ class WebSocketServiceConnection(protocol.Protocol):
       self.sendFrame(opcode = 8, payload = payload)
 
 
-   def sendMessage(self, payload, binary = False):
-
+   def sendMessage(self, payload, binary = False, payload_frag_size = None):
+      """
+      Send out data message. You can send text or binary message, and optionally
+      specifiy a payload fragment size. When the latter is given, the payload will
+      be split up into frames with payload <= the payload_frag_size given.
+      """
+      ## (initial) frame opcode
+      ##
       if binary:
-         self.sendFrame(opcode = 2, payload = payload)
+         opcode = 2
       else:
-         self.sendFrame(opcode = 1, payload = payload)
+         opcode = 1
 
+      ## send unfragmented
+      ##
+      if payload_frag_size is None or len(payload) <= payload_frag_size:
+         self.sendFrame(opcode = opcode, payload = payload)
 
+      ## send data message in fragments
+      ##
+      else:
+         if payload_frag_size < 1:
+            raise Exception("payload fragment size must be at least 1 (was %d)" % payload_frag_size)
+         i = 0
+         n = len(payload)
+         done = False
+         first = True
+         while not done:
+            j = i + payload_frag_size
+            if j > n:
+               done = True
+               j = n
+            if first:
+               self.sendFrame(opcode = opcode, payload = payload, fin = done)
+               first = False
+            else:
+               self.sendFrame(opcode = 0, payload = payload, fin = done)
+            i += payload_frag_size
 
 
 class WebSocketService(protocol.ServerFactory):

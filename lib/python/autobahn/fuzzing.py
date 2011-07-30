@@ -42,14 +42,18 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
                     "case007b": self.case007b,
                     "case007c": self.case007c,
                     "case008": self.case008,
-                    "case009": self.case009
+                    "case009": self.case009,
+                    "case100": self.case100,
+                    "case101": self.case101,
+                    "case101": self.case101,
+                    "case102": self.case102
                     }
       self.case = None
 
 
    def onPong(self, payload):
       if self.debug:
-         log.msg("PONG received from %s : %s" % (self.peerstr, payload))
+         log.msg("PONG of length %d received from %s : %s" % (len(payload), self.peerstr, payload))
 
       if self.case == "case003_part2":
          self.case003_part2()
@@ -69,12 +73,37 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
                            payload = pl.encode("UTF-8"),
                            fin = obj[1].get("fin", True),
                            rsv = obj[1].get("rsv", 0),
-                           mask = obj[1].get("mask", None))
+                           mask = obj[1].get("mask", None),
+                           payload_len = obj[1].get("payload_len", None),
+                           chopsize = obj[1].get("chopsize", None),
+                           sync = obj[1].get("sync", False))
+
+         ## send multiple frames as specified
+         ##
+         elif obj[0] == "sendframes":
+            frames = obj[1]
+            for frame in frames:
+               pl = frame.get("payload", "")
+               self.sendFrame(opcode = frame["opcode"],
+                              payload = pl.encode("UTF-8"),
+                              fin = frame.get("fin", True),
+                              rsv = frame.get("rsv", 0),
+                              mask = frame.get("mask", None),
+                              payload_len = frame.get("payload_len", None),
+                              chopsize = frame.get("chopsize", None),
+                              sync = frame.get("sync", False))
+
+         ## send close
+         ##
+         elif obj[0] == "close":
+            spec = obj[1]
+            self.sendClose(spec.get("code", None), spec.get("reason", None))
 
          ## echo argument
          ##
          elif obj[0] == "echo":
-            self.sendFrame(opcode = 1, payload = obj[1].encode("UTF-8"))
+            spec = obj[1]
+            self.sendFrame(opcode = 1, payload = spec.get("payload", ""), payload_len = spec.get("payload_len", None))
 
          ## run test case
          ##
@@ -191,9 +220,41 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
          self.transport.write(binascii.a2b_hex(d))
 
    def case009(self):
-      self.sendFrame(opcode = 1, fin = False, payload = "fragment1-", chunksize = 1)
-      self.sendFrame(opcode = 9, fin = True, payload = "ping", chunksize = 1)
-      self.sendFrame(opcode = 0, fin = True, payload = "fragment2", chunksize = 1)
+      self.sendFrame(opcode = 1, fin = False, payload = "fragment1-", chopsize = 1)
+      self.sendFrame(opcode = 9, fin = True, payload = "ping", chopsize = 1)
+      self.sendFrame(opcode = 0, fin = True, payload = "fragment2", chopsize = 1)
+      self.case = None
+
+   def case100(self):
+      """
+      Start conversation by sending 3 continuation frames with FIN = True, where
+      there is nothing to continue. This is bogus (continuation frames outside fragmented
+      message), and the client should immediately close the connection.
+      """
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus1")
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus*2")
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus**3")
+      self.sendFrame(opcode = 1, fin = True, payload = "BLUB!")
+      self.case = None
+
+   def case101(self):
+      """
+      Same as case101, but send out frames synchronously.
+      """
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus1", sync = True)
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus*2", sync = True)
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus**3", sync = True)
+      self.sendFrame(opcode = 1, fin = True, payload = "BLUB!", sync = True)
+      self.case = None
+
+   def case102(self):
+      """
+      Same as case102, but send out frames chooped into single octets.
+      """
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus1", chopsize = 1)
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus*2", chopsize = 1)
+      self.sendFrame(opcode = 0, fin = True, payload = "bogus**3", chopsize = 1)
+      self.sendFrame(opcode = 1, fin = True, payload = "BLUB!", chopsize = 1)
       self.case = None
 
 
