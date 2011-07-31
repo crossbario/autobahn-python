@@ -24,6 +24,7 @@ import base64
 import struct
 import random
 import urlparse
+import os
 
 
 class WebSocketProtocol(protocol.Protocol):
@@ -58,7 +59,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Override in derived class.
       """
-      pass
+      if self.debug:
+         log.msg("onOpen()")
 
    def onMessage(self, msg, binary):
       """
@@ -66,7 +68,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Override in derived class.
       """
-      pass
+      if self.debug:
+         log.msg("onMessage()")
 
    def onPing(self, payload):
       """
@@ -75,6 +78,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Override in derived class.
       """
+      if self.debug:
+         log.msg("onPing()")
       self.sendPong(payload)
 
    def onPong(self, payload):
@@ -83,7 +88,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Override in derived class.
       """
-      pass
+      if self.debug:
+         log.msg("onPong()")
 
    def onClose(self, code, reason):
       """
@@ -228,7 +234,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## the semantics of RSV has been negotiated
             ##
             if frame_rsv != 0:
-               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "RSV != 0 and no extension negoiated")
+               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "RSV != 0 and no extension negotiated")
 
             ## all client-to-server frames MUST be masked
             ##
@@ -454,12 +460,27 @@ class WebSocketProtocol(protocol.Protocol):
       b0 |= (rsv % 8) << 4
       b0 |= opcode % 128
 
-      ## second byte and payload len bytes
+      ## second byte, payload len bytes and mask
       ##
       b1 = 0
       el = ""
-      if mask:
+      if mask or not self.isServer:
          b1 |= 1 << 7
+         if mask:
+            mv = struct.pack("!I", mask)
+         else:
+            mv = struct.pack("!I", random.getrandbits(32))
+
+         frame_mask = []
+         for j in range(0, 4):
+            frame_mask.append(ord(mv[j]))
+
+         ## mask frame payload
+         ##
+         plm = ''.join([chr(ord(pl[k]) ^ frame_mask[k % 4]) for k in range(0, l)])
+      else:
+         mv = ""
+         plm = pl
 
       if l <= 125:
          b1 |= l
@@ -472,7 +493,7 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          raise Exception("invalid payload length")
 
-      raw = ''.join([chr(b0), chr(b1), el, pl])
+      raw = ''.join([chr(b0), chr(b1), el, mv, plm])
 
       self.sendData(raw, chopsize)
 
@@ -623,13 +644,14 @@ class WebSocketServiceConnection(WebSocketProtocol):
          log.msg("WebSocketServiceConnection.connectionLost")
          log.msg("connection from %s lost" % self.peerstr)
 
+
    def processHandshake(self):
       """
       Process WebSockets handshake.
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      end_of_header = self.data.find("\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          ## extract HTTP headers
@@ -795,7 +817,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
          response += "Sec-WebSocket-Accept: %s\n" % sec_websocket_accept
          if protocol:
             response += "Sec-WebSocket-Protocol: %s\n" % protocol
-         response += "\n"
+         response += "\x0d\x0a"
 
          if self.debug:
             log.msg("send handshake : %s" % response)
@@ -831,7 +853,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
       Send out HTTP error.
       """
       response  = "HTTP/1.1 %d %s\n" % (code, reason)
-      response += "\n"
+      response += "\x0d\x0a"
       if self.debug:
          log.msg("send handshake failure : %s" % response)
       self.sendData(response)
@@ -860,19 +882,143 @@ class WebSocketClientConnection(WebSocketProtocol):
    Client protocol for WebSockets.
    """
 
+   def __init__(self, debug = False):
+      self.debug = debug
+
+   def onOpen(self):
+      self.sendPing("ping from client")
+
+   def onPong(self, payload):
+      log.msg("PONG : " + payload)
+
    def connectionMade(self):
       WebSocketProtocol.connectionMade(self)
       if self.debug:
-         log.msg("WebSocketClientConnection.connectionMade")
          log.msg("connection to %s established" % self.peerstr)
+      self.http_request = None
+      self.http_headers = {}
       self.isServer = False
+      self.startHandshake()
 
 
    def connectionLost(self, reason):
       WebSocketProtocol.connectionLost(self, reason)
       if self.debug:
-         log.msg("WebSocketClientConnection.connectionLost")
          log.msg("connection to %s lost" % self.peerstr)
+
+
+   def startHandshake(self):
+      # GET /chat HTTP/1.1
+      # Host: server.example.com
+      # Upgrade: websocket
+      # Connection: Upgrade
+      # Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
+      # Sec-WebSocket-Origin: http://example.com
+      # Sec-WebSocket-Protocol: chat, superchat
+      # Sec-WebSocket-Version: 8
+      self.websocket_key = base64.b64encode(os.urandom(16))
+      log.msg(self.peerstr)
+
+      request  = "GET / HTTP/1.1\n"
+      request += "Host: localhost:9000\n"
+      request += "Upgrade: websocket\n"
+      request += "Connection: Upgrade\n"
+      request += "Sec-WebSocket-Key: %s\n" % self.websocket_key
+      request += "Sec-WebSocket-Version: 8\n"
+      request += "\x0d\x0a"
+
+      self.sendData(request)
+
+
+   def processHandshake(self):
+      """
+      Process WebSockets handshake.
+      """
+      ## only proceed when we have fully received the HTTP request line and all headers
+      ##
+      end_of_header = self.data.find("\x0a\x0d\x0a")
+      if end_of_header >= 0:
+
+         ## extract HTTP headers
+         ##
+         ## FIXME: properly handle headers split accross multiple lines
+         ##
+         raw = self.data[:end_of_header].splitlines()
+         self.http_request = raw[0].strip()
+         for h in raw[1:]:
+            i = h.find(":")
+            if i > 0:
+               key = h[:i].strip()
+               value = h[i+1:].strip()
+               self.http_headers[key] = value
+
+         ## remember rest (after HTTP headers, if any)
+         ##
+         self.data = self.data[end_of_header + 4:]
+
+         ## self.http_request & self.http_headers are now set
+         ## => validate WebSocket handshake
+         ##
+
+         if self.debug:
+            log.msg("received request line in handshake : %s" % str(self.http_request))
+            log.msg("received headers in handshake : %s" % str(self.http_headers))
+
+         ## Response Line
+         ##
+         if self.http_request != "HTTP/1.1 101 Switching Protocols":
+            pass
+
+         ## Upgrade
+         ##
+         if not self.http_headers.has_key("Upgrade"):
+            return self.sendHttpBadRequest("HTTP Upgrade header missing")
+         if self.http_headers["Upgrade"] != "websocket":
+            return self.sendHttpBadRequest("HTTP Upgrade header different from 'websocket'")
+
+         ## Connection
+         ##
+         if not self.http_headers.has_key("Connection"):
+            return self.sendHttpBadRequest("HTTP Connection header missing")
+         connectionUpgrade = False
+         for c in self.http_headers["Connection"].split(","):
+            if c.strip() == "Upgrade":
+               connectionUpgrade = True
+               break
+         if not connectionUpgrade:
+            return self.sendHttpBadRequest("HTTP Connection header does not include 'Upgrade' value")
+
+         ## compute Sec-WebSocket-Accept
+         ##
+         if not self.http_headers.has_key("Sec-WebSocket-Accept"):
+            return self.sendHttpBadRequest("HTTP Sec-WebSocket-Accept header missing")
+         else:
+            magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+            sha1 = hashlib.sha1()
+            sha1.update(self.websocket_key + magic)
+            sec_websocket_accept = base64.b64encode(sha1.digest())
+
+            if self.http_headers["Sec-WebSocket-Accept"] != sec_websocket_accept:
+               pass
+
+         log.msg(sec_websocket_accept)
+
+         ## move into OPEN state
+         ##
+         self.state = WebSocketProtocol.STATE_OPEN
+         self.current_frame = None
+         self.msg_payload = []
+         self.msg_type = None
+
+         ## fire handler on derived class
+         ##
+         self.onOpen()
+
+         ## process rest, if any
+         ##
+         if len(self.data) > 0:
+            self.dataReceived(None)
+
 
 
 class WebSocketClient(protocol.ClientFactory):
@@ -884,6 +1030,7 @@ class WebSocketClient(protocol.ClientFactory):
 
    def __init__(self, debug = False):
       self.debug = debug
+      random.seed()
 
    def clientConnectionFailed(self, connector, reason):
       print "Connection failed - goodbye!"

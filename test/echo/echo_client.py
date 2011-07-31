@@ -19,11 +19,34 @@
 from twisted.internet import reactor
 from twisted.python import log
 import sys
-from autobahn import websocket
+from autobahn import *
+
+class EchoClientConnection(websocket.WebSocketClientConnection):
+
+   def sendHello(self):
+      self.sendMessage("Hello, world!")
+
+   def onOpen(self):
+      ## send hello, when WebSocket connection handshake complete
+      self.sendHello()
+
+   def onMessage(self, msg, binary):
+      log.msg("got echo response: %s" % msg)
+      ## again, send hello, after 2s
+      reactor.callLater(2, self.sendHello)
+
+
+class EchoClient(websocket.WebSocketClient):
+
+   protocol = EchoClientConnection
+
+   def __init__(self, debug):
+      self.debug = debug
+
 
 def main():
    log.startLogging(sys.stdout)
-   factory = websocket.WebSocketClient(debug = True)
+   factory = EchoClient(debug = True)
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()
 

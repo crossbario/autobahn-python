@@ -24,6 +24,7 @@ from autobahn.websocket import WebSocketService, WebSocketServiceConnection
 class EchoServiceConnection(WebSocketServiceConnection):
 
    def onMessage(self, msg, binary):
+      log.msg("got echo request from %s : %s" % (self.peerstr, msg))
       self.sendMessage(msg, binary)
 
 
