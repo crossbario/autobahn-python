@@ -27,6 +27,7 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
    def onConnect(self, host, uri, origin, protocols):
       if self.debug:
          log.msg("connection received from %s for host %s, uri %s, origin %s, protocols %s" % (self.peerstr, host, uri, origin, str(protocols)))
+         log.msg(self.http_request_params)
       return None
 
 

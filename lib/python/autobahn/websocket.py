@@ -23,6 +23,7 @@ import hashlib
 import base64
 import struct
 import random
+import urlparse
 
 
 class HttpException():
@@ -216,6 +217,11 @@ class WebSocketServiceConnection(protocol.Protocol):
          ## FIXME: checking
          ##
          self.http_request_uri = rl[1]
+         (scheme, loc, path, params, query, fragment) = urlparse.urlparse(self.http_request_uri)
+         if fragment != "":
+            return self.sendHttpBadRequest("HTTP Request URI with fragment identifier")
+         self.http_request_path = path
+         self.http_request_params = urlparse.parse_qs(query)
 
          ## Host
          ##

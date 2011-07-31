@@ -14,9 +14,7 @@
 
          function openWebSocket(cmd)
          {
-               //webSocket = new MozWebSocket("ws://192.168.1.134:9000");
                webSocket = new MozWebSocket("ws://localhost:9000");
-               //webSocket = new MozWebSocket("ws://localhost:9000", ["autobahn", "foobar"]);
                //webSocket = new WebSocket("ws://localhost:9000");
 
                webSocket.onopen =
@@ -64,9 +62,21 @@
       </script>
    </head>
    <body>
-      <h1>Fuzzing Test</h1>
+      <h1>WebSockets Fuzz Testing of Firefox</h1>
+
+         <p>
+            To perform tests, first connect to Autobahn WebSockets fuzzing server using the "Open"/"Close"
+            buttons below.
+            After that, start any of below by pressing the buttons. This will send out
+            a JSON encoded command to the fuzzing server. The command contains a specification
+            of what the fuzzing server should send to the client (Firefox). The description will
+            state what the correct behavior is, and what Firefox actually does.
+            Note, that when the correct behavior is "close the connection", you'll need to reopen
+            the WebSockets connection first, before starting another test.
+         </p>
 
       <h2>References</h2>
+
          <ul>
             <li>
                [1] <a href="http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10">The WebSocket protocol</a>
@@ -78,12 +88,19 @@
             </li>
          </ul>
 
-      <table>
-         <tr>
-            <td><button onclick='openWebSocket();'>Open WebSocket</button></td>
-            <td><button onclick='closeWebSocket();'>Close WebSocket</button></td>
-         </tr>
-      </table>
+         <br/>
+         <br/>
+
+      <h2>0. Open/Close WebSockets connection</h2>
+         <p>
+            <table>
+               <tr>
+                  <td><button onclick='openWebSocket();'>Open WebSocket</button></td>
+                  <td><button onclick='closeWebSocket();'>Close WebSocket</button></td>
+               </tr>
+            </table>
+         </p>
+         <br/>
 
       <h2>1. Reserved Opcodes</h2>
 
