@@ -100,7 +100,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.debug:
          log.msg("received CLOSE for %s (%s, %s)" % (self.peerstr, code, reason))
-      self.sendClose(code, "ok, you asked me to close, I do;)")
+      self.sendClose(CLOSE_STATUS_CODE_NORMAL)
       self.transport.loseConnection()
 
 
@@ -557,8 +557,8 @@ class WebSocketProtocol(protocol.Protocol):
          payload += reason
 
       else:
-         if status_reason is not None:
-            raise Exception("status reason without status code in close frame")
+         if status_reason is not None and status_reason != "":
+            raise Exception("status reason '%s' without status code in close frame" % status_reason)
 
       self.sendFrame(opcode = 8, payload = payload)
 
