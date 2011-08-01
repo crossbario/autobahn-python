@@ -54,29 +54,33 @@ which you then can redistribute.
 
 ********************************************************************************
 **
-**    Fuzz Testing with Firefox
+**    Fuzz Testing Firefox / Chrome
 **
 ********************************************************************************
 
 Autobahn implements WebSockets protocol version 8, more precisely, the current
 draft version 10 of the WebSockets protocol spec, which you can find here:
 
-http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
+   http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10
 
-The only browser I know which currently implements that version is Firefox 7 and
-above.
+Currently /08/01/2011), the only browser (I know of) which implement that version
+are:
 
-Other browsers currently (07/30/2011) only implement older, incompatible,
-deprecated versions of the protocol. Autobahn will NOT work with those. As soon
-as other browsers implement version 8 or above, we will test with those of
-course also.
+   - Firefox 7 ("Aurora") and Firefox 8 ("Nightly")
+   - Chrome 14 ("dev-channel")
 
-You can fuzz test FF like so:
+Other browsers currently only implement older, incompatible, deprecated versions
+of the protocol. Autobahn will NOT work with those.
+
+As soon as other browsers implement version 8 or above, we will test with those
+of course also.
+
+You can fuzz test your browser like so:
 
 1. cd test/fuzzing
 2. python fuzzing_server.py
-3. open fuzzing.html in Firefox 7 or nightly
-4. press "Open WebSocket" and then one of the test case buttons
+3. open fuzzing.html in browser
+4. click the buttons for the test cases
 
 
 ********************************************************************************
