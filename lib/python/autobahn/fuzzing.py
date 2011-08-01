@@ -24,10 +24,9 @@ import binascii
 
 class FuzzingServiceConnection(WebSocketServiceConnection):
 
-   def onConnect(self, host, uri, origin, protocols):
+   def onConnect(self, host, path, params, origin, protocols):
       if self.debug:
-         log.msg("connection received from %s for host %s, uri %s, origin %s, protocols %s" % (self.peerstr, host, uri, origin, str(protocols)))
-         log.msg(self.http_request_params)
+         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (self.peerstr, host, path, str(params), origin, str(protocols)))
       return None
 
 

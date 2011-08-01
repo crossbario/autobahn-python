@@ -21,8 +21,10 @@ import json
 
 class AutobahnServiceConnection(WebSocketServiceConnection):
 
-   def onConnect(self, host, uri, origin, protocols):
-      print "Client connected", host, uri, origin, protocols
+   def onConnect(self, host, path, params, origin, protocols):
+      if self.debug:
+         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (self.peerstr, host, path, str(params), origin, str(protocols)))
+      return None
       #raise HttpException(401, "Authenticate first!")
 
    def onOpen(self):

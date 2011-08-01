@@ -622,7 +622,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
    ## The following set of methods is intended to be overridden in subclasses
    ##
 
-   def onConnect(self, host, uri, origin, protocols):
+   def onConnect(self, host, path, params, origin, protocols):
       """
       Callback when new WebSocket client connection is established.
       Throw HttpException when you don't want to accept WebSocket connection.
@@ -630,7 +630,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
 
       Override in derived class.
       """
-      pass
+      return None
 
    def connectionMade(self):
       WebSocketProtocol.connectionMade(self)
@@ -798,9 +798,12 @@ class WebSocketServiceConnection(WebSocketProtocol):
          ## WebSocket handshake validated
          ## => produce response
 
-         # request Host, request URI, origin, protocols
+         ## Now fire onConnect() on derived class, to give that class a chance to accept or deny
+         ## the connection. onConnect() may throw, in which case the connection is denied, or it
+         ## may return a protocol from the protocols provided by client or None.
+         ##
          try:
-            protocol = self.onConnect(self.http_request_host, self.http_request_uri, self.websocket_origin, self.websocket_protocols)
+            protocol = self.onConnect(self.http_request_host, self.http_request_path, self.http_request_params, self.websocket_origin, self.websocket_protocols)
             if protocol and not (protocol in self.websocket_protocols):
                raise Exception("protocol accepted must be from the list client sent or null")
          except HttpException, e:
