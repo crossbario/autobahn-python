@@ -35,6 +35,10 @@ class WebSocketProtocol(protocol.Protocol):
    for clients and servers.
    """
 
+   ## magic used during WebSocket handshake
+   ##
+   WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
    ## WebSockets protocol state
    ##
    STATE_CLOSED = 0
@@ -804,9 +808,8 @@ class WebSocketServiceConnection(WebSocketProtocol):
 
          ## compute Sec-WebSocket-Accept
          ##
-         magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
          sha1 = hashlib.sha1()
-         sha1.update(key + magic)
+         sha1.update(key + WebSocketProtocol.WS_MAGIC)
          sec_websocket_accept = base64.b64encode(sha1.digest())
 
          ## send response to complete WebSocket handshake
@@ -993,9 +996,8 @@ class WebSocketClientConnection(WebSocketProtocol):
          if not self.http_headers.has_key("Sec-WebSocket-Accept"):
             return self.sendHttpBadRequest("HTTP Sec-WebSocket-Accept header missing")
          else:
-            magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
             sha1 = hashlib.sha1()
-            sha1.update(self.websocket_key + magic)
+            sha1.update(self.websocket_key + WebSocketProtocol.WS_MAGIC)
             sec_websocket_accept = base64.b64encode(sha1.digest())
 
             if self.http_headers["Sec-WebSocket-Accept"] != sec_websocket_accept:
