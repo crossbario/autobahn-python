@@ -99,7 +99,7 @@ class WebSocketProtocol(protocol.Protocol):
       Override in derived class.
       """
       if self.debug:
-         log.msg("received CLOSE for %s (%d, %s)" % (self.peerstr, code, reason))
+         log.msg("received CLOSE for %s (%s, %s)" % (self.peerstr, code, reason))
       self.sendClose(code, "ok, you asked me to close, I do;)")
       self.transport.loseConnection()
 
@@ -651,7 +651,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0a\x0d\x0a")
+      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          ## extract HTTP headers
@@ -811,12 +811,12 @@ class WebSocketServiceConnection(WebSocketProtocol):
 
          ## send response to complete WebSocket handshake
          ##
-         response  = "HTTP/1.1 101 Switching Protocols\n"
-         response += "Upgrade: websocket\n"
-         response += "Connection: Upgrade\n"
-         response += "Sec-WebSocket-Accept: %s\n" % sec_websocket_accept
+         response  = "HTTP/1.1 101 Switching Protocols\x0d\x0a"
+         response += "Upgrade: websocket\x0d\x0a"
+         response += "Connection: Upgrade\x0d\x0a"
+         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
          if protocol:
-            response += "Sec-WebSocket-Protocol: %s\n" % protocol
+            response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % protocol
          response += "\x0d\x0a"
 
          if self.debug:
@@ -852,7 +852,7 @@ class WebSocketServiceConnection(WebSocketProtocol):
       """
       Send out HTTP error.
       """
-      response  = "HTTP/1.1 %d %s\n" % (code, reason)
+      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason)
       response += "\x0d\x0a"
       if self.debug:
          log.msg("send handshake failure : %s" % response)
@@ -919,12 +919,12 @@ class WebSocketClientConnection(WebSocketProtocol):
       self.websocket_key = base64.b64encode(os.urandom(16))
       log.msg(self.peerstr)
 
-      request  = "GET / HTTP/1.1\n"
-      request += "Host: localhost:9000\n"
-      request += "Upgrade: websocket\n"
-      request += "Connection: Upgrade\n"
-      request += "Sec-WebSocket-Key: %s\n" % self.websocket_key
-      request += "Sec-WebSocket-Version: 8\n"
+      request  = "GET / HTTP/1.1\x0d\x0a"
+      request += "Host: localhost:9000\x0d\x0a"
+      request += "Upgrade: websocket\x0d\x0a"
+      request += "Connection: Upgrade\x0d\x0a"
+      request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key
+      request += "Sec-WebSocket-Version: 8\x0d\x0a"
       request += "\x0d\x0a"
 
       self.sendData(request)
@@ -936,7 +936,7 @@ class WebSocketClientConnection(WebSocketProtocol):
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0a\x0d\x0a")
+      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          ## extract HTTP headers
