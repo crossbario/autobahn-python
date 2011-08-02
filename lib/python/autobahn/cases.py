@@ -16,16 +16,42 @@
 ##
 ###############################################################################
 
-from setuptools import setup
+from websocket import WebSocketProtocol
+from twisted.python import log
+import pickle
 
-setup (
-   name = 'autobahn',
-   version = '0.2',
-   description = 'Autobahn - asynchronous RPC/PubSub over JSON/WebSockets.',
-   author = 'Tavendo GmbH',
-   url = 'http://www.tavendo.de/autobahn',
-   platforms = ('Any',),
-   install_requires = ['Twisted>=10.1'],
-   packages = ['autobahn'],
-   zip_safe = False
-)
+
+class Case:
+
+   def __init__(self, protocol):
+      self.p = protocol
+      self.passed = True
+      self.result = "Ok"
+      self.init()
+
+   def compare(self, obj1, obj2):
+      return pickle.dumps(obj1) == pickle.dumps(obj2)
+
+   def init(self):
+      pass
+
+   def onOpen(self):
+      pass
+
+   def onMessage(self, msg, binary):
+      pass
+
+   def onPing(self, payload):
+      pass
+
+   def onPong(self, payload):
+      pass
+
+   def onClose(self, code, reason):
+      pass
+
+
+from case1 import Case1
+from case2 import Case2
+
+Cases = [Case1, Case2]

@@ -1,0 +1,128 @@
+<html>
+   <head>
+
+      <style lang="css">
+         body {
+          background-color: #F4F4F4;
+          color: #333;
+          font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+         }
+         h2 {margin-top: 1em;}
+         h3.case {margin-top: 2em;}
+         p.exp {color: blue; font-weight: bold;}
+         p.ok {color: green; font-weight: bold;}
+         p.bug {color: red; font-weight: bold;}
+      </style>
+
+      <script type="text/javascript">
+
+         /// CONFIGURATION //////////////////////////////////
+
+         // edit this for where you run the fuzzing server
+         var fuzzing_server = "127.0.0.1:9000";
+
+         // edit this for an identification of agent/testrun or leave null
+         // to try autodetection
+         var agent = null;
+
+         // specify first/last test case you want to run
+         var startCaseId = 1;
+         var endCaseId = 2;
+
+         /// CONFIGURATION END //////////////////////////////
+
+         var webSocket = null;
+         var currentCaseId = null;
+
+         window.onload =
+            function()
+            {
+               if (agent == null)
+               {
+                  ua = navigator.userAgent;
+                  if (ua.indexOf("Chrome") > -1)
+                  {
+                     i = ua.indexOf("Chrome");
+                     j = ua.indexOf(" ", i);
+                     agent = ua.slice(i, j);
+                     console.log("detected " + agent);
+                  }
+                  else if (ua.indexOf("Firefox") > -1)
+                  {
+                     i = ua.indexOf("Firefox");
+                     j = ua.indexOf(" ", i);
+                     s1 = ua.slice(i, j);
+                     i = ua.indexOf("Gecko/");
+                     j = ua.indexOf(" ", i);
+                     s2 = ua.slice(i + "Gecko/".length, j);
+                     agent = s1 + "(" + s2 + ")";
+                     console.log("detected " + agent);
+                  }
+                  else
+                  {
+                     agent = "unknown";
+                     console.log("could not detect user agent .. will use '" + agent + "'");
+                  }
+               }
+
+               currentCaseId = startCaseId;
+               start();
+            }
+
+         function start()
+         {
+            var ws_uri = "ws://" + fuzzing_server + "/runcase?case=" + currentCaseId + "&agent=" + agent;
+
+            try
+            {
+               webSocket = new WebSocket(ws_uri);
+            }
+            catch (e)
+            {
+               // Firefox 7/8 currently prefixes the object
+               webSocket = new MozWebSocket(ws_uri);
+            }
+
+            webSocket.onopen =
+            function(e)
+            {
+               console.log("WebSocket opened");
+            }
+
+            webSocket.onclose =
+            function(e)
+            {
+               console.log("WebSocket closed");
+               webSocket = null;
+
+               currentCaseId = currentCaseId + 1;
+               if (currentCaseId <= endCaseId)
+               {
+                  start();
+               }
+               else
+               {
+                  console.log("all test cases executed");
+               }
+            }
+
+            webSocket.onmessage =
+            function(e)
+            {
+               console.log("Echo message: " + e.data);
+               webSocket.send(e.data);
+            }
+         }
+
+         function stop()
+         {
+            webSocket.close();
+         }
+
+      </script>
+   </head>
+
+   <body>
+      <h1>Autobahn WebSockets Browser Test Suite</h1>
+   </body>
+</html>

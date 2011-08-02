@@ -19,3 +19,4 @@
 import websocket
 import autobahn
 import fuzzing
+import cases

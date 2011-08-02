@@ -16,16 +16,16 @@
 ##
 ###############################################################################
 
-from setuptools import setup
+from case1 import Case1
 
-setup (
-   name = 'autobahn',
-   version = '0.2',
-   description = 'Autobahn - asynchronous RPC/PubSub over JSON/WebSockets.',
-   author = 'Tavendo GmbH',
-   url = 'http://www.tavendo.de/autobahn',
-   platforms = ('Any',),
-   install_requires = ['Twisted>=10.1'],
-   packages = ['autobahn'],
-   zip_safe = False
-)
+class Case2(Case1):
+
+   DESCRIPTION = """Same as Case 1, but send all frames with SYNC = True.
+   Note, this does not change the octets sent in any way, only how the stream
+   is chopped up on the wire."""
+
+   EXPECTATION = """Same as Case 1. Implementations must be agnostic to how
+   octet stream is chopped up on wire (must be TCP clean)."""
+
+   def init(self):
+      self.sync = True

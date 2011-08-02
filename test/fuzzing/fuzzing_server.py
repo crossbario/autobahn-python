@@ -26,6 +26,9 @@ def main():
    service = fuzzing.FuzzingService(debug = True)
    reactor.listenTCP(9000, service)
    reactor.run()
+   report = open("report.html", 'w')
+   service.saveReport(report)
+   report.close()
 
 if __name__ == '__main__':
    main()

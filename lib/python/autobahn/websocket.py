@@ -43,7 +43,8 @@ class WebSocketProtocol(protocol.Protocol):
    ##
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
-   STATE_OPEN = 2
+   STATE_CLOSING = 2
+   STATE_OPEN = 3
 
    ## WebSockets protocol close codes
    ##
@@ -104,12 +105,24 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.debug:
          log.msg("received CLOSE for %s (%s, %s)" % (self.peerstr, code, reason))
-      self.sendClose(CLOSE_STATUS_CODE_NORMAL)
-      self.transport.loseConnection()
+
+      if self.closeAlreadySent:
+         self.transport.loseConnection()
+      else:
+         self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
 
 
    def __init__(self):
       self.state = WebSocketProtocol.STATE_CLOSED
+
+
+   def getState(self):
+      return self.state
+
+
+   def failConnection(self):
+      self.failedByMe = True
+      self.transport.loseConnection()
 
 
    def connectionMade(self):
@@ -123,6 +136,8 @@ class WebSocketProtocol(protocol.Protocol):
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
       self.state = WebSocketProtocol.STATE_CONNECTING
       self.data = ""
+      self.closeAlreadySent = False
+      self.failedByMe = False
 
 
    def connectionLost(self, reason):
@@ -132,14 +147,36 @@ class WebSocketProtocol(protocol.Protocol):
       self.state = WebSocketProtocol.STATE_CLOSED
 
 
+   def logRxOctets(self, data):
+      if self.debug:
+         log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+
+
+   def logTxOctets(self, data, sync):
+      if self.debug:
+         log.msg("TX Octets to %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+
+
+   def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
+      if self.debug:
+         log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), str(masked), str(payload_len), binascii.b2a_hex(mask), binascii.b2a_hex(payload)))
+
+
+   def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
+      if self.debug:
+         if mask:
+            mmask = binascii.b2a_hex(mask)
+         else:
+            mmask = str(mask)
+         log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, payload_len = %s, chopsize = %s, sync = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), mmask, str(payload_len), str(chopsize), str(sync), binascii.b2a_hex(payload)))
+
+
    def dataReceived(self, data):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
       """
-      if data:
-         if self.debug:
-            log.msg("RX from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
-         self.data += data
+      self.logRxOctets(data)
+      self.data += data
 
       ## WebSocket is open (handshake was completed)
       ##
@@ -171,7 +208,7 @@ class WebSocketProtocol(protocol.Protocol):
       raise Exception("must implement handshake (client or server) in derived class")
 
 
-   def sendData(self, raw, chopsize = None):
+   def sendData(self, raw, sync = False, chopsize = None):
       """
       Wrapper for self.transport.write which allows to give a chopsize.
       When asked to chop up writing to TCP stream, we write only chopsize octets
@@ -189,8 +226,7 @@ class WebSocketProtocol(protocol.Protocol):
             if j >= n:
                done = True
                j = n
-            if self.debug:
-               log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw[i:j])))
+            self.logTxOctets(raw[i:j], True)
             self.transport.write(raw[i:j])
 
             ## This is where the "magic" happens. We give up control to the
@@ -203,9 +239,10 @@ class WebSocketProtocol(protocol.Protocol):
 
             i += chopsize
       else:
-         if self.debug:
-            log.msg("TX to %s : %s" % (self.peerstr, binascii.b2a_hex(raw)))
+         self.logTxOctets(raw, sync)
          self.transport.write(raw)
+         if sync:
+            reactor.doSelect(0)
 
 
    def processData(self):
@@ -305,6 +342,7 @@ class WebSocketProtocol(protocol.Protocol):
                ## frame mask (all client-to-server frames MUST be masked!)
                ##
                frame_mask = []
+               frame_mask_raw = self.data[i:i+4]
                if frame_masked:
                   for j in range(i, i + 4):
                      frame_mask.append(ord(self.data[j]))
@@ -312,7 +350,7 @@ class WebSocketProtocol(protocol.Protocol):
 
                ## ok, got complete frame header
                ##
-               self.current_frame = (frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_payload_len)
+               self.current_frame = (frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_mask_raw, frame_payload_len)
 
                ## remember rest (payload of current frame and everything thereafter)
                ##
@@ -327,7 +365,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          buffered_len = len(self.data)
 
-         frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_payload_len = self.current_frame
+         frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_mask_raw, frame_payload_len = self.current_frame
 
          if buffered_len >= frame_payload_len:
 
@@ -345,7 +383,7 @@ class WebSocketProtocol(protocol.Protocol):
 
             ## now process frame
             ##
-            self.onFrame(frame_fin, frame_opcode, payload)
+            self.onFrame(frame_fin, frame_rsv, frame_opcode, frame_masked, frame_payload_len, frame_mask, frame_mask_raw, payload)
 
             return len(self.data) > 0 # reprocess when buffered data left
 
@@ -356,10 +394,12 @@ class WebSocketProtocol(protocol.Protocol):
          return False # need more data
 
 
-   def onFrame(self, fin, opcode, payload):
+   def onFrame(self, fin, rsv, opcode, masked, payload_len, mask, mask_raw, payload):
       """
       Process a completely received frame.
       """
+      self.logRxFrame(fin, rsv, opcode, masked, payload_len, mask_raw, payload)
+
       ## DATA frame
       ##
       if opcode in [0, 1, 2]:
@@ -432,7 +472,7 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("logic error processing frame with opcode %d" % opcode)
 
 
-   def sendFrame(self, opcode, payload, fin = True, rsv = 0, mask = None, payload_len = None, chopsize = None, sync = False):
+   def sendFrame(self, opcode, payload = "", fin = True, rsv = 0, mask = None, payload_len = None, chopsize = None, sync = False):
       """
       Send out frame. Normally only used internally via sendMessage(), sendPing(), sendPong() and sendClose().
 
@@ -499,10 +539,17 @@ class WebSocketProtocol(protocol.Protocol):
 
       raw = ''.join([chr(b0), chr(b1), el, mv, plm])
 
-      self.sendData(raw, chopsize)
+      ## log frame TX
+      ##
+      if mv != "":
+         mmv = binascii.b2a_hex(mv)
+      else:
+         mmv = None
+      self.logTxFrame(opcode, payload, fin, rsv, mmv, payload_len, chopsize, sync)
 
-      if sync:
-         reactor.doSelect(0)
+      ## send frame octets
+      ##
+      self.sendData(raw, sync, chopsize)
 
 
    def sendPing(self, payload):
@@ -554,6 +601,8 @@ class WebSocketProtocol(protocol.Protocol):
          if status_reason is not None:
             reason = status_reason.encode("UTF-8")
             plen += len(reason)
+         else:
+            reason = ""
 
          if plen > 125:
             raise Exception("close frame payload larger than 125 octets")
@@ -565,6 +614,7 @@ class WebSocketProtocol(protocol.Protocol):
             raise Exception("status reason '%s' without status code in close frame" % status_reason)
 
       self.sendFrame(opcode = 8, payload = payload)
+      self.closeAlreadySent = True
 
 
    def sendMessage(self, payload, binary = False, payload_frag_size = None):
