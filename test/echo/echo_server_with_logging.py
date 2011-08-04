@@ -16,29 +16,28 @@
 ##
 ###############################################################################
 
+import sys
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from twisted.python import log
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
-class EchoClientProtocol(WebSocketClientProtocol):
-
-   def sendHello(self):
-      self.sendMessage("Hello, world!")
-
-   def onOpen(self):
-      self.sendHello()
+class EchoServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, msg, binary):
-      print "Got echo: " + msg
-      reactor.callLater(2, self.sendHello)
+      self.sendMessage(msg, binary)
 
 
-class EchoClientFactory(WebSocketClientFactory):
+class EchoServerFactory(WebSocketServerFactory):
 
-   protocol = EchoClientProtocol
+   protocol = EchoServerProtocol
+
+   def __init__(self, debug):
+      self.debug = debug
 
 
 if __name__ == '__main__':
 
-   factory = EchoClientFactory()
-   reactor.connectTCP("localhost", 9000, factory)
+   log.startLogging(sys.stdout)
+   factory = EchoServerFactory(debug = True)
+   reactor.listenTCP(9000, factory)
    reactor.run()

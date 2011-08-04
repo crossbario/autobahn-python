@@ -1,33 +1,23 @@
 <html>
    <head>
       <script type="text/javascript">
-         window.onload =
-            function()
-            {
-               webSocket = new MozWebSocket("ws://localhost:9000");
-
-               webSocket.onopen =
-               function(e)
-               {
-                  console.log("webSocket.onopen");
-               }
-
-               webSocket.onclose =
-               function(e)
-               {
-                  console.log("webSocket.onclose");
-               }
-
-               webSocket.onmessage =
-               function(e)
-               {
-                  console.log("webSocket.onmessage : " + e.data);
-               }
+         window.onload = function() {
+            var ws_uri = "ws://localhost:9000";
+            try {
+               webSocket = new WebSocket(ws_uri);
             }
+            catch (e) {
+               // Firefox 7/8 currently prefixes the WebSocket object
+               webSocket = new MozWebSocket(ws_uri);
+            }
+            webSocket.onmessage = function(e) {
+               console.log("Got echo: " + e.data);
+            }
+         }
       </script>
    </head>
    <body>
-      <h1>Echo Test</h1>
+      <h1>Autobahn WebSockets Echo Test</h1>
       <button onclick='webSocket.send("Hello, world!");'>Send Hello</button>
    </body>
 </html>

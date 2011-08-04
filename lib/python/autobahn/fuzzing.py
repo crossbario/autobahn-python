@@ -18,7 +18,7 @@
 
 from twisted.internet import reactor
 from twisted.python import log
-from websocket import WebSocketProtocol, WebSocketService, WebSocketServiceConnection, HttpException
+from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
 from cases import Cases
 import json
 import binascii
@@ -32,10 +32,10 @@ def getUtcNow():
    return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-class FuzzingServiceConnection(WebSocketServiceConnection):
+class FuzzingServerProtocol(WebSocketServerProtocol):
 
    def connectionMade(self):
-      WebSocketServiceConnection.connectionMade(self)
+      WebSocketServerProtocol.connectionMade(self)
       self.case = None
       self.runCase = None
       self.caseAgent = None
@@ -44,7 +44,7 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
 
 
    def connectionLost(self, reason):
-      WebSocketServiceConnection.connectionLost(self, reason)
+      WebSocketServerProtocol.connectionLost(self, reason)
       if self.runCase and self.caseStarted:
          caseResult = {"case": self.case,
                        "description": self.Case.DESCRIPTION,
@@ -62,28 +62,28 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
       if self.runCase:
          self.wirelog.append(("RO", binascii.b2a_hex(data)))
       else:
-         WebSocketServiceConnection.logRxOctets(self, data)
+         WebSocketServerProtocol.logRxOctets(self, data)
 
 
    def logTxOctets(self, data, sync):
       if self.runCase:
          self.wirelog.append(("TO", binascii.b2a_hex(data), sync))
       else:
-         WebSocketServiceConnection.logTxOctets(self, data, sync)
+         WebSocketServerProtocol.logTxOctets(self, data, sync)
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
       if self.runCase:
          self.wirelog.append(("RF", payload, opcode, fin, rsv, masked, mask))
       else:
-         WebSocketServiceConnection.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
+         WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
       if self.runCase:
          self.wirelog.append(("TF", payload, opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
-         WebSocketServiceConnection.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
+         WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
 
    def continueLater(self, delay, fun):
@@ -205,33 +205,33 @@ class FuzzingServiceConnection(WebSocketServiceConnection):
                raise Exception("fuzzing server received unknown command" % obj[0])
 
 
-class FuzzingService(WebSocketService):
+class FuzzingServerFactory(WebSocketServerFactory):
 
-   protocol = FuzzingServiceConnection
+   protocol = FuzzingServerProtocol
 
    css = """
-<style lang="css">
-   body {
-    background-color: #F4F4F4;
-    color: #333;
-    font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
-   }
+   <style lang="css">
+      body {
+       background-color: #F4F4F4;
+       color: #333;
+       font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+      }
 
-   pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
-   pre.wirelog_tx_octets {color: #aaa; margin: 0; background-color: #600; padding: 2px;}
-   pre.wirelog_tx_octets_sync {color: #aaa; margin: 0; background-color: #606; padding: 2px;}
+      pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
+      pre.wirelog_tx_octets {color: #aaa; margin: 0; background-color: #600; padding: 2px;}
+      pre.wirelog_tx_octets_sync {color: #aaa; margin: 0; background-color: #606; padding: 2px;}
 
-   pre.wirelog_rx_frame {color: #fff; margin: 0; background-color: #0a0; padding: 2px;}
-   pre.wirelog_tx_frame {color: #fff; margin: 0; background-color: #a00; padding: 2px;}
-   pre.wirelog_tx_frame_sync {color: #fff; margin: 0; background-color: #a0a; padding: 2px;}
+      pre.wirelog_rx_frame {color: #fff; margin: 0; background-color: #0a0; padding: 2px;}
+      pre.wirelog_tx_frame {color: #fff; margin: 0; background-color: #a00; padding: 2px;}
+      pre.wirelog_tx_frame_sync {color: #fff; margin: 0; background-color: #a0a; padding: 2px;}
 
-   pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-   pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
 
-   pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
-   pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-</style>
-"""
+      pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
+      pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+   </style>
+   """
 
    def __init__(self, debug = False):
       self.debug = debug

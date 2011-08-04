@@ -16,10 +16,10 @@
 ##
 ###############################################################################
 
-from websocket import WebSocketService, WebSocketServiceConnection, HttpException
+from websocket import WebSocketServerFactory, WebSocketServerProtocol, HttpException
 import json
 
-class AutobahnServiceConnection(WebSocketServiceConnection):
+class AutobahnServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, host, path, params, origin, protocols):
       if self.debug:
@@ -64,10 +64,10 @@ class AutobahnServiceConnection(WebSocketServiceConnection):
       self.sendMessage(json.dumps(res))
 
 
-class AutobahnService(WebSocketService):
+class AutobahnService(WebSocketServerFactory):
 
    def __init__(self):
-      self.protocol = AutobahnServiceConnection
+      self.protocol = AutobahnServerProtocol
 
    def startFactory(self):
       pass

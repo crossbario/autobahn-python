@@ -663,7 +663,7 @@ class HttpException():
       self.reason = reason
 
 
-class WebSocketServiceConnection(WebSocketProtocol):
+class WebSocketServerProtocol(WebSocketProtocol):
    """
    Server protocol for WebSockets.
    """
@@ -916,12 +916,12 @@ class WebSocketServiceConnection(WebSocketProtocol):
       self.transport.loseConnection()
 
 
-class WebSocketService(protocol.ServerFactory):
+class WebSocketServerFactory(protocol.ServerFactory):
    """
    Server factory for WebSockets.
    """
 
-   protocol = WebSocketServiceConnection
+   protocol = WebSocketServerProtocol
 
    def __init__(self, debug = False):
       self.debug = debug
@@ -933,7 +933,7 @@ class WebSocketService(protocol.ServerFactory):
       pass
 
 
-class WebSocketClientConnection(WebSocketProtocol):
+class WebSocketClientProtocol(WebSocketProtocol):
    """
    Client protocol for WebSockets.
    """
@@ -1075,13 +1075,12 @@ class WebSocketClientConnection(WebSocketProtocol):
             self.dataReceived(None)
 
 
-
-class WebSocketClient(protocol.ClientFactory):
+class WebSocketClientFactory(protocol.ClientFactory):
    """
    Client factory for WebSockets.
    """
 
-   protocol = WebSocketClientConnection
+   protocol = WebSocketClientProtocol
 
    def __init__(self, debug = False):
       self.debug = debug
