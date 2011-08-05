@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from cases import Case
+from case import Case
 
 class Case4(Case):
 

@@ -16,7 +16,39 @@
 ##
 ###############################################################################
 
-import websocket
-import autobahn
-import fuzzing
-import case
+from autobahn.websocket import WebSocketProtocol
+from twisted.python import log
+import pickle
+
+
+class Case:
+
+   def __init__(self, protocol):
+      self.p = protocol
+      self.passed = True
+      self.result = "Ok"
+      self.init()
+
+   def compare(self, obj1, obj2):
+      return pickle.dumps(obj1) == pickle.dumps(obj2)
+
+   def init(self):
+      pass
+
+   def onOpen(self):
+      pass
+
+   def onMessage(self, msg, binary):
+      pass
+
+   def onPing(self, payload):
+      pass
+
+   def onPong(self, payload):
+      pass
+
+   def onClose(self, code, reason):
+      pass
+
+   def onConnectionLost(self, failedByMe):
+      pass

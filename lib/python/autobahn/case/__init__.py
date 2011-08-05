@@ -16,21 +16,15 @@
 ##
 ###############################################################################
 
-from cases import Case
+from case1 import Case1
+from case2 import Case2
+from case3 import Case3
+from case4 import Case4
+from case5 import Case5
 
-class Case3(Case):
+Cases = [Case1, Case2, Case3, Case4, Case5]
 
-   ID = "1.1"
+CaseCategories = {"1": "Opcodes",
+                  "4": "RSV",
+                  "3": "Fragmentation"}
 
-   DESCRIPTION = """Send frame with reserved opcode 3."""
-
-   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
-
-   def onOpen(self):
-      self.p.sendFrame(opcode = 3)
-      self.p.killAfter(1)
-
-   def onConnectionLost(self, failedByMe):
-      if failedByMe:
-         self.passed = False
-         self.result = "Client did not fail connection."

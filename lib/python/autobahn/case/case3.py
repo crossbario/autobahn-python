@@ -16,53 +16,21 @@
 ##
 ###############################################################################
 
-from websocket import WebSocketProtocol
-from twisted.python import log
-import pickle
+from case import Case
 
+class Case3(Case):
 
-class Case:
+   ID = "1.1"
 
-   def __init__(self, protocol):
-      self.p = protocol
-      self.passed = True
-      self.result = "Ok"
-      self.init()
+   DESCRIPTION = """Send frame with reserved opcode 3."""
 
-   def compare(self, obj1, obj2):
-      return pickle.dumps(obj1) == pickle.dumps(obj2)
-
-   def init(self):
-      pass
+   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
 
    def onOpen(self):
-      pass
-
-   def onMessage(self, msg, binary):
-      pass
-
-   def onPing(self, payload):
-      pass
-
-   def onPong(self, payload):
-      pass
-
-   def onClose(self, code, reason):
-      pass
+      self.p.sendFrame(opcode = 3)
+      self.p.killAfter(1)
 
    def onConnectionLost(self, failedByMe):
-      pass
-
-
-from case1 import Case1
-from case2 import Case2
-from case3 import Case3
-from case4 import Case4
-from case5 import Case5
-
-Cases = [Case1, Case2, Case3, Case4, Case5]
-
-CaseCategories = {"1": "Opcodes",
-                  "4": "RSV",
-                  "3": "Fragmentation"}
-
+      if failedByMe:
+         self.passed = False
+         self.result = "Client did not fail connection."

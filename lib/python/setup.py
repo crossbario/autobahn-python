@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
@@ -26,6 +26,6 @@ setup (
    url = 'http://www.tavendo.de/autobahn',
    platforms = ('Any',),
    install_requires = ['Twisted>=10.1'],
-   packages = ['autobahn'],
+   packages = find_packages(),
    zip_safe = False
 )

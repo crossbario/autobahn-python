@@ -19,7 +19,7 @@
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from cases import Cases, CaseCategories
+from case import Cases, CaseCategories
 import json
 import binascii
 import datetime
@@ -135,13 +135,15 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          if not self.caseAgent:
             raise Exception("need agent to run case")
          self.caseStarted = getUtcNow()
+         print "Running test case (class Case%d, ID %s) for user agent %s from peer %s" % (self.case, Cases[self.case - 1].ID, self.caseAgent, self.peerstr)
 
       elif path == "/updateReports":
          if not self.caseAgent:
             raise Exception("need agent to update reports for")
+         print "Updating reports, requested by peer %s" % self.peerstr
 
       else:
-         pass
+         print "Entering direct command mode for peer %s" % self.peerstr
 
       self.path = path
 
