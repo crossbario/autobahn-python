@@ -23,7 +23,7 @@ from autobahn.fuzzing import FuzzingServerFactory
 
 def main():
    log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
+   factory = FuzzingServerFactory(debug = True, outdir = "reports")
    reactor.listenTCP(9000, factory)
    reactor.run()
 

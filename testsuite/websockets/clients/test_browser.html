@@ -2,16 +2,11 @@
    <head>
 
       <style lang="css">
-         body {
-          background-color: #F4F4F4;
-          color: #333;
-          font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+         body
+         {
+            font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+            color: #333;
          }
-         h2 {margin-top: 1em;}
-         h3.case {margin-top: 2em;}
-         p.exp {color: blue; font-weight: bold;}
-         p.ok {color: green; font-weight: bold;}
-         p.bug {color: red; font-weight: bold;}
       </style>
 
       <script type="text/javascript">
@@ -34,9 +29,8 @@
          var webSocket = null;
          var currentCaseId = null;
 
-         window.onload =
-            function()
-            {
+         function startTestRun()
+         {
                if (agent == null)
                {
                   ua = navigator.userAgent;
@@ -66,10 +60,10 @@
                }
 
                updateStatus("Running test suite for test cases " + startCaseId + " - " + endCaseId + " ..");
-
+               document.getElementById('resultlink').innerHTML = '';
                currentCaseId = startCaseId;
                runNextCase();
-            }
+         }
 
          function updateStatus(msg)
          {
@@ -109,6 +103,8 @@
                   webSocket = null;
                   updateStatus("Reports updated.");
                   updateStatus("Test suite finished!");
+
+                  document.getElementById('resultlink').innerHTML = '<a href="../reports/index.html">Check test report</a>';
                }
          }
 
@@ -121,7 +117,7 @@
             webSocket.onopen =
                function(e)
                {
-                  updateStatus("Executing test case " + currentCaseId);
+                  updateStatus("Executing test case " + currentCaseId + "/" + endCaseId);
                }
 
             webSocket.onclose =
@@ -152,8 +148,9 @@
    </head>
 
    <body>
-      <h1>Autobahn WebSockets Browser Test Suite</h1>
-
-      <div id="statusline"></div>
+      <h1>WebSockets Protocol Compliance Test</h1>
+      <p><button onclick='startTestRun();'>Start Test Run</button></p>
+      <p id="statusline"></p>
+      <p id="resultlink"></p>
    </body>
 </html>

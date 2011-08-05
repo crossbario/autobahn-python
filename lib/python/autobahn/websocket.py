@@ -122,7 +122,13 @@ class WebSocketProtocol(protocol.Protocol):
 
    def failConnection(self):
       self.failedByMe = True
+      self.state = WebSocketProtocol.STATE_CLOSED
       self.transport.loseConnection()
+
+
+   def protocolViolation(self, reason):
+      log.msg("Failing connection on protocol violation : %s" % reason)
+      self.failConnection()
 
 
    def connectionMade(self):
@@ -175,12 +181,21 @@ class WebSocketProtocol(protocol.Protocol):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
       """
+      if not data:
+         log.msg("RECEIVED None Data!")
+         return
+
       self.logRxOctets(data)
       self.data += data
 
-      ## WebSocket is open (handshake was completed)
+      self.consumeData()
+
+
+   def consumeData(self):
+
+      ## WebSocket is open (handshake was completed) or close was sent
       ##
-      if self.state == WebSocketProtocol.STATE_OPEN:
+      if self.state in [WebSocketProtocol.STATE_OPEN, WebSocketProtocol.STATE_CLOSING]:
 
          while self.processData():
             pass
@@ -194,6 +209,11 @@ class WebSocketProtocol(protocol.Protocol):
          ## from other party here ..
          ##
          self.processHandshake()
+
+      ## we failed the connection .. don't process any more data!
+      ##
+      elif self.state == WebSocketProtocol.STATE_CLOSED:
+         log.msg("received data in STATE_CLOSED")
 
       ## should not arrive here (invalid state)
       ##
@@ -275,12 +295,14 @@ class WebSocketProtocol(protocol.Protocol):
             ## the semantics of RSV has been negotiated
             ##
             if frame_rsv != 0:
-               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "RSV != 0 and no extension negotiated")
+               self.protocolViolation("RSV != 0 and no extension negotiated")
+               return
 
             ## all client-to-server frames MUST be masked
             ##
             if self.isServer and not frame_masked:
-               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "unmasked client to server frame")
+               self.protocolViolation("unmasked client to server frame")
+               return
 
             ## check frame
             ##
@@ -289,22 +311,28 @@ class WebSocketProtocol(protocol.Protocol):
                ## control frames MUST NOT be fragmented
                ##
                if not frame_fin:
-                  self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "fragmented control frame")
+                  self.protocolViolation("fragmented control frame")
+                  return
+
                ## control frames MUST have payload 125 octets or less
                ##
                if frame_payload_len1 > 125:
-                  self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame with payload length > 125 octets")
+                  self.protocolViolation("control frame with payload length > 125 octets")
+                  return
+
                ## check for reserved control frame opcodes
                ##
                if frame_opcode not in [8, 9, 10]:
-                  self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "control frame using reserved opcode %d" % frame_opcode)
+                  self.protocolViolation("control frame using reserved opcode %d" % frame_opcode)
+                  return
 
             else: # data frame
 
                ## check for reserved data frame opcodes
                ##
                if frame_opcode not in [0, 1, 2]:
-                  self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "data frame using reserved opcode %d" % frame_opcode)
+                  self.protocolViolation("data frame using reserved opcode %d" % frame_opcode)
+                  return
 
             ## compute complete header length
             ##
@@ -410,12 +438,14 @@ class WebSocketProtocol(protocol.Protocol):
             if opcode in [1, 2]:
                self.msg_type = opcode
             else:
-               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "received continuation frame outside fragmented message")
+               self.protocolViolation("received continuation frame outside fragmented message")
+               return
          else:
             if opcode == 0:
                pass
             else:
-               self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "received non-continuation frame while in fragmented message")
+               self.protocolViolation("received non-continuation frame while in fragmented message")
+               return
 
          ## buffer message payload
          ##
@@ -893,7 +923,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## process rest, if any
          ##
          if len(self.data) > 0:
-            self.dataReceived(None)
+            self.consumeData()
 
 
    def sendHttpBadRequest(self, reason):
@@ -941,11 +971,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
    def __init__(self, debug = False):
       self.debug = debug
 
-   def onOpen(self):
-      self.sendPing("ping from client")
-
-   def onPong(self, payload):
-      log.msg("PONG : " + payload)
 
    def connectionMade(self):
       WebSocketProtocol.connectionMade(self)
@@ -964,24 +989,18 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
 
    def startHandshake(self):
-      # GET /chat HTTP/1.1
-      # Host: server.example.com
-      # Upgrade: websocket
-      # Connection: Upgrade
-      # Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
-      # Sec-WebSocket-Origin: http://example.com
-      # Sec-WebSocket-Protocol: chat, superchat
-      # Sec-WebSocket-Version: 8
       self.websocket_key = base64.b64encode(os.urandom(16))
-      log.msg(self.peerstr)
 
-      request  = "GET / HTTP/1.1\x0d\x0a"
+      request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.path
       request += "Host: localhost:9000\x0d\x0a"
       request += "Upgrade: websocket\x0d\x0a"
       request += "Connection: Upgrade\x0d\x0a"
       request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key
       request += "Sec-WebSocket-Version: 8\x0d\x0a"
       request += "\x0d\x0a"
+
+      if self.debug:
+         log.msg(request)
 
       self.sendData(request)
 
@@ -1072,7 +1091,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## process rest, if any
          ##
          if len(self.data) > 0:
-            self.dataReceived(None)
+            self.consumeData()
 
 
 class WebSocketClientFactory(protocol.ClientFactory):
