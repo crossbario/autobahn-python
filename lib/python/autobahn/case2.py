@@ -20,11 +20,13 @@ from case1 import Case1
 
 class Case2(Case1):
 
-   DESCRIPTION = """Same as Case 1, but send all frames with SYNC = True.
+   ID = "3.17"
+
+   DESCRIPTION = """Same as Case 3.16, but send all frames with SYNC = True.
    Note, this does not change the octets sent in any way, only how the stream
    is chopped up on the wire."""
 
-   EXPECTATION = """Same as Case 1. Implementations must be agnostic to how
+   EXPECTATION = """Same as Case 3.16. Implementations must be agnostic to how
    octet stream is chopped up on wire (must be TCP clean)."""
 
    def init(self):

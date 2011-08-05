@@ -19,7 +19,7 @@
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from cases import Cases
+from cases import Cases, CaseCategories
 import json
 import binascii
 import datetime
@@ -53,6 +53,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          self.runCase.onConnectionLost(self.failedByMe)
 
          caseResult = {"case": self.case,
+                       "id": self.Case.ID,
                        "description": self.Case.DESCRIPTION,
                        "expectation": self.Case.EXPECTATION,
                        "agent": self.caseAgent,
@@ -232,9 +233,9 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   ## CSS for Agent/Case detail report
+   ## CSS common for all reports
    ##
-   css_detail = """
+   css_common = """
       body
       {
          background-color: #F4F4F4;
@@ -242,31 +243,55 @@ class FuzzingServerFactory(WebSocketServerFactory):
          font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
       }
 
-      pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
-      pre.wirelog_tx_octets {color: #aaa; margin: 0; background-color: #600; padding: 2px;}
-      pre.wirelog_tx_octets_sync {color: #aaa; margin: 0; background-color: #606; padding: 2px;}
+      p#intro
+      {
+         margin-left: 30px;
+         font-size: 1.2em;
+      }
 
-      pre.wirelog_rx_frame {color: #fff; margin: 0; background-color: #0a0; padding: 2px;}
-      pre.wirelog_tx_frame {color: #fff; margin: 0; background-color: #a00; padding: 2px;}
-      pre.wirelog_tx_frame_sync {color: #fff; margin: 0; background-color: #a0a; padding: 2px;}
+      p#case_desc
+      {
+         border-radius: 10px;
+         background-color: #eee;
+         padding: 20px;
+         margin: 20px;
+      }
 
-      pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-      pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      p#case_expect
+      {
+         border-radius: 10px;
+         background-color: #eee;
+         padding: 20px;
+         margin: 20px;
+      }
 
-      pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
-      pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      p#case_result
+      {
+         border-radius: 10px;
+         background-color: #eee;
+         padding: 20px;
+         margin: 20px;
+      }
+
+      h1
+      {
+      }
+
+      h2
+      {
+         margin-top: 60px;
+         margin-left: 30px;
+      }
+
+      h3
+      {
+         margin-left: 50px;
+      }
    """
 
    ## CSS for Master report
    ##
    css_master = """
-      body
-      {
-         background-color: #F4F4F4;
-         color: #333;
-         font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
-      }
-
       table
       {
          border-collapse: collapse;
@@ -296,11 +321,20 @@ class FuzzingServerFactory(WebSocketServerFactory):
          font-size: 0.9em;
       }
 
+      td#case_category
+      {
+         color: #fff;
+         background-color: #000;
+         text-align: left;
+         padding-right: 40px;
+         font-size: 0.9em;
+      }
+
       td#case
       {
          background-color: #000;
          text-align: left;
-         padding-right: 60px;
+         padding-right: 30px;
          font-size: 0.9em;
       }
 
@@ -316,6 +350,51 @@ class FuzzingServerFactory(WebSocketServerFactory):
          text-align: center;
       }
    """
+
+   ## CSS for Agent/Case detail report
+   ##
+   css_detail = """
+      p#case_passed
+      {
+         color: #fff;
+         border-radius: 10px;
+         background-color: #0a0;
+         padding: 20px;
+         margin: 20px;
+         font-size: 1.2em;
+      }
+
+      p#case_failed
+      {
+         color: #fff;
+         border-radius: 10px;
+         background-color: #900;
+         padding: 20px;
+         margin: 20px;
+         font-size: 1.2em;
+      }
+
+      div#wirelog
+      {
+         margin-top: 20px;
+         margin-bottom: 80px;
+      }
+
+      pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
+      pre.wirelog_tx_octets {color: #aaa; margin: 0; background-color: #600; padding: 2px;}
+      pre.wirelog_tx_octets_sync {color: #aaa; margin: 0; background-color: #606; padding: 2px;}
+
+      pre.wirelog_rx_frame {color: #fff; margin: 0; background-color: #0a0; padding: 2px;}
+      pre.wirelog_tx_frame {color: #fff; margin: 0; background-color: #a00; padding: 2px;}
+      pre.wirelog_tx_frame_sync {color: #fff; margin: 0; background-color: #a0a; padding: 2px;}
+
+      pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+
+      pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
+      pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+   """
+
 
    def __init__(self, debug = False, outdir = "reports"):
       self.debug = debug
@@ -374,7 +453,8 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
 
    def makeAgentCaseReportFilename(self, agentId, caseNo):
-      return self.cleanForFilename(agentId) + "_" + ("case%03d" % caseNo) + ".html"
+      c = (Cases[caseNo - 1].ID).replace('.', '_')
+      return self.cleanForFilename(agentId) + "_case_" + c + ".html"
 
 
    def createMasterReport(self, outdir):
@@ -382,31 +462,60 @@ class FuzzingServerFactory(WebSocketServerFactory):
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s</style></head>' % FuzzingServerFactory.css_master)
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_master))
 
-      f.write('<h1>Autobahn WebSockets Protocol Compliance Test Suite</h1>')
+      f.write('<h1>WebSockets Protocol Compliance Test Report</h1>')
+
+      f.write('<p id="intro">Test summary report generated on</p>')
+      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
+      f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSocket protocol compliance test suite.</p>' % "http://www.tavendo.de/autobahn")
+
+      f.write('<h2>Test Results</h2>')
 
       f.write('<table id="agent_case_results">')
+
+      ## sorted list of agents for which test cases where run
+      ##
+      agentList = sorted(self.agents.keys())
+
+      ## create list of case indexes order by case ID
+      ##
+      cl = []
+      i = 1
+      for c in Cases:
+         cl.append((c.ID, i))
+         i += 1
+      cl = sorted(cl)
+      caseList = []
+      for c in cl:
+         caseList.append(c[1])
+
+      #caseList = sorted(self.cases.keys())
 
       ## Agents header
       ##
       f.write('<tr id="agent_case_results_header">')
-      f.write("<td>&nbsp;</td>")
-      for agentId in self.agents:
+      f.write('<td id="clabel">Category</td>')
+      f.write('<td id="clabel">Test</td>')
+      for agentId in agentList:
          f.write('<td id="agent">%s</td>' % agentId)
       f.write("</tr>")
 
-      for caseNo in self.cases:
+      for caseNo in caseList:
 
          f.write('<tr id="agent_case_result_row">')
 
          ## Case ID
          ##
-         f.write('<td id="case"><a href="#case_desc_%d">Case %03d</a></td>' % (caseNo, caseNo))
+         caseId = Cases[caseNo - 1].ID
+         caseCategory = CaseCategories.get(caseId.split('.')[0], "Misc")
+
+         f.write('<td id="case_category">%s</td>' % caseCategory)
+         f.write('<td id="case"><a href="#case_desc_%d">Case %s</a></td>' % (caseNo, caseId))
 
          ## Agent/Case Result
          ##
-         for agentId in self.agents:
+         for agentId in agentList:
             if self.agents[agentId].has_key(caseNo):
 
                case = self.agents[agentId][caseNo]
@@ -424,16 +533,16 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.write("</table>")
 
-      for caseNo in self.cases:
+      f.write('<h2>Test Cases</h2>')
+
+      for caseNo in caseList:
 
          Case = Cases[caseNo - 1]
 
          f.write('<a name="case_desc_%d"></a>' % caseNo)
-         f.write('<h2 id="case_desc_title">Case %d</h2>' % caseNo)
-         f.write('<h3>Description</h3>')
-         f.write('<p id="case_desc">%s</p>' % Case.DESCRIPTION)
-         f.write('<h3>Expectation</h3>')
-         f.write('<p id="case_expect">%s</p>' % Case.EXPECTATION)
+         f.write('<h3 id="case_desc_title">Case %s</h2>' % Case.ID)
+         f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % Case.DESCRIPTION)
+         f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % Case.EXPECTATION)
 
       f.write("</body></html>")
 
@@ -455,19 +564,26 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s</style></head>' % FuzzingServerFactory.css_detail)
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_detail))
 
-      f.write('<h1 class="case_heading">%s - Case %d</h1>' % (case["agent"], case["case"]))
+      f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
-      f.write('<p class="case_result">Description: %s</p>' % case["description"])
-      f.write('<p class="case_result">Expectation: %s</p>' % case["expectation"])
+      f.write('<h2>Summary</h2>')
 
-      f.write('<p class="case_passed">Passed: %s</p>' % case["passed"])
-      f.write('<p class="case_result">Result: %s</p>' % case["result"])
+      if case["passed"]:
+         f.write('<p id="case_passed"><b>Pass</b> (%s)</p>' % case["started"])
+      else:
+         f.write('<p id="case_failed"><b>Fail</b> (%s)</p>' % case["started"])
+
+      f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % case["description"])
+      f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % case["expectation"])
+      f.write('<p id="case_result"><i>Result</i><br/><br/>%s</p>' % case["result"])
+
+      f.write('<h2>Wire Log</h2>')
 
       ## write out wire log
       ##
-      f.write('<p class="wirelog">')
+      f.write('<div id="wirelog">')
       wl = case["wirelog"]
       i = 0
       for t in wl:
@@ -537,7 +653,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
          f.write('<pre class="wirelog_tcp_closed_by_server">%03d TCP CLOSED BY SERVER</pre>' % i)
       else:
          f.write('<pre class="wirelog_tcp_closed_by_client">%03d TCP CLOSED BY CLIENT</pre>' % i)
-      f.write('</p>')
+      f.write('</div>')
 
       f.write("</body></html>")
 

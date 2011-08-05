@@ -20,14 +20,16 @@ from cases import Case
 
 class Case1(Case):
 
+   ID = "3.16"
+
    DESCRIPTION = """A fragmented text message is sent in multiple frames. After
    sending the first 2 frames of the text message, a Ping is sent. Then we wait 1s,
    then we send 2 more text fragments, another Ping and then the final text fragment.
    Everything is legal."""
 
-   EXPECTATION = """We test if the client immediately answers the first Ping before
-   it has received the last text message fragment. Also we test if Ping payloads
-   are Pong'ed back exactly, and if the fragmented message is echo'ed back to us."""
+   EXPECTATION = """The peer immediately answers the first Ping before
+   it has received the last text message fragment. The peer pong's back the Ping's
+   payload exactly, and echo's the payload of the fragmented message back to us."""
 
    def init(self):
       self.sync = False

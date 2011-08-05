@@ -20,9 +20,11 @@ from cases import Case
 
 class Case3(Case):
 
+   ID = "1.1"
+
    DESCRIPTION = """Send frame with reserved opcode 3."""
 
-   EXPECTATION = """Client MUST fail the connection immediately."""
+   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
 
    def onOpen(self):
       self.p.sendFrame(opcode = 3)

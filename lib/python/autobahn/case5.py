@@ -18,16 +18,16 @@
 
 from cases import Case
 
-class Case4(Case):
+class Case5(Case):
 
-   ID = "1.2"
+   ID = "4.1"
 
-   DESCRIPTION = """Send frame with reserved opcode 11."""
+   DESCRIPTION = """Send text message with RSV == 7."""
 
-   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
+   EXPECTATION = """Connection is closed immediately, since RSV MUST BE 0, when no extension defining RSV meaning has been negoiated."""
 
    def onOpen(self):
-      self.p.sendFrame(opcode = 11)
+      self.p.sendFrame(opcode = 5, payload = "hello", rsv = 7)
       self.p.killAfter(1)
 
    def onConnectionLost(self, failedByMe):

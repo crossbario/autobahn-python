@@ -27,7 +27,7 @@
 
          // specify first/last test case you want to run
          var startCaseId = 1;
-         var endCaseId = 4;
+         var endCaseId = 5;
 
          /// CONFIGURATION END //////////////////////////////
 
@@ -65,7 +65,7 @@
                   }
                }
 
-               updateStatus("Running test cases " + startCaseId + " - " + endCaseId + " ..");
+               updateStatus("Running test suite for test cases " + startCaseId + " - " + endCaseId + " ..");
 
                currentCaseId = startCaseId;
                runNextCase();
@@ -108,6 +108,7 @@
                {
                   webSocket = null;
                   updateStatus("Reports updated.");
+                  updateStatus("Test suite finished!");
                }
          }
 
