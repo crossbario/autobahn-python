@@ -25,6 +25,7 @@ import binascii
 import datetime
 import random
 import textwrap
+import os
 
 
 def getUtcNow():
@@ -44,8 +45,13 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def connectionLost(self, reason):
+
       WebSocketServerProtocol.connectionLost(self, reason)
-      if self.runCase and self.caseStarted:
+
+      if self.runCase:
+
+         self.runCase.onConnectionLost(self.failedByMe)
+
          caseResult = {"case": self.case,
                        "description": self.Case.DESCRIPTION,
                        "expectation": self.Case.EXPECTATION,
@@ -55,7 +61,9 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                        "result": self.runCase.result,
                        "wirelog": self.wirelog,
                        "failedByMe": self.failedByMe}
+
          self.factory.logCase(caseResult)
+
 
 
    def logRxOctets(self, data):
@@ -120,19 +128,34 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          else:
             raise Exception("case %s not found" % self.case)
 
-      if path == "/runcase":
+      if path == "/runCase":
          if not self.runCase:
             raise Exception("need case to run")
          if not self.caseAgent:
             raise Exception("need agent to run case")
          self.caseStarted = getUtcNow()
 
+      elif path == "/updateReports":
+         if not self.caseAgent:
+            raise Exception("need agent to update reports for")
+
+      else:
+         pass
+
+      self.path = path
+
       return None
 
 
    def onOpen(self):
+
       if self.runCase:
          self.runCase.onOpen()
+      elif self.path == "/updateReports":
+         self.factory.createReports()
+         self.sendClose()
+      else:
+         pass
 
 
    def onPong(self, payload):
@@ -209,12 +232,14 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   css = """
-   <style lang="css">
-      body {
-       background-color: #F4F4F4;
-       color: #333;
-       font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+   ## CSS for Agent/Case detail report
+   ##
+   css_detail = """
+      body
+      {
+         background-color: #F4F4F4;
+         color: #333;
+         font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
       }
 
       pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
@@ -230,12 +255,73 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
       pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-   </style>
    """
 
-   def __init__(self, debug = False):
+   ## CSS for Master report
+   ##
+   css_master = """
+      body
+      {
+         background-color: #F4F4F4;
+         color: #333;
+         font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
+      }
+
+      table
+      {
+         border-collapse: collapse;
+         border-spacing: 0px;
+         margin-left: 40px;
+         margin-bottom: 40px;
+         margin-top: 20px;
+      }
+
+      td
+      {
+         margin: 0;
+         border: 1px #fff solid;
+         padding-top: 6px;
+         padding-bottom: 6px;
+         padding-left: 16px;
+         padding-right: 16px;
+      }
+
+      tr#agent_case_result_row a
+      {
+         color: #eee;
+      }
+
+      td#agent
+      {
+         font-size: 0.9em;
+      }
+
+      td#case
+      {
+         background-color: #000;
+         text-align: left;
+         padding-right: 60px;
+         font-size: 0.9em;
+      }
+
+      td#case_passed
+      {
+         background-color: #0a0;
+         text-align: center;
+      }
+
+      td#case_failed
+      {
+         background-color: #900;
+         text-align: center;
+      }
+   """
+
+   def __init__(self, debug = False, outdir = "reports"):
       self.debug = debug
+      self.outdir = outdir
       self.agents = {}
+      self.cases = {}
 
 
    def startFactory(self):
@@ -247,109 +333,215 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
 
    def logCase(self, caseResults):
+
       agent = caseResults["agent"]
       case = caseResults["case"]
+
+      ## index by agent->case
+      ##
       if not self.agents.has_key(agent):
          self.agents[agent] = {}
       self.agents[agent][case] = caseResults
+
+      ## index by case->agent
+      ##
+      if not self.cases.has_key(case):
+         self.cases[case] = {}
+      self.cases[case][agent] = caseResults
 
 
    def getCase(self, agent, case):
       return self.agents[agent][case]
 
 
-   def saveReport(self, reportFile):
-      f = reportFile
-      f.write("<html><body><head>%s</head>\n" % FuzzingService.css)
-      for agent in self.agents:
-         f.write("<h1>%s</h1>\n" % agent)
+   def createReports(self):
 
-         cases = self.agents[agent]
+      if not os.path.exists(self.outdir):
+         os.makedirs(self.outdir)
 
-         for c in cases:
+      self.createMasterReport(self.outdir)
 
-            case = cases[c]
+      for agentId in self.agents:
+         for caseNo in self.agents[agentId]:
+            self.createAgentCaseReport(agentId, caseNo, self.outdir)
 
-            f.write('<h2 class="case_heading">Case %d</h2>' % case["case"])
 
-            f.write('<p class="case_result">Description: %s</p>' % case["description"])
-            f.write('<p class="case_result">Expectation: %s</p>' % case["expectation"])
+   def cleanForFilename(self, str):
+      s0 = ''.join([c if c in "abcdefghjiklmnopqrstuvwxyz0123456789" else " " for c in str.strip().lower()])
+      s1 = s0.strip()
+      s2 = s1.replace(' ', '_')
+      return s2
 
-            f.write('<p class="case_passed">Passed: %s</p>' % case["passed"])
-            f.write('<p class="case_result">Result: %s</p>' % case["result"])
 
-            ## write out wire log
-            ##
-            f.write('<p class="wirelog">')
-            wl = case["wirelog"]
-            i = 0
-            for t in wl:
+   def makeAgentCaseReportFilename(self, agentId, caseNo):
+      return self.cleanForFilename(agentId) + "_" + ("case%03d" % caseNo) + ".html"
 
-               if t[0] == "RO":
-                  prefix = "RX OCTETS"
-                  css_class = "wirelog_rx_octets"
 
-               elif t[0] == "TO":
-                  prefix = "TX OCTETS"
-                  if t[2]:
-                     css_class = "wirelog_tx_octets_sync"
-                  else:
-                     css_class = "wirelog_tx_octets"
+   def createMasterReport(self, outdir):
 
-               elif t[0] == "RF":
-                  prefix = "RX FRAME "
-                  css_class = "wirelog_rx_frame"
+      report_filename = "index.html"
+      f = open(os.path.join(outdir, report_filename), 'w')
 
-               elif t[0] == "TF":
-                  prefix = "TX FRAME "
-                  if t[8] or t[7] is not None:
-                     css_class = "wirelog_tx_frame_sync"
-                  else:
-                     css_class = "wirelog_tx_frame"
+      f.write('<html><body><head><style lang="css">%s</style></head>' % FuzzingServerFactory.css_master)
 
-               elif t[0] in ["CT", "KL"]:
-                  pass
+      f.write('<h1>Autobahn WebSockets Protocol Compliance Test Suite</h1>')
 
+      f.write('<table id="agent_case_results">')
+
+      ## Agents header
+      ##
+      f.write('<tr id="agent_case_results_header">')
+      f.write("<td>&nbsp;</td>")
+      for agentId in self.agents:
+         f.write('<td id="agent">%s</td>' % agentId)
+      f.write("</tr>")
+
+      for caseNo in self.cases:
+
+         f.write('<tr id="agent_case_result_row">')
+
+         ## Case ID
+         ##
+         f.write('<td id="case"><a href="#case_desc_%d">Case %03d</a></td>' % (caseNo, caseNo))
+
+         ## Agent/Case Result
+         ##
+         for agentId in self.agents:
+            if self.agents[agentId].has_key(caseNo):
+
+               case = self.agents[agentId][caseNo]
+
+               agent_case_report_file = self.makeAgentCaseReportFilename(agentId, caseNo)
+
+               if case["passed"]:
+                  f.write('<td id="case_passed"><a href="%s">Pass</a></td>' % agent_case_report_file)
                else:
-                  raise Exception("logic error")
-
-               if t[0] in ["RO", "TO", "RF", "TF"]:
-
-                  lines = textwrap.wrap(t[1], 100)
-                  if t[0] in ["RO", "TO"]:
-                     if len(lines) > 0:
-                        f.write('<pre class="%s">%03d %s: %s</pre>' % (css_class, i, prefix, lines[0]))
-                        for ll in lines[1:]:
-                           f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
-                  else:
-                     if t[0] == "RF":
-                        if t[6]:
-                           mmask = binascii.b2a_hex(t[6])
-                        else:
-                           mmask = str(t[6])
-                        f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
-                     elif t[0] == "TF":
-                        f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
-                     else:
-                        raise Exception("logic error")
-                     for ll in lines:
-                        f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
-
-               elif t[0] == "CT":
-                  f.write('<pre class="wirelog_delay">%03d DELAY %f sec</pre>' % (i, t[1]))
-
-               elif t[0] == "KL":
-                  f.write('<pre class="wirelog_kill_after">%03d KILL AFTER %f sec</pre>' % (i, t[1]))
-
-               else:
-                  raise Exception("logic error")
-
-               i += 1
-
-            if case["failedByMe"]:
-               f.write('<pre class="wirelog_tcp_closed_by_server">%03d TCP CLOSED BY SERVER</pre>' % i)
+                  f.write('<td id="case_failed"><a href="%s">Fail</a></td>' % agent_case_report_file)
             else:
-               f.write('<pre class="wirelog_tcp_closed_by_client">%03d TCP CLOSED BY CLIENT</pre>' % i)
-            f.write('</p>')
+               f.write('<td id="case_missing">Missing</td>')
 
-      f.write("</body></html>\n")
+         f.write("</tr>")
+
+      f.write("</table>")
+
+      for caseNo in self.cases:
+
+         Case = Cases[caseNo - 1]
+
+         f.write('<a name="case_desc_%d"></a>' % caseNo)
+         f.write('<h2 id="case_desc_title">Case %d</h2>' % caseNo)
+         f.write('<h3>Description</h3>')
+         f.write('<p id="case_desc">%s</p>' % Case.DESCRIPTION)
+         f.write('<h3>Expectation</h3>')
+         f.write('<p id="case_expect">%s</p>' % Case.EXPECTATION)
+
+      f.write("</body></html>")
+
+      f.close()
+      return report_filename
+
+
+   def createAgentCaseReport(self, agentId, caseNo, outdir):
+
+      if not self.agents.has_key(agentId):
+         raise Exception("no test data stored for agent %s" % agentId)
+
+      if not self.agents[agentId].has_key(caseNo):
+         raise Exception("no test data stored for case %s with agent %s" % (caseNo, agentId))
+
+      case = self.agents[agentId][caseNo]
+
+      report_filename = self.makeAgentCaseReportFilename(agentId, caseNo)
+
+      f = open(os.path.join(outdir, report_filename), 'w')
+
+      f.write('<html><body><head><style lang="css">%s</style></head>' % FuzzingServerFactory.css_detail)
+
+      f.write('<h1 class="case_heading">%s - Case %d</h1>' % (case["agent"], case["case"]))
+
+      f.write('<p class="case_result">Description: %s</p>' % case["description"])
+      f.write('<p class="case_result">Expectation: %s</p>' % case["expectation"])
+
+      f.write('<p class="case_passed">Passed: %s</p>' % case["passed"])
+      f.write('<p class="case_result">Result: %s</p>' % case["result"])
+
+      ## write out wire log
+      ##
+      f.write('<p class="wirelog">')
+      wl = case["wirelog"]
+      i = 0
+      for t in wl:
+
+         if t[0] == "RO":
+            prefix = "RX OCTETS"
+            css_class = "wirelog_rx_octets"
+
+         elif t[0] == "TO":
+            prefix = "TX OCTETS"
+            if t[2]:
+               css_class = "wirelog_tx_octets_sync"
+            else:
+               css_class = "wirelog_tx_octets"
+
+         elif t[0] == "RF":
+            prefix = "RX FRAME "
+            css_class = "wirelog_rx_frame"
+
+         elif t[0] == "TF":
+            prefix = "TX FRAME "
+            if t[8] or t[7] is not None:
+               css_class = "wirelog_tx_frame_sync"
+            else:
+               css_class = "wirelog_tx_frame"
+
+         elif t[0] in ["CT", "KL"]:
+            pass
+
+         else:
+            raise Exception("logic error")
+
+         if t[0] in ["RO", "TO", "RF", "TF"]:
+
+            lines = textwrap.wrap(t[1], 100)
+            if t[0] in ["RO", "TO"]:
+               if len(lines) > 0:
+                  f.write('<pre class="%s">%03d %s: %s</pre>' % (css_class, i, prefix, lines[0]))
+                  for ll in lines[1:]:
+                     f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+            else:
+               if t[0] == "RF":
+                  if t[6]:
+                     mmask = binascii.b2a_hex(t[6])
+                  else:
+                     mmask = str(t[6])
+                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
+               elif t[0] == "TF":
+                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
+               else:
+                  raise Exception("logic error")
+               for ll in lines:
+                  f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+
+         elif t[0] == "CT":
+            f.write('<pre class="wirelog_delay">%03d DELAY %f sec</pre>' % (i, t[1]))
+
+         elif t[0] == "KL":
+            f.write('<pre class="wirelog_kill_after">%03d KILL AFTER %f sec</pre>' % (i, t[1]))
+
+         else:
+            raise Exception("logic error")
+
+         i += 1
+
+      if case["failedByMe"]:
+         f.write('<pre class="wirelog_tcp_closed_by_server">%03d TCP CLOSED BY SERVER</pre>' % i)
+      else:
+         f.write('<pre class="wirelog_tcp_closed_by_client">%03d TCP CLOSED BY CLIENT</pre>' % i)
+      f.write('</p>')
+
+      f.write("</body></html>")
+
+      f.close()
+      return report_filename
+
+

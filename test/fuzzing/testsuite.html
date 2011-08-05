@@ -27,7 +27,7 @@
 
          // specify first/last test case you want to run
          var startCaseId = 1;
-         var endCaseId = 2;
+         var endCaseId = 4;
 
          /// CONFIGURATION END //////////////////////////////
 
@@ -45,7 +45,7 @@
                      i = ua.indexOf("Chrome");
                      j = ua.indexOf(" ", i);
                      agent = ua.slice(i, j);
-                     console.log("detected " + agent);
+                     updateStatus("Detected user agent " + agent + ".");
                   }
                   else if (ua.indexOf("Firefox") > -1)
                   {
@@ -56,23 +56,29 @@
                      j = ua.indexOf(" ", i);
                      s2 = ua.slice(i + "Gecko/".length, j);
                      agent = s1 + "(" + s2 + ")";
-                     console.log("detected " + agent);
+                     updateStatus("Detected user agent " + agent + ".");
                   }
                   else
                   {
                      agent = "unknown";
-                     console.log("could not detect user agent .. will use '" + agent + "'");
+                     updateStatus("Could not detect user agent .. will use '" + agent + "'.");
                   }
                }
 
+               updateStatus("Running test cases " + startCaseId + " - " + endCaseId + " ..");
+
                currentCaseId = startCaseId;
-               start();
+               runNextCase();
             }
 
-         function start()
+         function updateStatus(msg)
          {
-            var ws_uri = "ws://" + fuzzing_server + "/runcase?case=" + currentCaseId + "&agent=" + agent;
+            console.log(msg);
+            document.getElementById('statusline').innerHTML = msg;
+         }
 
+         function openWebSocket(ws_uri)
+         {
             try
             {
                webSocket = new WebSocket(ws_uri);
@@ -82,41 +88,63 @@
                // Firefox 7/8 currently prefixes the object
                webSocket = new MozWebSocket(ws_uri);
             }
-
-            webSocket.onopen =
-            function(e)
-            {
-               console.log("WebSocket opened");
-            }
-
-            webSocket.onclose =
-            function(e)
-            {
-               console.log("WebSocket closed");
-               webSocket = null;
-
-               currentCaseId = currentCaseId + 1;
-               if (currentCaseId <= endCaseId)
-               {
-                  start();
-               }
-               else
-               {
-                  console.log("all test cases executed");
-               }
-            }
-
-            webSocket.onmessage =
-            function(e)
-            {
-               console.log("Echo message: " + e.data);
-               webSocket.send(e.data);
-            }
+            return webSocket;
          }
 
-         function stop()
+         function updateReports()
          {
-            webSocket.close();
+            var ws_uri = "ws://" + fuzzing_server + "/updateReports?agent=" + agent;
+
+            webSocket = openWebSocket(ws_uri);
+
+            webSocket.onopen =
+               function(e)
+               {
+                  updateStatus("Updating reports ..");
+               }
+
+            webSocket.onclose =
+               function(e)
+               {
+                  webSocket = null;
+                  updateStatus("Reports updated.");
+               }
+         }
+
+         function runNextCase()
+         {
+            var ws_uri = "ws://" + fuzzing_server + "/runCase?case=" + currentCaseId + "&agent=" + agent;
+
+            webSocket = openWebSocket(ws_uri);
+
+            webSocket.onopen =
+               function(e)
+               {
+                  updateStatus("Executing test case " + currentCaseId);
+               }
+
+            webSocket.onclose =
+               function(e)
+               {
+                  webSocket = null;
+
+                  currentCaseId = currentCaseId + 1;
+                  if (currentCaseId <= endCaseId)
+                  {
+                     runNextCase();
+                  }
+                  else
+                  {
+                     updateStatus("All test cases executed.");
+                     updateReports();
+                  }
+               }
+
+            webSocket.onmessage =
+               function(e)
+               {
+                  webSocket.send(e.data);
+               }
          }
 
       </script>
@@ -124,5 +152,7 @@
 
    <body>
       <h1>Autobahn WebSockets Browser Test Suite</h1>
+
+      <div id="statusline"></div>
    </body>
 </html>
