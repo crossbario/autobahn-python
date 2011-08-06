@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case2_6(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "2.6"
+
+   DESCRIPTION = """Send ping with binary payload of 125 octets, send in octet-wise chops."""
+
+   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping. Implementations must be TCP clean."""
+
+   def onOpen(self):
+      payload = "\xfe" * 125
+      self.expected = [("pong", payload), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 9, payload = payload, chopsize = 1)
+      self.p.killAfter(1)

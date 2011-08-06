@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case2_5(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "2.5"
+
+   DESCRIPTION = """Send ping with binary payload of 126 octets."""
+
+   EXPECTATION = """Connection is failed immediately, since control frames are only allowed to have payload up to and including 125 octets.."""
+
+   def onOpen(self):
+      payload = "\xfe" * 126
+      self.expected = [("failedByMe", False)]
+      self.p.sendFrame(opcode = 9, payload = payload)
+      self.p.killAfter(1)

@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case3_6(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "3.6"
+
+   DESCRIPTION = """Send Ping with <b>RSV = 6</b>."""
+
+   EXPECTATION = """The connection is failed immediately, since RSV must be 0."""
+
+   def onOpen(self):
+      payload = "Hello, world!"
+      self.expected = [("failedByMe", False)]
+      self.p.sendFrame(opcode = 2, payload = payload, rsv = 6)
+      self.p.killAfter(1)

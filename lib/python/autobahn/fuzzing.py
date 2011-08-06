@@ -35,6 +35,9 @@ def getUtcNow():
 
 class FuzzingServerProtocol(WebSocketServerProtocol):
 
+   MAX_WIRE_LOG_DATA = 256
+
+
    def connectionMade(self):
       WebSocketServerProtocol.connectionMade(self)
       self.case = None
@@ -66,31 +69,46 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          self.factory.logCase(caseResult)
 
 
+   def binLogData(self, data):
+      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
+         dd = binascii.b2a_hex(data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA]) + " ..."
+      else:
+         dd = binascii.b2a_hex(data)
+      return dd
+
+
+   def asciiLogData(self, data):
+      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
+         dd = data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA] + " ..."
+      else:
+         dd = data
+      return dd
+
 
    def logRxOctets(self, data):
-      if self.runCase:
-         self.wirelog.append(("RO", binascii.b2a_hex(data)))
+      if self.runCase and self.runCase.createWirelog:
+         self.wirelog.append(("RO", self.binLogData(data)))
       else:
          WebSocketServerProtocol.logRxOctets(self, data)
 
 
    def logTxOctets(self, data, sync):
-      if self.runCase:
-         self.wirelog.append(("TO", binascii.b2a_hex(data), sync))
+      if self.runCase and self.runCase.createWirelog:
+         self.wirelog.append(("TO", self.binLogData(data), sync))
       else:
          WebSocketServerProtocol.logTxOctets(self, data, sync)
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
-      if self.runCase:
-         self.wirelog.append(("RF", payload, opcode, fin, rsv, masked, mask))
+      if self.runCase and self.runCase.createWirelog:
+         self.wirelog.append(("RF", self.asciiLogData(payload), opcode, fin, rsv, masked, mask))
       else:
          WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
-      if self.runCase:
-         self.wirelog.append(("TF", payload, opcode, fin, rsv, mask, payload_len, chopsize, sync))
+      if self.runCase and self.runCase.createWirelog:
+         self.wirelog.append(("TF", self.asciiLogData(payload), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
          WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
@@ -321,6 +339,8 @@ class FuzzingServerFactory(WebSocketServerFactory):
       td#agent
       {
          font-size: 0.9em;
+         min-width: 140px;
+         text-align: center;
       }
 
       td#case_category
@@ -661,5 +681,3 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.close()
       return report_filename
-
-

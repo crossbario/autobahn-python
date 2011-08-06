@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case3_5(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "3.5"
+
+   DESCRIPTION = """Send small binary message with <b>RSV = 5</b>."""
+
+   EXPECTATION = """The connection is failed immediately, since RSV must be 0."""
+
+   def onOpen(self):
+      payload = "\x00\xff\xfe\xfd\xfc\xfb\x00\xff"
+      self.expected = [("failedByMe", False)]
+      self.p.sendFrame(opcode = 2, payload = payload, rsv = 5)
+      self.p.killAfter(1)

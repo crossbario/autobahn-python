@@ -16,16 +16,20 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case4_2_3(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "4.2.3"
+
+   DESCRIPTION = """Send small text message, then send frame with reserved control <b>Opcode = 13</b>, then send Ping."""
+
+   EXPECTATION = """Echo for first message is received, but then connection is failed immediately, since reserved opcode frame is used. A Pong is not received."""
+
+   def onOpen(self):
+      payload = "Hello, world!"
+      self.expected = [("message", payload, False), ("failedByMe", False)]
+      self.p.sendFrame(opcode = 1, payload = payload)
+      self.p.sendFrame(opcode = 13)
+      self.p.sendFrame(opcode = 9)
+      self.p.killAfter(1)

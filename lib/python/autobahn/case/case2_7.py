@@ -18,19 +18,15 @@
 
 from case import Case
 
-class Case3(Case):
+class Case2_7(Case):
 
-   ID = "1.1"
+   ID = "2.7"
 
-   DESCRIPTION = """Send frame with reserved opcode 3."""
+   DESCRIPTION = """Send unsolicited pong without payload. Verify nothing is received."""
 
-   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
+   EXPECTATION = """Nothing."""
 
    def onOpen(self):
-      self.p.sendFrame(opcode = 3)
+      self.expected = [("failedByMe", True)]
+      self.p.sendFrame(opcode = 10)
       self.p.killAfter(1)
-
-   def onConnectionLost(self, failedByMe):
-      if failedByMe:
-         self.passed = False
-         self.result = "Client did not fail connection."

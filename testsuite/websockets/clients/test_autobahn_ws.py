@@ -20,6 +20,7 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.case import Cases, CaseCategories
 
 class WebSocketTestClientProtocol(WebSocketClientProtocol):
 
@@ -35,7 +36,6 @@ class WebSocketTestClientProtocol(WebSocketClientProtocol):
       self.sendMessage(msg, binary)
 
 
-
 class WebSocketTestClientFactory(WebSocketClientFactory):
 
    protocol = WebSocketTestClientProtocol
@@ -44,7 +44,7 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
       self.debug = debug
 
       self.startCaseId = 1;
-      self.endCaseId = 5;
+      self.endCaseId = len(Cases);
       self.currentCaseId = self.startCaseId
 
       self.updateReports = True
@@ -69,6 +69,6 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WebSocketTestClientFactory(debug = True)
+   factory = WebSocketTestClientFactory(debug = False)
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

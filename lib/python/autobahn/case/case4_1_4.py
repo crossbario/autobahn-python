@@ -18,19 +18,18 @@
 
 from case import Case
 
-class Case5(Case):
+class Case4_1_4(Case):
 
-   ID = "4.1"
+   ID = "4.1.4"
 
-   DESCRIPTION = """Send text message with RSV == 7."""
+   DESCRIPTION = """Send small text message, then send frame with reserved non-control <b>Opcode = 6</b> and non-empty payload, then send Ping."""
 
-   EXPECTATION = """Connection is closed immediately, since RSV MUST BE 0, when no extension defining RSV meaning has been negoiated."""
+   EXPECTATION = """Echo for first message is received, but then connection is failed immediately, since reserved opcode frame is used. A Pong is not received."""
 
    def onOpen(self):
-      self.p.sendFrame(opcode = 5, payload = "hello", rsv = 7)
+      payload = "Hello, world!"
+      self.expected = [("message", payload, False), ("failedByMe", False)]
+      self.p.sendFrame(opcode = 1, payload = payload)
+      self.p.sendFrame(opcode = 6, payload = payload)
+      self.p.sendFrame(opcode = 9)
       self.p.killAfter(1)
-
-   def onConnectionLost(self, failedByMe):
-      if failedByMe:
-         self.passed = False
-         self.result = "Client did not fail connection."

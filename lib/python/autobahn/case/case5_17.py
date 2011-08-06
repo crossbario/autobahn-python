@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case5_16 import *
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case5_17(Case5_16):
 
-if __name__ == '__main__':
-   main()
+   ID = "5.17"
+
+   DESCRIPTION = """Same as Case 5.16, but send all frames with SYNC = True.
+   Note, this does not change the octets sent in any way, only how the stream
+   is chopped up on the wire."""
+
+   EXPECTATION = """Same as Case 5.16. Implementations must be agnostic to how
+   octet stream is chopped up on wire (must be TCP clean)."""
+
+   def init(self):
+      self.sync = True

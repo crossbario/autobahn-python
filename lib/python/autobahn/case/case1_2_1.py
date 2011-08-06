@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case1_2_1(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "1.2.1"
+
+   DESCRIPTION = """Send binary message with payload 0."""
+
+   EXPECTATION = """Receive echo'ed binary message (with empty payload)."""
+
+   def onOpen(self):
+      payload = ""
+      self.expected = [("message", payload, True), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 2, payload = payload)
+      self.p.killAfter(1)

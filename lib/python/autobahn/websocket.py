@@ -228,6 +228,22 @@ class WebSocketProtocol(protocol.Protocol):
       raise Exception("must implement handshake (client or server) in derived class")
 
 
+   def syncSocket(self):
+
+      ## FIXME: find suitable replacement for this code, which appears to break
+      ## sometimes ..
+      ##
+      ## From the web: "You should never call reactor.doSelect. This isn't portable across
+      ## reactors, and it could easily break the reactor by re-entering it where it isn't
+      ## expecting to be re-entered."
+      ##
+      try:
+         reactor.doSelect(0)
+         return True
+      except:
+         return False # socket has already gone away ..
+
+
    def sendData(self, raw, sync = False, chopsize = None):
       """
       Wrapper for self.transport.write which allows to give a chopsize.
@@ -255,14 +271,14 @@ class WebSocketProtocol(protocol.Protocol):
             ## probably not "intended" to be called by Twisted users, but it is
             ## the only "way" I found to work to attain the intended result.
             ##
-            reactor.doSelect(0)
+            self.syncSocket()
 
             i += chopsize
       else:
          self.logTxOctets(raw, sync)
          self.transport.write(raw)
          if sync:
-            reactor.doSelect(0)
+            self.syncSocket()
 
 
    def processData(self):

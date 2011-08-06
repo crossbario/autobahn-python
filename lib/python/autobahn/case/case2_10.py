@@ -16,18 +16,23 @@
 ##
 ###############################################################################
 
-from case1 import Case1
+from case import Case
 
-class Case2(Case1):
+class Case2_10(Case):
 
-   ID = "3.17"
+   ID = "2.10"
 
-   DESCRIPTION = """Same as Case 3.16, but send all frames with SYNC = True.
-   Note, this does not change the octets sent in any way, only how the stream
-   is chopped up on the wire."""
+   DESCRIPTION = """Send 10 Pings with payload."""
 
-   EXPECTATION = """Same as Case 3.16. Implementations must be agnostic to how
-   octet stream is chopped up on wire (must be TCP clean)."""
+   EXPECTATION = """Pongs for our Pings with all the payloads. Note: This is not required by the Spec .. but we check for this behaviour anyway."""
 
    def init(self):
-      self.sync = True
+      self.chopsize = None
+
+   def onOpen(self):
+      for i in range(1, 10):
+         payload = "payload-%d" % i
+         self.expected.append(("pong", payload))
+         self.p.sendFrame(opcode = 9, payload = payload, chopsize = self.chopsize)
+      self.expected.append(("failedByMe", True))
+      self.p.killAfter(1)

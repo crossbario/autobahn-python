@@ -19,14 +19,18 @@
 from autobahn.websocket import WebSocketProtocol
 from twisted.python import log
 import pickle
+import textwrap
 
 
 class Case:
 
+   PRINT_MAX = 400
+
    def __init__(self, protocol):
       self.p = protocol
-      self.passed = True
-      self.result = "Ok"
+      self.createWirelog = True
+      self.received = []
+      self.expected = []
       self.init()
 
    def compare(self, obj1, obj2):
@@ -39,16 +43,37 @@ class Case:
       pass
 
    def onMessage(self, msg, binary):
-      pass
+      self.received.append(("message", msg, binary))
 
    def onPing(self, payload):
-      pass
+      self.received.append(("ping", payload))
 
    def onPong(self, payload):
-      pass
+      self.received.append(("pong", payload))
 
    def onClose(self, code, reason):
       pass
 
    def onConnectionLost(self, failedByMe):
-      pass
+      self.received.append(("failedByMe", failedByMe))
+
+      self.passed = self.compare(self.received, self.expected)
+
+      e = str(self.expected)
+      if len(e) > Case.PRINT_MAX:
+         expected = e[:Case.PRINT_MAX] + ".."
+      else:
+         expected = e
+      expected = "<br/>".join(textwrap.wrap(expected, 70))
+
+      r = str(self.received)
+      if len(r) > Case.PRINT_MAX:
+         received = r[:Case.PRINT_MAX] + ".."
+      else:
+         received = r
+      received = "<br/>".join(textwrap.wrap(received, 70))
+
+      if self.passed:
+         self.result = "Ok - expected/got<br/>%s." % received
+      else:
+         self.result = "Error - expected<br/>%s<br/>, but got<br/>%s." % (expected, received)

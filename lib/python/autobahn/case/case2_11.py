@@ -16,21 +16,15 @@
 ##
 ###############################################################################
 
-from case import Case
+from case2_10 import *
 
-class Case4(Case):
+class Case2_11(Case2_10):
 
-   ID = "1.2"
+   ID = "2.11"
 
-   DESCRIPTION = """Send frame with reserved opcode 11."""
+   DESCRIPTION = """Send 10 Pings with payload. Send out octets in octet-wise chops."""
 
-   EXPECTATION = """Connection is closed immediately, since reserved opcodes must not be used (unless an extension defining it's meaning has been negoiated)."""
+   EXPECTATION = """Pongs for our Pings with all the payloads. Note: This is not required by the Spec .. but we check for this behaviour anyway."""
 
-   def onOpen(self):
-      self.p.sendFrame(opcode = 11)
-      self.p.killAfter(1)
-
-   def onConnectionLost(self, failedByMe):
-      if failedByMe:
-         self.passed = False
-         self.result = "Client did not fail connection."
+   def init(self):
+      self.chopsize = 1

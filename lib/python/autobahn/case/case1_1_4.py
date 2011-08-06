@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case1_1_4(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "1.1.4"
+
+   DESCRIPTION = """Send text message message with payload of length 127."""
+
+   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+
+   def onOpen(self):
+      payload = "*" * 127
+      self.expected = [("message", payload, False), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 1, payload = payload)
+      self.p.killAfter(1)

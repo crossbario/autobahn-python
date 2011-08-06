@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case2_2(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "2.2"
+
+   DESCRIPTION = """Send ping with small text payload."""
+
+   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping."""
+
+   def onOpen(self):
+      payload = "Hello, world!"
+      self.expected = [("pong", payload), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 9, payload = payload)
+      self.p.killAfter(1)

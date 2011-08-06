@@ -16,15 +16,76 @@
 ##
 ###############################################################################
 
-from case1 import Case1
-from case2 import Case2
-from case3 import Case3
-from case4 import Case4
-from case5 import Case5
+from case1_1_1 import *
+from case1_1_2 import *
+from case1_1_3 import *
+from case1_1_4 import *
+from case1_1_5 import *
+from case1_1_6 import *
+from case1_1_7 import *
+from case1_1_8 import *
+from case1_1_9 import *
+from case1_1_10 import *
 
-Cases = [Case1, Case2, Case3, Case4, Case5]
+from case1_2_1 import *
+from case1_2_2 import *
+from case1_2_3 import *
+from case1_2_4 import *
+from case1_2_5 import *
+from case1_2_6 import *
+from case1_2_7 import *
+from case1_2_8 import *
+from case1_2_9 import *
+from case1_2_10 import *
 
-CaseCategories = {"1": "Opcodes",
-                  "4": "RSV",
-                  "3": "Fragmentation"}
+from case2_1 import *
+from case2_2 import *
+from case2_3 import *
+from case2_4 import *
+from case2_5 import *
+from case2_6 import *
+from case2_7 import *
+from case2_8 import *
+from case2_9 import *
+from case2_10 import *
+from case2_11 import *
 
+from case3_1 import *
+from case3_2 import *
+from case3_3 import *
+from case3_4 import *
+from case3_5 import *
+from case3_6 import *
+from case3_7 import *
+
+from case4_1_1 import *
+from case4_1_2 import *
+from case4_1_3 import *
+from case4_1_4 import *
+from case4_1_5 import *
+
+from case4_2_1 import *
+from case4_2_2 import *
+from case4_2_3 import *
+from case4_2_4 import *
+from case4_2_5 import *
+
+from case5_15 import *
+from case5_16 import *
+
+
+Cases = []
+Cases += [Case1_1_1, Case1_1_2, Case1_1_3, Case1_1_4, Case1_1_5, Case1_1_6, Case1_1_7, Case1_1_8, Case1_1_9, Case1_1_10]
+Cases += [Case1_2_1, Case1_2_2, Case1_2_3, Case1_2_4, Case1_2_5, Case1_2_6, Case1_2_7, Case1_2_8, Case1_2_9, Case1_2_10]
+Cases += [Case2_1, Case2_2, Case2_3, Case2_4, Case2_5, Case2_6, Case2_7, Case2_8, Case2_9, Case2_10, Case2_11]
+Cases += [Case3_1, Case3_2, Case3_3, Case3_4, Case3_5, Case3_6, Case3_7]
+Cases += [Case4_1_1, Case4_1_2, Case4_1_3, Case4_1_4, Case4_1_5]
+Cases += [Case4_2_1, Case4_2_2, Case4_2_3, Case4_2_4, Case4_2_5]
+Cases += [Case5_15, Case5_16]
+
+CaseCategories = {"1": "Framing",
+                  "2": "Pings/Pongs",
+                  "3": "Reserved Bits",
+                  "4": "Opcodes",
+                  "5": "Fragmentation",
+                  "6": "Limits/Performance"}

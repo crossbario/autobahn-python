@@ -16,16 +16,17 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case4_1_2(Case):
 
-if __name__ == '__main__':
-   main()
+   ID = "4.1.2"
+
+   DESCRIPTION = """Send frame with reserved non-control <b>Opcode = 4</b> and non-empty payload."""
+
+   EXPECTATION = """The connection is failed immediately."""
+
+   def onOpen(self):
+      self.expected = [("failedByMe", False)]
+      self.p.sendFrame(opcode = 4, payload = "reserved opcode payload")
+      self.p.killAfter(1)

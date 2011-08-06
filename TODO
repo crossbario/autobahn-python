@@ -1,0 +1,22 @@
+When to select() on reactor before failing connection to send out any
+outstanding octets?
+
+Optimize fragment/message reassembly
+
+Fix: WebSocketProtocol.syncSocket()
+
+Fix: receive CLOSE in Case and check
+
+Cases
+
+Measure Time
+Timestamps in Wirelog
+Sections for Case Categories
+
+Limits/Performance
+
+64k
+256k
+1M
+4M
+16M

@@ -16,16 +16,18 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-import sys
-from autobahn.fuzzing import FuzzingServerFactory
+from case import Case
+from case1_1_9 import Case1_1_9
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
+class Case1_1_10(Case1_1_9):
 
-if __name__ == '__main__':
-   main()
+   ID = "1.1.10"
+
+   DESCRIPTION = """Send text message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
+
+   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+
+   def init(self):
+      self.DATALEN = 4 * 2**20
+      self.PAYLOAD = "BAsd7&jh23..-"
+      self.WAITSECS = 100
