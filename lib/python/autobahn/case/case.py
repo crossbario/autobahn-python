@@ -28,7 +28,6 @@ class Case:
 
    def __init__(self, protocol):
       self.p = protocol
-      self.createWirelog = True
       self.received = []
       self.expected = []
       self.init()

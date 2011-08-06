@@ -45,6 +45,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       self.caseAgent = None
       self.caseStarted = None
       self.wirelog = []
+      self.createWirelog = True
 
 
    def connectionLost(self, reason):
@@ -86,28 +87,28 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def logRxOctets(self, data):
-      if self.runCase and self.runCase.createWirelog:
+      if self.createWirelog:
          self.wirelog.append(("RO", self.binLogData(data)))
       else:
          WebSocketServerProtocol.logRxOctets(self, data)
 
 
    def logTxOctets(self, data, sync):
-      if self.runCase and self.runCase.createWirelog:
+      if self.createWirelog:
          self.wirelog.append(("TO", self.binLogData(data), sync))
       else:
          WebSocketServerProtocol.logTxOctets(self, data, sync)
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
-      if self.runCase and self.runCase.createWirelog:
+      if self.createWirelog:
          self.wirelog.append(("RF", self.asciiLogData(payload), opcode, fin, rsv, masked, mask))
       else:
          WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
-      if self.runCase and self.runCase.createWirelog:
+      if self.createWirelog:
          self.wirelog.append(("TF", self.asciiLogData(payload), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
          WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)

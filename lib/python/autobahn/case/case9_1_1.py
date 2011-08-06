@@ -32,7 +32,7 @@ class Case9_1_1(Case):
       self.WAITSECS = 10
 
    def onOpen(self):
-      self.createWirelog = False
+      self.p.createWirelog = False
       self.passed = False
       self.result = "Error - Did not receive message within %d seconds." % self.WAITSECS
 
