@@ -18,17 +18,17 @@
 
 from case import Case
 
-class Case1_1_9(Case):
+class Case9_2_1(Case):
 
-   ID = "1.1.9"
+   ID = "9.2.1"
 
-   DESCRIPTION = """Send text message message with payload of length 2**20 (1M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send binary message message with payload of length 2**20 (1M). Sent out data in chops of 997 octets."""
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def init(self):
       self.DATALEN = 2**20
-      self.PAYLOAD = "BAsd7&jh23..-"
+      self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
       self.WAITSECS = 10
 
    def onOpen(self):
@@ -36,22 +36,22 @@ class Case1_1_9(Case):
       self.passed = False
       self.result = "Error - Did not receive message within %d seconds." % self.WAITSECS
 
-      self.p.sendFrame(opcode = 1, payload = self.PAYLOAD, payload_len = self.DATALEN, chopsize = 997)
+      self.p.sendFrame(opcode = 2, payload = self.PAYLOAD, payload_len = self.DATALEN, chopsize = 997)
       self.p.killAfter(self.WAITSECS)
 
    def onMessage(self, msg, binary):
-      if binary:
+      if not binary:
          self.passed = False
-         self.result = "Error - Expected text message with payload, but got binary."
+         self.result = "Error - Expected binary message with payload, but got binary."
       else:
          if len(msg) != self.DATALEN:
             self.passed = False
-            self.result = "Error - Expected text message with payload of length %d, but got %d." % (self.DATALEN, len(msg))
+            self.result = "Error - Expected binary message with payload of length %d, but got %d." % (self.DATALEN, len(msg))
          else:
             ## FIXME : check actual content
             ##
             self.passed = True
-            self.result = "Ok - Received text message of length %d." % len(msg)
+            self.result = "Ok - Received binary message of length %d." % len(msg)
       self.p.failConnection()
 
    def onConnectionLost(self, failedByMe):

@@ -127,7 +127,8 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def protocolViolation(self, reason):
-      log.msg("Failing connection on protocol violation : %s" % reason)
+      if self.debug:
+         log.msg("Failing connection on protocol violation : %s" % reason)
       self.failConnection()
 
 
@@ -1091,8 +1092,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             if self.http_headers["Sec-WebSocket-Accept"] != sec_websocket_accept:
                pass
 
-         log.msg(sec_websocket_accept)
-
          ## move into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
@@ -1122,9 +1121,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       random.seed()
 
    def clientConnectionFailed(self, connector, reason):
-      print "Connection failed - goodbye!"
       reactor.stop()
 
    def clientConnectionLost(self, connector, reason):
-      print "Connection lost - goodbye!"
       reactor.stop()

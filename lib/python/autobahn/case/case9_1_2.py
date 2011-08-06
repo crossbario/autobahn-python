@@ -16,20 +16,17 @@
 ##
 ###############################################################################
 
-from case import Case
+from case9_1_1 import *
 
-class Case5_17(Case):
+class Case9_1_2(Case9_1_1):
 
-   ID = "5.17"
+   ID = "9.1.2"
 
-   DESCRIPTION = """Repeated 2x: Continuation Frame with FIN = true (where there is nothing to continue), then text Message fragmented into 2 fragments."""
+   DESCRIPTION = """Send text message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
 
-   EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
+   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
-   def onOpen(self):
-      self.expected = [("failedByMe", False)]
-      for i in range(1, 2):
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment1")
-         self.p.sendFrame(opcode = 1, fin = False, payload = "fragment2")
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment3")
-      self.p.killAfter(1)
+   def init(self):
+      self.DATALEN = 4 * 2**20
+      self.PAYLOAD = "BAsd7&jh23..-"
+      self.WAITSECS = 100

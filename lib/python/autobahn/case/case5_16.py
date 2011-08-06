@@ -22,46 +22,14 @@ class Case5_16(Case):
 
    ID = "5.16"
 
-   DESCRIPTION = """A fragmented text message is sent in multiple frames. After
-   sending the first 2 frames of the text message, a Ping is sent. Then we wait 1s,
-   then we send 2 more text fragments, another Ping and then the final text fragment.
-   Everything is legal."""
+   DESCRIPTION = """Repeated 2x: Continuation Frame with FIN = false (where there is nothing to continue), then text Message fragmented into 2 fragments."""
 
-   EXPECTATION = """The peer immediately answers the first Ping before
-   it has received the last text message fragment. The peer pong's back the Ping's
-   payload exactly, and echo's the payload of the fragmented message back to us."""
-
-   def init(self):
-      self.sync = False
+   EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
 
    def onOpen(self):
-      self.fragments = ["fragment1", "fragment2", "fragment3", "fragment4", "fragment5"]
-      self.pings = ["pongme 1!", "pongme 2!"]
-      self.received = []
-      self.expected = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments))]
-      self.step1()
-
-   def step1(self):
-      self.p.sendFrame(opcode = 1, fin = False, payload = self.fragments[0], sync = self.sync)
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[1], sync = self.sync)
-      self.p.sendFrame(opcode = 9, fin = True, payload = self.pings[0], sync = self.sync)
-      self.p.continueLater(1, self.step2)
-
-   def step2(self):
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[2], sync = self.sync)
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[3], sync = self.sync)
-      self.p.sendFrame(opcode = 9, fin = True, payload = self.pings[1], sync = self.sync)
-      self.p.sendFrame(opcode = 0, fin = True, payload = self.fragments[4], sync = self.sync)
-      self.p.continueLater(1, self.step3)
-
-   def step3(self):
-      self.passed = self.compare(self.received, self.expected)
-      if not self.passed:
-         self.result = "Expected %s, but got %s." % (str(self.expected), str(self.received))
-      self.p.failConnection()
-
-   def onPong(self, payload):
-      self.received.append(("pong", payload))
-
-   def onMessage(self, msg, binary):
-      self.received.append(("message", msg))
+      self.expected = [("failedByMe", False)]
+      for i in range(1, 2):
+         self.p.sendFrame(opcode = 0, fin = False, payload = "fragment1")
+         self.p.sendFrame(opcode = 1, fin = False, payload = "fragment2")
+         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment3")
+      self.p.killAfter(1)

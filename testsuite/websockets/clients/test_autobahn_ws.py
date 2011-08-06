@@ -22,17 +22,14 @@ from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
 from autobahn.case import Cases, CaseCategories
 
+
 class WebSocketTestClientProtocol(WebSocketClientProtocol):
 
-   def connectionMade(self):
-      log.msg("WebSocketTestClientProtocol.connectionMade")
-      WebSocketClientProtocol.connectionMade(self)
-
    def onOpen(self):
-      log.msg("WebSocketTestClientProtocol.onOpen")
+      if self.factory.currentCaseId <= self.factory.endCaseId:
+         print "Running test case ID %s as user agent %s on peer %s" % (Cases[self.factory.currentCaseId - 1].ID, self.factory.agent, self.peerstr)
 
    def onMessage(self, msg, binary):
-      log.msg("WebSocketTestClientProtocol.onMessage")
       self.sendMessage(msg, binary)
 
 
@@ -62,8 +59,6 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
          connector.connect()
       else:
          reactor.stop()
-
-
 
 
 if __name__ == '__main__':

@@ -18,18 +18,16 @@
 
 from case import Case
 
-class Case5_17(Case):
+class Case5_11(Case):
 
-   ID = "5.17"
+   ID = "5.11"
 
-   DESCRIPTION = """Repeated 2x: Continuation Frame with FIN = true (where there is nothing to continue), then text Message fragmented into 2 fragments."""
+   DESCRIPTION = """Send unfragmented Text Message after Continuation Frame with FIN = true, where there is nothing to continue, sent in octet-wise chops."""
 
    EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
 
    def onOpen(self):
       self.expected = [("failedByMe", False)]
-      for i in range(1, 2):
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment1")
-         self.p.sendFrame(opcode = 1, fin = False, payload = "fragment2")
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment3")
+      self.p.sendFrame(opcode = 0, fin = True, payload = "non-continuation payload", chopsize = 1)
+      self.p.sendFrame(opcode = 1, fin = True, payload = "Hello, world!", chopsize = 1)
       self.p.killAfter(1)

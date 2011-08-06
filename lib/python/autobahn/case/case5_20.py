@@ -16,20 +16,18 @@
 ##
 ###############################################################################
 
-from case import Case
+from case5_19 import *
 
-class Case5_17(Case):
+class Case5_20(Case5_19):
 
-   ID = "5.17"
+   ID = "5.20"
 
-   DESCRIPTION = """Repeated 2x: Continuation Frame with FIN = true (where there is nothing to continue), then text Message fragmented into 2 fragments."""
+   DESCRIPTION = """Same as Case 5.19, but send all frames with SYNC = True.
+   Note, this does not change the octets sent in any way, only how the stream
+   is chopped up on the wire."""
 
-   EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
+   EXPECTATION = """Same as Case 5.19. Implementations must be agnostic to how
+   octet stream is chopped up on wire (must be TCP clean)."""
 
-   def onOpen(self):
-      self.expected = [("failedByMe", False)]
-      for i in range(1, 2):
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment1")
-         self.p.sendFrame(opcode = 1, fin = False, payload = "fragment2")
-         self.p.sendFrame(opcode = 0, fin = True, payload = "fragment3")
-      self.p.killAfter(1)
+   def init(self):
+      self.sync = True

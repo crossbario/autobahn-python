@@ -17,17 +17,19 @@
 ###############################################################################
 
 from case import Case
-from case1_1_9 import Case1_1_9
 
-class Case1_1_10(Case1_1_9):
+class Case5_15(Case):
 
-   ID = "1.1.10"
+   ID = "5.15"
 
-   DESCRIPTION = """Send text message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send text Message fragmented into 2 fragments, then Continuation Frame with FIN = false where there is nothing to continue, then unfragmented Text Message, all sent in one chop."""
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
 
-   def init(self):
-      self.DATALEN = 4 * 2**20
-      self.PAYLOAD = "BAsd7&jh23..-"
-      self.WAITSECS = 100
+   def onOpen(self):
+      self.expected = [("failedByMe", False)]
+      self.p.sendFrame(opcode = 1, fin = False, payload = "fragment1")
+      self.p.sendFrame(opcode = 0, fin = True, payload = "fragment2")
+      self.p.sendFrame(opcode = 0, fin = False, payload = "fragment3")
+      self.p.sendFrame(opcode = 1, fin = True, payload = "fragment4")
+      self.p.killAfter(1)

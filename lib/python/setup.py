@@ -21,11 +21,11 @@ from setuptools import setup, find_packages
 setup (
    name = 'autobahn',
    version = '0.2',
-   description = 'Autobahn - asynchronous RPC/PubSub over JSON/WebSockets.',
+   description = 'Autobahn WebSockets',
    author = 'Tavendo GmbH',
    url = 'http://www.tavendo.de/autobahn',
    platforms = ('Any',),
-   install_requires = ['Twisted>=10.1'],
+   install_requires = ['Twisted>=11.0'],
    packages = find_packages(),
    zip_safe = False
 )

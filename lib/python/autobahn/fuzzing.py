@@ -153,7 +153,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          if not self.caseAgent:
             raise Exception("need agent to run case")
          self.caseStarted = getUtcNow()
-         print "Running test case (class Case%d, ID %s) for user agent %s from peer %s" % (self.case, Cases[self.case - 1].ID, self.caseAgent, self.peerstr)
+         print "Running test case ID %s for user agent %s for peer %s" % (Cases[self.case - 1].ID, self.caseAgent, self.peerstr)
 
       elif path == "/updateReports":
          if not self.caseAgent:

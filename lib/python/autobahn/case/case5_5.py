@@ -17,17 +17,18 @@
 ###############################################################################
 
 from case import Case
-from case1_2_9 import Case1_2_9
 
-class Case1_2_10(Case1_2_9):
+class Case5_5(Case):
 
-   ID = "1.2.10"
+   ID = "5.5"
 
-   DESCRIPTION = """Send binary message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send text Message fragmented into 2 fragments, octets are sent in octet-wise chops."""
 
-   EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
+   EXPECTATION = """Message is processed and echo'ed back to us."""
 
-   def init(self):
-      self.DATALEN = 4 * 2**20
-      self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
-      self.WAITSECS = 100
+   def onOpen(self):
+      fragments = ["fragment1", "fragment2"]
+      self.expected = [("message", ''.join(fragments), False), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0], chopsize = 1)
+      self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1], chopsize = 1)
+      self.p.killAfter(1)
