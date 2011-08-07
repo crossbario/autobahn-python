@@ -1,22 +1,30 @@
-When to select() on reactor before failing connection to send out any
-outstanding octets?
+Test Suite
+==========
 
-Optimize fragment/message reassembly
+Test Cases
 
-Fix: WebSocketProtocol.syncSocket()
+  - UTF-8 Handling
+  - Limits/Performance
+  - Close
+  - Handshaking
 
-Fix: receive CLOSE in Case and check
+  http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
+  http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html
 
-Cases
+Test Report
 
-Measure Time
-Timestamps in Wirelog
-Sections for Case Categories
+  - Measure Case Execution Time
+  - Timestamps in Wirelog
 
-Limits/Performance
 
-64k
-256k
-1M
-4M
-16M
+Python
+======
+
+WebSocket Protocol
+
+  - WebSocketProtocol.syncSocket() .. fix hack/reentry into Twisted reactor
+
+  - Force out outstanding octets before failing connection?
+    Twisted _seems_ to do that, but does it do so in every case?
+
+  - Optimize fragment/message reassembly
