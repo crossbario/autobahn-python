@@ -20,8 +20,6 @@ from case import Case
 
 class Case4_2_5(Case):
 
-   ID = "4.2.5"
-
    DESCRIPTION = """Send small text message, then send frame with reserved control <b>Opcode = 15</b> and non-empty payload, then send Ping."""
 
    EXPECTATION = """Echo for first message is received, but then connection is failed immediately, since reserved opcode frame is used. A Pong is not received."""

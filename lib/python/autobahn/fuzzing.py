@@ -19,7 +19,7 @@
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from case import Cases, CaseCategories
+from case import Cases, CaseCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
 import datetime
@@ -57,7 +57,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          self.runCase.onConnectionLost(self.failedByMe)
 
          caseResult = {"case": self.case,
-                       "id": self.Case.ID,
+                       "id": caseClasstoId(self.Case),
                        "description": self.Case.DESCRIPTION,
                        "expectation": self.Case.EXPECTATION,
                        "agent": self.caseAgent,
@@ -154,7 +154,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          if not self.caseAgent:
             raise Exception("need agent to run case")
          self.caseStarted = getUtcNow()
-         print "Running test case ID %s for user agent %s for peer %s" % (Cases[self.case - 1].ID, self.caseAgent, self.peerstr)
+         print "Running test case ID %s for user agent %s for peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
 
       elif path == "/updateReports":
          if not self.caseAgent:
@@ -476,7 +476,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
 
    def makeAgentCaseReportFilename(self, agentId, caseNo):
-      c = (Cases[caseNo - 1].ID).replace('.', '_')
+      c = (caseClasstoId(Cases[caseNo - 1])).replace('.', '_')
       return self.cleanForFilename(agentId) + "_case_" + c + ".html"
 
 
@@ -506,7 +506,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
       cl = []
       i = 1
       for c in Cases:
-         cl.append((c.ID, i))
+         cl.append((caseClasstoIdTuple(c) , i))
          i += 1
       cl = sorted(cl)
       caseList = []
@@ -530,7 +530,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
          ## Case ID
          ##
-         caseId = Cases[caseNo - 1].ID
+         caseId = caseClasstoId(Cases[caseNo - 1])
          caseCategory = CaseCategories.get(caseId.split('.')[0], "Misc")
 
          f.write('<td id="case_category">%s</td>' % caseCategory)
@@ -563,7 +563,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
          Case = Cases[caseNo - 1]
 
          f.write('<a name="case_desc_%d"></a>' % caseNo)
-         f.write('<h3 id="case_desc_title">Case %s</h2>' % Case.ID)
+         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseClasstoId(Case))
          f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % Case.DESCRIPTION)
          f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % Case.EXPECTATION)
 

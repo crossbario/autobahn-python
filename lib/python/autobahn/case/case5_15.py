@@ -20,8 +20,6 @@ from case import Case
 
 class Case5_15(Case):
 
-   ID = "5.15"
-
    DESCRIPTION = """Send text Message fragmented into 2 fragments, then Continuation Frame with FIN = false where there is nothing to continue, then unfragmented Text Message, all sent in one chop."""
 
    EXPECTATION = """The connection is failed immediately, since there is no message to continue."""

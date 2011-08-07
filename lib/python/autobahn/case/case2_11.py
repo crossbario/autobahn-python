@@ -20,8 +20,6 @@ from case2_10 import *
 
 class Case2_11(Case2_10):
 
-   ID = "2.11"
-
    DESCRIPTION = """Send 10 Pings with payload. Send out octets in octet-wise chops."""
 
    EXPECTATION = """Pongs for our Pings with all the payloads. Note: This is not required by the Spec .. but we check for this behaviour anyway."""

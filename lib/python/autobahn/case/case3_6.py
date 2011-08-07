@@ -20,8 +20,6 @@ from case import Case
 
 class Case3_6(Case):
 
-   ID = "3.6"
-
    DESCRIPTION = """Send Ping with <b>RSV = 6</b>."""
 
    EXPECTATION = """The connection is failed immediately, since RSV must be 0."""

@@ -20,8 +20,6 @@ from case import Case
 
 class Case1_2_1(Case):
 
-   ID = "1.2.1"
-
    DESCRIPTION = """Send binary message with payload 0."""
 
    EXPECTATION = """Receive echo'ed binary message (with empty payload)."""

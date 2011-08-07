@@ -20,8 +20,6 @@ from case import Case
 
 class Case2_10(Case):
 
-   ID = "2.10"
-
    DESCRIPTION = """Send 10 Pings with payload."""
 
    EXPECTATION = """Pongs for our Pings with all the payloads. Note: This is not required by the Spec .. but we check for this behaviour anyway."""

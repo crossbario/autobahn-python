@@ -20,8 +20,6 @@ from case import Case
 
 class Case9_1_1(Case):
 
-   ID = "9.1.1"
-
    DESCRIPTION = """Send text message message with payload of length 2**20 (1M). Sent out data in chops of 997 octets."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""

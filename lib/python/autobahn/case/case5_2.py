@@ -20,8 +20,6 @@ from case import Case
 
 class Case5_2(Case):
 
-   ID = "5.2"
-
    DESCRIPTION = """Send Pong fragmented into 2 fragments."""
 
    EXPECTATION = """Connection is failed immediately, since control message MUST NOT be fragmented."""

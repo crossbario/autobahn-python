@@ -20,8 +20,6 @@ from case import Case
 
 class Case2_9(Case):
 
-   ID = "2.9"
-
    DESCRIPTION = """Send unsolicited pong with payload. Send ping with payload. Verify pong for ping is received."""
 
    EXPECTATION = """Nothing in reply to own Pong, but Pong with payload echo'ed in reply to Ping."""

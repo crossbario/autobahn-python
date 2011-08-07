@@ -20,8 +20,6 @@ from case import Case
 
 class Case3_3(Case):
 
-   ID = "3.3"
-
    DESCRIPTION = """Send small text message, then send again with <b>RSV = 3</b>, then send Ping. Octets are sent in frame-wise chops. Octets are sent in octet-wise chops."""
 
    EXPECTATION = """Echo for first message is received, but then connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negoiated. The Pong is not received."""

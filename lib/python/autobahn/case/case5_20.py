@@ -20,8 +20,6 @@ from case5_19 import *
 
 class Case5_20(Case5_19):
 
-   ID = "5.20"
-
    DESCRIPTION = """Same as Case 5.19, but send all frames with SYNC = True.
    Note, this does not change the octets sent in any way, only how the stream
    is chopped up on the wire."""

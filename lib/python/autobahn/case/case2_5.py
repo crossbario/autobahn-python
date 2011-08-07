@@ -20,8 +20,6 @@ from case import Case
 
 class Case2_5(Case):
 
-   ID = "2.5"
-
    DESCRIPTION = """Send ping with binary payload of 126 octets."""
 
    EXPECTATION = """Connection is failed immediately, since control frames are only allowed to have payload up to and including 125 octets.."""

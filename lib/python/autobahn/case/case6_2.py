@@ -20,8 +20,6 @@ from case import Case
 
 class Case6_2(Case):
 
-   ID = "6.2"
-
    DESCRIPTION = """Send fragmented text message, 3 fragments each of length 0."""
 
    EXPECTATION = """A message is echo'ed back to us (with empty payload)."""

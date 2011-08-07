@@ -20,8 +20,6 @@ from case import Case
 
 class Case4_1_1(Case):
 
-   ID = "4.1.1"
-
    DESCRIPTION = """Send frame with reserved non-control <b>Opcode = 3</b>."""
 
    EXPECTATION = """The connection is failed immediately."""

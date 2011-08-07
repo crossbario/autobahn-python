@@ -20,8 +20,6 @@ from case import Case
 
 class Case3_5(Case):
 
-   ID = "3.5"
-
    DESCRIPTION = """Send small binary message with <b>RSV = 5</b>."""
 
    EXPECTATION = """The connection is failed immediately, since RSV must be 0."""

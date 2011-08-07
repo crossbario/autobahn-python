@@ -20,8 +20,6 @@ from case import Case
 
 class Case5_19(Case):
 
-   ID = "5.19"
-
    DESCRIPTION = """A fragmented text message is sent in multiple frames. After
    sending the first 2 frames of the text message, a Ping is sent. Then we wait 1s,
    then we send 2 more text fragments, another Ping and then the final text fragment.

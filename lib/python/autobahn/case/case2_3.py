@@ -20,8 +20,6 @@ from case import Case
 
 class Case2_3(Case):
 
-   ID = "2.3"
-
    DESCRIPTION = """Send ping with small binary (non UTF-8) payload."""
 
    EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping."""

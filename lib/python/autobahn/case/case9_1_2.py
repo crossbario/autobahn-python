@@ -20,8 +20,6 @@ from case9_1_1 import *
 
 class Case9_1_2(Case9_1_1):
 
-   ID = "9.1.2"
-
    DESCRIPTION = """Send text message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""

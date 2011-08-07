@@ -20,8 +20,6 @@ from case import Case
 
 class Case5_18(Case):
 
-   ID = "5.18"
-
    DESCRIPTION = """Send text Message fragmented into 2 fragments, with both frame opcodes set to text, sent in one chop."""
 
    EXPECTATION = """The connection is failed immediately, since all data frames after the initial data frame must have opcode 0."""
