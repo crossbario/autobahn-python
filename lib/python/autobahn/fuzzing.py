@@ -163,6 +163,9 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
             raise Exception("need agent to update reports for")
          print "Updating reports, requested by peer %s" % self.peerstr
 
+      elif path == "/getCaseCount":
+         pass
+
       else:
          print "Entering direct command mode for peer %s" % self.peerstr
 
@@ -177,6 +180,9 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          self.runCase.onOpen()
       elif self.path == "/updateReports":
          self.factory.createReports()
+         self.sendClose()
+      elif self.path == "/getCaseCount":
+         self.sendMessage(json.dumps(len(Cases)))
          self.sendClose()
       else:
          pass

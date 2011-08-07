@@ -11,58 +11,87 @@
 
       <script type="text/javascript">
 
-         /// CONFIGURATION //////////////////////////////////
-
-         // edit this for where you run the fuzzing server
-         var fuzzing_server = "127.0.0.1:9000";
-
-         // edit this for an identification of agent/testrun or leave null
-         // to try autodetection
+         var hostname = null;
+         var port = null;
          var agent = null;
-
-         // specify first/last test case you want to run
-         var startCaseId = 1;
-         var endCaseId = 71;
-
-         /// CONFIGURATION END //////////////////////////////
-
          var webSocket = null;
          var currentCaseId = null;
+         var caseCount = null;
+
+         window.onload =
+            function()
+            {
+               setHostname();
+               setPort();
+               setAgent();
+            }
+
+         function setHostname()
+         {
+            hostname = document.getElementById('hostname').value;
+
+            if (hostname == null || hostname == "")
+            {
+               hostname = "127.0.0.1";
+               document.getElementById('hostname').value = hostname;
+            }
+         }
+
+         function setPort()
+         {
+            port = document.getElementById('port').value;
+
+            if (port == null || port == "")
+            {
+               port = "9000";
+               document.getElementById('port').value = port;
+            }
+         }
+
+         function setAgent()
+         {
+            agent = document.getElementById('agent').value;
+
+            if (agent == null || agent == "")
+            {
+               ua = navigator.userAgent;
+               if (ua.indexOf("Chrome") > -1)
+               {
+                  i = ua.indexOf("Chrome");
+                  j = ua.indexOf(" ", i);
+                  agent = ua.slice(i, j);
+                  updateStatus("Detected user agent " + agent + ".");
+               }
+               else if (ua.indexOf("Firefox") > -1)
+               {
+                  i = ua.indexOf("Firefox");
+                  j = ua.indexOf(" ", i);
+                  s1 = ua.slice(i, j);
+                  i = ua.indexOf("Gecko/");
+                  j = ua.indexOf(" ", i);
+                  s2 = ua.slice(i + "Gecko/".length, j);
+                  agent = s1 + "(" + s2 + ")";
+                  updateStatus("Detected user agent " + agent + ".");
+               }
+               else
+               {
+                  agent = "unknown";
+                  updateStatus("Could not detect user agent .. will use '" + agent + "'.");
+               }
+
+               document.getElementById('agent').value = agent;
+            }
+         }
 
          function startTestRun()
          {
-               if (agent == null)
-               {
-                  ua = navigator.userAgent;
-                  if (ua.indexOf("Chrome") > -1)
-                  {
-                     i = ua.indexOf("Chrome");
-                     j = ua.indexOf(" ", i);
-                     agent = ua.slice(i, j);
-                     updateStatus("Detected user agent " + agent + ".");
-                  }
-                  else if (ua.indexOf("Firefox") > -1)
-                  {
-                     i = ua.indexOf("Firefox");
-                     j = ua.indexOf(" ", i);
-                     s1 = ua.slice(i, j);
-                     i = ua.indexOf("Gecko/");
-                     j = ua.indexOf(" ", i);
-                     s2 = ua.slice(i + "Gecko/".length, j);
-                     agent = s1 + "(" + s2 + ")";
-                     updateStatus("Detected user agent " + agent + ".");
-                  }
-                  else
-                  {
-                     agent = "unknown";
-                     updateStatus("Could not detect user agent .. will use '" + agent + "'.");
-                  }
-               }
-
-               updateStatus("Running test suite for test cases " + startCaseId + " - " + endCaseId + " ..");
-               document.getElementById('resultlink').innerHTML = '';
-               currentCaseId = startCaseId;
-               runNextCase();
+            setHostname();
+            setPort();
+            setAgent();
+            updateStatus("Running test suite ..");
+            document.getElementById('resultlink').innerHTML = '';
+            currentCaseId = 1;
+            getCaseCount(runNextCase);
          }
 
          function updateStatus(msg)
@@ -85,9 +114,29 @@
             return webSocket;
          }
 
+         function getCaseCount(cont)
+         {
+            var ws_uri = "ws://" + hostname + ":" + port + "/getCaseCount";
+
+            webSocket = openWebSocket(ws_uri);
+
+            webSocket.onmessage =
+               function(e)
+               {
+                  caseCount = JSON.parse(e.data);
+                  updateStatus("Will run " + caseCount + " cases ..");
+               }
+
+            webSocket.onclose =
+               function(e)
+               {
+                  cont();
+               }
+         }
+
          function updateReports()
          {
-            var ws_uri = "ws://" + fuzzing_server + "/updateReports?agent=" + agent;
+            var ws_uri = "ws://" + hostname + ":" + port + "/updateReports?agent=" + agent;
 
             webSocket = openWebSocket(ws_uri);
 
@@ -110,14 +159,14 @@
 
          function runNextCase()
          {
-            var ws_uri = "ws://" + fuzzing_server + "/runCase?case=" + currentCaseId + "&agent=" + agent;
+            var ws_uri = "ws://" + hostname + ":" + port + "/runCase?case=" + currentCaseId + "&agent=" + agent;
 
             webSocket = openWebSocket(ws_uri);
 
             webSocket.onopen =
                function(e)
                {
-                  updateStatus("Executing test case " + currentCaseId + "/" + endCaseId);
+                  updateStatus("Executing test case " + currentCaseId + "/" + caseCount);
                }
 
             webSocket.onclose =
@@ -126,7 +175,7 @@
                   webSocket = null;
 
                   currentCaseId = currentCaseId + 1;
-                  if (currentCaseId <= endCaseId)
+                  if (currentCaseId <= caseCount)
                   {
                      runNextCase();
                   }
@@ -149,8 +198,13 @@
 
    <body>
       <h1>WebSockets Protocol Compliance Test</h1>
+      <form>
+         <p>Fuzzing Server Hostname<br/><input id="hostname" type="text" size="20" maxlength="40"></p>
+         <p>Fuzzing Server Port<br/><input id="port" type="text" size="5" maxlength="5"></p>
+         <p>User Agent Identifier<br/><input id="agent" type="text" size="30" maxlength="30"></p>
+      </form>
       <p><button onclick='startTestRun();'>Start Test Run</button></p>
-      <p id="statusline"></p>
+      <p><i>Status:</i> <span id="statusline"></span></p>
       <p id="resultlink"></p>
    </body>
 </html>
