@@ -63,6 +63,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                        "agent": self.caseAgent,
                        "started": self.caseStarted,
                        "passed": self.runCase.passed,
+                       "expected": self.runCase.expected,
+                       "received": self.runCase.received,
                        "result": self.runCase.result,
                        "wirelog": self.wirelog,
                        "failedByMe": self.failedByMe}
@@ -339,25 +341,28 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       td#agent
       {
-         font-size: 0.9em;
+         color: #fff;
+         font-size: 1.0em;
          min-width: 140px;
          text-align: center;
+         background-color: #048;
       }
 
       td#case_category
       {
+         min-width: 180px;
          color: #fff;
          background-color: #000;
          text-align: left;
-         padding-right: 40px;
-         font-size: 0.9em;
+         padding-left: 20px;
+         font-size: 1.0em;
       }
 
       td#case
       {
-         background-color: #000;
+         background-color: #555;
          text-align: left;
-         padding-right: 30px;
+         padding-left: 40px;
          font-size: 0.9em;
       }
 
@@ -377,6 +382,11 @@ class FuzzingServerFactory(WebSocketServerFactory):
    ## CSS for Agent/Case detail report
    ##
    css_detail = """
+      h2
+      {
+         margin-top: 30px;
+      }
+
       p#case_passed
       {
          color: #fff;
@@ -517,23 +527,34 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       ## Agents header
       ##
-      f.write('<tr id="agent_case_results_header">')
-      f.write('<td id="clabel">Category</td>')
-      f.write('<td id="clabel">Test</td>')
-      for agentId in agentList:
-         f.write('<td id="agent">%s</td>' % agentId)
-      f.write("</tr>")
+      #f.write('<tr id="agent_case_results_header">')
+      #f.write('<td id="clabel">Category</td>')
+      #f.write('<td id="clabel">Test</td>')
+      #for agentId in agentList:
+      #   f.write('<td id="agent">%s</td>' % agentId)
+      #f.write("</tr>")
 
+      lastCaseCategory = None
       for caseNo in caseList:
 
-         f.write('<tr id="agent_case_result_row">')
-
-         ## Case ID
+         ## Case ID and category
          ##
          caseId = caseClasstoId(Cases[caseNo - 1])
          caseCategory = CaseCategories.get(caseId.split('.')[0], "Misc")
 
-         f.write('<td id="case_category">%s</td>' % caseCategory)
+         ## Category row
+         ##
+         if caseCategory != lastCaseCategory:
+            f.write('<tr id="case_category_row">')
+            f.write('<td id="case_category">%s</td>' % caseCategory)
+            for agentId in agentList:
+               f.write('<td id="agent">%s</td>' % agentId)
+            f.write('</tr>')
+
+         lastCaseCategory = caseCategory
+
+         f.write('<tr id="agent_case_result_row">')
+         #f.write('<td id="case_category">%s</td>' % caseCategory)
          f.write('<td id="case"><a href="#case_desc_%d">Case %s</a></td>' % (caseNo, caseId))
 
          ## Agent/Case Result
@@ -591,16 +612,30 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
-      f.write('<h2>Summary</h2>')
-
       if case["passed"]:
          f.write('<p id="case_passed"><b>Pass</b> (%s)</p>' % case["started"])
       else:
          f.write('<p id="case_failed"><b>Fail</b> (%s)</p>' % case["started"])
 
+      f.write('<h2>Case</h2>')
       f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % case["description"])
       f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % case["expectation"])
-      f.write('<p id="case_result"><i>Result</i><br/><br/>%s</p>' % case["result"])
+
+      f.write('<h2>Result</h2>')
+
+      if case["result"] and case["result"] != "":
+         f.write('<p id="case_result">%s</p>' % case["result"])
+
+      if case["expected"] and case["received"]:
+         es = str(case["expected"])
+         if len(es) > 400:
+            es = es[:400] + " ..."
+         f.write('<p id="case_result">Expected = %s</p>' % es)
+
+         rs = str(case["received"])
+         if len(rs) > 400:
+            rs = rs[:400] + " ..."
+         f.write('<p id="case_result">Actual = %s</p>' % rs)
 
       f.write('<h2>Wire Log</h2>')
 
