@@ -313,13 +313,13 @@ class WebSocketProtocol(protocol.Protocol):
             ##
             if frame_rsv != 0:
                self.protocolViolation("RSV != 0 and no extension negotiated")
-               return
+               return False
 
             ## all client-to-server frames MUST be masked
             ##
             if self.isServer and not frame_masked:
                self.protocolViolation("unmasked client to server frame")
-               return
+               return False
 
             ## check frame
             ##
@@ -329,19 +329,19 @@ class WebSocketProtocol(protocol.Protocol):
                ##
                if not frame_fin:
                   self.protocolViolation("fragmented control frame")
-                  return
+                  return False
 
                ## control frames MUST have payload 125 octets or less
                ##
                if frame_payload_len1 > 125:
                   self.protocolViolation("control frame with payload length > 125 octets")
-                  return
+                  return False
 
                ## check for reserved control frame opcodes
                ##
                if frame_opcode not in [8, 9, 10]:
                   self.protocolViolation("control frame using reserved opcode %d" % frame_opcode)
-                  return
+                  return False
 
             else: # data frame
 
@@ -349,7 +349,7 @@ class WebSocketProtocol(protocol.Protocol):
                ##
                if frame_opcode not in [0, 1, 2]:
                   self.protocolViolation("data frame using reserved opcode %d" % frame_opcode)
-                  return
+                  return False
 
             ## compute complete header length
             ##
@@ -428,9 +428,9 @@ class WebSocketProtocol(protocol.Protocol):
 
             ## now process frame
             ##
-            self.onFrame(frame_fin, frame_rsv, frame_opcode, frame_masked, frame_payload_len, frame_mask, frame_mask_raw, payload)
+            res = self.onFrame(frame_fin, frame_rsv, frame_opcode, frame_masked, frame_payload_len, frame_mask, frame_mask_raw, payload)
 
-            return len(self.data) > 0 # reprocess when buffered data left
+            return res and len(self.data) > 0 # reprocess when no error occurred and buffered data left
 
          else:
             return False # need more data
@@ -456,13 +456,13 @@ class WebSocketProtocol(protocol.Protocol):
                self.msg_type = opcode
             else:
                self.protocolViolation("received continuation frame outside fragmented message")
-               return
+               return False
          else:
             if opcode == 0:
                pass
             else:
                self.protocolViolation("received non-continuation frame while in fragmented message")
-               return
+               return False
 
          ## buffer message payload
          ##
@@ -490,7 +490,8 @@ class WebSocketProtocol(protocol.Protocol):
             ## unsigned integer (in network byte order) representing a status code
             ##
             if plen < 2:
-               pass
+               self.protocolViolation("received close frame with payload len 1")
+               return False
             code = struct.unpack("!H", payload[0:2])[0]
 
             ## Following the 2-byte integer the body MAY contain UTF-8
@@ -501,7 +502,8 @@ class WebSocketProtocol(protocol.Protocol):
                try:
                   reason = unicode(payload[2:], 'utf8')
                except UnicodeDecodeError:
-                  pass
+                  self.protocolViolation("received non-UTF-8 payload as close frame reason")
+                  return False
 
          self.onClose(code, reason)
 
@@ -517,6 +519,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       else:
          raise Exception("logic error processing frame with opcode %d" % opcode)
+
+      return True
 
 
    def sendFrame(self, opcode, payload = "", fin = True, rsv = 0, mask = None, payload_len = None, chopsize = None, sync = False):
