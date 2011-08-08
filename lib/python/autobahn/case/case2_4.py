@@ -26,6 +26,6 @@ class Case2_4(Case):
 
    def onOpen(self):
       payload = "\xfe" * 125
-      self.expected = [("pong", payload), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", payload), ("failedByMe", True)]
       self.p.sendFrame(opcode = 9, payload = payload)
       self.p.killAfter(1)

@@ -27,7 +27,7 @@ class Case5_8(Case):
    def onOpen(self):
       ping_payload = "ping payload"
       fragments = ["fragment1", "fragment2"]
-      self.expected = [("pong", ping_payload), ("message", ''.join(fragments), False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", ping_payload), ("message", ''.join(fragments), False), ("failedByMe", True)]
       self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0], chopsize = 1)
       self.p.sendFrame(opcode = 9, fin = True, payload = ping_payload, chopsize = 1)
       self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1], chopsize = 1)

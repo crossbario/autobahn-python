@@ -24,10 +24,16 @@ import textwrap
 
 class Case:
 
+   FAILED = "FAILED"
+   OK = "OK"
+   NON_STRICT = "NON-STRICT"
+
    def __init__(self, protocol):
       self.p = protocol
       self.received = []
-      self.expected = []
+      self.expected = {}
+      self.behavior = Case.FAILED
+      self.result = "Actual events differ from any expected."
       self.init()
 
    def init(self):
@@ -53,8 +59,9 @@ class Case:
 
    def onConnectionLost(self, failedByMe):
       self.received.append(("failedByMe", failedByMe))
-      self.passed = self.compare(self.received, self.expected)
-      if self.passed:
-         self.result = "Ok, actual events match expected."
-      else:
-         self.result = "Failure, actual events differ from expected."
+      for e in self.expected:
+         if self.compare(self.received, self.expected[e]):
+            self.behavior = e
+            self.passed = True
+            self.result = "Actual events match at least one expected."
+            break

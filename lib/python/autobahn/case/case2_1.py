@@ -25,6 +25,6 @@ class Case2_1(Case):
    EXPECTATION = """Pong (with empty payload) is sent in reply to Ping."""
 
    def onOpen(self):
-      self.expected = [("pong", ""), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", ""), ("failedByMe", True)]
       self.p.sendFrame(opcode = 9)
       self.p.killAfter(1)

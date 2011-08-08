@@ -25,7 +25,7 @@ class Case5_17(Case):
    EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
 
    def onOpen(self):
-      self.expected = [("failedByMe", False)]
+      self.expected[Case.OK] = [("failedByMe", False)]
       for i in range(1, 2):
          self.p.sendFrame(opcode = 0, fin = True, payload = "fragment1")
          self.p.sendFrame(opcode = 1, fin = False, payload = "fragment2")

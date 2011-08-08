@@ -25,7 +25,7 @@ class Case6_2(Case):
    EXPECTATION = """A message is echo'ed back to us (with empty payload)."""
 
    def onOpen(self):
-      self.expected = [("message", "", False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", "", False), ("failedByMe", True)]
       self.p.sendFrame(opcode = 1, fin = False, payload = "")
       self.p.sendFrame(opcode = 0, fin = False, payload = "")
       self.p.sendFrame(opcode = 0, fin = True, payload = "")

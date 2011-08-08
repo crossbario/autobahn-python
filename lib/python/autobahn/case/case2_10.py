@@ -28,9 +28,10 @@ class Case2_10(Case):
       self.chopsize = None
 
    def onOpen(self):
+      self.expected[Case.OK] = []
       for i in range(1, 10):
          payload = "payload-%d" % i
-         self.expected.append(("pong", payload))
+         self.expected[Case.OK].append(("pong", payload))
          self.p.sendFrame(opcode = 9, payload = payload, chopsize = self.chopsize)
-      self.expected.append(("failedByMe", True))
+      self.expected[Case.OK].append(("failedByMe", True))
       self.p.killAfter(1)

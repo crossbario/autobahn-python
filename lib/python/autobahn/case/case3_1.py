@@ -25,6 +25,6 @@ class Case3_1(Case):
    EXPECTATION = """The connection is failed immediately, since RSV must be 0, when no extension defining RSV meaning has been negoiated."""
 
    def onOpen(self):
-      self.expected = [("failedByMe", False)]
+      self.expected[Case.OK] = [("failedByMe", False)]
       self.p.sendFrame(opcode = 1, payload = "Hello, world!", rsv = 1)
       self.p.killAfter(1)

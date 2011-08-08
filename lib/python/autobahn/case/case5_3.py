@@ -26,7 +26,7 @@ class Case5_3(Case):
 
    def onOpen(self):
       fragments = ["fragment1", "fragment2"]
-      self.expected = [("message", ''.join(fragments), False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", ''.join(fragments), False), ("failedByMe", True)]
       self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0])
       self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1])
       self.p.killAfter(1)

@@ -26,7 +26,7 @@ class Case2_9(Case):
 
    def onOpen(self):
       payload = "ping payload"
-      self.expected = [("pong", payload), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", payload), ("failedByMe", True)]
       self.p.sendFrame(opcode = 10, payload = "unsolicited pong payload")
       self.p.sendFrame(opcode = 9, payload = payload)
       self.p.killAfter(1)

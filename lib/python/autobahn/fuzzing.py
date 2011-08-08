@@ -19,7 +19,7 @@
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from case import Cases, CaseCategories, caseClasstoId, caseClasstoIdTuple
+from case import Case, Cases, CaseCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
 import datetime
@@ -62,7 +62,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                        "expectation": self.Case.EXPECTATION,
                        "agent": self.caseAgent,
                        "started": self.caseStarted,
-                       "passed": self.runCase.passed,
+                       "behavior": self.runCase.behavior,
                        "expected": self.runCase.expected,
                        "received": self.runCase.received,
                        "result": self.runCase.result,
@@ -372,9 +372,15 @@ class FuzzingServerFactory(WebSocketServerFactory):
          font-size: 0.9em;
       }
 
-      td#case_passed
+      td#case_ok
       {
          background-color: #0a0;
+         text-align: center;
+      }
+
+      td#case_non_strict
+      {
+         background-color: #aa0;
          text-align: center;
       }
 
@@ -393,11 +399,21 @@ class FuzzingServerFactory(WebSocketServerFactory):
          margin-top: 30px;
       }
 
-      p#case_passed
+      p#case_ok
       {
          color: #fff;
          border-radius: 10px;
          background-color: #0a0;
+         padding: 20px;
+         margin: 20px;
+         font-size: 1.2em;
+      }
+
+      p#case_non_strict
+      {
+         color: #fff;
+         border-radius: 10px;
+         background-color: #990;
          padding: 20px;
          margin: 20px;
          font-size: 1.2em;
@@ -572,8 +588,10 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
                agent_case_report_file = self.makeAgentCaseReportFilename(agentId, caseNo)
 
-               if case["passed"]:
-                  f.write('<td id="case_passed"><a href="%s">Pass</a></td>' % agent_case_report_file)
+               if case["behavior"] == Case.OK:
+                  f.write('<td id="case_ok"><a href="%s">Pass</a></td>' % agent_case_report_file)
+               elif case["behavior"] == Case.NON_STRICT:
+                  f.write('<td id="case_non_strict"><a href="%s">Non-Strict</a></td>' % agent_case_report_file)
                else:
                   f.write('<td id="case_failed"><a href="%s">Fail</a></td>' % agent_case_report_file)
             else:
@@ -587,12 +605,12 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       for caseNo in caseList:
 
-         Case = Cases[caseNo - 1]
+         CCase = Cases[caseNo - 1]
 
          f.write('<a name="case_desc_%d"></a>' % caseNo)
-         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseClasstoId(Case))
-         f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % Case.DESCRIPTION)
-         f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % Case.EXPECTATION)
+         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseClasstoId(CCase))
+         f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % CCase.DESCRIPTION)
+         f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % CCase.EXPECTATION)
 
       f.write("</body></html>")
 
@@ -618,8 +636,10 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
-      if case["passed"]:
-         f.write('<p id="case_passed"><b>Pass</b> (%s)</p>' % case["started"])
+      if case["behavior"] == Case.OK:
+         f.write('<p id="case_ok"><b>Pass</b> (%s)</p>' % case["started"])
+      if case["behavior"] ==  Case.NON_STRICT:
+         f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s)</p>' % case["started"])
       else:
          f.write('<p id="case_failed"><b>Fail</b> (%s)</p>' % case["started"])
 

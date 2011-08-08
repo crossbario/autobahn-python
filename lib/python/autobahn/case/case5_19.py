@@ -39,7 +39,7 @@ class Case5_19(Case):
       self.fragments = ["fragment1", "fragment2", "fragment3", "fragment4", "fragment5"]
       self.pings = ["pongme 1!", "pongme 2!"]
 
-      self.expected = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments), False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments), False), ("failedByMe", True)]
 
       self.p.sendFrame(opcode = 1, fin = False, payload = self.fragments[0], sync = self.sync)
       self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[1], sync = self.sync)
