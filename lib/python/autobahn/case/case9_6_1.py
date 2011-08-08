@@ -18,23 +18,27 @@
 
 from case import Case
 
-class Case9_2_1(Case):
+class Case9_6_1(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 64 * 2**10 (64k)."""
+   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 4 octets."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
+   def setChopSize(self):
+      self.chopsize = 4
+
    def init(self):
-      self.DATALEN = 64 * 2**10
+      self.DATALEN = 1 * 2**20
       self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
-      self.WAITSECS = 10
+      self.WAITSECS = 200
       self.reportTime = True
+      self.setChopSize()
 
    def onOpen(self):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
-      self.p.sendFrame(opcode = 2, payload = self.PAYLOAD, payload_len = self.DATALEN)
+      self.p.sendFrame(opcode = 2, payload = self.PAYLOAD, payload_len = self.DATALEN, chopsize = self.chopsize)
       self.p.killAfter(self.WAITSECS)
 
    def onMessage(self, msg, binary):

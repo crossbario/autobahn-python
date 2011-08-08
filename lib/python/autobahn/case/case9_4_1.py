@@ -18,15 +18,16 @@
 
 from case import Case
 
-class Case9_2_1(Case):
+class Case9_4_1(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 64 * 2**10 (64k)."""
+   DESCRIPTION = """Send fragmented binary message message with message payload of length 8 * 2**20 (8M). Sent out in fragments of 64."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 64 * 2**10
-      self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
+      self.DATALEN = 8 * 2**20
+      self.FRAGSIZE = 64
+      self.PAYLOAD = "\xfe" * self.DATALEN
       self.WAITSECS = 10
       self.reportTime = True
 
@@ -34,12 +35,12 @@ class Case9_2_1(Case):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
-      self.p.sendFrame(opcode = 2, payload = self.PAYLOAD, payload_len = self.DATALEN)
+      self.p.sendMessage(payload = self.PAYLOAD, binary = True, payload_frag_size = self.FRAGSIZE)
       self.p.killAfter(self.WAITSECS)
 
    def onMessage(self, msg, binary):
       if not binary:
-         self.result = "Expected binary message with payload, but got text."
+         self.result = "Expected binary message with payload, but got binary."
       else:
          if len(msg) != self.DATALEN:
             self.result = "Expected binary message with payload of length %d, but got %d." % (self.DATALEN, len(msg))

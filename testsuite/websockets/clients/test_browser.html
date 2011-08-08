@@ -197,14 +197,16 @@
    </head>
 
    <body>
-      <h1>WebSockets Protocol Compliance Test</h1>
+      <h1>WebSockets Protocol Test Driver</h1>
+      <p>Provided by <a href="http://www.tavendo.de/autobahn">Autobahn</a> WebSockets.</p><br/>
       <form>
          <p>Fuzzing Server Hostname<br/><input id="hostname" type="text" size="20" maxlength="40"></p>
          <p>Fuzzing Server Port<br/><input id="port" type="text" size="5" maxlength="5"></p>
          <p>User Agent Identifier<br/><input id="agent" type="text" size="30" maxlength="30"></p>
       </form>
-      <p><button onclick='startTestRun();'>Start Test Run</button></p>
-      <p><i>Status:</i> <span id="statusline"></span></p>
+      <br/>
+      <p><button onclick='startTestRun();'>Start Test</button> &nbsp;&nbsp; <i>Status:</i> <span id="statusline">Ready</span></p>
+      <br/>
       <p id="resultlink"></p>
    </body>
 </html>

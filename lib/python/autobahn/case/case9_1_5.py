@@ -20,7 +20,7 @@ from case9_1_1 import *
 
 class Case9_1_5(Case9_1_1):
 
-   DESCRIPTION = """Send text message message with payload of length 8 * 2**20 (8M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send text message message with payload of length 8 * 2**20 (8M)."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 

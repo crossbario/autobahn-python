@@ -4,18 +4,16 @@ Test Suite
 Test Cases
 
   - UTF-8 Handling
-  - Limits/Performance
   - Close
-  - Handshaking
   - Server-to-Client Masking
   - Message Roundtrip Time / Latency
+  - Handshaking
 
   http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
   http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html
 
 Test Report
 
-  - Measure Case Execution Time
   - Timestamps in Wirelog
 
 

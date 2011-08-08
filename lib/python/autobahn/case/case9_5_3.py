@@ -16,16 +16,13 @@
 ##
 ###############################################################################
 
-from case9_1_1 import *
+from case9_5_1 import Case9_5_1
 
-class Case9_1_2(Case9_1_1):
+class Case9_5_3(Case9_5_1):
 
-   DESCRIPTION = """Send text message message with payload of length 256 * 2**10 (256k)."""
+   DESCRIPTION = """Send text message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 16 octets."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
-   def init(self):
-      self.DATALEN = 256 * 2**10
-      self.PAYLOAD = "BAsd7&jh23"
-      self.WAITSECS = 10
-      self.reportTime = True
+   def setChopSize(self):
+      self.chopsize = 16

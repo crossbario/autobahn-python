@@ -45,8 +45,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       self.runCase = None
       self.caseAgent = None
       self.caseStarted = None
-      self.caseStart = None
-      self.caseEnd = None
+      self.caseStart = 0
+      self.caseEnd = 0
       self.wirelog = []
       self.createWirelog = True
 
@@ -184,14 +184,36 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
    def onOpen(self):
 
       if self.runCase:
+
+         cc = caseClasstoIdTuple(self.runCase.__class__)
+
+         ## FF7 crashes on these
+         ##
+         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
+            print "Skipping fragmented message test case for broken FF/7 !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
+         ## FF and Chrome dont yet implement binary messages
+         ##
+         if (self.caseAgent.find("Firefox") >= 0 or self.caseAgent.find("Chrome") >= 0) and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
+            print "Skipping binary message test case for browser client !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
          self.caseStart = time.time()
          self.runCase.onOpen()
+
       elif self.path == "/updateReports":
          self.factory.createReports()
          self.sendClose()
+
       elif self.path == "/getCaseCount":
          self.sendMessage(json.dumps(len(Cases)))
          self.sendClose()
+
       else:
          pass
 
@@ -412,6 +434,13 @@ class FuzzingServerFactory(WebSocketServerFactory):
          background-color: #900;
          text-align: center;
       }
+
+      td#case_missing
+      {
+         color: #fff;
+         background-color: #a05a2c;
+         text-align: center;
+      }
    """
 
    ## CSS for Agent/Case detail report
@@ -542,11 +571,11 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_master))
 
-      f.write('<h1>WebSockets Protocol Compliance Test Report</h1>')
+      f.write('<h1>WebSockets Protocol Test Report</h1>')
 
       f.write('<p id="intro">Test summary report generated on</p>')
       f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
-      f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSocket protocol compliance test suite.</p>' % "http://www.tavendo.de/autobahn")
+      f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
 
       f.write('<h2>Test Results</h2>')
 
@@ -623,13 +652,6 @@ class FuzzingServerFactory(WebSocketServerFactory):
                   f.write('<td id="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td>' % (td_class, agent_case_report_file, td_text, case["duration"]))
                else:
                   f.write('<td id="%s"><a href="%s">%s</a></td>' % (td_class, agent_case_report_file, td_text))
-
-               #if case["behavior"] == Case.OK:
-               #   f.write('<td id="case_ok"><a href="%s">Pass [%d]</a></td>' % (agent_case_report_file, case["duration"]))
-               #elif case["behavior"] == Case.NON_STRICT:
-               #   f.write('<td id="case_non_strict"><a href="%s">Non-Strict [%d]</a></td>' % (agent_case_report_file, case["duration"]))
-               #else:
-               #   f.write('<td id="case_failed"><a href="%s">Fail [%d]</a></td>' % (agent_case_report_file, case["duration"]))
 
             else:
                f.write('<td id="case_missing">Missing</td>')

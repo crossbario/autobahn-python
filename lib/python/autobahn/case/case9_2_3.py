@@ -20,7 +20,7 @@ from case9_2_1 import *
 
 class Case9_2_3(Case9_2_1):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M)."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
