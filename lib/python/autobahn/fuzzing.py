@@ -638,7 +638,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       if case["behavior"] == Case.OK:
          f.write('<p id="case_ok"><b>Pass</b> (%s)</p>' % case["started"])
-      if case["behavior"] ==  Case.NON_STRICT:
+      elif case["behavior"] ==  Case.NON_STRICT:
          f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s)</p>' % case["started"])
       else:
          f.write('<p id="case_failed"><b>Fail</b> (%s)</p>' % case["started"])
