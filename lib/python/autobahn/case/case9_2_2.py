@@ -20,11 +20,12 @@ from case9_2_1 import *
 
 class Case9_2_2(Case9_2_1):
 
-   DESCRIPTION = """Send binary message message with payload of length 4*2**20 (4M). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send binary message message with payload of length 256 * 2**10 (256k). Sent out data in chops of 997 octets."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 4 * 2**20
+      self.DATALEN = 256 * 2**10
       self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
-      self.WAITSECS = 100
+      self.WAITSECS = 10
+      self.reportTime = True

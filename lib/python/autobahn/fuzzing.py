@@ -19,10 +19,11 @@
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from case import Case, Cases, CaseCategories, caseClasstoId, caseClasstoIdTuple
+from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
 import datetime
+import time
 import random
 import textwrap
 import os
@@ -44,6 +45,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       self.runCase = None
       self.caseAgent = None
       self.caseStarted = None
+      self.caseStart = None
+      self.caseEnd = None
       self.wirelog = []
       self.createWirelog = True
 
@@ -55,6 +58,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       if self.runCase:
 
          self.runCase.onConnectionLost(self.failedByMe)
+         self.caseEnd = time.time()
 
          caseResult = {"case": self.case,
                        "id": caseClasstoId(self.Case),
@@ -62,11 +66,14 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                        "expectation": self.Case.EXPECTATION,
                        "agent": self.caseAgent,
                        "started": self.caseStarted,
+                       "duration": int(round(1000. * (self.caseEnd - self.caseStart))), # case execution time in ms
+                       "reportTime": self.runCase.reportTime, # True/False switch to control report output of duration
                        "behavior": self.runCase.behavior,
                        "expected": self.runCase.expected,
                        "received": self.runCase.received,
                        "result": self.runCase.result,
                        "wirelog": self.wirelog,
+                       "createWirelog": self.createWirelog,
                        "failedByMe": self.failedByMe}
 
          self.factory.logCase(caseResult)
@@ -177,6 +184,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
    def onOpen(self):
 
       if self.runCase:
+         self.caseStart = time.time()
          self.runCase.onOpen()
       elif self.path == "/updateReports":
          self.factory.createReports()
@@ -364,12 +372,27 @@ class FuzzingServerFactory(WebSocketServerFactory):
          font-size: 1.0em;
       }
 
+      td#case_subcategory
+      {
+         color: #fff;
+         background-color: #333;
+         text-align: left;
+         padding-left: 30px;
+         font-size: 0.9em;
+      }
+
       td#case
       {
-         background-color: #555;
+         background-color: #666;
          text-align: left;
          padding-left: 40px;
          font-size: 0.9em;
+      }
+
+      span#case_duration
+      {
+         font-size: 0.7em;
+         color: #fff;
       }
 
       td#case_ok
@@ -545,38 +568,36 @@ class FuzzingServerFactory(WebSocketServerFactory):
       for c in cl:
          caseList.append(c[1])
 
-      #caseList = sorted(self.cases.keys())
-
-      ## Agents header
-      ##
-      #f.write('<tr id="agent_case_results_header">')
-      #f.write('<td id="clabel">Category</td>')
-      #f.write('<td id="clabel">Test</td>')
-      #for agentId in agentList:
-      #   f.write('<td id="agent">%s</td>' % agentId)
-      #f.write("</tr>")
-
       lastCaseCategory = None
+      lastCaseSubCategory = None
+
       for caseNo in caseList:
 
          ## Case ID and category
          ##
          caseId = caseClasstoId(Cases[caseNo - 1])
-         caseCategory = CaseCategories.get(caseId.split('.')[0], "Misc")
+         caseCategoryIndex = caseId.split('.')[0]
+         caseCategory = CaseCategories.get(caseCategoryIndex, "Misc")
+         caseSubCategoryIndex = '.'.join(caseId.split('.')[:2])
+         caseSubCategory = CaseSubCategories.get(caseSubCategoryIndex, None)
 
          ## Category row
          ##
          if caseCategory != lastCaseCategory:
             f.write('<tr id="case_category_row">')
-            f.write('<td id="case_category">%s</td>' % caseCategory)
+            f.write('<td id="case_category">%s %s</td>' % (caseCategoryIndex, caseCategory))
             for agentId in agentList:
                f.write('<td id="agent">%s</td>' % agentId)
             f.write('</tr>')
+            lastCaseCategory = caseCategory
+            lastCaseSubCategory = None
 
-         lastCaseCategory = caseCategory
+         if caseSubCategory != lastCaseSubCategory:
+            f.write('<tr id="case_subcategory_row">')
+            f.write('<td id="case_subcategory" colspan="%d">%s %s</td>' % (len(agentList) + 1, caseSubCategoryIndex, caseSubCategory))
+            lastCaseSubCategory = caseSubCategory
 
          f.write('<tr id="agent_case_result_row">')
-         #f.write('<td id="case_category">%s</td>' % caseCategory)
          f.write('<td id="case"><a href="#case_desc_%d">Case %s</a></td>' % (caseNo, caseId))
 
          ## Agent/Case Result
@@ -589,11 +610,27 @@ class FuzzingServerFactory(WebSocketServerFactory):
                agent_case_report_file = self.makeAgentCaseReportFilename(agentId, caseNo)
 
                if case["behavior"] == Case.OK:
-                  f.write('<td id="case_ok"><a href="%s">Pass</a></td>' % agent_case_report_file)
+                  td_text = "Pass"
+                  td_class = "case_ok"
                elif case["behavior"] == Case.NON_STRICT:
-                  f.write('<td id="case_non_strict"><a href="%s">Non-Strict</a></td>' % agent_case_report_file)
+                  td_text = "Non-Strict"
+                  td_class = "case_non_strict"
                else:
-                  f.write('<td id="case_failed"><a href="%s">Fail</a></td>' % agent_case_report_file)
+                  td_text = "Fail"
+                  td_class = "case_failed"
+
+               if case["reportTime"]:
+                  f.write('<td id="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td>' % (td_class, agent_case_report_file, td_text, case["duration"]))
+               else:
+                  f.write('<td id="%s"><a href="%s">%s</a></td>' % (td_class, agent_case_report_file, td_text))
+
+               #if case["behavior"] == Case.OK:
+               #   f.write('<td id="case_ok"><a href="%s">Pass [%d]</a></td>' % (agent_case_report_file, case["duration"]))
+               #elif case["behavior"] == Case.NON_STRICT:
+               #   f.write('<td id="case_non_strict"><a href="%s">Non-Strict [%d]</a></td>' % (agent_case_report_file, case["duration"]))
+               #else:
+               #   f.write('<td id="case_failed"><a href="%s">Fail [%d]</a></td>' % (agent_case_report_file, case["duration"]))
+
             else:
                f.write('<td id="case_missing">Missing</td>')
 
@@ -637,11 +674,11 @@ class FuzzingServerFactory(WebSocketServerFactory):
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
       if case["behavior"] == Case.OK:
-         f.write('<p id="case_ok"><b>Pass</b> (%s)</p>' % case["started"])
+         f.write('<p id="case_ok"><b>Pass</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
       elif case["behavior"] ==  Case.NON_STRICT:
-         f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s)</p>' % case["started"])
+         f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
       else:
-         f.write('<p id="case_failed"><b>Fail</b> (%s)</p>' % case["started"])
+         f.write('<p id="case_failed"><b>Fail</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
 
       f.write('<h2>Case</h2>')
       f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % case["description"])
@@ -664,6 +701,9 @@ class FuzzingServerFactory(WebSocketServerFactory):
          f.write('<p id="case_result">Actual = %s</p>' % rs)
 
       f.write('<h2>Wire Log</h2>')
+
+      if not case["createWirelog"]:
+         f.write('<p style="margin-left: 40px; color: #f00;"><i>Wire log after handshake disabled!</i></p>')
 
       ## write out wire log
       ##

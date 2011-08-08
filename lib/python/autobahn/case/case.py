@@ -34,6 +34,7 @@ class Case:
       self.expected = {}
       self.behavior = Case.FAILED
       self.result = "Actual events differ from any expected."
+      self.reportTime = False
       self.init()
 
    def init(self):

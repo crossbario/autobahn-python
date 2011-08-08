@@ -16,16 +16,17 @@
 ##
 ###############################################################################
 
-from case9_1_1 import *
+from case9_3_1 import Case9_3_1
 
-class Case9_1_2(Case9_1_1):
+class Case9_3_7(Case9_3_1):
 
-   DESCRIPTION = """Send text message message with payload of length 256 * 2**10 (256k). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send fragmented text message message with message payload of length 8 * 2**20 (8M). Sent out in fragments of 1M."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 256 * 2**10
-      self.PAYLOAD = "BAsd7&jh23"
+      self.DATALEN = 8 * 2**20
+      self.FRAGSIZE = 1 * 2**20
+      self.PAYLOAD = "*" * self.DATALEN
       self.WAITSECS = 10
       self.reportTime = True

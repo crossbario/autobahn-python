@@ -701,10 +701,10 @@ class WebSocketProtocol(protocol.Protocol):
                done = True
                j = n
             if first:
-               self.sendFrame(opcode = opcode, payload = payload, fin = done)
+               self.sendFrame(opcode = opcode, payload = payload[i:j], fin = done)
                first = False
             else:
-               self.sendFrame(opcode = 0, payload = payload, fin = done)
+               self.sendFrame(opcode = 0, payload = payload[i:j], fin = done)
             i += payload_frag_size
 
 

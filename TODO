@@ -7,6 +7,8 @@ Test Cases
   - Limits/Performance
   - Close
   - Handshaking
+  - Server-to-Client Masking
+  - Message Roundtrip Time / Latency
 
   http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
   http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html

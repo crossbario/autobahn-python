@@ -18,15 +18,16 @@
 
 from case import Case
 
-class Case9_1_1(Case):
+class Case9_3_1(Case):
 
-   DESCRIPTION = """Send text message message with payload of length 64 * 2**10 (64k). Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send fragmented text message message with message payload of length 8 * 2**20 (8M). Sent out in fragments of 64."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 64 * 2**10
-      self.PAYLOAD = "BAsd7&jh23"
+      self.DATALEN = 8 * 2**20
+      self.FRAGSIZE = 64
+      self.PAYLOAD = "*" * self.DATALEN
       self.WAITSECS = 10
       self.reportTime = True
 
@@ -34,7 +35,7 @@ class Case9_1_1(Case):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
-      self.p.sendFrame(opcode = 1, payload = self.PAYLOAD, payload_len = self.DATALEN, chopsize = 997)
+      self.p.sendMessage(payload = self.PAYLOAD, binary = False, payload_frag_size = self.FRAGSIZE)
       self.p.killAfter(self.WAITSECS)
 
    def onMessage(self, msg, binary):
