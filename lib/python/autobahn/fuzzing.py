@@ -47,8 +47,19 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       self.caseStarted = None
       self.caseStart = 0
       self.caseEnd = 0
-      self.wirelog = []
+
+      ## wire log
+      ##
       self.createWirelog = True
+      self.wirelog = []
+
+      ## stats for octets and frames
+      ##
+      self.createStats = True
+      self.rxOctetStats = {}
+      self.rxFrameStats = {}
+      self.txOctetStats = {}
+      self.txFrameStats = {}
 
 
    def connectionLost(self, reason):
@@ -74,7 +85,12 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                        "result": self.runCase.result,
                        "wirelog": self.wirelog,
                        "createWirelog": self.createWirelog,
-                       "failedByMe": self.failedByMe}
+                       "failedByMe": self.failedByMe,
+                       "createStats": self.createStats,
+                       "rxOctetStats": self.rxOctetStats,
+                       "rxFrameStats": self.rxFrameStats,
+                       "txOctetStats": self.txOctetStats,
+                       "txFrameStats": self.txFrameStats}
 
          self.factory.logCase(caseResult)
 
@@ -96,6 +112,9 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def logRxOctets(self, data):
+      if self.createStats:
+         l = len(data)
+         self.rxOctetStats[l] = self.rxOctetStats.get(l, 0) + 1
       if self.createWirelog:
          self.wirelog.append(("RO", self.binLogData(data)))
       else:
@@ -103,6 +122,9 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def logTxOctets(self, data, sync):
+      if self.createStats:
+         l = len(data)
+         self.txOctetStats[l] = self.txOctetStats.get(l, 0) + 1
       if self.createWirelog:
          self.wirelog.append(("TO", self.binLogData(data), sync))
       else:
@@ -110,6 +132,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
+      if self.createStats:
+         self.rxFrameStats[opcode] = self.rxFrameStats.get(opcode, 0) + 1
       if self.createWirelog:
          self.wirelog.append(("RF", self.asciiLogData(payload), opcode, fin, rsv, masked, mask))
       else:
@@ -117,6 +141,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
+      if self.createStats:
+         self.txFrameStats[opcode] = self.txFrameStats.get(opcode, 0) + 1
       if self.createWirelog:
          self.wirelog.append(("TF", self.asciiLogData(payload), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
@@ -481,6 +507,45 @@ class FuzzingServerFactory(WebSocketServerFactory):
          font-size: 1.2em;
       }
 
+      table
+      {
+         border-collapse: collapse;
+         border-spacing: 0px;
+         margin-left: 80px;
+         margin-bottom: 40px;
+         margin-top: 0px;
+      }
+
+      td
+      {
+         margin: 0;
+         font-size: 0.8em;
+         text-align: right;
+         border: 1px #fff solid;
+         padding-top: 6px;
+         padding-bottom: 6px;
+         padding-left: 16px;
+         padding-right: 16px;
+      }
+
+      tr#stats_header
+      {
+         color: #eee;
+         background-color: #000;
+      }
+
+      tr#stats_row
+      {
+         background-color: #fc3;
+         color: #000;
+      }
+
+      tr#stats_total
+      {
+         color: #fff;
+         background-color: #888;
+      }
+
       div#wirelog
       {
          margin-top: 20px;
@@ -721,6 +786,41 @@ class FuzzingServerFactory(WebSocketServerFactory):
          if len(rs) > 400:
             rs = rs[:400] + " ..."
          f.write('<p id="case_result">Actual = %s</p>' % rs)
+
+      f.write('<h2>Statistics</h2>')
+
+      if not case["createStats"]:
+         f.write('<p style="margin-left: 40px; color: #f00;"><i>Statistics for octets/frames disabled!</i></p>')
+      else:
+         ## octet stats
+         ##
+         for statdef in [("Received", case["rxOctetStats"]), ("Transmitted", case["txOctetStats"])]:
+            f.write('<h3>Octets %s by Chop Size</h3>' % statdef[0])
+            f.write('<table>')
+            stats = statdef[1]
+            total_cnt = 0
+            total_octets = 0
+            f.write('<tr id="stats_header"><td>Chop Size</td><td>Count</td><td>Octets</td></tr>')
+            for s in sorted(stats.keys()):
+               f.write('<tr id="stats_row"><td>%d</td><td>%d</td><td>%d</td></tr>' % (s, stats[s], s * stats[s]))
+               total_cnt += stats[s]
+               total_octets += s * stats[s]
+            f.write('<tr id="stats_total"><td>Total</td><td>%d</td><td>%d</td></tr>' % (total_cnt, total_octets))
+            f.write('</table>')
+
+         ## frame stats
+         ##
+         for statdef in [("Received", case["rxFrameStats"]), ("Transmitted", case["txFrameStats"])]:
+            f.write('<h3>Frames %s by Opcode</h3>' % statdef[0])
+            f.write('<table>')
+            stats = statdef[1]
+            total_cnt = 0
+            f.write('<tr id="stats_header"><td>Opcode</td><td>Count</td></tr>')
+            for s in sorted(stats.keys()):
+               f.write('<tr id="stats_row"><td>%d</td><td>%d</td></tr>' % (s, stats[s]))
+               total_cnt += stats[s]
+            f.write('<tr id="stats_total"><td>Total</td><td>%d</td></tr>' % (total_cnt))
+            f.write('</table>')
 
       f.write('<h2>Wire Log</h2>')
 
