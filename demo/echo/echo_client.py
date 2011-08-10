@@ -29,12 +29,16 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
    def onMessage(self, msg, binary):
       print "Got echo: " + msg
-      reactor.callLater(2, self.sendHello)
+      reactor.callLater(1, self.sendHello)
 
 
 class EchoClientFactory(WebSocketClientFactory):
 
    protocol = EchoClientProtocol
+
+   def __init__(self, debug = False):
+      self.path = "/"
+      self.debug = debug
 
 
 if __name__ == '__main__':
