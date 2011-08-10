@@ -25,6 +25,21 @@ import struct
 import random
 import urlparse
 import os
+import cStringIO
+import StringIO
+from io import BytesIO
+
+
+class FrameHeader:
+
+   def __init__(self, opcode, fin, rsv, length, mask, mask_array):
+      self.opcode = opcode
+      self.fin = fin
+      self.rsv = rsv
+      self.length = length
+      self.ptr = 0
+      self.mask = mask
+      self.mask_array = mask_array
 
 
 class WebSocketProtocol(protocol.Protocol):
@@ -67,14 +82,48 @@ class WebSocketProtocol(protocol.Protocol):
       if self.debug:
          log.msg("onOpen()")
 
-   def onMessage(self, msg, binary):
+
+   def onMessageBegin(self, opcode):
+      self.message_opcode = opcode
+      self.message_data = []
+
+
+   def onMessageFrameBegin(self, length, reserved):
+      self.frame_length = length
+      self.frame_reserved = reserved
+      self.frame_data = []
+
+
+   def onMessageFrameEnd(self):
+      data = bytearray().join(self.frame_data)
+      self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, data)
+      self.onMessageFrame(data, self.frame_reserved)
+
+
+   def onMessageEnd(self):
+      data = bytearray().join(self.message_data)
+      ## FIXME: forward bytearray & opcode
+      ##
+      self.onMessage(str(data), self.message_opcode == 2)
+
+
+   def onMessageFrameData(self, data):
+      self.frame_data.append(data)
+
+
+   def onMessageFrame(self, data, reserved):
+      self.message_data.append(data)
+
+
+   def onMessage(self, data, binary):
       """
-      Callback when message was received. Default implementation does nothing.
+      Callback when complete message was received. Default implementation does nothing.
 
       Override in derived class.
       """
       if self.debug:
-         log.msg("onMessage()")
+         log.msg("WebSocketProtocol.onMessage")
+
 
    def onPing(self, payload):
       """
@@ -87,6 +136,7 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("onPing()")
       self.sendPong(payload)
 
+
    def onPong(self, payload):
       """
       Callback when Pong was received. Default implementation does nothing.
@@ -95,6 +145,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.debug:
          log.msg("onPong()")
+
 
    def onClose(self, code, reason):
       """
@@ -156,43 +207,49 @@ class WebSocketProtocol(protocol.Protocol):
 
    def logRxOctets(self, data):
       if self.debug:
-         log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+         d = str(buffer(data))
+         log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(d)))
 
 
    def logTxOctets(self, data, sync):
       if self.debug:
-         log.msg("TX Octets to %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+         d = str(buffer(data))
+         log.msg("TX Octets to %s : %s" % (self.peerstr, binascii.b2a_hex(d)))
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
       if self.debug:
-         log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), str(masked), str(payload_len), binascii.b2a_hex(mask), binascii.b2a_hex(payload)))
-
-
-   def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
-      if self.debug:
+         d = str(buffer(payload))
          if mask:
             mmask = binascii.b2a_hex(mask)
          else:
             mmask = str(mask)
-         log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, payload_len = %s, chopsize = %s, sync = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), mmask, str(payload_len), str(chopsize), str(sync), binascii.b2a_hex(payload)))
+         log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), str(masked), str(payload_len), mmask, binascii.b2a_hex(d)))
+
+
+   def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
+      if self.debug:
+         d = str(buffer(payload))
+         if mask:
+            mmask = binascii.b2a_hex(mask)
+         else:
+            mmask = str(mask)
+         log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, payload_len = %s, chopsize = %s, sync = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), mmask, str(payload_len), str(chopsize), str(sync), binascii.b2a_hex(d)))
 
 
    def dataReceived(self, data):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
       """
-      if not data:
-         log.msg("RECEIVED None Data!")
-         return
-
       self.logRxOctets(data)
-      self.data += data
 
+      self.data += data
       self.consumeData()
 
 
    def consumeData(self):
+
+      buffered_len = len(self.data)
 
       ## WebSocket is open (handshake was completed) or close was sent
       ##
@@ -287,13 +344,17 @@ class WebSocketProtocol(protocol.Protocol):
       After WebSockets handshake has been completed, this procedure will do all
       subsequent processing of incoming bytes.
       """
+      buffered_len = len(self.data)
+
+      ## outside a frame, that is we are awaiting data which starts a new frame
+      ##
       if self.current_frame is None:
 
-         buffered_len = len(self.data)
+         #buffered_len = len(self.data)
 
-         ## start of new frame
+         ## need minimum of 2 octets to for new frame
          ##
-         if buffered_len >= 2: # need minimum frame length
+         if buffered_len >= 2:
 
             ## FIN, RSV, OPCODE
             ##
@@ -343,6 +404,13 @@ class WebSocketProtocol(protocol.Protocol):
                   self.protocolViolation("control frame using reserved opcode %d" % frame_opcode)
                   return False
 
+               ## close frame : if there is a body, the first two bytes of the body MUST be a 2-byte
+               ## unsigned integer (in network byte order) representing a status code
+               ##
+               if frame_opcode == 8 and frame_payload_len1 == 1:
+                  self.protocolViolation("received close control frame with payload len 1")
+                  return False
+
             else: # data frame
 
                ## check for reserved data frame opcodes
@@ -351,12 +419,25 @@ class WebSocketProtocol(protocol.Protocol):
                   self.protocolViolation("data frame using reserved opcode %d" % frame_opcode)
                   return False
 
+               ## check opcode vs message fragmentation state 1/2
+               ##
+               if not self.inside_message and frame_opcode == 0:
+                  self.protocolViolation("received continuation data frame outside fragmented message")
+                  return False
+
+               ## check opcode vs message fragmentation state 2/2
+               ##
+               if self.inside_message and frame_opcode != 0:
+                  self.protocolViolation("received non-continuation data frame while inside fragmented message")
+                  return False
+
             ## compute complete header length
             ##
             if frame_masked:
                mask_len = 4
             else:
                mask_len = 0
+
             if frame_payload_len1 <  126:
                frame_header_len = 2 + mask_len
             elif frame_payload_len1 == 126:
@@ -373,7 +454,7 @@ class WebSocketProtocol(protocol.Protocol):
 
                i = 2
 
-               ## EXTENDED PAYLOAD LEN
+               ## extract extended payload length
                ##
                if frame_payload_len1 == 126:
                   frame_payload_len = struct.unpack("!H", self.data[i:i+2])[0]
@@ -384,101 +465,111 @@ class WebSocketProtocol(protocol.Protocol):
                else:
                   frame_payload_len = frame_payload_len1
 
-               ## frame mask (all client-to-server frames MUST be masked!)
+               ## when payload is masked, extract frame mask
                ##
-               frame_mask = []
-               frame_mask_raw = self.data[i:i+4]
+               frame_mask = None
+               frame_mask_array = []
                if frame_masked:
-                  for j in range(i, i + 4):
-                     frame_mask.append(ord(self.data[j]))
+                  frame_mask = self.data[i:i+4]
+                  for j in range(0, 4):
+                     frame_mask_array.append(ord(frame_mask[j]))
                   i += 4
+
+               ## remember rest (payload of current frame after header and everything thereafter)
+               ##
+               self.data = self.data[i:]
 
                ## ok, got complete frame header
                ##
-               self.current_frame = (frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_mask_raw, frame_payload_len)
+               self.current_frame = FrameHeader(frame_opcode, frame_fin, frame_rsv, frame_payload_len, frame_mask, frame_mask_array)
 
-               ## remember rest (payload of current frame and everything thereafter)
+               ## process begin on new frame
                ##
-               self.data = self.data[i:]
+               self.onFrameBegin()
+
+               ## reprocess when frame has no payload or and buffered data left
+               ##
+               return frame_payload_len == 0 or len(self.data) > 0
 
             else:
                return False # need more data
          else:
             return False # need more data
 
-      if self.current_frame is not None:
-
-         buffered_len = len(self.data)
-
-         frame_header_len, frame_fin, frame_rsv, frame_opcode, frame_masked, frame_mask, frame_mask_raw, frame_payload_len = self.current_frame
-
-         if buffered_len >= frame_payload_len:
-
-            ## unmask payload
-            ##
-            if frame_masked:
-               payload = ''.join([chr(ord(self.data[k]) ^ frame_mask[k % 4]) for k in range(0, frame_payload_len)])
-            else:
-               payload = self.data[:frame_payload_len]
-
-            ## buffer rest and reset current_frame
-            ##
-            self.data = self.data[frame_payload_len:]
-            self.current_frame = None
-
-            ## now process frame
-            ##
-            res = self.onFrame(frame_fin, frame_rsv, frame_opcode, frame_masked, frame_payload_len, frame_mask, frame_mask_raw, payload)
-
-            return res and len(self.data) > 0 # reprocess when no error occurred and buffered data left
-
-         else:
-            return False # need more data
-
-      else:
-         return False # need more data
-
-
-   def onFrame(self, fin, rsv, opcode, masked, payload_len, mask, mask_raw, payload):
-      """
-      Process a completely received frame.
-      """
-      self.logRxFrame(fin, rsv, opcode, masked, payload_len, mask_raw, payload)
-
-      ## DATA frame
+      ## inside a started frame
       ##
-      if opcode in [0, 1, 2]:
+      else:
 
-         ## check opcode vs protocol message state
+         ## cut out rest of frame payload
          ##
-         if self.msg_type is None:
-            if opcode in [1, 2]:
-               self.msg_type = opcode
-            else:
-               self.protocolViolation("received continuation frame outside fragmented message")
-               return False
+         rest = self.current_frame.length - self.current_frame.ptr
+         if buffered_len >= rest:
+            payload = bytearray(self.data[:rest])
+            length = rest
+            self.data = self.data[rest:]
          else:
-            if opcode == 0:
-               pass
-            else:
-               self.protocolViolation("received non-continuation frame while in fragmented message")
-               return False
+            payload = bytearray(self.data)
+            length = buffered_len
+            self.data = ""
 
-         ## buffer message payload
+         ## unmask payload
          ##
-         self.msg_payload.append(payload)
+         if self.current_frame.mask:
+            for k in xrange(0, length):
+               payload[k] ^= self.current_frame.mask_array[(k + self.current_frame.ptr) % 4]
 
-         ## final message fragment?
+         ## process frame data
          ##
-         if fin:
-            msg = ''.join(self.msg_payload)
-            self.onMessage(msg, self.msg_type == 2)
-            self.msg_payload = []
-            self.msg_type = None
+         self.onFrameData(payload)
+
+         ## advance payload pointer and fire frame end handler when frame payload is complete
+         ##
+         self.current_frame.ptr += length
+         if self.current_frame.ptr == self.current_frame.length:
+            self.onFrameEnd()
+
+         ## reprocess when no error occurred and buffered data left
+         ##
+         return len(self.data) > 0
+
+
+   def onFrameBegin(self):
+      if self.current_frame.opcode > 7:
+         self.control_frame_data = bytearray()
+      else:
+         if not self.inside_message:
+            self.inside_message = True
+            self.onMessageBegin(self.current_frame.opcode)
+         self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
+
+
+   def onFrameData(self, payload):
+      if self.current_frame.opcode > 7:
+         self.control_frame_data.extend(payload)
+      else:
+         self.onMessageFrameData(payload)
+
+
+   def onFrameEnd(self):
+      if self.current_frame.opcode > 7:
+         self.processControlFrame()
+      else:
+         self.onMessageFrameEnd()
+         if self.current_frame.fin:
+            self.onMessageEnd()
+            self.inside_message = False
+      self.current_frame = None
+
+
+   def processControlFrame(self):
+      payload = str(self.control_frame_data)
+      self.control_frame_data = None
+
+      self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, payload)
 
       ## CLOSE frame
       ##
-      elif opcode == 8:
+      if self.current_frame.opcode == 8:
 
          code = None
          reason = None
@@ -489,9 +580,6 @@ class WebSocketProtocol(protocol.Protocol):
             ## If there is a body, the first two bytes of the body MUST be a 2-byte
             ## unsigned integer (in network byte order) representing a status code
             ##
-            if plen < 2:
-               self.protocolViolation("received close frame with payload len 1")
-               return False
             code = struct.unpack("!H", payload[0:2])[0]
 
             ## Following the 2-byte integer the body MAY contain UTF-8
@@ -509,16 +597,16 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## PING frame
       ##
-      elif opcode == 9:
+      elif self.current_frame.opcode == 9:
          self.onPing(payload)
 
       ## PONG frame
       ##
-      elif opcode == 10:
+      elif self.current_frame.opcode == 10:
          self.onPong(payload)
 
       else:
-         raise Exception("logic error processing frame with opcode %d" % opcode)
+         raise Exception("logic error")
 
       return True
 
@@ -572,7 +660,11 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## mask frame payload
          ##
-         plm = ''.join([chr(ord(pl[k]) ^ frame_mask[k % 4]) for k in range(0, l)])
+         pl_ba = bytearray(pl)
+         for k in xrange(0, l):
+            pl_ba[k] ^= frame_mask[k % 4]
+         plm = str(pl_ba)
+
       else:
          mv = ""
          plm = pl
@@ -934,8 +1026,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          self.state = WebSocketProtocol.STATE_OPEN
          self.current_frame = None
-         self.msg_payload = []
-         self.msg_type = None
+         self.inside_message = False
 
          ## fire handler on derived class
          ##
@@ -1100,8 +1191,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ##
          self.state = WebSocketProtocol.STATE_OPEN
          self.current_frame = None
-         self.msg_payload = []
-         self.msg_type = None
+         self.inside_message = False
 
          ## fire handler on derived class
          ##
