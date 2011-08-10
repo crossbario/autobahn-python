@@ -116,7 +116,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          l = len(data)
          self.rxOctetStats[l] = self.rxOctetStats.get(l, 0) + 1
       if self.createWirelog:
-         self.wirelog.append(("RO", self.binLogData(data)))
+         d = str(buffer(data))
+         self.wirelog.append(("RO", self.binLogData(d)))
       else:
          WebSocketServerProtocol.logRxOctets(self, data)
 
@@ -126,7 +127,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          l = len(data)
          self.txOctetStats[l] = self.txOctetStats.get(l, 0) + 1
       if self.createWirelog:
-         self.wirelog.append(("TO", self.binLogData(data), sync))
+         d = str(buffer(data))
+         self.wirelog.append(("TO", self.binLogData(d), sync))
       else:
          WebSocketServerProtocol.logTxOctets(self, data, sync)
 
@@ -135,7 +137,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       if self.createStats:
          self.rxFrameStats[opcode] = self.rxFrameStats.get(opcode, 0) + 1
       if self.createWirelog:
-         self.wirelog.append(("RF", self.asciiLogData(payload), opcode, fin, rsv, masked, mask))
+         d = str(buffer(payload))
+         self.wirelog.append(("RF", self.asciiLogData(d), opcode, fin, rsv, masked, mask))
       else:
          WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
@@ -144,7 +147,8 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
       if self.createStats:
          self.txFrameStats[opcode] = self.txFrameStats.get(opcode, 0) + 1
       if self.createWirelog:
-         self.wirelog.append(("TF", self.asciiLogData(payload), opcode, fin, rsv, mask, payload_len, chopsize, sync))
+         d = str(buffer(payload))
+         self.wirelog.append(("TF", self.asciiLogData(d), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
          WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
