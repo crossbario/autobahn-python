@@ -25,7 +25,7 @@ class Case9_6_1(Case):
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def setChopSize(self):
-      self.chopsize = 4
+      self.chopsize = 1
 
    def init(self):
       self.DATALEN = 1 * 2**20
