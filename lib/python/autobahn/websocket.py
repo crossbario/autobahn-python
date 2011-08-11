@@ -54,12 +54,21 @@ class WebSocketProtocol(protocol.Protocol):
    ##
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+   MESSAGE_TYPE_TEXT = 1
+   MESSAGE_TYPE_BINARY = 2
+
    ## WebSockets protocol state
    ##
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
    STATE_CLOSING = 2
    STATE_OPEN = 3
+
+   ## Streaming Send State
+   SEND_STATE_GROUND = 0
+   SEND_STATE_MESSAGE_BEGIN = 1
+   SEND_STATE_INSIDE_MESSAGE = 2
+   SEND_STATE_INSIDE_MESSAGE_FRAME = 3
 
    ## WebSockets protocol close codes
    ##
@@ -165,6 +174,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def __init__(self):
       self.state = WebSocketProtocol.STATE_CLOSED
+      self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
 
    def getState(self):
@@ -193,6 +203,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.peer = self.transport.getPeer()
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
       self.state = WebSocketProtocol.STATE_CONNECTING
+      self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
       self.closeAlreadySent = False
       self.failedByMe = False
@@ -461,6 +472,9 @@ class WebSocketProtocol(protocol.Protocol):
                   i += 2
                elif frame_payload_len1 == 127:
                   frame_payload_len = struct.unpack("!Q", self.data[i:i+8])[0]
+                  if frame_payload_len > 0x7FFFFFFFFFFFFFFF: # 2**63
+                     self.protocolViolation("invalid data frame length (>2^63)")
+                     return False
                   i += 8
                else:
                   frame_payload_len = frame_payload_len1
@@ -512,15 +526,16 @@ class WebSocketProtocol(protocol.Protocol):
             length = buffered_len
             self.data = ""
 
-         ## unmask payload
-         ##
-         if self.current_frame.mask:
-            for k in xrange(0, length):
-               payload[k] ^= self.current_frame.mask_array[(k + self.current_frame.ptr) % 4]
+         if length > 0:
+            ## unmask payload
+            ##
+            if self.current_frame.mask:
+               for k in xrange(0, length):
+                  payload[k] ^= self.current_frame.mask_array[(k + self.current_frame.ptr) % 4]
 
-         ## process frame data
-         ##
-         self.onFrameData(payload)
+            ## process frame data
+            ##
+            self.onFrameData(payload)
 
          ## advance payload pointer and fire frame end handler when frame payload is complete
          ##
@@ -760,7 +775,143 @@ class WebSocketProtocol(protocol.Protocol):
       self.closeAlreadySent = True
 
 
-   def sendMessage(self, payload, binary = False, payload_frag_size = None):
+   def beginMessage(self, opcode = 1):
+      ## check if sending state is valid for this method
+      ##
+      if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
+         raise Exception("WebSocketProtocol.beginMessage invalid in current sending state")
+
+      if opcode not in [1, 2]:
+         raise Exception("use of reserved opcode %d" % opcode)
+
+      ## move into "begin message" state and remember opcode for later (when sending first frame)
+      ##
+      self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
+      self.send_message_opcode = opcode
+
+
+   def beginMessageFrame(self, length, reserved = 0, mask = None):
+      ## check if sending state is valid for this method
+      ##
+      if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
+         raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state")
+
+      if length > 0x7FFFFFFFFFFFFFFF: # 2**63
+         raise Exception("invalid data frame length (>2^63)")
+
+      if reserved != 0:
+         raise Exception("use of reserved bits != 0")
+
+      self.send_message_frame_length = length
+      self.send_message_frame_octets_sent = 0
+
+      if mask:
+         self.send_message_frame_mask = mask
+      elif not self.isServer:
+         self.send_message_frame_mask = random.getrandbits(32)
+      else:
+         self.send_message_frame_mask = None
+
+      ## first byte
+      ##
+      b0 = (reserved % 8) << 4 # FIN = false .. since with streaming, we don't know when message ends
+
+      if self.send_state == WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN:
+         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+         b0 |= self.send_message_opcode % 128
+      else:
+         pass # message continuation frame
+
+      ## second byte, payload len bytes and mask
+      ##
+      b1 = 0
+      el = ""
+      if self.send_message_frame_mask:
+         b1 |= 1 << 7
+         mv = struct.pack("!I", self.send_message_frame_mask)
+         self.send_message_frame_mask_array = []
+         for j in range(0, 4):
+            self.send_message_frame_mask_array.append(ord(mv[j]))
+      else:
+         mv = ""
+
+      if length <= 125:
+         b1 |= length
+      elif length <= 0xFFFF:
+         b1 |= 126
+         el = struct.pack("!H", length)
+      elif length <= 0x7FFFFFFFFFFFFFFF:
+         b1 |= 127
+         el = struct.pack("!Q", length)
+      else:
+         raise Exception("invalid payload length")
+
+      header = ''.join([chr(b0), chr(b1), el, mv])
+      self.transport.write(header)
+      self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME
+
+
+   def sendMessageFrameData(self, payload, sync = False):
+      ## check if sending state is valid for this method
+      ##
+      if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
+         raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
+
+      rl = len(payload)
+      if self.send_message_frame_octets_sent + rl > self.send_message_frame_length:
+         l = self.send_message_frame_length - self.send_message_frame_octets_sent
+         rest = -(rl - l)
+         pl_ba = bytearray(payload[:l])
+      else:
+         l = rl
+         rest = self.send_message_frame_length - self.send_message_frame_octets_sent - l
+         pl_ba = bytearray(payload)
+
+      ## mask frame payload
+      ##
+      if self.send_message_frame_mask:
+         w = self.send_message_frame_octets_sent % 4
+         for k in xrange(0, l):
+            pl_ba[k] ^= self.send_message_frame_mask_array[(w + k) % 4]
+            ## WARNING. This is silly: if you do it instead like the uncommended line, the memory footprint
+            ## will run away ...
+#            pl_ba[k] ^= self.send_message_frame_mask_array[(self.send_message_frame_octets_sent + k) % 4]
+
+      ## send frame payload
+      ##
+      self.transport.write(str(pl_ba))
+
+      pl_ba = None
+
+      if sync:
+         self.syncSocket()
+
+      ## advance frame payload pointer and check if frame payload was completely sent
+      ##
+      self.send_message_frame_octets_sent += l
+
+      ## if we are done with frame, move back into "inside message" state
+      ##
+      if self.send_message_frame_octets_sent >= self.send_message_frame_length:
+         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+
+      ## when =0 : frame was completed exactly
+      ## when >0 : frame is still uncomplete and that much amount is still left to complete the frame
+      ## when <0 : frame was completed and there was this much unconsumed data in payload argument
+      ##
+      return rest
+
+
+   def endMessage(self):
+      ## check if sending state is valid for this method
+      ##
+      if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
+         raise Exception("WebSocketProtocol.endMessage invalid in current sending state")
+      self.sendFrame(opcode = 0, fin = True)
+      self.send_state = WebSocketProtocol.SEND_STATE_GROUND
+
+
+   def sendMessage(self, payload, binary = False, payload_frag_size = None, sync = False):
       """
       Send out data message. You can send text or binary message, and optionally
       specifiy a payload fragment size. When the latter is given, the payload will
@@ -776,7 +927,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## send unfragmented
       ##
       if payload_frag_size is None or len(payload) <= payload_frag_size:
-         self.sendFrame(opcode = opcode, payload = payload)
+         self.sendFrame(opcode = opcode, payload = payload, sync = sync)
 
       ## send data message in fragments
       ##
@@ -793,10 +944,10 @@ class WebSocketProtocol(protocol.Protocol):
                done = True
                j = n
             if first:
-               self.sendFrame(opcode = opcode, payload = payload[i:j], fin = done)
+               self.sendFrame(opcode = opcode, payload = payload[i:j], fin = done, sync = sync)
                first = False
             else:
-               self.sendFrame(opcode = 0, payload = payload[i:j], fin = done)
+               self.sendFrame(opcode = 0, payload = payload[i:j], fin = done, sync = sync)
             i += payload_frag_size
 
 

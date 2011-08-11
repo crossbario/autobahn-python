@@ -1,0 +1,55 @@
+###############################################################################
+##
+##  Copyright 2011 Tavendo GmbH
+##
+##  Licensed under the Apache License, Version 2.0 (the "License");
+##  you may not use this file except in compliance with the License.
+##  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+##  Unless required by applicable law or agreed to in writing, software
+##  distributed under the License is distributed on an "AS IS" BASIS,
+##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##  See the License for the specific language governing permissions and
+##  limitations under the License.
+##
+###############################################################################
+
+import hashlib, random, struct, binascii
+from twisted.internet import reactor
+from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+
+class NonStreamingClientProtocol(WebSocketClientProtocol):
+
+   def createMsg(self, len):
+      return ''.join([struct.pack("!Q", random.getrandbits(64)) for x in xrange(0, len / 8 + int(len % 8 > 0))])[:len]
+
+   def onOpen(self):
+      self.msg = self.createMsg(100 * 2**20)
+      print "created message of length", len(self.msg)
+      #print "message:", binascii.b2a_hex(self.msg)
+      self.sendMessage(self.msg, True)
+
+   def onMessage(self, msg, binary):
+      print "Message digest computed by server:", msg
+      sha256 = hashlib.sha256()
+      sha256.update(self.msg)
+      digest = sha256.hexdigest()
+      print "Message digest computed by my:    ", digest
+
+
+class NonStreamingClientFactory(WebSocketClientFactory):
+
+   protocol = NonStreamingClientProtocol
+
+   def __init__(self, debug = False):
+      self.path = "/"
+      self.debug = debug
+
+
+if __name__ == '__main__':
+
+   factory = NonStreamingClientFactory()
+   reactor.connectTCP("localhost", 9000, factory)
+   reactor.run()

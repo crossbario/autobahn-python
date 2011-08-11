@@ -28,3 +28,5 @@ WebSocket Protocol
     Twisted _seems_ to do that, but does it do so in every case?
 
   - Optimize fragment/message reassembly
+
+  - Further optimize masking: http://stackoverflow.com/questions/2119761/simple-python-challenge-fastest-bitwise-xor-on-data-buffers
