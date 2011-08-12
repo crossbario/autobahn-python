@@ -32,30 +32,19 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
    """
 
    def sendOneFrame(self):
-      """
-      Send out a WebSockets binary message with random bytes.
-      """
       data = randomByteString(FRAME_SIZE)
       self.beginMessageFrame(FRAME_SIZE)
       self.sendMessageFrameData(data)
 
    def onOpen(self):
-      self.scount = 0
-      self.stopped = False
+      self.count = 0
       self.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
       self.sendOneFrame()
 
-   def onMessage(self, msg, binary):
-      print "Digest for message %d computed by server: %s" % (self.scount, msg)
-      self.scount += 1
-
-      if not self.stopped:
-         if self.scount > 5:
-            self.endMessage()
-            self.sendClose()
-            self.stopped = True
-         else:
-            self.sendOneFrame()
+   def onMessage(self, message, binary):
+      print "Digest for frame %d computed by server: %s" % (self.count, message)
+      self.count += 1
+      self.sendOneFrame()
 
 
 if __name__ == '__main__':

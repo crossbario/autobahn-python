@@ -16,14 +16,14 @@
 ##
 ###############################################################################
 
-import hashlib, random, struct, binascii
+from ranstring import randomByteString
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
-MESSAGE_SIZE = 10 * 2**20
+MESSAGE_SIZE = 1 * 2**20
 
 
-class NonStreamingHashClientProtocol(WebSocketClientProtocol):
+class MessageBasedHashClientProtocol(WebSocketClientProtocol):
    """
    Message-based WebSockets client that generates stream of random octets
    sent to streaming WebSockets server in one message. The server will
@@ -31,34 +31,23 @@ class NonStreamingHashClientProtocol(WebSocketClientProtocol):
    we receive response, we repeat.
    """
 
-   def randomByteString(self, len):
-      """
-      Generate a string of random bytes.
-      """
-      return ''.join([struct.pack("!Q", random.getrandbits(64)) for x in xrange(0, len / 8 + int(len % 8 > 0))])[:len]
-
-   def sendBatch(self):
-      """
-      Send out a WebSockets binary message with random bytes.
-      """
-      data = self.randomByteString(MESSAGE_SIZE)
-      self.sendMessage(data, True)
+   def sendOneMessage(self):
+      data = randomByteString(MESSAGE_SIZE)
+      self.sendMessage(data, binary = True)
 
    def onOpen(self):
-      self.scount = 0
-      ## send a first batch when WS handshake has been completed
-      self.sendBatch()
+      self.count = 0
+      self.sendOneMessage()
 
-   def onMessage(self, msg, binary):
-      print "Digest for message %d computed by server: %s" % (self.scount, msg)
-      self.scount += 1
-      ## upon receiving a batch digest, send another
-      self.sendBatch()
+   def onMessage(self, message, binary):
+      print "Digest for message %d computed by server: %s" % (self.count, message)
+      self.count += 1
+      self.sendOneMessage()
 
 
 if __name__ == '__main__':
 
    factory = WebSocketClientFactory()
-   factory.protocol = NonStreamingHashClientProtocol
+   factory.protocol = MessageBasedHashClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

@@ -32,8 +32,8 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
    def onMessageBegin(self, opcode):
       self.sha256 = hashlib.sha256()
 
-   def onMessageFrame(self, data, reserved):
-      self.sha256.update(str(data))
+   def onMessageFrame(self, frame, reserved):
+      self.sha256.update(str(frame))
       digest = self.sha256.hexdigest()
       self.sendMessage(digest)
       print "Sent digest for frame: %s" % digest

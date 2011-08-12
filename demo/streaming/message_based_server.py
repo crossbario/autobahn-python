@@ -27,9 +27,9 @@ class MessageBasedHashServerProtocol(WebSocketServerProtocol):
    message it receives and sends back the computed digest.
    """
 
-   def onMessage(self, msg, binary):
+   def onMessage(self, message, binary):
       sha256 = hashlib.sha256()
-      sha256.update(msg)
+      sha256.update(message)
       digest = sha256.hexdigest()
       self.sendMessage(digest)
       print "Sent digest for message: %s" % digest

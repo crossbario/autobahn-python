@@ -22,6 +22,8 @@ Python
 
 WebSocket Protocol
 
+  - allow FIN = true on beginMessageFrame instead of endMessage
+
   - WebSocketProtocol.syncSocket() .. fix hack/reentry into Twisted reactor
 
   - Force out outstanding octets before failing connection?
