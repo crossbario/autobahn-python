@@ -27,7 +27,7 @@ FRAME_SIZE = 0x7FFFFFFFFFFFFFFF # 2^63 - This is the maximum imposed by the WS p
 #FRAME_SIZE = 1 * 2**20 # 1M
 
 
-class RandomBytesSender:
+class RandomByteStreamProducer:
    """
    A Twisted Push Producer generating a stream of random octets.
    """
@@ -82,7 +82,7 @@ class RandomBytesSender:
         pass
 
 
-class HashClientProtocol(WebSocketClientProtocol):
+class StreamingHashClientProtocol(WebSocketClientProtocol):
    """
    Streaming WebSockets client that generates stream of random octets
    sent to streaming WebSockets server, which computes a running SHA-256,
@@ -98,7 +98,7 @@ class HashClientProtocol(WebSocketClientProtocol):
       ## when WebSockets handshake is complete, we create our producer,
       ## register and resume it
       ##
-      producer = RandomBytesSender(self)
+      producer = RandomByteStreamProducer(self)
       self.registerProducer(producer, True)
       producer.resumeProducing()
 
@@ -110,6 +110,6 @@ class HashClientProtocol(WebSocketClientProtocol):
 if __name__ == '__main__':
 
    factory = WebSocketClientFactory()
-   factory.protocol = HashClientProtocol
+   factory.protocol = StreamingHashClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

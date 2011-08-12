@@ -26,7 +26,7 @@ from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 BATCH_SIZE = 1 * 2**20
 
 
-class HashServerProtocol(WebSocketServerProtocol):
+class StreamingHashServerProtocol(WebSocketServerProtocol):
    """
    Streaming WebSockets server that computes a running SHA-256 for data
    received. It will respond every BATCH_SIZE bytes with the digest
@@ -90,6 +90,6 @@ class HashServerProtocol(WebSocketServerProtocol):
 if __name__ == '__main__':
 
    factory = WebSocketServerFactory()
-   factory.protocol = HashServerProtocol
+   factory.protocol = StreamingHashServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

@@ -20,36 +20,45 @@ import hashlib, random, struct, binascii
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
-class NonStreamingClientProtocol(WebSocketClientProtocol):
+MESSAGE_SIZE = 10 * 2**20
 
-   def createMsg(self, len):
+
+class NonStreamingHashClientProtocol(WebSocketClientProtocol):
+   """
+   Message-based WebSockets client that generates stream of random octets
+   sent to streaming WebSockets server in one message. The server will
+   respond to us with the SHA-256 computed over message payload. When
+   we receive response, we repeat.
+   """
+
+   def randomByteString(self, len):
+      """
+      Generate a string of random bytes.
+      """
       return ''.join([struct.pack("!Q", random.getrandbits(64)) for x in xrange(0, len / 8 + int(len % 8 > 0))])[:len]
 
+   def sendBatch(self):
+      """
+      Send out a WebSockets binary message with random bytes.
+      """
+      data = self.randomByteString(MESSAGE_SIZE)
+      self.sendMessage(data, True)
+
    def onOpen(self):
-      self.msg = self.createMsg(100 * 2**20)
-      print "created message of length", len(self.msg)
-      #print "message:", binascii.b2a_hex(self.msg)
-      self.sendMessage(self.msg, True)
+      self.scount = 0
+      ## send a first batch when WS handshake has been completed
+      self.sendBatch()
 
    def onMessage(self, msg, binary):
-      print "Message digest computed by server:", msg
-      sha256 = hashlib.sha256()
-      sha256.update(self.msg)
-      digest = sha256.hexdigest()
-      print "Message digest computed by my:    ", digest
-
-
-class NonStreamingClientFactory(WebSocketClientFactory):
-
-   protocol = NonStreamingClientProtocol
-
-   def __init__(self, debug = False):
-      self.path = "/"
-      self.debug = debug
+      print "Digest for message %d computed by server: %s" % (self.scount, msg)
+      self.scount += 1
+      ## upon receiving a batch digest, send another
+      self.sendBatch()
 
 
 if __name__ == '__main__':
 
-   factory = NonStreamingClientFactory()
+   factory = WebSocketClientFactory()
+   factory.protocol = NonStreamingHashClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

@@ -22,28 +22,26 @@ from twisted.python import log
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
-class NonStreamingServerProtocol(WebSocketServerProtocol):
+class NonStreamingHashServerProtocol(WebSocketServerProtocol):
+   """
+   Message-based WebSockets server that computes a SHA-256 for message
+   payload of messages it receives. It sends back the computed digest.
+   """
 
    def onMessage(self, msg, binary):
+      ## upon receiving a message, we compute the SHA-256 digest ..
       sha256 = hashlib.sha256()
       sha256.update(msg)
       digest = sha256.hexdigest()
+
+      ## .. and send that back to the client
       self.sendMessage(digest)
-      self.sendClose()
-      print "computed message digest for client", digest
-
-
-class NonStreamingServerFactory(WebSocketServerFactory):
-
-   protocol = NonStreamingServerProtocol
-
-   def __init__(self, debug = False):
-      self.debug = debug
+      print "Sent digest for message : %s" % digest
 
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
-   factory = NonStreamingServerFactory()
+   factory = WebSocketServerFactory()
+   factory.protocol = NonStreamingHashServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()
