@@ -307,10 +307,14 @@ class WebSocketProtocol(protocol.Protocol):
       ## expecting to be re-entered."
       ##
       try:
-         reactor.doSelect(0)
+         reactor.doIteration(0)
          return True
       except:
          return False # socket has already gone away ..
+
+
+   def registerProducer(self, producer, streaming):
+      self.transport.registerProducer(producer, streaming)
 
 
    def sendData(self, raw, sync = False, chopsize = None):
@@ -1363,6 +1367,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
    def __init__(self, debug = False):
       self.debug = debug
+      self.path = "/"
       random.seed()
 
    def clientConnectionFailed(self, connector, reason):
