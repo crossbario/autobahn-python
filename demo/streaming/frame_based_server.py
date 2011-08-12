@@ -16,32 +16,34 @@
 ##
 ###############################################################################
 
-import sys, hashlib
+import hashlib
 from twisted.internet import reactor
-from twisted.python import log
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
-class NonStreamingHashServerProtocol(WebSocketServerProtocol):
+class FrameBasedHashServerProtocol(WebSocketServerProtocol):
    """
-   Message-based WebSockets server that computes a SHA-256 for message
-   payload of messages it receives. It sends back the computed digest.
+   Frame-based WebSockets server that computes a running SHA-256 for message data
+   received. It will respond after every frame received with the digest computed
+   up to that point. It can receive messages of unlimited number of frames.
+   Digest is reset upon new message.
    """
 
-   def onMessage(self, msg, binary):
-      ## upon receiving a message, we compute the SHA-256 digest ..
-      sha256 = hashlib.sha256()
-      sha256.update(msg)
-      digest = sha256.hexdigest()
+   def onMessageBegin(self, opcode):
+      self.sha256 = hashlib.sha256()
 
-      ## .. and send that back to the client
+   def onMessageFrame(self, data, reserved):
+      self.sha256.update(str(data))
+      digest = self.sha256.hexdigest()
       self.sendMessage(digest)
-      print "Sent digest for message : %s" % digest
+      print "Sent digest for frame: %s" % digest
+
+   def onMessageEnd(self):
+      pass
 
 
 if __name__ == '__main__':
-
    factory = WebSocketServerFactory()
-   factory.protocol = NonStreamingHashServerProtocol
+   factory.protocol = FrameBasedHashServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

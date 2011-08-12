@@ -16,12 +16,12 @@
 ##
 ###############################################################################
 
-import sys, hashlib
+import hashlib
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 
-## We want updates of the running digest every BATCH_SIZE bytes
+## Send running digest every BATCH_SIZE bytes
 ##
 BATCH_SIZE = 1 * 2**20
 
@@ -30,20 +30,11 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
    """
    Streaming WebSockets server that computes a running SHA-256 for data
    received. It will respond every BATCH_SIZE bytes with the digest
-   up to that point.
-
-   This server can run forever in constant memory (more precisely, with a
-   finite upper bound, and with no bugs in GC).
+   up to that point. It can receive messages of unlimited number of frames
+   and frames of unlimited length (actually, up to 2^63, which is the
+   WebSockets protocol imposed limit on frame size). Digest is reset upon
+   new message.
    """
-
-   def sendDigest(self, final = False):
-      digest = self.sha256.hexdigest()
-      self.sendMessage(digest)
-      if not final:
-         print "Sent digest for batch %d : %s.." % (self.count, digest[:8])
-      else:
-         print "Sent final digest for full message : %s" % digest
-
 
    def onMessageBegin(self, opcode):
       self.sha256 = hashlib.sha256()
@@ -51,10 +42,8 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
       self.received = 0
       self.next = BATCH_SIZE
 
-
    def onMessageFrameBegin(self, length, reserved):
-      print "new frame of length %d started" % length
-
+      pass
 
    def onMessageFrameData(self, data):
       length = len(data)
@@ -63,10 +52,16 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
       ## when the data received exceeds the next BATCH_SIZE ..
       if self.received >= self.next:
 
-         ## we compute and send digest up to that chunk ..
+         ## update digest up to batch size
          rest = length - (self.received - self.next)
          self.sha256.update(str(data[:rest]))
-         self.sendDigest()
+
+         ## send digest
+         digest = self.sha256.hexdigest()
+         self.sendMessage(digest)
+         print "Sent digest for batch %d : %s.." % (self.count, digest)
+
+         ## advance to next batch
          self.next += BATCH_SIZE
          self.count += 1
 
@@ -76,19 +71,14 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
          ## otherwise we just update the digest for received data
          self.sha256.update(str(data))
 
-
    def onMessageFrameEnd(self):
       pass
 
-
    def onMessageEnd(self):
-      ## we send the final digest _should_ the message end ..
-      ##
-      self.sendDigest(True)
+      pass
 
 
 if __name__ == '__main__':
-
    factory = WebSocketServerFactory()
    factory.protocol = StreamingHashServerProtocol
    reactor.listenTCP(9000, factory)

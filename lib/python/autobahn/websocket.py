@@ -910,7 +910,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
-         raise Exception("WebSocketProtocol.endMessage invalid in current sending state")
+         raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
       self.sendFrame(opcode = 0, fin = True)
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
