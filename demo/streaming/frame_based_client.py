@@ -33,8 +33,7 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
 
    def sendOneFrame(self):
       data = randomByteString(FRAME_SIZE)
-      self.beginMessageFrame(FRAME_SIZE)
-      self.sendMessageFrameData(data)
+      self.sendMessageFrame(data)
 
    def onOpen(self):
       self.count = 0
