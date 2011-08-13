@@ -55,7 +55,10 @@ class WebSocketProtocol(protocol.Protocol):
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
    MESSAGE_TYPE_TEXT = 1
+   """WebSockets text message type (UTF-8 payload)."""
+
    MESSAGE_TYPE_BINARY = 2
+   """WebSockets binary message type (arbitrary binary payload)."""
 
    ## WebSockets protocol state
    ##
@@ -73,62 +76,122 @@ class WebSocketProtocol(protocol.Protocol):
    ## WebSockets protocol close codes
    ##
    CLOSE_STATUS_CODE_NORMAL = 1000
+   """Normal close of connection."""
+
    CLOSE_STATUS_CODE_GOING_AWAY = 1001
+   """Going away."""
+
    CLOSE_STATUS_CODE_PROTOCOL_ERROR = 1002
+   """Protocol error."""
+
    CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED = 1003
+   """Payload not accepted."""
+
    CLOSE_STATUS_CODE_FRAME_TOO_LARGE = 1004
+   """Frame too large."""
+
    CLOSE_STATUS_CODE_NULL = 1005 # MUST NOT be set in close frame!
+   """No status received. (MUST NOT be used as status code when sending a close)."""
+
    CLOSE_STATUS_CODE_CONNECTION_LOST = 1006 # MUST NOT be set in close frame!
+   """Abnormal close of connection. (MUST NOT be used as status code when sending a close)."""
+
    CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8 = 1007
+   """Invalid UTF-8."""
+
 
    def onOpen(self):
       """
-      Callback when initial handshake was completed. Now you may send messages!
-      Default implementation does nothing.
-
-      Override in derived class.
+      Callback when initial WebSockets handshake was completed. Now you may send messages.
+      Default implementation does nothing. Override in derived class.
       """
       if self.debug:
-         log.msg("onOpen()")
+         log.msg("WebSocketProtocol.onOpen")
 
 
    def onMessageBegin(self, opcode):
+      """
+      Callback when receiving a new message has begun. Default implementation will
+      prepare to buffer message frames. Override in derived class.
+
+      :param opcode: Opcode of message.
+      :type opcode: int
+      """
       self.message_opcode = opcode
       self.message_data = []
 
 
    def onMessageFrameBegin(self, length, reserved):
+      """
+      Callback when receiving a new message frame has begun. Default implementation will
+      prepare to buffer message frame data. Override in derived class.
+
+      :param length: Length of message frame which is received.
+      :type length: int
+      :param reserved: Reserved bits set in frame (an integer from 0 to 7).
+      :type reserved: int
+      """
       self.frame_length = length
       self.frame_reserved = reserved
       self.frame_data = []
 
 
+   def onMessageFrameData(self, payload):
+      """
+      Callback when receiving data witin message frame. Default implementation will
+      buffer data for frame. Override in derived class.
+
+      :param payload: Partial payload for message frame.
+      :type payload: str
+      """
+      self.frame_data.append(payload)
+
+
    def onMessageFrameEnd(self):
+      """
+      Callback when a message frame has been completely received. Default implementation
+      will flatten the buffered frame data and callback onMessageFrame. Override
+      in derived class.
+      """
       data = bytearray().join(self.frame_data)
       self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, data)
       self.onMessageFrame(data, self.frame_reserved)
 
 
-   def onMessageEnd(self):
-      data = bytearray().join(self.message_data)
-      ## FIXME: forward bytearray & opcode
-      ##
-      self.onMessage(str(data), self.message_opcode == 2)
-
-
-   def onMessageFrameData(self, data):
-      self.frame_data.append(data)
-
-
-   def onMessageFrame(self, data, reserved):
-      self.message_data.append(data)
-
-
-   def onMessage(self, data, binary):
+   def onMessageFrame(self, payload, reserved):
       """
-      Callback when complete message was received. Default implementation does nothing.
+      Callback fired when complete message frame has been received. Default implementation
+      will buffer frame for message. Override in derived class.
 
+      :param payload: Message frame payload.
+      :type payload: str
+      :param reserved: Reserved bits set in frame (an integer from 0 to 7).
+      :type reserved: int
+      """
+      self.message_data.append(payload)
+
+
+   def onMessageEnd(self):
+      """
+      Callback when a message has been completely received. Default implementation
+      will flatten the buffered frames and callback onMessage. Override
+      in derived class.
+      """
+      data = bytearray().join(self.message_data)
+      self.onMessage(str(data), self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
+      self.message_opcode = None
+      self.message_data = None
+
+
+   def onMessage(self, payload, binary):
+      """
+      Callback when a complete message was received. Default implementation does nothing.
       Override in derived class.
+
+      :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be an empty string, when message contained no payload.
+      :type payload: str
+      :param binary: If True, payload is binary, otherwise text.
+      :type binary: bool
       """
       if self.debug:
          log.msg("WebSocketProtocol.onMessage")
@@ -137,39 +200,44 @@ class WebSocketProtocol(protocol.Protocol):
    def onPing(self, payload):
       """
       Callback when Ping was received. Default implementation responds
-      with a Pong.
+      with a Pong. Override in derived class.
 
-      Override in derived class.
+      :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
+      :type payload: str
       """
       if self.debug:
-         log.msg("onPing()")
+         log.msg("WebSocketProtocol.onPing")
       self.sendPong(payload)
 
 
    def onPong(self, payload):
       """
       Callback when Pong was received. Default implementation does nothing.
-
       Override in derived class.
+
+      :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
       """
       if self.debug:
-         log.msg("onPong()")
+         log.msg("WebSocketProtocol.onPong")
 
 
    def onClose(self, code, reason):
       """
-      Callback when Close was received. The default implementation answer with Close,
-      which is how a WebSockets server should behave.
+      Callback when Close was received. The default implementation answers by
+      sending a normal Close when no Close was sent before. Otherwise it drops
+      the connection. Override in derived class.
 
-      Override in derived class.
+      :param code: None or close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
+      :type code: int
+      :param reason: None or close reason (when present, a status code MUST have been also be present).
+      :type reason: str
       """
       if self.debug:
-         log.msg("received CLOSE for %s (%s, %s)" % (self.peerstr, code, reason))
-
+         log.msg("WebSocketProtocol.onClose")
       if self.closeAlreadySent:
          self.transport.loseConnection()
       else:
-         self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+         self.sendClose(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
 
 
    def __init__(self):
@@ -714,54 +782,69 @@ class WebSocketProtocol(protocol.Protocol):
       self.sendData(raw, sync, chopsize)
 
 
-   def sendPing(self, payload):
+   def sendPing(self, payload = None):
       """
-      Send out Ping to peer. Payload can be arbitrary, but length must be less than 126 octets.
-      A peer is expected to Pong back the payload a soon as "practical". When more than 1 Ping
-      is outstanding at the peer, the peer may elect to respond only to the last Ping.
+      Send out Ping to peer. A peer is expected to Pong back the payload a soon
+      as "practical". When more than 1 Ping is outstanding at a peer, the peer may
+      elect to respond only to the last Ping.
+
+      :param payload: An optional, arbitrary payload of length < 126 octets.
+      :type payload: str
       """
-      l = len(payload)
-      if l > 125:
-         raise Exception("invalid payload for PING (payload length must be <= 125, was %d)" % l)
-      self.sendFrame(opcode = 9, payload = payload)
+      if payload:
+         l = len(payload)
+         if l > 125:
+            raise Exception("invalid payload for PING (payload length must be <= 125, was %d)" % l)
+         self.sendFrame(opcode = 9, payload = payload)
+      else:
+         self.sendFrame(opcode = 9)
 
 
-   def sendPong(self, payload):
+   def sendPong(self, payload = None):
       """
-      Send out Pong to peer. Payload can be arbitrary, but length must be less than 126 octets.
-      A Pong frame MAY be sent unsolicited.  This serves as a unidirectional heartbeat.
-      A response to an unsolicited pong is "not expected".
+      Send out Pong to peer. A Pong frame MAY be sent unsolicited.
+      This serves as a unidirectional heartbeat. A response to an unsolicited pong is "not expected".
+
+      :param payload: An optional, arbitrary payload of length < 126 octets.
+      :type payload: str
       """
-      l = len(payload)
-      if l > 125:
-         raise Exception("invalid payload for PONG (payload length must be <= 125, was %d)" % l)
-      self.sendFrame(opcode = 10, payload = payload)
+      if payload:
+         l = len(payload)
+         if l > 125:
+            raise Exception("invalid payload for PONG (payload length must be <= 125, was %d)" % l)
+         self.sendFrame(opcode = 10, payload = payload)
+      else:
+         self.sendFrame(opcode = 10)
 
 
-   def sendClose(self, status_code = None, status_reason = None):
-      """
-      Send out close to peer.
+   def sendClose(self, code = None, reason = None):
+      """Send close to WebSockets peer.
+
+      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
+      :type code: int
+      :param reason: An optional close reason (when present, a status code MUST also be present).
+      :type reason: str
       """
       plen = 0
       payload = ""
 
-      if status_code is not None:
+      if code is not None:
 
-         if (not (status_code >= 3000 and status_code <= 3999)) and \
-            (not (status_code >= 4000 and status_code <= 4999)) and \
-            status_code not in [WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL,
-                                WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY,
-                                WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
-                                WebSocketProtocol.CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED,
-                                WebSocketProtocol.CLOSE_STATUS_CODE_FRAME_TOO_LARGE,
-                                WebSocketProtocol.CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8]:
-            raise Exception("invalid status code %d for close frame" % status_code)
+         if (not (code >= 3000 and code <= 3999)) and \
+            (not (code >= 4000 and code <= 4999)) and \
+            code not in [WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL,
+                         WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY,
+                         WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
+                         WebSocketProtocol.CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED,
+                         WebSocketProtocol.CLOSE_STATUS_CODE_FRAME_TOO_LARGE,
+                         WebSocketProtocol.CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8]:
+            raise Exception("invalid status code %d for close frame" % code)
 
-         payload = struct.pack("!H", status_code)
+         payload = struct.pack("!H", code)
          plen = 2
 
-         if status_reason is not None:
-            reason = status_reason.encode("UTF-8")
+         if reason is not None:
+            reason = reason.encode("UTF-8")
             plen += len(reason)
          else:
             reason = ""
@@ -772,14 +855,19 @@ class WebSocketProtocol(protocol.Protocol):
          payload += reason
 
       else:
-         if status_reason is not None and status_reason != "":
-            raise Exception("status reason '%s' without status code in close frame" % status_reason)
+         if reason is not None and reason != "":
+            raise Exception("status reason '%s' without status code in close frame" % reason)
 
       self.sendFrame(opcode = 8, payload = payload)
       self.closeAlreadySent = True
 
 
-   def beginMessage(self, opcode = 1):
+   def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
+      """
+      Begin sending new message.
+
+      :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
+      """
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
@@ -795,21 +883,35 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def beginMessageFrame(self, length, reserved = 0, mask = None):
+      """
+      Begin sending new message frame.
+
+      :param length: Length of frame which is started. Must be >= 0 and <= 2^63.
+      :type length: int
+      :param reserved: Reserved bits for frame (an integer from 0 to 7). Note that reserved != 0 is only legal when an extension has been negoiated which defines semantics.
+      :type reserved: int
+      :param mask: Optional frame mask. When given, this is used. When None and the peer is a client, a mask will be internally generated. For servers None is default.
+      :type mask: str
+      """
       ## check if sending state is valid for this method
       ##
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
          raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state")
 
-      if length > 0x7FFFFFFFFFFFFFFF: # 2**63
-         raise Exception("invalid data frame length (>2^63)")
+      if type(length) is not int or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
+         raise Exception("invalid value for message frame length")
 
-      if reserved != 0:
-         raise Exception("use of reserved bits != 0")
+      if type(reserved) is not int or reserved < 0 or reserved > 7:
+         raise Exception("invalid value for reserved bits")
 
       self.send_message_frame_length = length
       self.send_message_frame_octets_sent = 0
 
       if mask:
+         if type(mask) is not str:
+            raise Exception("mask must be a (byte) string")
+         if len(mask) != 4:
+            raise Exception("mask must have length 4")
          self.send_message_frame_mask = mask
       elif not self.isServer:
          self.send_message_frame_mask = random.getrandbits(32)
@@ -850,12 +952,28 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          raise Exception("invalid payload length")
 
+      ## write message frame header
+      ##
       header = ''.join([chr(b0), chr(b1), el, mv])
       self.transport.write(header)
+
+      ## now we are inside message frame ..
+      ##
       self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME
 
 
-   def sendMessageFrameData(self, payload, sync = False):
+   def sendMessageFrameData(self, payload):
+      """
+      Send out data when within message frame (message was begun, frame was begun).
+      Note that the frame is automatically ended when enough data has been sent
+      that is, there is no endMessageFrame, since you have begun the frame specifying
+      the frame length, which implicitly defined the frame end. This is different from
+      messages, which you begin and end, since a message can contain an unlimited number
+      of frames.
+
+      :param payload: Data to send.
+      :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
+      """
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
@@ -887,8 +1005,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       pl_ba = None
 
-      if sync:
-         self.syncSocket()
+      #if sync:
+      #   self.syncSocket()
 
       ## advance frame payload pointer and check if frame payload was completely sent
       ##
@@ -907,6 +1025,10 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def endMessage(self):
+      """
+      End a previously begun message. No more frames may be sent (for that message). You have to
+      begin a new message before sending again.
+      """
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
@@ -915,9 +1037,19 @@ class WebSocketProtocol(protocol.Protocol):
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
 
+   def sendMessageFrame(self, payload, reserved = 0, mask = None, sync = False):
+      """
+      When a message has begun, send a complete message frame in one go.
+      """
+      self.beginMessageFrame(len(payload), reserved, mask)
+      self.sendMessageFrameData(payload, sync)
+
+
    def sendMessage(self, payload, binary = False, payload_frag_size = None, sync = False):
       """
-      Send out data message. You can send text or binary message, and optionally
+      Send out a message in one go.
+
+      You can send text or binary message, and optionally
       specifiy a payload fragment size. When the latter is given, the payload will
       be split up into frames with payload <= the payload_frag_size given.
       """
@@ -963,12 +1095,8 @@ class HttpException():
 
 class WebSocketServerProtocol(WebSocketProtocol):
    """
-   Server protocol for WebSockets.
+   A Twisted protocol for WebSockets servers.
    """
-
-   ##
-   ## The following set of methods is intended to be overridden in subclasses
-   ##
 
    def onConnect(self, host, path, params, origin, protocols):
       """
@@ -1215,7 +1343,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 class WebSocketServerFactory(protocol.ServerFactory):
    """
-   Server factory for WebSockets.
+   A Twisted factory for WebSockets server protocols.
    """
 
    protocol = WebSocketServerProtocol
