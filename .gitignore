@@ -4,3 +4,4 @@
 /lib/python/dist/*
 /lib/python/autobahn.egg-info*/
 testsuite/websockets/reports/*
+doc/python/_build/*
