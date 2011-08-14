@@ -19,6 +19,7 @@
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
 
+
 class EchoClientProtocol(WebSocketClientProtocol):
 
    def sendHello(self):
@@ -32,17 +33,9 @@ class EchoClientProtocol(WebSocketClientProtocol):
       reactor.callLater(1, self.sendHello)
 
 
-class EchoClientFactory(WebSocketClientFactory):
-
-   protocol = EchoClientProtocol
-
-   def __init__(self, debug = False):
-      self.path = "/"
-      self.debug = debug
-
-
 if __name__ == '__main__':
 
-   factory = EchoClientFactory()
+   factory = WebSocketClientFactory()
+   factory.protocol = EchoClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

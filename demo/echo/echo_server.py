@@ -19,19 +19,15 @@
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
+
 class EchoServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, msg, binary):
       self.sendMessage(msg, binary)
 
 
-class EchoServerFactory(WebSocketServerFactory):
-
-   protocol = EchoServerProtocol
-
-
 if __name__ == '__main__':
-
-   factory = EchoServerFactory()
+   factory = WebSocketServerFactory()
+   factory.protocol = EchoServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

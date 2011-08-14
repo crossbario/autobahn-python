@@ -23,8 +23,9 @@ setup (
    version = '0.3.1',
    description = 'Autobahn WebSockets',
    author = 'Tavendo GmbH',
+   author_email = 'autobahnws@googlegroups.com',
    url = 'http://www.tavendo.de/autobahn',
-   platforms = ('Any',),
+   platforms = ('Any'),
    install_requires = ['Twisted>=11.0'],
    packages = find_packages(),
    zip_safe = False
