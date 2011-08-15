@@ -26,9 +26,9 @@ FRAME_SIZE = 1 * 2**20
 class FrameBasedHashClientProtocol(WebSocketClientProtocol):
    """
    Message-based WebSockets client that generates stream of random octets
-   sent to streaming WebSockets server in one message. The server will
-   respond to us with the SHA-256 computed over message payload. When
-   we receive response, we repeat.
+   sent to WebSockets server as a sequence of frames all in one message.
+   The server will respond to us with the SHA-256 computed over frames.
+   When we receive response, we repeat by sending a new frame.
    """
 
    def sendOneFrame(self):

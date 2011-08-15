@@ -26,9 +26,9 @@ MESSAGE_SIZE = 1 * 2**20
 class MessageBasedHashClientProtocol(WebSocketClientProtocol):
    """
    Message-based WebSockets client that generates stream of random octets
-   sent to streaming WebSockets server in one message. The server will
-   respond to us with the SHA-256 computed over message payload. When
-   we receive response, we repeat.
+   sent to WebSockets server as a sequence of messages. The server will
+   respond to us with the SHA-256 computed over each message. When
+   we receive response, we repeat by sending a new message.
    """
 
    def sendOneMessage(self):

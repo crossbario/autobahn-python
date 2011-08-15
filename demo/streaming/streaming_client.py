@@ -21,58 +21,35 @@ from zope.interface import implements
 from twisted.internet import reactor, interfaces
 from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol
 
-FRAME_SIZE = 0x7FFFFFFFFFFFFFFF # 2^63 - This is the maximum imposed by the WS protocol
-
-
-class RandomByteStreamProducer:
-   """
-   A Twisted Push Producer generating a stream of random octets sending out data
-   in a WebSockets message frame.
-   """
-   implements(interfaces.IPushProducer)
-
-   def __init__(self, proto):
-      self.proto = proto
-      self.started = False
-      self.paused = False
-
-   def pauseProducing(self):
-      self.paused = True
-
-   def resumeProducing(self):
-      self.paused = False
-
-      if not self.started:
-         self.proto.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
-         self.proto.beginMessageFrame(FRAME_SIZE)
-         self.started = True
-
-      while not self.paused:
-         data = randomByteString(1024)
-         if self.proto.sendMessageFrameData(data) <= 0:
-            self.proto.beginMessageFrame(FRAME_SIZE)
-            print "new frame started!"
-
-   def stopProducing(self):
-      pass
+BATCH_SIZE = 1 * 2**20
 
 
 class StreamingHashClientProtocol(WebSocketClientProtocol):
    """
    Streaming WebSockets client that generates stream of random octets
-   sent to streaming WebSockets server, which computes a running SHA-256,
-   which it will send every BATCH_SIZE octets back to us.
+   sent to WebSockets server as a sequence of batches in one frame, in one message.
+   The server computes a running SHA-256, which it will send every BATCH_SIZE octets
+   back to us. When we receive a response, we repeat by sending another batch of data.
    """
+
+   def sendOneBatch(self):
+      data = randomByteString(BATCH_SIZE)
+
+      # Note, that this could complete the frame, when the frame length is reached.
+      # Since the frame length here is 2^63, we don't bother, since it'll take
+      # _very_ long to reach that.
+      self.sendMessageFrameData(data)
 
    def onOpen(self):
       self.count = 0
-      producer = RandomByteStreamProducer(self)
-      self.registerProducer(producer, True)
-      producer.resumeProducing()
+      self.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
+      self.beginMessageFrame(0x7FFFFFFFFFFFFFFF) # 2^63 - This is the maximum imposed by the WS protocol
+      self.sendOneBatch()
 
    def onMessage(self, message, binary):
       print "Digest for batch %d computed by server: %s" % (self.count, message)
       self.count += 1
+      self.sendOneBatch()
 
 
 if __name__ == '__main__':

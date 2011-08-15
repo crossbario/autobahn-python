@@ -59,7 +59,7 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
          ## send digest
          digest = self.sha256.hexdigest()
          self.sendMessage(digest)
-         print "Sent digest for batch %d : %s.." % (self.count, digest)
+         print "Sent digest for batch %d : %s" % (self.count, digest)
 
          ## advance to next batch
          self.next += BATCH_SIZE
