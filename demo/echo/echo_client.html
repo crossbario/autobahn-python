@@ -2,14 +2,17 @@
    <head>
       <script type="text/javascript">
          window.onload = function() {
+
             var ws_uri = "ws://localhost:9000";
-            try {
+
+            if ("WebSocket" in window) {
                webSocket = new WebSocket(ws_uri);
             }
-            catch (e) {
+            else {
                // Firefox 7/8 currently prefixes the WebSocket object
                webSocket = new MozWebSocket(ws_uri);
             }
+
             webSocket.onmessage = function(e) {
                console.log("Got echo: " + e.data);
             }

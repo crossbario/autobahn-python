@@ -27,6 +27,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == '__main__':
+
    factory = WebSocketServerFactory()
    factory.protocol = EchoServerProtocol
    reactor.listenTCP(9000, factory)

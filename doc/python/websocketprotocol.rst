@@ -58,12 +58,6 @@ The advanced API provides you all the necessary methods and callbacks to
 do WebSockets using frame-based processing or even completely streaming
 processing - both sending and receiving.
 
-In the Autobahn source repository, under "demo/streaming/" you can find
-a demonstration of use. The example there implements a WebSockets client
-which sends random bytes to a WebSockets server which computes SHA-256
-for received data. Three possible implementations are shown: a message-
-based, a frame-based and a streaming.
-
 API for frame-based processing:
 
   * :func:`autobahn.websocket.WebSocketProtocol.onMessageBegin`

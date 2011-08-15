@@ -19,11 +19,7 @@
 import hashlib
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
-
-
-## Send running digest every BATCH_SIZE bytes
-##
-BATCH_SIZE = 1 * 2**20
+from streaming_client import BATCH_SIZE
 
 
 class StreamingHashServerProtocol(WebSocketServerProtocol):
