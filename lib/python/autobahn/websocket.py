@@ -898,7 +898,7 @@ class WebSocketProtocol(protocol.Protocol):
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
          raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state")
 
-      if type(length) is not int or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
+      if (not type(length) in [int, long]) or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
          raise Exception("invalid value for message frame length")
 
       if type(reserved) is not int or reserved < 0 or reserved > 7:
