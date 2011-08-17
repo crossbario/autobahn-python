@@ -1,0 +1,116 @@
+ <html>
+   <head>
+      <title>Autobahn WebSockets RPC Demo</title>
+      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script>
+         webSocket = null;
+
+         var calls = new Array();
+
+         function makeid(len)
+         {
+             var text = "";
+             var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+             for( var i=0; i < len; i++ )
+                 text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+             return text;
+         }
+
+         function call(procid, arg)
+         {
+            d = $.Deferred();
+            callid = makeid(16);
+            calls[callid] = d;
+            msg = JSON.stringify(["CALL", procid, callid, arg]);
+            webSocket.send(msg);
+            return d;
+         }
+
+         function done(msg)
+         {
+            alert(msg);
+         }
+
+         function foo(a)
+         {
+            if (a)
+            {
+               $('#foo').fadeOut(1000, done);
+            }
+            else
+            {
+               $('#foo').fadeIn(1000, done);
+            }
+         }
+
+         function test()
+         {
+            //call("square", "sd").always(function (r) { alert("result = " + r); });
+            //call("asyncSum", [1,2,3,4,5]).then(done);
+            //call("sum", [1,2,3,4,5]).then(done);
+
+            // http://forum.jquery.com/topic/a-case-for-deferred-chain
+            call("sum", [1,2,3,4,5]).then(function (x) { call("square", x).then(done); } );
+         }
+
+         $(document).ready(function()
+         {
+            var ws_uri = "ws://localhost:9000";
+
+            if ("WebSocket" in window) {
+               webSocket = new WebSocket(ws_uri);
+            }
+            else {
+               // Firefox 7/8 currently prefixes the WebSocket object
+               webSocket = new MozWebSocket(ws_uri);
+            }
+
+            webSocket.onmessage = function(e)
+            {
+               //console.log("webSocket.onmessage: " + e.data);
+               o = JSON.parse(e.data);
+               if (o[1] in calls)
+               {
+                  if (o[0] == "CALL_RESULT")
+                  {
+                     calls[o[1]].resolve(o[2]);
+                  }
+                  else if (o[0] == "CALL_ERROR")
+                  {
+                     calls[o[1]].reject(o[2]);
+                  }
+                  else
+                  {
+                  }
+                  delete calls[o[1]];
+               }
+            }
+
+            webSocket.onopen = function(e)
+            {
+               console.log("webSocket.onopen");
+            }
+
+            webSocket.onclose = function(e)
+            {
+               console.log("webSocket.onclose");
+            }
+
+            $("a").click(function(event)
+            {
+               alert("As you can see, the link no longer took you to jquery.com");
+               event.preventDefault();
+            });
+         });
+     </script>
+   </head>
+   <body>
+      <a href="http://jquery.com/">jQuery</a>
+      <div style="font-size: 100px;" id="foo">HAHA</div>
+      <button onclick='foo(false);'>Fade In!</button>
+      <button onclick='foo(true);'>Fade Out!</button>
+      <button onclick='test();'>Test</button>
+   </body>
+ </html>

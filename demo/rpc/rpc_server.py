@@ -46,7 +46,7 @@ class RpcServerFactory(AutobahnServerFactory):
    def asyncSum(self, arg):
       print "asyncSum", arg
       d = defer.Deferred()
-      reactor.callLater(1, d.callback, self.sum(arg))
+      reactor.callLater(3, d.callback, self.sum(arg))
       return d
 
    @rpc
