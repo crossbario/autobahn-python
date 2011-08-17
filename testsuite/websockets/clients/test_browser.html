@@ -153,7 +153,7 @@
                   updateStatus("Reports updated.");
                   updateStatus("Test suite finished!");
 
-                  document.getElementById('resultlink').innerHTML = '<a href="../reports/index.html">Check test report</a>';
+                  document.getElementById('resultlink').innerHTML = '<a href="../reports/clients/index.html">Check test report</a>';
                }
          }
 
@@ -197,7 +197,7 @@
    </head>
 
    <body>
-      <h1>WebSockets Protocol Test Driver</h1>
+      <h1>WebSockets Browser Testsuite</h1>
       <p>Provided by <a href="http://www.tavendo.de/autobahn">Autobahn</a> WebSockets.</p><br/>
       <form>
          <p>Fuzzing Server Hostname<br/><input id="hostname" type="text" size="20" maxlength="40"></p>
@@ -205,7 +205,7 @@
          <p>User Agent Identifier<br/><input id="agent" type="text" size="30" maxlength="30"></p>
       </form>
       <br/>
-      <p><button onclick='startTestRun();'>Start Test</button> &nbsp;&nbsp; <i>Status:</i> <span id="statusline">Ready</span></p>
+      <p><button onclick='startTestRun();'>Start Tests</button> &nbsp;&nbsp; <i>Status:</i> <span id="statusline">Ready</span></p>
       <br/>
       <p id="resultlink"></p>
    </body>

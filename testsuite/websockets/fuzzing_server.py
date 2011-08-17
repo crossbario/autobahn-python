@@ -16,16 +16,15 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
 import sys
+from twisted.python import log
+from twisted.internet import reactor
 from autobahn.fuzzing import FuzzingServerFactory
 
-def main():
-   log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports")
-   reactor.listenTCP(9000, factory)
-   reactor.run()
 
 if __name__ == '__main__':
-   main()
+
+   log.startLogging(sys.stdout)
+   factory = FuzzingServerFactory(debug = False, outdir = "reports/clients")
+   reactor.listenTCP(9000, factory)
+   reactor.run()

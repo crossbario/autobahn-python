@@ -16,10 +16,6 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
-from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
 import datetime
@@ -27,6 +23,12 @@ import time
 import random
 import textwrap
 import os
+import re
+import pkg_resources
+from twisted.internet import reactor
+from twisted.python import log
+from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
+from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
 
 
 def getUtcNow():
@@ -923,9 +925,9 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   def __init__(self, debug = False):
+   def __init__(self, debug = False, outdir = "reports/clients"):
       WebSocketServerFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = "reports/clients")
+      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
 
 
 class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
@@ -933,6 +935,14 @@ class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
    def connectionMade(self):
       FuzzingProtocol.connectionMade(self)
       WebSocketClientProtocol.connectionMade(self)
+
+      self.caseAgent = self.factory.agent
+      self.case = self.factory.currentCaseIndex
+      self.Case = Cases[self.case - 1]
+      self.runCase = self.Case(self)
+      self.caseStarted = getUtcNow()
+      print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
+
 
    def connectionLost(self, reason):
       WebSocketClientProtocol.connectionLost(self, reason)
@@ -943,6 +953,64 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
    protocol = FuzzingClientProtocol
 
-   def __init__(self, debug = False):
+   def __init__(self, spec, debug = False, outdir = "reports/servers"):
+
       WebSocketClientFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = "reports/servers")
+      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+
+      self.spec = spec
+      self.specCases = []
+      for c in self.spec["cases"]:
+         if c.find('*') >= 0:
+            s = c.replace('.', '\.').replace('*', '.*')
+            p = re.compile(s)
+            t = []
+            for x in CasesIndices.keys():
+               if p.match(x):
+                  t.append(caseIdtoIdTuple(x))
+            for h in sorted(t):
+               self.specCases.append(caseIdTupletoId(h))
+         else:
+            self.specCases.append(c)
+      print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
+      self.currServer = -1
+      if self.nextServer():
+         if self.nextCase():
+            reactor.connectTCP(self.hostname, self.port, self)
+
+
+   def nextServer(self):
+      self.currSpecCase = -1
+      self.currServer += 1
+      if self.currServer < len(spec["servers"]):
+         s = spec["servers"][self.currServer]
+         self.agent = s["agent"]
+         if self.agent == "AutobahnServer":
+            self.agent = "AutobahnServer/%s" % pkg_resources.get_distribution("autobahn").version
+         self.hostname = s["hostname"]
+         self.port = s["port"]
+         return True
+      else:
+         return False
+
+
+   def nextCase(self):
+      self.currSpecCase += 1
+      if self.currSpecCase < len(self.specCases):
+         self.currentCaseId = self.specCases[self.currSpecCase]
+         self.currentCaseIndex = CasesIndices[self.currentCaseId]
+         return True
+      else:
+         return False
+
+
+   def clientConnectionLost(self, connector, reason):
+      if self.nextCase():
+         connector.connect()
+      else:
+         if self.nextServer():
+            if self.nextCase():
+               reactor.connectTCP(self.hostname, self.port, self)
+         else:
+            self.createReports()
+            reactor.stop()
