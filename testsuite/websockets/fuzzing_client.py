@@ -16,15 +16,15 @@
 ##
 ###############################################################################
 
-import sys
+import sys, json
 from twisted.python import log
 from twisted.internet import reactor
-from autobahn.fuzzing import FuzzingServerFactory
+from autobahn.fuzzing import FuzzingClientFactory
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports/clients")
-   reactor.listenTCP(9000, factory)
+   spec = json.loads(open("fuzzing_client_spec.json").read())
+   factory = FuzzingClientFactory(spec, debug = False, outdir = "reports/servers")
    reactor.run()

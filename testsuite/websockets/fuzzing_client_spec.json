@@ -1,0 +1,4 @@
+{
+   "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000}],
+   "cases": ["*"]
+}

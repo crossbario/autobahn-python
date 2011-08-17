@@ -19,12 +19,19 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
-from autobahn.fuzzing import FuzzingServerFactory
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
+
+
+class WebSocketTestServerProtocol(WebSocketServerProtocol):
+
+   def onMessage(self, msg, binary):
+      self.sendMessage(msg, binary)
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports/clients")
+   factory = WebSocketServerFactory(debug = False)
+   factory.protocol = WebSocketTestServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

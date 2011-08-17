@@ -16,10 +16,6 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.python import log
-from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
 import datetime
@@ -27,6 +23,12 @@ import time
 import random
 import textwrap
 import os
+import re
+import pkg_resources
+from twisted.internet import reactor
+from twisted.python import log
+from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
+from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, caseIdtoIdTuple, caseIdTupletoId
 
 
 def getUtcNow():
@@ -34,13 +36,12 @@ def getUtcNow():
    return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-class FuzzingServerProtocol(WebSocketServerProtocol):
+class FuzzingProtocol:
 
    MAX_WIRE_LOG_DATA = 256
 
-
    def connectionMade(self):
-      WebSocketServerProtocol.connectionMade(self)
+
       self.case = None
       self.runCase = None
       self.caseAgent = None
@@ -63,8 +64,6 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def connectionLost(self, reason):
-
-      WebSocketServerProtocol.connectionLost(self, reason)
 
       if self.runCase:
 
@@ -96,16 +95,16 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def binLogData(self, data):
-      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
-         dd = binascii.b2a_hex(data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA]) + " ..."
+      if len(data) > FuzzingProtocol.MAX_WIRE_LOG_DATA:
+         dd = binascii.b2a_hex(data[:FuzzingProtocol.MAX_WIRE_LOG_DATA]) + " ..."
       else:
          dd = binascii.b2a_hex(data)
       return dd
 
 
    def asciiLogData(self, data):
-      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
-         dd = data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA] + " ..."
+      if len(data) > FuzzingProtocol.MAX_WIRE_LOG_DATA:
+         dd = data[:FuzzingProtocol.MAX_WIRE_LOG_DATA] + " ..."
       else:
          dd = data
       return dd
@@ -119,7 +118,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(data))
          self.wirelog.append(("RO", self.binLogData(d)))
       else:
-         WebSocketServerProtocol.logRxOctets(self, data)
+         WebSocketProtocol.logRxOctets(self, data)
 
 
    def logTxOctets(self, data, sync):
@@ -130,7 +129,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(data))
          self.wirelog.append(("TO", self.binLogData(d), sync))
       else:
-         WebSocketServerProtocol.logTxOctets(self, data, sync)
+         WebSocketProtocol.logTxOctets(self, data, sync)
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
@@ -140,7 +139,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(payload))
          self.wirelog.append(("RF", self.asciiLogData(d), opcode, fin, rsv, masked, mask))
       else:
-         WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
+         WebSocketProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
@@ -150,7 +149,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(payload))
          self.wirelog.append(("TF", self.asciiLogData(d), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
-         WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
+         WebSocketProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
 
    def continueLater(self, delay, fun):
@@ -161,54 +160,6 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
    def killAfter(self, delay):
       self.wirelog.append(("KL", delay))
       reactor.callLater(delay, self.failConnection)
-
-
-   def onConnect(self, host, path, params, origin, protocols):
-      if self.debug:
-         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (self.peerstr, host, path, str(params), origin, str(protocols)))
-
-      if params.has_key("agent"):
-         if len(params["agent"]) > 1:
-            raise Exception("multiple agents specified")
-         self.caseAgent = params["agent"][0]
-
-      if params.has_key("case"):
-         if len(params["case"]) > 1:
-            raise Exception("multiple test cases specified")
-         try:
-            self.case = int(params["case"][0])
-         except:
-            raise Exception("invalid test case ID %s" % params["case"][0])
-
-      if self.case:
-         if self.case >= 1 and self.case <= len(Cases):
-            self.Case = Cases[self.case - 1]
-            self.runCase = self.Case(self)
-         else:
-            raise Exception("case %s not found" % self.case)
-
-      if path == "/runCase":
-         if not self.runCase:
-            raise Exception("need case to run")
-         if not self.caseAgent:
-            raise Exception("need agent to run case")
-         self.caseStarted = getUtcNow()
-         print "Running test case ID %s for user agent %s for peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
-
-      elif path == "/updateReports":
-         if not self.caseAgent:
-            raise Exception("need agent to update reports for")
-         print "Updating reports, requested by peer %s" % self.peerstr
-
-      elif path == "/getCaseCount":
-         pass
-
-      else:
-         print "Entering direct command mode for peer %s" % self.peerstr
-
-      self.path = path
-
-      return None
 
 
    def onOpen(self):
@@ -315,12 +266,10 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                self.sendFrame(opcode = 1, payload = spec.get("payload", ""), payload_len = spec.get("payload_len", None))
 
             else:
-               raise Exception("fuzzing server received unknown command" % obj[0])
+               raise Exception("fuzzing peer received unknown command" % obj[0])
 
 
-class FuzzingServerFactory(WebSocketServerFactory):
-
-   protocol = FuzzingServerProtocol
+class FuzzingFactory:
 
    ## CSS common for all reports
    ##
@@ -567,8 +516,8 @@ class FuzzingServerFactory(WebSocketServerFactory):
       pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
       pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
 
-      pre.wirelog_tcp_closed_by_server {color: #fff; margin: 0; background-color: #008; padding: 2px;}
-      pre.wirelog_tcp_closed_by_client {color: #fff; margin: 0; background-color: #000; padding: 2px;}
+      pre.wirelog_tcp_closed_by_me {color: #fff; margin: 0; background-color: #008; padding: 2px;}
+      pre.wirelog_tcp_closed_by_peer {color: #fff; margin: 0; background-color: #000; padding: 2px;}
    """
 
 
@@ -638,7 +587,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_master))
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
 
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
@@ -760,7 +709,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_detail))
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
@@ -900,12 +849,168 @@ class FuzzingServerFactory(WebSocketServerFactory):
          i += 1
 
       if case["failedByMe"]:
-         f.write('<pre class="wirelog_tcp_closed_by_server">%03d TCP CLOSED BY SERVER</pre>' % i)
+         f.write('<pre class="wirelog_tcp_closed_by_me">%03d TCP CLOSED BY ME</pre>' % i)
       else:
-         f.write('<pre class="wirelog_tcp_closed_by_client">%03d TCP CLOSED BY CLIENT</pre>' % i)
+         f.write('<pre class="wirelog_tcp_closed_by_peer">%03d TCP CLOSED BY PEER</pre>' % i)
       f.write('</div>')
 
       f.write("</body></html>")
 
       f.close()
       return report_filename
+
+
+
+class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
+
+   def connectionMade(self):
+      WebSocketServerProtocol.connectionMade(self)
+      FuzzingProtocol.connectionMade(self)
+
+
+   def connectionLost(self, reason):
+      WebSocketServerProtocol.connectionLost(self, reason)
+      FuzzingProtocol.connectionLost(self, reason)
+
+
+   def onConnect(self, host, path, params, origin, protocols):
+      if self.debug:
+         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (self.peerstr, host, path, str(params), origin, str(protocols)))
+
+      if params.has_key("agent"):
+         if len(params["agent"]) > 1:
+            raise Exception("multiple agents specified")
+         self.caseAgent = params["agent"][0]
+
+      if params.has_key("case"):
+         if len(params["case"]) > 1:
+            raise Exception("multiple test cases specified")
+         try:
+            self.case = int(params["case"][0])
+         except:
+            raise Exception("invalid test case ID %s" % params["case"][0])
+
+      if self.case:
+         if self.case >= 1 and self.case <= len(Cases):
+            self.Case = Cases[self.case - 1]
+            self.runCase = self.Case(self)
+         else:
+            raise Exception("case %s not found" % self.case)
+
+      if path == "/runCase":
+         if not self.runCase:
+            raise Exception("need case to run")
+         if not self.caseAgent:
+            raise Exception("need agent to run case")
+         self.caseStarted = getUtcNow()
+         print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
+
+      elif path == "/updateReports":
+         if not self.caseAgent:
+            raise Exception("need agent to update reports for")
+         print "Updating reports, requested by peer %s" % self.peerstr
+
+      elif path == "/getCaseCount":
+         pass
+
+      else:
+         print "Entering direct command mode for peer %s" % self.peerstr
+
+      self.path = path
+
+      return None
+
+
+class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
+
+   protocol = FuzzingServerProtocol
+
+   def __init__(self, debug = False, outdir = "reports/clients"):
+      WebSocketServerFactory.__init__(self, debug = debug)
+      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+
+
+class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
+
+   def connectionMade(self):
+      FuzzingProtocol.connectionMade(self)
+      WebSocketClientProtocol.connectionMade(self)
+
+      self.caseAgent = self.factory.agent
+      self.case = self.factory.currentCaseIndex
+      self.Case = Cases[self.case - 1]
+      self.runCase = self.Case(self)
+      self.caseStarted = getUtcNow()
+      print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
+
+
+   def connectionLost(self, reason):
+      WebSocketClientProtocol.connectionLost(self, reason)
+      FuzzingProtocol.connectionLost(self, reason)
+
+
+class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
+
+   protocol = FuzzingClientProtocol
+
+   def __init__(self, spec, debug = False, outdir = "reports/servers"):
+
+      WebSocketClientFactory.__init__(self, debug = debug)
+      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+
+      self.spec = spec
+      self.specCases = []
+      for c in self.spec["cases"]:
+         if c.find('*') >= 0:
+            s = c.replace('.', '\.').replace('*', '.*')
+            p = re.compile(s)
+            t = []
+            for x in CasesIndices.keys():
+               if p.match(x):
+                  t.append(caseIdtoIdTuple(x))
+            for h in sorted(t):
+               self.specCases.append(caseIdTupletoId(h))
+         else:
+            self.specCases.append(c)
+      print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
+      self.currServer = -1
+      if self.nextServer():
+         if self.nextCase():
+            reactor.connectTCP(self.hostname, self.port, self)
+
+
+   def nextServer(self):
+      self.currSpecCase = -1
+      self.currServer += 1
+      if self.currServer < len(self.spec["servers"]):
+         s = self.spec["servers"][self.currServer]
+         self.agent = s["agent"]
+         if self.agent == "AutobahnServer":
+            self.agent = "AutobahnServer/%s" % pkg_resources.get_distribution("autobahn").version
+         self.hostname = s["hostname"]
+         self.port = s["port"]
+         return True
+      else:
+         return False
+
+
+   def nextCase(self):
+      self.currSpecCase += 1
+      if self.currSpecCase < len(self.specCases):
+         self.currentCaseId = self.specCases[self.currSpecCase]
+         self.currentCaseIndex = CasesIndices[self.currentCaseId]
+         return True
+      else:
+         return False
+
+
+   def clientConnectionLost(self, connector, reason):
+      if self.nextCase():
+         connector.connect()
+      else:
+         if self.nextServer():
+            if self.nextCase():
+               reactor.connectTCP(self.hostname, self.port, self)
+         else:
+            self.createReports()
+            reactor.stop()

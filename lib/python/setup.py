@@ -20,13 +20,30 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
-   version = '0.3.1',
+   version = '0.3.2',
    description = 'Autobahn WebSockets',
+   long_description = """Twisted-based WebSockets client and server framework.
+   Autobahn includes a ligth-weight, asynchronous RPC/Events over WebSockets protocol.
+   Also supplied is a fuzzing test framework which can test WebSockets client and
+   server implementations.""",
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://www.tavendo.de/autobahn',
    platforms = ('Any'),
    install_requires = ['Twisted>=11.0'],
    packages = find_packages(),
-   zip_safe = False
+   zip_safe = False,
+
+   ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
+   ##
+   classifiers = ["License :: OSI Approved :: Apache Software License",
+                  "Development Status :: 4 - Beta",
+                  "Environment :: Console",
+                  "Framework :: Twisted",
+                  "Intended Audience :: Developers",
+                  "Operating System :: OS Independent",
+                  "Programming Language :: Python",
+                  "Topic :: Internet",
+                  "Topic :: Software Development :: Libraries",
+                  "Topic :: Software Development :: Testing"]
 )
