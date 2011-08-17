@@ -195,7 +195,6 @@ Cases += [Case9_4_1, Case9_4_2, Case9_4_3, Case9_4_4, Case9_4_5, Case9_4_6, Case
 Cases += [Case9_5_1, Case9_5_2, Case9_5_3, Case9_5_4, Case9_5_5, Case9_5_6]
 Cases += [Case9_6_1, Case9_6_2, Case9_6_3, Case9_6_4, Case9_6_5, Case9_6_6]
 
-
 ## Class1_2_3 => '1.2.3'
 ##
 def caseClasstoId(klass):
@@ -205,3 +204,23 @@ def caseClasstoId(klass):
 ##
 def caseClasstoIdTuple(klass):
    return tuple([int(x) for x in klass.__name__[4:].split("_")])
+
+## '1.2.3' => (1, 2, 3)
+##
+def caseIdtoIdTuple(id):
+   return tuple([int(x) for x in id.split('.')])
+
+## (1, 2, 3) => '1.2.3'
+##
+def caseIdTupletoId(idt):
+   return '.'.join([str(x) for x in list(idt)])
+
+
+## Index:
+## "1.2.3" => Index (1-based) of Case1_2_3 in Cases
+##
+CasesIndices = {}
+i = 1
+for c in Cases:
+   CasesIndices[caseClasstoId(c)] = i
+   i += 1
