@@ -18,7 +18,7 @@
 
 from twisted.internet import reactor
 from twisted.python import log
-from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol, HttpException
+from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
 import json
 import binascii
@@ -34,13 +34,12 @@ def getUtcNow():
    return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-class FuzzingServerProtocol(WebSocketServerProtocol):
+class FuzzingProtocol:
 
    MAX_WIRE_LOG_DATA = 256
 
-
    def connectionMade(self):
-      WebSocketServerProtocol.connectionMade(self)
+
       self.case = None
       self.runCase = None
       self.caseAgent = None
@@ -63,8 +62,6 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def connectionLost(self, reason):
-
-      WebSocketServerProtocol.connectionLost(self, reason)
 
       if self.runCase:
 
@@ -96,16 +93,16 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
 
 
    def binLogData(self, data):
-      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
-         dd = binascii.b2a_hex(data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA]) + " ..."
+      if len(data) > FuzzingProtocol.MAX_WIRE_LOG_DATA:
+         dd = binascii.b2a_hex(data[:FuzzingProtocol.MAX_WIRE_LOG_DATA]) + " ..."
       else:
          dd = binascii.b2a_hex(data)
       return dd
 
 
    def asciiLogData(self, data):
-      if len(data) > FuzzingServerProtocol.MAX_WIRE_LOG_DATA:
-         dd = data[:FuzzingServerProtocol.MAX_WIRE_LOG_DATA] + " ..."
+      if len(data) > FuzzingProtocol.MAX_WIRE_LOG_DATA:
+         dd = data[:FuzzingProtocol.MAX_WIRE_LOG_DATA] + " ..."
       else:
          dd = data
       return dd
@@ -119,7 +116,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(data))
          self.wirelog.append(("RO", self.binLogData(d)))
       else:
-         WebSocketServerProtocol.logRxOctets(self, data)
+         WebSocketProtocol.logRxOctets(self, data)
 
 
    def logTxOctets(self, data, sync):
@@ -130,7 +127,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(data))
          self.wirelog.append(("TO", self.binLogData(d), sync))
       else:
-         WebSocketServerProtocol.logTxOctets(self, data, sync)
+         WebSocketProtocol.logTxOctets(self, data, sync)
 
 
    def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
@@ -140,7 +137,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(payload))
          self.wirelog.append(("RF", self.asciiLogData(d), opcode, fin, rsv, masked, mask))
       else:
-         WebSocketServerProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
+         WebSocketProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
@@ -150,7 +147,7 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
          d = str(buffer(payload))
          self.wirelog.append(("TF", self.asciiLogData(d), opcode, fin, rsv, mask, payload_len, chopsize, sync))
       else:
-         WebSocketServerProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
+         WebSocketProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
 
    def continueLater(self, delay, fun):
@@ -315,12 +312,10 @@ class FuzzingServerProtocol(WebSocketServerProtocol):
                self.sendFrame(opcode = 1, payload = spec.get("payload", ""), payload_len = spec.get("payload_len", None))
 
             else:
-               raise Exception("fuzzing server received unknown command" % obj[0])
+               raise Exception("fuzzing peer received unknown command" % obj[0])
 
 
-class FuzzingServerFactory(WebSocketServerFactory):
-
-   protocol = FuzzingServerProtocol
+class FuzzingFactory:
 
    ## CSS common for all reports
    ##
@@ -638,7 +633,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_master))
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
 
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
@@ -760,7 +755,7 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingServerFactory.css_common, FuzzingServerFactory.css_detail))
+      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
@@ -909,3 +904,20 @@ class FuzzingServerFactory(WebSocketServerFactory):
 
       f.close()
       return report_filename
+
+
+
+class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
+
+   def connectionMade(self):
+      WebSocketServerProtocol.connectionMade(self)
+      FuzzingProtocol.connectionMade(self)
+
+   def connectionLost(self, reason):
+      WebSocketServerProtocol.connectionLost(self, reason)
+      FuzzingProtocol.connectionLost(self, reason)
+
+
+class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
+
+   protocol = FuzzingServerProtocol
