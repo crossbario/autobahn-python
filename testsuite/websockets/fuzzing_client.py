@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys
+import sys, json
 from twisted.python import log
 from twisted.internet import reactor
 from autobahn.fuzzing import FuzzingClientFactory

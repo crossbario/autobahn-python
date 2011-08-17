@@ -28,7 +28,7 @@ import pkg_resources
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
-from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple
+from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, caseIdtoIdTuple, caseIdTupletoId
 
 
 def getUtcNow():
@@ -982,8 +982,8 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
    def nextServer(self):
       self.currSpecCase = -1
       self.currServer += 1
-      if self.currServer < len(spec["servers"]):
-         s = spec["servers"][self.currServer]
+      if self.currServer < len(self.spec["servers"]):
+         s = self.spec["servers"][self.currServer]
          self.agent = s["agent"]
          if self.agent == "AutobahnServer":
             self.agent = "AutobahnServer/%s" % pkg_resources.get_distribution("autobahn").version
