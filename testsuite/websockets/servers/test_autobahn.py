@@ -16,17 +16,22 @@
 ##
 ###############################################################################
 
-from setuptools import setup, find_packages
+import sys
+from twisted.python import log
+from twisted.internet import reactor
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
-setup (
-   name = 'autobahn',
-   version = '0.3.2',
-   description = 'Autobahn WebSockets',
-   author = 'Tavendo GmbH',
-   author_email = 'autobahnws@googlegroups.com',
-   url = 'http://www.tavendo.de/autobahn',
-   platforms = ('Any'),
-   install_requires = ['Twisted>=11.0'],
-   packages = find_packages(),
-   zip_safe = False
-)
+
+class WebSocketTestServerProtocol(WebSocketServerProtocol):
+
+   def onMessage(self, msg, binary):
+      self.sendMessage(msg, binary)
+
+
+if __name__ == '__main__':
+
+   log.startLogging(sys.stdout)
+   factory = WebSocketServerFactory(debug = False)
+   factory.protocol = WebSocketTestServerProtocol
+   reactor.listenTCP(9000, factory)
+   reactor.run()
