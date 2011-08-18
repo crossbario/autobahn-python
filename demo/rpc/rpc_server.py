@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+import decimal
 from twisted.internet import reactor, defer
 from twisted.python import log
 from autobahn.autobahn import rpc, AutobahnServerFactory, AutobahnServerProtocol
@@ -24,19 +25,8 @@ from autobahn.autobahn import rpc, AutobahnServerFactory, AutobahnServerProtocol
 
 class RpcServerProtocol(AutobahnServerProtocol):
 
-   pass
-
-
-
-class RpcServerFactory(AutobahnServerFactory):
-
-   protocol = RpcServerProtocol
-
-   def __init__(self, debug):
-      AutobahnServerFactory.__init__(self, debug)
-      #self.registerProcedure("sum", self.sum)
-      #self.registerProcedure("asyncSum", self.asyncSum)
-      #self.registerProcedure("square", self.square)
+   def onOpen(self):
+      self.clear()
 
    @rpc("sum")
    def sum(self, arg):
@@ -53,10 +43,41 @@ class RpcServerFactory(AutobahnServerFactory):
    def square(self, arg):
       return arg * arg
 
+   # 0 / 20 +
+   #
+
+   @rpc
+   def clear(self, arg = None):
+      print "CLEAR"
+      self.op = None
+      self.current = decimal.Decimal(0)
+      return str(self.current)
+
+   @rpc
+   def calc(self, arg):
+      op, num = str(arg[0]), decimal.Decimal(arg[1])
+      print "CALC", op, num
+      if self.op:
+         if self.op == "+":
+            self.current += num
+         elif self.op == "-":
+            self.current -= num
+         elif self.op == "*":
+            self.current *= num
+         elif self.op == "/":
+            self.current /= num
+         self.op = op
+      else:
+         self.op = op
+         self.current = num
+      return str(self.current)
+
+
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = RpcServerFactory(debug = False)
+   factory = AutobahnServerFactory(debug = False)
+   factory.protocol = RpcServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

@@ -42,6 +42,26 @@ def rpc(arg = None):
 
 class AutobahnServerProtocol(WebSocketServerProtocol):
 
+   def __init__(self, debug = False):
+      self.debug = debug
+      self.procs = {}
+      for k in inspect.getmembers(self.__class__, inspect.ismethod):
+         if k[1].__dict__.has_key("_autobahn_rpc_id"):
+            #uri = self.__class__.BASEURI + k[1].__dict__["uri"]
+            uri = k[1].__dict__["_autobahn_rpc_id"]
+            proc = k[1]
+            self.registerProcedure(uri, proc)
+
+   def registerProcedure(self, uri, proc):
+      self.procs[uri] = proc
+      print "registered procedure", proc, "on", uri
+
+   def callProcedure(self, uri, arg):
+      if self.procs.has_key(uri):
+         return self.procs[uri](self, arg)
+      else:
+         raise Exception("no procedure %s" % uri)
+
    def callResult(self, res, callId):
       self.sendMessage(json.dumps(["CALL_RESULT", callId, res]))
 
@@ -59,7 +79,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
                      procId = obj[1]
                      callId = obj[2]
                      arg = obj[3]
-                     d = defer.maybeDeferred(self.factory.callProcedure, procId, arg)
+                     d = defer.maybeDeferred(self.callProcedure, procId, arg)
                      d.addCallback(self.callResult, callId)
                      d.addErrback(self.callError, callId)
                         #res = self.factory.callProcedure(procId, arg)
@@ -83,31 +103,11 @@ class AutobahnServerFactory(WebSocketServerFactory):
 
    protocol = AutobahnServerProtocol
 
-   def __init__(self, debug = False):
-      self.debug = debug
-      self.procs = {}
-      for k in inspect.getmembers(self.__class__, inspect.ismethod):
-         if k[1].__dict__.has_key("_autobahn_rpc_id"):
-            #uri = self.__class__.BASEURI + k[1].__dict__["uri"]
-            uri = k[1].__dict__["_autobahn_rpc_id"]
-            proc = k[1]
-            self.registerProcedure(uri, proc)
-
    def startFactory(self):
       pass
 
    def stopFactory(self):
       pass
-
-   def registerProcedure(self, uri, proc):
-      self.procs[uri] = proc
-      print "registered procedure", proc, "on", uri
-
-   def callProcedure(self, uri, arg):
-      if self.procs.has_key(uri):
-         return self.procs[uri](self, arg)
-      else:
-         raise Exception("no procedure %s" % uri)
 
 
 class AutobahnClientProtocol(WebSocketClientProtocol):
