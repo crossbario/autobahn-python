@@ -27,12 +27,12 @@ def newId():
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
 
 
-def rpc(arg = None):
-   ## @rcp decorator without argument
+def AutobahnRpc(arg = None):
+   ## decorator without argument
    if type(arg) is types.FunctionType:
       arg._autobahn_rpc_id = arg.__name__
       return arg
-   ## @rpc decorator with argument
+   ## decorator with argument
    else:
       def inner(f):
          f._autobahn_rpc_id = arg
