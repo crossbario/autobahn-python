@@ -1,3 +1,17 @@
+
+RPC Open Questions
+==================
+
+1.
+Take dependency on jQuery and use Deferred from there, or
+integrate our own/someone's Deferred with Autobahn JS?
+
+2.
+RPC Server Classes
+- only check for RPC funs on class derived from AB WS Protocol or
+- register(BaseUri, RpcClass)
+
+
 Test Suite
 ==========
 

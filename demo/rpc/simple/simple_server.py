@@ -16,68 +16,38 @@
 ##
 ###############################################################################
 
-import sys
-import decimal
+import sys, math
 from twisted.internet import reactor, defer
 from twisted.python import log
-from autobahn.autobahn import rpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
-class RpcServerProtocol(AutobahnServerProtocol):
+class SimpleServerProtocol(AutobahnServerProtocol):
 
-   def onOpen(self):
-      self.clear()
-
-   @rpc("sum")
-   def sum(self, arg):
-      return reduce(lambda x, y: x + y, arg)
-
-   @rpc
-   def asyncSum(self, arg):
-      print "asyncSum", arg
-      d = defer.Deferred()
-      reactor.callLater(3, d.callback, self.sum(arg))
-      return d
-
-   @rpc
+   @AutobahnRpc
    def square(self, arg):
       return arg * arg
 
-   # 0 / 20 +
-   #
+   @AutobahnRpc
+   def sum(self, arg):
+      return reduce(lambda x, y: x + y, arg)
 
-   @rpc
-   def clear(self, arg = None):
-      print "CLEAR"
-      self.op = None
-      self.current = decimal.Decimal(0)
-      return str(self.current)
+   @AutobahnRpc
+   def sqrt(self, arg):
+      print arg
+      return math.sqrt(arg)
 
-   @rpc
-   def calc(self, arg):
-      op, num = str(arg[0]), decimal.Decimal(arg[1])
-      print "CALC", op, num
-      if self.op:
-         if self.op == "+":
-            self.current += num
-         elif self.op == "-":
-            self.current -= num
-         elif self.op == "*":
-            self.current *= num
-         elif self.op == "/":
-            self.current /= num
-         self.op = op
-      else:
-         self.op = op
-         self.current = num
-      return str(self.current)
-
+   @AutobahnRpc("asum")
+   def asyncSum(self, arg):
+      d = defer.Deferred()
+      reactor.callLater(3, d.callback, self.sum(arg))
+      return d
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = AutobahnServerFactory(debug = False)
-   factory.protocol = RpcServerProtocol
+   factory.protocol = SimpleServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

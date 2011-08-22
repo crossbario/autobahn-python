@@ -1,233 +1,50 @@
  <html>
    <head>
-      <title>Autobahn WebSockets RPC Demo</title>
-      <style>
+      <title>Autobahn WebSockets Simple RPC Demo</title>
 
-      body
-      {
-         font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
-      }
-
-      #result
-      {
-         color: #333;
-         background-color: #fff;
-         padding: 0.2em;
-         min-height: 3em;
-         text-align: right;
-      }
-
-      #calc
-      {
-         background-color: #028ec9;
-         padding: 1em;
-         border-radius: 0.5em;
-      }
-
-      #calc td
-      {
-         height: 100%;
-      }
-
-      #calc button
-      {
-         width: 100%;
-         height: 100%;
-         min-height: 3em;
-         min-width: 3em;
-      }
-
-      </style>
       <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script src="../../../lib/javascript/autobahn.js"></script>
       <script>
-         webSocket = null;
 
-         var calls = new Array();
-
-         function makeid(len)
-         {
-             var text = "";
-             var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-             for( var i=0; i < len; i++ )
-                 text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-             return text;
-         }
-
-         function call(procid, arg)
-         {
-            d = $.Deferred();
-            callid = makeid(16);
-            calls[callid] = d;
-            msg = JSON.stringify(["CALL", procid, callid, arg]);
-            webSocket.send(msg);
-            return d;
-         }
-
-         function done(msg)
-         {
-            alert(msg);
-         }
-
-         function foo(a)
-         {
-            if (a)
-            {
-               $('#foo').fadeOut(1000, done);
-            }
-            else
-            {
-               $('#foo').fadeIn(1000, done);
-            }
-         }
-
-         function test()
-         {
-            //call("square", "sd").always(function (r) { alert("result = " + r); });
-            //call("asyncSum", [1,2,3,4,5]).then(done);
-            //call("sum", [1,2,3,4,5]).then(done);
-
-            // http://forum.jquery.com/topic/a-case-for-deferred-chain
-            call("sum", [1,2,3,4,5]).then(function (x) { call("square", x).then(done); } );
-         }
+         var sess = null;
 
          $(document).ready(function()
          {
+            // To connect to a Autobahn WebSockets RPC server, just
+            // create a new session providing the server URL and (optional)
+            // onOpen and onClose/Error handlers
 
-            console.log(1.1 + 2.2);
-            console.log(0.1 + 0.1 + 0.1 - 0.3);
-            x = 0; for (i = 0; i < 10; ++i) x += 1/10; console.log(x);
-            x = 0; for (i = 0; i < 100; ++i) x += 1/100; console.log(x);
-
-            var ws_uri = "ws://localhost:9000";
-
-            if ("WebSocket" in window) {
-               webSocket = new WebSocket(ws_uri);
-            }
-            else {
-               // Firefox 7/8 currently prefixes the WebSocket object
-               webSocket = new MozWebSocket(ws_uri);
-            }
-
-            webSocket.onmessage = function(e)
-            {
-               //console.log("webSocket.onmessage: " + e.data);
-               o = JSON.parse(e.data);
-               if (o[1] in calls)
-               {
-                  if (o[0] == "CALL_RESULT")
-                  {
-                     calls[o[1]].resolve(o[2]);
-                  }
-                  else if (o[0] == "CALL_ERROR")
-                  {
-                     calls[o[1]].reject(o[2]);
-                  }
-                  else
-                  {
-                  }
-                  delete calls[o[1]];
-               }
-            }
-
-            webSocket.onopen = function(e)
-            {
-               console.log("webSocket.onopen");
-            }
-
-            webSocket.onclose = function(e)
-            {
-               console.log("webSocket.onclose");
-            }
-
-            $("a").click(function(event)
-            {
-               alert("As you can see, the link no longer took you to jquery.com");
-               event.preventDefault();
-            });
+            sess = new ab.Session("ws://localhost:9000", function() { console.log("Connected!"); });
          });
 
-
-         var enterNew = false;
-
-
-         function key_digit(d)
+         function test()
          {
-            var s = $('#result').html();
-            if (enterNew) {
-               if (d == ".") {
-                  s = "0.";
-               } else {
-                  s = d;
-               }
-               enterNew = false;
-            } else {
-               if (d == ".") {
-                  if (s.indexOf(".") == -1) {
-                     s += ".";
-                  }
-               }
-               else {
-                  if (s == "0") {
-                     s = d;
-                  }
-                  else {
-                     s += d;
-                  }
-               }
-            }
-            $('#result').html(s);
+            // Autobahn WebSockets returns a jQuery Deferred object
+            // when a RPC call is initiated
+
+            // http://api.jquery.com/category/deferred-object/
+
+            // call a function and log result on success
+            sess.call("square", 23).then(console.log);
+
+            // call a function and call another function on success
+            sess.call("square", 23).then(function(x) { sess.call("sqrt", x).then(console.log); } );
+
+            // call a function, log on success, show alert on error
+            sess.call("sqrt", -1).then(console.log, function(error) { alert(error); } );
+
+            // call a function with list of numbers as arg
+            sess.call("sum", [1,2,3,4,5]).then(console.log);
+
+            // call a function that takes a long time, call another function
+            // the result of the latter is received first, RPC is really asynchronous
+            sess.call("asum", [1,2,3]).then(console.log);
+            sess.call("sum", [4,5,6]).then(console.log);
          }
 
-         function setresult(res) {
-            console.log(res);
-            $('#result').html(res);
-         }
-
-         function key_op(o) {
-            if (o == "C") {
-               call("clear", [o, null]).then(setresult);
-               enterNew = false;
-            }
-            else if ("+-*/=".indexOf(o) != -1 && !enterNew) {
-               call("calc", [o, $('#result').html()]).then(setresult);
-               enterNew = true;
-            }
-         }
      </script>
    </head>
    <body>
-      <table id="calc">
-         <tr>
-            <td id="result" colspan="5">0</td>
-         </tr>
-         <tr><td style="height: 0.5em;" colspan="5"></td></tr>
-         <tr>
-            <td><button onclick='key_digit("7");'>7</button></td>
-            <td><button onclick='key_digit("8");'>8</button></td>
-            <td><button onclick='key_digit("9");'>9</button></td>
-            <td><button onclick='key_op("/");'>/</button></td>
-            <td rowspan="2"><button onclick='key_op("C");'>C</button></td>
-         </tr>
-         <tr>
-            <td><button onclick='key_digit("4");'>4</button></td>
-            <td><button onclick='key_digit("5");'>5</button></td>
-            <td><button onclick='key_digit("6");'>6</button></td>
-            <td><button onclick='key_op("*");'>*</button></td>
-         </tr>
-         <tr>
-            <td><button onclick='key_digit("1");'>1</button></td>
-            <td><button onclick='key_digit("2");'>2</button></td>
-            <td><button onclick='key_digit("3");'>3</button></td>
-            <td><button onclick='key_op("-");'>-</button></td>
-            <td rowspan="2"><button onclick='key_op("=");'>=</button></td>
-         </tr>
-         <tr>
-            <td colspan="2"><button onclick='key_digit("0");'>0</button></td>
-            <td><button onclick='key_digit(".");'>.</button></td>
-            <td><button onclick='key_op("+");'>+</button></td>
-         </tr>
-      </table>
+      <button onclick="test()">Run Test</button>
    </body>
  </html>
