@@ -26,19 +26,24 @@ from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServer
 class CalculatorServerProtocol(AutobahnServerProtocol):
 
    def onOpen(self):
+
       self.clear()
 
    def clear(self, arg = None):
+
       self.op = None
       self.current = decimal.Decimal(0)
 
    @AutobahnRpc
    def calc(self, arg):
-      #print "CALC", arg
-      op, num = str(arg[0]), decimal.Decimal(arg[1])
+
+      op = arg["op"]
+
       if op == "C":
          self.clear()
          return str(self.current)
+
+      num = decimal.Decimal(arg["num"])
       if self.op:
          if self.op == "+":
             self.current += num
@@ -52,9 +57,11 @@ class CalculatorServerProtocol(AutobahnServerProtocol):
       else:
          self.op = op
          self.current = num
+
       res = str(self.current)
       if op == "=":
          self.clear()
+
       return res
 
 

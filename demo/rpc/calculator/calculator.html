@@ -1,4 +1,4 @@
- <html>
+<html>
    <head>
       <title>Autobahn WebSockets Decimal Calculator Demo</title>
       <style>
@@ -33,9 +33,10 @@
          }
       </style>
       <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
-      <script src="autobahn.js"></script>
+      <script src="../../../lib/javascript/autobahn.js"></script>
       <script>
 
+         var sess = null;
          var clearFirst = false;
 
          function key_digit(d) {
@@ -69,25 +70,26 @@
 
          function key_op(op) {
 
-            arg = [op, $('#calcdisplay').html()];
+            arg = {op: op};
+            if (op != "C") {
+               arg.num = $('#calcdisplay').html();
+            }
 
-            ab.call("calc", arg).then(function (res) { $('#calcdisplay').html(res); },
-                                      function (res) { alert("Error (" + res + ")"); });
+            sess.call("calc", arg).then(function (res) { $('#calcdisplay').html(res); },
+                                        function (res) { alert("Error (" + res + ")"); });
+
             clearFirst = true;
          }
 
-         function doit() {
-            ab.publish("foobar", [Math.random(), Math.random()]);
-         }
-
-         function gotit(res, d) {
-            console.log(res);
-            d.then(gotit);
-         }
-
          $(document).ready(function() {
-            console.log("Using Autobahn v" + ab.version);
-            ab.open("ws://localhost:9000", function() { ab.subscribe("foobar").then(gotit); });
+
+            ab.debug(true);
+            sess = new ab.Session("ws://localhost:9000");
+            sess2 = new ab.Session("ws://localhost:9001", function() { sess2.subscribe("wpcmd").then(console.log); });
+            console.log(sess);
+            console.log(sess2);
+
+            //sess2 = new ab.Session("ws://localhost:9001", function() { sess2.subscribe("wpcmd").then(console.log); });
          });
 
      </script>
@@ -124,7 +126,5 @@
             <td><button onclick='key_op("+");'>+</button></td>
          </tr>
       </table>
-
-      <button onclick='doit();'>Doit</button>
    </body>
  </html>
