@@ -70,27 +70,34 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
       self.sendMessage(json.dumps(["CALL_ERROR", callId, str(res.value)]))
 
    def onMessage(self, msg, binary):
+      #print msg
       if not binary:
          try:
             obj = json.loads(msg)
-            if type(obj) == list and len(obj) == 4:
-               if type(obj[0]) == unicode and type(obj[1]) == unicode and type(obj[2]) == unicode:
-                  if obj[0] == "CALL":
-                     procId = obj[1]
-                     callId = obj[2]
-                     arg = obj[3]
-                     d = defer.maybeDeferred(self.callProcedure, procId, arg)
-                     d.addCallback(self.callResult, callId)
-                     d.addErrback(self.callError, callId)
-                        #res = self.factory.callProcedure(procId, arg)
-                        #self.sendMessage(json.dumps(res))
+            if type(obj) == list:
+               if obj[0] == "CALL":
+                  procId = obj[1]
+                  callId = obj[2]
+                  arg = obj[3]
+                  d = defer.maybeDeferred(self.callProcedure, procId, arg)
+                  d.addCallback(self.callResult, callId)
+                  d.addErrback(self.callError, callId)
+                     #res = self.factory.callProcedure(procId, arg)
+                     #self.sendMessage(json.dumps(res))
 #                     except e:
 #                        print "error " + str(e)
-                  else:
-                     log.msg("unknown message type")
+               elif obj[0] == "SUBSCRIBE":
+                  eventId = obj[1]
+                  self.factory.subscribe(self, eventId)
+                  #self.sendMessage(json.dumps(["SUBSCRIBED", eventId, subscriptionId]))
+                  #else:
+                  #   self.sendMessage(json.dumps(["SUBSCRIBE_ERROR", subscriptionId, "no event '%s'" % eventId]))
+               elif obj[0] == "PUBLISH":
+                  eventId = obj[1]
+                  event = obj[2]
+                  self.factory.onEvent(eventId, event)
                else:
-                  log.msg("invalid type")
-                  print obj
+                  log.msg("unknown message type")
             else:
                log.msg("msg not a list")
          except:
@@ -103,8 +110,25 @@ class AutobahnServerFactory(WebSocketServerFactory):
 
    protocol = AutobahnServerProtocol
 
+   def subscribe(self, proto, eventId):
+      print "AutobahnServerFactory.subscribe", proto, eventId
+      if not self.subscriptions.has_key(eventId):
+         self.subscriptions[eventId] = []
+      self.subscriptions[eventId].append(proto)
+
+   def onEvent(self, eventId, event):
+      #print "AutobahnServerFactory.onEvent", eventId, event
+      if self.subscriptions.has_key(eventId):
+         if len(self.subscriptions[eventId]) > 0:
+            eventObj = ["EVENT", eventId, event]
+            eventJson = json.dumps(eventObj)
+            for proto in self.subscriptions[eventId]:
+               proto.sendMessage(eventJson)
+      else:
+         pass
+
    def startFactory(self):
-      pass
+      self.subscriptions = {}
 
    def stopFactory(self):
       pass

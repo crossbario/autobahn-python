@@ -34,7 +34,7 @@ class CalculatorServerProtocol(AutobahnServerProtocol):
 
    @AutobahnRpc
    def calc(self, arg):
-      print "CALC", arg
+      #print "CALC", arg
       op, num = str(arg[0]), decimal.Decimal(arg[1])
       if op == "C":
          self.clear()
