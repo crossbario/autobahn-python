@@ -161,3 +161,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol):
             d.errback(res)
          else:
             pass
+
+
+class AutobahnClientFactory(WebSocketClientFactory):
+   pass

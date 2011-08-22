@@ -2,6 +2,9 @@
 RPC Open Questions
 ==================
 
+0.
+Order of args: procid, arg OR arg, procid
+
 1.
 Take dependency on jQuery and use Deferred from there, or
 integrate our own/someone's Deferred with Autobahn JS?
@@ -17,7 +20,7 @@ Test Suite
 
 Test Cases
 
-  - UTF-8 Handling
+  - UTF-8 Handling (codecs.getincrementaldecoder('utf-8')())
   - Close
   - Server-to-Client Masking
   - Message Roundtrip Time / Latency

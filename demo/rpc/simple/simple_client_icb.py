@@ -24,37 +24,34 @@ from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
 
 class SimpleClientProtocol(AutobahnClientProtocol):
    """
-   Demonstrates simple RCP calls with Autobahn WebSockets and Twisted Deferreds.
+   Demonstrates the use of the inline callbacks pattern with Twisted Deferreds
+   and Autobahn WebSockets.
    """
+
+   @defer.inlineCallbacks
+   def mysubfun(self, val):
+      print "mysubfun:1", val
+      r1 = yield self.call([1, 2, 3, val], "asum")
+      print "mysubfun:2", r1
+      r2 = yield self.call(r1, "square")
+      print "mysubfun:3", r2
+      defer.returnValue(r2 + 1)
+
+
+   @defer.inlineCallbacks
+   def myfun(self, val):
+      print "myfun:1", val
+      r = yield self.mysubfun(val)
+      print "myfun:2", r
+      defer.returnValue(r * 10)
+
 
    def show(self, result):
       print "SUCCESS:", result
 
-   def alert(self, result):
-      print "ERROR:", result
 
    def onOpen(self):
-      # call a function and log result on success
-      self.call(23, "square").addCallback(self.show)
-
-      # call a function and call another function on success
-      self.call(23, "square").addCallback(self.call, "sqrt").addCallback(self.show)
-
-      # call a function, log on success, show alert on error
-      self.call(-1, "sqrt").addCallbacks(self.show, self.alert)
-
-      # call a function with list of numbers as arg
-      self.call([1, 2, 3, 4, 5], "sum").addCallback(self.show)
-
-      # call a function with list of numbers as arg and call a lambda created inline function on result
-      self.call([1, 2, 3, 4, 5, 6], "sum").addCallback(lambda x: x + 100).addCallback(self.show)
-
-      # call a function that takes a long time, call another function
-      # the result of the latter is received first, RPC is really asynchronous
-      # moreoever, the connection is closed only after the first, slow function returns.
-      #
-      self.call([1, 2, 3], "asum").addCallback(self.show).addCallback(self.sendClose)
-      self.call([4, 5, 6], "sum").addCallback(self.show)
+      self.myfun(42).addCallback(self.show).addCallback(self.sendClose)
 
 
 if __name__ == '__main__':

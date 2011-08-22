@@ -23,6 +23,10 @@ from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServer
 
 
 class SimpleServerProtocol(AutobahnServerProtocol):
+   """
+   Demonstrates creating a server with Autobahn WebSockets that responds
+   to RPC calls.
+   """
 
    @AutobahnRpc
    def square(self, arg):
@@ -39,6 +43,9 @@ class SimpleServerProtocol(AutobahnServerProtocol):
 
    @AutobahnRpc("asum")
    def asyncSum(self, arg):
+      """
+      Simulate a slow function.
+      """
       d = defer.Deferred()
       reactor.callLater(3, d.callback, self.sum(arg))
       return d
