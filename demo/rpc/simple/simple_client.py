@@ -26,7 +26,8 @@ from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
 
 class SimpleClientProtocol(AutobahnClientProtocol):
    """
-   Demonstrates simple RCP calls with Autobahn WebSockets and Twisted Deferreds.
+   Demonstrates simple Remote Procedure Calls (RPC) with
+   Autobahn WebSockets and Twisted Deferreds.
    """
 
    def show(self, result):
@@ -49,7 +50,7 @@ class SimpleClientProtocol(AutobahnClientProtocol):
       tests.append(self.testInlineCallbacks())
 
       ## close when all tests have finished
-      #DeferredList(tests).addCallback(self.close)
+      DeferredList(tests).addCallback(self.close)
 
 
    def testBasicRpc(self):

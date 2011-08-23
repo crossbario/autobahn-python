@@ -1,5 +1,5 @@
-WebSockets Clients
-==================
+WebSocket Clients
+=================
 
 Introduction
 ------------

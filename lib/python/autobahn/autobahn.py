@@ -23,11 +23,12 @@ from twisted.python import log
 from twisted.internet.defer import Deferred, maybeDeferred
 from websocket import WebSocketClientProtocol, WebSocketClientFactory, WebSocketServerFactory, WebSocketServerProtocol, HttpException
 
+
 def newId():
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
 
 
-def AutobahnRpc(arg = None):
+def exportRpc(arg = None):
    ## decorator without argument
    if type(arg) is types.FunctionType:
       arg._autobahn_rpc_id = arg.__name__
@@ -41,23 +42,43 @@ def AutobahnRpc(arg = None):
 
 
 class AutobahnServerProtocol(WebSocketServerProtocol):
+   """
+   Server factory for Autobahn RPC/PubSub.
+   """
 
    def __init__(self, debug = False):
       self.debug = debug
       self.procs = {}
 
+
    def registerForRpc(self, obj, baseUri = ""):
+      """
+      Register an service object for RPC. A service object has methods
+      which are decorated using @exportRpc.
+
+      :param obj: The object to be registered (in this WebSockets session) for RPC.
+      :type obj: Object with methods decorated using @exportRpc.
+      :param baseUri: Optional base URI which is prepended to method names for export.
+      :type baseUri: String.
+      """
       for k in inspect.getmembers(obj.__class__, inspect.ismethod):
          if k[1].__dict__.has_key("_autobahn_rpc_id"):
             uri = baseUri + k[1].__dict__["_autobahn_rpc_id"]
             proc = k[1]
             self.registerProcedure(uri, obj, proc)
 
+
    def registerProcedure(self, uri, obj, proc):
+      ## Internal method for registering a procedure for RPC.
+
       self.procs[uri] = (obj, proc)
-      print "registered procedure", obj, proc, "on", uri
+      if self.debug:
+         log.msg("registered procedure on %s" % uri)
+
 
    def callProcedure(self, uri, arg = None):
+      ## Internal method for calling a procedure invoked via RPC.
+
       if self.procs.has_key(uri):
          m = self.procs[uri]
          if arg:
@@ -68,14 +89,23 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
       else:
          raise Exception("no procedure %s" % uri)
 
+
    def callResult(self, res, callId):
+      ## Internal method for marshaling/sending an RPC success result.
+
       self.sendMessage(json.dumps(["CALL_RESULT", callId, res]))
 
+
    def callError(self, res, callId):
+      ## Internal method for marshaling/sending an RPC error result.
+
 #      self.sendMessage(json.dumps(["CALL_ERROR", callId, res.getErrorMessage()]))
       self.sendMessage(json.dumps(["CALL_ERROR", callId, str(res.value)]))
 
+
    def onMessage(self, msg, binary):
+      ## Internal method handling Autobahn messages received from client.
+
       if not binary:
          try:
             obj = json.loads(msg)
@@ -88,12 +118,12 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
                   d.addCallback(self.callResult, callId)
                   d.addErrback(self.callError, callId)
                elif obj[0] == "SUBSCRIBE":
-                  eventId = obj[1]
-                  self.factory.subscribe(self, eventId)
+                  topic = obj[1]
+                  self.factory.subscribe(self, topic)
                elif obj[0] == "PUBLISH":
-                  eventId = obj[1]
+                  topic = obj[1]
                   event = obj[2]
-                  self.factory.onEvent(eventId, event)
+                  self.factory.publish(topic, event)
                else:
                   log.msg("unknown message type")
             else:
@@ -105,34 +135,49 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
 
 
 class AutobahnServerFactory(WebSocketServerFactory):
+   """
+   Server factory for Autobahn RPC/PubSub.
+   """
 
    protocol = AutobahnServerProtocol
 
-   def subscribe(self, proto, eventId):
-      print "AutobahnServerFactory.subscribe", proto, eventId
-      if not self.subscriptions.has_key(eventId):
-         self.subscriptions[eventId] = []
-      self.subscriptions[eventId].append(proto)
+   def subscribe(self, proto, topic):
+      ## Internal method called from proto to subscribe client for topic.
 
-   def onEvent(self, eventId, event):
-      #print "AutobahnServerFactory.onEvent", eventId, event
-      if self.subscriptions.has_key(eventId):
-         if len(self.subscriptions[eventId]) > 0:
-            eventObj = ["EVENT", eventId, event]
+      if self.debug:
+         log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topic))
+
+      if not self.subscriptions.has_key(topic):
+         self.subscriptions[topic] = []
+      self.subscriptions[topic].append(proto)
+
+
+   def publish(self, topic, event):
+      ## Internal method called from proto to publish an received event
+      ## to all peers subscribed to the event topic.
+
+      if self.subscriptions.has_key(topic):
+         if len(self.subscriptions[topic]) > 0:
+            eventObj = ["EVENT", topic, event]
             eventJson = json.dumps(eventObj)
-            for proto in self.subscriptions[eventId]:
+            for proto in self.subscriptions[topic]:
                proto.sendMessage(eventJson)
       else:
          pass
 
+
    def startFactory(self):
       self.subscriptions = {}
+
 
    def stopFactory(self):
       pass
 
 
 class AutobahnClientProtocol(WebSocketClientProtocol):
+   """
+   Client protocol for Autobahn RPC/PubSub.
+   """
 
    def __init__(self, debug = False):
 
@@ -141,9 +186,8 @@ class AutobahnClientProtocol(WebSocketClientProtocol):
 
 
    def onMessage(self, msg, binary):
+      ## Internal method to handle received Autobahn messages.
 
-      ## handle received Autobahn messages:
-      ## Call Results and Published Events
       obj = json.loads(msg)
       msg_type = obj[0]
       callid = obj[1]
@@ -196,4 +240,8 @@ class AutobahnClientProtocol(WebSocketClientProtocol):
 
 
 class AutobahnClientFactory(WebSocketClientFactory):
-   pass
+   """
+   Client factory for Autobahn RPC/PubSub.
+   """
+
+   protocol = AutobahnClientProtocol

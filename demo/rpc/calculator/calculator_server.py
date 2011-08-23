@@ -20,21 +20,23 @@ import sys
 import decimal
 from twisted.internet import reactor
 from twisted.python import log
-from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
 class CalculatorServerProtocol(AutobahnServerProtocol):
 
-   def onOpen(self):
-
+   def onConnect(self, connectionRequest):
+      self.registerForRpc(self)
       self.clear()
+
 
    def clear(self, arg = None):
 
       self.op = None
       self.current = decimal.Decimal(0)
 
-   @AutobahnRpc
+
+   @exportRpc
    def calc(self, arg):
 
       op = arg["op"]

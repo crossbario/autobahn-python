@@ -43,8 +43,18 @@ class FrameHeader:
 
 
 class HttpException():
+   """
+   Throw an instance of this class to deny a WebSockets connection
+   during handshake in WebSocketServerProtocol.onConnect().
+   """
 
    def __init__(self, code, reason):
+      """
+      :param code: HTTP error code.
+      :type code: int
+      :param reason: HTTP error reason.
+      :type reason: str
+      """
       self.code = code
       self.reason = reason
 

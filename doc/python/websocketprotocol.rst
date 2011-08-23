@@ -1,5 +1,5 @@
-WebSockets Protocol
-===================
+WebSocket Protocol
+==================
 
 Introduction
 ------------
@@ -131,3 +131,9 @@ Classes
              endMessage,
              sendMessageFrame,
              sendMessage
+
+.. autoclass:: autobahn.websocket.ConnectionRequest
+   :members: __init__
+
+.. autoclass:: autobahn.websocket.HttpException
+   :members: __init__

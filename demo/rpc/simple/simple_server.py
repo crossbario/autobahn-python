@@ -19,43 +19,54 @@
 import sys, math
 from twisted.internet import reactor, defer
 from twisted.python import log
-from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
 class SimpleService:
+   """
+   The service class we will export for Remote Procedure Calls (RPC).
 
-   def __init__(self, label):
+   All you need to do is use the @exportRpc decorator on methods
+   you want to provide for RPC and register a class instance in the
+   server factory (see below).
+
+   The method will be exported under the Python method name, or
+   under the (optional) name you can provide as an argument to the
+   decorator (see asyncSum()).
+   """
+
+   def __init__(self, label = "FooBar"):
       self.setlabel(label)
 
-   @AutobahnRpc
+   @exportRpc
    def getlabel(self):
       return self.label
 
-   @AutobahnRpc
+   @exportRpc
    def setlabel(self, label):
       self.label = "*** " + label + " ***"
 
-   @AutobahnRpc
+   @exportRpc
    def add(self, x, y):
       return x + y
 
-   @AutobahnRpc
+   @exportRpc
    def sub(self, x, y):
       return x - y
 
-   @AutobahnRpc
+   @exportRpc
    def square(self, x):
       return x * x
 
-   @AutobahnRpc
+   @exportRpc
    def sum(self, list):
       return reduce(lambda x, y: x + y, list)
 
-   @AutobahnRpc
+   @exportRpc
    def sqrt(self, x):
       return math.sqrt(x)
 
-   @AutobahnRpc("asum")
+   @exportRpc("asum")
    def asyncSum(self, list):
       """
       Simulate a slow function.
@@ -67,12 +78,18 @@ class SimpleService:
 
 class SimpleServerProtocol(AutobahnServerProtocol):
    """
-   Demonstrates creating a server with Autobahn WebSockets that responds
-   to RPC calls.
+   Demonstrates creating a server with Autobahn WebSockets
+   that responds to RPC calls.
    """
 
    def onConnect(self, connectionRequest):
-      self.svc1 = SimpleService("FooBar")
+
+      # when a client connects, we can check if we
+      # want to accept here, and if so, we create
+      # instances of our service classes ..
+      self.svc1 = SimpleService()
+
+      # .. and register them for RPC. that's it.
       self.registerForRpc(self.svc1)
 
 
