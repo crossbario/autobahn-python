@@ -42,6 +42,29 @@ class FrameHeader:
       self.mask_array = mask_array
 
 
+class HttpException():
+
+   def __init__(self, code, reason):
+      self.code = code
+      self.reason = reason
+
+
+class ConnectionRequest():
+   """
+   Thin-wrapper for WebSockets connection request information
+   provided in WebSocketServerProtocol.onConnect when WebSockets
+   client establishes a connection to WebSockets server.
+   """
+   def __init__(self, peer, peerstr, host, path, params, origin, protocols):
+      self.peer = peer
+      self.peerstr = peerstr
+      self.host = host
+      self.path = path
+      self.params = params
+      self.origin = origin
+      self.protocols = protocols
+
+
 class WebSocketProtocol(protocol.Protocol):
    """
    A Twisted Protocol class for WebSockets. This class is used by both WebSocket
@@ -1087,24 +1110,25 @@ class WebSocketProtocol(protocol.Protocol):
             i += payload_frag_size
 
 
-class HttpException():
-   def __init__(self, code, reason):
-      self.code = code
-      self.reason = reason
-
-
 class WebSocketServerProtocol(WebSocketProtocol):
    """
    A Twisted protocol for WebSockets servers.
    """
 
-   def onConnect(self, host, path, params, origin, protocols):
+   def onConnect(self, connectionRequest):
       """
-      Callback when new WebSocket client connection is established.
-      Throw HttpException when you don't want to accept WebSocket connection.
-      Return accepted protocol from list of protocols provided by client or None.
+      Callback fired during WebSocket handshake when new WebSocket client
+      connection is to be established.
 
-      Override in derived class.
+      Throw HttpException when you don't want to accept the WebSocket
+      connection request.
+
+      When you want to accept the connection, return accepted subprotocol
+      from list of protocols provided by client or None to speak
+      the base WS protocol without extensions.
+
+      :param connectionRequest: WebSocket connection request information.
+      :type connectionRequest: ConnectionRequest
       """
       return None
 
@@ -1279,7 +1303,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## may return a protocol from the protocols provided by client or None.
          ##
          try:
-            protocol = self.onConnect(self.http_request_host, self.http_request_path, self.http_request_params, self.websocket_origin, self.websocket_protocols)
+            connectionRequest = ConnectionRequest(self.peer, self.peerstr, self.http_request_host, self.http_request_path, self.http_request_params, self.websocket_origin, self.websocket_protocols)
+            protocol = self.onConnect(connectionRequest)
             if protocol and not (protocol in self.websocket_protocols):
                raise Exception("protocol accepted must be from the list client sent or null")
          except HttpException, e:

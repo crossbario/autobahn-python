@@ -873,22 +873,22 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
       FuzzingProtocol.connectionLost(self, reason)
 
 
-   def onConnect(self, host, path, params, origin, protocols):
+   def onConnect(self, connectionRequest):
       if self.debug:
-         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (self.peerstr, host, path, str(params), origin, str(protocols)))
+         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (connectionRequest.peerstr, connectionRequest.host, connectionRequest.path, str(connectionRequest.params), connectionRequest.origin, str(connectionRequest.protocols)))
 
-      if params.has_key("agent"):
-         if len(params["agent"]) > 1:
+      if connectionRequest.params.has_key("agent"):
+         if len(connectionRequest.params["agent"]) > 1:
             raise Exception("multiple agents specified")
-         self.caseAgent = params["agent"][0]
+         self.caseAgent = connectionRequest.params["agent"][0]
 
-      if params.has_key("case"):
-         if len(params["case"]) > 1:
+      if connectionRequest.params.has_key("case"):
+         if len(connectionRequest.params["case"]) > 1:
             raise Exception("multiple test cases specified")
          try:
-            self.case = int(params["case"][0])
+            self.case = int(connectionRequest.params["case"][0])
          except:
-            raise Exception("invalid test case ID %s" % params["case"][0])
+            raise Exception("invalid test case ID %s" % connectionRequest.params["case"][0])
 
       if self.case:
          if self.case >= 1 and self.case <= len(Cases):
@@ -897,26 +897,26 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
          else:
             raise Exception("case %s not found" % self.case)
 
-      if path == "/runCase":
+      if connectionRequest.path == "/runCase":
          if not self.runCase:
             raise Exception("need case to run")
          if not self.caseAgent:
             raise Exception("need agent to run case")
          self.caseStarted = getUtcNow()
-         print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
+         print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, connectionRequest.peerstr)
 
-      elif path == "/updateReports":
+      elif connectionRequest.path == "/updateReports":
          if not self.caseAgent:
             raise Exception("need agent to update reports for")
-         print "Updating reports, requested by peer %s" % self.peerstr
+         print "Updating reports, requested by peer %s" % connectionRequest.peerstr
 
-      elif path == "/getCaseCount":
+      elif connectionRequest.path == "/getCaseCount":
          pass
 
       else:
-         print "Entering direct command mode for peer %s" % self.peerstr
+         print "Entering direct command mode for peer %s" % connectionRequest.peerstr
 
-      self.path = path
+      self.path = connectionRequest.path
 
       return None
 
