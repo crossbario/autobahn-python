@@ -22,33 +22,58 @@ from twisted.python import log
 from autobahn.autobahn import AutobahnRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
+class SimpleService:
+
+   def __init__(self, label):
+      self.setlabel(label)
+
+   @AutobahnRpc
+   def getlabel(self):
+      return self.label
+
+   @AutobahnRpc
+   def setlabel(self, label):
+      self.label = "*** " + label + " ***"
+
+   @AutobahnRpc
+   def add(self, x, y):
+      return x + y
+
+   @AutobahnRpc
+   def sub(self, x, y):
+      return x - y
+
+   @AutobahnRpc
+   def square(self, x):
+      return x * x
+
+   @AutobahnRpc
+   def sum(self, list):
+      return reduce(lambda x, y: x + y, list)
+
+   @AutobahnRpc
+   def sqrt(self, x):
+      return math.sqrt(x)
+
+   @AutobahnRpc("asum")
+   def asyncSum(self, list):
+      """
+      Simulate a slow function.
+      """
+      d = defer.Deferred()
+      reactor.callLater(3, d.callback, self.sum(list))
+      return d
+
+
 class SimpleServerProtocol(AutobahnServerProtocol):
    """
    Demonstrates creating a server with Autobahn WebSockets that responds
    to RPC calls.
    """
 
-   @AutobahnRpc
-   def square(self, arg):
-      return arg * arg
-
-   @AutobahnRpc
-   def sum(self, arg):
-      return reduce(lambda x, y: x + y, arg)
-
-   @AutobahnRpc
-   def sqrt(self, arg):
-      print arg
-      return math.sqrt(arg)
-
-   @AutobahnRpc("asum")
-   def asyncSum(self, arg):
-      """
-      Simulate a slow function.
-      """
-      d = defer.Deferred()
-      reactor.callLater(3, d.callback, self.sum(arg))
-      return d
+   def onConnect(self, connectionRequest):
+      self.svc1 = SimpleService("FooBar")
+      self.registerForRpc(self.svc1)
 
 
 if __name__ == '__main__':

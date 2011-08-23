@@ -20,7 +20,7 @@ import json
 import random
 import inspect, types
 from twisted.python import log
-from twisted.internet import defer
+from twisted.internet.defer import Deferred, maybeDeferred
 from websocket import WebSocketClientProtocol, WebSocketClientFactory, WebSocketServerFactory, WebSocketServerProtocol, HttpException
 
 def newId():
@@ -45,20 +45,26 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
    def __init__(self, debug = False):
       self.debug = debug
       self.procs = {}
-      for k in inspect.getmembers(self.__class__, inspect.ismethod):
+
+   def registerForRpc(self, obj, baseUri = ""):
+      for k in inspect.getmembers(obj.__class__, inspect.ismethod):
          if k[1].__dict__.has_key("_autobahn_rpc_id"):
-            #uri = self.__class__.BASEURI + k[1].__dict__["uri"]
-            uri = k[1].__dict__["_autobahn_rpc_id"]
+            uri = baseUri + k[1].__dict__["_autobahn_rpc_id"]
             proc = k[1]
-            self.registerProcedure(uri, proc)
+            self.registerProcedure(uri, obj, proc)
 
-   def registerProcedure(self, uri, proc):
-      self.procs[uri] = proc
-      print "registered procedure", proc, "on", uri
+   def registerProcedure(self, uri, obj, proc):
+      self.procs[uri] = (obj, proc)
+      print "registered procedure", obj, proc, "on", uri
 
-   def callProcedure(self, uri, arg):
+   def callProcedure(self, uri, arg = None):
       if self.procs.has_key(uri):
-         return self.procs[uri](self, arg)
+         m = self.procs[uri]
+         if arg:
+            args = tuple(arg)
+            return m[1](m[0], *args)
+         else:
+            return m[1](m[0])
       else:
          raise Exception("no procedure %s" % uri)
 
@@ -70,7 +76,6 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
       self.sendMessage(json.dumps(["CALL_ERROR", callId, str(res.value)]))
 
    def onMessage(self, msg, binary):
-      #print msg
       if not binary:
          try:
             obj = json.loads(msg)
@@ -78,20 +83,13 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
                if obj[0] == "CALL":
                   procId = obj[1]
                   callId = obj[2]
-                  arg = obj[3]
-                  d = defer.maybeDeferred(self.callProcedure, procId, arg)
+                  arg = obj[3:]
+                  d = maybeDeferred(self.callProcedure, procId, arg)
                   d.addCallback(self.callResult, callId)
                   d.addErrback(self.callError, callId)
-                     #res = self.factory.callProcedure(procId, arg)
-                     #self.sendMessage(json.dumps(res))
-#                     except e:
-#                        print "error " + str(e)
                elif obj[0] == "SUBSCRIBE":
                   eventId = obj[1]
                   self.factory.subscribe(self, eventId)
-                  #self.sendMessage(json.dumps(["SUBSCRIBED", eventId, subscriptionId]))
-                  #else:
-                  #   self.sendMessage(json.dumps(["SUBSCRIBE_ERROR", subscriptionId, "no event '%s'" % eventId]))
                elif obj[0] == "PUBLISH":
                   eventId = obj[1]
                   event = obj[2]
@@ -100,8 +98,8 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
                   log.msg("unknown message type")
             else:
                log.msg("msg not a list")
-         except:
-            log.msg("JSON parse error")
+         except Exception, e:
+            log.msg("JSON parse error " + str(e))
       else:
          log.msg("binary message")
 
@@ -137,18 +135,15 @@ class AutobahnServerFactory(WebSocketServerFactory):
 class AutobahnClientProtocol(WebSocketClientProtocol):
 
    def __init__(self, debug = False):
+
       WebSocketClientProtocol.__init__(self, debug)
       self.calls = {}
 
-   def call(self, arg, procid):
-      callid = newId()
-      d = defer.Deferred()
-      self.calls[callid] = d
-      msg = json.dumps(["CALL", procid, callid, arg])
-      self.sendMessage(msg)
-      return d
 
    def onMessage(self, msg, binary):
+
+      ## handle received Autobahn messages:
+      ## Call Results and Published Events
       obj = json.loads(msg)
       msg_type = obj[0]
       callid = obj[1]
@@ -161,6 +156,43 @@ class AutobahnClientProtocol(WebSocketClientProtocol):
             d.errback(res)
          else:
             pass
+
+
+   def call(self, *args):
+      """
+      Perform a remote-procedure call (RPC). The first argument is the procedure
+      ID (mandatory). Subsequent positional arguments can be provided (must be
+      JSON serializable). The return value is a Twisted Deferred.
+      """
+
+      procid = args[0]
+      callid = newId()
+      d = Deferred()
+      self.calls[callid] = d
+      a = ["CALL", procid, callid]
+      a.extend(args[1:])
+      msg = json.dumps(a)
+      self.sendMessage(msg)
+      return d
+
+
+   def rcall(self, *args):
+      """
+      Similar to call(), can be used for less verbose chaining of RPC calls (see
+      tutorial for details).
+
+      The second argument is the procedure ID (mandatory). The first argument can
+      be either None, in which case the RPC has no argument, or not None, in which
+      case it is the first positional RPC argument. Any arguments args[2:] can
+      provide further positional arguments to the RPC.
+      """
+
+      a = []
+      a.append(args[1]) # procedure ID
+      if args[0]:
+         a.append(args[0]) # result from previous deferred
+         a.extend(args[2:]) # new args
+      return self.call(*a)
 
 
 class AutobahnClientFactory(WebSocketClientFactory):
