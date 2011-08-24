@@ -1145,8 +1145,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
    def connectionMade(self):
       WebSocketProtocol.connectionMade(self)
       if self.debug:
-         log.msg("WebSocketServiceConnection.connectionMade")
-         log.msg("connection accepted from %s" % self.peerstr)
+         log.msg("WebSocketServerProtocol - connection accepted from peer %s" % self.peerstr)
       self.http_request = None
       self.http_headers = {}
       self.isServer = True

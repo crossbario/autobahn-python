@@ -106,6 +106,9 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
    def onMessage(self, msg, binary):
       ## Internal method handling Autobahn messages received from client.
 
+      if self.debug:
+         log.msg("AutobahnServerProtocol message received : %s" % str(msg))
+
       if not binary:
          try:
             obj = json.loads(msg)
@@ -156,6 +159,9 @@ class AutobahnServerFactory(WebSocketServerFactory):
       ## Internal method called from proto to publish an received event
       ## to all peers subscribed to the event topic.
 
+      if self.debug:
+         log.msg("publish event %s for topic %s" % (str(event), topic))
+
       if self.subscriptions.has_key(topic):
          if len(self.subscriptions[topic]) > 0:
             eventObj = ["EVENT", topic, event]
@@ -167,11 +173,14 @@ class AutobahnServerFactory(WebSocketServerFactory):
 
 
    def startFactory(self):
+      if self.debug:
+         log.msg("AutobahnServerFactory starting")
       self.subscriptions = {}
 
 
    def stopFactory(self):
-      pass
+      if self.debug:
+         log.msg("AutobahnServerFactory stopped")
 
 
 class AutobahnClientProtocol(WebSocketClientProtocol):
