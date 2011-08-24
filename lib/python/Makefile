@@ -4,7 +4,7 @@ egg:
 	python setup.py bdist_egg
 
 install:
-	easy_install -v ./dist/autobahn-0.4-py2.7.egg
+	easy_install -v ./dist/autobahn-0.4.0-py2.7.egg
 
 clean:
 	rm -rf ./build
