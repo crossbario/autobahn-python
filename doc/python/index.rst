@@ -41,8 +41,7 @@ Contents
    websocketprotocol
    websocketclient
    websocketserver
-   autobahnclient
-   autobahnserver
+   autobahnprotocol
 
 
 Protocol Classes

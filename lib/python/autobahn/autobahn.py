@@ -22,10 +22,7 @@ import inspect, types
 from twisted.python import log
 from twisted.internet.defer import Deferred, maybeDeferred
 from websocket import WebSocketClientProtocol, WebSocketClientFactory, WebSocketServerFactory, WebSocketServerProtocol, HttpException
-
-
-def newId():
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
+from qnamemap import QnameMap
 
 
 def exportRpc(arg = None):
@@ -41,7 +38,70 @@ def exportRpc(arg = None):
       return inner
 
 
-class AutobahnServerProtocol(WebSocketServerProtocol):
+class AutobahnProtocol:
+
+   MESSAGE_TYPEID_NULL           = 0
+   """
+   Placeholder for message type of no message.
+   """
+
+   MESSAGE_TYPEID_PREFIX         = 1
+   """
+   Client-to-server message establishing a URI prefix to be used in QNames.
+   """
+
+   MESSAGE_TYPEID_CALL           = 2
+   """
+   Client-to-server message initiating an RPC.
+   """
+
+   MESSAGE_TYPEID_CALL_RESULT    = 3
+   """
+   Server-to-client message returning the result of a successful RPC.
+   """
+
+   MESSAGE_TYPEID_CALL_ERROR     = 4
+   """
+   Server-to-client message returning the error of a failed RPC.
+   """
+
+   MESSAGE_TYPEID_SUBSCRIBE      = 5
+   """
+   Client-to-server message subscribing to a topic.
+   """
+
+   MESSAGE_TYPEID_UNSUBSCRIBE    = 6
+   """
+   Client-to-server message unsubscribing from a topic.
+   """
+
+   MESSAGE_TYPEID_PUBLISH        = 7
+   """
+   Client-to-server message publishing an event to a topic.
+   """
+
+   MESSAGE_TYPEID_EVENT          = 8
+   """
+   Server-to-client message providing the event of a (subscribed) topic.
+   """
+
+
+   ERROR_DEFAULT_URI = "http://autobahn/ontology/error/generic"
+   ERROR_DEFAULT_DESCRIPTION = "generic error"
+
+
+   def _newid(self):
+      return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
+
+
+   def _protocolError(self, reason):
+      if self.debug:
+         log.msg("Closing Autobahn session on protocol violation : %s" % reason)
+      #self.failConnection()
+      self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Autobahn RPC/PubSub protocol violation ('%s')" % reason)
+
+
+class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
    """
    Server factory for Autobahn RPC/PubSub.
    """
@@ -65,10 +125,10 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
          if k[1].__dict__.has_key("_autobahn_rpc_id"):
             uri = baseUri + k[1].__dict__["_autobahn_rpc_id"]
             proc = k[1]
-            self.registerProcedure(uri, obj, proc)
+            self._registerProcedure(uri, obj, proc)
 
 
-   def registerProcedure(self, uri, obj, proc):
+   def _registerProcedure(self, uri, obj, proc):
       ## Internal method for registering a procedure for RPC.
 
       self.procs[uri] = (obj, proc)
@@ -76,7 +136,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
          log.msg("registered procedure on %s" % uri)
 
 
-   def callProcedure(self, uri, arg = None):
+   def _callProcedure(self, uri, arg = None):
       ## Internal method for calling a procedure invoked via RPC.
 
       if self.procs.has_key(uri):
@@ -90,17 +150,41 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
          raise Exception("no procedure %s" % uri)
 
 
-   def callResult(self, res, callId):
+   def _sendCallResult(self, result, callid):
       ## Internal method for marshaling/sending an RPC success result.
 
-      self.sendMessage(json.dumps(["CALL_RESULT", callId, res]))
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
+      try:
+         o = json.dumps(msg)
+      except:
+         raise Exception("call result not JSON serializable")
+
+      self.sendMessage(o)
 
 
-   def callError(self, res, callId):
+   def _sendCallError(self, error, callid):
       ## Internal method for marshaling/sending an RPC error result.
 
-#      self.sendMessage(json.dumps(["CALL_ERROR", callId, res.getErrorMessage()]))
-      self.sendMessage(json.dumps(["CALL_ERROR", callId, str(res.value)]))
+      eargs = error.value.args
+
+      if len(eargs) == 0:
+         erroruri = AutobahnProtocol.ERROR_DEFAULT_URI
+         errordesc = AutobahnProtocol.ERROR_DEFAULT_DESCRIPTION
+      elif len(eargs) == 1:
+         if type(eargs[0]) not in [str, unicode]:
+            raise Exception("invalid type for exception description")
+         erroruri = AutobahnProtocol.ERROR_DEFAULT_URI
+         errordesc = eargs[0]
+      else:
+         if type(eargs[0]) not in [str, unicode]:
+            raise Exception("invalid type for exception URI")
+         if type(eargs[1]) not in [str, unicode]:
+            raise Exception("invalid type for exception description")
+         erroruri = eargs[0]
+         errordesc = eargs[1]
+
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, erroruri, errordesc]
+      self.sendMessage(json.dumps(msg))
 
 
    def onMessage(self, msg, binary):
@@ -113,20 +197,35 @@ class AutobahnServerProtocol(WebSocketServerProtocol):
          try:
             obj = json.loads(msg)
             if type(obj) == list:
-               if obj[0] == "CALL":
-                  procId = obj[1]
-                  callId = obj[2]
+
+               ## Call Message
+               ##
+               if obj[0] == AutobahnProtocol.MESSAGE_TYPEID_CALL:
+                  procuri = obj[1]
+                  callid = obj[2]
                   arg = obj[3:]
-                  d = maybeDeferred(self.callProcedure, procId, arg)
-                  d.addCallback(self.callResult, callId)
-                  d.addErrback(self.callError, callId)
-               elif obj[0] == "SUBSCRIBE":
+                  d = maybeDeferred(self._callProcedure, procuri, arg)
+                  d.addCallback(self._sendCallResult, callid)
+                  d.addErrback(self._sendCallError, callid)
+
+               ## Subscribe Message
+               ##
+               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_SUBSCRIBE:
                   topic = obj[1]
                   self.factory.subscribe(self, topic)
-               elif obj[0] == "PUBLISH":
+
+               ## Unsubscribe Message
+               ##
+               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_UNSUBSCRIBE:
+                  pass
+
+               ## Publish Message
+               ##
+               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_PUBLISH:
                   topic = obj[1]
                   event = obj[2]
                   self.factory.publish(topic, event)
+
                else:
                   log.msg("unknown message type")
             else:
@@ -183,7 +282,7 @@ class AutobahnServerFactory(WebSocketServerFactory):
          log.msg("AutobahnServerFactory stopped")
 
 
-class AutobahnClientProtocol(WebSocketClientProtocol):
+class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
    """
    Client protocol for Autobahn RPC/PubSub.
    """
@@ -192,60 +291,157 @@ class AutobahnClientProtocol(WebSocketClientProtocol):
 
       WebSocketClientProtocol.__init__(self, debug)
       self.calls = {}
+      self.qnames = QnameMap()
 
 
    def onMessage(self, msg, binary):
       ## Internal method to handle received Autobahn messages.
 
-      obj = json.loads(msg)
-      msg_type = obj[0]
-      callid = obj[1]
-      res = obj[2]
-      d = self.calls.pop(callid, None)
-      if d:
-         if msg_type == "CALL_RESULT":
-            d.callback(res)
-         elif msg_type == "CALL_ERROR":
-            d.errback(res)
+      if binary:
+         self._protocolError("binary message received")
+         return
+
+      try:
+         obj = json.loads(msg)
+      except:
+         self._protocolError("message payload not valid JSON")
+         return
+
+      if type(obj) != list:
+         self._protocolError("message payload not a list")
+         return
+
+      if len(obj) < 1:
+         self._protocolError("message without message type")
+
+      if type(obj[0]) != int:
+         self._protocolError("message type not an integer")
+
+      msgtype = obj[0]
+
+      if msgtype not in [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, AutobahnProtocol.MESSAGE_TYPEID_EVENT]:
+         self._protocolError("invalid message type '%d'" % msgtype)
+
+      if msgtype in [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR]:
+         if len(obj) < 2:
+            self._protocolError("call result/error message without callid")
+            return
+         if type(obj[1]) not in [unicode, str]:
+            self._protocolError("invalid type for callid in call result/error message")
+            return
+         callid = str(obj[1])
+         d = self.calls.pop(callid, None)
+         if d:
+            if len(obj) != 3:
+               self._protocolError("call result/error message invalid length")
+               return
+            if msgtype == AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT:
+               result = obj[2]
+               d.callback(result)
+            elif msgtype == AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR:
+               if type(obj[2]) not in [unicode, str]:
+                  self._protocolError("invalid type for errorid in call error message")
+                  return
+               erroruri = str(obj[2])
+               d.errback(erroruri)
+            else:
+               raise Exception("logic error")
          else:
-            pass
+            if self.debug:
+               log.msg("callid not found for received call result/error message")
+      elif msgtype == AutobahnProtocol.MESSAGE_TYPEID_EVENT:
+         pass
+      else:
+         raise Exception("logic error")
 
 
    def call(self, *args):
       """
       Perform a remote-procedure call (RPC). The first argument is the procedure
-      ID (mandatory). Subsequent positional arguments can be provided (must be
+      URI (mandatory). Subsequent positional arguments can be provided (must be
       JSON serializable). The return value is a Twisted Deferred.
       """
 
-      procid = args[0]
-      callid = newId()
+      if len(args) < 1:
+         raise Exception("missing procedure URI")
+
+      if type(args[0]) not in [unicode, str]:
+         raise Exception("invalid type for procedure URI")
+
+      procuri = args[0]
+      while True:
+         callid = self._newid()
+         if not self.calls.has_key(callid):
+            break
       d = Deferred()
       self.calls[callid] = d
-      a = ["CALL", procid, callid]
-      a.extend(args[1:])
-      msg = json.dumps(a)
-      self.sendMessage(msg)
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL, callid, procuri]
+      msg.extend(args[1:])
+
+      try:
+         o = json.dumps(msg)
+      except:
+         raise Exception("call argument(s) not JSON serializable")
+
+      self.sendMessage(o)
       return d
 
 
-   def rcall(self, *args):
+   def prefix(self, prefix, uri):
       """
-      Similar to call(), can be used for less verbose chaining of RPC calls (see
-      tutorial for details).
+      Establishes a prefix to be used in QNames instead of URIs having that
+      prefix for both client-to-server and server-to-client messages.
 
-      The second argument is the procedure ID (mandatory). The first argument can
-      be either None, in which case the RPC has no argument, or not None, in which
-      case it is the first positional RPC argument. Any arguments args[2:] can
-      provide further positional arguments to the RPC.
+      :param prefix: Prefix used in Qnames.
+      :type prefix: str
+      :param uri: URI (partial) that this prefix will resolve to.
+      :type uri: str
       """
 
-      a = []
-      a.append(args[1]) # procedure ID
-      if args[0]:
-         a.append(args[0]) # result from previous deferred
-         a.extend(args[2:]) # new args
-      return self.call(*a)
+      if type(prefix) != str:
+         raise Exception("invalid type for prefix")
+
+      if type(uri) not in [unicode, str]:
+         raise Exception("invalid type for URI")
+
+      if self.qnames.get(prefix):
+         raise Exception("prefix already defined")
+
+      self.qnames.set(prefix, uri)
+
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_PREFIX, prefix, uri]
+
+      self.sendMessage(json.dumps(msg))
+
+
+   def publish(self, topicuri, event):
+      """
+      Publish an event under a topic URI. The latter may be abbreviated using a
+      Qname which has been previously defined using prefix(). The event must
+      be JSON serializable.
+
+      :param topicuri: The topic URI or Qname.
+      :type topicuri: str
+      :param event: Event to be published (can be anything JSON serializable) or None.
+      :type  event: value
+      """
+
+      if type(topicuri) not in [unicode, str]:
+         raise Exception("invalid type for URI")
+
+      if QnameMap.isQname(topicuri):
+         if not self.qnames.resolve(topicuri):
+            raise Exception("undefined qname used")
+
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event]
+
+      try:
+         o = json.dumps(msg)
+      except:
+         raise Exception("event argument not JSON serializable")
+
+      self.sendMessage(o)
+
 
 
 class AutobahnClientFactory(WebSocketClientFactory):

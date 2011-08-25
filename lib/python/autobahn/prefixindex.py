@@ -16,9 +16,7 @@
 ##
 ###############################################################################
 
-import websocket
-import autobahn
-import fuzzing
-import case
-import qnamemap
-import prefixindex
+class PrefixIndex:
+
+   def __init__(self):
+      self.index = {}

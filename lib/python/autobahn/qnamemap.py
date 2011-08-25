@@ -16,9 +16,28 @@
 ##
 ###############################################################################
 
-import websocket
-import autobahn
-import fuzzing
-import case
-import qnamemap
-import prefixindex
+class QnameMap:
+
+   def isQname(str):
+      i = str.find(":")
+      if i > 0 and str[i+1] != "/":
+         return True
+      else:
+         return False
+
+   def __init__(self):
+      self.index = {}
+
+   def get(self, prefix):
+      return self.index.get(prefix, None)
+
+   def set(self, prefix, uri):
+      self.index[prefix] = uri
+
+   def resolve(self, str):
+      i = str.find(":")
+      if i > 0:
+         prefix = str[:i]
+         if str[i+1] != "/" and self.index.has_key(prefix):
+            return self.index[prefix] + str[i+1:]
+      return None
