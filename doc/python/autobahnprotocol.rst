@@ -10,7 +10,10 @@ you derive from to implement Autobahn RPC/PubSub servers.
 
 
 .. autoclass:: autobahn.autobahn.AutobahnServerProtocol
-   :members: registerForRpc, publish
+   :members: registerForRpc,
+             registerMethodForRpc,
+             registerProcedureForRpc,
+             publish
 
 .. autoclass:: autobahn.autobahn.AutobahnServerFactory
 

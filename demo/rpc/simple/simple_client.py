@@ -32,8 +32,9 @@ class SimpleClientProtocol(AutobahnClientProtocol):
    def show(self, result):
       print "SUCCESS:", result
 
-   def alert(self, result):
-      print "ERROR:", result
+   def alert(self, e):
+      erroruri, errodesc = e.value.args
+      print "ERROR: %s ('%s')" % (erroruri, errodesc)
 
    def done(self, *args):
       self.sendClose()
@@ -51,8 +52,8 @@ class SimpleClientProtocol(AutobahnClientProtocol):
       d3 = self.call("square", 23).addCallback(lambda res: \
                          self.call("sqrt", res).addCallback(self.show))
 
-      #d3 = self.call("sqrt", -1).addCallbacks(self.show, self.alert)
-      
+      d4 = self.call("sqrt", -1).addCallbacks(self.show, self.alert)
+
       #d4 = self.call("sum", [1, 2, 3, 4, 5]).addCallback(self.show)
 
       #d5 = self.call("asum", [1, 2, 3]).addCallback(self.show)
@@ -60,7 +61,7 @@ class SimpleClientProtocol(AutobahnClientProtocol):
       #d6 = self.call("sum", [4, 5, 6]).addCallback(self.show)
 
 #      DeferredList([d1, d2, d3, d4, d5, d6]).addCallback(self.done)
-      DeferredList([d2, d3]).addCallback(self.done)
+      DeferredList([d2, d3, d4]).addCallback(self.done)
 
 
 if __name__ == '__main__':

@@ -22,6 +22,8 @@ Increase Timeout on performance tests. Maybe make it an option.
 
 Test Cases
 
+  - allow "fail connection" = "immediate TCP close" OR "WS close handshake"
+
   - UTF-8 Handling (codecs.getincrementaldecoder('utf-8')())
   - Close
   - Server-to-Client Masking
