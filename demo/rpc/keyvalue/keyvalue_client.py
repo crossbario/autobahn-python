@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+from functools import partial
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
@@ -25,24 +26,19 @@ from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
 
 class KeyValueClientProtocol(AutobahnClientProtocol):
 
-   def show(self, result):
-      print "SUCCESS:", result
-
-   def alert(self, e):
-      erroruri, errodesc = e.value.args
-      print "ERROR: %s ('%s')" % (erroruri, errodesc)
-
    def done(self, *args):
       self.sendClose()
 
+   def show(self, key, value):
+      print key, value
+
+   def get(self, keys):
+      for key in keys:
+         self.call("keyvalue:get", key).addCallback(lambda value, key = key: self.show(key, value))
 
    def onOpen(self):
-
       self.prefix("keyvalue", "http://example.com/simple/keyvalue#")
-
-      d1 = self.call("keyvalue:get", "otto").addCallbacks(self.show)
-
-      DeferredList([d1]).addCallback(self.done)
+      self.call("keyvalue:keys").addCallbacks(self.get).addCallback(self.done)
 
 
 if __name__ == '__main__':

@@ -41,8 +41,7 @@ class KeyValue:
 
    @exportRpc
    def get(self, key):
-      k = str(key)
-      return self.store.get(k, None)
+      return self.store.get(str(k), None)
 
    @exportRpc
    def keys(self):

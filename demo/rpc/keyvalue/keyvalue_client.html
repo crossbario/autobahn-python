@@ -22,7 +22,7 @@
             sess.call("keyvalue:set", "heinz", {name: "Heinzelmann", karma: 666});
             sess.call("keyvalue:set", "otto", {name: "Otto der Dritte", karma: 50});
             sess.call("keyvalue:get", "heinz").then(console.log);
-            sess.call("keyvalue:get").then(console.log);
+            sess.call("keyvalue:keys").then(console.log);
          }
 
      </script>
