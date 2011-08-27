@@ -1,5 +1,6 @@
 *.pyc
 *.pyo
+*.dat
 /lib/python/build/*
 /lib/python/dist/*
 /lib/python/autobahn.egg-info*/

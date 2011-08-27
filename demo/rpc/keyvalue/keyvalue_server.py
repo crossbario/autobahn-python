@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys, math
+import sys, math, shelve
 from twisted.internet import reactor, defer
 from twisted.python import log
 from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
@@ -24,22 +24,29 @@ from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerPr
 
 class KeyValue:
    """
-   Simple, non-persistent key-value store.
+   Simple, persistent key-value store.
    """
 
-   def __init__(self):
-      self.store = {}
+   def __init__(self, filename):
+      self.store = shelve.open(filename)
 
    @exportRpc
    def set(self, key, value):
-      self.store[key] = value
+      k = str(key)
+      if value:
+         self.store[k] = value
+      else:
+         if self.store.has_key(k):
+            del self.store[k]
 
    @exportRpc
-   def get(self, key = None):
-      if key:
-         return self.store.get(key, None)
-      else:
-         return self.store
+   def get(self, key):
+      k = str(key)
+      return self.store.get(k, None)
+
+   @exportRpc
+   def keys(self):
+      return self.store.keys()
 
 
 class KeyValueServerProtocol(AutobahnServerProtocol):
@@ -63,7 +70,7 @@ class KeyValueServerFactory(AutobahnServerFactory):
 
       ## the key-value store resides on the factory object, since it is to
       ## be shared among all client connections
-      self.keyvalue = KeyValue()
+      self.keyvalue = KeyValue("keyvalue.dat")
 
 
 if __name__ == '__main__':

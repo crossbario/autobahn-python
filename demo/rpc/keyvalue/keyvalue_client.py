@@ -23,11 +23,7 @@ from twisted.internet.defer import Deferred, DeferredList
 from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
 
 
-class SimpleClientProtocol(AutobahnClientProtocol):
-   """
-   Demonstrates simple Remote Procedure Calls (RPC) with
-   Autobahn WebSockets and Twisted Deferreds.
-   """
+class KeyValueClientProtocol(AutobahnClientProtocol):
 
    def show(self, result):
       print "SUCCESS:", result
@@ -42,37 +38,17 @@ class SimpleClientProtocol(AutobahnClientProtocol):
 
    def onOpen(self):
 
-      #d1 = self.call("square", 23).addCallback(self.show)
-
-      self.prefix("calc", "http://example.com/simple/calc#")
       self.prefix("keyvalue", "http://example.com/simple/keyvalue#")
 
-      # prints 23
-      d2 = self.call("calc:square", 23).addCallback(lambda res: \
-                         self.call("calc:sqrt", res)).addCallback(self.show)
+      d1 = self.call("keyvalue:get", "otto").addCallbacks(self.show)
 
-      # prints 23
-      d3 = self.call("calc:square", 23).addCallback(lambda res: \
-                         self.call("calc:sqrt", res).addCallback(self.show))
-
-      d4 = self.call("calc:sqrt", -1).addCallbacks(self.show, self.alert)
-
-      d5 = self.call("keyvalue:get", "otto").addCallbacks(self.show, self.alert)
-
-      #d4 = self.call("sum", [1, 2, 3, 4, 5]).addCallback(self.show)
-
-      #d5 = self.call("asum", [1, 2, 3]).addCallback(self.show)
-
-      #d6 = self.call("sum", [4, 5, 6]).addCallback(self.show)
-
-#      DeferredList([d1, d2, d3, d4, d5, d6]).addCallback(self.done)
-      DeferredList([d2, d3, d4, d5]).addCallback(self.done)
+      DeferredList([d1]).addCallback(self.done)
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = AutobahnClientFactory(debug = False)
-   factory.protocol = SimpleClientProtocol
+   factory.protocol = KeyValueClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()
