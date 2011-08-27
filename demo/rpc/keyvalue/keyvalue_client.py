@@ -32,7 +32,7 @@ class SimpleClientProtocol(AutobahnClientProtocol):
    def show(self, result):
       print "SUCCESS:", result
 
-   def logerror(self, e):
+   def alert(self, e):
       erroruri, errodesc = e.value.args
       print "ERROR: %s ('%s')" % (erroruri, errodesc)
 
@@ -42,25 +42,31 @@ class SimpleClientProtocol(AutobahnClientProtocol):
 
    def onOpen(self):
 
+      #d1 = self.call("square", 23).addCallback(self.show)
+
       self.prefix("calc", "http://example.com/simple/calc#")
+      self.prefix("keyvalue", "http://example.com/simple/keyvalue#")
 
-      d1 = self.call("calc:square", 23).addCallback(self.show)
-
-      d2 = self.call("calc:add", 23, 7).addCallback(self.show)
-
-      d3 = self.call("calc:sum", [1, 2, 3, 4, 5]).addCallback(self.show)
-
-      d4 = self.call("calc:square", 23).addCallback(lambda res: \
+      # prints 23
+      d2 = self.call("calc:square", 23).addCallback(lambda res: \
                          self.call("calc:sqrt", res)).addCallback(self.show)
 
-      d5 = self.call("calc:sqrt", -1).addCallbacks(self.show, self.logerror)
-      d6 = self.call("calc:square", 1001).addCallbacks(self.show, self.logerror)
+      # prints 23
+      d3 = self.call("calc:square", 23).addCallback(lambda res: \
+                         self.call("calc:sqrt", res).addCallback(self.show))
 
-      d7 = self.call("calc:asum", [1, 2, 3]).addCallback(self.show)
-      d8 = self.call("calc:sum", [4, 5, 6]).addCallback(self.show)
+      d4 = self.call("calc:sqrt", -1).addCallbacks(self.show, self.alert)
 
-      ## we want to shutdown the client exactly when all deferreds are finished
-      DeferredList([d1, d2, d3, d4, d5, d6, d7, d8]).addCallback(self.done)
+      d5 = self.call("keyvalue:get", "otto").addCallbacks(self.show, self.alert)
+
+      #d4 = self.call("sum", [1, 2, 3, 4, 5]).addCallback(self.show)
+
+      #d5 = self.call("asum", [1, 2, 3]).addCallback(self.show)
+
+      #d6 = self.call("sum", [4, 5, 6]).addCallback(self.show)
+
+#      DeferredList([d1, d2, d3, d4, d5, d6]).addCallback(self.done)
+      DeferredList([d2, d3, d4, d5]).addCallback(self.done)
 
 
 if __name__ == '__main__':

@@ -22,9 +22,9 @@ from twisted.python import log
 from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
-class SimpleService:
+class Calc:
    """
-   The service class we will export for Remote Procedure Calls (RPC).
+   A simple calc service we will export for Remote Procedure Calls (RPC).
 
    All you need to do is use the @exportRpc decorator on methods
    you want to provide for RPC and register a class instance in the
@@ -34,17 +34,6 @@ class SimpleService:
    under the (optional) name you can provide as an argument to the
    decorator (see asyncSum()).
    """
-
-   def __init__(self, label = "FooBar"):
-      self.setlabel(label)
-
-   @exportRpc
-   def getlabel(self):
-      return self.label
-
-   @exportRpc
-   def setlabel(self, label):
-      self.label = "*** " + label + " ***"
 
    @exportRpc
    def add(self, x, y):
@@ -56,6 +45,9 @@ class SimpleService:
 
    @exportRpc
    def square(self, x):
+      if x > 1000:
+         ## raise a custom exception
+         raise Exception("http://example.com/error#number_too_big", "number %d too big to square" % x)
       return x * x
 
    @exportRpc
@@ -68,9 +60,7 @@ class SimpleService:
 
    @exportRpc("asum")
    def asyncSum(self, list):
-      """
-      Simulate a slow function.
-      """
+      ## Simulate a slow function.
       d = defer.Deferred()
       reactor.callLater(3, d.callback, self.sum(list))
       return d
@@ -78,8 +68,8 @@ class SimpleService:
 
 class SimpleServerProtocol(AutobahnServerProtocol):
    """
-   Demonstrates creating a server with Autobahn WebSockets
-   that responds to RPC calls.
+   Demonstrates creating a simple server with Autobahn WebSockets that
+   responds to RPC calls.
    """
 
    def onConnect(self, connectionRequest):
@@ -87,10 +77,10 @@ class SimpleServerProtocol(AutobahnServerProtocol):
       # when a client connects, we can check if we
       # want to accept here, and if so, we create
       # instances of our service classes ..
-      self.svc1 = SimpleService()
+      self.calc = Calc()
 
       # .. and register them for RPC. that's it.
-      self.registerForRpc(self.svc1)
+      self.registerForRpc(self.calc, "http://example.com/simple/calc#")
 
 
 if __name__ == '__main__':

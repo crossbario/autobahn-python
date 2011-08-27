@@ -1,0 +1,33 @@
+ <html>
+   <head>
+      <title>Autobahn WebSockets Simple Remote Key-Value Store Demo</title>
+
+      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script src="../../../lib/javascript/autobahn.js"></script>
+      <script>
+
+         var sess = null;
+
+         $(document).ready(function()
+         {
+            sess = new ab.Session("ws://localhost:9000", function() {
+                                                            console.log("Connected!");
+                                                            sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
+            });
+
+         });
+
+         function test()
+         {
+            sess.call("keyvalue:set", "heinz", {name: "Heinzelmann", karma: 666});
+            sess.call("keyvalue:set", "otto", {name: "Otto der Dritte", karma: 50});
+            sess.call("keyvalue:get", "heinz").then(console.log);
+            sess.call("keyvalue:get").then(console.log);
+         }
+
+     </script>
+   </head>
+   <body>
+      <button onclick="test()">Run Test</button>
+   </body>
+ </html>

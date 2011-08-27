@@ -13,45 +13,47 @@
             // To connect to a Autobahn WebSockets RPC server, just
             // create a new session providing the server URL and (optional)
             // onOpen and onClose/Error handlers
+            sess = new ab.Session("ws://localhost:9000", function() {
+                                                            console.log("Connected!");
+                                                            // we register a prefix so we can abbreviate procedure URIs later
+                                                            sess.prefix("calc", "http://example.com/simple/calc#");
+            });
 
-            sess = new ab.Session("ws://localhost:9000",
-                                  function() { console.log("Connected!"); });
          });
+
+         function logerror(erroruri, errordesc) {
+            console.log(erroruri + ' ("' + errordesc + '")');
+         }
 
          function test()
          {
             // Autobahn WebSockets returns a jQuery Deferred object
-            // when a RPC call is initiated
-
-            // http://api.jquery.com/category/deferred-object/
+            // when a RPC call is initiated (http://api.jquery.com/category/deferred-object)
 
             // call a function and log result on success
-            //sess.call("square", 23).then(console.log);
+            sess.call("calc:square", 23).then(console.log);
 
-            // call a function and call another function on success
-            
-            // prints 529
-            sess.call("square", 23).then(function(res) {
-                                             return sess.call("sqrt", res);
-                                         }).then(console.log);
-
-            // prints 23
-            sess.call("square", 23).then(function(res) {
-                                             sess.call("sqrt", res).then(console.log);
-                                         });
-
-
-            // call a function, log on success, show alert on error
-            //sess.call("sqrt", -1).then(console.log,
-            //                           function(error) { alert(error); });
+            // call a function with multiple arguments
+            sess.call("calc:add", 23, 7).then(console.log);
 
             // call a function with list of numbers as arg
-            //sess.call("sum", [1,2,3,4,5]).then(console.log);
+            sess.call("calc:sum", [1, 2, 3, 4, 5]).then(console.log);
+
+            // call a function and call another function on success
+            sess.call("calc:square", 23).then(function(res) {
+                                                   sess.call("calc:sqrt", res).then(console.log);
+                                              });
+
+            // call a function, log on success, handle error
+            sess.call("calc:sqrt", -1).then(console.log, logerror);
+
+            // demonstrates how we can throw (see server) and receive a custom error
+            sess.call("calc:square", 1001).then(console.log, logerror);
 
             // call a function that takes a long time, call another function
             // the result of the latter is received first, RPC is really asynchronous
-            //sess.call("asum", [1,2,3]).then(console.log);
-            //sess.call("sum", [4,5,6]).then(console.log);
+            sess.call("calc:asum", [1, 2, 3]).then(console.log);
+            sess.call("calc:sum", [4, 5, 6]).then(console.log);
          }
 
      </script>

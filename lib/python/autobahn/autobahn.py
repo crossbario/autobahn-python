@@ -88,8 +88,10 @@ class AutobahnProtocol:
    """
 
 
-   ERROR_DEFAULT_URI = "http://autobahn/ontology/error/generic"
-   ERROR_DEFAULT_DESCRIPTION = "generic error"
+   ERROR_URI_BASE = "http://autobahn.tavendo.de/error#"
+
+   ERROR_URI_GENERIC = ERROR_URI_BASE + "generic"
+   ERROR_DESC_GENERIC = "generic error"
 
 
    def _newid(self):
@@ -210,12 +212,12 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       eargs = error.value.args
 
       if len(eargs) == 0:
-         erroruri = AutobahnProtocol.ERROR_DEFAULT_URI
-         errordesc = AutobahnProtocol.ERROR_DEFAULT_DESCRIPTION
+         erroruri = AutobahnProtocol.ERROR_URI_GENERIC
+         errordesc = AutobahnProtocol.ERROR_DESC_GENERIC
       elif len(eargs) == 1:
          if type(eargs[0]) not in [str, unicode]:
             raise Exception("invalid type for exception description")
-         erroruri = AutobahnProtocol.ERROR_DEFAULT_URI
+         erroruri = AutobahnProtocol.ERROR_URI_GENERIC
          errordesc = eargs[0]
       else:
          if type(eargs[0]) not in [str, unicode]:
@@ -225,7 +227,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
          erroruri = eargs[0]
          errordesc = eargs[1]
 
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, erroruri, errordesc]
+      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
       self.sendMessage(json.dumps(msg))
 
 
