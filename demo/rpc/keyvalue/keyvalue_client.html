@@ -19,8 +19,8 @@
 
          function test()
          {
-            sess.call("keyvalue:set", "heinz", {name: "Heinzelmann", karma: 666});
-            sess.call("keyvalue:set", "otto", {name: "Otto der Dritte", karma: 50});
+            sess.call("keyvalue:set", "heinz", {name: "Heinzelmann", karma: 666, modified: new Date()});
+            sess.call("keyvalue:set", "otto", {name: "Otto der Dritte", karma: 50, modified: new Date()});
             sess.call("keyvalue:get", "heinz").then(console.log);
             sess.call("keyvalue:keys").then(console.log);
          }

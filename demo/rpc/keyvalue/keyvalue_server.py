@@ -16,9 +16,9 @@
 ##
 ###############################################################################
 
-import sys, math, shelve
-from twisted.internet import reactor, defer
+import sys, shelve
 from twisted.python import log
+from twisted.internet import reactor, defer
 from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
@@ -41,7 +41,7 @@ class KeyValue:
 
    @exportRpc
    def get(self, key):
-      return self.store.get(str(k), None)
+      return self.store.get(str(key), None)
 
    @exportRpc
    def keys(self):

@@ -75,21 +75,21 @@
                arg.num = $('#calcdisplay').html();
             }
 
-            sess.call("calc", arg).then(function (res) { $('#calcdisplay').html(res); },
-                                        function (res) { alert("Error (" + res + ")"); });
+            sess.call("calculator:calc", arg).then(function (res) { $('#calcdisplay').html(res); },
+                                                   function (res) { alert("Error (" + res + ")"); });
 
             clearFirst = true;
          }
 
-         $(document).ready(function() {
+         var sess = null;
 
-            ab.debug(true);
-            sess = new ab.Session("ws://localhost:9000");
-            sess2 = new ab.Session("ws://localhost:9001", function() { sess2.subscribe("wpcmd").then(console.log); });
-            console.log(sess);
-            console.log(sess2);
+         $(document).ready(function()
+         {
+            sess = new ab.Session("ws://localhost:9000", function() {
+                                                            console.log("Connected!");
+                                                            sess.prefix("calculator", "http://example.com/simple/calculator#");
+            });
 
-            //sess2 = new ab.Session("ws://localhost:9001", function() { sess2.subscribe("wpcmd").then(console.log); });
          });
 
      </script>

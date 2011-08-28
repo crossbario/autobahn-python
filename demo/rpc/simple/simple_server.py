@@ -17,8 +17,8 @@
 ###############################################################################
 
 import sys, math
-from twisted.internet import reactor, defer
 from twisted.python import log
+from twisted.internet import reactor, defer
 from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 

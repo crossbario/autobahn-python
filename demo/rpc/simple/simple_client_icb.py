@@ -19,30 +19,59 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred, returnValue, inlineCallbacks
 from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
 
 
-class KeyValueClientProtocol(AutobahnClientProtocol):
+class SimpleClientProtocol(AutobahnClientProtocol):
+   """
+   Demonstrates simple Remote Procedure Calls (RPC) with
+   Autobahn WebSockets and Twisted Inline Callbacks.
+   """
+
+   def show(self, result):
+      print "SUCCESS:", result
 
    def done(self, *args):
       self.sendClose()
 
-   def show(self, key, value):
-      print key, value
-
-   def get(self, keys):
-      for key in keys:
-         self.call("keyvalue:get", key).addCallback(lambda value, key = key: self.show(key, value))
 
    def onOpen(self):
-      self.prefix("keyvalue", "http://example.com/simple/keyvalue#")
-      self.call("keyvalue:keys").addCallbacks(self.get).addCallback(self.done)
+
+      self.prefix("calc", "http://example.com/simple/calc#")
+
+      self.myfun(42).addCallback(self.show).addCallback(self.done)
+
+
+   @inlineCallbacks
+   def myfun(self, val):
+
+      print "myfun:1", val
+
+      r = yield self.mysubfun(val)
+      print "myfun:2", r
+
+      returnValue(r * 10)
+
+
+   @inlineCallbacks
+   def mysubfun(self, val):
+
+      print "mysubfun:1", val
+
+      r1 = yield self.call("calc:asum", [1, 2, 3, val])
+      print "mysubfun:2", r1
+
+      r2 = yield self.call("calc:square", r1)
+      print "mysubfun:3", r2
+
+      returnValue(r2 + 1)
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = AutobahnClientFactory(debug = False)
-   factory.protocol = KeyValueClientProtocol
+   factory.protocol = SimpleClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

@@ -16,17 +16,16 @@
 ##
 ###############################################################################
 
-import sys
-import decimal
-from twisted.internet import reactor
+import sys, decimal
 from twisted.python import log
+from twisted.internet import reactor
 from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
 
 
 class CalculatorServerProtocol(AutobahnServerProtocol):
 
    def onConnect(self, connectionRequest):
-      self.registerForRpc(self)
+      self.registerForRpc(self, "http://example.com/simple/calculator#")
       self.clear()
 
 
