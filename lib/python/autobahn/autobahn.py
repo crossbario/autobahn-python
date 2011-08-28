@@ -145,7 +145,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       :param uri: URI to register RPC method under.
       :type uri: str
       :param obj: The object on which to register a method for RPC.
-      :type obj
+      :type obj: object
       :param proc: Unbound object method to register RPC for.
       :type proc: unbound method
       """
@@ -532,6 +532,10 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
    def subscribe(self, topicuri):
       """
+      Subscribe to topic.
+
+      :param topicuri: URI or CURIE of topic to subscribe to.
+      :type topicuri: str
       """
       d = Deferred()
       self.subscriptions[topicuri] = d
@@ -543,6 +547,10 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
    def unsubscribe(self, topicuri):
       """
+      Unsubscribe from topic.
+
+      :param topicuri: URI or CURIE of topic to unsubscribe from.
+      :type topicuri: str
       """
       del self.subscriptions[topicuri]
       msg = [AutobahnProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicuri]

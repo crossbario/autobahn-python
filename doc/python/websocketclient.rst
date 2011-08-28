@@ -13,6 +13,5 @@ Classes
 -------
 
 .. autoclass:: autobahn.websocket.WebSocketClientProtocol
-   :members: onConnect
 
 .. autoclass:: autobahn.websocket.WebSocketClientFactory

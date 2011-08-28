@@ -1,8 +1,8 @@
 Autobahn WebSockets for Python Documentation
 ============================================
 
-Autobahn WebSockets Features
-----------------------------
+WebSockets Features
+-------------------
 
 *Autobahn WebSockets for Python* provides an implementation of the WebSockets protocol
 which can be used to build WebSockets clients and servers.
@@ -16,16 +16,15 @@ The implementation is compliant to the latest `protocol draft <http://tools.ietf
    * high performance `Twisted-based <http://twistedmatrix.com>`_
 
 
-Autobahn RPC/PubSub Features
-----------------------------
+RPC/PubSub Features
+-------------------
 
 Additionally, *Autobahn WebSockets for Python* provides an implementation of the
-**Autobahn RPC/PubSub** protocol.
-
-Autobahn RPC/PubSub can be used to easily build applications around
+`WebSocket Application Messaging Protocol (WAMP) <http://www.tavendo.de/autobahn/protocol.html>`_ protocol,
+which can be used to build applications around
 **Remote Procedure Call** and **Publish & Subscribe** messaging patterns.
 
-   * implements Autobahn RPC/PubSub
+   * includes Autobahn RPC/PubSub, an implementation of `WAMP <http://www.tavendo.de/autobahn/protocol.html>`_
    * simple and open protocol
    * built on *JSON* and *WebSockets*
    * provides RPC and PubSub messaging
