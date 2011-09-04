@@ -1,0 +1,44 @@
+ <html>
+   <head>
+      <title>Autobahn WebSockets Simple RPC Demo</title>
+
+      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script src="../../../lib/javascript/autobahn.js"></script>
+      <script>
+
+         var sess = null;
+         
+         function on_foobar(event, d) {
+            console.log(event);
+            d.then(on_foobar);
+         }
+
+         $(document).ready(function()
+         {
+            // To connect to a Autobahn WebSockets RPC server, just
+            // create a new session providing the server URL and (optional)
+            // onOpen and onClose/Error handlers
+            sess = new ab.Session("ws://localhost:9000", function() {
+                                                            console.log("Connected!");
+                                                            // we register a prefix so we can abbreviate procedure URIs later
+                                                            sess.prefix("event", "http://resource.example.com/schema/event#");
+                                                            sess.subscribe("event:foobar").then(on_foobar);
+            });
+
+         });
+
+         function logerror(erroruri, errordesc) {
+            console.log(erroruri + ' ("' + errordesc + '")');
+         }
+
+         function test()
+         {
+            sess.publish("event:foobar", {name: "foo", value: "bar", num: 23});
+         }
+
+     </script>
+   </head>
+   <body>
+      <button onclick="test()">Publish Event</button>
+   </body>
+ </html>

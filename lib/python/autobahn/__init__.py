@@ -21,3 +21,11 @@ import autobahn
 import fuzzing
 import case
 import prefixmap
+
+try:
+   import pkg_resources
+   version = pkg_resources.require("Autobahn")[0].version
+except:
+   ## i.e. no setuptools installed ..
+   version = None
+
