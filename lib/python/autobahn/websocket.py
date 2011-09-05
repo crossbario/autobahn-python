@@ -1125,6 +1125,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
    A Twisted protocol for WebSockets servers.
    """
 
+   def __init__(self, debug = False):
+      self.debug = debug
+
+
    def onConnect(self, connectionRequest):
       """
       Callback fired during WebSocket handshake when new WebSocket client
@@ -1141,6 +1145,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       :type connectionRequest: ConnectionRequest
       """
       return None
+
 
    def connectionMade(self):
       WebSocketProtocol.connectionMade(self)

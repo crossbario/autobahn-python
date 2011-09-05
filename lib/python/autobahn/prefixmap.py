@@ -86,10 +86,11 @@ class PrefixMap:
 
    def resolve(self, curie):
       """
-      Resolved given CURIE to full URI.
+      Resolve given CURIE to full URI.
 
       :param curie: CURIE (i.e. "rdf:label").
       :type curie: str
+      :returns: str -- Full URI for CURIE or None.
       """
       i = curie.find(":")
       if i > 0:
@@ -101,9 +102,11 @@ class PrefixMap:
 
    def resolveOrPass(self, curieOrUri):
       """
-      Try to resolve given argument and return verbatim if cannot be resolved.
+      Resolve given CURIE/URI and return string verbatim if cannot be resolved.
 
-      :param
+      :param curieOrUri: CURIE or URI.
+      :type curieOrUri: str
+      :returns: str -- Full URI for CURIE or original string.
       """
       u = self.resolve(curieOrUri)
       if u:

@@ -39,12 +39,22 @@ class ClientProtocol(AutobahnClientProtocol):
    def done(self, *args):
       self.sendClose()
 
+   def onFoobar(self, arg):
+      print "FOOBAR", arg
+      arg[3].addCallback(self.onFoobar)
 
    def onOpen(self):
 
       self.prefix("event", "http://resource.example.com/schema/event#")
+
+      self.subscribe("event:foobar").addCallback(self.onFoobar)
+
       self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
-      self.done()
+      self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
+      self.publish("event:foobar-extended", {"name": "foo", "value": "bar", "num": 42})
+      self.publish("event:foobar-limited", {"name": "foo", "value": "bar", "num": 23})
+      
+      #self.done()
 
 
 if __name__ == '__main__':

@@ -19,44 +19,76 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
-from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.autobahn import exportSub, exportPub, AutobahnServerFactory, AutobahnServerProtocol
 
 
-class SomeService:
+class TopicService:
 
-   @exportSub("event1")
-   def subscribeEvent1(self):
-      return True
-   
-   @exportPub("event1")
-   def publishEvent1(self, event):
-      pass
+   def __init__(self, allowedTopicIds):
+      self.allowedTopicIds = allowedTopicIds
+      self.serial = 0
 
 
-class Tiles:
-   
-   @exportPub("tile-erased")
-   def subscribeTileErased(self, tilemapUri, sectorX, sectorY):
-      pass
+   @exportSub("foobar", True)
+   def subscribe(self, topicUriPrefix, topicUriSuffix):
+      """
+      Custom topic subscription handler.
+      """
+      print "client wants to subscribe to %s%s" % (topicUriPrefix, topicUriSuffix)
+      try:
+         i = int(topicUriSuffix)
+         if i in self.allowedTopicIds:
+            print "Subscribing client to topic Foobar %d" % i
+            return True
+         else:
+            print "Client not allowed to subscribe to topic Foobar %d" % i
+            return False
+      except:
+         print "illegal topic - skipped subscription"
+         return False
 
-   @exportPub("tile-erased")
-   def publishTileErased(self, tilemapUri, tileX, tileY):
-      sectorX = tileX / 16
-      sectorY = tileY / 16
 
-   
+   @exportPub("foobar", True)
+   def publish(self, topicUriPrefix, topicUriSuffix, event):
+      """
+      Custom topic publication handler.
+      """
+      print "client wants to publish to %s%s" % (topicUriPrefix, topicUriSuffix)
+      try:
+         i = int(topicUriSuffix)
+         if type(event) == dict and event.has_key("count"):
+            if event["count"] > 0:
+               self.serial += 1
+               event["serial"] = self.serial
+               print "ok, published enriched event"
+               return event
+            else:
+               print "event count attribute is negative"
+               return None
+         else:
+            print "event is not dict or misses count attribute"
+            return None
+      except:
+         print "illegal topic - skipped publication of event"
+         return None
+
+
 class SimpleServerProtocol(AutobahnServerProtocol):
 
-   BASEURI = "http://resource.example.com/schema/event#"
-   
    def onConnect(self, connectionRequest):
-      
-      ## register a URI as topic
-      self.registerForPubSub(SimpleServerProtocol.BASEURI + "event0")
 
-      ## register a service handler to provide topic
-      self.someservice = SomeService()
-      self.registerForPubSub(self.someservice, SimpleServerProtocol.BASEURI)
+      ## register a single, fixed URI as PubSub topic
+      self.registerForPubSub("http://example.com/event/simple")
+
+      ## register a URI and all URIs having the string as prefix as PubSub topic
+      #self.registerForPubSub("http://example.com/event/simple", True)
+
+      ## register any URI (string) as topic
+      #self.registerForPubSub("", True)
+
+      ## register a topic handler to control topic subscriptions/publications
+      self.topicservice = TopicService([1, 3, 7])
+      self.registerHandlerForPubSub(self.topicservice, "http://example.com/event/")
 
 
 if __name__ == '__main__':

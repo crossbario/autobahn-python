@@ -1,28 +1,27 @@
  <html>
    <head>
-      <title>Autobahn WebSockets Simple RPC Demo</title>
+      <title>Autobahn WebSockets Simple PubSub Demo</title>
 
       <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
       <script src="../../../lib/javascript/autobahn.js"></script>
       <script>
 
          var sess = null;
-         
-         function on_foobar(event, d) {
+
+         function onEvent(event, d) {
             console.log(event);
-            d.then(on_foobar);
+            d.then(onEvent);
          }
 
          $(document).ready(function()
          {
-            // To connect to a Autobahn WebSockets RPC server, just
-            // create a new session providing the server URL and (optional)
-            // onOpen and onClose/Error handlers
             sess = new ab.Session("ws://localhost:9000", function() {
                                                             console.log("Connected!");
-                                                            // we register a prefix so we can abbreviate procedure URIs later
-                                                            sess.prefix("event", "http://resource.example.com/schema/event#");
-                                                            sess.subscribe("event:foobar").then(on_foobar);
+                                                            sess.prefix("event", "http://example.com/event/");
+                                                            sess.subscribe("event:simple").then(onEvent);
+                                                            sess.subscribe("event:simple-foobar").then(onEvent);
+                                                            sess.subscribe("event:foobar1").then(onEvent);
+                                                            sess.subscribe("event:foobar2").then(onEvent);
             });
 
          });
@@ -33,12 +32,17 @@
 
          function test()
          {
-            sess.publish("event:foobar", {name: "foo", value: "bar", num: 23});
+            sess.publish("event:simple", {name: "foo", value: "bar", num: 23});
+            sess.publish("event:simple-foobar", {name: "foo", value: "bar", num: 333});
+            sess.publish("event:foobar1", {count: 42});
+            sess.publish("event:foobar1", {count: -1});
+            sess.publish("event:foobar2", {count: 666});
+            sess.publish("event:foobarbaz", {count: 10});
          }
 
      </script>
    </head>
    <body>
-      <button onclick="test()">Publish Event</button>
+      <button onclick="test()">Publish Events</button>
    </body>
  </html>

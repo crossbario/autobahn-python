@@ -48,4 +48,7 @@ RPC/PubSub Protocol
              MESSAGE_TYPEID_SUBSCRIBE,
              MESSAGE_TYPEID_UNSUBSCRIBE,
              MESSAGE_TYPEID_PUBLISH,
-             MESSAGE_TYPEID_EVENT
+             MESSAGE_TYPEID_EVENT,
+             shrinkUri,
+             resolveCurie,
+             resolveCurieOrPass

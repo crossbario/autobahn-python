@@ -28,6 +28,9 @@ from prefixmap import PrefixMap
 
 
 def exportRpc(arg = None):
+   """
+   Decorator for RPC'ed callables.
+   """
    ## decorator without argument
    if type(arg) is types.FunctionType:
       arg._autobahn_rpc_id = arg.__name__
@@ -39,8 +42,31 @@ def exportRpc(arg = None):
          return f
       return inner
 
+def exportSub(arg, prefixMatch = False):
+   """
+   Decorator for subscription handlers.
+   """
+   def inner(f):
+      f._autobahn_sub_id = arg
+      f._autobahn_sub_prefix_match = prefixMatch
+      return f
+   return inner
+
+def exportPub(arg, prefixMatch = False):
+   """
+   Decorator for publication handlers.
+   """
+   def inner(f):
+      f._autobahn_pub_id = arg
+      f._autobahn_pub_prefix_match = prefixMatch
+      return f
+   return inner
+
 
 class AutobahnProtocol:
+   """
+   Base protocol class for Autobahn RPC/PubSub.
+   """
 
    MESSAGE_TYPEID_NULL           = 0
    """
@@ -94,6 +120,11 @@ class AutobahnProtocol:
    ERROR_DESC_GENERIC = "generic error"
 
 
+   def __init__(self, debug = False):
+      self.debug = debug
+      self.prefixes = PrefixMap()
+
+
    def _newid(self):
       return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
 
@@ -105,20 +136,171 @@ class AutobahnProtocol:
       self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Autobahn RPC/PubSub protocol violation ('%s')" % reason)
 
 
+   def shrinkUri(self, uri):
+      """
+      Shrink given URI to CURIE according to current prefix mapping.
+      If no appropriate prefix mapping is available, return original URI.
+
+      :param uri: URI to shrink.
+      :type uri: str
+      :returns str -- CURIE or original URI.
+      """
+      return self.prefixes.shrink(uri)
+
+
+   def resolveCurie(self, curieOrUri):
+      """
+      Resolve given CURIE/URI according to current prefix mapping or return
+      None if cannot be resolved.
+
+      :param curieOrUri: CURIE or URI.
+      :type curieOrUri: str
+      :returns: str -- Full URI for CURIE or None.
+      """
+      return self.prefixes.resolve(curieOrUri)
+
+
+   def resolveCurieOrPass(self, curieOrUri):
+      """
+      Resolve given CURIE/URI according to current prefix mapping or return
+      string verbatim if cannot be resolved.
+
+      :param curieOrUri: CURIE or URI.
+      :type curieOrUri: str
+      :returns: str -- Full URI for CURIE or original string.
+      """
+      return self.prefixes.resolveOrPass(curieOrUri)
+
+
 class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
    """
    Server factory for Autobahn RPC/PubSub.
    """
 
    def __init__(self, debug = False):
-      self.debug = debug
+      WebSocketServerProtocol.__init__(self, debug)
+      AutobahnProtocol.__init__(self)
+
+      ## RPCs registered in this session (a URI map of (object, procedure)
+      ## pairs for object methods or (None, procedure) for free standing procedures)
       self.procs = {}
-      self.prefixes = PrefixMap()
+
+      ## Publication handlers registered in this session (a URI map of (object, pubHandler) pairs
+      ## pairs for object methods (handlers) or (None, None) for topic without handler)
+      self.pubHandlers = {}
+
+      ## Subscription handlers registered in this session (a URI map of (object, subHandler) pairs
+      ## pairs for object methods (handlers) or (None, None) for topic without handler)
+      self.subHandlers = {}
 
 
    def connectionLost(self, reason):
       WebSocketServerProtocol.connectionLost(self, reason)
       self.factory._unsubscribeClient(self)
+
+
+   def _getPubHandler(self, topicuri):
+      ## Longest matching prefix based resolution of (full) topic URI to
+      ## publication handler.
+      ## Returns a 5-tuple (consumedUriPart, unconsumedUriPart, handlerObj, handlerProc, prefixMatch)
+      ##
+      for i in xrange(len(topicuri), -1, -1):
+         tt = topicuri[:i]
+         if self.pubHandlers.has_key(tt):
+            h = self.pubHandlers[tt]
+            return (tt, topicuri[i:], h[0], h[1], h[2])
+      return None
+
+
+   def _getSubHandler(self, topicuri):
+      ## Longest matching prefix based resolution of (full) topic URI to
+      ## subscription handler.
+      ## Returns a 5-tuple (consumedUriPart, unconsumedUriPart, handlerObj, handlerProc, prefixMatch)
+      ##
+      for i in xrange(len(topicuri), -1, -1):
+         tt = topicuri[:i]
+         if self.subHandlers.has_key(tt):
+            h = self.subHandlers[tt]
+            return (tt, topicuri[i:], h[0], h[1], h[2])
+      return None
+
+
+   def registerForPubSub(self, topicUri, prefixMatch = False):
+      """
+      Register a topic URI as publish/subscribe channel in this session.
+
+      :param topicUri: Topic URI to be established as publish/subscribe channel.
+      :type topicUri: str
+      :param prefixMatch: Allow to match this topic URI by prefix.
+      :type prefixMatch: bool
+      """
+      self.pubHandlers[topicUri] = (None, None, prefixMatch)
+      self.subHandlers[topicUri] = (None, None, prefixMatch)
+      if self.debug:
+         log.msg("registered topic %s" % topicUri)
+
+
+   def registerHandlerForPubSub(self, obj, baseUri = ""):
+      """
+      Register a handler object for PubSub. A handler object has methods
+      which are decorated using @exportPub and @exportSub.
+
+      :param obj: The object to be registered (in this WebSockets session) for PubSub.
+      :type obj: Object with methods decorated using @exportPub and @exportSub.
+      :param baseUri: Optional base URI which is prepended to topic names for export.
+      :type baseUri: String.
+      """
+      for k in inspect.getmembers(obj.__class__, inspect.ismethod):
+         if k[1].__dict__.has_key("_autobahn_pub_id"):
+            uri = baseUri + k[1].__dict__["_autobahn_pub_id"]
+            prefixMatch = k[1].__dict__["_autobahn_pub_prefix_match"]
+            proc = k[1]
+            self.registerHandlerForPub(uri, obj, proc, prefixMatch)
+         elif k[1].__dict__.has_key("_autobahn_sub_id"):
+            uri = baseUri + k[1].__dict__["_autobahn_sub_id"]
+            prefixMatch = k[1].__dict__["_autobahn_sub_prefix_match"]
+            proc = k[1]
+            self.registerHandlerForSub(uri, obj, proc, prefixMatch)
+
+
+   def registerHandlerForSub(self, uri, obj, proc, prefixMatch = False):
+      """
+      Register a method of an object as subscription handler.
+
+      :param uri: Topic URI to register subscription handler for.
+      :type uri: str
+      :param obj: The object on which to register a method as subscription handler.
+      :type obj: object
+      :param proc: Unbound object method to register as subscription handler.
+      :type proc: unbound method
+      :param prefixMatch: Allow to match this topic URI by prefix.
+      :type prefixMatch: bool
+      """
+      self.subHandlers[uri] = (obj, proc, prefixMatch)
+      if not self.pubHandlers.has_key(uri):
+         self.pubHandlers[uri] = (None, None, False)
+      if self.debug:
+         log.msg("registered subscription handler for topic %s" % uri)
+
+
+   def registerHandlerForPub(self, uri, obj, proc, prefixMatch = False):
+      """
+      Register a method of an object as publication handler.
+
+      :param uri: Topic URI to register publication handler for.
+      :type uri: str
+      :param obj: The object on which to register a method as publication handler.
+      :type obj: object
+      :param proc: Unbound object method to register as publication handler.
+      :type proc: unbound method
+      :param prefixMatch: Allow to match this topic URI by prefix.
+      :type prefixMatch: bool
+      """
+      self.pubHandlers[uri] = (obj, proc, prefixMatch)
+      if not self.subHandlers.has_key(uri):
+         self.subHandlers[uri] = (None, None, False)
+      if self.debug:
+         log.msg("registered publication handler for topic %s" % uri)
 
 
    def registerForRpc(self, obj, baseUri = ""):
@@ -256,7 +438,38 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                ##
                elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_SUBSCRIBE:
                   topicuri = self.prefixes.resolveOrPass(obj[1])
-                  self.factory._subscribeClient(self, topicuri)
+                  h = self._getSubHandler(topicuri)
+                  if h:
+                     ## either exact match or prefix match allowed
+                     if h[1] == "" or h[4]:
+
+                        ## direct topic
+                        if h[2] is None and h[3] is None:
+                           self.factory._subscribeClient(self, topicuri)
+
+                        ## topic handled by subscription handler
+                        else:
+                           try:
+                              ## handler is object method
+                              if h[2]:
+                                 a = h[3](h[2], str(h[0]), str(h[1]))
+
+                              ## handler is free standing procedure
+                              else:
+                                 a = h[3](str(h[0]), str(h[1]))
+
+                              ## only subscribe client if handler did return True
+                              if a:
+                                 self.factory._subscribeClient(self, topicuri)
+                           except:
+                              if self.debug:
+                                 log.msg("execption during topic subscription handler")
+                     else:
+                        if self.debug:
+                           log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
+                  else:
+                     if self.debug:
+                        log.msg("no topic / subscription handler registered for %s" % topicuri)
 
                ## Unsubscribe Message
                ##
@@ -268,8 +481,40 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                ##
                elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_PUBLISH:
                   topicuri = self.prefixes.resolveOrPass(obj[1])
-                  event = obj[2]
-                  self.factory._dispatchEvent(topicuri, event)
+                  h = self._getPubHandler(topicuri)
+                  if h:
+                     ## either exact match or prefix match allowed
+                     if h[1] == "" or h[4]:
+
+                        event = obj[2]
+
+                        ## direct topic
+                        if h[2] is None and h[3] is None:
+                           self.factory._dispatchEvent(topicuri, event)
+
+                        ## topic handled by publication handler
+                        else:
+                           try:
+                              ## handler is object method
+                              if h[2]:
+                                 e = h[3](h[2], str(h[0]), str(h[1]), event)
+
+                              ## handler is free standing procedure
+                              else:
+                                 e = h[3](str(h[0]), str(h[1]), event)
+
+                              ## only dispatch event if handler did return event
+                              if e:
+                                 self.factory._dispatchEvent(topicuri, e)
+                           except:
+                              if self.debug:
+                                 log.msg("execption during topic publication handler")
+                     else:
+                        if self.debug:
+                           log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
+                  else:
+                     if self.debug:
+                        log.msg("no topic / publication handler registered for %s" % topicuri)
 
                ## Define prefix to be used in CURIEs
                ##
@@ -358,11 +603,10 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
    """
 
    def __init__(self, debug = False):
-
       WebSocketClientProtocol.__init__(self, debug)
+      AutobahnProtocol.__init__(self)
       self.calls = {}
       self.subscriptions = {}
-      self.prefixes = PrefixMap()
 
 
    def onMessage(self, msg, binary):
@@ -436,12 +680,14 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
          if type(obj[1]) not in [unicode, str]:
             self._protocolError("invalid type for topicid in event message")
             return
-         topicuri = self.prefixes.resolveOrPass(obj[1])
-         event = obj[2]
-         cur_d = self.subscriptions[topicuri]
-         new_d = Deferred()
-         self.subscriptions[topicuri] = new_d
-         cur_d.callback([event, new_d])
+         unresolvedTopicUri = str(obj[1])
+         topicuri = self.prefixes.resolveOrPass(unresolvedTopicUri)
+         if self.subscriptions.has_key(topicuri):
+            event = obj[2]
+            cur_d = self.subscriptions[topicuri]
+            new_d = Deferred()
+            self.subscriptions[topicuri] = new_d
+            cur_d.callback([unresolvedTopicUri, topicuri, event, new_d])
       else:
          raise Exception("logic error")
 
@@ -536,9 +782,10 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
       :param topicuri: URI or CURIE of topic to subscribe to.
       :type topicuri: str
+      :returns -- Twisted Deferred.
       """
       d = Deferred()
-      self.subscriptions[topicuri] = d
+      self.subscriptions[self.prefixes.resolveOrPass(topicuri)] = d
       msg = [AutobahnProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicuri]
       o = json.dumps(msg)
       self.sendMessage(o)
