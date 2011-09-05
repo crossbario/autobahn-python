@@ -39,6 +39,88 @@
             sess.publish("event:foobar2", {count: 666});
             sess.publish("event:foobarbaz", {count: 10});
          }
+         
+         function test2()
+         {
+            // Variant 1
+            
+            chn = sess.subscribe("tilemap:ac638c53-1945-58d2-b081-3aa40a503eff/sector/w23n81");
+
+            chn.bind("event:tile-erased", function(evt) {
+               console.log("tile erased " + evt.tileX + "/" + evt.tileY);
+            });
+            
+            chn.publish("event:tile-erased", {tileX: 0, tileY: 0});
+            
+            chn.unsubscribe();
+            
+
+            chn.bind("autobahn:subscription-failed", function(evt) {
+            });
+
+
+            // Variant 2
+
+            chn = sess.attach("tilemap:ac638c53-1945-58d2-b081-3aa40a503eff/sector/w23n81");
+
+            chn.subscribe("event:tile-erased", function(evt) {
+               console.log("tile erased " + evt.tileX + "/" + evt.tileY);
+            });
+
+            chn.publish("event:tile-erased", {tileX: 0, tileY: 0});
+            
+            chn.unsubscribe("event:tile-erased");
+
+            chn.detach();
+            
+
+            // Variant 3
+            
+            sess.attach("tilemap:ac638c53-1945-58d2-b081-3aa40a503eff/sector/w23n81").then(function(channel) {
+               
+               channel.bind("event:tile-erased", function(evt) {
+                  console.log("tile erased " + evt.tileX + "/" + evt.tileY);
+               });
+               
+               channel.publish("event:tile-erased", {tileX: 0, tileY: 0});
+            });
+
+            // Variant 3b
+            
+            var chn1;
+            sess.attach("tilemap:ac638c53-1945-58d2-b081-3aa40a503eff/sector/w23n81", "rw").then(function(channel) {
+               chn1 = channel;
+            });
+            
+
+
+
+            // CURIEs
+            
+            // set prefix to be used in CURIEs
+            sess.prefix("event", "http://resource.example.com/schema/event#");
+            
+            // get prefix
+            console.log(sess.prefix("event"));
+            
+            // shrink URI to CURIE
+            console.log(sess.shrink("http://resource.example.com/schema/event#tile-erased"));
+
+            // resolve CURIE to URI
+            console.log(sess.resolve("event:tile-erased"));
+            
+            
+            // Unique Session ID
+            
+            sess.id();
+            
+            // Session Authentication (some sort of challenge-response, i.e. CRAM-SHA256)
+            
+            // cookie: signed client IP+port
+            
+            // AUTH-REQUEST, AUTH-CHALLENGE, AUTH-RESPONSE, AUTH-OK, AUTH-ERROR
+         }
+         
 
      </script>
    </head>
