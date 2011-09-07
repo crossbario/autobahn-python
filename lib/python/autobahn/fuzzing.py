@@ -176,14 +176,6 @@ class FuzzingProtocol:
             self.sendClose()
             return
 
-         ## FF and Chrome dont yet implement binary messages
-         ##
-         if (self.caseAgent.find("Firefox") >= 0 or self.caseAgent.find("Chrome") >= 0) and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
-            print "Skipping binary message test case for browser client !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
          self.caseStart = time.time()
          self.runCase.onOpen()
 
@@ -983,12 +975,31 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       self.currSpecCase = -1
       self.currServer += 1
       if self.currServer < len(self.spec["servers"]):
+         ## run tests for next server
+         ##
          s = self.spec["servers"][self.currServer]
-         self.agent = s["agent"]
+
+         autobahn_version = pkg_resources.get_distribution("autobahn").version
+
+         ## agent (=server) string for reports
+         ##
+         self.agent = s.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
-            self.agent = "AutobahnServer/%s" % pkg_resources.get_distribution("autobahn").version
-         self.hostname = s["hostname"]
-         self.port = s["port"]
+            self.agent = "AutobahnServer/%s" % autobahn_version
+
+         ## used to establish TCP connection
+         ##
+         self.hostname = s.get("hostname", "localhost")
+         self.port = s.get("port", 80)
+
+         ## used in HTTP header for WS opening handshake
+         ##
+         self.path = s.get("path", "/")
+         self.host = s.get("host", self.hostname)
+         self.origin = s.get("origin", None)
+         self.subprotocols = s.get("subprotocols", [])
+         self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
+         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn_version
          return True
       else:
          return False

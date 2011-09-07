@@ -15,3 +15,4 @@ Classes
 .. autoclass:: autobahn.websocket.WebSocketClientProtocol
 
 .. autoclass:: autobahn.websocket.WebSocketClientFactory
+   :members: __init__

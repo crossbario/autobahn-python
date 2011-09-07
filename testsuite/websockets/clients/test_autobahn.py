@@ -39,7 +39,7 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
    protocol = WebSocketTestClientProtocol
 
    def __init__(self, debug):
-      self.debug = debug
+      WebSocketClientFactory.__init__(self, debug = debug)
 
       self.startCaseId = 1;
       self.endCaseId = len(Cases);

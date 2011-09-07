@@ -53,3 +53,7 @@ WebSocket Protocol
   - Optimize fragment/message reassembly
 
   - Further optimize masking: http://stackoverflow.com/questions/2119761/simple-python-challenge-fastest-bitwise-xor-on-data-buffers
+
+  - check NumPy for masking
+
+    https://github.com/kanaka/websockify/blob/6e263063c2b63642a0e17cb91d6b9f6c9365c0c0/websocket.py#L293

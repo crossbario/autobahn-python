@@ -162,6 +162,7 @@
             var ws_uri = "ws://" + hostname + ":" + port + "/runCase?case=" + currentCaseId + "&agent=" + agent;
 
             webSocket = openWebSocket(ws_uri);
+            webSocket.binaryType = "arraybuffer";
 
             webSocket.onopen =
                function(e)

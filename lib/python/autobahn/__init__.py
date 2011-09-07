@@ -21,3 +21,4 @@ import autobahn
 import fuzzing
 import case
 import prefixmap
+import utf8validator
