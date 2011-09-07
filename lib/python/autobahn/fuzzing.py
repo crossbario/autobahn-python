@@ -579,7 +579,7 @@ class FuzzingFactory:
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
+      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
 
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
@@ -701,7 +701,7 @@ class FuzzingFactory:
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
+      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 

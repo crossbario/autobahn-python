@@ -25,6 +25,7 @@ import struct
 import random
 import urlparse
 import os
+from utf8validator import Utf8Validator
 
 
 class FrameHeader:
@@ -324,6 +325,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.data = ""
       self.closeAlreadySent = False
       self.failedByMe = False
+      self.utf8validator = Utf8Validator()
 
 
    def connectionLost(self, reason):
@@ -656,7 +658,9 @@ class WebSocketProtocol(protocol.Protocol):
 
             ## process frame data
             ##
-            self.onFrameData(payload)
+            fr = self.onFrameData(payload)
+            if not fr:
+               return False
 
          ## advance payload pointer and fire frame end handler when frame payload is complete
          ##
@@ -675,6 +679,9 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          if not self.inside_message:
             self.inside_message = True
+            self.inside_text_message = self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_TEXT
+            if self.inside_text_message:
+               self.utf8validator.reset()
             self.onMessageBegin(self.current_frame.opcode)
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
 
@@ -683,6 +690,11 @@ class WebSocketProtocol(protocol.Protocol):
       if self.current_frame.opcode > 7:
          self.control_frame_data.extend(payload)
       else:
+         if self.inside_text_message:
+            uv = self.utf8validator.consume(payload)
+            if not uv[0]:
+               self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % uv[2])
+               return False
          self.onMessageFrameData(payload)
 
 
@@ -694,6 +706,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.current_frame.fin:
             self.onMessageEnd()
             self.inside_message = False
+            self.inside_text_message = False
       self.current_frame = None
 
 

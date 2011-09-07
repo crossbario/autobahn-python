@@ -127,6 +127,10 @@ from case5_20 import *
 from case6_1 import *
 from case6_2 import *
 from case6_3 import *
+from case6_4 import *
+from case6_5 import *
+from case6_6 import *
+from case6_7 import *
 
 from case9_1_1 import *
 from case9_1_2 import *
@@ -187,7 +191,7 @@ Cases += [Case3_1, Case3_2, Case3_3, Case3_4, Case3_5, Case3_6, Case3_7]
 Cases += [Case4_1_1, Case4_1_2, Case4_1_3, Case4_1_4, Case4_1_5]
 Cases += [Case4_2_1, Case4_2_2, Case4_2_3, Case4_2_4, Case4_2_5]
 Cases += [Case5_1, Case5_2, Case5_3, Case5_4, Case5_5, Case5_6, Case5_7, Case5_8, Case5_9, Case5_10, Case5_11, Case5_12, Case5_13, Case5_14, Case5_15, Case5_16, Case5_17, Case5_18, Case5_19, Case5_20]
-Cases += [Case6_1, Case6_2, Case6_3]
+Cases += [Case6_1, Case6_2, Case6_3, Case6_4, Case6_5, Case6_6, Case6_7]
 Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]
