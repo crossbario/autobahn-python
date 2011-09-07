@@ -1,18 +1,7 @@
+WebSockets
+==========
 
-RPC Open Questions
-==================
-
-0.
-Order of args: procid, arg OR arg, procid
-
-1.
-Take dependency on jQuery and use Deferred from there, or
-integrate our own/someone's Deferred with Autobahn JS?
-
-2.
-RPC Server Classes
-- only check for RPC funs on class derived from AB WS Protocol or
-- register(BaseUri, RpcClass)
+- Update to Hybi 13
 
 
 Test Suite
@@ -23,7 +12,6 @@ Increase Timeout on performance tests. Maybe make it an option.
 Test Cases
 
   - allow "fail connection" = "immediate TCP close" OR "WS close handshake"
-
   - UTF-8 Handling (codecs.getincrementaldecoder('utf-8')())
   - Close
   - Server-to-Client Masking
@@ -32,6 +20,9 @@ Test Cases
 
   http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
   http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html
+
+  - Binary Messags in Browser (http://peter.sh/2011/09/media-source-binary-web-sockets-accessibility-and-border-images/ => see links to Trac there)
+  - JSON roundtripping tests
 
 Test Report
 
