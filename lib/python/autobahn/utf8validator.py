@@ -95,7 +95,7 @@ class Utf8Validator:
       """
       Incrementally validate a chunk of bytes provided as bytearray.
 
-      Will return a triple (valid?, currentIndex, totalIndex).
+      Will return a quad (valid?, endsOnCodePoint?, currentIndex, totalIndex).
 
       As soon as an octet is encountered which renders the octet sequence
       invalid, a triple with valid? == False is returned. currentIndex returns
@@ -110,9 +110,9 @@ class Utf8Validator:
          self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + (self.state << 4) + Utf8Validator.UTF8VALIDATOR_DFA[ba[i]]]
          if self.state == Utf8Validator.UTF8_REJECT:
             self.i += i
-            return False, i, self.i
+            return False, False, i, self.i
       self.i += l
-      return True, l, self.i
+      return True, self.state == Utf8Validator.UTF8_ACCEPT, l, self.i
 
 
 if __name__ == '__main__':
@@ -217,29 +217,28 @@ if __name__ == '__main__':
    for i in xrange(0, 0xffff): # should by 0x10ffff, but non-wide Python build is limited to 16-bits
       ss = unichr(i).encode("utf-8")
       if i >= 0xD800 and i <= 0xDBFF: # high-surrogate
-         expect = None # False
+         expect = False
       elif i >= 0xDC00 and i <= 0xDFFF: # low-surrogate
-         expect = None # False
+         expect = False
       else:
          expect = True
-      if expect is not None:
-         vs.append((expect, ss))
+      vs.append((expect, ss))
 
    # 5.1 Single UTF-16 surrogates
-   for i in xrange(0xD800, 0xDBFF): # high-surrogate
-      ss = unichr(i).encode("utf-8")
-      vs.append((False, ss))
-   for i in xrange(0xDC00, 0xDFFF): # low-surrogate
-      ss = unichr(i).encode("utf-8")
-      vs.append((False, ss))
+#   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+#      ss = unichr(i).encode("utf-8")
+#      vs.append((False, ss))
+#   for i in xrange(0xDC00, 0xDFFF): # low-surrogate
+#      ss = unichr(i).encode("utf-8")
+#      vs.append((False, ss))
 
    # 5.2 Paired UTF-16 surrogates
-   for i in xrange(0xD800, 0xDBFF): # high-surrogate
-      for j in xrange(0xDC00, 0xDFFF): # low-surrogate
-         ss1 = unichr(i).encode("utf-8")
-         ss2 = unichr(j).encode("utf-8")
-         vs.append((False, ss1 + ss2))
-         vs.append((False, ss2 + ss1))
+#   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+#      for j in xrange(0xDC00, 0xDFFF): # low-surrogate
+#         ss1 = unichr(i).encode("utf-8")
+#         ss2 = unichr(j).encode("utf-8")
+#         vs.append((False, ss1 + ss2))
+#         vs.append((False, ss2 + ss1))
 
    # 5.3 Other illegal code positions
    vs.append((False, '\xef\xbf\xbe'))
@@ -248,17 +247,16 @@ if __name__ == '__main__':
 
    for s in vs:
       v.reset()
-      res = v.validate(bytearray(s[1]))
+      r = v.validate(bytearray(s[1]))
+      res = r[0] and r[1]
+      #assert res == s[0]
       try:
          ps = s[1].decode("utf-8")
          res_py = True
       except UnicodeDecodeError:
          res_py = False
-      if res[0] != s[0]:
-         print s, res
-#      if res[0] != res_py:
-#         print s, res_py
-      #assert res[0] == s[0]
+      if res != s[0] or res != res_py:
+         print s, res, res_py
 
    sys.exit(0)
 
