@@ -38,7 +38,7 @@ class Utf8Validator:
    """
 
    ## DFA transitions
-   UTF8VALIDATOR_DFA = bytearray([
+   UTF8VALIDATOR_DFA = [
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 00..1f
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 20..3f
      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 40..5f
@@ -53,7 +53,7 @@ class Utf8Validator:
      1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, # s3..s4
      1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, # s5..s6
      1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, # s7..s8
-   ])
+   ]
 
    UTF8_ACCEPT = 0
    UTF8_REJECT = 1
@@ -61,12 +61,18 @@ class Utf8Validator:
    def __init__(self):
       self.reset()
 
-   def _eatone(self, b):
+   def decode(self, b):
       """
-      Eat one octet, and validate on the fly. Unicode code points are
-      also created, but we are not interested in those.
+      Eat one UTF-8 octet, and validate on the fly.
+
+      Returns UTF8_ACCEPT when enough octets have been consumed, in which case
+      self.codepoint contains the decoded Unicode code point.
+
+      Returns UTF8_REJECT when invalid UTF-8 was encountered.
+
+      Returns some other positive integer when more octets need to be eaten.
       """
-      type = Utf8Validator.UTF8VALIDATOR_DFA[int(b)]
+      type = Utf8Validator.UTF8VALIDATOR_DFA[b]
       if self.state != Utf8Validator.UTF8_ACCEPT:
          self.codepoint = (b & 0x3f) | (self.codepoint << 6)
       else:
@@ -76,31 +82,33 @@ class Utf8Validator:
 
    def reset(self):
       """
-      Reset validator to start new incremental UTF-8 validation.
+      Reset validator to start new incremental UTF-8 decode/validation.
       """
       self.state = Utf8Validator.UTF8_ACCEPT
       self.codepoint = 0
       self.i = 0
 
-   def consume(self, ba):
+   def validate(self, ba):
       """
-      Incrementally consume a chunk of bytes provided as bytearray.
-      
+      Incrementally validate a chunk of bytes provided as bytearray.
+
       Will return a triple (valid?, currentIndex, totalIndex).
-      As soon as a byte is consumed which renders the total byte sequence
+
+      As soon as an octet is encountered which renders the octet sequence
       invalid, a triple with valid? == False is returned. currentIndex returns
       the index within the currently consumed chunk, and totalIndex the
       index within the total consumed sequence that was the point of bail out.
       When valid? == True, currentIndex will be len(ba) and totalIndex the
       total amount of consumed bytes.
       """
-      i = 0
       l = len(ba)
-      while i < l:
-         if self._eatone(ba[i]) == Utf8Validator.UTF8_REJECT:
+      for i in xrange(0, l):
+         ## optimized version of decode(), since we are not interested in actual code points
+         self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + (self.state << 4) + Utf8Validator.UTF8VALIDATOR_DFA[ba[i]]]
+         if self.state == Utf8Validator.UTF8_REJECT:
+            self.i += i
             return False, i, self.i
-         self.i += 1
-         i += 1
+      self.i += l
       return True, i, self.i
 
 

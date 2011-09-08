@@ -28,7 +28,7 @@ class Case9_3_1(Case):
       self.DATALEN = 8 * 2**20
       self.FRAGSIZE = 64
       self.PAYLOAD = "*" * self.DATALEN
-      self.WAITSECS = 10
+      self.WAITSECS = 100
       self.reportTime = True
 
    def onOpen(self):

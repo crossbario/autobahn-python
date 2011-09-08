@@ -326,6 +326,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.closeAlreadySent = False
       self.failedByMe = False
       self.utf8validator = Utf8Validator()
+      self.utf8validateIncoming = self.factory.utf8validateIncoming
 
 
    def connectionLost(self, reason):
@@ -333,6 +334,19 @@ class WebSocketProtocol(protocol.Protocol):
       This is called by Twisted framework when a TCP connection was lost.
       """
       self.state = WebSocketProtocol.STATE_CLOSED
+
+
+   def setValidateIncomingUtf8(self, enabled):
+      """
+      Enable/disable validation of incoming text message UTF-8 payload.
+      This is enabled by default (and normally should be). This option
+      does only applies to new incoming text messages (not a currently
+      received message and not binary messages).
+
+      :param enabled: True to enable, False to disable.
+      :type enabled: bool
+      """
+      self.utf8validateIncoming = enabled
 
 
    def logRxOctets(self, data):
@@ -659,7 +673,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## process frame data
             ##
             fr = self.onFrameData(payload)
-            if not fr:
+            if fr == False:
                return False
 
          ## advance payload pointer and fire frame end handler when frame payload is complete
@@ -677,12 +691,20 @@ class WebSocketProtocol(protocol.Protocol):
       if self.current_frame.opcode > 7:
          self.control_frame_data = bytearray()
       else:
+         ## new message started
+         ##
          if not self.inside_message:
+
             self.inside_message = True
-            self.inside_text_message = self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_TEXT
-            if self.inside_text_message:
+
+            if self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_TEXT and self.utf8validateIncoming:
                self.utf8validator.reset()
+               self.utf8validateIncomingCurrentMessage = True
+            else:
+               self.utf8validateIncomingCurrentMessage = False
+
             self.onMessageBegin(self.current_frame.opcode)
+
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
 
 
@@ -690,11 +712,14 @@ class WebSocketProtocol(protocol.Protocol):
       if self.current_frame.opcode > 7:
          self.control_frame_data.extend(payload)
       else:
-         if self.inside_text_message:
-            uv = self.utf8validator.consume(payload)
+         ## incrementally validate UTF-8 payload
+         ##
+         if self.utf8validateIncomingCurrentMessage:
+            uv = self.utf8validator.validate(payload)
             if not uv[0]:
                self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % uv[2])
                return False
+
          self.onMessageFrameData(payload)
 
 
@@ -706,7 +731,6 @@ class WebSocketProtocol(protocol.Protocol):
          if self.current_frame.fin:
             self.onMessageEnd()
             self.inside_message = False
-            self.inside_text_message = False
       self.current_frame = None
 
 
@@ -1404,7 +1428,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
    protocol = WebSocketServerProtocol
 
 
-   def __init__(self, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, debug = False):
+   def __init__(self, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, utf8validateIncoming = True, debug = False):
       """
       Create instance of WebSocket server factory.
 
@@ -1412,6 +1436,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type subprotocols: list of strings
       :param version: The WebSockets protocol spec version to be used (must be one of 10, 11, 12, 13).
       :type version: int
+      :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
+      :type utf8validateIncoming: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
       """
@@ -1424,6 +1450,10 @@ class WebSocketServerFactory(protocol.ServerFactory):
       ## FIXME: check args
       ##
       self.subprotocols = subprotocols
+
+      ## default for protocol instances
+      ##
+      self.utf8validateIncoming = utf8validateIncoming
 
    def startFactory(self):
       pass
@@ -1630,7 +1660,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
    protocol = WebSocketClientProtocol
 
 
-   def __init__(self, path = "/", host = "localhost", origin = None, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, useragent = None, debug = False):
+   def __init__(self, path = "/", host = "localhost", origin = None, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, useragent = None, utf8validateIncoming = True, debug = False):
       """
       Create instance of WebSocket client factory.
 
@@ -1646,6 +1676,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type version: int
       :param useragent: User agent as announced in HTTP header.
       :type useragent: str
+      :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
+      :type utf8validateIncoming: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
       """
@@ -1662,6 +1694,10 @@ class WebSocketClientFactory(protocol.ClientFactory):
       self.origin = origin
       self.subprotocols = subprotocols
       self.useragent = useragent
+
+      ## default for protocol instances
+      ##
+      self.utf8validateIncoming = utf8validateIncoming
 
       ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
       random.seed()
