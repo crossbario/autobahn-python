@@ -29,6 +29,9 @@
 ##
 ###############################################################################
 
+import sys
+
+
 class Utf8Validator:
    """
    Incremental UTF-8 validator with constant memory consumption (minimal state).
@@ -109,37 +112,180 @@ class Utf8Validator:
             self.i += i
             return False, i, self.i
       self.i += l
-      return True, i, self.i
+      return True, l, self.i
 
 
 if __name__ == '__main__':
 
    v = Utf8Validator()
 
+   # http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+
+   vs = []
+
+   # 1 Some correct UTF-8 text
+   vs.append((True, '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'))
+
+   # 2.1 First possible sequence of a certain length
+   vs.append((True, '\x00'))
+   vs.append((True, '\xc2\x80'))
+   vs.append((True, '\xe0\xa0\x80'))
+   vs.append((True, '\xf0\x90\x80\x80'))
+
+   # the following conform to the UTF-8 integer encoding scheme, but
+   # valid UTF-8 only allows for Unicode code points up to U+10FFFF
+   vs.append((False, '\xf8\x88\x80\x80\x80'))
+   vs.append((False, '\xfc\x84\x80\x80\x80\x80'))
+
+   # 2.2 Last possible sequence of a certain length
+   vs.append((True, '\x7f'))
+   vs.append((True, '\xdf\xbf'))
+   vs.append((True, '\xef\xbf\xbf'))
+   vs.append((True, '\xf4\x8f\xbf\xbf'))
+
+   # the following conform to the UTF-8 integer encoding scheme, but
+   # valid UTF-8 only allows for Unicode code points up to U+10FFFF
+   vs.append((False, '\xf7\xbf\xbf\xbf'))
+   vs.append((False, '\xfb\xbf\xbf\xbf\xbf'))
+   vs.append((False, '\xfd\xbf\xbf\xbf\xbf\xbf'))
+
+   # 2.3 Other boundary conditions
+   vs.append((True, '\xed\x9f\xbf'))
+   vs.append((True, '\xee\x80\x80'))
+   vs.append((False, '\xef\xbf\xbd'))
+   vs.append((True, '\xf4\x8f\xbf\xbf'))
+   vs.append((False, '\xf4\x90\x80\x80'))
+
+   # 3.1  Unexpected continuation bytes
+   vs.append((False, '\x80'))
+   vs.append((False, '\xbf'))
+   vs.append((False, '\x80\xbf'))
+   vs.append((False, '\x80\xbf\x80'))
+   vs.append((False, '\x80\xbf\x80\xbf'))
+   vs.append((False, '\x80\xbf\x80\xbf\x80'))
+   vs.append((False, '\x80\xbf\x80\xbf\x80\xbf'))
+   s = ""
+   for i in xrange(0x80, 0xbf):
+      s += chr(i)
+   vs.append((False, s))
+
+   # 3.2  Lonely start characters
+   m = [(0xc0, 0xdf), (0xe0, 0xef), (0xf0, 0xf7), (0xf8, 0xfb), (0xfc, 0xfd)]
+   for mm in m:
+      s = ''
+      for i in xrange(mm[0], mm[1]):
+         s += chr(i)
+         s += chr(0x20)
+      vs.append((False, s))
+
+   # 3.3  Sequences with last continuation byte missing
+   k = ['\xc0', '\xe0\x80', '\xf0\x80\x80', '\xf8\x80\x80\x80', '\xfc\x80\x80\x80\x80',
+        '\xdf', '\xef\xbf', '\xf7\xbf\xbf', '\xfb\xbf\xbf\xbf', '\xfd\xbf\xbf\xbf\xbf']
+   for kk in k:
+      vs.append((False, kk))
+
+   # 3.4  Concatenation of incomplete sequences
+   vs.append((False, ''.join(k)))
+
+   # 3.5  Impossible bytes
+   vs.append((False, '\xfe'))
+   vs.append((False, '\xff'))
+   vs.append((False, '\xfe\xfe\xff\xff'))
+
+   # 4.1  Examples of an overlong ASCII character
+   vs.append((False, '\xc0\xaf'))
+   vs.append((False, '\xe0\x80\xaf'))
+   vs.append((False, '\xf0\x80\x80\xaf'))
+   vs.append((False, '\xf8\x80\x80\x80\xaf'))
+   vs.append((False, '\xfc\x80\x80\x80\x80\xaf'))
+
+   # 4.2  Maximum overlong sequences
+   vs.append((False, '\xc1\xbf'))
+   vs.append((False, '\xe0\x9f\xbf'))
+   vs.append((False, '\xf0\x8f\xbf\xbf'))
+   vs.append((False, '\xf8\x87\xbf\xbf\xbf'))
+   vs.append((False, '\xfc\x83\xbf\xbf\xbf\xbf'))
+
+   # 4.3  Overlong representation of the NUL character
+   vs.append((False, '\xc0\x80'))
+   vs.append((False, '\xe0\x80\x80'))
+   vs.append((False, '\xf0\x80\x80\x80'))
+   vs.append((False, '\xf8\x80\x80\x80\x80'))
+   vs.append((False, '\xfc\x80\x80\x80\x80\x80'))
+
+   # All Unicode code points
+   for i in xrange(0, 0xffff): # should by 0x10ffff, but non-wide Python build is limited to 16-bits
+      ss = unichr(i).encode("utf-8")
+      if i >= 0xD800 and i <= 0xDBFF: # high-surrogate
+         expect = None # False
+      elif i >= 0xDC00 and i <= 0xDFFF: # low-surrogate
+         expect = None # False
+      else:
+         expect = True
+      if expect is not None:
+         vs.append((expect, ss))
+
+   # 5.1 Single UTF-16 surrogates
+   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+      ss = unichr(i).encode("utf-8")
+      vs.append((False, ss))
+   for i in xrange(0xDC00, 0xDFFF): # low-surrogate
+      ss = unichr(i).encode("utf-8")
+      vs.append((False, ss))
+
+   # 5.2 Paired UTF-16 surrogates
+   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+      for j in xrange(0xDC00, 0xDFFF): # low-surrogate
+         ss1 = unichr(i).encode("utf-8")
+         ss2 = unichr(j).encode("utf-8")
+         vs.append((False, ss1 + ss2))
+         vs.append((False, ss2 + ss1))
+
+   # 5.3 Other illegal code positions
+   vs.append((False, '\xef\xbf\xbe'))
+   vs.append((False, '\xef\xbf\xbf'))
+
+
+   for s in vs:
+      v.reset()
+      res = v.validate(bytearray(s[1]))
+      try:
+         ps = s[1].decode("utf-8")
+         res_py = True
+      except UnicodeDecodeError:
+         res_py = False
+      if res[0] != s[0]:
+         print s, res
+#      if res[0] != res_py:
+#         print s, res_py
+      #assert res[0] == s[0]
+
+   sys.exit(0)
+
    # note that this source file was created with an UTF-8 editor and
    # declares that on line 1 to Python
    s = "µ@ßöäüàá"
    print s.decode("utf-8")
-   print v.consume(bytearray(s))
+   print v.validate(bytearray(s))
    v.reset()
    print
 
-   print v.consume(bytearray([0xF5]))
+   print v.validate(bytearray([0xF5]))
    v.reset()
    print
 
    ## the following 3 all fail on eating byte 7 (0xA0)
-   print v.consume(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64]))
-   print v.consume(bytearray([0xED, 0xA0, 0x80]))
+   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64]))
+   print v.validate(bytearray([0xED, 0xA0, 0x80]))
    v.reset()
    print
 
-   print v.consume(bytearray([0x65, 0x64, 0x69, 0x74]))
-   print v.consume(bytearray([0x65, 0x64, 0xED, 0xA0, 0x80]))
+   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74]))
+   print v.validate(bytearray([0x65, 0x64, 0xED, 0xA0, 0x80]))
    v.reset()
    print
 
-   print v.consume(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64, 0xED]))
-   print v.consume(bytearray([0xA0, 0x80]))
+   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64, 0xED]))
+   print v.validate(bytearray([0xA0, 0x80]))
    v.reset()
    print
