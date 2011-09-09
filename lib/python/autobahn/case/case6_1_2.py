@@ -18,7 +18,7 @@
 
 from case import Case
 
-class Case6_2(Case):
+class Case6_1_2(Case):
 
    DESCRIPTION = """Send fragmented text message, 3 fragments each of length 0."""
 

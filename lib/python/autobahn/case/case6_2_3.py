@@ -21,16 +21,16 @@
 from case import Case
 import binascii
 
-class Case6_6(Case):
+class Case6_2_3(Case):
 
    PAYLOAD = "Hello-µ@ßöäüàá-UTF-8!!"
 
-   DESCRIPTION = """Send a valid UTF-8 text message in fragments of 1 octet.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
+   DESCRIPTION = """Send a valid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
 
    EXPECTATION = """The message is echo'ed back to us."""
 
    def onOpen(self):
 
-      self.expected[Case.OK] = [("message", Case6_6.PAYLOAD, False), ("failedByMe", True)]
-      self.p.sendMessage(Case6_6.PAYLOAD, binary = False, payload_frag_size = 1)
+      self.expected[Case.OK] = [("message", self.PAYLOAD, False), ("failedByMe", True)]
+      self.p.sendMessage(self.PAYLOAD, binary = False, payload_frag_size = 1)
       self.p.killAfter(1)

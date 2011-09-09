@@ -1043,7 +1043,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## write message frame header
       ##
       header = ''.join([chr(b0), chr(b1), el, mv])
-      self.transport.write(header)
+      self.sendData(header)
 
       ## now we are inside message frame ..
       ##
@@ -1089,12 +1089,9 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## send frame payload
       ##
-      self.transport.write(str(pl_ba))
+      self.sendData(str(pl_ba))
 
       pl_ba = None
-
-      #if sync:
-      #   self.syncSocket()
 
       ## advance frame payload pointer and check if frame payload was completely sent
       ##

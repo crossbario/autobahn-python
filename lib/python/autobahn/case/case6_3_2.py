@@ -19,20 +19,17 @@
 ###############################################################################
 
 from case import Case
+from case6_3_1 import Case6_3_1
 import binascii
 
-class Case6_5(Case):
+class Case6_3_2(Case6_3_1):
 
-   PAYLOAD1 = "Hello-µ@ßöä"
-   PAYLOAD2 = "üàá-UTF-8!!"
+   DESCRIPTION = """Send invalid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
 
-   DESCRIPTION = """Send a valid UTF-8 text message in two fragments, fragmented on UTF-8 code point boundary.<br><br>MESSAGE FRAGMENT 1:<br>%s<br>%s<br><br>MESSAGE FRAGMENT 2:<br>%s<br>%s""" % (PAYLOAD1, binascii.b2a_hex(PAYLOAD1), PAYLOAD2, binascii.b2a_hex(PAYLOAD2))
-
-   EXPECTATION = """The message is echo'ed back to us."""
+   EXPECTATION = """The connection is failed immediately, since the payload is not valid UTF-8."""
 
    def onOpen(self):
 
-      self.expected[Case.OK] = [("message", Case6_5.PAYLOAD1 + Case6_5.PAYLOAD2, False), ("failedByMe", True)]
-      self.p.sendFrame(opcode = 1, fin = False, payload = Case6_5.PAYLOAD1)
-      self.p.sendFrame(opcode = 0, fin = True, payload = Case6_5.PAYLOAD2)
+      self.expected[Case.OK] = [("failedByMe", False)]
+      self.p.sendMessage(self.PAYLOAD, binary = False, payload_frag_size = 1)
       self.p.killAfter(1)

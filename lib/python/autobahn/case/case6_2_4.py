@@ -21,16 +21,16 @@
 from case import Case
 import binascii
 
-class Case6_7(Case):
+class Case6_2_4(Case):
 
-   PAYLOAD = "\xED\xA0\x80"
+   PAYLOAD = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'
 
-   DESCRIPTION = """Send a text message with payload which is not valid UTF-8 in one fragment.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
+   DESCRIPTION = """Send a valid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
 
-   EXPECTATION = """The connection is failed immediately, since the payload is not valid UTF-8."""
+   EXPECTATION = """The message is echo'ed back to us."""
 
    def onOpen(self):
 
-      self.expected[Case.OK] = [("failedByMe", False)]
-      self.p.sendMessage(Case6_7.PAYLOAD, binary = False)
+      self.expected[Case.OK] = [("message", self.PAYLOAD, False), ("failedByMe", True)]
+      self.p.sendMessage(self.PAYLOAD, binary = False, payload_frag_size = 1)
       self.p.killAfter(1)

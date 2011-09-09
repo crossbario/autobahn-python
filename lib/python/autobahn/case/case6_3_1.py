@@ -1,3 +1,5 @@
+# coding=utf-8
+
 ###############################################################################
 ##
 ##  Copyright 2011 Tavendo GmbH
@@ -17,14 +19,22 @@
 ###############################################################################
 
 from case import Case
+import binascii
 
-class Case6_1(Case):
+class Case6_3_1(Case):
 
-   DESCRIPTION = """Send text message of length 0."""
+   # invalid exactly on byte 12 (\xa0)
+   PAYLOAD1 = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'
+   PAYLOAD2 = '\xed\xa0\x80'
+   PAYLOAD3 = '\x65\x64\x69\x74\x65\x64'
+   PAYLOAD = PAYLOAD1 + PAYLOAD2 + PAYLOAD3
 
-   EXPECTATION = """A message is echo'ed back to us (with empty payload)."""
+   DESCRIPTION = """Send invalid UTF-8 text message unfragmented.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
+
+   EXPECTATION = """The connection is failed immediately, since the payload is not valid UTF-8."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("message", "", False), ("failedByMe", True)]
-      self.p.sendFrame(opcode = 1, payload = "")
+
+      self.expected[Case.OK] = [("failedByMe", False)]
+      self.p.sendMessage(self.PAYLOAD, binary = False)
       self.p.killAfter(1)
