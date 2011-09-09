@@ -168,10 +168,18 @@ class FuzzingProtocol:
 
          cc = caseClasstoIdTuple(self.runCase.__class__)
 
+         ## Chrome crashes on these
+         ##
+         if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
+            print "Skipping forever sending data after invalid UTF-8 for broken Chrome (crashes) !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
          ## FF7 crashes on these
          ##
          if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
-            print "Skipping fragmented message test case for broken FF/7 !!!"
+            print "Skipping fragmented message test case for broken FF/7 (crashes) !!!"
             self.runCase = None
             self.sendClose()
             return
