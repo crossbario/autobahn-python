@@ -25,6 +25,7 @@ import struct
 import random
 import urlparse
 import os
+from collections import deque
 from utf8validator import Utf8Validator
 
 
@@ -328,6 +329,12 @@ class WebSocketProtocol(protocol.Protocol):
       self.utf8validator = Utf8Validator()
       self.utf8validateIncoming = self.factory.utf8validateIncoming
 
+      ## for chopped/synched sends, we need to queue to maintain
+      ## ordering when recalling the reactor to actually "force"
+      ## the octets to wire (see test/trickling in the repo)
+      self.send_queue = deque()
+      self.triggered = False
+
 
    def connectionLost(self, reason):
       """
@@ -430,27 +437,47 @@ class WebSocketProtocol(protocol.Protocol):
       raise Exception("must implement handshake (client or server) in derived class")
 
 
-   def syncSocket(self):
-
-      ## FIXME: find suitable replacement for this code, which appears to break
-      ## sometimes ..
-      ##
-      ## From the web: "You should never call reactor.doSelect. This isn't portable across
-      ## reactors, and it could easily break the reactor by re-entering it where it isn't
-      ## expecting to be re-entered."
-      ##
-      try:
-         reactor.doIteration(0)
-         return True
-      except:
-         return False # socket has already gone away ..
-
-
    def registerProducer(self, producer, streaming):
+      """
+      Register a Twisted producer with this protocol.
+
+      :param producer: A Twisted push or pull producer.
+      :type producer: object
+      :param streaming: Producer type.
+      :type streaming: bool
+      """
       self.transport.registerProducer(producer, streaming)
 
 
-   def sendData(self, raw, sync = False, chopsize = None):
+   def _trigger(self):
+      """
+      Trigger sending stuff from send queue (which is only used for chopped/synched writes).
+      """
+      if not self.triggered:
+         self.triggered = True
+         self._send()
+
+
+   def _send(self):
+      """
+      Send out stuff from send queue. For details how this works, see test/trickling
+      in the repo.
+      """
+      if len(self.send_queue) > 0:
+         e = self.send_queue.popleft()
+         self.logTxOctets(e[0], e[1])
+         self.transport.write(e[0])
+         # we need to reenter the reactor to make the latter
+         # reenter the OS network stack, so that octets
+         # can get on the wire. Note: this is a "heuristic",
+         # since there is no (easy) way to really force out
+         # octets from the OS network stack to wire.
+         reactor.callLater(0.000001, self._send)
+      else:
+         self.triggered = False
+
+
+   def sendData(self, data, sync = False, chopsize = None):
       """
       Wrapper for self.transport.write which allows to give a chopsize.
       When asked to chop up writing to TCP stream, we write only chopsize octets
@@ -461,30 +488,23 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if chopsize and chopsize > 0:
          i = 0
-         n = len(raw)
+         n = len(data)
          done = False
          while not done:
             j = i + chopsize
             if j >= n:
                done = True
                j = n
-            self.logTxOctets(raw[i:j], True)
-            self.transport.write(raw[i:j])
-
-            ## This is where the "magic" happens. We give up control to the
-            ## Twisted reactor, which calls into the OS Select(), which will
-            ## then send out outstanding data. I suspect this Twisted call is
-            ## probably not "intended" to be called by Twisted users, but it is
-            ## the only "way" I found to work to attain the intended result.
-            ##
-            self.syncSocket()
-
+            self.send_queue.append((data[i:j], True))
             i += chopsize
+         self._trigger()
       else:
-         self.logTxOctets(raw, sync)
-         self.transport.write(raw)
-         if sync:
-            self.syncSocket()
+         if sync or len(self.send_queue) > 0:
+            self.send_queue.append((data, sync))
+            self._trigger()
+         else:
+            self.logTxOctets(data, False)
+            self.transport.write(data)
 
 
    def processData(self):

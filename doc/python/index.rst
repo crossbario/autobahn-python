@@ -7,7 +7,8 @@ WebSockets Features
 *Autobahn WebSockets for Python* provides an implementation of the WebSockets protocol
 which can be used to build WebSockets clients and servers.
 
-The implementation is compliant to the latest `protocol draft <http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-10>`_.
+The implementation is compliant to the WebSockets `protocol draft version 13 <http://tools.ietf.org/html/draft-ietf-hybi-thewebsocketprotocol-13>`_,
+and supports draft versions starting from 10.
 
    * usable for clients and servers
    * easy to use basic API

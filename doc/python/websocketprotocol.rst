@@ -133,7 +133,8 @@ Classes
              endMessage,
              sendMessageFrame,
              sendMessage,
-             setValidateIncomingUtf8
+             setValidateIncomingUtf8,
+             registerProducer
 
 .. autoclass:: autobahn.websocket.ConnectionRequest
    :members: __init__

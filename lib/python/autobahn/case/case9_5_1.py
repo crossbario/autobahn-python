@@ -30,7 +30,7 @@ class Case9_5_1(Case):
    def init(self):
       self.DATALEN = 1 * 2**20
       self.PAYLOAD = "BAsd7&jh23"
-      self.WAITSECS = 200
+      self.WAITSECS = 600
       self.reportTime = True
       self.setChopSize()
 
