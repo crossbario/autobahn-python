@@ -66,5 +66,5 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = WebSocketTestClientFactory(debug = False)
-   reactor.connectTCP("localhost", 9000, factory)
+   reactor.connectTCP("localhost", 9001, factory)
    reactor.run()
