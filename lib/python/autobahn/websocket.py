@@ -680,7 +680,9 @@ class WebSocketProtocol(protocol.Protocol):
          ##
          self.current_frame.ptr += length
          if self.current_frame.ptr == self.current_frame.length:
-            self.onFrameEnd()
+            fr = self.onFrameEnd()
+            if fr == False:
+               return False
 
          ## reprocess when no error occurred and buffered data left
          ##
@@ -700,6 +702,7 @@ class WebSocketProtocol(protocol.Protocol):
             if self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_TEXT and self.utf8validateIncoming:
                self.utf8validator.reset()
                self.utf8validateIncomingCurrentMessage = True
+               self.utf8validateLast = (True, True, 0, 0)
             else:
                self.utf8validateIncomingCurrentMessage = False
 
@@ -715,9 +718,9 @@ class WebSocketProtocol(protocol.Protocol):
          ## incrementally validate UTF-8 payload
          ##
          if self.utf8validateIncomingCurrentMessage:
-            uv = self.utf8validator.validate(payload)
-            if not uv[0]:
-               self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % uv[2])
+            self.utf8validateLast = self.utf8validator.validate(payload)
+            if not self.utf8validateLast[0]:
+               self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3])
                return False
 
          self.onMessageFrameData(payload)
@@ -729,6 +732,10 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          self.onMessageFrameEnd()
          if self.current_frame.fin:
+            if self.utf8validateIncomingCurrentMessage:
+               if not self.utf8validateLast[1]:
+                  self.protocolViolation("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3])
+                  return False
             self.onMessageEnd()
             self.inside_message = False
       self.current_frame = None

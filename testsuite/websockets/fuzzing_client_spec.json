@@ -1,5 +1,4 @@
 {
-   "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000, "version": 13},
-               {"agent": "Jetty/7.5", "hostname": "localhost", "port": 8080, "version": 13}],
+   "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000, "version": 13}],
    "cases": ["*"]
 }

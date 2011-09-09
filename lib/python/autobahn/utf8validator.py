@@ -29,8 +29,6 @@
 ##
 ###############################################################################
 
-import sys
-
 
 class Utf8Validator:
    """
@@ -98,7 +96,7 @@ class Utf8Validator:
       Will return a quad (valid?, endsOnCodePoint?, currentIndex, totalIndex).
 
       As soon as an octet is encountered which renders the octet sequence
-      invalid, a triple with valid? == False is returned. currentIndex returns
+      invalid, a quad with valid? == False is returned. currentIndex returns
       the index within the currently consumed chunk, and totalIndex the
       index within the total consumed sequence that was the point of bail out.
       When valid? == True, currentIndex will be len(ba) and totalIndex the
@@ -115,12 +113,14 @@ class Utf8Validator:
       return True, self.state == Utf8Validator.UTF8_ACCEPT, l, self.i
 
 
-if __name__ == '__main__':
+
+def test_utf8():
+   """
+   These tests verify the UTF-8 decoder/validator on the various test cases from
+   http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
+   """
 
    v = Utf8Validator()
-
-   # http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
-
    vs = []
 
    # 1 Some correct UTF-8 text
@@ -152,7 +152,7 @@ if __name__ == '__main__':
    # 2.3 Other boundary conditions
    vs.append((True, '\xed\x9f\xbf'))
    vs.append((True, '\xee\x80\x80'))
-   vs.append((False, '\xef\xbf\xbd'))
+   vs.append((True, '\xef\xbf\xbd'))
    vs.append((True, '\xf4\x8f\xbf\xbf'))
    vs.append((False, '\xf4\x90\x80\x80'))
 
@@ -215,75 +215,71 @@ if __name__ == '__main__':
 
    # All Unicode code points
    for i in xrange(0, 0xffff): # should by 0x10ffff, but non-wide Python build is limited to 16-bits
-      ss = unichr(i).encode("utf-8")
-      if i >= 0xD800 and i <= 0xDBFF: # high-surrogate
-         expect = False
-      elif i >= 0xDC00 and i <= 0xDFFF: # low-surrogate
-         expect = False
-      else:
-         expect = True
-      vs.append((expect, ss))
+      if i < 0xD800 or i > 0xDFFF: # filter surrogate code points, which are disallowed to encode in UTF-8
+         vs.append((True, unichr(i).encode("utf-8")))
 
    # 5.1 Single UTF-16 surrogates
-#   for i in xrange(0xD800, 0xDBFF): # high-surrogate
-#      ss = unichr(i).encode("utf-8")
-#      vs.append((False, ss))
-#   for i in xrange(0xDC00, 0xDFFF): # low-surrogate
-#      ss = unichr(i).encode("utf-8")
-#      vs.append((False, ss))
+   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+      ss = unichr(i).encode("utf-8")
+      vs.append((False, ss))
+   for i in xrange(0xDC00, 0xDFFF): # low-surrogate
+      ss = unichr(i).encode("utf-8")
+      vs.append((False, ss))
 
    # 5.2 Paired UTF-16 surrogates
-#   for i in xrange(0xD800, 0xDBFF): # high-surrogate
-#      for j in xrange(0xDC00, 0xDFFF): # low-surrogate
-#         ss1 = unichr(i).encode("utf-8")
-#         ss2 = unichr(j).encode("utf-8")
-#         vs.append((False, ss1 + ss2))
-#         vs.append((False, ss2 + ss1))
+   for i in xrange(0xD800, 0xDBFF): # high-surrogate
+      for j in xrange(0xDC00, 0xDFFF): # low-surrogate
+         ss1 = unichr(i).encode("utf-8")
+         ss2 = unichr(j).encode("utf-8")
+         vs.append((False, ss1 + ss2))
+         vs.append((False, ss2 + ss1))
 
    # 5.3 Other illegal code positions
-   vs.append((False, '\xef\xbf\xbe'))
-   vs.append((False, '\xef\xbf\xbf'))
+   # Those are non-character code points and valid UTF-8 by RFC 3629
+   vs.append((True, '\xef\xbf\xbe'))
+   vs.append((True, '\xef\xbf\xbf'))
 
+   # Unicode replacement character
+   vs.append((True, '\xef\xbf\xbd'))
 
+   # now test and assert ..
    for s in vs:
       v.reset()
       r = v.validate(bytearray(s[1]))
-      res = r[0] and r[1]
-      #assert res == s[0]
-      try:
-         ps = s[1].decode("utf-8")
-         res_py = True
-      except UnicodeDecodeError:
-         res_py = False
-      if res != s[0] or res != res_py:
-         print s, res, res_py
+      res = r[0] and r[1] # no UTF-8 decode error and everything consumed
+      assert res == s[0]
 
-   sys.exit(0)
 
-   # note that this source file was created with an UTF-8 editor and
-   # declares that on line 1 to Python
-   s = "µ@ßöäüàá"
-   print s.decode("utf-8")
-   print v.validate(bytearray(s))
+def test_utf8_incremental():
+   """
+   These tests verify that the UTF-8 decoder/validator can operate incrementally.
+   """
+
+   v = Utf8Validator()
+
    v.reset()
-   print
+   assert (True, True, 15, 15) == v.validate(bytearray("µ@ßöäüàá"))
 
-   print v.validate(bytearray([0xF5]))
    v.reset()
-   print
+   assert (False, False, 0, 0) == v.validate(bytearray([0xF5]))
 
    ## the following 3 all fail on eating byte 7 (0xA0)
-   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64]))
-   print v.validate(bytearray([0xED, 0xA0, 0x80]))
    v.reset()
-   print
+   assert (True, True, 6, 6) == v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64]))
+   assert (False, False, 1, 7) == v.validate(bytearray([0xED, 0xA0, 0x80]))
 
-   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74]))
-   print v.validate(bytearray([0x65, 0x64, 0xED, 0xA0, 0x80]))
    v.reset()
-   print
+   assert (True, True, 4, 4) == v.validate(bytearray([0x65, 0x64, 0x69, 0x74]))
+   assert (False, False, 3, 7) == v.validate(bytearray([0x65, 0x64, 0xED, 0xA0, 0x80]))
 
-   print v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64, 0xED]))
-   print v.validate(bytearray([0xA0, 0x80]))
    v.reset()
-   print
+   assert (True, False, 7, 7) == v.validate(bytearray([0x65, 0x64, 0x69, 0x74, 0x65, 0x64, 0xED]))
+   assert (False, False, 0, 7) == v.validate(bytearray([0xA0, 0x80]))
+
+
+if __name__ == '__main__':
+   """
+   Run unit tests.
+   """
+   test_utf8_incremental()
+   test_utf8()
