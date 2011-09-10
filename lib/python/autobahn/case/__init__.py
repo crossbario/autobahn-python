@@ -225,6 +225,8 @@ Cases += [Case9_5_3, Case9_5_4, Case9_5_5, Case9_5_6]
 #Cases += [Case9_6_1, Case9_6_2]
 Cases += [Case9_6_3, Case9_6_4, Case9_6_5, Case9_6_6]
 
+#Cases = [Case1_1_1, Case1_1_2, Case1_1_3, Case1_1_4, Case1_1_5, Case1_1_6, Case1_1_7, Case1_1_8]
+
 ## Class1_2_3 => '1.2.3'
 ##
 def caseClasstoId(klass):

@@ -95,6 +95,9 @@ class WebSocketProtocol(protocol.Protocol):
    ##
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+   QUEUED_WRITE_DELAY = 0.00001
+#   QUEUED_WRITE_DELAY = 0.000001
+
    MESSAGE_TYPE_TEXT = 1
    """WebSockets text message type (UTF-8 payload)."""
 
@@ -472,7 +475,7 @@ class WebSocketProtocol(protocol.Protocol):
          # can get on the wire. Note: this is a "heuristic",
          # since there is no (easy) way to really force out
          # octets from the OS network stack to wire.
-         reactor.callLater(0.000001, self._send)
+         reactor.callLater(WebSocketProtocol.QUEUED_WRITE_DELAY, self._send)
       else:
          self.triggered = False
 
