@@ -73,6 +73,14 @@
                   agent = s1 + "(" + s2 + ")";
                   updateStatus("Detected user agent " + agent + ".");
                }
+               else if (ua.indexOf("Safari") > -1)
+               {
+                  i = ua.indexOf("Safari");
+                  j = ua.indexOf(" ", i);
+                  if (j < 0) j = ua.length;
+                  agent = ua.slice(i, j);
+                  updateStatus("Detected user agent " + agent + ".");
+               }
                else
                {
                   agent = "unknown";

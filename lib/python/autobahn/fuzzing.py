@@ -171,7 +171,7 @@ class FuzzingProtocol:
          ## Chrome crashes on these
          ##
          if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
-            print "Skipping forever sending data after invalid UTF-8 for broken Chrome (crashes) !!!"
+            print "Skipping forever sending data after invalid UTF-8 for Chrome (crashes) !!!"
             self.runCase = None
             self.sendClose()
             return
@@ -179,11 +179,27 @@ class FuzzingProtocol:
          ## FF7 crashes on these
          ##
          if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
-            print "Skipping fragmented message test case for broken FF/7 (crashes) !!!"
+            print "Skipping fragmented message test case for Firefox/7 (crashes) !!!"
             self.runCase = None
             self.sendClose()
             return
 
+         ## FF7 crashes on these
+         ##
+         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:3] in [(6, 4, 2), (6, 4, 3), (6, 4, 4), (6, 4, 5)]:
+            print "Skipping invalid UTF-8 test for Firefox/7 (crashes) !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
+         ## FF does not yet implement binary messages
+         ##
+         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
+            print "Skipping binary message test case for Firefox !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+            
          self.caseStart = time.time()
          self.runCase.onOpen()
 
