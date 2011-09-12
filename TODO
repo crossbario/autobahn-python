@@ -18,17 +18,12 @@ RPC Server Classes
 Test Suite
 ==========
 
-Increase Timeout on performance tests. Maybe make it an option.
-
 Test Cases
 
   - allow "fail connection" = "immediate TCP close" OR "WS close handshake"
-
-  - UTF-8 Handling (codecs.getincrementaldecoder('utf-8')())
-  - Close
+  - Opening/Closing Handshake
   - Server-to-Client Masking
   - Message Roundtrip Time / Latency
-  - Handshaking
 
   http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
   http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html
@@ -45,15 +40,7 @@ WebSocket Protocol
 
   - allow FIN = true on beginMessageFrame instead of endMessage
 
-  - WebSocketProtocol.syncSocket() .. fix hack/reentry into Twisted reactor
-
-  - Force out outstanding octets before failing connection?
-    Twisted _seems_ to do that, but does it do so in every case?
-
-  - Optimize fragment/message reassembly
-
   - Further optimize masking: http://stackoverflow.com/questions/2119761/simple-python-challenge-fastest-bitwise-xor-on-data-buffers
 
   - check NumPy for masking
-
     https://github.com/kanaka/websockify/blob/6e263063c2b63642a0e17cb91d6b9f6c9365c0c0/websocket.py#L293

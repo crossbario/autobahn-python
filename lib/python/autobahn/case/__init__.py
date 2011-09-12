@@ -220,12 +220,8 @@ Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]
 Cases += [Case9_4_1, Case9_4_2, Case9_4_3, Case9_4_4, Case9_4_5, Case9_4_6, Case9_4_7, Case9_4_8, Case9_4_9]
-#Cases += [Case9_5_1, Case9_5_2]
-Cases += [Case9_5_3, Case9_5_4, Case9_5_5, Case9_5_6]
-#Cases += [Case9_6_1, Case9_6_2]
-Cases += [Case9_6_3, Case9_6_4, Case9_6_5, Case9_6_6]
-
-#Cases = [Case1_1_1, Case1_1_2, Case1_1_3, Case1_1_4, Case1_1_5, Case1_1_6, Case1_1_7, Case1_1_8]
+Cases += [Case9_5_1, Case9_5_2, Case9_5_3, Case9_5_4, Case9_5_5, Case9_5_6]
+Cases += [Case9_6_1, Case9_6_2, Case9_6_3, Case9_6_4, Case9_6_5, Case9_6_6]
 
 ## Class1_2_3 => '1.2.3'
 ##

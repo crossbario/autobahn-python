@@ -84,8 +84,8 @@ class WebSocketProtocol(protocol.Protocol):
 
    ## The WebSocket specification versions supported by this
    ## implementation. Note, that this is spec, not protocol version.
-   ## I.e. specs 10-12 all use protocol version 8, but spec 13 uses protocol 13 also
-   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13]
+   ## I.e. specs 10-12 all use protocol version 8, but specs 13,14 uses protocol 13 also
+   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14]
    SUPPORTED_PROTOCOL_VERSIONS = [8, 13]
 
    ## The default spec version we speak.
@@ -96,7 +96,6 @@ class WebSocketProtocol(protocol.Protocol):
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
    QUEUED_WRITE_DELAY = 0.00001
-#   QUEUED_WRITE_DELAY = 0.000001
 
    MESSAGE_TYPE_TEXT = 1
    """WebSockets text message type (UTF-8 payload)."""
@@ -140,8 +139,8 @@ class WebSocketProtocol(protocol.Protocol):
    CLOSE_STATUS_CODE_ABNORMAL_CLOSE = 1006 # MUST NOT be set in close frame!
    """Abnormal close of connection. (MUST NOT be used as status code when sending a close)."""
 
-   CLOSE_STATUS_CODE_INVALID_UTF8 = 1007
-   """Invalid UTF-8."""
+   CLOSE_STATUS_CODE_INVALID_PAYLOAD = 1007
+   """Invalid frame payload data."""
 
    CLOSE_STATUS_CODE_POLICY_VIOLATION = 1008
    """Policy violation."""
@@ -156,7 +155,7 @@ class WebSocketProtocol(protocol.Protocol):
                                  CLOSE_STATUS_CODE_GOING_AWAY,
                                  CLOSE_STATUS_CODE_PROTOCOL_ERROR,
                                  CLOSE_STATUS_CODE_UNSUPPORTED_DATA,
-                                 CLOSE_STATUS_CODE_INVALID_UTF8,
+                                 CLOSE_STATUS_CODE_INVALID_PAYLOAD,
                                  CLOSE_STATUS_CODE_POLICY_VIOLATION,
                                  CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
                                  CLOSE_STATUS_CODE_MANDATORY_EXTENSION]
@@ -629,11 +628,17 @@ class WebSocketProtocol(protocol.Protocol):
                ##
                if frame_payload_len1 == 126:
                   frame_payload_len = struct.unpack("!H", self.data[i:i+2])[0]
+                  if frame_payload_len < 126:
+                     self.protocolViolation("invalid data frame length (not using minimal length encoding)")
+                     return False
                   i += 2
                elif frame_payload_len1 == 127:
                   frame_payload_len = struct.unpack("!Q", self.data[i:i+8])[0]
                   if frame_payload_len > 0x7FFFFFFFFFFFFFFF: # 2**63
                      self.protocolViolation("invalid data frame length (>2^63)")
+                     return False
+                  if frame_payload_len < 65536:
+                     self.protocolViolation("invalid data frame length (not using minimal length encoding)")
                      return False
                   i += 8
                else:
@@ -1461,7 +1466,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       :param subprotocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type subprotocols: list of strings
-      :param version: The WebSockets protocol spec version to be used (must be one of 10, 11, 12, 13).
+      :param version: The WebSockets protocol spec version to be used (must be one of 10-14).
       :type version: int
       :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
       :type utf8validateIncoming: bool
@@ -1699,7 +1704,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type origin: str
       :param subprotocols: List of subprotocols the client should announce in WebSockets opening handshake.
       :type subprotocols: list of strings
-      :param version: The WebSockets protocol spec version to be used (must be one of 10, 11, 12, 13).
+      :param version: The WebSockets protocol spec version to be used (must be one of 10-14).
       :type version: int
       :param useragent: User agent as announced in HTTP header.
       :type useragent: str

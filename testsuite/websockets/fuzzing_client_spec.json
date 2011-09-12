@@ -1,6 +1,5 @@
 {
    "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000, "version": 13},
-               {"agent": "Jetty/7.5.1.v20110908", "hostname": "localhost", "port": 8090, "version": 13},
                {"agent": "Jetty/7.5.2-SNAPSHOT", "hostname": "localhost", "port": 8080, "version": 13}],
    "cases": ["*"]
 }
