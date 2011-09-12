@@ -28,5 +28,5 @@ class Case9_3_2(Case9_3_1):
       self.DATALEN = 8 * 2**20
       self.FRAGSIZE = 256
       self.PAYLOAD = "*" * self.DATALEN
-      self.WAITSECS = 10
+      self.WAITSECS = 100
       self.reportTime = True

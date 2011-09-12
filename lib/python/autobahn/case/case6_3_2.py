@@ -1,3 +1,5 @@
+# coding=utf-8
+
 ###############################################################################
 ##
 ##  Copyright 2011 Tavendo GmbH
@@ -16,13 +18,18 @@
 ##
 ###############################################################################
 
-from case9_6_1 import Case9_6_1
+from case import Case
+from case6_3_1 import Case6_3_1
+import binascii
 
-class Case9_6_6(Case9_6_1):
+class Case6_3_2(Case6_3_1):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 2048 octets."""
+   DESCRIPTION = """Send invalid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """The connection is failed immediately, since the payload is not valid UTF-8."""
 
-   def setChopSize(self):
-      self.chopsize = 2048
+   def onOpen(self):
+
+      self.expected[Case.OK] = [("failedByMe", False)]
+      self.p.sendMessage(self.PAYLOAD, binary = False, payload_frag_size = 1)
+      self.p.killAfter(1)

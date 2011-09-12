@@ -34,4 +34,4 @@ class Case2_10(Case):
          self.expected[Case.OK].append(("pong", payload))
          self.p.sendFrame(opcode = 9, payload = payload, chopsize = self.chopsize)
       self.expected[Case.OK].append(("failedByMe", True))
-      self.p.killAfter(1)
+      self.p.killAfter(3)

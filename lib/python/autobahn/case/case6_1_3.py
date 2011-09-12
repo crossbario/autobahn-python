@@ -16,13 +16,18 @@
 ##
 ###############################################################################
 
-from case9_6_1 import Case9_6_1
+from case import Case
 
-class Case9_6_6(Case9_6_1):
+class Case6_1_3(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 2048 octets."""
+   DESCRIPTION = """Send fragmented text message, 3 fragments, first and last of length 0, middle non-empty."""
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """A message is echo'ed back to us (with payload = payload of middle fragment)."""
 
-   def setChopSize(self):
-      self.chopsize = 2048
+   def onOpen(self):
+      payload = "middle frame payload"
+      self.expected[Case.OK] = [("message", payload, False), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 1, fin = False, payload = "")
+      self.p.sendFrame(opcode = 0, fin = False, payload = payload)
+      self.p.sendFrame(opcode = 0, fin = True, payload = "")
+      self.p.killAfter(1)

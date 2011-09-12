@@ -1,27 +1,24 @@
-WebSockets
-==========
-
-- Update to Hybi 13
-
-
 Test Suite
 ==========
 
-Increase Timeout on performance tests. Maybe make it an option.
+Allow to specify case exclusion patterns.
 
 Test Cases
 
+  - split out 6.4.3 to a new test section: "Implementation Limits" => see how behaves
+  - UTF-8 fail fast: differentiate 4 behaviors
+      1. only when complete message was received
+      2. only when complete frame was received
+      3. only when complete octets for encoded integer was received
+      4. as soon as invalid octet is received
+
+   Currently, there are tests to distinguish between 1., 2. and 4.
+   So for completeness, there need to be tests to differentiate between 3. and 4.
+
   - allow "fail connection" = "immediate TCP close" OR "WS close handshake"
-  - UTF-8 Handling (codecs.getincrementaldecoder('utf-8')())
-  - Close
+  - Opening/Closing Handshake
   - Server-to-Client Masking
   - Message Roundtrip Time / Latency
-  - Handshaking
-
-  http://www.ietf.org/mail-archive/web/hybi/current/msg07995.html
-  http://www.ietf.org/mail-archive/web/hybi/current/msg07975.html
-
-  - Binary Messags in Browser (http://peter.sh/2011/09/media-source-binary-web-sockets-accessibility-and-border-images/ => see links to Trac there)
   - JSON roundtripping tests
 
 Test Report
@@ -36,11 +33,7 @@ WebSocket Protocol
 
   - allow FIN = true on beginMessageFrame instead of endMessage
 
-  - WebSocketProtocol.syncSocket() .. fix hack/reentry into Twisted reactor
-
-  - Force out outstanding octets before failing connection?
-    Twisted _seems_ to do that, but does it do so in every case?
-
-  - Optimize fragment/message reassembly
-
   - Further optimize masking: http://stackoverflow.com/questions/2119761/simple-python-challenge-fastest-bitwise-xor-on-data-buffers
+
+  - check NumPy for masking
+    https://github.com/kanaka/websockify/blob/6e263063c2b63642a0e17cb91d6b9f6c9365c0c0/websocket.py#L293

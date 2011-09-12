@@ -16,4 +16,5 @@ Classes
    :members: onConnect
 
 .. autoclass:: autobahn.websocket.WebSocketServerFactory
+   :members: __init__
 

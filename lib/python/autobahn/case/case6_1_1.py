@@ -16,13 +16,15 @@
 ##
 ###############################################################################
 
-from case9_6_1 import Case9_6_1
+from case import Case
 
-class Case9_6_6(Case9_6_1):
+class Case6_1_1(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 2048 octets."""
+   DESCRIPTION = """Send text message of length 0."""
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """A message is echo'ed back to us (with empty payload)."""
 
-   def setChopSize(self):
-      self.chopsize = 2048
+   def onOpen(self):
+      self.expected[Case.OK] = [("message", "", False), ("failedByMe", True)]
+      self.p.sendFrame(opcode = 1, payload = "")
+      self.p.killAfter(1)

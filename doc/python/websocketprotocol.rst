@@ -106,11 +106,13 @@ Classes
              CLOSE_STATUS_CODE_NORMAL,
              CLOSE_STATUS_CODE_GOING_AWAY,
              CLOSE_STATUS_CODE_PROTOCOL_ERROR,
-             CLOSE_STATUS_CODE_PAYLOAD_NOT_ACCEPTED,
-             CLOSE_STATUS_CODE_FRAME_TOO_LARGE,
+             CLOSE_STATUS_CODE_UNSUPPORTED_DATA,
              CLOSE_STATUS_CODE_NULL,
-             CLOSE_STATUS_CODE_CONNECTION_LOST,
-             CLOSE_STATUS_CODE_TEXT_FRAME_NOT_UTF8,
+             CLOSE_STATUS_CODE_ABNORMAL_CLOSE,
+             CLOSE_STATUS_CODE_INVALID_PAYLOAD,
+             CLOSE_STATUS_CODE_POLICY_VIOLATION,
+             CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
+             CLOSE_STATUS_CODE_MANDATORY_EXTENSION,
              onOpen,
              onClose,
              onPing,
@@ -130,7 +132,9 @@ Classes
              sendMessageFrameData,
              endMessage,
              sendMessageFrame,
-             sendMessage
+             sendMessage,
+             setValidateIncomingUtf8,
+             registerProducer
 
 .. autoclass:: autobahn.websocket.ConnectionRequest
    :members: __init__

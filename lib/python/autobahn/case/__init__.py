@@ -42,6 +42,10 @@ CaseSubCategories = {"1.1": "Text Messages",
                      "1.2": "Binary Messages",
                      "4.1": "Non-control Opcodes",
                      "4.2": "Control Opcodes",
+                     "6.1": "Valid UTF-8 with zero payload fragments",
+                     "6.2": "Valid UTF-8 unfragmented, fragmented on code-points and within code-points",
+                     "6.3": "Invalid UTF-8 differently fragmented",
+                     "6.4": "Fail-fast on invalid UTF-8",
                      "9.1": "Text Message (increasing size)",
                      "9.2": "Binary Message (increasing size)",
                      "9.3": "Fragmented Text Message (fixed size, increasing fragment size)",
@@ -124,9 +128,25 @@ from case5_18 import *
 from case5_19 import *
 from case5_20 import *
 
-from case6_1 import *
-from case6_2 import *
-from case6_3 import *
+from case6_1_1 import *
+from case6_1_2 import *
+from case6_1_3 import *
+
+from case6_2_1 import *
+from case6_2_2 import *
+from case6_2_3 import *
+from case6_2_4 import *
+
+from case6_3_1 import *
+from case6_3_2 import *
+
+from case6_4_1 import *
+from case6_4_2 import *
+from case6_4_3 import *
+from case6_4_4 import *
+from case6_4_5 import *
+
+from case6_x_x import *
 
 from case9_1_1 import *
 from case9_1_2 import *
@@ -187,7 +207,15 @@ Cases += [Case3_1, Case3_2, Case3_3, Case3_4, Case3_5, Case3_6, Case3_7]
 Cases += [Case4_1_1, Case4_1_2, Case4_1_3, Case4_1_4, Case4_1_5]
 Cases += [Case4_2_1, Case4_2_2, Case4_2_3, Case4_2_4, Case4_2_5]
 Cases += [Case5_1, Case5_2, Case5_3, Case5_4, Case5_5, Case5_6, Case5_7, Case5_8, Case5_9, Case5_10, Case5_11, Case5_12, Case5_13, Case5_14, Case5_15, Case5_16, Case5_17, Case5_18, Case5_19, Case5_20]
-Cases += [Case6_1, Case6_2, Case6_3]
+Cases += [Case6_1_1, Case6_1_2, Case6_1_3]
+Cases += [Case6_2_1, Case6_2_2, Case6_2_3, Case6_2_4]
+Cases += [Case6_3_1, Case6_3_2]
+Cases += [Case6_4_1, Case6_4_2]
+Cases += [Case6_4_3]
+Cases += [Case6_4_4]
+Cases += [Case6_4_5]
+Cases.extend(Case6_X_X)
+CaseSubCategories.update(Case6_X_X_CaseSubCategories)
 Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]

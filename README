@@ -1,8 +1,40 @@
-Autobahn is a light-weight, asynchronous RPC/Event protocol built
-on top of WebSockets.
+Autobahn WebSockets
+-------------------
 
-The Autobahn open-source project currently develops client libraries,
-a server framework and a protocol compliance test suite, all usable
-for raw WebSockets as well as Autobahn development.
+Autobahn WebSockets provides an implementation of the WebSockets protocol
+which can be used to build WebSockets clients and servers.
+
+   * supports protocol draft version 10-14
+   * usable for clients and servers
+   * easy to use basic API
+   * advanced API for frame-based/streaming processing
+   * very good standards conformance
+   * fully asynchronous Twisted-based implementation
+   * Open-source (Apache 2 license)
+
+Testsuite
+---------
+
+Autobahn WebSockets also includes a WebSockets test suite which can used to
+test client and server implementations for protocol conformance.
+The test suite includes over 200 test cases and has broad protocol coverage.
+
+RPC/PubSub
+----------
+
+Autobahn WebSockets also provides an implementation of the
+
+   WebSocket Application Messaging Protocol (WAMP)
+   http://www.tavendo.de/autobahn/protocol.html
+
+which can be used to build applications around Remote Procedure Call and
+Publish & Subscribe messaging patterns.
+
+   * provides RPC and PubSub messaging
+   * built on JSON and WebSockets
+   * simple and open protocol
+   * usable for clients and servers
 
 For more information, please visit: http://www.tavendo.de/autobahn
+
+Commercial support and services is available from Tavendo GmbH.

@@ -21,6 +21,7 @@ import autobahn
 import fuzzing
 import case
 import prefixmap
+import utf8validator
 
 try:
    import pkg_resources
@@ -28,4 +29,3 @@ try:
 except:
    ## i.e. no setuptools installed ..
    version = None
-

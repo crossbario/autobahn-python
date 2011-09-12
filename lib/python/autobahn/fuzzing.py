@@ -168,22 +168,38 @@ class FuzzingProtocol:
 
          cc = caseClasstoIdTuple(self.runCase.__class__)
 
+         ## Chrome crashes on these
+         ##
+         if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
+            print "Skipping forever sending data after invalid UTF-8 for Chrome (crashes) !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
          ## FF7 crashes on these
          ##
          if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
-            print "Skipping fragmented message test case for broken FF/7 !!!"
+            print "Skipping fragmented message test case for Firefox/7 (crashes) !!!"
             self.runCase = None
             self.sendClose()
             return
 
-         ## FF and Chrome dont yet implement binary messages
+         ## FF7 crashes on these
          ##
-         if (self.caseAgent.find("Firefox") >= 0 or self.caseAgent.find("Chrome") >= 0) and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
-            print "Skipping binary message test case for browser client !!!"
+         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:3] in [(6, 4, 2), (6, 4, 3), (6, 4, 4), (6, 4, 5)]:
+            print "Skipping invalid UTF-8 test for Firefox/7 (crashes) !!!"
             self.runCase = None
             self.sendClose()
             return
 
+         ## FF does not yet implement binary messages
+         ##
+         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
+            print "Skipping binary message test case for Firefox !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+            
          self.caseStart = time.time()
          self.runCase.onOpen()
 
@@ -587,7 +603,7 @@ class FuzzingFactory:
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
+      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
 
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
@@ -709,7 +725,7 @@ class FuzzingFactory:
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<html><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
+      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
 
       f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
 
@@ -983,12 +999,31 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       self.currSpecCase = -1
       self.currServer += 1
       if self.currServer < len(self.spec["servers"]):
+         ## run tests for next server
+         ##
          s = self.spec["servers"][self.currServer]
-         self.agent = s["agent"]
+
+         autobahn_version = pkg_resources.get_distribution("autobahn").version
+
+         ## agent (=server) string for reports
+         ##
+         self.agent = s.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
-            self.agent = "AutobahnServer/%s" % pkg_resources.get_distribution("autobahn").version
-         self.hostname = s["hostname"]
-         self.port = s["port"]
+            self.agent = "AutobahnServer/%s" % autobahn_version
+
+         ## used to establish TCP connection
+         ##
+         self.hostname = s.get("hostname", "localhost")
+         self.port = s.get("port", 80)
+
+         ## used in HTTP header for WS opening handshake
+         ##
+         self.path = s.get("path", "/")
+         self.host = s.get("host", self.hostname)
+         self.origin = s.get("origin", None)
+         self.subprotocols = s.get("subprotocols", [])
+         self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
+         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn_version
          return True
       else:
          return False

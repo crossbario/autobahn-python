@@ -28,6 +28,8 @@ class Case:
    OK = "OK"
    NON_STRICT = "NON-STRICT"
 
+   SUBCASES = []
+
    def __init__(self, protocol):
       self.p = protocol
       self.received = []
@@ -35,7 +37,14 @@ class Case:
       self.behavior = Case.FAILED
       self.result = "Actual events differ from any expected."
       self.reportTime = False
+      self.subcase = None
       self.init()
+
+   def getSubcaseCount(self):
+      return len(Case.SUBCASES)
+
+   def setSubcase(self, subcase):
+      self.subcase = subcase
 
    def init(self):
       pass

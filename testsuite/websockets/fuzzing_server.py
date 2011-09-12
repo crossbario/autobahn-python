@@ -26,5 +26,5 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = FuzzingServerFactory(debug = False, outdir = "reports/clients")
-   reactor.listenTCP(9000, factory)
+   reactor.listenTCP(9001, factory)
    reactor.run()

@@ -20,17 +20,17 @@ from case import Case
 
 class Case9_6_1(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 1 octet."""
+   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 64 octets."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def setChopSize(self):
-      self.chopsize = 1
+      self.chopsize = 64
 
    def init(self):
       self.DATALEN = 1 * 2**20
       self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
-      self.WAITSECS = 200
+      self.WAITSECS = 600
       self.reportTime = True
       self.setChopSize()
 

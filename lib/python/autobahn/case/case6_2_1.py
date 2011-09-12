@@ -1,3 +1,5 @@
+# coding=utf-8
+
 ###############################################################################
 ##
 ##  Copyright 2011 Tavendo GmbH
@@ -16,13 +18,19 @@
 ##
 ###############################################################################
 
-from case9_6_1 import Case9_6_1
+from case import Case
+import binascii
 
-class Case9_6_6(Case9_6_1):
+class Case6_2_1(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 2048 octets."""
+   PAYLOAD = "Hello-µ@ßöäüàá-UTF-8!!"
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   DESCRIPTION = """Send a valid UTF-8 text message in one fragment.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
 
-   def setChopSize(self):
-      self.chopsize = 2048
+   EXPECTATION = """The message is echo'ed back to us."""
+
+   def onOpen(self):
+
+      self.expected[Case.OK] = [("message", self.PAYLOAD, False), ("failedByMe", True)]
+      self.p.sendMessage(self.PAYLOAD, binary = False)
+      self.p.killAfter(1)

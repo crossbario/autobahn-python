@@ -20,9 +20,9 @@ from case9_5_1 import Case9_5_1
 
 class Case9_5_5(Case9_5_1):
 
-   DESCRIPTION = """Send text message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 256 octets."""
+   DESCRIPTION = """Send text message message with payload of length 1 * 2**20 (1M). Sent out data in chops of 1024 octets."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
    def setChopSize(self):
-      self.chopsize = 256
+      self.chopsize = 1024

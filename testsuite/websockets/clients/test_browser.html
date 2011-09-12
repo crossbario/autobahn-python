@@ -43,7 +43,7 @@
 
             if (port == null || port == "")
             {
-               port = "9000";
+               port = "9001";
                document.getElementById('port').value = port;
             }
          }
@@ -71,6 +71,14 @@
                   j = ua.indexOf(" ", i);
                   s2 = ua.slice(i + "Gecko/".length, j);
                   agent = s1 + "(" + s2 + ")";
+                  updateStatus("Detected user agent " + agent + ".");
+               }
+               else if (ua.indexOf("Safari") > -1)
+               {
+                  i = ua.indexOf("Safari");
+                  j = ua.indexOf(" ", i);
+                  if (j < 0) j = ua.length;
+                  agent = ua.slice(i, j);
                   updateStatus("Detected user agent " + agent + ".");
                }
                else
@@ -162,6 +170,7 @@
             var ws_uri = "ws://" + hostname + ":" + port + "/runCase?case=" + currentCaseId + "&agent=" + agent;
 
             webSocket = openWebSocket(ws_uri);
+            webSocket.binaryType = "arraybuffer";
 
             webSocket.onopen =
                function(e)
@@ -206,6 +215,7 @@
       </form>
       <br/>
       <p><button onclick='startTestRun();'>Start Tests</button> &nbsp;&nbsp; <i>Status:</i> <span id="statusline">Ready</span></p>
+      <p><button onclick='updateReports();'>Update Reports (Manual)</button></p>
       <br/>
       <p id="resultlink"></p>
    </body>

@@ -1,3 +1,5 @@
+# coding=utf-8
+
 ###############################################################################
 ##
 ##  Copyright 2011 Tavendo GmbH
@@ -17,16 +19,18 @@
 ###############################################################################
 
 from case import Case
+import binascii
 
-class Case6_2(Case):
+class Case6_2_4(Case):
 
-   DESCRIPTION = """Send fragmented text message, 3 fragments each of length 0."""
+   PAYLOAD = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'
 
-   EXPECTATION = """A message is echo'ed back to us (with empty payload)."""
+   DESCRIPTION = """Send a valid UTF-8 text message in fragments of 1 octet, resulting in frames ending on positions which are not code point ends.<br><br>MESSAGE:<br>%s<br>%s""" % (PAYLOAD, binascii.b2a_hex(PAYLOAD))
+
+   EXPECTATION = """The message is echo'ed back to us."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("message", "", False), ("failedByMe", True)]
-      self.p.sendFrame(opcode = 1, fin = False, payload = "")
-      self.p.sendFrame(opcode = 0, fin = False, payload = "")
-      self.p.sendFrame(opcode = 0, fin = True, payload = "")
+
+      self.expected[Case.OK] = [("message", self.PAYLOAD, False), ("failedByMe", True)]
+      self.p.sendMessage(self.PAYLOAD, binary = False, payload_frag_size = 1)
       self.p.killAfter(1)
