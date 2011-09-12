@@ -18,7 +18,19 @@ RPC Server Classes
 Test Suite
 ==========
 
+Allow to specify case exclusion patterns.
+
 Test Cases
+
+  - split out 6.4.3 to a new test section: "Implementation Limits" => see how behaves
+  - UTF-8 fail fast: differentiate 4 behaviors
+      1. only when complete message was received
+      2. only when complete frame was received
+      3. only when complete octets for encoded integer was received
+      4. as soon as invalid octet is received
+
+   Currently, there are tests to distinguish between 1., 2. and 4.
+   So for completeness, there need to be tests to differentiate between 3. and 4.
 
   - allow "fail connection" = "immediate TCP close" OR "WS close handshake"
   - Opening/Closing Handshake
