@@ -18,15 +18,15 @@
 
 package de.tavendo.autobahn;
 
-public class AutobahnException extends Exception {
+public class WebSocketException extends Exception {
 
    private static final long serialVersionUID = 1L;
 
-   public AutobahnException(String message) {
+   public WebSocketException(String message) {
       super(message);
    }
 
-   public AutobahnException(String message, Throwable t) {
+   public WebSocketException(String message, Throwable t) {
       super(message, t);
    }
 }

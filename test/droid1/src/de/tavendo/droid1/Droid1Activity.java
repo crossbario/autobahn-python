@@ -18,7 +18,8 @@
 
 package de.tavendo.droid1;
 
-import de.tavendo.autobahn.AutobahnException;
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
@@ -31,8 +32,35 @@ public class Droid1Activity extends Activity {
    public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       setContentView(R.layout.main);
+      
+      WebSocketConnection sess = new WebSocketConnection();
+      try {
+         sess.connect("ws://192.168.1.130:9000");
+         sess.send("Hallo, Arsch!!");
+      } catch (WebSocketException e) {
+         
+         Log.d(TAG, e.toString());
+      }
 
+      /*
       AutobahnException e = new AutobahnException("protocol violation");
       Log.d(TAG, e.toString());
+
+      Log.d(TAG, "Main.onCreate on Thread " + Thread.currentThread().getId());
+      
+      Autobahn service = new AutobahnConnection();
+
+      service.call("getUser", Integer.class, new Autobahn.OnCallResult() {
+         @Override
+         public void onResult(Object result) {
+            Log.d(TAG, "RPC Result = " + result.toString());
+         }
+
+         @Override
+         public void onError(String errorId, String errorInfo) {
+         }
+      }, 666);
+*/      
    }
+      
 }
