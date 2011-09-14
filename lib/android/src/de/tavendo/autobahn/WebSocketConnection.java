@@ -29,8 +29,6 @@ import android.util.Log;
 
 import java.net.URI;
 
-import de.tavendo.autobahn.WebSocketWriter.WebSocketClientHandshake;
-
 public class WebSocketConnection {
 
    private static final String TAG = "de.tavendo.autobahn.WebSocketConnection";
@@ -55,7 +53,7 @@ public class WebSocketConnection {
    }
    
    public void send(String payload) {
-      mWriterHandler.forwardMessage(new WebSocketWriter.WebSocketTextMessage(payload));
+      mWriterHandler.forwardMessage(new WebSocketMessage.TextMessage(payload));
    }
 
    public void connect(String wsUri) throws WebSocketException {
@@ -132,7 +130,7 @@ public class WebSocketConnection {
             mWriterThread.start();
             mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mTransportChannel);
             
-            WebSocketClientHandshake hs = new WebSocketWriter.WebSocketClientHandshake();
+            WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake();
             hs.mHost = mWsHost;
             hs.mPath = mWsPath;
             mWriterHandler.forwardMessage(hs);

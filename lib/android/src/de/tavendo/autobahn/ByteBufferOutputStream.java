@@ -92,6 +92,10 @@ public class ByteBufferOutputStream extends OutputStream {
       mBuffer.put(bytes, off, len);
    }
    
+   public synchronized void write(byte[] bytes) throws IOException {
+      write(bytes, 0, bytes.length);
+   }
+   
    public synchronized void crlf() throws IOException {
       write(0x0d);
       write(0x0a);
@@ -108,5 +112,10 @@ public class ByteBufferOutputStream extends OutputStream {
          e.printStackTrace();
       }
    }
+/*   
+   public synchronized String getAsString() {
+      String s = mBuffer.
+   }
+*/   
 }
 

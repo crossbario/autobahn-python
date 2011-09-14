@@ -41,6 +41,13 @@ public class WebSocketReader extends Thread {
    private final ByteBuffer mBuffer;
    private final Handler mHandler;
    private final SocketChannel mConnection;
+   
+   private final static int STATE_CLOSED = 0;
+   private final static int STATE_CONNECTING = 1;
+   private final static int STATE_CLOSING = 2;
+   private final static int STATE_OPEN = 3;
+   
+   private int mState;
 
    public WebSocketReader(Handler handler, SocketChannel connection) {
 
@@ -49,6 +56,8 @@ public class WebSocketReader extends Thread {
       mHandler = handler;
       mConnection = connection;
       mBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      
+      mState = STATE_CONNECTING;
    }
 
    @Override
@@ -66,7 +75,37 @@ public class WebSocketReader extends Thread {
                break;
 
             Log.d(TAG, "ok, READ " + len + " bytes");
-
+            
+            // WebSocket needs handshake
+            if (mState == STATE_CONNECTING) {
+               
+               // search end of HTTP header
+               for (int i = len - 4; i >= 0; --i) {
+                  if (mBuffer.get(i+0) == 0x0d &&
+                      mBuffer.get(i+1) == 0x0a &&
+                      mBuffer.get(i+2) == 0x0d &&
+                      mBuffer.get(i+3) == 0x0a) {
+                     
+                     for (int j = 0; j <= i+3; ++j) {
+                        baos.write(mBuffer.get(j));
+                     }
+                     
+                     Log.d(TAG, baos.toString("UTF-8"));
+                     
+                     baos.reset();
+                     
+                     for (int j = i+4; j < len; ++j) {
+                        baos.write(mBuffer.get(j));
+                     }
+                     
+                     mState = STATE_OPEN;
+                     break;
+                  }
+               }               
+            } else {
+               
+            }
+/*
             for (int i = 0; i < len; ++i) {
                byte b = mBuffer.get(i);
                if (b == 0) {
@@ -79,6 +118,7 @@ public class WebSocketReader extends Thread {
                   baos.write(b);
                }
             }
+*/            
          } while (true);
       } catch (Exception e) {
          // TODO Auto-generated catch block
