@@ -27,17 +27,10 @@ class EchoServerProtocol(WebSocketServerProtocol):
       self.sendMessage(msg, binary)
 
 
-class EchoServerFactory(WebSocketServerFactory):
-
-   protocol = EchoServerProtocol
-
-   def __init__(self, debug):
-      self.debug = debug
-
-
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = EchoServerFactory(debug = True)
+   factory = WebSocketServerFactory(debug = True)
+   factory.protocol = EchoServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()
