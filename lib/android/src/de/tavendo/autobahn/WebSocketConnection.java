@@ -25,6 +25,7 @@ import java.nio.channels.SocketChannel;
 
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Message;
 import android.util.Log;
 
 import java.net.URI;
@@ -122,7 +123,18 @@ public class WebSocketConnection {
             
             //OutputStream os = mTransportChannel.socket().getOutputStream();            
             //os.write("Hello, world!".getBytes("UTF-8"));
+            mMasterHandler = new Handler() {
+               public void handleMessage(Message msg) {
 
+                  if (msg.obj instanceof WebSocketMessage.TextMessage) {
+                     
+                     WebSocketMessage.TextMessage textMessage = (WebSocketMessage.TextMessage) msg.obj;
+                     
+                     Log.d(TAG, "YYY = " + textMessage.mPayload);
+                  }
+               }
+            };
+               
             mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel);
             mReaderThread.start();
 

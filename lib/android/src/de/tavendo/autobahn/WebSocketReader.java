@@ -19,6 +19,7 @@
 package de.tavendo.autobahn;
 
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -69,11 +70,24 @@ public class WebSocketReader extends Thread {
       
       mState = STATE_CONNECTING;
    }
+   
+   private void processFrame(int opcode, boolean fin, byte[] payload) throws UnsupportedEncodingException {
+      
+      String s = new String(payload, "UTF-8");                     
+      Log.d(TAG, "XXX = " + s);
+      notifyMessage(new WebSocketMessage.TextMessage(s));
+   }
 
+   private void notifyMessage(Object obj) {
+      
+      Message msg = mHandler.obtainMessage();
+      msg.obj = obj;
+      mHandler.sendMessage(msg);      
+   }
+   
    @Override
    public void run() {
 
-      Log.d(TAG, "TransportReader::run()");
       try {
          
          NoCopyByteArrayOutputStream data = new NoCopyByteArrayOutputStream();
@@ -82,6 +96,7 @@ public class WebSocketReader extends Thread {
          
          do {
             
+            // don't block when there was already buffered data left over from last iteration
             if (!reprocess) {
 
                // blocking read on socket
@@ -89,8 +104,6 @@ public class WebSocketReader extends Thread {
                   len = mConnection.read(mBuffer);
                   if (len > 0) break;
                }
-   
-               Log.d(TAG, "ok, READ " + len + " bytes");
             }
             
             // WebSocket needs handshake
@@ -136,9 +149,6 @@ public class WebSocketReader extends Thread {
             }
             
             if (mState == STATE_OPEN) {
-               
-               Log.d(TAG, "SIZE = " + data.size());
-               Log.d(TAG, "LENGTH = " + data.getByteArray().length);
                
                if (mCurrentFrame == null) {
                   
@@ -200,19 +210,20 @@ public class WebSocketReader extends Thread {
                }
                
                if (mCurrentFrame != null) {
+                  
                   long totalLen = mCurrentFrame.mHeaderLen + mCurrentFrame.mPayloadLen;
+                  
+                  // see if we buffered complete frame
                   if (data.size() >= totalLen) {
                      
-                     Log.d(TAG, "Payload Length = " + mCurrentFrame.mPayloadLen);
-                     
-                     byte[] pl = new byte[(int) mCurrentFrame.mPayloadLen];
-                     
+                     // cut out frame payload
+                     byte[] pl = new byte[(int) mCurrentFrame.mPayloadLen];                     
                      System.arraycopy(data.getByteArray(), mCurrentFrame.mHeaderLen, pl, 0, (int) mCurrentFrame.mPayloadLen);
                      
-                     String s = new String(pl, "UTF-8");
+                     // process frame
+                     processFrame(mCurrentFrame.mOpcode, mCurrentFrame.mFin, pl);
                      
-                     Log.d(TAG, "XXX = " + s);
-                     
+                     // rebuffer rest
                      long restLen = data.size() - totalLen;
 
                      if (restLen > 0) {
@@ -226,9 +237,6 @@ public class WebSocketReader extends Thread {
                         reprocess = false;
                      }
 
-                     Log.d(TAG, "restLen : " + restLen);
-                     Log.d(TAG, "buffered length after frame processed : " + data.size());
-                     
                      mCurrentFrame = null;
                   }                  
                }
