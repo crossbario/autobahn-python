@@ -37,6 +37,8 @@ public class Droid1Activity extends Activity {
       try {
          sess.connect("ws://192.168.1.130:9000");
          sess.send("Hallo, Arsch!!");
+         sess.send("A second message.");
+         sess.send("My last word!");
       } catch (WebSocketException e) {
          
          Log.d(TAG, e.toString());

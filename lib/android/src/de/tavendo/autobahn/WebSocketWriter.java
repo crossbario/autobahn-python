@@ -49,13 +49,18 @@ public class WebSocketWriter extends Handler {
       mBufferStream = new ByteBufferOutputStream();
    }
 
-   private String createWsKey() {
-      byte[] ba = new byte[16];
+   private String newHandshakeKey() {
+      final byte[] ba = new byte[16];
       mRng.nextBytes(ba);
       return Base64.encodeToString(ba, Base64.DEFAULT);
    }
    
-
+   private byte[] newFrameMask() {
+      final byte[] ba = new byte[4];
+      mRng.nextBytes(ba);
+      return ba;
+   }
+   
    public void forwardMessage(Object obj) {
       
       Message msg = obtainMessage();
@@ -109,7 +114,6 @@ public class WebSocketWriter extends Handler {
    private void sendFrame(int opcode, boolean fin, byte[] payload) throws IOException {
       
       // first octet
-      //
       byte b0 = 0;
       if (fin) {
          b0 |= (byte) (1 << 7);
@@ -125,6 +129,7 @@ public class WebSocketWriter extends Handler {
          len = payload.length;
       }
       
+      // extended payload length
       if (len < 125) {
          b1 |= (byte) len;
          mBufferStream.write(b1);
@@ -146,14 +151,17 @@ public class WebSocketWriter extends Handler {
                                          (byte)(len         & 0xff)});         
       }
       
-      mBufferStream.write(0);
-      mBufferStream.write(0);
-      mBufferStream.write(0);
-      mBufferStream.write(0);
+      // a mask is always needed, even without payload
+      byte mask[] = newFrameMask();      
+      mBufferStream.write(mask[0]);
+      mBufferStream.write(mask[1]);
+      mBufferStream.write(mask[2]);
+      mBufferStream.write(mask[3]);
       
       if (len > 0) {
+         // FIXME: optimize
          for (int i = 0; i < len; ++i) {
-            payload[i] ^= 0;
+            payload[i] ^= mask[i % 4];
          }      
          mBufferStream.write(payload);         
       }
@@ -203,7 +211,7 @@ public class WebSocketWriter extends Handler {
             mBufferStream.crlf();
             mBufferStream.write("Connection: Upgrade");
             mBufferStream.crlf();
-            mBufferStream.write("Sec-WebSocket-Key: " + createWsKey());
+            mBufferStream.write("Sec-WebSocket-Key: " + newHandshakeKey());
             mBufferStream.crlf();
             if (clientHandshakeMessage.mOrigin != null && !clientHandshakeMessage.mOrigin.equals("")) {
                mBufferStream.write("Origin: " + clientHandshakeMessage.mOrigin);

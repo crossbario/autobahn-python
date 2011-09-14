@@ -23,6 +23,16 @@ from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
+   def sendHello(self):
+      for i in xrange(0, 3):
+         self.sendMessage("*" * (self.count * 5))
+      self.count += 1
+      reactor.callLater(1, self.sendHello)
+
+   def onOpen(self):
+      self.count = 1
+      self.sendHello()
+
    def onMessage(self, msg, binary):
       self.sendMessage(msg, binary)
 
