@@ -35,7 +35,8 @@ public class Droid1Activity extends Activity {
       
       WebSocketConnection sess = new WebSocketConnection();
       try {
-         sess.connect("ws://192.168.1.130:9000");
+          //sess.connect("ws://192.168.1.130:9000");
+          sess.connect("ws://192.168.2.35:9000");
          sess.send("Hallo, Arsch!!");
          sess.send("A second message.");
          sess.send("My last word!");

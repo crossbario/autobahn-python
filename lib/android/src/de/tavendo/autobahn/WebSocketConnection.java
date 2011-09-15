@@ -151,17 +151,17 @@ public class WebSocketConnection {
                      
                   } else if (msg.obj instanceof WebSocketMessage.Pong) {
                      
-                     WebSocketMessage.Pong pong = (WebSocketMessage.Pong) msg.obj;
+                     //WebSocketMessage.Pong pong = (WebSocketMessage.Pong) msg.obj;
                      Log.d(TAG, "WebSockets Pong received");
                      
                   } else if (msg.obj instanceof WebSocketMessage.Close) {
                      
-                     WebSocketMessage.Close close = (WebSocketMessage.Close) msg.obj;
+                     //WebSocketMessage.Close close = (WebSocketMessage.Close) msg.obj;
                      Log.d(TAG, "WebSockets Close received");
                                           
                   } else if (msg.obj instanceof WebSocketMessage.ServerHandshake) {
                      
-                     WebSocketMessage.ServerHandshake serverHandshake = (WebSocketMessage.ServerHandshake) msg.obj;
+                     //WebSocketMessage.ServerHandshake serverHandshake = (WebSocketMessage.ServerHandshake) msg.obj;
                      Log.d(TAG, "WebSockets Server handshake received");
                      
                   } else if (msg.obj instanceof WebSocketMessage.ProtocolViolation) {
