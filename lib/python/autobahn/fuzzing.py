@@ -168,6 +168,16 @@ class FuzzingProtocol:
 
          cc = caseClasstoIdTuple(self.runCase.__class__)
 
+         ## IE10 crashes on these
+         ##
+         if self.caseAgent.find("MSIE") >= 0 and (cc[0:3] in [(6, 4, 3), (6, 4, 5)] or
+                                                  cc[0:2] in [(2, 5)] or
+                                                  cc[0:1][0] in [3, 4, 5]):
+            print "Skipping test case for IE10 (crashes) !!!"
+            self.runCase = None
+            self.sendClose()
+            return
+
          ## Chrome crashes on these
          ##
          if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
