@@ -54,7 +54,7 @@ public class WebSocketConnection {
    }
    
    public void send(String payload) {
-      mWriterHandler.forwardMessage(new WebSocketMessage.TextMessage(payload));
+      mWriterHandler.forward(new WebSocketMessage.TextMessage(payload));
    }
 
    public void connect(String wsUri) throws WebSocketException {
@@ -124,28 +124,75 @@ public class WebSocketConnection {
             //OutputStream os = mTransportChannel.socket().getOutputStream();            
             //os.write("Hello, world!".getBytes("UTF-8"));
             mMasterHandler = new Handler() {
+               
                public void handleMessage(Message msg) {
 
                   if (msg.obj instanceof WebSocketMessage.TextMessage) {
                      
                      WebSocketMessage.TextMessage textMessage = (WebSocketMessage.TextMessage) msg.obj;
                      
-                     Log.d(TAG, "YYY = " + textMessage.mPayload);
+                     Log.d(TAG, "WebSockets Text message received ('" + textMessage.mPayload + "')");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.BinaryMessage) {
+                     
+                     WebSocketMessage.BinaryMessage binaryMessage = (WebSocketMessage.BinaryMessage) msg.obj;
+                     
+                     Log.d(TAG, "WebSockets Binary message received (length " + binaryMessage.mPayload.length + ")");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.Ping) {
+                     
+                     WebSocketMessage.Ping ping = (WebSocketMessage.Ping) msg.obj;
+                     Log.d(TAG, "WebSockets Ping received");
+                     
+                     // reply with Pong
+                     WebSocketMessage.Pong pong = new WebSocketMessage.Pong();
+                     pong.mPayload = ping.mPayload;
+                     mWriterHandler.forward(pong);
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.Pong) {
+                     
+                     WebSocketMessage.Pong pong = (WebSocketMessage.Pong) msg.obj;
+                     Log.d(TAG, "WebSockets Pong received");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.Close) {
+                     
+                     WebSocketMessage.Close close = (WebSocketMessage.Close) msg.obj;
+                     Log.d(TAG, "WebSockets Close received");
+                                          
+                  } else if (msg.obj instanceof WebSocketMessage.ServerHandshake) {
+                     
+                     WebSocketMessage.ServerHandshake serverHandshake = (WebSocketMessage.ServerHandshake) msg.obj;
+                     Log.d(TAG, "WebSockets Server handshake received");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.ProtocolViolation) {
+                     
+                     WebSocketMessage.ProtocolViolation protocolViolation = (WebSocketMessage.ProtocolViolation) msg.obj;
+                     Log.d(TAG, "WebSockets Protocol Violation (" + protocolViolation.mReason + ")");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.Error) {
+                     
+                     WebSocketMessage.Error error = (WebSocketMessage.Error) msg.obj;
+                     Log.d(TAG, "WebSockets Error (" + error.mException.toString() + ")");
+                     
+                  } else {
+                     
                   }
                }
             };
-               
+            
+            // create WebSocket reader and thread
             mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel);
             mReaderThread.start();
 
+            // create WebSocket writer and thread
             mWriterThread = new HandlerThread("WebSocketWriter");
             mWriterThread.start();
-            mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mTransportChannel);
+            mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel);
             
-            WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake();
-            hs.mHost = mWsHost;
+            // start WebSockets handshake
+            WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake(mWsHost);
             hs.mPath = mWsPath;
-            mWriterHandler.forwardMessage(hs);
+            mWriterHandler.forward(hs);
             
          } else {
 

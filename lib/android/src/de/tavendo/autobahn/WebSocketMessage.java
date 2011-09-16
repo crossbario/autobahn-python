@@ -18,15 +18,28 @@
 
 package de.tavendo.autobahn;
 
+/**
+ * Container class for different message types used in communication
+ * between foreground thread and the WebSockets background
+ * reader and writer.
+ */
 public class WebSocketMessage {
+   
+   /// Base message class.
+   public static class Message {
+      
+   }
 
-   public static class ClientHandshake {
+   /// Initial WebSockets handshake (client request).
+   public static class ClientHandshake extends Message {
       
       public String mHost;
       public String mPath;
       public String mOrigin;
       
-      ClientHandshake() {         
+      ClientHandshake(String host) {
+         mPath = "/";
+         mOrigin = null;
       }
       
       ClientHandshake(String host, String path, String origin) {
@@ -36,7 +49,28 @@ public class WebSocketMessage {
       }
    }
    
-   public static class TextMessage {
+   /// Initial WebSockets handshake (server response).
+   public static class ServerHandshake extends Message {
+      
+   }
+   
+   /// WebSockets reader detected WS protocol violation.
+   public static class ProtocolViolation extends Message {
+      public String mReason;
+      public int mCode;
+   }
+   
+   /// An exception occured in the WS reader or WS writer.
+   public static class Error extends Message {
+      public Exception mException;
+      
+      public Error(Exception e) {
+         mException = e;
+      }
+   }
+
+   /// WebSockets text message to send or received.
+   public static class TextMessage extends Message {
       
       public String mPayload;
       
@@ -45,7 +79,8 @@ public class WebSocketMessage {
       }
    }
 
-   public static class BinaryMessage {
+   /// WebSockets binary message to send or received.
+   public static class BinaryMessage extends Message{
       
       public byte[] mPayload;
       
@@ -54,7 +89,8 @@ public class WebSocketMessage {
       }
    }
 
-   public static class Close {
+   /// WebSockets close to send or received.
+   public static class Close extends Message {
       
       public int mCode;
       public String mReason;
@@ -75,7 +111,8 @@ public class WebSocketMessage {
       }
    }
 
-   public static class Ping {
+   /// WebSockets ping to send or received.
+   public static class Ping extends Message {
       
       public byte[] mPayload;
       
@@ -88,7 +125,8 @@ public class WebSocketMessage {
       }
    }
 
-   public static class Pong {
+   /// WebSockets pong to send or received.
+   public static class Pong extends Message {
       
       public byte[] mPayload;
       

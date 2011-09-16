@@ -3,6 +3,30 @@ Android
 
 check out Maven Android Plugin (http://code.google.com/p/maven-android-plugin/wiki/GettingStarted)
 
+Options
+=======
+
+Add options, configurable at run-time from command line flags, or on Protocol derived
+class in connectionMade():
+
+Masking
+
+   maskClientFrames (true)
+   requireMaskedClientFrames (true)
+   maskServerFrames (false)
+   acceptMaskedServerFrames (false)
+   applyMask (true)
+
+Close Handling
+
+   failConnectionWithClose (false)
+
+Automatic Pings
+
+Automatic Fragmentation
+
+Frame/Message Size Limits
+
 
 Test Suite
 ==========

@@ -24,17 +24,24 @@ from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 class EchoServerProtocol(WebSocketServerProtocol):
 
    def sendHello(self):
-      for i in xrange(0, 3):
-         self.sendMessage("*" * (self.count * 5))
-      self.count += 1
-      reactor.callLater(1, self.sendHello)
+      if self.send_hello:
+         for i in xrange(0, 3):
+            self.sendMessage("*" * (self.count * 5))
+         self.count += 1
+         reactor.callLater(1, self.sendHello)
 
    def onOpen(self):
       self.count = 1
-      self.sendHello()
+      self.send_hello = True
+      #self.sendHello()
 
    def onMessage(self, msg, binary):
+      print msg
       self.sendMessage(msg, binary)
+
+   def connectionLost(self, reason):
+      WebSocketServerProtocol.connectionLost(self, reason)
+      self.send_hello = False
 
 
 if __name__ == '__main__':

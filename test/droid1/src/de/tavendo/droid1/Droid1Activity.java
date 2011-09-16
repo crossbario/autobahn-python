@@ -39,6 +39,7 @@ public class Droid1Activity extends Activity {
          sess.send("Hallo, Arsch!!");
          sess.send("A second message.");
          sess.send("My last word!");
+         sess.send("NSDSFSDFHASDFKJDSHGFSDHGFJKSDHGF");
       } catch (WebSocketException e) {
          
          Log.d(TAG, e.toString());
