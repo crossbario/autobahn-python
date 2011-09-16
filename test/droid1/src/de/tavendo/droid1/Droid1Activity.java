@@ -20,32 +20,82 @@ package de.tavendo.droid1;
 
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
+import de.tavendo.autobahn.WebSocketHandler;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 
 public class Droid1Activity extends Activity {
 
-   static final String TAG = "AUTOBAHN";
+   static final String TAG = "de.tavendo.autobahn";
+//   static final String WSHOST = "192.168.1.132";
+   static final String WSHOST = "192.168.2.35";
+   static final String WSPORT = "9001";
+   static final String WSAGENT = "AutobahnAndroid/0.4.2";
 
+   int currCase = 0;
+   int lastCase = 8;
+   WebSocketConnection sess = new WebSocketConnection();
+   
+   private void next() {
+      
+      try {
+         currCase += 1;
+         if (currCase <= lastCase) {      
+                 sess.connect("ws://" + WSHOST + ":" + WSPORT + "/runCase?case=" + currCase + "&agent=" + WSAGENT,
+                       new WebSocketHandler() {
+      
+                          @Override
+                          public void onClose() {
+                             Log.d(TAG, "Test case " + currCase + " finished.");
+                             next();
+                          }            
+                 });
+         } else {
+               sess.connect("ws://" + WSHOST + ":" + WSPORT + "/updateReports?agent=" + WSAGENT,
+                     new WebSocketHandler() {
+    
+                        @Override
+                        public void onClose() {
+                           Log.d(TAG, "Test reports updated.");
+                        }            
+               });
+         }
+      } catch (WebSocketException e) {
+         
+         Log.d(TAG, e.toString());
+      }
+   }
+   
    @Override
    public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       setContentView(R.layout.main);
       
-      WebSocketConnection sess = new WebSocketConnection();
+      next();
+      
+/*      
       try {
-          //sess.connect("ws://192.168.1.130:9000");
-          sess.connect("ws://192.168.2.35:9000");
-         sess.send("Hallo, Arsch!!");
-         sess.send("A second message.");
-         sess.send("My last word!");
-         sess.send("NSDSFSDFHASDFKJDSHGFSDHGFJKSDHGF");
+       //sess.connect("ws://192.168.1.130:9000");
+       //sess.connect("ws://192.168.2.35:9000");
+         sess.connect("ws://192.168.1.132:9001/runCase?case=2&agent=AutobahnAndroid/0.4.2",
+               new WebSocketHandler() {
+
+                  @Override
+                  public void onClose() {
+                     Log.d(TAG, "WebSocket Connection Closed");
+                  }            
+         });
+         
+         //sess.send("Hallo, Arsch!!");
+         //sess.send("A second message.");
+         //sess.send("My last word!");
+         //sess.send("NSDSFSDFHASDFKJDSHGFSDHGFJKSDHGF");
       } catch (WebSocketException e) {
          
          Log.d(TAG, e.toString());
       }
-
+*/
       /*
       AutobahnException e = new AutobahnException("protocol violation");
       Log.d(TAG, e.toString());

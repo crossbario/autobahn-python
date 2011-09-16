@@ -49,6 +49,9 @@ public class WebSocketConnection {
    private String mWsHost;
    private int mWsPort;
    private String mWsPath;
+   private String mWsQuery;
+   
+   private WebSocketHandler mWsHandler;
 
    public WebSocketConnection() {
    }
@@ -57,14 +60,14 @@ public class WebSocketConnection {
       mWriterHandler.forward(new WebSocketMessage.TextMessage(payload));
    }
 
-   public void connect(String wsUri) throws WebSocketException {
+   public void connect(String wsUri, WebSocketHandler wsHandler) throws WebSocketException {
       
       // don't connect if already connected .. user needs to disconnect first
       //
       if (mTransportChannel != null && mTransportChannel.isConnected()) {
          throw new WebSocketException("already connected");
       }
-
+      
       // parse WebSockets URI
       //
       try {
@@ -102,11 +105,19 @@ public class WebSocketConnection {
             mWsPath = mWsUri.getPath();            
          }
          
+         if (mWsUri.getQuery() == null || mWsUri.getQuery().equals("")) {
+            mWsQuery = null;
+         } else {
+            mWsQuery = mWsUri.getQuery();
+         }
+         
       } catch (URISyntaxException e) {
 
          throw new WebSocketException("invalid WebSockets URI");
       }
       
+      mWsHandler = wsHandler;
+
       // connect TCP socket
       // http://developer.android.com/reference/java/nio/channels/SocketChannel.html
       //
@@ -116,13 +127,14 @@ public class WebSocketConnection {
          //mTransportChannel.configureBlocking(false);
          mTransportChannel.socket().connect(new InetSocketAddress(mWsHost, mWsPort), 1000);
          //mTransportChannel.connect(new InetSocketAddress(mWsHost, mWsPort));
+         
+         //mTransportChannel.socket().setSoTimeout(200);
+         mTransportChannel.socket().setSoTimeout(2000);
 
          if (mTransportChannel.isConnected()) {
 
             Log.d(TAG, "established TCP connection to " + mWsHost + ":" + mWsPort);
             
-            //OutputStream os = mTransportChannel.socket().getOutputStream();            
-            //os.write("Hello, world!".getBytes("UTF-8"));
             mMasterHandler = new Handler() {
                
                public void handleMessage(Message msg) {
@@ -131,13 +143,17 @@ public class WebSocketConnection {
                      
                      WebSocketMessage.TextMessage textMessage = (WebSocketMessage.TextMessage) msg.obj;
                      
-                     Log.d(TAG, "WebSockets Text message received ('" + textMessage.mPayload + "')");
+                     Log.d(TAG, "WebSockets Text message received (length " + textMessage.mPayload.length() + ")");
+                     
+                     mWriterHandler.forward(textMessage);
                      
                   } else if (msg.obj instanceof WebSocketMessage.BinaryMessage) {
                      
                      WebSocketMessage.BinaryMessage binaryMessage = (WebSocketMessage.BinaryMessage) msg.obj;
                      
                      Log.d(TAG, "WebSockets Binary message received (length " + binaryMessage.mPayload.length + ")");
+                     
+                     mWriterHandler.forward(binaryMessage);
                      
                   } else if (msg.obj instanceof WebSocketMessage.Ping) {
                      
@@ -163,6 +179,29 @@ public class WebSocketConnection {
                      
                      //WebSocketMessage.ServerHandshake serverHandshake = (WebSocketMessage.ServerHandshake) msg.obj;
                      Log.d(TAG, "WebSockets Server handshake received");
+                     
+                  } else if (msg.obj instanceof WebSocketMessage.ConnectionLost) {
+                     
+                     WebSocketMessage.ConnectionLost connnectionLost = (WebSocketMessage.ConnectionLost) msg.obj;
+                     Log.d(TAG, "WebSockets Connection Lost");
+
+                     mWriterThread.getLooper().quit();
+                     mReaderThread.quit();
+                     try {
+                        mTransportChannel.close();
+                     } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                     }
+                     mTransportChannel = null;
+                     if (mWsHandler != null) {
+                        mWsHandler.onClose();
+                        //mWsHandler = null;
+                     } else {
+                        Log.d(TAG, "could not call onClose() .. already NULL");
+                     }
+                     
+                     Log.d(TAG, "worker threads stopped");
                      
                   } else if (msg.obj instanceof WebSocketMessage.ProtocolViolation) {
                      
@@ -192,6 +231,7 @@ public class WebSocketConnection {
             // start WebSockets handshake
             WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake(mWsHost);
             hs.mPath = mWsPath;
+            hs.mQuery = mWsQuery;
             mWriterHandler.forward(hs);
             
          } else {

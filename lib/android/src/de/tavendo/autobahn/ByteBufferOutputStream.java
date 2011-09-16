@@ -34,7 +34,7 @@ public class ByteBufferOutputStream extends OutputStream {
    private ByteBuffer mBuffer;
 
    public ByteBufferOutputStream() {
-      this(65536, 16384);
+      this(2 * 65536, 16384);
    }
 
    public ByteBufferOutputStream(int initialSize, int growSize) {

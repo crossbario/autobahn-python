@@ -47,6 +47,7 @@ public class WebSocketReader extends Thread {
    private final static int STATE_CLOSING = 2;
    private final static int STATE_OPEN = 3;
    
+   private boolean mStopped = false;
    private int mState;
    
    private NoCopyByteArrayOutputStream mData = new NoCopyByteArrayOutputStream();
@@ -88,6 +89,10 @@ public class WebSocketReader extends Thread {
       mCurrentFrame = null;
       
       mState = STATE_CONNECTING;
+   }
+   
+   public void quit() {
+      mStopped = true;
    }
    
    /**
@@ -294,6 +299,7 @@ public class WebSocketReader extends Thread {
             // rebuffer rest
             long restLen = mData.size() - mCurrentFrame.mTotalLen;
             if (restLen > 0) {
+               
                byte[] rest = new byte[(int) restLen];
                System.arraycopy(mData.getByteArray(), mCurrentFrame.mHeaderLen + (int) mCurrentFrame.mPayloadLen, rest, 0, (int) restLen);
                mData.reset();
@@ -303,6 +309,7 @@ public class WebSocketReader extends Thread {
                // process rest
                return true;
             } else {
+               
                mData.reset();
                mCurrentFrame = null;
                
@@ -317,8 +324,9 @@ public class WebSocketReader extends Thread {
       }
    }
    
-   private void processHandshake() throws UnsupportedEncodingException {
+   private boolean processHandshake() throws UnsupportedEncodingException {
       
+      boolean res = false;
       while (mBuffer.hasRemaining()) {
          
          // buffer HTTP headers in own stream
@@ -336,20 +344,23 @@ public class WebSocketReader extends Thread {
                
                // FIXME: process handshake from server
                Log.d(TAG, mHttpHeader.toString("UTF-8"));
+               
+               res = mBuffer.hasRemaining(); 
 
                // buffer rest
-               while (mBuffer.hasRemaining()) {
-                  mData.write(mBuffer.get());
-               }
+               //while (mBuffer.hasRemaining()) {
+               //   mData.write(mBuffer.get());
+               //}
                mState = STATE_OPEN;
                break;
             }
          }
       }
-      mBuffer.clear();
+      //mBuffer.clear();
+      return res;
    }
    
-   private void consumeData() throws Exception {
+   private boolean consumeData() throws Exception {
       
       if (mState == STATE_OPEN || mState == STATE_CLOSING) {
          
@@ -362,15 +373,19 @@ public class WebSocketReader extends Thread {
          while (processData()) {
             // reprocess until all buffered consumed or error occurred
          }
+         return false;
          
       } else if (mState == STATE_CONNECTING) {
          
-         processHandshake();
+         return processHandshake();
       
       } else if (mState == STATE_CLOSED) {
+         
+         return false;
       
       } else {
          // should not arrive here
+         return false;         
       }
       
    }
@@ -384,18 +399,21 @@ public class WebSocketReader extends Thread {
       try {
          
          mBuffer.clear();
+         mData.reset();
          do {            
             // blocking read on socket
-            while (true) {
-               int len = mSocket.read(mBuffer);
-               if (len > 0) {
-                  mBuffer.flip();
-                  break;
+            int len = mSocket.read(mBuffer);
+            if (len > 0) {
+               mBuffer.flip();
+               // process buffered data            
+               while (consumeData()) {
                }
             }
-            // process buffered data            
-            consumeData();
-         } while (true);
+            if (len < 0) {
+               notify(new WebSocketMessage.ConnectionLost());
+               mStopped = true;
+            }
+         } while (!mStopped);
 
       } catch (Exception e) {
 

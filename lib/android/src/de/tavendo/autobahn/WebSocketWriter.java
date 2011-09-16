@@ -25,6 +25,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Base64;
+import android.util.Log;
+
 import java.util.Random;
 
 /**
@@ -48,6 +50,8 @@ public class WebSocketWriter extends Handler {
    
    /// The send buffer that holds data to send on socket.
    private final ByteBufferOutputStream mBuffer;
+   
+   private boolean mStopped = false;
 
    /**
     * Create new WebSockets background writer.
@@ -64,6 +68,10 @@ public class WebSocketWriter extends Handler {
       mMaster = master;
       mSocket = socket;
       mBuffer = new ByteBufferOutputStream();
+   }
+
+   public void shutdown() {
+      mStopped = true;
    }
    
    /**
@@ -119,7 +127,13 @@ public class WebSocketWriter extends Handler {
    private void sendClientHandshake(WebSocketMessage.ClientHandshake message) throws IOException {
       
       // write HTTP header with handshake
-      mBuffer.write("GET " + message.mPath + " HTTP/1.1");
+      String path;
+      if (message.mQuery != null) {
+         path = message.mPath + "?" + message.mQuery;
+      } else {
+         path = message.mPath;
+      }
+      mBuffer.write("GET " + path + " HTTP/1.1");
       mBuffer.crlf();
       mBuffer.write("Host: " + message.mHost);
       mBuffer.crlf();
@@ -193,8 +207,10 @@ public class WebSocketWriter extends Handler {
    /**
     * Send WebSockets text message.
     */
-   private void sendTextMessage(WebSocketMessage.TextMessage message) throws IOException {      
-      sendFrame(1, true, message.mPayload.getBytes("UTF-8"));
+   private void sendTextMessage(WebSocketMessage.TextMessage message) throws IOException {
+      byte[] payload = message.mPayload.getBytes("UTF-8");
+      Log.d(TAG, "sending text message (" + payload.length + ")");
+      sendFrame(1, true, payload);
    }
    
    /**
@@ -223,25 +239,25 @@ public class WebSocketWriter extends Handler {
       }
       
       // extended payload length
-      if (len < 125) {
+      if (len <= 125) {
          b1 |= (byte) len;
          mBuffer.write(b1);
       } else if (len <= 0xffff) {
-         b1 |= (byte) 126;
+         b1 |= (byte) (126 & 0xff);
          mBuffer.write(b1);
          mBuffer.write(new byte[] {(byte)((len >> 8) & 0xff),
-                                         (byte)(len & 0xff)});         
+                                   (byte)(len & 0xff)});         
       } else {
-         b1 |= (byte) 127;
+         b1 |= (byte) (127 & 0xff);
          mBuffer.write(b1);
          mBuffer.write(new byte[] {(byte)((len >> 56) & 0xff),
-                                         (byte)((len >> 48) & 0xff),
-                                         (byte)((len >> 40) & 0xff),
-                                         (byte)((len >> 32) & 0xff),
-                                         (byte)((len >> 24) & 0xff),
-                                         (byte)((len >> 16) & 0xff),
-                                         (byte)((len >> 8)  & 0xff),
-                                         (byte)(len         & 0xff)});         
+                                   (byte)((len >> 48) & 0xff),
+                                   (byte)((len >> 40) & 0xff),
+                                   (byte)((len >> 32) & 0xff),
+                                   (byte)((len >> 24) & 0xff),
+                                   (byte)((len >> 16) & 0xff),
+                                   (byte)((len >> 8)  & 0xff),
+                                   (byte)(len         & 0xff)});         
       }
       
       // a mask is always needed, even without payload
@@ -310,10 +326,14 @@ public class WebSocketWriter extends Handler {
          mBuffer.flip();
          while (mBuffer.remaining() > 0) {
             // this can block on socket write
-            mSocket.write(mBuffer.getBuffer());
+            Log.d(TAG, "writing to socket .." + mBuffer.remaining() + " - " + mBuffer.getBuffer().position());
+            int written = mSocket.write(mBuffer.getBuffer());
+            Log.d(TAG, "" + written + " octets written to socket (" + mBuffer.remaining());
          }
 
       } catch (Exception e) {
+         
+         Log.d(TAG, e.toString());
          
          // wrap the exception and notify master
          notify(new WebSocketMessage.Error(e));

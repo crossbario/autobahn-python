@@ -35,6 +35,7 @@ public class WebSocketMessage {
       
       public String mHost;
       public String mPath;
+      public String mQuery;
       public String mOrigin;
       
       ClientHandshake(String host) {
@@ -52,6 +53,10 @@ public class WebSocketMessage {
    /// Initial WebSockets handshake (server response).
    public static class ServerHandshake extends Message {
       
+   }
+   
+   /// WebSockets connection lost
+   public static class ConnectionLost extends Message {
    }
    
    /// WebSockets reader detected WS protocol violation.
