@@ -20,12 +20,12 @@ from case import Case
 
 class Case1_2_8(Case):
 
-   DESCRIPTION = """Send binary message message with payload of length 65537. Sent out data in chops of 997 octets."""
+   DESCRIPTION = """Send binary message message with payload of length 65536. Sent out data in chops of 997 octets."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def onOpen(self):
-      payload = "\xfe" * 65537
+      payload = "\xfe" * 65536
       self.expected[Case.OK] = [("message", payload, True), ("failedByMe", True)]
       self.p.sendFrame(opcode = 2, payload = payload, chopsize = 997)
       self.p.killAfter(3)
