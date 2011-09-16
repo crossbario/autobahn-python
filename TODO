@@ -33,6 +33,8 @@ Test Suite
 
 Allow to specify case exclusion patterns.
 
+Rotate agent labels in report 90° counterclock => css
+
 Test Cases
 
   - split out 6.4.3 to a new test section: "Implementation Limits" => see how behaves
