@@ -28,4 +28,4 @@ class Case1_2_7(Case):
       payload = "\xfe" * 65536
       self.expected[Case.OK] = [("message", payload, True), ("failedByMe", True)]
       self.p.sendFrame(opcode = 2, payload = payload)
-      self.p.killAfter(1)
+      self.p.killAfter(10)
