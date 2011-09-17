@@ -54,12 +54,15 @@ class Case:
 
    def onMessage(self, msg, binary):
       self.received.append(("message", msg, binary))
+      self.finishWhenDone()
 
    def onPing(self, payload):
       self.received.append(("ping", payload))
+      self.finishWhenDone()
 
    def onPong(self, payload):
       self.received.append(("pong", payload))
+      self.finishWhenDone()
 
    def onClose(self, code, reason):
       pass
@@ -75,3 +78,11 @@ class Case:
             self.passed = True
             self.result = "Actual events match at least one expected."
             break
+
+   def finishWhenDone(self):
+      for e in self.expected:
+         # when we expect to fail the connection ourselfes and already
+         # received everything before, we immediately fail the connection
+         if self.expected[e][-1] == ("failedByMe", True):
+            if self.compare(self.received, self.expected[e][:-1]):
+               self.p.failConnection()
