@@ -18,103 +18,126 @@
 
 package de.tavendo.droid1;
 
-import de.tavendo.autobahn.WebSocketConnection;
-import de.tavendo.autobahn.WebSocketException;
-import de.tavendo.autobahn.WebSocketHandler;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import de.tavendo.autobahn.WebSocketConnection;
+import de.tavendo.autobahn.WebSocketException;
+import de.tavendo.autobahn.WebSocketHandler;
 
 public class Droid1Activity extends Activity {
 
    static final String TAG = "de.tavendo.autobahn";
-//   static final String WSHOST = "192.168.1.132";
-   static final String WSHOST = "192.168.2.35";
-   static final String WSPORT = "9001";
-   static final String WSAGENT = "AutobahnAndroid/0.4.2";
+
+   static EditText mHostname;
+   static EditText mPort;
+   static EditText mAgent;
+   static TextView mStatusline;
+   static Button mStart;
 
    int currCase = 0;
-   int lastCase = 8;
+   int lastCase = 0;
+
    WebSocketConnection sess = new WebSocketConnection();
-   
+
    private void next() {
-      
+
       try {
-         currCase += 1;
-         if (currCase <= lastCase) {      
-                 sess.connect("ws://" + WSHOST + ":" + WSPORT + "/runCase?case=" + currCase + "&agent=" + WSAGENT,
-                       new WebSocketHandler() {
-      
-                          @Override
-                          public void onClose() {
-                             Log.d(TAG, "Test case " + currCase + " finished.");
-                             next();
-                          }            
-                 });
+         if (currCase == 0) {
+
+            sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/getCaseCount",
+                  new WebSocketHandler() {
+
+                     @Override
+                     public void onMessage(String payload) {
+                        lastCase = Integer.parseInt(payload);
+                     }
+
+                     @Override
+                     public void onClose() {
+                        mStatusline.setText("Ok, will run " + lastCase + " cases.");
+                        currCase += 1;
+                        next();
+                     }
+            });
+
          } else {
-               sess.connect("ws://" + WSHOST + ":" + WSPORT + "/updateReports?agent=" + WSAGENT,
-                     new WebSocketHandler() {
-    
-                        @Override
-                        public void onClose() {
-                           Log.d(TAG, "Test reports updated.");
-                        }            
-               });
+            if (currCase <= lastCase) {
+                    sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/runCase?case=" + currCase + "&agent=" + mAgent.getText(),
+                          new WebSocketHandler() {
+
+                             @Override
+                             public void onMessage(String payload) {
+                                sess.sendMessage(payload);
+                             }
+
+                             @Override
+                             public void onMessage(byte[] payload) {
+                                sess.sendMessage(payload);
+                             }
+
+                             @Override
+                             public void onOpen() {
+                                mStatusline.setText("Test case " + currCase + "/" + lastCase + " started ..");
+                             }
+
+                             @Override
+                             public void onClose() {
+                                mStatusline.setText("Test case " + currCase + "/" + lastCase + " finished.");
+                                currCase += 1;
+                                next();
+                             }
+                    });
+            } else {
+                  sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/updateReports?agent=" + mAgent.getText(),
+                        new WebSocketHandler() {
+
+                           @Override
+                           public void onOpen() {
+                              mStatusline.setText("Updating test reports ..");
+                           }
+
+                           @Override
+                           public void onClose() {
+                              mStatusline.setText("Test reports updated. Finished.");
+                              mStart.setEnabled(true);
+                           }
+                  });
+            }
          }
       } catch (WebSocketException e) {
-         
+
          Log.d(TAG, e.toString());
       }
    }
-   
+
    @Override
    public void onCreate(Bundle savedInstanceState) {
+
       super.onCreate(savedInstanceState);
+
       setContentView(R.layout.main);
-      
-      next();
-      
-/*      
-      try {
-       //sess.connect("ws://192.168.1.130:9000");
-       //sess.connect("ws://192.168.2.35:9000");
-         sess.connect("ws://192.168.1.132:9001/runCase?case=2&agent=AutobahnAndroid/0.4.2",
-               new WebSocketHandler() {
 
-                  @Override
-                  public void onClose() {
-                     Log.d(TAG, "WebSocket Connection Closed");
-                  }            
-         });
-         
-         //sess.send("Hallo, Arsch!!");
-         //sess.send("A second message.");
-         //sess.send("My last word!");
-         //sess.send("NSDSFSDFHASDFKJDSHGFSDHGFJKSDHGF");
-      } catch (WebSocketException e) {
-         
-         Log.d(TAG, e.toString());
-      }
-*/
-      /*
-      AutobahnException e = new AutobahnException("protocol violation");
-      Log.d(TAG, e.toString());
+      mHostname = (EditText) findViewById(R.id.hostname);
+      mPort = (EditText) findViewById(R.id.port);
+      mAgent = (EditText) findViewById(R.id.agent);
+      mStatusline = (TextView) findViewById(R.id.statusline);
 
-      Log.d(TAG, "Main.onCreate on Thread " + Thread.currentThread().getId());
-      
-      Autobahn service = new AutobahnConnection();
-
-      service.call("getUser", Integer.class, new Autobahn.OnCallResult() {
-         @Override
-         public void onResult(Object result) {
-            Log.d(TAG, "RPC Result = " + result.toString());
-         }
+      mStart = (Button) findViewById(R.id.start);
+      mStart.setOnClickListener(new Button.OnClickListener() {
 
          @Override
-         public void onError(String errorId, String errorInfo) {
+         public void onClick(View v) {
+            mStart.setEnabled(false);
+            currCase = 0;
+            next();
          }
-      }, 666);
-*/      
-   }
-      
+
+      });
+  }
+
 }

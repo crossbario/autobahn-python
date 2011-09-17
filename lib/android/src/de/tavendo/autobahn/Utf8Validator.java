@@ -18,6 +18,7 @@
 
 package de.tavendo.autobahn;
 
+
 /**
  *  Incremental UTF-8 validator with constant memory consumption (minimal state).
  *
@@ -25,7 +26,7 @@ package de.tavendo.autobahn;
  *  Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
  */
 public class Utf8Validator {
-   
+
    /// DFA state transitions (14 x 32 = 448).
    private static final int[] DFA = {
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 00..1f
@@ -41,15 +42,15 @@ public class Utf8Validator {
       1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, // s1..s2
       1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, // s3..s4
       1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, // s5..s6
-      1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, // s7..s8
+      1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1  // s7..s8
    };
-   
+
    private static final int ACCEPT = 0;
    private static final int REJECT = 1;
-   
+
    private int mState;
    private int mPos;
-   
+
    /**
     * Create new incremental UTF-8 validator. The validator is already
     * resetted and thus immediately usable.
@@ -57,7 +58,7 @@ public class Utf8Validator {
    public Utf8Validator() {
       reset();
    }
-   
+
    /**
     * Reset validator state to begin validation of new
     * UTF-8 stream.
@@ -66,13 +67,13 @@ public class Utf8Validator {
       mState = ACCEPT;
       mPos = 0;
    }
-   
+
    /**
     * Get end of validated position within stream. When validate()
     * returns false, indicating an UTF-8 error, this function can
     * be used to get the exact position within the stream upon
     * which the violation was encountered.
-    * 
+    *
     * @return     Current position with stream validated.
     */
    public int position() {
@@ -80,8 +81,18 @@ public class Utf8Validator {
    }
 
    /**
+    * Check if incremental validation (currently) has ended on
+    * a complete encoded Unicode codepoint.
+    *
+    * @return        True, iff currently ended on codepoint.
+    */
+   public boolean isValid() {
+      return mState == ACCEPT;
+   }
+
+   /**
     * Validate a chunk of octets for UTF-8.
-    * 
+    *
     * @param data    Buffer which contains chunk to validate.
     * @param off     Offset within buffer where to continue with validation.
     * @param len     Length in octets to validate within buffer.
@@ -89,7 +100,7 @@ public class Utf8Validator {
     */
    public boolean validate(byte[] data, int off, int len) {
       for (int i = off; i < off + len; ++i) {
-         mState = DFA[256 + (mState << 4) + DFA[0xff & data[i]]];
+         mState = DFA[256 + (mState << 4) + DFA[(int) (0xff & data[i])]];
          if (mState == REJECT) {
             mPos += i;
             return false;
@@ -98,4 +109,15 @@ public class Utf8Validator {
       mPos += len;
       return true;
    }
+
+   /**
+    * Validate a chunk of octets for UTF-8.
+    *
+    * @param data    Buffer which contains chunk to validate.
+    * @return        False as soon as UTF-8 violation occurs, true otherwise.
+    */
+   public boolean validate(byte[] data) {
+      return validate(data, 0, data.length);
+   }
+
 }

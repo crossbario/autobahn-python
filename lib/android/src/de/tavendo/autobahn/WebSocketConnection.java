@@ -20,6 +20,7 @@ package de.tavendo.autobahn;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SocketChannel;
 
@@ -27,8 +28,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
-
-import java.net.URI;
 
 public class WebSocketConnection {
 
@@ -50,24 +49,53 @@ public class WebSocketConnection {
    private int mWsPort;
    private String mWsPath;
    private String mWsQuery;
-   
+
    private WebSocketHandler mWsHandler;
 
    public WebSocketConnection() {
    }
-   
-   public void send(String payload) {
+
+   public void sendMessage(String payload) {
       mWriterHandler.forward(new WebSocketMessage.TextMessage(payload));
    }
 
+   public void sendMessage(byte[] payload) {
+      mWriterHandler.forward(new WebSocketMessage.BinaryMessage(payload));
+   }
+
+   private void failConnection() {
+
+      mWriterThread.getLooper().quit();
+      mReaderThread.quit();
+
+      // FIXME join threads before closing socket
+
+      try {
+         mTransportChannel.close();
+      } catch (IOException e) {
+         // TODO Auto-generated catch block
+         e.printStackTrace();
+      }
+      mTransportChannel = null;
+      if (mWsHandler != null) {
+         mWsHandler.onClose();
+         //mWsHandler = null;
+      } else {
+         Log.d(TAG, "could not call onClose() .. already NULL");
+      }
+
+      //Log.d(TAG, "worker threads stopped");
+
+   }
+
    public void connect(String wsUri, WebSocketHandler wsHandler) throws WebSocketException {
-      
+
       // don't connect if already connected .. user needs to disconnect first
       //
       if (mTransportChannel != null && mTransportChannel.isConnected()) {
          throw new WebSocketException("already connected");
       }
-      
+
       // parse WebSockets URI
       //
       try {
@@ -76,13 +104,13 @@ public class WebSocketConnection {
          if (!mWsUri.getScheme().equals("ws") && !mWsUri.getScheme().equals("wss")) {
             throw new WebSocketException("unsupported scheme for WebSockets URI");
          }
-         
+
          if (mWsUri.getScheme().equals("wss")) {
             throw new WebSocketException("secure WebSockets not implemented");
          }
-         
+
          mWsScheme = mWsUri.getScheme();
-         
+
          if (mWsUri.getPort() == -1) {
             if (mWsScheme.equals("ws")) {
                mWsPort = 80;
@@ -92,30 +120,30 @@ public class WebSocketConnection {
          } else {
             mWsPort = mWsUri.getPort();
          }
-         
+
          if (mWsUri.getHost() == null) {
             throw new WebSocketException("no host specified in WebSockets URI");
          } else {
-            mWsHost = mWsUri.getHost();            
+            mWsHost = mWsUri.getHost();
          }
 
          if (mWsUri.getPath() == null || mWsUri.getPath().equals("")) {
             mWsPath = "/";
          } else {
-            mWsPath = mWsUri.getPath();            
+            mWsPath = mWsUri.getPath();
          }
-         
+
          if (mWsUri.getQuery() == null || mWsUri.getQuery().equals("")) {
             mWsQuery = null;
          } else {
             mWsQuery = mWsUri.getQuery();
          }
-         
+
       } catch (URISyntaxException e) {
 
          throw new WebSocketException("invalid WebSockets URI");
       }
-      
+
       mWsHandler = wsHandler;
 
       // connect TCP socket
@@ -127,98 +155,100 @@ public class WebSocketConnection {
          //mTransportChannel.configureBlocking(false);
          mTransportChannel.socket().connect(new InetSocketAddress(mWsHost, mWsPort), 1000);
          //mTransportChannel.connect(new InetSocketAddress(mWsHost, mWsPort));
-         
-         //mTransportChannel.socket().setSoTimeout(200);
-         mTransportChannel.socket().setSoTimeout(2000);
+
+         mTransportChannel.socket().setSoTimeout(200);
+         //mTransportChannel.socket().setSoTimeout(2000);
 
          if (mTransportChannel.isConnected()) {
 
-            Log.d(TAG, "established TCP connection to " + mWsHost + ":" + mWsPort);
-            
+            //Log.d(TAG, "established TCP connection to " + mWsHost + ":" + mWsPort);
+
             mMasterHandler = new Handler() {
-               
+
                public void handleMessage(Message msg) {
 
                   if (msg.obj instanceof WebSocketMessage.TextMessage) {
-                     
+
                      WebSocketMessage.TextMessage textMessage = (WebSocketMessage.TextMessage) msg.obj;
-                     
-                     Log.d(TAG, "WebSockets Text message received (length " + textMessage.mPayload.length() + ")");
-                     
-                     mWriterHandler.forward(textMessage);
-                     
+
+                     //Log.d(TAG, "WebSockets Text message received (length " + textMessage.mPayload.length() + ")");
+
+                     if (mWsHandler != null) {
+                        mWsHandler.onMessage(textMessage.mPayload);
+                     } else {
+                        Log.d(TAG, "could not call onMessage() .. already NULL");
+                     }
+
                   } else if (msg.obj instanceof WebSocketMessage.BinaryMessage) {
-                     
+
                      WebSocketMessage.BinaryMessage binaryMessage = (WebSocketMessage.BinaryMessage) msg.obj;
-                     
-                     Log.d(TAG, "WebSockets Binary message received (length " + binaryMessage.mPayload.length + ")");
-                     
-                     mWriterHandler.forward(binaryMessage);
-                     
+
+                     //Log.d(TAG, "WebSockets Binary message received (length " + binaryMessage.mPayload.length + ")");
+
+                     if (mWsHandler != null) {
+                        mWsHandler.onMessage(binaryMessage.mPayload);
+                     } else {
+                        Log.d(TAG, "could not call onMessage() .. already NULL");
+                     }
+
                   } else if (msg.obj instanceof WebSocketMessage.Ping) {
-                     
+
                      WebSocketMessage.Ping ping = (WebSocketMessage.Ping) msg.obj;
-                     Log.d(TAG, "WebSockets Ping received");
-                     
+                     //Log.d(TAG, "WebSockets Ping received");
+
                      // reply with Pong
                      WebSocketMessage.Pong pong = new WebSocketMessage.Pong();
                      pong.mPayload = ping.mPayload;
                      mWriterHandler.forward(pong);
-                     
+
                   } else if (msg.obj instanceof WebSocketMessage.Pong) {
-                     
+
                      //WebSocketMessage.Pong pong = (WebSocketMessage.Pong) msg.obj;
-                     Log.d(TAG, "WebSockets Pong received");
-                     
+                     //Log.d(TAG, "WebSockets Pong received");
+
                   } else if (msg.obj instanceof WebSocketMessage.Close) {
-                     
+
                      //WebSocketMessage.Close close = (WebSocketMessage.Close) msg.obj;
-                     Log.d(TAG, "WebSockets Close received");
-                                          
+                     //Log.d(TAG, "WebSockets Close received");
+                     WebSocketMessage.Close close = new WebSocketMessage.Close();
+                     mWriterHandler.forward(close);
+
                   } else if (msg.obj instanceof WebSocketMessage.ServerHandshake) {
-                     
+
                      //WebSocketMessage.ServerHandshake serverHandshake = (WebSocketMessage.ServerHandshake) msg.obj;
-                     Log.d(TAG, "WebSockets Server handshake received");
-                     
+                     //Log.d(TAG, "WebSockets Server handshake received");
+
+                     if (mWsHandler != null) {
+                        mWsHandler.onOpen();
+                     } else {
+                        Log.d(TAG, "could not call onOpen() .. already NULL");
+                     }
+
                   } else if (msg.obj instanceof WebSocketMessage.ConnectionLost) {
-                     
+
                      WebSocketMessage.ConnectionLost connnectionLost = (WebSocketMessage.ConnectionLost) msg.obj;
                      Log.d(TAG, "WebSockets Connection Lost");
+                     failConnection();
 
-                     mWriterThread.getLooper().quit();
-                     mReaderThread.quit();
-                     try {
-                        mTransportChannel.close();
-                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                     }
-                     mTransportChannel = null;
-                     if (mWsHandler != null) {
-                        mWsHandler.onClose();
-                        //mWsHandler = null;
-                     } else {
-                        Log.d(TAG, "could not call onClose() .. already NULL");
-                     }
-                     
-                     Log.d(TAG, "worker threads stopped");
-                     
+
                   } else if (msg.obj instanceof WebSocketMessage.ProtocolViolation) {
-                     
+
                      WebSocketMessage.ProtocolViolation protocolViolation = (WebSocketMessage.ProtocolViolation) msg.obj;
-                     Log.d(TAG, "WebSockets Protocol Violation (" + protocolViolation.mReason + ")");
-                     
+                     Log.d(TAG, "WebSockets Protocol Violation (" + protocolViolation.mException.toString() + ")");
+                     failConnection();
+
                   } else if (msg.obj instanceof WebSocketMessage.Error) {
-                     
+
                      WebSocketMessage.Error error = (WebSocketMessage.Error) msg.obj;
                      Log.d(TAG, "WebSockets Error (" + error.mException.toString() + ")");
-                     
+                     failConnection();
+
                   } else {
-                     
+
                   }
                }
             };
-            
+
             // create WebSocket reader and thread
             mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel);
             mReaderThread.start();
@@ -227,13 +257,13 @@ public class WebSocketConnection {
             mWriterThread = new HandlerThread("WebSocketWriter");
             mWriterThread.start();
             mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel);
-            
+
             // start WebSockets handshake
             WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake(mWsHost);
             hs.mPath = mWsPath;
             hs.mQuery = mWsQuery;
             mWriterHandler.forward(hs);
-            
+
          } else {
 
             throw new WebSocketException("could not connect to WebSockets server");

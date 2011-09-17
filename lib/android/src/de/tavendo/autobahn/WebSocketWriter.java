@@ -209,7 +209,7 @@ public class WebSocketWriter extends Handler {
     */
    private void sendTextMessage(WebSocketMessage.TextMessage message) throws IOException {
       byte[] payload = message.mPayload.getBytes("UTF-8");
-      Log.d(TAG, "sending text message (" + payload.length + ")");
+      //Log.d(TAG, "sending text message (" + payload.length + ")");
       sendFrame(1, true, payload);
    }
    
@@ -326,9 +326,9 @@ public class WebSocketWriter extends Handler {
          mBuffer.flip();
          while (mBuffer.remaining() > 0) {
             // this can block on socket write
-            Log.d(TAG, "writing to socket .." + mBuffer.remaining() + " - " + mBuffer.getBuffer().position());
+            //Log.d(TAG, "writing to socket .." + mBuffer.remaining() + " - " + mBuffer.getBuffer().position());
             int written = mSocket.write(mBuffer.getBuffer());
-            Log.d(TAG, "" + written + " octets written to socket (" + mBuffer.remaining());
+            //Log.d(TAG, "" + written + " octets written to socket (" + mBuffer.remaining());
          }
 
       } catch (Exception e) {

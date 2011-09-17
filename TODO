@@ -3,6 +3,18 @@ Android
 
 check out Maven Android Plugin (http://code.google.com/p/maven-android-plugin/wiki/GettingStarted)
 
+Pitch:
+
+  - easy to use API, modeled after the WS JS API
+  - uses anonymous inner class for event handler to match Android event handler idiom
+  - integrates with Android UI application / tailored to (event loop integration)
+  - passes all Autobahn WS test suite test cases (strict)
+
+WebSockets
+==========
+
+  - SSL support
+
 Options
 =======
 

@@ -24,7 +24,6 @@ import java.nio.channels.SocketChannel;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 
 /**
  * Transport Reader. This is run on own background thread and posts messages
@@ -41,26 +40,31 @@ public class WebSocketReader extends Thread {
    private final ByteBuffer mBuffer;
    private final Handler mMaster;
    private final SocketChannel mSocket;
-   
+
    private final static int STATE_CLOSED = 0;
    private final static int STATE_CONNECTING = 1;
    private final static int STATE_CLOSING = 2;
    private final static int STATE_OPEN = 3;
-   
+
    private boolean mStopped = false;
    private int mState;
-   
+
    private NoCopyByteArrayOutputStream mData = new NoCopyByteArrayOutputStream();
    private NoCopyByteArrayOutputStream mHttpHeader = new NoCopyByteArrayOutputStream();
-   
+
    private boolean mInsideMessage = false;
-   
+
    private int mMessageOpcode;
    private NoCopyByteArrayOutputStream mMessagePayload = new NoCopyByteArrayOutputStream();
-   
+
    /// Frame currently being received.
    private FrameHeader mCurrentFrame;
-   
+
+   private Utf8Validator mUtf8Validator = new Utf8Validator();
+
+   private int mMaxFramePayloadSize = 256 * 1024;
+   private int mMaxMessagePayloadSize = 4 * 1024 * 1024;
+
    /**
     * WebSockets frame metadata.
     */
@@ -75,73 +79,73 @@ public class WebSocketReader extends Thread {
 
    /**
     * Create new WebSockets background reader.
-    * 
+    *
     * @param master    The message handler of master (foreground thread).
     * @param socket    The socket channel created on foreground thread.
     */
    public WebSocketReader(Handler master, SocketChannel socket) {
 
       super("WebSocketReader");
-      
+
       mMaster = master;
       mSocket = socket;
       mBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
       mCurrentFrame = null;
-      
+
       mState = STATE_CONNECTING;
    }
-   
+
    public void quit() {
       mStopped = true;
    }
-   
+
    /**
     * Notify the master (foreground thread).
-    * 
-    * @param message       Message to send to master.       
+    *
+    * @param message       Message to send to master.
     */
    private void notify(WebSocketMessage.Message message) {
-      
+
       Message msg = mMaster.obtainMessage();
       msg.obj = message;
-      mMaster.sendMessage(msg);      
+      mMaster.sendMessage(msg);
    }
-   
+
    private boolean processData() throws Exception {
 
       if (mCurrentFrame == null) {
-         
+
          if (mData.size() >= 2) {
-            
+
             byte[] da = mData.getByteArray();
-            
+
             byte b0 = da[0];
             boolean fin = (b0 & 0x80) != 0;
             int rsv = (b0 & 0x70) >> 4;
             int opcode = b0 & 0x0f;
-            
+
             byte b1 = da[1];
             boolean masked = (b1 & 0x80) != 0;
             int payload_len1 = b1 & 0x7f;
-            
+
             // now check protocol compliance
-            
+
             if (rsv != 0) {
                throw new WebSocketException("RSV != 0 and no extension negotiated");
             }
-            
+
             if (masked) {
                // currently, we don't allow this. need to see whats the final spec.
                throw new WebSocketException("masked server frame");
             }
-            
+
             if (opcode > 7) {
                // control frame
                if (!fin) {
                   throw new WebSocketException("fragmented control frame");
                }
                if (payload_len1 > 125) {
-                  throw new WebSocketException("control frame with payload length > 125 octets");                    
+                  throw new WebSocketException("control frame with payload length > 125 octets");
                }
                if (opcode != 8 && opcode != 9 && opcode != 10) {
                   throw new WebSocketException("control frame using reserved opcode " + opcode);
@@ -164,7 +168,7 @@ public class WebSocketReader extends Thread {
 
             int mask_len = masked ? 4 : 0;
             int header_len = 0;
-            
+
             if (payload_len1 < 126) {
                header_len = 2 + mask_len;
             } else if (payload_len1 == 126) {
@@ -175,9 +179,9 @@ public class WebSocketReader extends Thread {
                // should not arrive here
                throw new Exception("logic error");
             }
-            
+
             if (mData.size() >= header_len) {
-               
+
                int i = 2;
                long payload_len = 0;
                if (payload_len1 == 126) {
@@ -205,7 +209,11 @@ public class WebSocketReader extends Thread {
                } else {
                   payload_len = payload_len1;
                }
-               
+
+               if (payload_len > mMaxFramePayloadSize) {
+                  throw new WebSocketException("frame payload too large");
+               }
+
                mCurrentFrame = new FrameHeader();
                mCurrentFrame.mOpcode = opcode;
                mCurrentFrame.mFin = fin;
@@ -213,122 +221,139 @@ public class WebSocketReader extends Thread {
                mCurrentFrame.mPayloadLen = payload_len;
                mCurrentFrame.mHeaderLen = header_len;
                mCurrentFrame.mTotalLen = mCurrentFrame.mHeaderLen + mCurrentFrame.mPayloadLen;
-               
+
                return mCurrentFrame.mPayloadLen == 0 || mData.size() >= mCurrentFrame.mTotalLen;
-               
+
             } else {
-               
+
                // need more data
                return false;
             }
          } else {
-            
+
             // need more data
             return false;
          }
 
       } else {
-         
+
          // within frame
-         
+
          // see if we buffered complete frame
          if (mData.size() >= mCurrentFrame.mTotalLen) {
-            
+
             // cut out frame payload
             byte[] framePayload = null;
             if (mCurrentFrame.mPayloadLen > 0) {
-               framePayload = new byte[(int) mCurrentFrame.mPayloadLen];                     
+               framePayload = new byte[(int) mCurrentFrame.mPayloadLen];
                System.arraycopy(mData.getByteArray(), mCurrentFrame.mHeaderLen, framePayload, 0, (int) mCurrentFrame.mPayloadLen);
             }
-            
+
             if (mCurrentFrame.mOpcode > 7) {
                // control frame
-               
+
                if (mCurrentFrame.mOpcode == 8) {
                   // close
                   notify(new WebSocketMessage.Close());
-                  
+
                } else if (mCurrentFrame.mOpcode == 9) {
                   // ping
                   notify(new WebSocketMessage.Ping(framePayload));
-                  
+
                } else if (mCurrentFrame.mOpcode == 10) {
                   // pong
                   notify(new WebSocketMessage.Pong(framePayload));
-                  
+
                } else {
-                  
+
                   // illegal control frame
                }
-               
+
             } else {
                // message frame
-               
+
                if (!mInsideMessage) {
                   // new message started
                   mInsideMessage = true;
                   mMessageOpcode = mCurrentFrame.mOpcode;
+                  if (mMessageOpcode == 1) {
+                     mUtf8Validator.reset();
+                  }
                }
-               
+
                if (framePayload != null) {
+
+                  if (mMessagePayload.size() + framePayload.length > mMaxMessagePayloadSize) {
+                     throw new WebSocketException("message payload too large");
+                  }
+
+                  if (mMessageOpcode == 1) {
+                     if (!mUtf8Validator.validate(framePayload)) {
+                        throw new WebSocketException("invalid UTF-8 in text message payload");
+                     }
+                  }
+
                   mMessagePayload.write(framePayload);
                }
-               
+
                if (mCurrentFrame.mFin) {
-                                    
+
                   if (mMessageOpcode == 1) {
-                     
-//                     String s = new String(mMessagePayload.getByteArray(), "UTF-8");                     
-                     String s = new String(mMessagePayload.toByteArray(), "UTF-8");                     
+
+                     if (!mUtf8Validator.isValid()) {
+                        throw new WebSocketException("UTF-8 text message payload ended within Unicode code point");
+                     }
+//                     String s = new String(mMessagePayload.getByteArray(), "UTF-8");
+                     String s = new String(mMessagePayload.toByteArray(), "UTF-8");
                      notify(new WebSocketMessage.TextMessage(s));
-                     
+
                   } else if (mMessageOpcode == 2) {
-                                          
+
                      notify(new WebSocketMessage.BinaryMessage(mMessagePayload.toByteArray()));
-                     
+
                   } else {
-                     
+
                      // illegal data message
                   }
-                  
+
                   mInsideMessage = false;
                   mMessagePayload.reset();
                }
-            }      
-            
+            }
+
             // rebuffer rest
             long restLen = mData.size() - mCurrentFrame.mTotalLen;
             if (restLen > 0) {
-               
+
                byte[] rest = new byte[(int) restLen];
                System.arraycopy(mData.getByteArray(), mCurrentFrame.mHeaderLen + (int) mCurrentFrame.mPayloadLen, rest, 0, (int) restLen);
                mData.reset();
                mData.write(rest);
                mCurrentFrame = null;
-               
+
                // process rest
                return true;
             } else {
-               
+
                mData.reset();
                mCurrentFrame = null;
-               
+
                // nothing more buffered
                return false;
             }
          } else {
-            
+
             // need more data
             return false;
          }
       }
    }
-   
+
    private boolean processHandshake() throws UnsupportedEncodingException {
-      
+
       boolean res = false;
       while (mBuffer.hasRemaining()) {
-         
+
          // buffer HTTP headers in own stream
          mHttpHeader.write(mBuffer.get());
 
@@ -341,11 +366,12 @@ public class WebSocketReader extends Thread {
                 data[pos+1] == 0x0a &&
                 data[pos+2] == 0x0d &&
                 data[pos+3] == 0x0a) {
-               
+
                // FIXME: process handshake from server
-               Log.d(TAG, mHttpHeader.toString("UTF-8"));
-               
-               res = mBuffer.hasRemaining(); 
+               //Log.d(TAG, mHttpHeader.toString("UTF-8"));
+               notify(new WebSocketMessage.ServerHandshake());
+
+               res = mBuffer.hasRemaining();
 
                // buffer rest
                //while (mBuffer.hasRemaining()) {
@@ -359,37 +385,37 @@ public class WebSocketReader extends Thread {
       //mBuffer.clear();
       return res;
    }
-   
+
    private boolean consumeData() throws Exception {
-      
+
       if (mState == STATE_OPEN || mState == STATE_CLOSING) {
-         
+
          // buffer rest
          while (mBuffer.hasRemaining()) {
             mData.write(mBuffer.get());
          }
          mBuffer.clear();
-         
+
          while (processData()) {
             // reprocess until all buffered consumed or error occurred
          }
          return false;
-         
+
       } else if (mState == STATE_CONNECTING) {
-         
+
          return processHandshake();
-      
+
       } else if (mState == STATE_CLOSED) {
-         
+
          return false;
-      
+
       } else {
          // should not arrive here
-         return false;         
+         return false;
       }
-      
+
    }
-   
+
    /**
     * Background reader thread loop.
     */
@@ -397,15 +423,15 @@ public class WebSocketReader extends Thread {
    public void run() {
 
       try {
-         
+
          mBuffer.clear();
          mData.reset();
-         do {            
+         do {
             // blocking read on socket
             int len = mSocket.read(mBuffer);
             if (len > 0) {
                mBuffer.flip();
-               // process buffered data            
+               // process buffered data
                while (consumeData()) {
                }
             }
@@ -415,10 +441,19 @@ public class WebSocketReader extends Thread {
             }
          } while (!mStopped);
 
+      } catch (WebSocketException e) {
+
+         // wrap the exception and notify master
+         notify(new WebSocketMessage.ProtocolViolation(e));
+
       } catch (Exception e) {
 
          // wrap the exception and notify master
          notify(new WebSocketMessage.Error(e));
+
+      } finally {
+
+         mStopped = true;
       }
    }
 

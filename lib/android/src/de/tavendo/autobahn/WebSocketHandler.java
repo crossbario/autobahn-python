@@ -18,8 +18,18 @@
 
 package de.tavendo.autobahn;
 
-public interface WebSocketHandler {
+public class WebSocketHandler {
    
-   public void onClose();
+   public void onOpen() {      
+   }
+   
+   public void onClose() {      
+   }
+   
+   public void onMessage(String payload) {      
+   }
+   
+   public void onMessage(byte[] payload) {
+   }
 
 }
