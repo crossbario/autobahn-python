@@ -19,12 +19,22 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
+from twisted.web.server import Site
+from twisted.web.static import File
 from autobahn.fuzzing import FuzzingServerFactory
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = FuzzingServerFactory(debug = False, outdir = "reports/clients")
-   reactor.listenTCP(9001, factory)
+
+   ## fuzzing server
+   fuzzer = FuzzingServerFactory(debug = False, outdir = "reports/clients")
+   reactor.listenTCP(9001, fuzzer)
+
+   ## web server
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(9090, web)
+
    reactor.run()
