@@ -79,6 +79,9 @@ public class WebSocketMessage {
       }
    }
 
+   public static class Quit extends Message {
+   }
+
    /// WebSockets text message to send or received.
    public static class TextMessage extends Message {
 

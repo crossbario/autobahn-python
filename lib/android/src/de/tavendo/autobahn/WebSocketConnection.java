@@ -65,10 +65,23 @@ public class WebSocketConnection {
 
    private void failConnection() {
 
-      mWriterThread.getLooper().quit();
       mReaderThread.quit();
+      try {
+         mReaderThread.join();
+      } catch (InterruptedException e1) {
+         // TODO Auto-generated catch block
+         e1.printStackTrace();
+      }
 
-      // FIXME join threads before closing socket
+      //mWriterThread.getLooper().quit();
+      mWriterHandler.forward(new WebSocketMessage.Quit());
+      try {
+         mWriterThread.join();
+      } catch (InterruptedException e1) {
+         // TODO Auto-generated catch block
+         e1.printStackTrace();
+      }
+
 
       try {
          mTransportChannel.close();
@@ -158,6 +171,7 @@ public class WebSocketConnection {
 
          mTransportChannel.socket().setSoTimeout(200);
          //mTransportChannel.socket().setSoTimeout(2000);
+         mTransportChannel.socket().setTcpNoDelay(true);
 
          if (mTransportChannel.isConnected()) {
 

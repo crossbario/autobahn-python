@@ -20,7 +20,6 @@ package de.tavendo.autobahn;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
@@ -34,7 +33,7 @@ public class ByteBufferOutputStream extends OutputStream {
    private ByteBuffer mBuffer;
 
    public ByteBufferOutputStream() {
-      this(2 * 65536, 16384);
+      this(2 * 65536, 65536);
    }
 
    public ByteBufferOutputStream(int initialSize, int growSize) {
@@ -47,7 +46,7 @@ public class ByteBufferOutputStream extends OutputStream {
    public ByteBuffer getBuffer() {
       return mBuffer;
    }
-   
+
    public Buffer flip() {
       return mBuffer.flip();
    }
@@ -62,12 +61,14 @@ public class ByteBufferOutputStream extends OutputStream {
 
    public synchronized void expand(int requestSize) {
 
-      if (requestSize >= mBuffer.capacity()) {
+      if (requestSize > mBuffer.capacity()) {
 
          ByteBuffer oldBuffer = mBuffer;
          int oldPosition = mBuffer.position();
-         int newLen = ((requestSize / mGrowSize) + 1) * mGrowSize;
-         mBuffer = ByteBuffer.allocateDirect(newLen);
+         int newCapacity = ((requestSize / mGrowSize) + 1) * mGrowSize;
+         mBuffer = ByteBuffer.allocateDirect(newCapacity);
+         oldBuffer.clear();
+         mBuffer.clear();
          mBuffer.put(oldBuffer);
          mBuffer.position(oldPosition);
       }
@@ -91,31 +92,19 @@ public class ByteBufferOutputStream extends OutputStream {
       }
       mBuffer.put(bytes, off, len);
    }
-   
+
    public synchronized void write(byte[] bytes) throws IOException {
       write(bytes, 0, bytes.length);
    }
-   
+
+   public synchronized void write(String str) throws IOException {
+      write(str.getBytes("UTF-8"));
+   }
+
    public synchronized void crlf() throws IOException {
       write(0x0d);
       write(0x0a);
    }
 
-   public synchronized void write(String str) {
-      try {
-         write(str.getBytes("UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
-      } catch (IOException e) {
-         // TODO Auto-generated catch block
-         e.printStackTrace();
-      }
-   }
-/*   
-   public synchronized String getAsString() {
-      String s = mBuffer.
-   }
-*/   
 }
 

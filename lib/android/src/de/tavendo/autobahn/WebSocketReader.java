@@ -62,8 +62,9 @@ public class WebSocketReader extends Thread {
 
    private Utf8Validator mUtf8Validator = new Utf8Validator();
 
-   private int mMaxFramePayloadSize = 256 * 1024;
-   private int mMaxMessagePayloadSize = 4 * 1024 * 1024;
+//   private int mMaxFramePayloadSize = 256 * 1024;
+   private int mMaxFramePayloadSize = 16 * 1024 * 1024;
+   private int mMaxMessagePayloadSize = 16 * 1024 * 1024;
 
    /**
     * WebSockets frame metadata.
@@ -236,6 +237,9 @@ public class WebSocketReader extends Thread {
          }
 
       } else {
+
+         // FIXME: refactor this for streaming processing, incl. fail fast
+         // on invalid UTF-8 within frame already
 
          // within frame
 
