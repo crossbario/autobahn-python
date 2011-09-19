@@ -90,6 +90,7 @@ public class WebSocketWriter extends Handler {
       sendMessage(msg);
    }
 
+
    /**
     * Notify the master (foreground thread).
     *
@@ -102,6 +103,7 @@ public class WebSocketWriter extends Handler {
       mMaster.sendMessage(msg);
    }
 
+
    /**
     * Create new key for WebSockets handshake.
     *
@@ -113,6 +115,7 @@ public class WebSocketWriter extends Handler {
       return Base64.encodeToString(ba, Base64.DEFAULT);
    }
 
+
    /**
     * Create new (random) frame mask.
     *
@@ -123,6 +126,7 @@ public class WebSocketWriter extends Handler {
       mRng.nextBytes(ba);
       return ba;
    }
+
 
    /**
     * Send WebSocket client handshake.
@@ -154,6 +158,7 @@ public class WebSocketWriter extends Handler {
       mBuffer.crlf();
       mBuffer.crlf();
    }
+
 
    /**
     * Send WebSockets close.
@@ -189,6 +194,7 @@ public class WebSocketWriter extends Handler {
       }
    }
 
+
    /**
     * Send WebSockets ping.
     */
@@ -198,6 +204,7 @@ public class WebSocketWriter extends Handler {
       }
       sendFrame(9, true, message.mPayload);
    }
+
 
    /**
     * Send WebSockets pong. Normally, unsolicited Pongs are not used,
@@ -210,6 +217,7 @@ public class WebSocketWriter extends Handler {
       sendFrame(10, true, message.mPayload);
    }
 
+
    /**
     * Send WebSockets binary message.
     */
@@ -219,6 +227,7 @@ public class WebSocketWriter extends Handler {
       }
       sendFrame(2, true, message.mPayload);
    }
+
 
    /**
     * Send WebSockets text message.
@@ -231,6 +240,7 @@ public class WebSocketWriter extends Handler {
       sendFrame(1, true, payload);
    }
 
+
    /**
     * Send WebSockets binary message.
     */
@@ -241,14 +251,23 @@ public class WebSocketWriter extends Handler {
       sendFrame(1, true, message.mPayload);
    }
 
+
    /**
     * Send WebSockets frame.
-    *
-    * @param opcode           Frame opcode.
-    * @param fin              Final frame flag.
-    * @param payload          Frame payload.
     */
-   private void sendFrame(int opcode, boolean fin, byte[] payload) throws IOException {
+   protected void sendFrame(int opcode, boolean fin, byte[] payload) throws IOException {
+      if (payload != null) {
+         sendFrame(opcode, fin, payload, 0, payload.length);
+      } else {
+         sendFrame(opcode, fin, null, 0, 0);
+      }
+   }
+
+
+   /**
+    * Send WebSockets frame.
+    */
+   protected void sendFrame(int opcode, boolean fin, byte[] payload, int offset, int length) throws IOException {
 
       // first octet
       byte b0 = 0;
@@ -264,31 +283,26 @@ public class WebSocketWriter extends Handler {
          b1 = (byte) (1 << 7);
       }
 
-      long len = 0;
-      if (payload != null) {
-         len = payload.length;
-      }
-
       // extended payload length
-      if (len <= 125) {
-         b1 |= (byte) len;
+      if (length <= 125) {
+         b1 |= (byte) length;
          mBuffer.write(b1);
-      } else if (len <= 0xffff) {
+      } else if (length <= 0xffff) {
          b1 |= (byte) (126 & 0xff);
          mBuffer.write(b1);
-         mBuffer.write(new byte[] {(byte)((len >> 8) & 0xff),
-                                   (byte)(len & 0xff)});
+         mBuffer.write(new byte[] {(byte)((length >> 8) & 0xff),
+                                   (byte)(length & 0xff)});
       } else {
          b1 |= (byte) (127 & 0xff);
          mBuffer.write(b1);
-         mBuffer.write(new byte[] {(byte)((len >> 56) & 0xff),
-                                   (byte)((len >> 48) & 0xff),
-                                   (byte)((len >> 40) & 0xff),
-                                   (byte)((len >> 32) & 0xff),
-                                   (byte)((len >> 24) & 0xff),
-                                   (byte)((len >> 16) & 0xff),
-                                   (byte)((len >> 8)  & 0xff),
-                                   (byte)(len         & 0xff)});
+         mBuffer.write(new byte[] {(byte)((length >> 56) & 0xff),
+                                   (byte)((length >> 48) & 0xff),
+                                   (byte)((length >> 40) & 0xff),
+                                   (byte)((length >> 32) & 0xff),
+                                   (byte)((length >> 24) & 0xff),
+                                   (byte)((length >> 16) & 0xff),
+                                   (byte)((length >> 8)  & 0xff),
+                                   (byte)(length         & 0xff)});
       }
 
       byte mask[] = null;
@@ -301,17 +315,18 @@ public class WebSocketWriter extends Handler {
          mBuffer.write(mask[3]);
       }
 
-      if (len > 0) {
+      if (length > 0) {
          if (mOptions.getMaskClientFrames()) {
             // FIXME: optimize
             // FIXME: masking within buffer of output stream
-            for (int i = 0; i < len; ++i) {
-               payload[i] ^= mask[i % 4];
+            for (int i = 0; i < length; ++i) {
+               payload[i + offset] ^= mask[i % 4];
             }
          }
-         mBuffer.write(payload);
+         mBuffer.write(payload, offset, length);
       }
    }
+
 
    /**
     * Process message received from foreground thread. This is called from
@@ -325,49 +340,10 @@ public class WebSocketWriter extends Handler {
          // clear send buffer
          mBuffer.clear();
 
-         //
-         if (msg.obj instanceof WebSocketMessage.TextMessage) {
-
-            sendTextMessage((WebSocketMessage.TextMessage) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.RawTextMessage) {
-
-            sendRawTextMessage((WebSocketMessage.RawTextMessage) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.BinaryMessage) {
-
-            sendBinaryMessage((WebSocketMessage.BinaryMessage) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.Ping) {
-
-            sendPing((WebSocketMessage.Ping) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.Pong) {
-
-            sendPong((WebSocketMessage.Pong) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.Close) {
-
-            sendClose((WebSocketMessage.Close) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.ClientHandshake) {
-
-            sendClientHandshake((WebSocketMessage.ClientHandshake) msg.obj);
-
-         } else if (msg.obj instanceof WebSocketMessage.Quit) {
-
-            mLooper.quit();
-            return;
-
-         } else {
-
-            // should never arrive here
-            throw new WebSocketException("invalid message to WebSocketWriter");
-
-         }
+         // process message from master
+         processMessage(msg.obj);
 
          // send out buffered data
-         //
          mBuffer.flip();
          while (mBuffer.remaining() > 0) {
             // this can block on socket write
@@ -383,5 +359,62 @@ public class WebSocketWriter extends Handler {
          // wrap the exception and notify master
          notify(new WebSocketMessage.Error(e));
       }
+   }
+
+
+   /**
+    * Process WebSockets or control message from master. Normally,
+    * there should be no reason to override this. If you do, you
+    * need to know what you are doing.
+    */
+   protected void processMessage(Object msg) throws IOException, WebSocketException {
+
+      if (msg instanceof WebSocketMessage.TextMessage) {
+
+         sendTextMessage((WebSocketMessage.TextMessage) msg);
+
+      } else if (msg instanceof WebSocketMessage.RawTextMessage) {
+
+         sendRawTextMessage((WebSocketMessage.RawTextMessage) msg);
+
+      } else if (msg instanceof WebSocketMessage.BinaryMessage) {
+
+         sendBinaryMessage((WebSocketMessage.BinaryMessage) msg);
+
+      } else if (msg instanceof WebSocketMessage.Ping) {
+
+         sendPing((WebSocketMessage.Ping) msg);
+
+      } else if (msg instanceof WebSocketMessage.Pong) {
+
+         sendPong((WebSocketMessage.Pong) msg);
+
+      } else if (msg instanceof WebSocketMessage.Close) {
+
+         sendClose((WebSocketMessage.Close) msg);
+
+      } else if (msg instanceof WebSocketMessage.ClientHandshake) {
+
+         sendClientHandshake((WebSocketMessage.ClientHandshake) msg);
+
+      } else if (msg instanceof WebSocketMessage.Quit) {
+
+         mLooper.quit();
+         return;
+
+      } else {
+
+         processAppMessage(msg);
+      }
+   }
+
+
+   /**
+    * Process message other than plain WebSockets or control message.
+    * This is intended to be overridden in derived classes.
+    */
+   protected void processAppMessage(Object msg) throws WebSocketException, IOException {
+
+      throw new WebSocketException("unknown message received by WebSocketWriter");
    }
 }
