@@ -19,17 +19,20 @@
 package de.tavendo.autobahn;
 
 public class WebSocketHandler {
-   
-   public void onOpen() {      
+
+   public void onOpen() {
    }
-   
-   public void onClose() {      
+
+   public void onClose() {
    }
-   
-   public void onMessage(String payload) {      
+
+   public void onTextMessage(String payload) {
    }
-   
-   public void onMessage(byte[] payload) {
+
+   public void onRawTextMessage(byte[] payload) {
+   }
+
+   public void onBinaryMessage(byte[] payload) {
    }
 
 }

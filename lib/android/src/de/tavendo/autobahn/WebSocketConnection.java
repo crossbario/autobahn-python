@@ -52,15 +52,25 @@ public class WebSocketConnection {
 
    private WebSocketHandler mWsHandler;
 
+   private WebSocketOptions mOptions;
+
    public WebSocketConnection() {
    }
 
-   public void sendMessage(String payload) {
+   public void sendTextMessage(String payload) {
       mWriterHandler.forward(new WebSocketMessage.TextMessage(payload));
    }
 
-   public void sendMessage(byte[] payload) {
+   public void sendRawTextMessage(byte[] payload) {
+      mWriterHandler.forward(new WebSocketMessage.RawTextMessage(payload));
+   }
+
+   public void sendBinaryMessage(byte[] payload) {
       mWriterHandler.forward(new WebSocketMessage.BinaryMessage(payload));
+   }
+
+   public boolean isConnected() {
+      return mTransportChannel != null && mTransportChannel.isConnected();
    }
 
    private void failConnection() {
@@ -101,7 +111,13 @@ public class WebSocketConnection {
 
    }
 
+
    public void connect(String wsUri, WebSocketHandler wsHandler) throws WebSocketException {
+      connect(wsUri, wsHandler, new WebSocketOptions());
+   }
+
+
+   public void connect(String wsUri, WebSocketHandler wsHandler, WebSocketOptions options) throws WebSocketException {
 
       // don't connect if already connected .. user needs to disconnect first
       //
@@ -159,6 +175,9 @@ public class WebSocketConnection {
 
       mWsHandler = wsHandler;
 
+      // make copy of options!
+      mOptions = new WebSocketOptions(options);
+
       // connect TCP socket
       // http://developer.android.com/reference/java/nio/channels/SocketChannel.html
       //
@@ -169,9 +188,8 @@ public class WebSocketConnection {
          mTransportChannel.socket().connect(new InetSocketAddress(mWsHost, mWsPort), 1000);
          //mTransportChannel.connect(new InetSocketAddress(mWsHost, mWsPort));
 
-         mTransportChannel.socket().setSoTimeout(200);
-         //mTransportChannel.socket().setSoTimeout(2000);
-         mTransportChannel.socket().setTcpNoDelay(true);
+         mTransportChannel.socket().setSoTimeout(mOptions.getSocketReceiveTimeout());
+         mTransportChannel.socket().setTcpNoDelay(mOptions.getTcpNoDelay());
 
          if (mTransportChannel.isConnected()) {
 
@@ -188,7 +206,17 @@ public class WebSocketConnection {
                      //Log.d(TAG, "WebSockets Text message received (length " + textMessage.mPayload.length() + ")");
 
                      if (mWsHandler != null) {
-                        mWsHandler.onMessage(textMessage.mPayload);
+                        mWsHandler.onTextMessage(textMessage.mPayload);
+                     } else {
+                        Log.d(TAG, "could not call onMessage() .. already NULL");
+                     }
+
+                  } else if (msg.obj instanceof WebSocketMessage.RawTextMessage) {
+
+                     WebSocketMessage.RawTextMessage rawTextMessage = (WebSocketMessage.RawTextMessage) msg.obj;
+
+                     if (mWsHandler != null) {
+                        mWsHandler.onRawTextMessage(rawTextMessage.mPayload);
                      } else {
                         Log.d(TAG, "could not call onMessage() .. already NULL");
                      }
@@ -200,7 +228,7 @@ public class WebSocketConnection {
                      //Log.d(TAG, "WebSockets Binary message received (length " + binaryMessage.mPayload.length + ")");
 
                      if (mWsHandler != null) {
-                        mWsHandler.onMessage(binaryMessage.mPayload);
+                        mWsHandler.onBinaryMessage(binaryMessage.mPayload);
                      } else {
                         Log.d(TAG, "could not call onMessage() .. already NULL");
                      }
@@ -264,13 +292,13 @@ public class WebSocketConnection {
             };
 
             // create WebSocket reader and thread
-            mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel);
+            mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel, mOptions);
             mReaderThread.start();
 
             // create WebSocket writer and thread
             mWriterThread = new HandlerThread("WebSocketWriter");
             mWriterThread.start();
-            mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel);
+            mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel, mOptions);
 
             // start WebSockets handshake
             WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake(mWsHost);

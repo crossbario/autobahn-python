@@ -92,6 +92,16 @@ public class WebSocketMessage {
       }
    }
 
+   /// WebSockets raw (UTF-8) text message to send or received.
+   public static class RawTextMessage extends Message{
+
+      public byte[] mPayload;
+
+      RawTextMessage(byte[] payload) {
+         mPayload = payload;
+      }
+   }
+
    /// WebSockets binary message to send or received.
    public static class BinaryMessage extends Message{
 

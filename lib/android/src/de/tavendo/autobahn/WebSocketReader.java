@@ -36,7 +36,7 @@ public class WebSocketReader extends Thread {
    // private final ObjectMapper mJsonMapper = new ObjectMapper();
    // private final JsonFactory mJsonFactory;
 
-   private static final int BUFFER_SIZE = 65536;
+   private static final int BUFFER_SIZE = 2 * 65536;
    private final ByteBuffer mBuffer;
    private final Handler mMaster;
    private final SocketChannel mSocket;
@@ -49,22 +49,20 @@ public class WebSocketReader extends Thread {
    private boolean mStopped = false;
    private int mState;
 
-   private NoCopyByteArrayOutputStream mData = new NoCopyByteArrayOutputStream();
+   private NoCopyByteArrayOutputStream mData;
    private NoCopyByteArrayOutputStream mHttpHeader = new NoCopyByteArrayOutputStream();
 
    private boolean mInsideMessage = false;
 
    private int mMessageOpcode;
-   private NoCopyByteArrayOutputStream mMessagePayload = new NoCopyByteArrayOutputStream();
+   private NoCopyByteArrayOutputStream mMessagePayload;
 
    /// Frame currently being received.
    private FrameHeader mCurrentFrame;
 
    private Utf8Validator mUtf8Validator = new Utf8Validator();
 
-//   private int mMaxFramePayloadSize = 256 * 1024;
-   private int mMaxFramePayloadSize = 16 * 1024 * 1024;
-   private int mMaxMessagePayloadSize = 16 * 1024 * 1024;
+   private final WebSocketOptions mOptions;
 
    /**
     * WebSockets frame metadata.
@@ -84,12 +82,17 @@ public class WebSocketReader extends Thread {
     * @param master    The message handler of master (foreground thread).
     * @param socket    The socket channel created on foreground thread.
     */
-   public WebSocketReader(Handler master, SocketChannel socket) {
+   public WebSocketReader(Handler master, SocketChannel socket, WebSocketOptions options) {
 
       super("WebSocketReader");
 
       mMaster = master;
       mSocket = socket;
+      mOptions = options;
+
+      mData = new NoCopyByteArrayOutputStream(options.getMaxFramePayloadSize() + 14);
+      mMessagePayload = new NoCopyByteArrayOutputStream(options.getMaxMessagePayloadSize());
+
       mBuffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
       mCurrentFrame = null;
 
@@ -211,7 +214,7 @@ public class WebSocketReader extends Thread {
                   payload_len = payload_len1;
                }
 
-               if (payload_len > mMaxFramePayloadSize) {
+               if (payload_len > mOptions.getMaxFramePayloadSize()) {
                   throw new WebSocketException("frame payload too large");
                }
 
@@ -280,21 +283,19 @@ public class WebSocketReader extends Thread {
                   // new message started
                   mInsideMessage = true;
                   mMessageOpcode = mCurrentFrame.mOpcode;
-                  if (mMessageOpcode == 1) {
+                  if (mMessageOpcode == 1 && mOptions.getValidateIncomingUtf8()) {
                      mUtf8Validator.reset();
                   }
                }
 
                if (framePayload != null) {
 
-                  if (mMessagePayload.size() + framePayload.length > mMaxMessagePayloadSize) {
+                  if (mMessagePayload.size() + framePayload.length > mOptions.getMaxMessagePayloadSize()) {
                      throw new WebSocketException("message payload too large");
                   }
 
-                  if (mMessageOpcode == 1) {
-                     if (!mUtf8Validator.validate(framePayload)) {
-                        throw new WebSocketException("invalid UTF-8 in text message payload");
-                     }
+                  if (mMessageOpcode == 1 && mOptions.getValidateIncomingUtf8() && !mUtf8Validator.validate(framePayload)) {
+                     throw new WebSocketException("invalid UTF-8 in text message payload");
                   }
 
                   mMessagePayload.write(framePayload);
@@ -304,12 +305,19 @@ public class WebSocketReader extends Thread {
 
                   if (mMessageOpcode == 1) {
 
-                     if (!mUtf8Validator.isValid()) {
+                     if (mOptions.getValidateIncomingUtf8() && !mUtf8Validator.isValid()) {
                         throw new WebSocketException("UTF-8 text message payload ended within Unicode code point");
                      }
-//                     String s = new String(mMessagePayload.getByteArray(), "UTF-8");
-                     String s = new String(mMessagePayload.toByteArray(), "UTF-8");
-                     notify(new WebSocketMessage.TextMessage(s));
+
+                     if (mOptions.getReceiveTextMessagesRaw()) {
+
+                        notify(new WebSocketMessage.RawTextMessage(mMessagePayload.toByteArray()));
+
+                     } else {
+
+                        String s = new String(mMessagePayload.toByteArray(), "UTF-8");
+                        notify(new WebSocketMessage.TextMessage(s));
+                     }
 
                   } else if (mMessageOpcode == 2) {
 

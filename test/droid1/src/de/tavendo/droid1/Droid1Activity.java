@@ -28,6 +28,7 @@ import android.widget.TextView;
 import de.tavendo.autobahn.WebSocketConnection;
 import de.tavendo.autobahn.WebSocketException;
 import de.tavendo.autobahn.WebSocketHandler;
+import de.tavendo.autobahn.WebSocketOptions;
 
 public class Droid1Activity extends Activity {
 
@@ -53,7 +54,7 @@ public class Droid1Activity extends Activity {
                   new WebSocketHandler() {
 
                      @Override
-                     public void onMessage(String payload) {
+                     public void onTextMessage(String payload) {
                         lastCase = Integer.parseInt(payload);
                      }
 
@@ -67,31 +68,39 @@ public class Droid1Activity extends Activity {
 
          } else {
             if (currCase <= lastCase) {
-                    sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/runCase?case=" + currCase + "&agent=" + mAgent.getText(),
-                          new WebSocketHandler() {
 
-                             @Override
-                             public void onMessage(String payload) {
-                                sess.sendMessage(payload);
-                             }
+                 WebSocketOptions options = new WebSocketOptions();
+                 options.setReceiveTextMessagesRaw(true);
+                 options.setValidateIncomingUtf8(false);
+                 options.setMaskClientFrames(false);
+                 options.setMaxMessagePayloadSize(4*1024*1024);
+                 options.setMaxFramePayloadSize(4*1024*1024);
 
-                             @Override
-                             public void onMessage(byte[] payload) {
-                                sess.sendMessage(payload);
-                             }
+                 sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/runCase?case=" + currCase + "&agent=" + mAgent.getText(),
+                       new WebSocketHandler() {
 
-                             @Override
-                             public void onOpen() {
-                                mStatusline.setText("Test case " + currCase + "/" + lastCase + " started ..");
-                             }
+                          @Override
+                          public void onRawTextMessage(byte[] payload) {
+                             sess.sendRawTextMessage(payload);
+                          }
 
-                             @Override
-                             public void onClose() {
-                                mStatusline.setText("Test case " + currCase + "/" + lastCase + " finished.");
-                                currCase += 1;
-                                next();
-                             }
-                    });
+                          @Override
+                          public void onBinaryMessage(byte[] payload) {
+                             sess.sendBinaryMessage(payload);
+                          }
+
+                          @Override
+                          public void onOpen() {
+                             mStatusline.setText("Test case " + currCase + "/" + lastCase + " started ..");
+                          }
+
+                          @Override
+                          public void onClose() {
+                             mStatusline.setText("Test case " + currCase + "/" + lastCase + " finished.");
+                             currCase += 1;
+                             next();
+                          }
+                 }, options);
             } else {
                   sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/updateReports?agent=" + mAgent.getText(),
                         new WebSocketHandler() {

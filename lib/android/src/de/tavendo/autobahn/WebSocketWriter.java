@@ -41,17 +41,20 @@ public class WebSocketWriter extends Handler {
    /// Random number generator for handshake key and frame mask generation.
    private final Random mRng = new Random();
 
+   /// Connection master.
    private final Handler mMaster;
+
+   /// Message looper this object is running on.
+   private final Looper mLooper;
 
    /// The NIO socket channel created on foreground thread.
    private final SocketChannel mSocket;
 
+   /// WebSockets options.
+   private final WebSocketOptions mOptions;
+
    /// The send buffer that holds data to send on socket.
    private final ByteBufferOutputStream mBuffer;
-
-   private boolean mStopped = false;
-
-   private final Looper mLooper;
 
 
    /**
@@ -62,19 +65,17 @@ public class WebSocketWriter extends Handler {
     * @param master    The message handler of master (foreground thread).
     * @param socket    The socket channel created on foreground thread.
     */
-   public WebSocketWriter(Looper looper, Handler master, SocketChannel socket) {
+   public WebSocketWriter(Looper looper, Handler master, SocketChannel socket, WebSocketOptions options) {
 
       super(looper);
 
       mLooper = looper;
       mMaster = master;
       mSocket = socket;
-      mBuffer = new ByteBufferOutputStream();
+      mOptions = options;
+      mBuffer = new ByteBufferOutputStream(options.getMaxFramePayloadSize() + 14, 4*64*1024);
    }
 
-   public void shutdown() {
-      mStopped = true;
-   }
 
    /**
     * This can be called on foreground thread to send this object
@@ -157,7 +158,7 @@ public class WebSocketWriter extends Handler {
    /**
     * Send WebSockets close.
     */
-   private void sendClose(WebSocketMessage.Close message) throws IOException {
+   private void sendClose(WebSocketMessage.Close message) throws IOException, WebSocketException {
 
       if (message.mCode > 0) {
 
@@ -171,6 +172,10 @@ public class WebSocketWriter extends Handler {
             }
          } else {
             payload = new byte[2];
+         }
+
+         if (payload != null && payload.length > 125) {
+            throw new WebSocketException("close payload exceeds 125 octets");
          }
 
          payload[0] = (byte)((message.mCode >> 8) & 0xff);
@@ -187,7 +192,10 @@ public class WebSocketWriter extends Handler {
    /**
     * Send WebSockets ping.
     */
-   private void sendPing(WebSocketMessage.Ping message) throws IOException {
+   private void sendPing(WebSocketMessage.Ping message) throws IOException, WebSocketException {
+      if (message.mPayload != null && message.mPayload.length > 125) {
+         throw new WebSocketException("ping payload exceeds 125 octets");
+      }
       sendFrame(9, true, message.mPayload);
    }
 
@@ -195,24 +203,42 @@ public class WebSocketWriter extends Handler {
     * Send WebSockets pong. Normally, unsolicited Pongs are not used,
     * but Pongs are only send in response to a Ping from the peer.
     */
-   private void sendPong(WebSocketMessage.Pong message) throws IOException {
+   private void sendPong(WebSocketMessage.Pong message) throws IOException, WebSocketException {
+      if (message.mPayload != null && message.mPayload.length > 125) {
+         throw new WebSocketException("pong payload exceeds 125 octets");
+      }
       sendFrame(10, true, message.mPayload);
    }
 
    /**
     * Send WebSockets binary message.
     */
-   private void sendBinaryMessage(WebSocketMessage.BinaryMessage message) throws IOException {
+   private void sendBinaryMessage(WebSocketMessage.BinaryMessage message) throws IOException, WebSocketException {
+      if (message.mPayload.length > mOptions.getMaxMessagePayloadSize()) {
+         throw new WebSocketException("message payload exceeds payload limit");
+      }
       sendFrame(2, true, message.mPayload);
    }
 
    /**
     * Send WebSockets text message.
     */
-   private void sendTextMessage(WebSocketMessage.TextMessage message) throws IOException {
+   private void sendTextMessage(WebSocketMessage.TextMessage message) throws IOException, WebSocketException {
       byte[] payload = message.mPayload.getBytes("UTF-8");
-      //Log.d(TAG, "sending text message (" + payload.length + ")");
+      if (payload.length > mOptions.getMaxMessagePayloadSize()) {
+         throw new WebSocketException("message payload exceeds payload limit");
+      }
       sendFrame(1, true, payload);
+   }
+
+   /**
+    * Send WebSockets binary message.
+    */
+   private void sendRawTextMessage(WebSocketMessage.RawTextMessage message) throws IOException, WebSocketException {
+      if (message.mPayload.length > mOptions.getMaxMessagePayloadSize()) {
+         throw new WebSocketException("message payload exceeds payload limit");
+      }
+      sendFrame(1, true, message.mPayload);
    }
 
    /**
@@ -233,7 +259,10 @@ public class WebSocketWriter extends Handler {
       mBuffer.write(b0);
 
       // second octet
-      byte b1 = (byte) (1 << 7); // c2s is always masked
+      byte b1 = 0;
+      if (mOptions.getMaskClientFrames()) {
+         b1 = (byte) (1 << 7);
+      }
 
       long len = 0;
       if (payload != null) {
@@ -262,18 +291,23 @@ public class WebSocketWriter extends Handler {
                                    (byte)(len         & 0xff)});
       }
 
-      // a mask is always needed, even without payload
-      byte mask[] = newFrameMask();
-      mBuffer.write(mask[0]);
-      mBuffer.write(mask[1]);
-      mBuffer.write(mask[2]);
-      mBuffer.write(mask[3]);
+      byte mask[] = null;
+      if (mOptions.getMaskClientFrames()) {
+         // a mask is always needed, even without payload
+         mask = newFrameMask();
+         mBuffer.write(mask[0]);
+         mBuffer.write(mask[1]);
+         mBuffer.write(mask[2]);
+         mBuffer.write(mask[3]);
+      }
 
       if (len > 0) {
-         // FIXME: optimize
-         // FIXME: masking within buffer of output stream
-         for (int i = 0; i < len; ++i) {
-            payload[i] ^= mask[i % 4];
+         if (mOptions.getMaskClientFrames()) {
+            // FIXME: optimize
+            // FIXME: masking within buffer of output stream
+            for (int i = 0; i < len; ++i) {
+               payload[i] ^= mask[i % 4];
+            }
          }
          mBuffer.write(payload);
       }
@@ -295,6 +329,10 @@ public class WebSocketWriter extends Handler {
          if (msg.obj instanceof WebSocketMessage.TextMessage) {
 
             sendTextMessage((WebSocketMessage.TextMessage) msg.obj);
+
+         } else if (msg.obj instanceof WebSocketMessage.RawTextMessage) {
+
+            sendRawTextMessage((WebSocketMessage.RawTextMessage) msg.obj);
 
          } else if (msg.obj instanceof WebSocketMessage.BinaryMessage) {
 
@@ -333,9 +371,8 @@ public class WebSocketWriter extends Handler {
          mBuffer.flip();
          while (mBuffer.remaining() > 0) {
             // this can block on socket write
-            Log.d(TAG, "writing to socket .." + mBuffer.remaining() + " - " + mBuffer.getBuffer().position());
+            @SuppressWarnings("unused")
             int written = mSocket.write(mBuffer.getBuffer());
-            Log.d(TAG, "" + written + " octets written to socket (" + mBuffer.remaining());
          }
 
       } catch (Exception e) {

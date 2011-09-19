@@ -24,10 +24,18 @@ import java.io.InputStream;
 
 public class NoCopyByteArrayOutputStream extends ByteArrayOutputStream {
 
+   public NoCopyByteArrayOutputStream() {
+      super();
+   }
+
+   public NoCopyByteArrayOutputStream(int size) {
+      super(size);
+   }
+
    public InputStream getInputStream() {
       return new ByteArrayInputStream(buf, 0, count);
    }
-   
+
    public byte[] getByteArray() {
       return buf;
    }
