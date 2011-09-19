@@ -268,7 +268,7 @@ public class WebSocketConnection {
 
                   } else if (msg.obj instanceof WebSocketMessage.ConnectionLost) {
 
-                     WebSocketMessage.ConnectionLost connnectionLost = (WebSocketMessage.ConnectionLost) msg.obj;
+                     //WebSocketMessage.ConnectionLost connnectionLost = (WebSocketMessage.ConnectionLost) msg.obj;
                      Log.d(TAG, "WebSockets Connection Lost");
                      failConnection();
 

@@ -23,8 +23,6 @@ class in connectionMade():
 
 Masking
 
-   maskClientFrames (true)
-   requireMaskedClientFrames (true)
    maskServerFrames (false)
    acceptMaskedServerFrames (false)
    applyMask (true)

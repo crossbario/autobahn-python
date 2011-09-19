@@ -71,10 +71,11 @@ public class Droid1Activity extends Activity {
 
                  WebSocketOptions options = new WebSocketOptions();
                  options.setReceiveTextMessagesRaw(true);
-                 options.setValidateIncomingUtf8(false);
-                 options.setMaskClientFrames(false);
+                 //options.setValidateIncomingUtf8(false);
+                 //options.setMaskClientFrames(false);
                  options.setMaxMessagePayloadSize(4*1024*1024);
                  options.setMaxFramePayloadSize(4*1024*1024);
+                 options.setTcpNoDelay(false);
 
                  sess.connect("ws://" + mHostname.getText() + ":" + mPort.getText() + "/runCase?case=" + currCase + "&agent=" + mAgent.getText(),
                        new WebSocketHandler() {
