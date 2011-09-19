@@ -51,4 +51,5 @@ class Case9_1_1(Case):
       self.p.failConnection()
 
    def onConnectionLost(self, failedByMe):
-      pass
+      if not failedByMe:
+         self.result = "Connection failed by peer."

@@ -20,13 +20,13 @@ from case9_3_1 import Case9_3_1
 
 class Case9_3_7(Case9_3_1):
 
-   DESCRIPTION = """Send fragmented text message message with message payload of length 8 * 2**20 (8M). Sent out in fragments of 1M."""
+   DESCRIPTION = """Send fragmented text message message with message payload of length 4 * 2**20 (4M). Sent out in fragments of 256k."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 8 * 2**20
-      self.FRAGSIZE = 1 * 2**20
+      self.DATALEN = 4 * 2**20
+      self.FRAGSIZE = 256 * 2**10
       self.PAYLOAD = "*" * self.DATALEN
       self.WAITSECS = 100
       self.reportTime = True
