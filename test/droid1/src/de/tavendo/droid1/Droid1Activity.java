@@ -32,7 +32,7 @@ import de.tavendo.autobahn.WebSocketOptions;
 
 public class Droid1Activity extends Activity {
 
-   static final String TAG = "de.tavendo.autobahn";
+   static final String TAG = "de.tavendo.droid1";
 
    static EditText mHostname;
    static EditText mPort;

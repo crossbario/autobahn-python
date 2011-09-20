@@ -47,6 +47,7 @@ Rotate agent labels in report 90° counterclock => css
 
 Test Cases
 
+  - add new case variant of 6.4.2: the middle frame is large (64k)
   - split out 6.4.3 to a new test section: "Implementation Limits" => see how behaves
   - UTF-8 fail fast: differentiate 4 behaviors
       1. only when complete message was received

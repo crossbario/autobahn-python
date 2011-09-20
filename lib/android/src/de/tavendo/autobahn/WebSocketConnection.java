@@ -35,11 +35,9 @@ public class WebSocketConnection {
 
    private Handler mMasterHandler;
 
-   private WebSocketReader mReaderThread;
-
-   private HandlerThread mWriterThread;
-   // private TransportWriter mWriterHandler;
-   private WebSocketWriter mWriterHandler;
+   protected WebSocketReader mWebSocketReader;
+   protected WebSocketWriter mWebSocketWriter;
+   protected HandlerThread mWebSocketWriterThread;
 
    private SocketChannel mTransportChannel;
 
@@ -58,15 +56,15 @@ public class WebSocketConnection {
    }
 
    public void sendTextMessage(String payload) {
-      mWriterHandler.forward(new WebSocketMessage.TextMessage(payload));
+      mWebSocketWriter.forward(new WebSocketMessage.TextMessage(payload));
    }
 
    public void sendRawTextMessage(byte[] payload) {
-      mWriterHandler.forward(new WebSocketMessage.RawTextMessage(payload));
+      mWebSocketWriter.forward(new WebSocketMessage.RawTextMessage(payload));
    }
 
    public void sendBinaryMessage(byte[] payload) {
-      mWriterHandler.forward(new WebSocketMessage.BinaryMessage(payload));
+      mWebSocketWriter.forward(new WebSocketMessage.BinaryMessage(payload));
    }
 
    public boolean isConnected() {
@@ -75,18 +73,18 @@ public class WebSocketConnection {
 
    private void failConnection() {
 
-      mReaderThread.quit();
+      mWebSocketReader.quit();
       try {
-         mReaderThread.join();
+         mWebSocketReader.join();
       } catch (InterruptedException e1) {
          // TODO Auto-generated catch block
          e1.printStackTrace();
       }
 
       //mWriterThread.getLooper().quit();
-      mWriterHandler.forward(new WebSocketMessage.Quit());
+      mWebSocketWriter.forward(new WebSocketMessage.Quit());
       try {
-         mWriterThread.join();
+         mWebSocketWriterThread.join();
       } catch (InterruptedException e1) {
          // TODO Auto-generated catch block
          e1.printStackTrace();
@@ -241,7 +239,7 @@ public class WebSocketConnection {
                      // reply with Pong
                      WebSocketMessage.Pong pong = new WebSocketMessage.Pong();
                      pong.mPayload = ping.mPayload;
-                     mWriterHandler.forward(pong);
+                     mWebSocketWriter.forward(pong);
 
                   } else if (msg.obj instanceof WebSocketMessage.Pong) {
 
@@ -253,7 +251,7 @@ public class WebSocketConnection {
                      //WebSocketMessage.Close close = (WebSocketMessage.Close) msg.obj;
                      //Log.d(TAG, "WebSockets Close received");
                      WebSocketMessage.Close close = new WebSocketMessage.Close();
-                     mWriterHandler.forward(close);
+                     mWebSocketWriter.forward(close);
 
                   } else if (msg.obj instanceof WebSocketMessage.ServerHandshake) {
 
@@ -292,19 +290,19 @@ public class WebSocketConnection {
             };
 
             // create WebSocket reader and thread
-            mReaderThread = new WebSocketReader(mMasterHandler, mTransportChannel, mOptions);
-            mReaderThread.start();
+            mWebSocketReader = new WebSocketReader(mMasterHandler, mTransportChannel, mOptions);
+            mWebSocketReader.start();
 
             // create WebSocket writer and thread
-            mWriterThread = new HandlerThread("WebSocketWriter");
-            mWriterThread.start();
-            mWriterHandler = new WebSocketWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel, mOptions);
+            mWebSocketWriterThread = new HandlerThread("WebSocketWriter");
+            mWebSocketWriterThread.start();
+            mWebSocketWriter = new WebSocketWriter(mWebSocketWriterThread.getLooper(), mMasterHandler, mTransportChannel, mOptions);
 
             // start WebSockets handshake
             WebSocketMessage.ClientHandshake hs = new WebSocketMessage.ClientHandshake(mWsHost);
             hs.mPath = mWsPath;
             hs.mQuery = mWsQuery;
-            mWriterHandler.forward(hs);
+            mWebSocketWriter.forward(hs);
 
          } else {
 

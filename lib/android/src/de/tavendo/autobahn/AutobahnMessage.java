@@ -18,11 +18,49 @@
 
 package de.tavendo.autobahn;
 
+
 public class AutobahnMessage {
 
+   public static final int MESSAGE_TYPE_PREFIX = 1;
+   public static final int MESSAGE_TYPE_CALL = 2;
+   public static final int MESSAGE_TYPE_CALL_RESULT = 3;
+   public static final int MESSAGE_TYPE_CALL_ERROR = 4;
+   public static final int MESSAGE_TYPE_SUBSCRIBE = 5;
+   public static final int MESSAGE_TYPE_UNSUBSCRIBE = 6;
+   public static final int MESSAGE_TYPE_PUBLISH = 7;
+   public static final int MESSAGE_TYPE_EVENT = 8;
+
    public static class Call {
-      public String callId;
-      public String procUri;
-      public Object args;
+      public String mCallId;
+      public String mProcUri;
+      public Object[] mArgs;
+
+      public Call(String callId, String procUri, int argCount) {
+         mCallId = callId;
+         mProcUri = procUri;
+         mArgs = new Object[argCount];
+      }
    }
- }
+
+   public static class CallResult {
+      public String mCallId;
+      public Object mResult;
+
+      public CallResult(String callId, Object result) {
+         mCallId = callId;
+         mResult = result;
+      }
+   }
+
+   public static class CallError {
+      public String mCallId;
+      public String mErrorUri;
+      public String mErrorDesc;
+
+      public CallError(String callId, String errorUri, String errorDesc) {
+         mCallId = callId;
+         mErrorUri = errorUri;
+         mErrorDesc = errorDesc;
+      }
+   }
+}

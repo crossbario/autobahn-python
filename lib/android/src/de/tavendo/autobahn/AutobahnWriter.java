@@ -32,8 +32,6 @@ import android.os.Looper;
 
 public class AutobahnWriter extends WebSocketWriter {
 
-   private static final int MESSAGE_TYPE_CALL = 1;
-
    private final JsonFactory mJsonFactory;
    private final NoCopyByteArrayOutputStream mPayload;
 
@@ -56,10 +54,12 @@ public class AutobahnWriter extends WebSocketWriter {
             AutobahnMessage.Call call = (AutobahnMessage.Call) msg;
 
             generator.writeStartArray();
-            generator.writeNumber(MESSAGE_TYPE_CALL);
-            generator.writeString(call.callId);
-            generator.writeString(call.procUri);
-            generator.writeObject(call.args);
+            generator.writeNumber(AutobahnMessage.MESSAGE_TYPE_CALL);
+            generator.writeString(call.mCallId);
+            generator.writeString(call.mProcUri);
+            for (Object arg : call.mArgs) {
+               generator.writeObject(arg);
+            }
             generator.writeEndArray();
 
          } else {
@@ -68,8 +68,11 @@ public class AutobahnWriter extends WebSocketWriter {
          }
       } catch (JsonGenerationException e) {
 
+         throw new WebSocketException("JSON serialization error (" + e.toString() + ")");
+
       } catch (JsonMappingException e) {
 
+         throw new WebSocketException("JSON serialization error (" + e.toString() + ")");
       }
 
       generator.flush();
