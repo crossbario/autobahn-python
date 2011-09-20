@@ -25,9 +25,8 @@ import org.codehaus.jackson.type.TypeReference;
 
 import android.os.HandlerThread;
 import android.util.Log;
-import de.tavendo.autobahn.Autobahn.OnCallResult;
 
-public class AutobahnConnection extends WebSocketConnection {
+public class AutobahnConnection extends WebSocketConnection implements Autobahn {
 
    private static final String TAG = "de.tavendo.autobahn.AutobahnConnection";
 
@@ -59,7 +58,7 @@ public class AutobahnConnection extends WebSocketConnection {
 
    private final ConcurrentHashMap<String, CallResultMeta> mCalls = new ConcurrentHashMap<String, CallResultMeta>();
 
-   private OnSession mSessionHandler;
+   private Autobahn.OnSession mSessionHandler;
 
    public AutobahnConnection() {
    }
@@ -95,15 +94,7 @@ public class AutobahnConnection extends WebSocketConnection {
    }
 
 
-   public interface OnSession {
-
-      public void onOpen();
-
-      public void onClose();
-
-   }
-
-   public void connect(String wsUri, OnSession sessionHandler) throws WebSocketException {
+   public void connect(String wsUri, Autobahn.OnSession sessionHandler) {
 
       WebSocketOptions options = new WebSocketOptions();
       options.setReceiveTextMessagesRaw(true);
@@ -111,26 +102,35 @@ public class AutobahnConnection extends WebSocketConnection {
       options.setMaxFramePayloadSize(4*1024*1024);
       options.setTcpNoDelay(false);
 
-      connect(wsUri, new WebSocketHandler() {
-
-         @Override
-         public void onOpen() {
-            if (mSessionHandler != null) {
-               mSessionHandler.onOpen();
-            }
-         }
-
-         @Override
-         public void onClose() {
-            if (mSessionHandler != null) {
-               mSessionHandler.onClose();
-            }
-         }
-
-
-      }, options);
-
       mSessionHandler = sessionHandler;
+
+      try {
+         connect(wsUri, new WebSocketHandler() {
+
+            @Override
+            public void onOpen() {
+               if (mSessionHandler != null) {
+                  mSessionHandler.onOpen();
+               }
+            }
+
+            @Override
+            public void onClose() {
+               if (mSessionHandler != null) {
+                  mSessionHandler.onClose(Autobahn.OnSession.CLOSE_NORMAL, "connection closed normally");
+               }
+            }
+
+
+         }, options);
+
+      } catch (WebSocketException e) {
+
+         if (mSessionHandler != null) {
+            mSessionHandler.onClose(Autobahn.OnSession.CLOSE_CANNOT_CONNECT, e.toString());
+         }
+      }
+
    }
 
    public void disconnect() {
@@ -138,8 +138,6 @@ public class AutobahnConnection extends WebSocketConnection {
    }
 
    protected void processAppMessage(Object message) {
-
-      Log.d(TAG, "APP MESSAGE RECEIVED");
 
       if (message instanceof AutobahnMessage.CallResult) {
 

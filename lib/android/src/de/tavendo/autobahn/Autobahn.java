@@ -22,61 +22,75 @@ package de.tavendo.autobahn;
 import org.codehaus.jackson.type.TypeReference;
 
 public interface Autobahn {
-   
-   public void connect(String wsUri) throws WebSocketException;
- 
+
+   public interface OnSession {
+
+      public static final int CLOSE_NORMAL = 1;
+      public static final int CLOSE_CANNOT_CONNECT = 2;
+      public static final int CLOSE_CONNECTION_LOST = 3;
+      public static final int CLOSE_PROTOCOL_ERROR = 4;
+
+      public void onOpen();
+
+      public void onClose(int code, String reason);
+
+   }
+
+   public void connect(String wsUri, OnSession sessionHandler);
+
    public interface OnCallResult {
-      
+
       public void onResult(Object result);
-      
+
       public void onError(String errorId, String errorInfo);
    }
-   
-   /*
-    * Wire format for calls.
-    * 
-    * Call (client-to-server JSON message):
-    * 
-    *    ["call", <callId>, <procedureId>, <argument>]
-    *    
-    * Result (server-to-client JSON message):
-    * 
-    *    ["callresult", <callId>, <result>]
-    *    
-    * Error (server-to-client JSON message):
-    * 
-    *    ["callerror", <callId>, <errorId>, <errorInfo>]
-    */
-
 
    public void call(String procedureId, Class<?> resultType, OnCallResult resultHandler, Object... arguments);
 
    public void call(String procedureId, TypeReference<?> resultType, OnCallResult resultHandler, Object... arguments);
-   
+
+   /*
+    * Wire format for calls.
+    *
+    * Call (client-to-server JSON message):
+    *
+    *    ["call", <callId>, <procedureId>, <argument>]
+    *
+    * Result (server-to-client JSON message):
+    *
+    *    ["callresult", <callId>, <result>]
+    *
+    * Error (server-to-client JSON message):
+    *
+    *    ["callerror", <callId>, <errorId>, <errorInfo>]
+    */
+
+
+/*
    public interface OnEventListener {
-      
+
       //public void onSubscribeSuccess();
-      
+
       //public void onSubscribeError(String errorId, String errorInfo);
-      
+
       public void onEvent(Object event);
-      
+
       //public void onUnsubscribe();
    }
+   public void subscribe(String eventId, Class<?> eventType, OnEventListener eventListener);
+*/
+
+   /*
+   public void subscribe(String eventId, JavaType eventType, OnEventListener eventListener);
 
    public void subscribe(String eventId, Class<?> eventType, OnEventListener eventListener);
-   
-   /*   
-   public void subscribe(String eventId, JavaType eventType, OnEventListener eventListener);
-   
-   public void subscribe(String eventId, Class<?> eventType, OnEventListener eventListener);
-   
+
    public void subscribe(String eventId, TypeReference<?> eventType, OnEventListener eventListener);
-   
+
    public void unsubscribe(String eventId, OnEventListener eventListener);
-   
+
    public void unsubscribe(String eventId);
-   
+
    public void unsubscribe();
-   */   
+   */
 }

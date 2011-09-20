@@ -68,8 +68,6 @@ public class AutobahnReader extends WebSocketReader {
 
    protected void onRawTextMessage(byte[] payload) {
 
-      Log.d(TAG, "Received raw text message");
-
       try {
 
          // create parser on top of raw UTF-8 payload
@@ -103,12 +101,7 @@ public class AutobahnReader extends WebSocketReader {
                      } else {
                      }
                      notify(new AutobahnMessage.CallResult(callId, result));
-                     Log.d(TAG, "notified CallResult");
                   }
-
-                  if (parser.nextToken() == JsonToken.END_ARRAY) {
-                  }
-
 
                } else if (msgType == AutobahnMessage.MESSAGE_TYPE_CALL_ERROR) {
 
@@ -127,18 +120,42 @@ public class AutobahnReader extends WebSocketReader {
                   if (mCalls.containsKey(callId)) {
 
                      notify(new AutobahnMessage.CallError(callId, errorUri, errorDesc));
-                     Log.d(TAG, "notified CallError");
-                  }
-
-                  if (parser.nextToken() == JsonToken.END_ARRAY) {
                   }
 
                } else if (msgType == AutobahnMessage.MESSAGE_TYPE_EVENT) {
 
+                  //parser.nextToken();
+                  //String topicUri = parser.getText();
+
+                  // FIXME: read object as ..
+
+               } else if (msgType == AutobahnMessage.MESSAGE_TYPE_PREFIX) {
+
+                  // prefix
+                  parser.nextToken();
+                  String prefix = parser.getText();
+
+                  // URI
+                  parser.nextToken();
+                  String uri = parser.getText();
+
+                  notify(new AutobahnMessage.Prefix(prefix, uri));
+
                } else {
 
+                  // FIXME: invalid WAMP message
+
                }
+            } else {
+               // error: missing msg type
             }
+            if (parser.nextToken() == JsonToken.END_ARRAY) {
+            } else {
+               // error: missing array close or invalid additional args
+            }
+
+         } else {
+            // error: no array
          }
          parser.close();
 

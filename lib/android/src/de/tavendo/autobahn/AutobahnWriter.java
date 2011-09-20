@@ -62,9 +62,47 @@ public class AutobahnWriter extends WebSocketWriter {
             }
             generator.writeEndArray();
 
+         } else if (msg instanceof AutobahnMessage.Prefix) {
+
+            AutobahnMessage.Prefix prefix = (AutobahnMessage.Prefix) msg;
+
+            generator.writeStartArray();
+            generator.writeNumber(AutobahnMessage.MESSAGE_TYPE_PREFIX);
+            generator.writeString(prefix.mPrefix);
+            generator.writeString(prefix.mUri);
+            generator.writeEndArray();
+
+         } else if (msg instanceof AutobahnMessage.Subscribe) {
+
+            AutobahnMessage.Subscribe subscribe = (AutobahnMessage.Subscribe) msg;
+
+            generator.writeStartArray();
+            generator.writeNumber(AutobahnMessage.MESSAGE_TYPE_SUBSCRIBE);
+            generator.writeString(subscribe.mTopicUri);
+            generator.writeEndArray();
+
+         } else if (msg instanceof AutobahnMessage.Unsubscribe) {
+
+            AutobahnMessage.Unsubscribe unsubscribe = (AutobahnMessage.Unsubscribe) msg;
+
+            generator.writeStartArray();
+            generator.writeNumber(AutobahnMessage.MESSAGE_TYPE_UNSUBSCRIBE);
+            generator.writeString(unsubscribe.mTopicUri);
+            generator.writeEndArray();
+
+         } else if (msg instanceof AutobahnMessage.Publish) {
+
+            AutobahnMessage.Publish publish = (AutobahnMessage.Publish) msg;
+
+            generator.writeStartArray();
+            generator.writeNumber(AutobahnMessage.MESSAGE_TYPE_PUBLISH);
+            generator.writeString(publish.mTopicUri);
+            generator.writeObject(publish.mEvent);
+            generator.writeEndArray();
+
          } else {
 
-            throw new WebSocketException("unknown message received by AutobahnWriter");
+            throw new WebSocketException("invalid message received by AutobahnWriter");
          }
       } catch (JsonGenerationException e) {
 

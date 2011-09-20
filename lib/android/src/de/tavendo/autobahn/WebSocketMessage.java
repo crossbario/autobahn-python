@@ -19,9 +19,8 @@
 package de.tavendo.autobahn;
 
 /**
- * Container class for different message types used in communication
- * between foreground thread and the WebSockets background
- * reader and writer.
+ * The master thread and the background reader/writer threads communicate
+ * using these messages for WebSockets connections.
  */
 public class WebSocketMessage {
 

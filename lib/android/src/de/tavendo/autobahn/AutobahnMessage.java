@@ -18,7 +18,10 @@
 
 package de.tavendo.autobahn;
 
-
+/**
+ * The master thread and the background reader/writer threads communicate
+ * using these messages for Autobahn WAMP connections.
+ */
 public class AutobahnMessage {
 
    public static final int MESSAGE_TYPE_PREFIX = 1;
@@ -30,6 +33,11 @@ public class AutobahnMessage {
    public static final int MESSAGE_TYPE_PUBLISH = 7;
    public static final int MESSAGE_TYPE_EVENT = 8;
 
+
+   /**
+    * RPC request message.
+    * Client-to-server message.
+    */
    public static class Call {
       public String mCallId;
       public String mProcUri;
@@ -42,6 +50,10 @@ public class AutobahnMessage {
       }
    }
 
+   /**
+    * RPC success response message.
+    * Server-to-client message.
+    */
    public static class CallResult {
       public String mCallId;
       public Object mResult;
@@ -52,6 +64,10 @@ public class AutobahnMessage {
       }
    }
 
+   /**
+    * RPC failure response message.
+    * Server-to-client message.
+    */
    public static class CallError {
       public String mCallId;
       public String mErrorUri;
@@ -61,6 +77,71 @@ public class AutobahnMessage {
          mCallId = callId;
          mErrorUri = errorUri;
          mErrorDesc = errorDesc;
+      }
+   }
+
+   /**
+    * Define CURIE message.
+    * Server-to-client and client-to-server message.
+    */
+   public static class Prefix {
+      public String mPrefix;
+      public String mUri;
+
+      public Prefix(String prefix, String uri) {
+         mPrefix = prefix;
+         mUri = uri;
+      }
+   }
+
+   /**
+    * Publish to topic URI request message.
+    * Client-to-server message.
+    */
+   public static class Publish {
+      public String mTopicUri;
+      public Object mEvent;
+
+      public Publish(String topicUri, Object event) {
+         mTopicUri = topicUri;
+         mEvent = event;
+      }
+   }
+
+   /**
+    * Subscribe to topic URI request message.
+    * Client-to-server message.
+    */
+   public static class Subscribe {
+      public String mTopicUri;
+
+      public Subscribe(String topicUri) {
+         mTopicUri = topicUri;
+      }
+   }
+
+   /**
+    * Unsubscribe from topic URI request message.
+    * Client-to-server message.
+    */
+   public static class Unsubscribe {
+      public String mTopicUri;
+
+      public Unsubscribe(String topicUri) {
+         mTopicUri = topicUri;
+      }
+   }
+
+   /**
+    * Event on topic URI message.
+    * Server-to-client message.
+    */
+   public static class Event {
+      public String mTopicUri;
+      public Object mEvent;
+
+      public Event(String topicUri, Object event) {
+         mEvent = event;
       }
    }
 }
