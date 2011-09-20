@@ -26,6 +26,11 @@ class Case1_1_1(Case):
 
    def onOpen(self):
       payload = ""
-      self.expected[Case.OK] = [("message", payload, False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", payload, False), ("closedByMe", True, 1000), ("failedByMe", False)]
+      self.expected[Case.NO_CLOSE] = [("message", payload, False), ("failedByMe", True)]      
       self.p.sendFrame(opcode = 1, payload = payload)
       self.p.killAfter(1)
+   
+   def closeCase(self):
+      self.p.sendClose(1000)
+      

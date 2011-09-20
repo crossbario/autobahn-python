@@ -29,9 +29,16 @@ class Case2_10(Case):
 
    def onOpen(self):
       self.expected[Case.OK] = []
+      self.expected[Case.NO_CLOSE] = []
       for i in range(1, 10):
          payload = "payload-%d" % i
          self.expected[Case.OK].append(("pong", payload))
+         self.expected[Case.NO_CLOSE].append(("pong", payload))
          self.p.sendFrame(opcode = 9, payload = payload, chopsize = self.chopsize)
       self.expected[Case.OK].append(("failedByMe", True))
+      self.expected[Case.NO_CLOSE].append(("closedByMe", True, 1000))
+      self.expected[Case.NO_CLOSE].append(("failedByMe", False))
       self.p.killAfter(3)
+
+   def closeCase(self):
+      self.p.sendClose(1000)

@@ -25,6 +25,8 @@ class Case2_7(Case):
    EXPECTATION = """Nothing."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("failedByMe", True)]
+      self.expected[Case.OK] = [("closedByMe", True, 1000), ("failedByMe", False)]
+      self.expected[Case.NO_CLOSE] = [("failedByMe", True)]
       self.p.sendFrame(opcode = 10)
+      self.p.sendClose(1000)
       self.p.killAfter(1)
