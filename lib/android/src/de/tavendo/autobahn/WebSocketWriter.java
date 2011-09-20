@@ -283,26 +283,28 @@ public class WebSocketWriter extends Handler {
          b1 = (byte) (1 << 7);
       }
 
+      long len = length;
+
       // extended payload length
-      if (length <= 125) {
-         b1 |= (byte) length;
+      if (len <= 125) {
+         b1 |= (byte) len;
          mBuffer.write(b1);
-      } else if (length <= 0xffff) {
+      } else if (len <= 0xffff) {
          b1 |= (byte) (126 & 0xff);
          mBuffer.write(b1);
-         mBuffer.write(new byte[] {(byte)((length >> 8) & 0xff),
-                                   (byte)(length & 0xff)});
+         mBuffer.write(new byte[] {(byte)((len >> 8) & 0xff),
+                                   (byte)(len & 0xff)});
       } else {
          b1 |= (byte) (127 & 0xff);
          mBuffer.write(b1);
-         mBuffer.write(new byte[] {(byte)((length >> 56) & 0xff),
-                                   (byte)((length >> 48) & 0xff),
-                                   (byte)((length >> 40) & 0xff),
-                                   (byte)((length >> 32) & 0xff),
-                                   (byte)((length >> 24) & 0xff),
-                                   (byte)((length >> 16) & 0xff),
-                                   (byte)((length >> 8)  & 0xff),
-                                   (byte)(length         & 0xff)});
+         mBuffer.write(new byte[] {(byte)((len >> 56) & 0xff),
+                                   (byte)((len >> 48) & 0xff),
+                                   (byte)((len >> 40) & 0xff),
+                                   (byte)((len >> 32) & 0xff),
+                                   (byte)((len >> 24) & 0xff),
+                                   (byte)((len >> 16) & 0xff),
+                                   (byte)((len >> 8)  & 0xff),
+                                   (byte)(len         & 0xff)});
       }
 
       byte mask[] = null;
@@ -315,11 +317,11 @@ public class WebSocketWriter extends Handler {
          mBuffer.write(mask[3]);
       }
 
-      if (length > 0) {
+      if (len > 0) {
          if (mOptions.getMaskClientFrames()) {
             // FIXME: optimize
             // FIXME: masking within buffer of output stream
-            for (int i = 0; i < length; ++i) {
+            for (int i = 0; i < len; ++i) {
                payload[i + offset] ^= mask[i % 4];
             }
          }
