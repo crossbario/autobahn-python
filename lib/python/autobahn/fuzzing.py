@@ -233,6 +233,14 @@ class FuzzingProtocol:
             log.msg("Pong received: " + payload)
 
 
+   def onClose(self, code, reason):
+      if self.runCase:
+         self.runCase.onClose(code, reason, self.closeAlreadySent)
+      else:
+         if self.debug:
+            log.msg("Close received: " + code + " - " + reason)
+      WebSocketProtocol.onClose(self,code,reason)
+
    def onMessage(self, msg, binary):
 
       if self.runCase:
@@ -428,7 +436,7 @@ class FuzzingFactory:
          text-align: center;
       }
 
-      td#case_non_strict
+      td#case_non_strict,td#case_no_close
       {
          background-color: #aa0;
          text-align: center;
@@ -466,7 +474,7 @@ class FuzzingFactory:
          font-size: 1.2em;
       }
 
-      p#case_non_strict
+      p#case_non_strict,p#case_no_close
       {
          color: #fff;
          border-radius: 10px;
@@ -688,6 +696,9 @@ class FuzzingFactory:
                elif case["behavior"] == Case.NON_STRICT:
                   td_text = "Non-Strict"
                   td_class = "case_non_strict"
+               elif case["behavior"] == Case.NO_CLOSE:
+                  td_text = "No Close"
+                  td_class = "case_no_close"
                else:
                   td_text = "Fail"
                   td_class = "case_failed"
@@ -743,6 +754,8 @@ class FuzzingFactory:
          f.write('<p id="case_ok"><b>Pass</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
       elif case["behavior"] ==  Case.NON_STRICT:
          f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+      elif case["behavior"] ==  Case.NO_CLOSE:
+         f.write('<p id="case_no_close"><b>No Close</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
       else:
          f.write('<p id="case_failed"><b>Fail</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
 

@@ -27,6 +27,7 @@ class Case:
    FAILED = "FAILED"
    OK = "OK"
    NON_STRICT = "NON-STRICT"
+   NO_CLOSE = "NO CLOSE"
 
    SUBCASES = []
 
@@ -64,8 +65,9 @@ class Case:
       self.received.append(("pong", payload))
       self.finishWhenDone()
 
-   def onClose(self, code, reason):
-      pass
+   def onClose(self, code, reason, closedByMe):
+      self.received.append(("closedByMe", closedByMe, code))
+      self.finishWhenDone()
 
    def compare(self, obj1, obj2):
       return pickle.dumps(obj1) == pickle.dumps(obj2)
@@ -81,6 +83,12 @@ class Case:
 
    def finishWhenDone(self):
       for e in self.expected:
+         if e == Case.NO_CLOSE:
+            continue
+         if self.expected[e][-2][:-1] == ("closedByMe", True):
+            if self.compare(self.received, self.expected[e][:-2]):
+               self.closeCase()
+               return
          # when we expect to fail the connection ourselfes and already
          # received everything before, we immediately fail the connection
          if self.expected[e][-1] == ("failedByMe", True):
