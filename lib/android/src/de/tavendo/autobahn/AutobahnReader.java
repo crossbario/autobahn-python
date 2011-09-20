@@ -18,15 +18,135 @@
 
 package de.tavendo.autobahn;
 
+import java.io.IOException;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
+import android.util.Log;
+import de.tavendo.autobahn.AutobahnConnection.CallResultMeta;
 
 public class AutobahnReader extends WebSocketReader {
 
-   public AutobahnReader(Handler master, SocketChannel socket,
-         WebSocketOptions options) {
-      super(master, socket, options);
+   private static final String TAG = "de.tavendo.autobahn.AutobahnReader";
+
+   private final ObjectMapper mJsonMapper;
+   private final JsonFactory mJsonFactory;
+
+   private final ConcurrentHashMap<String, CallResultMeta> mCalls;
+
+
+   public AutobahnReader(ConcurrentHashMap<String, CallResultMeta> calls, Handler master, SocketChannel socket, WebSocketOptions options, String threadName) {
+
+      super(master, socket, options, threadName);
+
+      mCalls = calls;
+
+      mJsonMapper = new ObjectMapper();
+      mJsonMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+      mJsonFactory = mJsonMapper.getJsonFactory();
    }
 
+   protected void onTextMessage(String payload) {
+
+      // FIXME
+      Log.d(TAG, "Error - received non-raw text message");
+   }
+
+   protected void onBinaryMessage(byte[] payload) {
+
+      // FIXME
+      Log.d(TAG, "Error - received binary message");
+   }
+
+   protected void onRawTextMessage(byte[] payload) {
+
+      Log.d(TAG, "Received raw text message");
+
+      try {
+
+         // create parser on top of raw UTF-8 payload
+         JsonParser parser = mJsonFactory.createJsonParser(payload);
+
+         // all Autobahn messages are JSON arrays
+         if (parser.nextToken() == JsonToken.START_ARRAY) {
+
+            // message type
+            if (parser.nextToken() == JsonToken.VALUE_NUMBER_INT) {
+
+               int msgType = parser.getIntValue();
+
+               if (msgType == AutobahnMessage.MESSAGE_TYPE_CALL_RESULT) {
+
+                  // call ID
+                  parser.nextToken();
+                  String callId = parser.getText();
+
+                  // result
+                  parser.nextToken();
+                  Object result = null;
+
+                  if (mCalls.containsKey(callId)) {
+
+                     CallResultMeta meta = mCalls.get(callId);
+                     if (meta.mResultClass != null) {
+                        result = parser.readValueAs(meta.mResultClass);
+                     } else if (meta.mResultTypeRef != null) {
+                        result = parser.readValueAs(meta.mResultTypeRef);
+                     } else {
+                     }
+                     notify(new AutobahnMessage.CallResult(callId, result));
+                     Log.d(TAG, "notified CallResult");
+                  }
+
+                  if (parser.nextToken() == JsonToken.END_ARRAY) {
+                  }
+
+
+               } else if (msgType == AutobahnMessage.MESSAGE_TYPE_CALL_ERROR) {
+
+                  // call ID
+                  parser.nextToken();
+                  String callId = parser.getText();
+
+                  // error URI
+                  parser.nextToken();
+                  String errorUri = parser.getText();
+
+                  // error description
+                  parser.nextToken();
+                  String errorDesc = parser.getText();
+
+                  if (mCalls.containsKey(callId)) {
+
+                     notify(new AutobahnMessage.CallError(callId, errorUri, errorDesc));
+                     Log.d(TAG, "notified CallError");
+                  }
+
+                  if (parser.nextToken() == JsonToken.END_ARRAY) {
+                  }
+
+               } else if (msgType == AutobahnMessage.MESSAGE_TYPE_EVENT) {
+
+               } else {
+
+               }
+            }
+         }
+         parser.close();
+
+
+      } catch (JsonParseException e) {
+         e.printStackTrace();
+      } catch (IOException e) {
+         e.printStackTrace();
+      }
+   }
 }

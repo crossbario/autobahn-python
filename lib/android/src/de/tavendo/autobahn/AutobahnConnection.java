@@ -23,9 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.codehaus.jackson.type.TypeReference;
 
+import android.os.HandlerThread;
+import android.util.Log;
 import de.tavendo.autobahn.Autobahn.OnCallResult;
 
 public class AutobahnConnection extends WebSocketConnection {
+
+   private static final String TAG = "de.tavendo.autobahn.AutobahnConnection";
 
    protected AutobahnWriter mWriterHandler;
 
@@ -34,7 +38,7 @@ public class AutobahnConnection extends WebSocketConnection {
    private static final char[] mBase64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
          .toCharArray();
 
-   private static class CallResultMeta {
+   public static class CallResultMeta {
 
       CallResultMeta(OnCallResult handler, Class<?> resultClass) {
          this.mResultHandler = handler;
@@ -58,6 +62,17 @@ public class AutobahnConnection extends WebSocketConnection {
    private OnSession mSessionHandler;
 
    public AutobahnConnection() {
+   }
+
+   protected void createWriter() {
+      mWriterThread = new HandlerThread("AutobahnWriter");
+      mWriterThread.start();
+      mWriter = new AutobahnWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel, mOptions);
+   }
+
+   protected void createReader() {
+      mReader = new AutobahnReader(mCalls, mMasterHandler, mTransportChannel, mOptions, "AutobahnReader");
+      mReader.start();
    }
 
    /**
@@ -88,7 +103,32 @@ public class AutobahnConnection extends WebSocketConnection {
 
    }
 
-   public void connect(String wsUri, OnSession sessionHandler) {
+   public void connect(String wsUri, OnSession sessionHandler) throws WebSocketException {
+
+      WebSocketOptions options = new WebSocketOptions();
+      options.setReceiveTextMessagesRaw(true);
+      options.setMaxMessagePayloadSize(4*1024*1024);
+      options.setMaxFramePayloadSize(4*1024*1024);
+      options.setTcpNoDelay(false);
+
+      connect(wsUri, new WebSocketHandler() {
+
+         @Override
+         public void onOpen() {
+            if (mSessionHandler != null) {
+               mSessionHandler.onOpen();
+            }
+         }
+
+         @Override
+         public void onClose() {
+            if (mSessionHandler != null) {
+               mSessionHandler.onClose();
+            }
+         }
+
+
+      }, options);
 
       mSessionHandler = sessionHandler;
    }
@@ -96,6 +136,40 @@ public class AutobahnConnection extends WebSocketConnection {
    public void disconnect() {
 
    }
+
+   protected void processAppMessage(Object message) {
+
+      Log.d(TAG, "APP MESSAGE RECEIVED");
+
+      if (message instanceof AutobahnMessage.CallResult) {
+
+         AutobahnMessage.CallResult callresult = (AutobahnMessage.CallResult) message;
+
+         if (mCalls.containsKey(callresult.mCallId)) {
+            CallResultMeta meta = mCalls.get(callresult.mCallId);
+            if (meta.mResultHandler != null) {
+               meta.mResultHandler.onResult(callresult.mResult);
+            }
+            mCalls.remove(callresult.mCallId);
+         }
+
+      } else if (message instanceof AutobahnMessage.CallError) {
+
+         AutobahnMessage.CallError callerror = (AutobahnMessage.CallError) message;
+
+         if (mCalls.containsKey(callerror.mCallId)) {
+            CallResultMeta meta = mCalls.get(callerror.mCallId);
+            if (meta.mResultHandler != null) {
+               meta.mResultHandler.onError(callerror.mErrorUri, callerror.mErrorDesc);
+            }
+            mCalls.remove(callerror.mCallId);
+         }
+      } else {
+
+         Log.d(TAG, "unknown message in AutobahnConnection.processAppMessage");
+      }
+   }
+
 
    public void call(String procUri, CallResultMeta resultMeta, Object... arguments) {
 
@@ -106,7 +180,7 @@ public class AutobahnConnection extends WebSocketConnection {
 
       mCalls.put(call.mCallId, resultMeta);
 
-      //mWriterHandler.forward(call);
+      mWriter.forward(call);
    }
 
    public void call(String procUri, Class<?> resultType, OnCallResult resultHandler, Object... arguments) {

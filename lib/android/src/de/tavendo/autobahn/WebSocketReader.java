@@ -79,9 +79,9 @@ public class WebSocketReader extends Thread {
     * @param master    The message handler of master (foreground thread).
     * @param socket    The socket channel created on foreground thread.
     */
-   public WebSocketReader(Handler master, SocketChannel socket, WebSocketOptions options) {
+   public WebSocketReader(Handler master, SocketChannel socket, WebSocketOptions options, String threadName) {
 
-      super("WebSocketReader");
+      super(threadName);
 
       mMaster = master;
       mSocket = socket;
@@ -108,7 +108,7 @@ public class WebSocketReader extends Thread {
     *
     * @param message       Message to send to master.
     */
-   private void notify(WebSocketMessage.Message message) {
+   protected void notify(Object message) {
 
       Message msg = mMaster.obtainMessage();
       msg.obj = message;
@@ -283,16 +283,17 @@ public class WebSocketReader extends Thread {
                // control frame
 
                if (mFrameHeader.mOpcode == 8) {
-                  // close
-                  notify(new WebSocketMessage.Close());
+                  // dispatch WS close
+                  // FIXME: parse close payload
+                  onClose();
 
                } else if (mFrameHeader.mOpcode == 9) {
-                  // ping
-                  notify(new WebSocketMessage.Ping(framePayload));
+                  // dispatch WS ping
+                  onPing(framePayload);
 
                } else if (mFrameHeader.mOpcode == 10) {
-                  // pong
-                  notify(new WebSocketMessage.Pong(framePayload));
+                  // dispatch WS pong
+                  onPong(framePayload);
 
                } else {
 
@@ -338,21 +339,23 @@ public class WebSocketReader extends Thread {
                         throw new WebSocketException("UTF-8 text message payload ended within Unicode code point");
                      }
 
-                     // deliver text message raw or normal
+                     // deliver text message
                      if (mOptions.getReceiveTextMessagesRaw()) {
 
-                        notify(new WebSocketMessage.RawTextMessage(mMessagePayload.toByteArray()));
+                        // dispatch WS text message as raw (but validated) UTF-8
+                        onRawTextMessage(mMessagePayload.toByteArray());
 
                      } else {
 
+                        // dispatch WS text message as Java String (previously already validated)
                         String s = new String(mMessagePayload.toByteArray(), "UTF-8");
-                        notify(new WebSocketMessage.TextMessage(s));
+                        onTextMessage(s);
                      }
 
                   } else if (mMessageOpcode == 2) {
 
-                     // deliver binary message
-                     notify(new WebSocketMessage.BinaryMessage(mMessagePayload.toByteArray()));
+                     // dispatch WS binary message
+                     onBinaryMessage(mMessagePayload.toByteArray());
 
                   } else {
 
@@ -381,6 +384,63 @@ public class WebSocketReader extends Thread {
    }
 
 
+   /**
+    * WS close received. Default notifies master.
+    */
+   protected void onClose() {
+
+      notify(new WebSocketMessage.Close());
+   }
+
+
+   /**
+    * WS ping received. Default notifies master.
+    */
+   protected void onPing(byte[] payload) {
+
+      notify(new WebSocketMessage.Ping(payload));
+   }
+
+
+   /**
+    * WS pong received. Default notifies master.
+    */
+   protected void onPong(byte[] payload) {
+
+      notify(new WebSocketMessage.Pong(payload));
+   }
+
+
+   /**
+    * WS text message received. Default notifies master.
+    */
+   protected void onTextMessage(String payload) {
+
+      notify(new WebSocketMessage.TextMessage(payload));
+   }
+
+
+   /**
+    * WS text message received. Default notifies master.
+    */
+   protected void onRawTextMessage(byte[] payload) {
+
+      notify(new WebSocketMessage.RawTextMessage(payload));
+   }
+
+
+   /**
+    * WS binary message received. Default notifies master.
+    */
+   protected void onBinaryMessage(byte[] payload) {
+
+      notify(new WebSocketMessage.BinaryMessage(payload));
+   }
+
+
+   /**
+    * Process WS handshake received from server.
+    */
    private boolean processHandshake() throws UnsupportedEncodingException {
 
       boolean res = false;
@@ -410,6 +470,9 @@ public class WebSocketReader extends Thread {
    }
 
 
+   /**
+    * Consume data buffered in mFrameBuffer.
+    */
    private boolean consumeData() throws Exception {
 
       if (mState == STATE_OPEN || mState == STATE_CLOSING) {

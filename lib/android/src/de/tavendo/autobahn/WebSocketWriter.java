@@ -83,7 +83,7 @@ public class WebSocketWriter extends Handler {
     *
     * @param message       Message to send to WebSockets writer.
     */
-   public void forward(WebSocketMessage.Message message) {
+   public void forward(Object message) {
 
       Message msg = obtainMessage();
       msg.obj = message;
@@ -96,7 +96,7 @@ public class WebSocketWriter extends Handler {
     *
     * @param message       Message to send to master.
     */
-   private void notify(WebSocketMessage.Message message) {
+   private void notify(Object message) {
 
       Message msg = mMaster.obtainMessage();
       msg.obj = message;
