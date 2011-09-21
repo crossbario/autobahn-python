@@ -47,6 +47,9 @@ Rotate agent labels in report 90° counterclock => css
 
 Test Cases
 
+  - make NON-STRICT more green
+  - add notice at top of report overview, explaining diff. beetween PASS, NON-STRICT and FAIL
+  - test UTF-8 non-chars : EF BF [BE-BF] or F[0-7] [89AB]F BF [BE-BF] (any codepoint whose low 16 bits are 0xFFFE or 0xFFFF ??)
   - add new case variant of 6.4.2: the middle frame is large (64k)
   - split out 6.4.3 to a new test section: "Implementation Limits" => see how behaves
   - UTF-8 fail fast: differentiate 4 behaviors

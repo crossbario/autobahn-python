@@ -42,28 +42,23 @@ public interface Autobahn {
 
       public void onResult(Object result);
 
-      public void onError(String errorId, String errorInfo);
+      public void onError(String errorUri, String errorDesc);
    }
 
-   public void call(String procedureId, Class<?> resultType, OnCallResult resultHandler, Object... arguments);
+   public void call(String procUri, Class<?> resultType, OnCallResult resultHandler, Object... arguments);
 
-   public void call(String procedureId, TypeReference<?> resultType, OnCallResult resultHandler, Object... arguments);
+   public void call(String procUri, TypeReference<?> resultType, OnCallResult resultHandler, Object... arguments);
 
-   /*
-    * Wire format for calls.
-    *
-    * Call (client-to-server JSON message):
-    *
-    *    ["call", <callId>, <procedureId>, <argument>]
-    *
-    * Result (server-to-client JSON message):
-    *
-    *    ["callresult", <callId>, <result>]
-    *
-    * Error (server-to-client JSON message):
-    *
-    *    ["callerror", <callId>, <errorId>, <errorInfo>]
-    */
+   public interface OnEventHandler {
+
+      public void onEvent(String topicUri, Object event);
+   }
+
+   public void subscribe(String eventId, Class<?> eventType, OnEventHandler eventHandler);
+
+   public void subscribe(String eventId, TypeReference<?> eventType, OnEventHandler eventHandler);
+
+
 
 
 /*

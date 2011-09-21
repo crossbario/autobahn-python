@@ -18,6 +18,7 @@
 
 package de.tavendo.autobahn;
 
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,15 +38,15 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
    private static final char[] mBase64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
          .toCharArray();
 
-   public static class CallResultMeta {
+   public static class CallMeta {
 
-      CallResultMeta(OnCallResult handler, Class<?> resultClass) {
+      CallMeta(OnCallResult handler, Class<?> resultClass) {
          this.mResultHandler = handler;
          this.mResultClass = resultClass;
          this.mResultTypeRef = null;
       }
 
-      CallResultMeta(OnCallResult handler, TypeReference<?> resultTypeReference) {
+      CallMeta(OnCallResult handler, TypeReference<?> resultTypeReference) {
          this.mResultHandler = handler;
          this.mResultClass = null;
          this.mResultTypeRef = resultTypeReference;
@@ -56,12 +57,31 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
       public TypeReference<?> mResultTypeRef;
    }
 
-   private final ConcurrentHashMap<String, CallResultMeta> mCalls = new ConcurrentHashMap<String, CallResultMeta>();
+   private final ConcurrentHashMap<String, CallMeta> mCalls = new ConcurrentHashMap<String, CallMeta>();
+
+   private static class SubscriptionMeta {
+
+      SubscriptionMeta(OnEventHandler eventHandler, Class<?> eventType) {
+         this.mEventHandler = eventHandler;
+         this.mEventClass = eventType;
+         this.mEventTypeRef = null;
+      }
+
+      SubscriptionMeta(OnEventHandler eventListener, TypeReference<?> eventType) {
+         this.mEventHandler = eventListener;
+         this.mEventClass = null;
+         this.mEventTypeRef = eventType;
+      }
+
+      public OnEventHandler mEventHandler;
+      public Class<?> mEventClass;
+      public TypeReference<?> mEventTypeRef;
+   }
+
+   private ConcurrentHashMap<String, List<SubscriptionMeta>> mEventListenerRegistrations = new ConcurrentHashMap<String, List<SubscriptionMeta>>();
 
    private Autobahn.OnSession mSessionHandler;
 
-   public AutobahnConnection() {
-   }
 
    protected void createWriter() {
       mWriterThread = new HandlerThread("AutobahnWriter");
@@ -69,10 +89,12 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
       mWriter = new AutobahnWriter(mWriterThread.getLooper(), mMasterHandler, mTransportChannel, mOptions);
    }
 
+
    protected void createReader() {
       mReader = new AutobahnReader(mCalls, mMasterHandler, mTransportChannel, mOptions, "AutobahnReader");
       mReader.start();
    }
+
 
    /**
     * Create new random ID, i.e. for use in RPC calls to correlate
@@ -86,6 +108,7 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
       return new String(buffer);
    }
 
+
    /**
     * Create new random ID of default length.
     */
@@ -94,6 +117,7 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
    }
 
 
+   @Override
    public void connect(String wsUri, Autobahn.OnSession sessionHandler) {
 
       WebSocketOptions options = new WebSocketOptions();
@@ -133,9 +157,11 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
 
    }
 
+
    public void disconnect() {
 
    }
+
 
    protected void processAppMessage(Object message) {
 
@@ -144,7 +170,7 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
          AutobahnMessage.CallResult callresult = (AutobahnMessage.CallResult) message;
 
          if (mCalls.containsKey(callresult.mCallId)) {
-            CallResultMeta meta = mCalls.get(callresult.mCallId);
+            CallMeta meta = mCalls.get(callresult.mCallId);
             if (meta.mResultHandler != null) {
                meta.mResultHandler.onResult(callresult.mResult);
             }
@@ -156,7 +182,7 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
          AutobahnMessage.CallError callerror = (AutobahnMessage.CallError) message;
 
          if (mCalls.containsKey(callerror.mCallId)) {
-            CallResultMeta meta = mCalls.get(callerror.mCallId);
+            CallMeta meta = mCalls.get(callerror.mCallId);
             if (meta.mResultHandler != null) {
                meta.mResultHandler.onError(callerror.mErrorUri, callerror.mErrorDesc);
             }
@@ -169,7 +195,7 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
    }
 
 
-   public void call(String procUri, CallResultMeta resultMeta, Object... arguments) {
+   private void call(String procUri, CallMeta resultMeta, Object... arguments) {
 
       AutobahnMessage.Call call = new AutobahnMessage.Call(newId(), procUri, arguments.length);
       for (int i = 0; i < arguments.length; ++i) {
@@ -181,14 +207,34 @@ public class AutobahnConnection extends WebSocketConnection implements Autobahn 
       mWriter.forward(call);
    }
 
+
+   @Override
    public void call(String procUri, Class<?> resultType, OnCallResult resultHandler, Object... arguments) {
 
-      call(procUri, new CallResultMeta(resultHandler, resultType), arguments);
+      call(procUri, new CallMeta(resultHandler, resultType), arguments);
    }
 
+
+   @Override
    public void call(String procUri, TypeReference<?> resultType, OnCallResult resultHandler, Object... arguments) {
 
-      call(procUri, new CallResultMeta(resultHandler, resultType), arguments);
+      call(procUri, new CallMeta(resultHandler, resultType), arguments);
+   }
+
+
+   @Override
+   public void subscribe(String eventId, Class<?> eventType,
+         OnEventHandler eventHandler) {
+      // TODO Auto-generated method stub
+
+   }
+
+
+   @Override
+   public void subscribe(String eventId, TypeReference<?> eventType,
+         OnEventHandler eventHandler) {
+      // TODO Auto-generated method stub
+
    }
 
 }

@@ -31,7 +31,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import android.os.Handler;
 import android.util.Log;
-import de.tavendo.autobahn.AutobahnConnection.CallResultMeta;
+import de.tavendo.autobahn.AutobahnConnection.CallMeta;
 
 public class AutobahnReader extends WebSocketReader {
 
@@ -40,10 +40,10 @@ public class AutobahnReader extends WebSocketReader {
    private final ObjectMapper mJsonMapper;
    private final JsonFactory mJsonFactory;
 
-   private final ConcurrentHashMap<String, CallResultMeta> mCalls;
+   private final ConcurrentHashMap<String, CallMeta> mCalls;
 
 
-   public AutobahnReader(ConcurrentHashMap<String, CallResultMeta> calls, Handler master, SocketChannel socket, WebSocketOptions options, String threadName) {
+   public AutobahnReader(ConcurrentHashMap<String, CallMeta> calls, Handler master, SocketChannel socket, WebSocketOptions options, String threadName) {
 
       super(master, socket, options, threadName);
 
@@ -93,7 +93,7 @@ public class AutobahnReader extends WebSocketReader {
 
                   if (mCalls.containsKey(callId)) {
 
-                     CallResultMeta meta = mCalls.get(callId);
+                     CallMeta meta = mCalls.get(callId);
                      if (meta.mResultClass != null) {
                         result = parser.readValueAs(meta.mResultClass);
                      } else if (meta.mResultTypeRef != null) {
