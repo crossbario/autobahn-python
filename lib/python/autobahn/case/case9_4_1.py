@@ -35,8 +35,9 @@ class Case9_4_1(Case):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendMessage(payload = self.PAYLOAD, binary = True, payload_frag_size = self.FRAGSIZE)
-      self.p.killAfter(self.WAITSECS)
+      self.p.closeAfter(self.WAITSECS)
 
    def onMessage(self, msg, binary):
       if not binary:
@@ -49,7 +50,8 @@ class Case9_4_1(Case):
             ##
             self.behavior = Case.OK
             self.result = "Received binary message of length %d." % len(msg)
-      self.p.failConnection()
+      self.p.createWirelog = True
+      self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
 
    def onConnectionLost(self, failedByMe):
       pass

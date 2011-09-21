@@ -283,9 +283,9 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("WebSocketProtocol.onPong")
 
 
-   def onClose(self, code, reason):
+   def onCloseFrame(self, code, reason):
       """
-      Callback when Close was received. The default implementation answers by
+      Callback when Close frame was received. The default implementation answers by
       sending a normal Close when no Close was sent before. Otherwise it drops
       the connection. Override in derived class.
 
@@ -295,24 +295,51 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       """
       if self.debug:
-         log.msg("WebSocketProtocol.onClose")
-      if self.closeAlreadySent:
-         self.transport.loseConnection()
+         log.msg("WebSocketProtocol.onCloseFrame")
+      if self.state == WebSocketProtocol.STATE_CLOSING:
+         if code != None:
+            self.remoteCloseCode = code
+            self.remoteCloseReason = reason
+         self.wasClean = True
+         self.failConnection()
       else:
-         self.sendClose(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+         #self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+         self.sendCloseFrame(code)
+         if code != None:
+            self.remoteCloseCode = code
+            self.remoteCloseReason = reason
+            self.localCloseCode = code
+         self.wasClean = True
+         self.failConnection(failedByMe = False)
+   
+   def onClose(self):
+      """
+      Callback when the connection has been closed. Override in derived class.
+      """
+      pass
 
-
-   def failConnection(self):
-      self.failedByMe = True
+   def failConnection(self, failedByMe = True):
+      self.failedByMe = failedByMe
+      self.droppedByMe = True
       self.state = WebSocketProtocol.STATE_CLOSED
-      self.transport.loseConnection()
+      if failedByMe and not self.isServer:
+         self.transport.loseConnection()
+         self.onClose()
 
 
    def protocolViolation(self, reason):
       if self.debug:
          log.msg("Failing connection on protocol violation : %s" % reason)
+      if self.state == WebSocketProtocol.STATE_CONNECTING:
+         if (not self.failByDrop):
+            # should send HTTP error here?
+            self.failConnection()
+            return
+      elif self.state == WebSocketProtocol.STATE_OPEN:
+         if (not self.failByDrop):
+            self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,reason)
+            return
       self.failConnection()
-
 
    def connectionMade(self):
       """
@@ -328,8 +355,14 @@ class WebSocketProtocol(protocol.Protocol):
       self.data = ""
       self.closeAlreadySent = False
       self.failedByMe = False
+      self.droppedByMe = False
+      self.wasClean = False
+      self.localCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NULL
+      self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NULL
+      self.remoteCloseReason = ""
       self.utf8validator = Utf8Validator()
       self.utf8validateIncoming = self.factory.utf8validateIncoming
+      self.failByDrop = self.factory.failByDrop
 
       ## for chopped/synched sends, we need to queue to maintain
       ## ordering when recalling the reactor to actually "force"
@@ -343,6 +376,7 @@ class WebSocketProtocol(protocol.Protocol):
       This is called by Twisted framework when a TCP connection was lost.
       """
       self.state = WebSocketProtocol.STATE_CLOSED
+      self.onClose()
 
 
    def setValidateIncomingUtf8(self, enabled):
@@ -801,7 +835,7 @@ class WebSocketProtocol(protocol.Protocol):
                   self.protocolViolation("received non-UTF-8 payload as close frame reason")
                   return False
 
-         self.onClose(code, reason)
+         self.onCloseFrame(code, reason)
 
       ## PING frame
       ##
@@ -938,8 +972,8 @@ class WebSocketProtocol(protocol.Protocol):
          self.sendFrame(opcode = 10)
 
 
-   def sendClose(self, code = None, reason = None):
-      """Send close to WebSockets peer.
+   def sendCloseFrame(self, code = None, reason = None):
+      """Send close helper/validation method
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -973,10 +1007,28 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          if reason is not None and reason != "":
             raise Exception("status reason '%s' without status code in close frame" % reason)
-
       self.sendFrame(opcode = 8, payload = payload)
-      self.closeAlreadySent = True
+      
 
+   def sendClose(self, code = None, reason = None):
+      """Send close to WebSockets peer.
+
+      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
+      :type code: int
+      :param reason: An optional close reason (when present, a status code MUST also be present).
+      :type reason: str
+      """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         return
+         #raise Exception("tried to close a connection that wasn't open")
+      self.sendCloseFrame(code,reason)
+      if code != None:
+        self.localCloseCode = code
+      self.state = WebSocketProtocol.STATE_CLOSING
+      self.closeAlreadySent = True
+      self.failedByMe = True
+      # TODO: set a timer here
+      self.killAfter(1)
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
       """
@@ -1465,7 +1517,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
    protocol = WebSocketServerProtocol
 
 
-   def __init__(self, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, utf8validateIncoming = True, debug = False):
+   def __init__(self, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, utf8validateIncoming = True, debug = False, failByDrop = False):
       """
       Create instance of WebSocket server factory.
 
@@ -1491,6 +1543,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       ## default for protocol instances
       ##
       self.utf8validateIncoming = utf8validateIncoming
+      self.failByDrop = failByDrop
 
    def startFactory(self):
       pass
@@ -1697,7 +1750,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
    protocol = WebSocketClientProtocol
 
 
-   def __init__(self, path = "/", host = "localhost", origin = None, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, useragent = None, utf8validateIncoming = True, debug = False):
+   def __init__(self, path = "/", host = "localhost", origin = None, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, useragent = None, utf8validateIncoming = True, debug = False, failByDrop = False):
       """
       Create instance of WebSocket client factory.
 
@@ -1717,6 +1770,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type utf8validateIncoming: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
+      :param failByDrop: Fail connections by dropping the TCP connection without sending an error response (false/true).
+      :type failByDrop: bool
       """
       self.debug = debug
 
@@ -1735,6 +1790,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       ## default for protocol instances
       ##
       self.utf8validateIncoming = utf8validateIncoming
+      self.failByDrop = failByDrop
 
       ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
       random.seed()

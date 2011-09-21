@@ -25,7 +25,8 @@ class Case5_10(Case):
    EXPECTATION = """The connection is failed immediately, since there is no message to continue."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("failedByMe", False)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 0, fin = True, payload = "non-continuation payload", sync = True)
       self.p.sendFrame(opcode = 1, fin = True, payload = "Hello, world!", sync = True)
       self.p.killAfter(1)

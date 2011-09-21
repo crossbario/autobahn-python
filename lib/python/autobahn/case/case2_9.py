@@ -22,15 +22,12 @@ class Case2_9(Case):
 
    DESCRIPTION = """Send unsolicited pong with payload. Send ping with payload. Verify pong for ping is received."""
 
-   EXPECTATION = """Nothing in reply to own Pong, but Pong with payload echo'ed in reply to Ping."""
+   EXPECTATION = """Nothing in reply to own Pong, but Pong with payload echo'ed in reply to Ping. Clean close with normal code."""
 
    def onOpen(self):
       payload = "ping payload"
-      self.expected[Case.OK] = [("pong", payload), ("closedByMe", True, 1000), ("failedByMe", False)]
-      self.expected[Case.NO_CLOSE] = [("pong", payload), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong",payload)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 10, payload = "unsolicited pong payload")
       self.p.sendFrame(opcode = 9, payload = payload)
-      self.p.killAfter(1)
-
-   def closeCase(self):
-      self.p.sendClose(1000)
+      self.p.closeAfter(1)

@@ -22,14 +22,11 @@ class Case1_1_5(Case):
 
    DESCRIPTION = """Send text message message with payload of length 128."""
 
-   EXPECTATION = """Receive echo'ed text message (with payload as sent)."""
+   EXPECTATION = """Receive echo'ed text message (with payload as sent). Clean close with normal code."""
 
    def onOpen(self):
       payload = "*" * 128
-      self.expected[Case.OK] = [("message", payload, False), ("closedByMe", True, 1000), ("failedByMe", True)]
-      self.expected[Case.NO_CLOSE] = [("message", payload, False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", payload, False)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 1, payload = payload)
       self.p.killAfter(1)
-
-   def closeCase(self):
-      self.p.sendClose(1000)

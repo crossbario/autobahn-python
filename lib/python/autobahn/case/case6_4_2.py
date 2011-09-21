@@ -30,8 +30,10 @@ class Case6_4_2(Case6_3_1):
 
    def onOpen(self):
 
-      self.expected[Case.OK] = [("timeout", "A"), ("failedByMe", False)]
-      self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B"), ("failedByMe", False)]
+      self.expected[Case.OK] = [("timeout", "A")]
+      self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
+
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
 
       self.p.sendFrame(opcode = 1, fin = False, payload = self.PAYLOAD[:12])
       self.p.continueLater(1, self.part2)

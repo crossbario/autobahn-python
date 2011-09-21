@@ -27,16 +27,24 @@ class Case:
    FAILED = "FAILED"
    OK = "OK"
    NON_STRICT = "NON-STRICT"
-   NO_CLOSE = "NO CLOSE"
-
+   WRONG_CODE = "WRONG CODE"
+   UNCLEAN = "UNCLEAN"
+   FAILED_BY_CLIENT = "FAILED BY CLIENT"
+   
+   # to remove
+   NO_CLOSE = "NO_CLOSE"
+   
    SUBCASES = []
 
    def __init__(self, protocol):
       self.p = protocol
       self.received = []
       self.expected = {}
+      self.expectedClose = {}
       self.behavior = Case.FAILED
+      self.behaviorClose = Case.FAILED
       self.result = "Actual events differ from any expected."
+      self.resultClose = "TCP connection was dropped without close handshake"
       self.reportTime = False
       self.subcase = None
       self.init()
@@ -65,32 +73,43 @@ class Case:
       self.received.append(("pong", payload))
       self.finishWhenDone()
 
-   def onClose(self, code, reason, closedByMe):
-      self.received.append(("closedByMe", closedByMe, code))
-      self.finishWhenDone()
-
-   def compare(self, obj1, obj2):
-      return pickle.dumps(obj1) == pickle.dumps(obj2)
-
-   def onConnectionLost(self, failedByMe):
-      self.received.append(("failedByMe", failedByMe))
+   def onClose(self):
+      # check if we passed the test
       for e in self.expected:
          if self.compare(self.received, self.expected[e]):
             self.behavior = e
             self.passed = True
             self.result = "Actual events match at least one expected."
             break
+      # check the close status
+      if self.expectedClose["failedByMe"] != self.p.failedByMe:
+         self.behaviorClose = Case.FAILED
+         self.resultClose = "The connection was failed by the wrong endpoint"
+      elif self.expectedClose["requireClean"] and not self.p.wasClean:
+         self.behaviorClose = Case.UNCLEAN
+         self.resultClose = "The spec requires the connection to be failed cleanly here"
+      elif self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_NULL and self.p.remoteCloseCode != self.expectedClose["closeCode"]:
+         self.behaviorClose = Case.WRONG_CODE
+         self.resultClose = "The close code should have been %d or empty" % self.expectedClose["closeCode"]
+      elif not self.p.isServer and self.p.droppedByMe:
+         self.behaviorClose = Case.FAILED_BY_CLIENT
+         self.resultClose = "It is preferred that the server close the TCP connection"
+      else:
+         self.behaviorClose = Case.OK
+         self.resultClose = "Connection was properly closed"
+
+   def compare(self, obj1, obj2):
+      return pickle.dumps(obj1) == pickle.dumps(obj2)
+
+   def onConnectionLost(self, failedByMe):
+      pass
 
    def finishWhenDone(self):
+      # if we match at least one expected outcome check if we are supposed to 
+      # start the closing handshake and if so, do it.
       for e in self.expected:
-         if e == Case.NO_CLOSE:
-            continue
-         if self.expected[e][-2][:-1] == ("closedByMe", True):
-            if self.compare(self.received, self.expected[e][:-2]):
-               self.closeCase()
-               return
-         # when we expect to fail the connection ourselfes and already
-         # received everything before, we immediately fail the connection
-         if self.expected[e][-1] == ("failedByMe", True):
-            if self.compare(self.received, self.expected[e][:-1]):
-               self.p.failConnection()
+         if not self.compare(self.received, self.expected[e]):
+            return
+      if self.expectedClose["failedByMe"]:
+         self.p.sendClose(self.expectedClose["closeCode"])
+               

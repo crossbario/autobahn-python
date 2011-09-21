@@ -33,13 +33,14 @@ def __init__(self, protocol):
 def onOpen(self):
 
    if self.isValid:
-      self.expected[Case.OK] = [("message", self.PAYLOAD, False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", self.PAYLOAD, False)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
    else:
-      self.expected[Case.OK] = [("failedByMe", False)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
 
    self.p.sendMessage(self.PAYLOAD, binary = False)
    self.p.killAfter(0.5)
-
 
 i = 5
 for t in UTF8_TEST_SEQUENCES:
@@ -63,3 +64,4 @@ for t in UTF8_TEST_SEQUENCES:
       Case6_X_X.append(C)
       j += 1
    i += 1
+

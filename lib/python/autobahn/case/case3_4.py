@@ -26,8 +26,9 @@ class Case3_4(Case):
 
    def onOpen(self):
       payload = "Hello, world!"
-      self.expected[Case.OK] = [("message", payload, False), ("failedByMe", False)]
-      self.expected[Case.NON_STRICT] = [("failedByMe", False)]
+      self.expected[Case.OK] = [("message", payload, False)]
+      self.expected[Case.NON_STRICT] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 1, payload = payload, chopsize = 1)
       self.p.sendFrame(opcode = 1, payload = payload, rsv = 4, chopsize = 1)
       self.p.sendFrame(opcode = 9, chopsize = 1)

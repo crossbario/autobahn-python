@@ -25,6 +25,7 @@ class Case4_2_1(Case):
    EXPECTATION = """The connection is failed immediately."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("failedByMe", False)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 11)
       self.p.killAfter(1)

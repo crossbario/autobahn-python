@@ -32,8 +32,10 @@ class Case6_4_4(Case6_3_1):
 
    def onOpen(self):
 
-      self.expected[Case.OK] = [("timeout", "A"), ("failedByMe", False)]
-      self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B"), ("failedByMe", False)]
+      self.expected[Case.OK] = [("timeout", "A")]
+      self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
+      
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
 
       self.p.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_TEXT)
       self.p.beginMessageFrame(len(self.PAYLOAD))
