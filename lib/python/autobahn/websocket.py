@@ -283,9 +283,24 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("WebSocketProtocol.onPong")
 
 
+   def onClose(self, wasClean, code, reason):
+      """
+      Callback when the connection has been closed. Override in derived class.
+
+      :param wasClean: True, iff the connection was closed cleanly.
+      :type wasClean: bool
+      :param code: None or close status code (sent by peer), if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
+      :type code: int
+      :param reason: None or close reason (sent by peer) (when present, a status code MUST have been also be present).
+      :type reason: str
+      """
+      if self.debug:
+         log.msg("WebSocketProtocol.onClose")
+
+
    def onCloseFrame(self, code, reason):
       """
-      Callback when Close frame was received. The default implementation answers by
+      Callback when a Close frame was received. The default implementation answers by
       sending a normal Close when no Close was sent before. Otherwise it drops
       the connection. Override in derived class.
 
@@ -296,56 +311,83 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.debug:
          log.msg("WebSocketProtocol.onCloseFrame")
-      if self.state == WebSocketProtocol.STATE_CLOSING:
-         if code != None:
-            self.remoteCloseCode = code
-            self.remoteCloseReason = reason
-         self.wasClean = True
-         self.failConnection(failedByMe = True, forceClientDisconnect = False)
-      else:
-         #self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
-         self.sendCloseFrame(code)
-         if code != None:
-            self.remoteCloseCode = code
-            self.remoteCloseReason = reason
-            self.localCloseCode = code
-         self.wasClean = True
-         self.failConnection(failedByMe = False, forceClientDisconnect = False)
-   
-   def onClose(self):
-      """
-      Callback when the connection has been closed. Override in derived class.
-      """
-      pass
 
-   def failConnection(self, failedByMe = True, forceClientDisconnect = True):
+      self.remoteCloseCode = code
+      self.remoteCloseReason = reason
+
+      if self.state == WebSocketProtocol.STATE_CLOSING:
+         ## We already initiated the closing handshake, so this
+         ## is the peer's reply to our close frame.
+         self.wasClean = True
+         if self.isServer:
+            ## When we are a server, we immediately drop the TCP.
+            self.dropConnection()
+         else:
+            ## When we are a client, the server should drop the TCP
+            ## If that doesn't happen, we do. And that will set wasClean = False.
+            reactor.callLater(self.serverConnectionDropTimeout, self.timeoutConnectionDrop)
+
+      elif self.state == WebSocketProtocol.STATE_OPEN:
+         ## The peer initiates a closing handshake, so we reply
+         ## by sending close frame.
+         self.wasClean = True
+         if self.echoCloseCodeReason:
+            self.sendClose(code, reason)
+         else:
+            self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+         if self.isServer:
+            ## When we are a server, we immediately drop the TCP.
+            self.dropConnection()
+         else:
+            ## When we are a client, a timeout in sendClose() will set wasClean = False.
+            pass
+      else:
+         ## STATE_CONNECTING
+         ## STATE_CLOSED
+         raise Exception("logic error")
+
+
+   def timeoutConnectionDrop(self):
       """
-      Fails the websocket connection unless it has already been closed. 
-      If we are the server, drops the TCP connection and sets appropriate state. If we are the client 
-      TCP is not dropped unless the failedByMe flag is set
+      We expected the peer to drop the connection, but it didn't (in time).
+      So we do, but with wasClean = False.
       """
-      if self.state == WebSocketProtocol.STATE_CLOSED:
-         return
-      self.failedByMe = failedByMe
+      self.wasClean = False
+      self.dropConnection()
+
+
+   def dropConnection(self):
+      """
+      Drop the underlying TCP connection.
+      """
+      self.droppedByMe = True
       self.state = WebSocketProtocol.STATE_CLOSED
-      if self.isServer or forceClientDisconnect:
-         self.droppedByMe = True
-         self.transport.loseConnection()
-         self.onClose()
+      self.transport.loseConnection()
+
+
+   def failConnection(self, code = None, reason = None):
+      """
+      Fails the WebSockets connection.
+      """
+      if self.debug:
+         log.msg("Failing connection : %s - %s" % (code, reason))
+      self.failedByMe = True
+      if self.failByDrop:
+         ## brutally drop the TCP connection
+         self.dropConnection()
+      else:
+         ## perform WebSockets closing handshake
+         self.sendClose(code, reason)
+
 
    def protocolViolation(self, reason):
+      """
+      Fired when a WebSockets protocol violation/error occurs.
+      """
       if self.debug:
-         log.msg("Failing connection on protocol violation : %s" % reason)
-      if self.state == WebSocketProtocol.STATE_CONNECTING:
-         if (not self.failByDrop):
-            # should send HTTP error here?
-            self.failConnection()
-            return
-      elif self.state == WebSocketProtocol.STATE_OPEN:
-         if (not self.failByDrop):
-            self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR,reason)
-            return
-      self.failConnection()
+         log.msg("Protocol violation : %s" % reason)
+      self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
+
 
    def connectionMade(self):
       """
@@ -359,19 +401,22 @@ class WebSocketProtocol(protocol.Protocol):
       self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
-      self.closeAlreadySent = False
+      self.closedByMe = False
       self.failedByMe = False
       self.droppedByMe = False
       self.wasClean = False
-      self.localCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NULL
-      self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NULL
-      self.remoteCloseReason = ""
+      self.localCloseCode = None
+      self.localCloseReason = None
+      self.remoteCloseCode = None
+      self.remoteCloseReason = None
       self.utf8validator = Utf8Validator()
-
-      self.failByDrop = self.maskClientFrames = getattr(self.factory, "failByDrop", True)
       self.utf8validateIncoming = getattr(self.factory, "utf8validateIncoming", True)
       self.requireMaskedClientFrames = getattr(self.factory, "requireMaskedClientFrames", True)
       self.maskClientFrames = getattr(self.factory, "maskClientFrames", True)
+      self.failByDrop = getattr(self.factory, "failByDrop", True)
+      self.echoCloseCodeReason = getattr(self.factory, "echoCloseCodeReason", False)
+      self.serverConnectionDropTimeout = getattr(self.factory, "serverConnectionDropTimeout", False)
+      self.closeHandshakeTimeout = getattr(self.factory, "closeHandshakeTimeout", False)
 
       ## for chopped/synched sends, we need to queue to maintain
       ## ordering when recalling the reactor to actually "force"
@@ -384,10 +429,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       This is called by Twisted framework when a TCP connection was lost.
       """
-      if self.state == WebSocketProtocol.STATE_CLOSED:
-         return
       self.state = WebSocketProtocol.STATE_CLOSED
-      self.onClose()
+      self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def setValidateIncomingUtf8(self, enabled):
@@ -984,7 +1027,7 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def sendCloseFrame(self, code = None, reason = None):
-      """Send close helper/validation method
+      """Send close frame to WebSockets peer.
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -1018,11 +1061,12 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          if reason is not None and reason != "":
             raise Exception("status reason '%s' without status code in close frame" % reason)
+
       self.sendFrame(opcode = 8, payload = payload)
-      
+
 
    def sendClose(self, code = None, reason = None):
-      """Send close to WebSockets peer.
+      """Starts a closing handshake.
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -1030,16 +1074,16 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         return
-         #raise Exception("tried to close a connection that wasn't open")
-      self.sendCloseFrame(code,reason)
-      if code != None:
-        self.localCloseCode = code
+         raise Exception("cannot close a WebSockets connection which is not open")
+      self.sendCloseFrame(code, reason)
       self.state = WebSocketProtocol.STATE_CLOSING
-      self.closeAlreadySent = True
-      self.failedByMe = True
-      # TODO: set a timer here
-      reactor.callLater(0.4, self.failConnection)
+      self.closedByMe = True
+      self.localCloseCode = code
+      self.localCloseReason = reason
+
+      ## drop connection when timeout on receiving close handshake reply
+      reactor.callLater(self.closeHandshakeTimeout, self.timeoutConnectionDrop)
+
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
       """
@@ -1537,7 +1581,9 @@ class WebSocketServerFactory(protocol.ServerFactory):
                 version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
                 utf8validateIncoming = True,
                 requireMaskedClientFrames = True,
-                failByDrop = False,
+                failByDrop = True,
+                echoCloseCodeReason = False,
+                closeHandshakeTimeout = 1,
                 debug = False):
       """
       Create instance of WebSocket server factory.
@@ -1550,6 +1596,12 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type utf8validateIncoming: bool
       :param requireMaskedClientFrames: Require client frames to be masked.
       :type requireMaskedClientFrames: bool
+      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake.
+      :type failbyDrop: bool
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "".
+      :type echoCloseCodeReason: bool
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
+      :type closeHandshakeTimeout: float
       :param debug: Debug mode (false/true).
       :type debug: bool
       """
@@ -1566,9 +1618,10 @@ class WebSocketServerFactory(protocol.ServerFactory):
       ## default for protocol instances
       ##
       self.utf8validateIncoming = utf8validateIncoming
-      self.failByDrop = failByDrop
-
       self.requireMaskedClientFrames = requireMaskedClientFrames
+      self.failByDrop = failByDrop
+      self.echoCloseCodeReason = echoCloseCodeReason
+      self.closeHandshakeTimeout = closeHandshakeTimeout
 
    def startFactory(self):
       pass
@@ -1784,7 +1837,10 @@ class WebSocketClientFactory(protocol.ClientFactory):
                 useragent = None,
                 utf8validateIncoming = True,
                 maskClientFrames = True,
-                failByDrop = False,
+                failByDrop = True,
+                echoCloseCodeReason = False,
+                serverConnectionDropTimeout = 1,
+                closeHandshakeTimeout = 1,
                 debug = False):
       """
       Create instance of WebSocket client factory.
@@ -1805,10 +1861,16 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type utf8validateIncoming: bool
       :param maskClientFrames: Mask client to server frames.
       :type maskClientFrames: bool
+      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake.
+      :type failbyDrop: bool
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "".
+      :type echoCloseCodeReason: bool
+      :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds.
+      :type serverConnectionDropTimeout: float
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
+      :type closeHandshakeTimeout: float
       :param debug: Debug mode (false/true).
       :type debug: bool
-      :param failByDrop: Fail connections by dropping the TCP connection without sending an error response (false/true).
-      :type failByDrop: bool
       """
       self.debug = debug
 
@@ -1827,8 +1889,11 @@ class WebSocketClientFactory(protocol.ClientFactory):
       ## default for protocol instances
       ##
       self.utf8validateIncoming = utf8validateIncoming
-      self.failByDrop = failByDrop
       self.maskClientFrames = maskClientFrames
+      self.failByDrop = failByDrop
+      self.echoCloseCodeReason = echoCloseCodeReason
+      self.serverConnectionDropTimeout = serverConnectionDropTimeout
+      self.closeHandshakeTimeout = closeHandshakeTimeout
 
       ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
       random.seed()

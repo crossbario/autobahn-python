@@ -54,7 +54,13 @@ class Case9_1_1(Case):
       self.p.createWirelog = True
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
 
+<<<<<<< HEAD
 
 #   def onConnectionLost(self, failedByMe):
 #      if not failedByMe:
 #         self.result = "Connection failed by peer."
+=======
+   def onConnectionLost(self, failedByMe):
+      if not failedByMe:
+         self.result = "Connection failed by peer."
+>>>>>>> upstream/master
