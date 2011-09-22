@@ -295,8 +295,21 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: None or close reason (sent by peer) (when present, a status code MUST have been also be present).
       :type reason: str
       """
-      if True or self.debug:
-         log.msg("WebSocketProtocol.onClose : closedByMe = %s, failedByMe = %s, droppedByMe = %s, wasClean = %s, code = %s, reason = %s" % (self.closedByMe, self.failedByMe, self.droppedByMe, wasClean, code, reason))
+      if self.debug:
+         s = "WebSocketProtocol.onClose:\n"
+         s += "wasClean=%s\n" % wasClean
+         s += "code=%s\n" % code
+         s += "reason=%s\n" % reason
+         s += "self.closedByMe=%s\n" % self.closedByMe
+         s += "self.failedByMe=%s\n" % self.failedByMe
+         s += "self.droppedByMe=%s\n" % self.droppedByMe
+         s += "self.wasClean=%s\n" % self.wasClean
+         s += "self.wasNotCleanReason=%s\n" % self.wasNotCleanReason
+         s += "self.localCloseCode=%s\n" % self.localCloseCode
+         s += "self.localCloseReason=%s\n" % self.localCloseReason
+         s += "self.remoteCloseCode=%s\n" % self.remoteCloseCode
+         s += "self.remoteCloseReason=%s\n" % self.remoteCloseReason
+         log.msg(s)
 
 
    def onCloseFrame(self, code, reason):
@@ -328,26 +341,27 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             ## When we are a client, the server should drop the TCP
             ## If that doesn't happen, we do. And that will set wasClean = False.
-            reactor.callLater(self.serverConnectionDropTimeout, self.timeoutConnectionDrop)
+            reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
          ## The peer initiates a closing handshake, so we reply
          ## by sending close frame.
 
          self.wasClean = True
-         self.closedByMe = False
 
          ## Either reply with same code/reason, or code == NORMAL
          if self.echoCloseCodeReason:
-            self.sendClose(code, reason)
+            self.sendClose(code = code, reason = reason, isReply = True)
          else:
-            self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+            self.sendClose(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
 
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection()
          else:
-            ## When we are a client, a timeout in sendClose() will set wasClean = False.
+            ## When we are a client, we expect the server to drop the TCP,
+            ## and when the server fails to do so, a timeout in sendClose()
+            ## will set wasClean = False back again.
             pass
 
       else:
@@ -356,14 +370,38 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("logic error")
 
 
-   def timeoutConnectionDrop(self):
+   def onServerConnectionDropTimeout(self):
       """
-      We expected the peer to drop the connection, but it didn't (in time).
-      So we do, but with wasClean = False.
+      We (a client) expected the peer (a server) to drop the connection,
+      but it didn't (in time self.serverConnectionDropTimeout).
+      So we drop the connection, but set self.wasClean = False.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
+         if self.debug:
+            log.msg("onServerConnectionDropTimeout")
          self.wasClean = False
+         self.wasNotCleanReason = "server did not drop TCP connection (in time)"
          self.dropConnection()
+      else:
+         if self.debug:
+            log.msg("skipping onServerConnectionDropTimeout since connection is already closed")
+
+
+   def onCloseHandshakeTimeout(self):
+      """
+      We expected the peer to respond to us initiating a close handshake. It didn't
+      respond (in time self.closeHandshakeTimeout) with a close response frame though.
+      So we drop the connection, but set self.wasClean = False.
+      """
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         if self.debug:
+            log.msg("onCloseHandshakeTimeout fired")
+         self.wasClean = False
+         self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
+         self.dropConnection()
+      else:
+         if self.debug:
+            log.msg("skipping onCloseHandshakeTimeout since connection is already closed")
 
 
    def dropConnection(self):
@@ -371,27 +409,36 @@ class WebSocketProtocol(protocol.Protocol):
       Drop the underlying TCP connection.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
+         if self.debug:
+            log.msg("dropping connection")
          self.droppedByMe = True
          self.state = WebSocketProtocol.STATE_CLOSED
          self.transport.loseConnection()
       else:
          if self.debug:
-            log.msg("warning: skipping dropConnection() in state already closed")
+            log.msg("skipping dropConnection since connection is already closed")
 
 
-   def failConnection(self, code = None, reason = None):
+   def failConnection(self, code = CLOSE_STATUS_CODE_GOING_AWAY, reason = "Going Away"):
       """
       Fails the WebSockets connection.
       """
-      if self.debug:
-         log.msg("Failing connection : %s - %s" % (code, reason))
-      self.failedByMe = True
-      if self.failByDrop:
-         ## brutally drop the TCP connection
-         self.dropConnection()
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         if self.debug:
+            log.msg("Failing connection : %s - %s" % (code, reason))
+         self.failedByMe = True
+         if self.failByDrop:
+            ## brutally drop the TCP connection
+            self.wasClean = False
+            self.wasNotCleanReason = "I failed the WS connection by dropping the TCP"
+            self.dropConnection()
+         else:
+            ## perform WebSockets closing handshake
+            self.sendClose(code = code, reason = reason, isReply = False)
       else:
-         ## perform WebSockets closing handshake
-         self.sendClose(code, reason)
+         if self.debug:
+            log.msg("skipping failConnection since connection is already closed")
+
 
 
    def protocolViolation(self, reason):
@@ -433,6 +480,9 @@ class WebSocketProtocol(protocol.Protocol):
       # and received) _and_ the server dropped the TCP (which is its responsibility)
       self.wasClean = False
 
+      # When self.wasClean = False, the reason (what happened)
+      self.wasNotCleanReason = None
+
       # The close code I sent in close frame (if any)
       self.localCloseCode = None
 
@@ -466,7 +516,13 @@ class WebSocketProtocol(protocol.Protocol):
       This is called by Twisted framework when a TCP connection was lost.
       """
       self.state = WebSocketProtocol.STATE_CLOSED
-      self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+      if not self.wasClean:
+         self.onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
+      else:
+         if self.closedByMe:
+            self.onClose(self.wasClean, self.localCloseCode, self.localCloseReason)
+         else:
+            self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def setValidateIncomingUtf8(self, enabled):
@@ -591,8 +647,12 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if len(self.send_queue) > 0:
          e = self.send_queue.popleft()
-         self.logTxOctets(e[0], e[1])
-         self.transport.write(e[0])
+         if self.state != WebSocketProtocol.STATE_CLOSED:
+            self.logTxOctets(e[0], e[1])
+            self.transport.write(e[0])
+         else:
+            if self.debug:
+               log.msg("skipped delayed write, since connection is closed")
          # we need to reenter the reactor to make the latter
          # reenter the OS network stack, so that octets
          # can get on the wire. Note: this is a "heuristic",
@@ -1084,7 +1144,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.sendFrame(opcode = 8, payload = payload)
 
 
-   def sendClose(self, code = None, reason = None):
+   def sendClose(self, code = None, reason = None, isReply = False):
       """Starts a closing handshake.
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
@@ -1093,12 +1153,11 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       """
       if self.state == WebSocketProtocol.STATE_CLOSING:
-         if True or self.debug:
-            log.msg("warning: ignoring sendClose() since connection already closing")
+         if self.debug:
+            log.msg("ignoring sendClose since connection already closing")
 
       elif self.state == WebSocketProtocol.STATE_CLOSED:
-         if True or self.debug:
-            log.msg("warning: ignoring sendClose() since connection alread closed")
+         raise Exception("connection closed")
 
       elif self.state == WebSocketProtocol.STATE_CONNECTING:
          raise Exception("cannot close a connection not yet connected")
@@ -1126,16 +1185,14 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## update state
          self.state = WebSocketProtocol.STATE_CLOSING
-
-         ## this will get overridden again in calling method onCloseFrame(),
-         ## where we use this method to reply to a close frame
-         self.closedByMe = True
+         self.closedByMe = not isReply
 
          self.localCloseCode = code
          self.localCloseReason = reason
 
          ## drop connection when timeout on receiving close handshake reply
-         reactor.callLater(self.closeHandshakeTimeout, self.timeoutConnectionDrop)
+         if self.closedByMe:
+            reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
 
       else:
          raise Exception("logic error")
