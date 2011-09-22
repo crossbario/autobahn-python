@@ -20,13 +20,13 @@ from case9_4_1 import Case9_4_1
 
 class Case9_4_8(Case9_4_1):
 
-   DESCRIPTION = """Send fragmented binary message message with message payload of length 8 * 2**20 (8M). Sent out in fragments of 4M."""
+   DESCRIPTION = """Send fragmented binary message message with message payload of length 4 * 2**20 (4M). Sent out in fragments of 1M."""
 
    EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
 
    def init(self):
-      self.DATALEN = 8 * 2**20
-      self.FRAGSIZE = 4 * 2**20
+      self.DATALEN = 4 * 2**20
+      self.FRAGSIZE = 1 * 2**20
       self.PAYLOAD = "*" * self.DATALEN
       self.WAITSECS = 100
       self.reportTime = True

@@ -363,8 +363,11 @@ class WebSocketProtocol(protocol.Protocol):
       self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NULL
       self.remoteCloseReason = ""
       self.utf8validator = Utf8Validator()
-      self.utf8validateIncoming = self.factory.utf8validateIncoming
-      self.failByDrop = self.factory.failByDrop
+
+      self.failByDrop = self.maskClientFrames = getattr(self.factory, "failByDrop", True)
+      self.utf8validateIncoming = getattr(self.factory, "utf8validateIncoming", True)
+      self.requireMaskedClientFrames = getattr(self.factory, "requireMaskedClientFrames", True)
+      self.maskClientFrames = getattr(self.factory, "maskClientFrames", True)
 
       ## for chopped/synched sends, we need to queue to maintain
       ## ordering when recalling the reactor to actually "force"
@@ -586,7 +589,7 @@ class WebSocketProtocol(protocol.Protocol):
 
             ## all client-to-server frames MUST be masked
             ##
-            if self.isServer and not frame_masked:
+            if self.isServer and self.requireMaskedClientFrames and not frame_masked:
                self.protocolViolation("unmasked client to server frame")
                return False
 
@@ -893,7 +896,7 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       b1 = 0
       el = ""
-      if mask or not self.isServer:
+      if mask or (not self.isServer and self.maskClientFrames):
          b1 |= 1 << 7
          if mask:
             mv = struct.pack("!I", mask)
@@ -1080,12 +1083,16 @@ class WebSocketProtocol(protocol.Protocol):
       self.send_message_frame_octets_sent = 0
 
       if mask:
+         ## explicit mask given
+         ##
          if type(mask) is not str:
             raise Exception("mask must be a (byte) string")
          if len(mask) != 4:
             raise Exception("mask must have length 4")
          self.send_message_frame_mask = mask
-      elif not self.isServer:
+      elif not self.isServer and self.maskClientFrames:
+         ## client-to-server masking (if not deactivated)
+         ##
          self.send_message_frame_mask = random.getrandbits(32)
       else:
          self.send_message_frame_mask = None
@@ -1521,7 +1528,13 @@ class WebSocketServerFactory(protocol.ServerFactory):
    protocol = WebSocketServerProtocol
 
 
-   def __init__(self, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, utf8validateIncoming = True, debug = False, failByDrop = False):
+   def __init__(self,
+                subprotocols = [],
+                version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
+                utf8validateIncoming = True,
+                requireMaskedClientFrames = True,
+                failByDrop = False,
+                debug = False):
       """
       Create instance of WebSocket server factory.
 
@@ -1531,6 +1544,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type version: int
       :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
       :type utf8validateIncoming: bool
+      :param requireMaskedClientFrames: Require client frames to be masked.
+      :type requireMaskedClientFrames: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
       """
@@ -1548,6 +1563,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       ##
       self.utf8validateIncoming = utf8validateIncoming
       self.failByDrop = failByDrop
+
+      self.requireMaskedClientFrames = requireMaskedClientFrames
 
    def startFactory(self):
       pass
@@ -1754,7 +1771,17 @@ class WebSocketClientFactory(protocol.ClientFactory):
    protocol = WebSocketClientProtocol
 
 
-   def __init__(self, path = "/", host = "localhost", origin = None, subprotocols = [], version = WebSocketProtocol.DEFAULT_SPEC_VERSION, useragent = None, utf8validateIncoming = True, debug = False, failByDrop = False):
+   def __init__(self,
+                path = "/",
+                host = "localhost",
+                origin = None,
+                subprotocols = [],
+                version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
+                useragent = None,
+                utf8validateIncoming = True,
+                maskClientFrames = True,
+                failByDrop = False,
+                debug = False):
       """
       Create instance of WebSocket client factory.
 
@@ -1772,6 +1799,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type useragent: str
       :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
       :type utf8validateIncoming: bool
+      :param maskClientFrames: Mask client to server frames.
+      :type maskClientFrames: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
       :param failByDrop: Fail connections by dropping the TCP connection without sending an error response (false/true).
@@ -1795,6 +1824,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       ##
       self.utf8validateIncoming = utf8validateIncoming
       self.failByDrop = failByDrop
+      self.maskClientFrames = maskClientFrames
 
       ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
       random.seed()

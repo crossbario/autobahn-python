@@ -53,3 +53,8 @@ class Case9_1_1(Case):
             self.result = "Received text message of length %d." % len(msg)
       self.p.createWirelog = True
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
+
+
+#   def onConnectionLost(self, failedByMe):
+#      if not failedByMe:
+#         self.result = "Connection failed by peer."

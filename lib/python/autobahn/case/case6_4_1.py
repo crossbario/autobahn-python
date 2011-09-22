@@ -24,7 +24,7 @@ import binascii
 
 class Case6_4_1(Case6_3_1):
 
-   DESCRIPTION = """Send invalid UTF-8 text message in 3 fragments. First is valid, then wait, then 2nd which contains the octet making the sequence invalid, then wait, then 3rd with rest.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
+   DESCRIPTION = """Send invalid UTF-8 text message in 3 fragments (frames). First frame payload is valid, then wait, then 2nd frame which contains the payload octet making the sequence invalid, then wait, then 3rd frame with rest.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
 
    EXPECTATION = """The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
 

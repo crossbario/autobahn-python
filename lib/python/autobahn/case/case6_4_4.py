@@ -26,9 +26,9 @@ from autobahn.websocket import WebSocketProtocol
 
 class Case6_4_4(Case6_3_1):
 
-   DESCRIPTION = """Send invalid UTF-8 text message in 2 fragments. First is valid, then wait, then in 2nd frame, send the octet making the sequence invalid, then wait, then send test rest of 2nd frame.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
+   DESCRIPTION = """Send invalid UTF-8 text message in one frame, but 3 chops. First chop is valid, then wait, then send 2nd chop with payload octet making the sequence invalid, then wait, then send test rest of payload in last chop.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
 
-   EXPECTATION = """The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8) upon receiving the offending octet. If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
+   EXPECTATION = """The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8) upon receiving the offending octet. If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
 
    def onOpen(self):
 
