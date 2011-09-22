@@ -269,7 +269,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.debug:
          log.msg("WebSocketProtocol.onPing")
-      self.sendPong(payload)
+      if self.state == WebSocketProtocol.STATE_OPEN:
+         self.sendPong(payload)
 
 
    def onPong(self, payload):
@@ -294,8 +295,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: None or close reason (sent by peer) (when present, a status code MUST have been also be present).
       :type reason: str
       """
-      if self.debug:
-         log.msg("WebSocketProtocol.onClose")
+      if True or self.debug:
+         log.msg("WebSocketProtocol.onClose : closedByMe = %s, failedByMe = %s, droppedByMe = %s, wasClean = %s, code = %s, reason = %s" % (self.closedByMe, self.failedByMe, self.droppedByMe, wasClean, code, reason))
 
 
    def onCloseFrame(self, code, reason):
@@ -318,7 +319,9 @@ class WebSocketProtocol(protocol.Protocol):
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
          ## is the peer's reply to our close frame.
+
          self.wasClean = True
+
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection()
@@ -330,17 +333,23 @@ class WebSocketProtocol(protocol.Protocol):
       elif self.state == WebSocketProtocol.STATE_OPEN:
          ## The peer initiates a closing handshake, so we reply
          ## by sending close frame.
+
          self.wasClean = True
+         self.closedByMe = False
+
+         ## Either reply with same code/reason, or code == NORMAL
          if self.echoCloseCodeReason:
             self.sendClose(code, reason)
          else:
             self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection()
          else:
             ## When we are a client, a timeout in sendClose() will set wasClean = False.
             pass
+
       else:
          ## STATE_CONNECTING
          ## STATE_CLOSED
@@ -352,17 +361,22 @@ class WebSocketProtocol(protocol.Protocol):
       We expected the peer to drop the connection, but it didn't (in time).
       So we do, but with wasClean = False.
       """
-      self.wasClean = False
-      self.dropConnection()
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         self.wasClean = False
+         self.dropConnection()
 
 
    def dropConnection(self):
       """
       Drop the underlying TCP connection.
       """
-      self.droppedByMe = True
-      self.state = WebSocketProtocol.STATE_CLOSED
-      self.transport.loseConnection()
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         self.droppedByMe = True
+         self.state = WebSocketProtocol.STATE_CLOSED
+         self.transport.loseConnection()
+      else:
+         if self.debug:
+            log.msg("warning: skipping dropConnection() in state already closed")
 
 
    def failConnection(self, code = None, reason = None):
@@ -401,14 +415,36 @@ class WebSocketProtocol(protocol.Protocol):
       self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
+
+      ## the following vars are related to connection close handling/tracking
+
+      # True, iff I have initiated closing HS (that is, did send close first)
       self.closedByMe = False
+
+      # True, iff I have failed the WS connection (i.e. due to protocol error)
+      # Failing can be either by initiating close HS or brutal drop (this is
+      # controlled by failByDrop option)
       self.failedByMe = False
+
+      # True, iff I dropped the TCP connection (called transport.loseConnection())
       self.droppedByMe = False
+
+      # True, iff full WebSockets closing handshake was performed (close frame sent
+      # and received) _and_ the server dropped the TCP (which is its responsibility)
       self.wasClean = False
+
+      # The close code I sent in close frame (if any)
       self.localCloseCode = None
+
+      # The close reason I sent in close frame (if any)
       self.localCloseReason = None
+
+      # The close code the peer sent me in close frame (if any)
       self.remoteCloseCode = None
+
+      # The close reason the peer sent me in close frame (if any)
       self.remoteCloseReason = None
+
       self.utf8validator = Utf8Validator()
       self.utf8validateIncoming = getattr(self.factory, "utf8validateIncoming", True)
       self.requireMaskedClientFrames = getattr(self.factory, "requireMaskedClientFrames", True)
@@ -1000,6 +1036,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param payload: An optional, arbitrary payload of length < 126 octets.
       :type payload: str
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       if payload:
          l = len(payload)
          if l > 125:
@@ -1017,6 +1055,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param payload: An optional, arbitrary payload of length < 126 octets.
       :type payload: str
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       if payload:
          l = len(payload)
          if l > 125:
@@ -1026,41 +1066,20 @@ class WebSocketProtocol(protocol.Protocol):
          self.sendFrame(opcode = 10)
 
 
-   def sendCloseFrame(self, code = None, reason = None):
+   def sendCloseFrame(self, code = None, reasonUtf8 = None):
       """Send close frame to WebSockets peer.
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
-      :param reason: An optional close reason (when present, a status code MUST also be present).
+      :param reason: An optional close reason (normally MUST be UTF-8 encoded and when present, a status code MUST also be present).
       :type reason: str
       """
-      plen = 0
       payload = ""
 
       if code is not None:
-
-         if (not (code >= 3000 and code <= 3999)) and \
-            (not (code >= 4000 and code <= 4999)) and \
-            code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED:
-            raise Exception("invalid status code %d for close frame" % code)
-
-         payload = struct.pack("!H", code)
-         plen = 2
-
-         if reason is not None:
-            reason = reason.encode("UTF-8")
-            plen += len(reason)
-         else:
-            reason = ""
-
-         if plen > 125:
-            raise Exception("close frame payload larger than 125 octets")
-
-         payload += reason
-
-      else:
-         if reason is not None and reason != "":
-            raise Exception("status reason '%s' without status code in close frame" % reason)
+         payload += struct.pack("!H", code)
+         if reasonUtf8 is not None:
+            payload += reasonUtf8
 
       self.sendFrame(opcode = 8, payload = payload)
 
@@ -1073,16 +1092,53 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: An optional close reason (when present, a status code MUST also be present).
       :type reason: str
       """
-      if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("cannot close a WebSockets connection which is not open")
-      self.sendCloseFrame(code, reason)
-      self.state = WebSocketProtocol.STATE_CLOSING
-      self.closedByMe = True
-      self.localCloseCode = code
-      self.localCloseReason = reason
+      if self.state == WebSocketProtocol.STATE_CLOSING:
+         if True or self.debug:
+            log.msg("warning: ignoring sendClose() since connection already closing")
 
-      ## drop connection when timeout on receiving close handshake reply
-      reactor.callLater(self.closeHandshakeTimeout, self.timeoutConnectionDrop)
+      elif self.state == WebSocketProtocol.STATE_CLOSED:
+         if True or self.debug:
+            log.msg("warning: ignoring sendClose() since connection alread closed")
+
+      elif self.state == WebSocketProtocol.STATE_CONNECTING:
+         raise Exception("cannot close a connection not yet connected")
+
+      elif self.state == WebSocketProtocol.STATE_OPEN:
+
+         ## validate code/reason for close frame sending
+         reasonUtf8 = None
+         if code is not None:
+            if (not (code >= 3000 and code <= 3999)) and \
+               (not (code >= 4000 and code <= 4999)) and \
+               code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED:
+               raise Exception("invalid status code %d for close frame" % code)
+
+            if reason is not None:
+               reasonUtf8 = reason.encode("UTF-8")
+               if len(reasonUtf8) + 2 > 125:
+                  raise Exception("close frame payload larger than 125 octets")
+         else:
+            if reason is not None and reason != "":
+               raise Exception("status reason '%s' without status code in close frame" % reason)
+
+         ## send close frame using raw sendCloseFrame()
+         self.sendCloseFrame(code, reasonUtf8)
+
+         ## update state
+         self.state = WebSocketProtocol.STATE_CLOSING
+
+         ## this will get overridden again in calling method onCloseFrame(),
+         ## where we use this method to reply to a close frame
+         self.closedByMe = True
+
+         self.localCloseCode = code
+         self.localCloseReason = reason
+
+         ## drop connection when timeout on receiving close handshake reply
+         reactor.callLater(self.closeHandshakeTimeout, self.timeoutConnectionDrop)
+
+      else:
+         raise Exception("logic error")
 
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
@@ -1091,6 +1147,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
@@ -1116,6 +1174,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param mask: Optional frame mask. When given, this is used. When None and the peer is a client, a mask will be internally generated. For servers None is default.
       :type mask: str
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       ## check if sending state is valid for this method
       ##
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
@@ -1201,6 +1261,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param payload: Data to send.
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
@@ -1253,6 +1315,8 @@ class WebSocketProtocol(protocol.Protocol):
       End a previously begun message. No more frames may be sent (for that message). You have to
       begin a new message before sending again.
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
@@ -1265,6 +1329,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       When a message has begun, send a complete message frame in one go.
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       self.beginMessageFrame(len(payload), reserved, mask)
       self.sendMessageFrameData(payload, sync)
 
@@ -1277,6 +1343,8 @@ class WebSocketProtocol(protocol.Protocol):
       specifiy a payload fragment size. When the latter is given, the payload will
       be split up into frames with payload <= the payload_frag_size given.
       """
+      if self.state != WebSocketProtocol.STATE_OPEN:
+         raise Exception("connection not open")
       ## (initial) frame opcode
       ##
       if binary:
@@ -1316,10 +1384,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
    A Twisted protocol for WebSockets servers.
    """
 
-   def __init__(self, debug = False):
-      self.debug = debug
-
-
    def onConnect(self, connectionRequest):
       """
       Callback fired during WebSocket handshake when new WebSocket client
@@ -1339,10 +1403,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 
    def connectionMade(self):
+      self.isServer = True
       WebSocketProtocol.connectionMade(self)
       if self.debug:
          log.msg("connection accepted from peer %s" % self.peerstr)
-      self.isServer = True
 
 
    def connectionLost(self, reason):
@@ -1551,12 +1615,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
    def failHandshake(self, reason):
       """
       During opening handshake the client request was invalid, we send a HTTP
-      error response and then close the connection.
+      error response and then drop the connection.
       """
       if self.debug:
          log.msg("failing WebSockets opening handshake ('%s')" % reason)
       self.sendHttpErrorResponse(400, reason)
-      self.failConnection()
+      self.dropConnection()
 
 
    def sendHttpErrorResponse(self, code, reason):
@@ -1636,10 +1700,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
    """
 
    def connectionMade(self):
+      self.isServer = False
       WebSocketProtocol.connectionMade(self)
       if self.debug:
          log.msg("connection to %s established" % self.peerstr)
-      self.isServer = False
       self.startHandshake()
 
 
@@ -1811,12 +1875,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
    def failHandshake(self, reason):
       """
-      During opening handshake the server response is invalid and we fail the
+      During opening handshake the server response is invalid and we drop the
       connection.
       """
       if self.debug:
          log.msg("failing WebSockets opening handshake ('%s')" % reason)
-      self.failConnection()
+      self.dropConnection()
 
 
 
