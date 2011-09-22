@@ -1074,7 +1074,8 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("cannot close a WebSockets connection which is not open")
+         return
+         #raise Exception("cannot close a WebSockets connection which is not open")
       self.sendCloseFrame(code, reason)
       self.state = WebSocketProtocol.STATE_CLOSING
       self.closedByMe = True

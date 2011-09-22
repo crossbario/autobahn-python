@@ -72,10 +72,10 @@ class Case:
    def onPong(self, payload):
       self.received.append(("pong", payload))
       self.finishWhenDone()
-
-   def onClose(self):
+   
+   def onClose(self, wasClean, code, reason):
       pass
-
+   
    def compare(self, obj1, obj2):
       return pickle.dumps(obj1) == pickle.dumps(obj2)
 
@@ -88,13 +88,13 @@ class Case:
             self.result = "Actual events match at least one expected."
             break
       # check the close status
-      if self.expectedClose["failedByMe"] != self.p.failedByMe:
+      if self.expectedClose["failedByMe"] != self.p.closedByMe:
          self.behaviorClose = Case.FAILED
          self.resultClose = "The connection was failed by the wrong endpoint"
       elif self.expectedClose["requireClean"] and not self.p.wasClean:
          self.behaviorClose = Case.UNCLEAN
          self.resultClose = "The spec requires the connection to be failed cleanly here"
-      elif self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_NULL and self.p.remoteCloseCode != self.expectedClose["closeCode"]:
+      elif self.p.remoteCloseCode != None and self.p.remoteCloseCode != self.expectedClose["closeCode"]:
          self.behaviorClose = Case.WRONG_CODE
          self.resultClose = "The close code should have been %d or empty" % self.expectedClose["closeCode"]
       elif not self.p.isServer and self.p.droppedByMe:

@@ -64,7 +64,6 @@ class FuzzingProtocol:
 
 
    def connectionLost(self, reason):
-
       if self.runCase:
 
          self.runCase.onConnectionLost(self.failedByMe)
@@ -87,6 +86,7 @@ class FuzzingProtocol:
                        "resultClose": self.runCase.resultClose,
                        "wirelog": self.wirelog,
                        "createWirelog": self.createWirelog,
+                       "closedByMe": self.closedByMe,
                        "failedByMe": self.failedByMe,
                        "droppedByMe": self.droppedByMe,
                        "wasClean": self.wasClean,
@@ -99,8 +99,9 @@ class FuzzingProtocol:
                        "rxFrameStats": self.rxFrameStats,
                        "txOctetStats": self.txOctetStats,
                        "txFrameStats": self.txFrameStats}
-
          self.factory.logCase(caseResult)
+      # parent's connectionLost does useful things
+      WebSocketProtocol.connectionLost(self,reason)
 
 
    def binLogData(self, data):
@@ -245,9 +246,9 @@ class FuzzingProtocol:
             log.msg("Pong received: " + payload)
 
 
-   def onClose(self):
+   def onClose(self, wasClean, code, reason):
       if self.runCase:
-         self.runCase.onClose()
+         self.runCase.onClose(wasClean, code, reason)
       else:
          if self.debug:
             log.msg("Close received: " + code + " - " + reason)
@@ -727,13 +728,13 @@ class FuzzingFactory:
                   td_class = "case_failed"
                
                if case["behaviorClose"] == Case.OK:
-                  ctd_text = "%d" % case["remoteCloseCode"]
+                  ctd_text = "%s" % str(case["remoteCloseCode"])
                   ctd_class = "case_ok"
                elif case["behaviorClose"] == Case.FAILED_BY_CLIENT:
-                  ctd_text = "%d" % case["remoteCloseCode"]
+                  ctd_text = "%s" % str(case["remoteCloseCode"])
                   ctd_class = "case_almost"
                elif case["behaviorClose"] == Case.WRONG_CODE:
-                  ctd_text = "%d" % case["remoteCloseCode"]
+                  ctd_text = "%s" % str(case["remoteCloseCode"])
                   ctd_class = "case_non_strict"
                elif case["behaviorClose"] == Case.UNCLEAN:
                   ctd_text = "Unclean"
@@ -858,11 +859,12 @@ class FuzzingFactory:
       f.write('<table>')
       f.write('<tr id="stats_header"><td>Key</td><td>Value</td></tr>')
       f.write('<tr id="stats_row"><td>isServer</td><td>%d</td></tr>' % case["isServer"])
+      f.write('<tr id="stats_row"><td>closedByMe</td><td>%d</td></tr>' % case["closedByMe"])
       f.write('<tr id="stats_row"><td>failedByMe</td><td>%d</td></tr>' % case["failedByMe"])
       f.write('<tr id="stats_row"><td>droppedByMe</td><td>%d</td></tr>' % case["droppedByMe"])
       f.write('<tr id="stats_row"><td>wasClean</td><td>%d</td></tr>' % case["wasClean"])
-      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%d</td></tr>' % case["localCloseCode"])
-      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%d</td></tr>' % case["remoteCloseCode"])
+      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%s</td></tr>' % str(case["localCloseCode"]))
+      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%s</td></tr>' % str(case["remoteCloseCode"]))
       f.write('<tr id="stats_row"><td>remoteCloseReason</td><td>%s</td></tr>' % case["remoteCloseReason"])
       f.write('</table>')
       
