@@ -301,7 +301,7 @@ class WebSocketProtocol(protocol.Protocol):
             self.remoteCloseCode = code
             self.remoteCloseReason = reason
          self.wasClean = True
-         self.failConnection()
+         self.failConnection(failedByMe = True, forceClientDisconnect = False)
       else:
          #self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
          self.sendCloseFrame(code)
@@ -310,7 +310,7 @@ class WebSocketProtocol(protocol.Protocol):
             self.remoteCloseReason = reason
             self.localCloseCode = code
          self.wasClean = True
-         self.failConnection(failedByMe = False)
+         self.failConnection(failedByMe = False, forceClientDisconnect = False)
    
    def onClose(self):
       """
@@ -318,7 +318,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       pass
 
-   def failConnection(self, failedByMe = True):
+   def failConnection(self, failedByMe = True, forceClientDisconnect = True):
       """
       Fails the websocket connection unless it has already been closed. 
       If we are the server, drops the TCP connection and sets appropriate state. If we are the client 
@@ -328,7 +328,7 @@ class WebSocketProtocol(protocol.Protocol):
          return
       self.failedByMe = failedByMe
       self.state = WebSocketProtocol.STATE_CLOSED
-      if self.isServer or failedByMe:
+      if self.isServer or forceClientDisconnect:
          self.droppedByMe = True
          self.transport.loseConnection()
          self.onClose()
@@ -1039,7 +1039,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.closeAlreadySent = True
       self.failedByMe = True
       # TODO: set a timer here
-      reactor.callLater(1, self.failConnection)
+      reactor.callLater(0.4, self.failConnection)
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
       """
