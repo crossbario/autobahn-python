@@ -148,6 +148,9 @@ from case6_4_5 import *
 
 from case6_x_x import *
 
+from case7_1 import *
+from case7_2 import *
+
 from case9_1_1 import *
 from case9_1_2 import *
 from case9_1_3 import *
@@ -216,6 +219,7 @@ Cases += [Case6_4_4]
 Cases += [Case6_4_5]
 Cases.extend(Case6_X_X)
 CaseSubCategories.update(Case6_X_X_CaseSubCategories)
+Cases += [Case7_1, Case7_2]
 Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]

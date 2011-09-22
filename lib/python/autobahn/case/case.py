@@ -74,6 +74,12 @@ class Case:
       self.finishWhenDone()
 
    def onClose(self):
+      pass
+
+   def compare(self, obj1, obj2):
+      return pickle.dumps(obj1) == pickle.dumps(obj2)
+
+   def onConnectionLost(self, failedByMe):
       # check if we passed the test
       for e in self.expected:
          if self.compare(self.received, self.expected[e]):
@@ -97,12 +103,6 @@ class Case:
       else:
          self.behaviorClose = Case.OK
          self.resultClose = "Connection was properly closed"
-
-   def compare(self, obj1, obj2):
-      return pickle.dumps(obj1) == pickle.dumps(obj2)
-
-   def onConnectionLost(self, failedByMe):
-      pass
 
    def finishWhenDone(self):
       # if we match at least one expected outcome check if we are supposed to 

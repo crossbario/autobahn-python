@@ -319,6 +319,8 @@ class WebSocketProtocol(protocol.Protocol):
       pass
 
    def failConnection(self, failedByMe = True):
+      if self.state == WebSocketProtocol.STATE_CLOSED:
+         return
       self.failedByMe = failedByMe
       self.droppedByMe = True
       self.state = WebSocketProtocol.STATE_CLOSED
@@ -375,6 +377,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       This is called by Twisted framework when a TCP connection was lost.
       """
+      if self.state == WebSocketProtocol.STATE_CLOSED:
+         return
       self.state = WebSocketProtocol.STATE_CLOSED
       self.onClose()
 

@@ -53,5 +53,3 @@ class Case9_4_1(Case):
       self.p.createWirelog = True
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
 
-   def onConnectionLost(self, failedByMe):
-      pass
