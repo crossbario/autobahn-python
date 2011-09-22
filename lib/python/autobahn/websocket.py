@@ -319,15 +319,19 @@ class WebSocketProtocol(protocol.Protocol):
       pass
 
    def failConnection(self, failedByMe = True):
+      """
+      Fails the websocket connection unless it has already been closed. 
+      If we are the server, drops the TCP connection and sets appropriate state. If we are the client 
+      TCP is not dropped unless the failedByMe flag is set
+      """
       if self.state == WebSocketProtocol.STATE_CLOSED:
          return
       self.failedByMe = failedByMe
-      self.droppedByMe = True
       self.state = WebSocketProtocol.STATE_CLOSED
-      if failedByMe and not self.isServer:
+      if self.isServer or failedByMe:
+         self.droppedByMe = True
          self.transport.loseConnection()
          self.onClose()
-
 
    def protocolViolation(self, reason):
       if self.debug:
@@ -1035,7 +1039,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.closeAlreadySent = True
       self.failedByMe = True
       # TODO: set a timer here
-      self.killAfter(1)
+      reactor.callLater(1, self.failConnection)
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
       """
