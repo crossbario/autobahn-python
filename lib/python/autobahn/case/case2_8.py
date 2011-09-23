@@ -20,11 +20,15 @@ from case import Case
 
 class Case2_8(Case):
 
-   DESCRIPTION = """Send unsolicited pong with payload. Verify nothing is received."""
+   DESCRIPTION = """Send unsolicited pong with payload. Verify nothing is received. Clean close with normal code."""
 
    EXPECTATION = """Nothing."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("failedByMe", True)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 10, payload = "unsolicited pong payload")
-      self.p.killAfter(1)
+      self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
+      self.p.closeAfter(1)
+      
+      

@@ -18,15 +18,19 @@
 
 from case import Case
 
-class Case3_5(Case):
+class Case7_2(Case):
 
-   DESCRIPTION = """Send small binary message with <b>RSV = 5</b>."""
+   DESCRIPTION = """Send ping after close"""
 
-   EXPECTATION = """The connection is failed immediately, since RSV must be 0."""
+   EXPECTATION = """Receive echo'ed text message. Clean close with normal code."""
 
    def onOpen(self):
-      payload = "\x00\xff\xfe\xfd\xfc\xfb\x00\xff"
-      self.expected[Case.OK] = []
-      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
-      self.p.sendFrame(opcode = 2, payload = payload, rsv = 5)
+      payload = "Hello World!"
+      self.expected[Case.OK] = [("message", payload, False)]      
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.p.sendFrame(opcode = 1, payload = payload)
+      #self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL);
+      #self.p.sendFrame(opcode = 9)
       self.p.killAfter(1)
+
+      

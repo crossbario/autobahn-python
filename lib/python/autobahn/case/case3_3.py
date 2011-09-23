@@ -26,8 +26,9 @@ class Case3_3(Case):
 
    def onOpen(self):
       payload = "Hello, world!"
-      self.expected[Case.OK] = [("message", payload, False), ("failedByMe", False)]
-      self.expected[Case.NON_STRICT] = [("failedByMe", False)]
+      self.expected[Case.OK] = [("message", payload, False)]
+      self.expected[Case.NON_STRICT] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 1, payload = payload, sync = True)
       self.p.sendFrame(opcode = 1, payload = payload, rsv = 3, sync = True)
       self.p.sendFrame(opcode = 9, sync = True)

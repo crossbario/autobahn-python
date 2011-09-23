@@ -26,8 +26,9 @@ class Case5_15(Case):
 
    def onOpen(self):
       fragments = ["fragment1", "fragment2", "fragment3", "fragment4"]
-      self.expected[Case.OK] = [("message", ''.join(fragments[:2]), False), ("failedByMe", False)]
-      self.expected[Case.NON_STRICT] = [("failedByMe", False)]
+      self.expected[Case.OK] = [("message", ''.join(fragments[:2]), False)]
+      self.expected[Case.NON_STRICT] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0])
       self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1])
       self.p.sendFrame(opcode = 0, fin = False, payload = fragments[2])

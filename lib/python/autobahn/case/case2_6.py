@@ -22,10 +22,11 @@ class Case2_6(Case):
 
    DESCRIPTION = """Send ping with binary payload of 125 octets, send in octet-wise chops."""
 
-   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping. Implementations must be TCP clean."""
+   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping. Implementations must be TCP clean. Clean close with normal code."""
 
    def onOpen(self):
       payload = "\xfe" * 125
-      self.expected[Case.OK] = [("pong", payload), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", payload)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 9, payload = payload, chopsize = 1)
-      self.p.killAfter(2)
+      self.p.closeAfter(2)

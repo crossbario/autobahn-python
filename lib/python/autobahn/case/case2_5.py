@@ -22,10 +22,11 @@ class Case2_5(Case):
 
    DESCRIPTION = """Send ping with binary payload of 126 octets."""
 
-   EXPECTATION = """Connection is failed immediately, since control frames are only allowed to have payload up to and including 125 octets.."""
+   EXPECTATION = """Connection is failed immediately (1002/Protocol Error), since control frames are only allowed to have payload up to and including 125 octets.."""
 
    def onOpen(self):
       payload = "\xfe" * 126
-      self.expected[Case.OK] = [("failedByMe", False)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 9, payload = payload)
       self.p.killAfter(1)

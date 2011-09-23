@@ -22,10 +22,11 @@ class Case1_2_2(Case):
 
    DESCRIPTION = """Send binary message message with payload of length 125."""
 
-   EXPECTATION = """Receive echo'ed binary message (with payload as sent)."""
+   EXPECTATION = """Receive echo'ed binary message (with payload as sent). Clean close with normal code."""
 
    def onOpen(self):
       payload = "\xfe" * 125
-      self.expected[Case.OK] = [("message", payload, True), ("failedByMe", True)]
+      self.expected[Case.OK] = [("message", payload, True)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 2, payload = payload)
       self.p.killAfter(1)

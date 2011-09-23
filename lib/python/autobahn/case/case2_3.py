@@ -22,10 +22,12 @@ class Case2_3(Case):
 
    DESCRIPTION = """Send ping with small binary (non UTF-8) payload."""
 
-   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping."""
+   EXPECTATION = """Pong with payload echo'ed is sent in reply to Ping. Clean close with normal code."""
 
    def onOpen(self):
       payload = "\x00\xff\xfe\xfd\xfc\xfb\x00\xff"
-      self.expected[Case.OK] = [("pong", payload), ("failedByMe", True)]
+      
+      self.expected[Case.OK] = [("pong", payload)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 9, payload = payload)
-      self.p.killAfter(1)
+      self.p.closeAfter(1)

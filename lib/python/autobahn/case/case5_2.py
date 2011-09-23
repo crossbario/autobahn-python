@@ -25,7 +25,8 @@ class Case5_2(Case):
    EXPECTATION = """Connection is failed immediately, since control message MUST NOT be fragmented."""
 
    def onOpen(self):
-      self.expected[Case.OK] = [("failedByMe", False)]
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
       self.p.sendFrame(opcode = 10, fin = False, payload = "fragment1")
       self.p.sendFrame(opcode = 0, fin = True, payload = "fragment2")
       self.p.killAfter(1)

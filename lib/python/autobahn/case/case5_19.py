@@ -39,7 +39,8 @@ class Case5_19(Case):
       self.fragments = ["fragment1", "fragment2", "fragment3", "fragment4", "fragment5"]
       self.pings = ["pongme 1!", "pongme 2!"]
 
-      self.expected[Case.OK] = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments), False), ("failedByMe", True)]
+      self.expected[Case.OK] = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments), False)]
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
 
       self.p.sendFrame(opcode = 1, fin = False, payload = self.fragments[0], sync = self.sync)
       self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[1], sync = self.sync)
@@ -53,4 +54,4 @@ class Case5_19(Case):
       self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[3], sync = self.sync)
       self.p.sendFrame(opcode = 9, fin = True, payload = self.pings[1], sync = self.sync)
       self.p.sendFrame(opcode = 0, fin = True, payload = self.fragments[4], sync = self.sync)
-      self.p.killAfter(1)
+      self.p.closeAfter(1)
