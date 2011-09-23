@@ -182,18 +182,44 @@ class FuzzingProtocol:
          WebSocketProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
 
 
-   def continueLater(self, delay, fun):
-      self.wirelog.append(("CT", delay))
-      reactor.callLater(delay, fun)
+   def executeContinueLater(self, fun, tag):
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         self.wirelog.append(("CTE", tag))
+         fun()
+      else:
+         pass # connection already gone
+
+
+   def continueLater(self, delay, fun, tag = None):
+      self.wirelog.append(("CT", delay, tag))
+      reactor.callLater(delay, self.executeContinueLater, fun, tag)
+
+
+   def executeKillAfter(self):
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         self.wirelog.append(("KLE"))
+         self.failConnection()
+      else:
+         pass # connection already gone
 
 
    def killAfter(self, delay):
       self.wirelog.append(("KL", delay))
-      reactor.callLater(delay, self.failConnection)
+      reactor.callLater(delay, self.executeKillAfter)
+
+
+   def executeCloseAfter(self):
+      if self.state != WebSocketProtocol.STATE_CLOSED:
+         self.wirelog.append(("TIE"))
+         self.sendClose()
+      else:
+         pass # connection already gone
+
 
    def closeAfter(self, delay):
       self.wirelog.append(("TI", delay))
-      reactor.callLater(delay, self.sendClose)
+      reactor.callLater(delay, self.executeCloseAfter)
+
 
    def onOpen(self):
 
@@ -251,7 +277,6 @@ class FuzzingProtocol:
          self.sendClose()
 
       elif self.path == "/getCaseCount":
-         print "XXXX", len(self.factory.specCases)
          self.sendMessage(json.dumps(len(self.factory.specCases)))
          self.sendClose()
 
@@ -930,7 +955,7 @@ class FuzzingFactory:
             else:
                css_class = "wirelog_tx_frame"
 
-         elif t[0] in ["CT", "KL", "TI"]:
+         elif t[0] in ["CT", "CTE", "KL", "LKE", "TI", "TIE"]:
             pass
 
          else:
@@ -959,13 +984,22 @@ class FuzzingFactory:
                   f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
 
          elif t[0] == "CT":
-            f.write('<pre class="wirelog_delay">%03d DELAY %f sec</pre>' % (i, t[1]))
+            f.write('<pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>' % (i, t[1], t[2]))
+
+         elif t[0] == "CTE":
+            f.write('<pre class="wirelog_delay">%03d DELAY TIMEOUT on TAG %s</pre>' % (i, t[1]))
 
          elif t[0] == "KL":
-            f.write('<pre class="wirelog_kill_after">%03d KILL AFTER %f sec</pre>' % (i, t[1]))
+            f.write('<pre class="wirelog_kill_after">%03d FAIL CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+
+         elif t[0] == "KLE":
+            f.write('<pre class="wirelog_kill_after">%03d FAILING CONNECTION</pre>' % (i))
 
          elif t[0] == "TI":
-            f.write('<pre class="wirelog_kill_after">%03d TIME OUT %f sec</pre>' % (i, t[1]))
+            f.write('<pre class="wirelog_kill_after">%03d CLOSE CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+
+         elif t[0] == "TIE":
+            f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
 
          else:
             raise Exception("logic error")
@@ -973,9 +1007,9 @@ class FuzzingFactory:
          i += 1
 
       if case["droppedByMe"]:
-         f.write('<pre class="wirelog_tcp_closed_by_me">%03d TCP CLOSED BY ME</pre>' % i)
+         f.write('<pre class="wirelog_tcp_closed_by_me">%03d TCP DROPPED BY ME</pre>' % i)
       else:
-         f.write('<pre class="wirelog_tcp_closed_by_peer">%03d TCP CLOSED BY PEER</pre>' % i)
+         f.write('<pre class="wirelog_tcp_closed_by_peer">%03d TCP DROPPED BY PEER</pre>' % i)
       f.write('</div>')
 
       f.write("</body></html>")
@@ -1035,7 +1069,7 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
          print "Updating reports, requested by peer %s" % connectionRequest.peerstr
 
       elif connectionRequest.path == "/getCaseCount":
-         print "YYYY"
+         pass
 
       else:
          print "Entering direct command mode for peer %s" % connectionRequest.peerstr

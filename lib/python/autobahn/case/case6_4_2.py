@@ -36,12 +36,12 @@ class Case6_4_2(Case6_3_1):
       self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
 
       self.p.sendFrame(opcode = 1, fin = False, payload = self.PAYLOAD[:12])
-      self.p.continueLater(1, self.part2)
+      self.p.continueLater(1, self.part2, "A")
 
    def part2(self):
       self.received.append(("timeout", "A"))
       self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD[12])
-      self.p.continueLater(1, self.part3)
+      self.p.continueLater(1, self.part3, "B")
 
    def part3(self):
       self.received.append(("timeout", "B"))
