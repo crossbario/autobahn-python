@@ -167,7 +167,7 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when initial WebSockets handshake was completed. Now you may send messages.
       Default implementation does nothing. Override in derived class.
       """
-      if self.debug:
+      if self.debugCodePaths:
          log.msg("WebSocketProtocol.onOpen")
 
 
@@ -295,7 +295,7 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: None or close reason (sent by peer) (when present, a status code MUST have been also be present).
       :type reason: str
       """
-      if self.debug:
+      if self.debugCodePaths:
          s = "WebSocketProtocol.onClose:\n"
          s += "wasClean=%s\n" % wasClean
          s += "code=%s\n" % code
@@ -323,7 +323,7 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: None or close reason (when present, a status code MUST have been also be present).
       :type reason: str
       """
-      if self.debug:
+      if self.debugCodePaths:
          log.msg("WebSocketProtocol.onCloseFrame")
 
       self.remoteCloseCode = code
@@ -377,13 +377,13 @@ class WebSocketProtocol(protocol.Protocol):
       So we drop the connection, but set self.wasClean = False.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("onServerConnectionDropTimeout")
          self.wasClean = False
          self.wasNotCleanReason = "server did not drop TCP connection (in time)"
          self.dropConnection()
       else:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("skipping onServerConnectionDropTimeout since connection is already closed")
 
 
@@ -394,13 +394,13 @@ class WebSocketProtocol(protocol.Protocol):
       So we drop the connection, but set self.wasClean = False.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("onCloseHandshakeTimeout fired")
          self.wasClean = False
          self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
          self.dropConnection()
       else:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("skipping onCloseHandshakeTimeout since connection is already closed")
 
 
@@ -409,13 +409,13 @@ class WebSocketProtocol(protocol.Protocol):
       Drop the underlying TCP connection.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("dropping connection")
          self.droppedByMe = True
          self.state = WebSocketProtocol.STATE_CLOSED
          self.transport.loseConnection()
       else:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("skipping dropConnection since connection is already closed")
 
 
@@ -424,7 +424,7 @@ class WebSocketProtocol(protocol.Protocol):
       Fails the WebSockets connection.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("Failing connection : %s - %s" % (code, reason))
          self.failedByMe = True
          if self.failByDrop:
@@ -434,9 +434,13 @@ class WebSocketProtocol(protocol.Protocol):
             self.dropConnection()
          else:
             ## perform WebSockets closing handshake
-            self.sendClose(code = code, reason = reason, isReply = False)
+            if self.state != WebSocketProtocol.STATE_CLOSING:
+               self.sendClose(code = code, reason = reason, isReply = False)
+            else:
+               if self.debugCodePaths:
+                  log.msg("skipping failConnection since connection is already closing")
       else:
-         if self.debug:
+         if self.debugCodePaths:
             log.msg("skipping failConnection since connection is already closed")
 
 
@@ -449,7 +453,7 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       :returns: bool -- True, when any further processing should be discontinued.
       """
-      if self.debug:
+      if self.debugCodePaths:
          log.msg("Protocol violation : %s" % reason)
       self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
       if self.failByDrop:
@@ -466,7 +470,8 @@ class WebSocketProtocol(protocol.Protocol):
       and handed over to a Protocol instance (an instance of this class).
       """
       self.debug = self.factory.debug
-      self.transport.setTcpNoDelay(True)
+      self.debugCodePaths = getattr(self.factory, "debugCodepaths", self.factory.debug)
+      self.transport.setTcpNoDelay(getattr(self.factory, "tcpNoDelay", True))
       self.peer = self.transport.getPeer()
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
       self.state = WebSocketProtocol.STATE_CONNECTING
@@ -661,7 +666,7 @@ class WebSocketProtocol(protocol.Protocol):
             self.logTxOctets(e[0], e[1])
             self.transport.write(e[0])
          else:
-            if self.debug:
+            if self.debugCodePaths:
                log.msg("skipped delayed write, since connection is closed")
          # we need to reenter the reactor to make the latter
          # reenter the OS network stack, so that octets
@@ -1163,11 +1168,12 @@ class WebSocketProtocol(protocol.Protocol):
       :type reason: str
       """
       if self.state == WebSocketProtocol.STATE_CLOSING:
-         if self.debug:
-            log.msg("ignoring sendClose since connection already closing")
+         if self.debugCodePaths:
+            log.msg("ignoring sendClose since connection is closing")
 
       elif self.state == WebSocketProtocol.STATE_CLOSED:
-         raise Exception("connection closed")
+         if self.debugCodePaths:
+            log.msg("ignoring sendClose since connection already closed")
 
       elif self.state == WebSocketProtocol.STATE_CONNECTING:
          raise Exception("cannot close a connection not yet connected")
@@ -1715,7 +1721,9 @@ class WebSocketServerFactory(protocol.ServerFactory):
                 failByDrop = True,
                 echoCloseCodeReason = False,
                 closeHandshakeTimeout = 1,
-                debug = False):
+                tcpNoDelay = True,
+                debug = False,
+                debugCodePaths = False):
       """
       Create instance of WebSocket server factory.
 
@@ -1733,10 +1741,15 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type echoCloseCodeReason: bool
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
       :type closeHandshakeTimeout: float
+      :param tcpNoDelay: TCP NODELAY socket option.
+      :type tcpNoDelay: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
+      :param debugCodePaths: Debug code paths mode (false/true).
+      :type debugCodePaths: bool
       """
       self.debug = debug
+      self.debugCodePaths = debugCodePaths
 
       if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
          raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
@@ -1753,6 +1766,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       self.failByDrop = failByDrop
       self.echoCloseCodeReason = echoCloseCodeReason
       self.closeHandshakeTimeout = closeHandshakeTimeout
+      self.tcpNoDelay = tcpNoDelay
 
    def startFactory(self):
       pass
@@ -1972,7 +1986,9 @@ class WebSocketClientFactory(protocol.ClientFactory):
                 echoCloseCodeReason = False,
                 serverConnectionDropTimeout = 1,
                 closeHandshakeTimeout = 1,
-                debug = False):
+                tcpNoDelay = True,
+                debug = False,
+                debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
@@ -2000,10 +2016,15 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type serverConnectionDropTimeout: float
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
       :type closeHandshakeTimeout: float
+      :param tcpNoDelay: TCP NODELAY socket option.
+      :type tcpNoDelay: bool
       :param debug: Debug mode (false/true).
       :type debug: bool
+      :param debugCodePaths: Debug code paths mode (false/true).
+      :type debugCodePaths: bool
       """
       self.debug = debug
+      self.debugCodePaths = debugCodePaths
 
       if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
          raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
@@ -2025,6 +2046,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       self.echoCloseCodeReason = echoCloseCodeReason
       self.serverConnectionDropTimeout = serverConnectionDropTimeout
       self.closeHandshakeTimeout = closeHandshakeTimeout
+      self.tcpNoDelay = tcpNoDelay
 
       ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
       random.seed()
