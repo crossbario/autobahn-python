@@ -562,6 +562,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       self.state = WebSocketProtocol.STATE_CLOSED
       if not self.wasClean:
+         if not self.droppedByMe and self.wasNotCleanReason is None:
+            self.wasNotCleanReason = "peer failed the WS connection by dropping the TCP"
          self.onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
       else:
          if self.closedByMe:

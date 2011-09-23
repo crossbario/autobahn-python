@@ -28,12 +28,28 @@ import pkg_resources
 from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
-from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, caseIdtoIdTuple, caseIdTupletoId
+from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
 
 
 def getUtcNow():
    now = datetime.datetime.utcnow()
    return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def parseSpecCases(spec):
+   specCases = []
+   for c in spec["cases"]:
+      if c.find('*') >= 0:
+         s = c.replace('.', '\.').replace('*', '.*')
+         p = re.compile(s)
+         t = []
+         for x in CasesIndices.keys():
+            if p.match(x):
+               t.append(caseIdtoIdTuple(x))
+         for h in sorted(t):
+            specCases.append(caseIdTupletoId(h))
+      else:
+         specCases.append(c)
+   return specCases
 
 
 class FuzzingProtocol:
@@ -235,7 +251,8 @@ class FuzzingProtocol:
          self.sendClose()
 
       elif self.path == "/getCaseCount":
-         self.sendMessage(json.dumps(len(Cases)))
+         print "XXXX", len(self.factory.specCases)
+         self.sendMessage(json.dumps(len(self.factory.specCases)))
          self.sendClose()
 
       else:
@@ -998,8 +1015,8 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
             raise Exception("invalid test case ID %s" % connectionRequest.params["case"][0])
 
       if self.case:
-         if self.case >= 1 and self.case <= len(Cases):
-            self.Case = Cases[self.case - 1]
+         if self.case >= 1 and self.case <= len(self.factory.specCases):
+            self.Case = CasesById[self.factory.specCases[self.case - 1]]
             self.runCase = self.Case(self)
          else:
             raise Exception("case %s not found" % self.case)
@@ -1018,7 +1035,7 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
          print "Updating reports, requested by peer %s" % connectionRequest.peerstr
 
       elif connectionRequest.path == "/getCaseCount":
-         pass
+         print "YYYY"
 
       else:
          print "Entering direct command mode for peer %s" % connectionRequest.peerstr
@@ -1032,9 +1049,16 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   def __init__(self, debug = False, outdir = "reports/clients"):
+   def __init__(self, spec, debug = False, outdir = "reports/clients"):
+
       WebSocketServerFactory.__init__(self, debug = debug)
       FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+
+      self.spec = spec
+      self.specCases = parseSpecCases(self.spec)
+      print "Autobahn WebSockets Fuzzing Server"
+      print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
+      print "Cases = %s" % str(self.specCases)
 
 
 class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
@@ -1066,20 +1090,12 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
 
       self.spec = spec
-      self.specCases = []
-      for c in self.spec["cases"]:
-         if c.find('*') >= 0:
-            s = c.replace('.', '\.').replace('*', '.*')
-            p = re.compile(s)
-            t = []
-            for x in CasesIndices.keys():
-               if p.match(x):
-                  t.append(caseIdtoIdTuple(x))
-            for h in sorted(t):
-               self.specCases.append(caseIdTupletoId(h))
-         else:
-            self.specCases.append(c)
+      self.specCases = parseSpecCases(self.spec)
+      print "Autobahn WebSockets Fuzzing Client"
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
+      print "Cases = %s" % str(self.specCases)
+      print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + x["port"] for x in spec["servers"]])
+
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():

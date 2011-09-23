@@ -256,3 +256,10 @@ i = 1
 for c in Cases:
    CasesIndices[caseClasstoId(c)] = i
    i += 1
+
+## Index:
+## "1.2.3" => Case1_2_3
+##
+CasesById = {}
+for c in Cases:
+   CasesById[caseClasstoId(c)] = c
