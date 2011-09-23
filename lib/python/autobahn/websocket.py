@@ -444,10 +444,20 @@ class WebSocketProtocol(protocol.Protocol):
    def protocolViolation(self, reason):
       """
       Fired when a WebSockets protocol violation/error occurs.
+
+      :param reason: Protocol violation that was encountered (human readable).
+      :type reason: str
+      :returns: bool -- True, when any further processing should be discontinued.
       """
       if self.debug:
          log.msg("Protocol violation : %s" % reason)
       self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
+      if self.failByDrop:
+         return True
+      else:
+         ## if we don't immediately drop the TCP, we need to skip the invalid frame
+         ## to continue to later receive the closing handshake reply
+         return False
 
 
    def connectionMade(self):
@@ -704,8 +714,6 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       if self.current_frame is None:
 
-         #buffered_len = len(self.data)
-
          ## need minimum of 2 octets to for new frame
          ##
          if buffered_len >= 2:
@@ -727,14 +735,14 @@ class WebSocketProtocol(protocol.Protocol):
             ## the semantics of RSV has been negotiated
             ##
             if frame_rsv != 0:
-               self.protocolViolation("RSV != 0 and no extension negotiated")
-               return False
+               if self.protocolViolation("RSV != 0 and no extension negotiated"):
+                  return False
 
             ## all client-to-server frames MUST be masked
             ##
             if self.isServer and self.requireMaskedClientFrames and not frame_masked:
-               self.protocolViolation("unmasked client to server frame")
-               return False
+               if self.protocolViolation("unmasked client to server frame"):
+                  return False
 
             ## check frame
             ##
@@ -743,47 +751,47 @@ class WebSocketProtocol(protocol.Protocol):
                ## control frames MUST NOT be fragmented
                ##
                if not frame_fin:
-                  self.protocolViolation("fragmented control frame")
-                  return False
+                  if self.protocolViolation("fragmented control frame"):
+                     return False
 
                ## control frames MUST have payload 125 octets or less
                ##
                if frame_payload_len1 > 125:
-                  self.protocolViolation("control frame with payload length > 125 octets")
-                  return False
+                  if self.protocolViolation("control frame with payload length > 125 octets"):
+                     return False
 
                ## check for reserved control frame opcodes
                ##
                if frame_opcode not in [8, 9, 10]:
-                  self.protocolViolation("control frame using reserved opcode %d" % frame_opcode)
-                  return False
+                  if self.protocolViolation("control frame using reserved opcode %d" % frame_opcode):
+                     return False
 
                ## close frame : if there is a body, the first two bytes of the body MUST be a 2-byte
                ## unsigned integer (in network byte order) representing a status code
                ##
                if frame_opcode == 8 and frame_payload_len1 == 1:
-                  self.protocolViolation("received close control frame with payload len 1")
-                  return False
+                  if self.protocolViolation("received close control frame with payload len 1"):
+                     return False
 
             else: # data frame
 
                ## check for reserved data frame opcodes
                ##
                if frame_opcode not in [0, 1, 2]:
-                  self.protocolViolation("data frame using reserved opcode %d" % frame_opcode)
-                  return False
+                  if self.protocolViolation("data frame using reserved opcode %d" % frame_opcode):
+                     return False
 
                ## check opcode vs message fragmentation state 1/2
                ##
                if not self.inside_message and frame_opcode == 0:
-                  self.protocolViolation("received continuation data frame outside fragmented message")
-                  return False
+                  if self.protocolViolation("received continuation data frame outside fragmented message"):
+                     return False
 
                ## check opcode vs message fragmentation state 2/2
                ##
                if self.inside_message and frame_opcode != 0:
-                  self.protocolViolation("received non-continuation data frame while inside fragmented message")
-                  return False
+                  if self.protocolViolation("received non-continuation data frame while inside fragmented message"):
+                     return False
 
             ## compute complete header length
             ##
@@ -813,17 +821,17 @@ class WebSocketProtocol(protocol.Protocol):
                if frame_payload_len1 == 126:
                   frame_payload_len = struct.unpack("!H", self.data[i:i+2])[0]
                   if frame_payload_len < 126:
-                     self.protocolViolation("invalid data frame length (not using minimal length encoding)")
-                     return False
+                     if self.protocolViolation("invalid data frame length (not using minimal length encoding)"):
+                        return False
                   i += 2
                elif frame_payload_len1 == 127:
                   frame_payload_len = struct.unpack("!Q", self.data[i:i+8])[0]
                   if frame_payload_len > 0x7FFFFFFFFFFFFFFF: # 2**63
-                     self.protocolViolation("invalid data frame length (>2^63)")
-                     return False
+                     if self.protocolViolation("invalid data frame length (>2^63)"):
+                        return False
                   if frame_payload_len < 65536:
-                     self.protocolViolation("invalid data frame length (not using minimal length encoding)")
-                     return False
+                     if self.protocolViolation("invalid data frame length (not using minimal length encoding)"):
+                        return False
                   i += 8
                else:
                   frame_payload_len = frame_payload_len1
@@ -932,8 +940,8 @@ class WebSocketProtocol(protocol.Protocol):
          if self.utf8validateIncomingCurrentMessage:
             self.utf8validateLast = self.utf8validator.validate(payload)
             if not self.utf8validateLast[0]:
-               self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3])
-               return False
+               if self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
+                  return False
 
          self.onMessageFrameData(payload)
 
@@ -946,8 +954,8 @@ class WebSocketProtocol(protocol.Protocol):
          if self.current_frame.fin:
             if self.utf8validateIncomingCurrentMessage:
                if not self.utf8validateLast[1]:
-                  self.protocolViolation("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3])
-                  return False
+                  if self.protocolViolation("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
+                     return False
             self.onMessageEnd()
             self.inside_message = False
       self.current_frame = None
@@ -982,8 +990,8 @@ class WebSocketProtocol(protocol.Protocol):
                try:
                   reason = unicode(payload[2:], 'utf8')
                except UnicodeDecodeError:
-                  self.protocolViolation("received non-UTF-8 payload as close frame reason")
-                  return False
+                  if self.protocolViolation("received non-UTF-8 payload as close frame reason"):
+                     return False
 
          self.onCloseFrame(code, reason)
 
@@ -998,7 +1006,9 @@ class WebSocketProtocol(protocol.Protocol):
          self.onPong(payload)
 
       else:
-         raise Exception("logic error")
+         ## we might arrive here, when protocolViolation
+         ## wants us to continue anyway
+         pass
 
       return True
 
@@ -1097,7 +1107,7 @@ class WebSocketProtocol(protocol.Protocol):
       :type payload: str
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       if payload:
          l = len(payload)
          if l > 125:
@@ -1116,7 +1126,7 @@ class WebSocketProtocol(protocol.Protocol):
       :type payload: str
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       if payload:
          l = len(payload)
          if l > 125:
@@ -1205,7 +1215,7 @@ class WebSocketProtocol(protocol.Protocol):
       :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
@@ -1232,7 +1242,7 @@ class WebSocketProtocol(protocol.Protocol):
       :type mask: str
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       ## check if sending state is valid for this method
       ##
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
@@ -1319,7 +1329,7 @@ class WebSocketProtocol(protocol.Protocol):
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
@@ -1373,7 +1383,7 @@ class WebSocketProtocol(protocol.Protocol):
       begin a new message before sending again.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
@@ -1387,7 +1397,7 @@ class WebSocketProtocol(protocol.Protocol):
       When a message has begun, send a complete message frame in one go.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       self.beginMessageFrame(len(payload), reserved, mask)
       self.sendMessageFrameData(payload, sync)
 
@@ -1401,7 +1411,7 @@ class WebSocketProtocol(protocol.Protocol):
       be split up into frames with payload <= the payload_frag_size given.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
-         raise Exception("connection not open")
+         return
       ## (initial) frame opcode
       ##
       if binary:
