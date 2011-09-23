@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys
+import sys, json
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.web.server import Site
@@ -27,9 +27,10 @@ from autobahn.fuzzing import FuzzingServerFactory
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
+   spec = json.loads(open("fuzzing_server_spec.json").read())
 
    ## fuzzing server
-   fuzzer = FuzzingServerFactory(debug = False, outdir = "reports/clients")
+   fuzzer = FuzzingServerFactory(spec, debug = False, outdir = "reports/clients")
    #fuzzer.requireMaskedClientFrames = False
    #fuzzer.utf8validateIncoming = False
    fuzzer.failByDrop = False

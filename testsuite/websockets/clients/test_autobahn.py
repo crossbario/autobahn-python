@@ -27,11 +27,17 @@ from autobahn.case import Cases, CaseCategories, caseClasstoId
 class WebSocketTestClientProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
-      if self.factory.currentCaseId <= self.factory.endCaseId:
-         print "Running test case ID %s as user agent %s on peer %s" % (caseClasstoId(Cases[self.factory.currentCaseId - 1]), self.factory.agent, self.peerstr)
+      if self.factory.endCaseId is None:
+         print "Getting case count .."
+      elif self.factory.currentCaseId <= self.factory.endCaseId:
+         print "Running test case %d/%d as user agent %s on peer %s" % (self.factory.currentCaseId, self.factory.endCaseId, self.factory.agent, self.peerstr)
 
    def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+      if self.factory.endCaseId is None:
+         self.factory.endCaseId = int(msg)
+         print "Ok, will run %d cases" % self.factory.endCaseId
+      else:
+         self.sendMessage(msg, binary)
 
 
 class WebSocketTestClientFactory(WebSocketClientFactory):
@@ -41,13 +47,12 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
    def __init__(self, debug):
       WebSocketClientFactory.__init__(self, debug = debug)
 
-      self.startCaseId = 1;
-      self.endCaseId = len(Cases);
-      self.currentCaseId = self.startCaseId
+      self.endCaseId = None
+      self.currentCaseId = 0
 
       self.updateReports = True
       self.agent = "AutobahnClient/%s" % pkg_resources.get_distribution("autobahn").version
-      self.path = "/runCase?case=%d&agent=%s" % (self.currentCaseId, self.agent)
+      self.path = "/getCaseCount"
 
    def clientConnectionLost(self, connector, reason):
       self.currentCaseId += 1
