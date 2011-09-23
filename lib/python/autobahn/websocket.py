@@ -381,6 +381,7 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("onServerConnectionDropTimeout")
          self.wasClean = False
          self.wasNotCleanReason = "server did not drop TCP connection (in time)"
+         self.wasServerConnectionDropTimeout = True
          self.dropConnection()
       else:
          if self.debugCodePaths:
@@ -398,6 +399,7 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("onCloseHandshakeTimeout fired")
          self.wasClean = False
          self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
+         self.wasCloseHandshakeTimeout = True
          self.dropConnection()
       else:
          if self.debugCodePaths:
@@ -497,6 +499,14 @@ class WebSocketProtocol(protocol.Protocol):
 
       # When self.wasClean = False, the reason (what happened)
       self.wasNotCleanReason = None
+
+      # When we are a client, and we expected the server to drop the TCP, but that
+      # didn't happen in time, this gets True
+      self.wasServerConnectionDropTimeout = False
+
+      # When we initiated a closing handshake, but the peer did not respond in
+      # time, this gets True
+      self.wasCloseHandshakeTimeout = False
 
       # The close code I sent in close frame (if any)
       self.localCloseCode = None
