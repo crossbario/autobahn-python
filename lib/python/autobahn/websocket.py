@@ -381,6 +381,7 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("onServerConnectionDropTimeout")
          self.wasClean = False
          self.wasNotCleanReason = "server did not drop TCP connection (in time)"
+         self.wasServerConnectionDropTimeout = True
          self.dropConnection()
       else:
          if self.debugCodePaths:
@@ -398,6 +399,7 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("onCloseHandshakeTimeout fired")
          self.wasClean = False
          self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
+         self.wasCloseHandshakeTimeout = True
          self.dropConnection()
       else:
          if self.debugCodePaths:
@@ -464,6 +466,26 @@ class WebSocketProtocol(protocol.Protocol):
          return False
 
 
+   def invalidPayload(self, reason):
+      """
+      Fired when invalid payload is encountered. Currently, this only happens
+      for text message when payload is invalid UTF-8.
+
+      :param reason: What was invalid for the payload (human readable).
+      :type reason: str
+      :returns: bool -- True, when any further processing should be discontinued.
+      """
+      if self.debugCodePaths:
+         log.msg("Invalid payload : %s" % reason)
+      self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, reason)
+      if self.failByDrop:
+         return True
+      else:
+         ## if we don't immediately drop the TCP, we need to skip the invalid frame
+         ## to continue to later receive the closing handshake reply
+         return False
+
+
    def connectionMade(self):
       """
       This is called by Twisted framework when a new TCP connection has been established
@@ -497,6 +519,14 @@ class WebSocketProtocol(protocol.Protocol):
 
       # When self.wasClean = False, the reason (what happened)
       self.wasNotCleanReason = None
+
+      # When we are a client, and we expected the server to drop the TCP, but that
+      # didn't happen in time, this gets True
+      self.wasServerConnectionDropTimeout = False
+
+      # When we initiated a closing handshake, but the peer did not respond in
+      # time, this gets True
+      self.wasCloseHandshakeTimeout = False
 
       # The close code I sent in close frame (if any)
       self.localCloseCode = None
@@ -945,7 +975,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.utf8validateIncomingCurrentMessage:
             self.utf8validateLast = self.utf8validator.validate(payload)
             if not self.utf8validateLast[0]:
-               if self.protocolViolation("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
+               if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                   return False
 
          self.onMessageFrameData(payload)
@@ -959,7 +989,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.current_frame.fin:
             if self.utf8validateIncomingCurrentMessage:
                if not self.utf8validateLast[1]:
-                  if self.protocolViolation("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
+                  if self.invalidPayload("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
                      return False
             self.onMessageEnd()
             self.inside_message = False
@@ -995,7 +1025,7 @@ class WebSocketProtocol(protocol.Protocol):
                try:
                   reason = unicode(payload[2:], 'utf8')
                except UnicodeDecodeError:
-                  if self.protocolViolation("received non-UTF-8 payload as close frame reason"):
+                  if self.invalidPayload("received non-UTF-8 payload as close frame reason"):
                      return False
 
          self.onCloseFrame(code, reason)
