@@ -645,7 +645,7 @@ class FuzzingFactory:
    def logCase(self, caseResults):
 
       agent = caseResults["agent"]
-      case = caseResults["case"]
+      case = caseResults["id"]
 
       ## index by agent->case
       ##
@@ -672,8 +672,8 @@ class FuzzingFactory:
       self.createMasterReport(self.outdir)
 
       for agentId in self.agents:
-         for caseNo in self.agents[agentId]:
-            self.createAgentCaseReport(agentId, caseNo, self.outdir)
+         for caseId in self.agents[agentId]:
+            self.createAgentCaseReport(agentId, caseId, self.outdir)
 
 
    def cleanForFilename(self, str):
@@ -683,8 +683,8 @@ class FuzzingFactory:
       return s2
 
 
-   def makeAgentCaseReportFilename(self, agentId, caseNo):
-      c = (caseClasstoId(Cases[caseNo - 1])).replace('.', '_')
+   def makeAgentCaseReportFilename(self, agentId, caseId):
+      c = caseId.replace('.', '_')
       return self.cleanForFilename(agentId) + "_case_" + c + ".html"
 
 
@@ -709,13 +709,12 @@ class FuzzingFactory:
       ##
       agentList = sorted(self.agents.keys())
 
-      ## create list of case indexes order by case ID
+      ## create list ordered list of case Ids
       ##
       cl = []
-      i = 1
       for c in Cases:
-         cl.append((caseClasstoIdTuple(c) , i))
-         i += 1
+         t = caseClasstoIdTuple(c)
+         cl.append((t, caseIdTupletoId(t)))
       cl = sorted(cl)
       caseList = []
       for c in cl:
@@ -724,11 +723,8 @@ class FuzzingFactory:
       lastCaseCategory = None
       lastCaseSubCategory = None
 
-      for caseNo in caseList:
+      for caseId in caseList:
 
-         ## Case ID and category
-         ##
-         caseId = caseClasstoId(Cases[caseNo - 1])
          caseCategoryIndex = caseId.split('.')[0]
          caseCategory = CaseCategories.get(caseCategoryIndex, "Misc")
          caseSubCategoryIndex = '.'.join(caseId.split('.')[:2])
@@ -751,16 +747,16 @@ class FuzzingFactory:
             lastCaseSubCategory = caseSubCategory
 
          f.write('<tr id="agent_case_result_row">')
-         f.write('<td id="case"><a href="#case_desc_%d">Case %s</a></td>' % (caseNo, caseId))
+         f.write('<td id="case"><a href="#case_desc_%s">Case %s</a></td>' % (caseId.replace('.', '_'), caseId))
 
          ## Agent/Case Result
          ##
          for agentId in agentList:
-            if self.agents[agentId].has_key(caseNo):
+            if self.agents[agentId].has_key(caseId):
 
-               case = self.agents[agentId][caseNo]
+               case = self.agents[agentId][caseId]
 
-               agent_case_report_file = self.makeAgentCaseReportFilename(agentId, caseNo)
+               agent_case_report_file = self.makeAgentCaseReportFilename(agentId, caseId)
 
                if case["behavior"] == Case.OK:
                   td_text = "Pass"
@@ -805,12 +801,12 @@ class FuzzingFactory:
 
       f.write('<h2>Test Cases</h2>')
 
-      for caseNo in caseList:
+      for caseId in caseList:
 
-         CCase = Cases[caseNo - 1]
+         CCase = CasesById[caseId]
 
-         f.write('<a name="case_desc_%d"></a>' % caseNo)
-         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseClasstoId(CCase))
+         f.write('<a name="case_desc_%s"></a>' % caseId.replace('.', '_'))
+         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseId)
          f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % CCase.DESCRIPTION)
          f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % CCase.EXPECTATION)
 
@@ -820,23 +816,23 @@ class FuzzingFactory:
       return report_filename
 
 
-   def createAgentCaseReport(self, agentId, caseNo, outdir):
+   def createAgentCaseReport(self, agentId, caseId, outdir):
 
       if not self.agents.has_key(agentId):
          raise Exception("no test data stored for agent %s" % agentId)
 
-      if not self.agents[agentId].has_key(caseNo):
-         raise Exception("no test data stored for case %s with agent %s" % (caseNo, agentId))
+      if not self.agents[agentId].has_key(caseId):
+         raise Exception("no test data stored for case %s with agent %s" % (caseId, agentId))
 
-      case = self.agents[agentId][caseNo]
+      case = self.agents[agentId][caseId]
 
-      report_filename = self.makeAgentCaseReportFilename(agentId, caseNo)
+      report_filename = self.makeAgentCaseReportFilename(agentId, caseId)
 
       f = open(os.path.join(outdir, report_filename), 'w')
 
       f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
 
-      f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], case["id"]))
+      f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], caseId))
 
       if case["behavior"] == Case.OK:
          f.write('<p id="case_ok"><b>Pass</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
