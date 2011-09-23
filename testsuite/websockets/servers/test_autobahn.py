@@ -32,6 +32,7 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    factory = WebSocketServerFactory(debug = False)
+   factory.failByDrop = False
    factory.protocol = WebSocketTestServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

@@ -32,6 +32,7 @@ if __name__ == '__main__':
    fuzzer = FuzzingServerFactory(debug = False, outdir = "reports/clients")
    #fuzzer.requireMaskedClientFrames = False
    #fuzzer.utf8validateIncoming = False
+   fuzzer.failByDrop = False
    reactor.listenTCP(9001, fuzzer)
 
    ## web server

@@ -26,5 +26,6 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    spec = json.loads(open("fuzzing_client_spec.json").read())
-   factory = FuzzingClientFactory(spec, debug = False, outdir = "reports/servers")
+   fuzzer = FuzzingClientFactory(spec, debug = False, outdir = "reports/servers")
+   fuzzer.failByDrop = False
    reactor.run()
