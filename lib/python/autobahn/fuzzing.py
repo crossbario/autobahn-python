@@ -90,7 +90,11 @@ class FuzzingProtocol:
                        "failedByMe": self.failedByMe,
                        "droppedByMe": self.droppedByMe,
                        "wasClean": self.wasClean,
+                       "wasNotCleanReason": self.wasNotCleanReason,
+                       "wasServerConnectionDropTimeout": self.wasServerConnectionDropTimeout,
+                       "wasCloseHandshakeTimeout": self.wasCloseHandshakeTimeout,
                        "localCloseCode": self.localCloseCode,
+                       "localCloseReason": self.localCloseReason,
                        "remoteCloseCode": self.remoteCloseCode,
                        "remoteCloseReason": self.remoteCloseReason,
                        "isServer": self.isServer,
@@ -170,7 +174,7 @@ class FuzzingProtocol:
    def killAfter(self, delay):
       self.wirelog.append(("KL", delay))
       reactor.callLater(delay, self.failConnection)
-   
+
    def closeAfter(self, delay):
       self.wirelog.append(("TI", delay))
       reactor.callLater(delay, self.sendClose)
@@ -222,7 +226,7 @@ class FuzzingProtocol:
             self.runCase = None
             self.sendClose()
             return
-            
+
          self.caseStart = time.time()
          self.runCase.onOpen()
 
@@ -441,13 +445,15 @@ class FuzzingFactory:
          font-size: 0.7em;
          color: #fff;
       }
-      
+
       td.close
       {
          width: 15px;
          padding: 6px;
+         font-size: 0.7em;
+         color: #fff;
       }
-      
+
       td.case_ok
       {
          background-color: #0a0;
@@ -726,7 +732,7 @@ class FuzzingFactory:
                else:
                   td_text = "Fail"
                   td_class = "case_failed"
-               
+
                if case["behaviorClose"] == Case.OK:
                   ctd_text = "%s" % str(case["remoteCloseCode"])
                   ctd_class = "case_ok"
@@ -816,10 +822,28 @@ class FuzzingFactory:
          if len(rs) > 400:
             rs = rs[:400] + " ..."
          f.write('<p id="case_result">Actual = %s</p>' % rs)
+
       f.write('<h2>Close Result</h2>')
       if case["resultClose"] and case["resultClose"] != "":
          f.write('<p id="close_result">%s: %s</p>' % (case["behaviorClose"],case["resultClose"]))
-      
+
+      f.write('<h2>Closing Behavior</h2>')
+      f.write('<table>')
+      f.write('<tr id="stats_header"><td>Key</td><td>Value</td></tr>')
+      f.write('<tr id="stats_row"><td>isServer</td><td>%s</td></tr>' % case["isServer"])
+      f.write('<tr id="stats_row"><td>closedByMe</td><td>%s</td></tr>' % case["closedByMe"])
+      f.write('<tr id="stats_row"><td>failedByMe</td><td>%s</td></tr>' % case["failedByMe"])
+      f.write('<tr id="stats_row"><td>droppedByMe</td><td>%s</td></tr>' % case["droppedByMe"])
+      f.write('<tr id="stats_row"><td>wasClean</td><td>%s</td></tr>' % case["wasClean"])
+      f.write('<tr id="stats_row"><td>wasNotCleanReason</td><td>%s</td></tr>' % case["wasNotCleanReason"])
+      f.write('<tr id="stats_row"><td>wasServerConnectionDropTimeout</td><td>%s</td></tr>' % case["wasServerConnectionDropTimeout"])
+      f.write('<tr id="stats_row"><td>wasCloseHandshakeTimeout</td><td>%s</td></tr>' % case["wasCloseHandshakeTimeout"])
+      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%s</td></tr>' % str(case["localCloseCode"]))
+      f.write('<tr id="stats_row"><td>localCloseReason</td><td>%s</td></tr>' % str(case["localCloseReason"]))
+      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%s</td></tr>' % str(case["remoteCloseCode"]))
+      f.write('<tr id="stats_row"><td>remoteCloseReason</td><td>%s</td></tr>' % case["remoteCloseReason"])
+      f.write('</table>')
+
       f.write('<h2>Statistics</h2>')
 
       if not case["createStats"]:
@@ -854,22 +878,7 @@ class FuzzingFactory:
                total_cnt += stats[s]
             f.write('<tr id="stats_total"><td>Total</td><td>%d</td></tr>' % (total_cnt))
             f.write('</table>')
-      
-      f.write('<h3>Close Stats</h3>')
-      f.write('<table>')
-      f.write('<tr id="stats_header"><td>Key</td><td>Value</td></tr>')
-      f.write('<tr id="stats_row"><td>isServer</td><td>%d</td></tr>' % case["isServer"])
-      f.write('<tr id="stats_row"><td>closedByMe</td><td>%d</td></tr>' % case["closedByMe"])
-      f.write('<tr id="stats_row"><td>failedByMe</td><td>%d</td></tr>' % case["failedByMe"])
-      f.write('<tr id="stats_row"><td>droppedByMe</td><td>%d</td></tr>' % case["droppedByMe"])
-      f.write('<tr id="stats_row"><td>wasClean</td><td>%d</td></tr>' % case["wasClean"])
-      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%s</td></tr>' % str(case["localCloseCode"]))
-      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%s</td></tr>' % str(case["remoteCloseCode"]))
-      f.write('<tr id="stats_row"><td>remoteCloseReason</td><td>%s</td></tr>' % case["remoteCloseReason"])
-      f.write('</table>')
-      
-      
-      
+
       f.write('<h2>Wire Log</h2>')
 
       if not case["createWirelog"]:
@@ -937,7 +946,7 @@ class FuzzingFactory:
 
          elif t[0] == "KL":
             f.write('<pre class="wirelog_kill_after">%03d KILL AFTER %f sec</pre>' % (i, t[1]))
-            
+
          elif t[0] == "TI":
             f.write('<pre class="wirelog_kill_after">%03d TIME OUT %f sec</pre>' % (i, t[1]))
 
