@@ -452,7 +452,7 @@ class FuzzingFactory:
          color: #eee;
       }
 
-      td#agent
+      td.agent
       {
          color: #fff;
          font-size: 1.0em;
@@ -471,7 +471,7 @@ class FuzzingFactory:
          font-size: 1.0em;
       }
 
-      td#case_subcategory
+      td.case_subcategory
       {
          color: #fff;
          background-color: #333;
@@ -631,7 +631,46 @@ class FuzzingFactory:
       pre.wirelog_tcp_closed_by_me {color: #fff; margin: 0; background-color: #008; padding: 2px;}
       pre.wirelog_tcp_closed_by_peer {color: #fff; margin: 0; background-color: #000; padding: 2px;}
    """
-
+   
+    ## CSS for Agent/Case detail report
+   ##
+   def js_master(self):
+      return """
+   
+   var isClosed = false;
+   
+   function closeHelper(display,colspan) {
+      // hide all close codes
+      var a = document.getElementsByClassName("close_hide");
+      for (var i in a) {
+         if (a[i].style) {
+            a[i].style.display = display;
+         }
+      }
+      
+      // set colspans
+      var a = document.getElementsByClassName("close_flex");
+      for (var i in a) {
+         a[i].colSpan = colspan;
+      }
+      
+      var a = document.getElementsByClassName("case_subcategory");
+      for (var i in a) {
+         a[i].colSpan = """+str(len(self.agents.keys()))+"""*colspan + 1;
+      }
+   }
+   
+   function toggleClose() {
+      if (window.isClosed == false) {
+         closeHelper("none",1);
+         window.isClosed = true;
+      } else {
+         closeHelper("table-cell",2);
+         window.isClosed = false;
+      }
+   }
+   
+   """
 
    def __init__(self, debug = False, outdir = "reports"):
       self.debug = debug
@@ -699,14 +738,16 @@ class FuzzingFactory:
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master))
+      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style><script language="javascript">%s</script></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master, self.js_master()))
 
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
       f.write('<p id="intro">Test summary report generated on</p>')
       f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
       f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
-
+      
+      f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
+      
       f.write('<h2>Test Results</h2>')
 
       f.write('<table id="agent_case_results">')
@@ -742,14 +783,14 @@ class FuzzingFactory:
             f.write('<tr id="case_category_row">')
             f.write('<td id="case_category">%s %s</td>' % (caseCategoryIndex, caseCategory))
             for agentId in agentList:
-               f.write('<td id="agent" colspan="2">%s</td>' % agentId)
+               f.write('<td class="agent close_flex" colspan="2">%s</td>' % agentId)
             f.write('</tr>')
             lastCaseCategory = caseCategory
             lastCaseSubCategory = None
 
          if caseSubCategory != lastCaseSubCategory:
             f.write('<tr id="case_subcategory_row">')
-            f.write('<td id="case_subcategory" colspan="%d">%s %s</td>' % (len(agentList)*2 + 1, caseSubCategoryIndex, caseSubCategory))
+            f.write('<td class="case_subcategory" colspan="%d">%s %s</td>' % (len(agentList)*2 + 1, caseSubCategoryIndex, caseSubCategory))
             lastCaseSubCategory = caseSubCategory
 
          f.write('<tr id="agent_case_result_row">')
@@ -794,12 +835,12 @@ class FuzzingFactory:
                   ctd_class = "case_failed"
 
                if case["reportTime"]:
-                  f.write('<td class="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td><td class="close %s">%s</td>' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
+                  f.write('<td class="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
                else:
-                  f.write('<td class="%s"><a href="%s">%s</a></td><td class="close %s">%s</td>' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
+                  f.write('<td class="%s"><a href="%s">%s</a></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
 
             else:
-               f.write('<td class="case_missing" colspan="2">Missing</td>')
+               f.write('<td class="case_missing close_flex" colspan="2">Missing</td>')
 
          f.write("</tr>")
 
@@ -1136,7 +1177,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       print "Autobahn WebSockets Fuzzing Client"
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
-      print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + x["port"] for x in spec["servers"]])
+      print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + str(x["port"]) for x in spec["servers"]])
 
       self.currServer = -1
       if self.nextServer():
