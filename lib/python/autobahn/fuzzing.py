@@ -140,6 +140,12 @@ class FuzzingProtocol:
       return dd
 
 
+   def enableWirelog(self, enable):
+      if enable != self.createWirelog:
+         self.createWirelog = enable
+         self.wirelog.append(("WLM", enable))
+
+
    def logRxOctets(self, data):
       if self.createStats:
          l = len(data)
@@ -951,7 +957,7 @@ class FuzzingFactory:
             else:
                css_class = "wirelog_tx_frame"
 
-         elif t[0] in ["CT", "CTE", "KL", "LKE", "TI", "TIE"]:
+         elif t[0] in ["CT", "CTE", "KL", "LKE", "TI", "TIE", "WLM"]:
             pass
 
          else:
@@ -978,6 +984,12 @@ class FuzzingFactory:
                   raise Exception("logic error")
                for ll in lines:
                   f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+
+         elif t[0] == "WLM":
+            if t[1]:
+               f.write('<pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>' % (i))
+            else:
+               f.write('<pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>' % (i))
 
          elif t[0] == "CT":
             f.write('<pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>' % (i, t[1], t[2]))
