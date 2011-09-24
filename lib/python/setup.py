@@ -20,15 +20,16 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
-   version = '0.4.2',
+   version = '0.4.3',
    description = 'Autobahn WebSockets',
    long_description = """Twisted-based WebSockets client and server framework.
 
-   Autobahn includes a light-weight, asynchronous RPC/PubSub over JSON-WebSockets
-   protocol implementation.
+   Autobahn provides a WebSockets (Hybi Draft 10-14) Twisted-based framework for
+   creating WebSockets clients and servers.
 
-   Also supplied is a fuzzing test framework which can test WebSockets client and
-   server implementations.""",
+   Autobahn also includes a light-weight, asynchronous RPC/PubSub over JSON-WebSockets
+   protocol implementation and a fuzzing test framework which can test WebSockets client
+   and server implementations.""",
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://www.tavendo.de/autobahn',
