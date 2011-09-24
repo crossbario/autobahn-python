@@ -1065,8 +1065,8 @@ class WebSocketProtocol(protocol.Protocol):
       of payload data to peers without having to construct potentially large messges
       themselfes.
       """
-      if payload_len:
-         if payload_len < 1 or len(payload) < 1:
+      if payload_len is not None:
+         if len(payload) < 1:
             raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
          l = payload_len
          pl = ''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
