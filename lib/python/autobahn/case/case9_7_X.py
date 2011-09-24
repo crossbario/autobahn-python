@@ -51,9 +51,9 @@ def sendOne(self):
    self.count += 1
 
 def onMessage(self, msg, binary):
-   if binary != self.BINARY: # or (msg is not None and len(msg) != self.LEN):
+   if binary != self.BINARY or len(msg) != self.LEN:
       self.behavior = Case.FAILED
-      self.result = "Echo'ed message type or length differs from what I sent."
+      self.result = "Echo'ed message type or length differs from what I sent (got binary = %s, payload length = %s)." % (binary, len(msg))
       self.p.enableWirelog(True)
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
    elif self.count < self.COUNT:
@@ -73,7 +73,7 @@ for b in [False, True]:
       else:
          mt = "text"
          cc = "Case9_7_%d"
-      DESCRIPTION = """Send %d %s messages of payload size %d to measure implementation/network RTT (round trip time) / latency.""" % (s[0], mt, s[1])
+      DESCRIPTION = """Send %d %s messages of payload size %d to measure implementation/network RTT (round trip time) / latency.""" % (s[1], mt, s[0])
       EXPECTATION = """Receive echo'ed %s messages (with payload as sent). Timeout case after %d secs.""" % (mt, s[2])
       C = type(cc % i,
                 (object, Case, ),
