@@ -216,7 +216,7 @@ class FuzzingProtocol:
 
    def executeCloseAfter(self):
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         self.wirelog.append(("TIE"))
+         self.wirelog.append(("TIE", ))
          self.sendClose()
       else:
          pass # connection already gone
@@ -1002,7 +1002,7 @@ class FuzzingFactory:
             pass
 
          else:
-            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0]), str(t))
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
 
          if t[0] in ["RO", "TO", "RF", "TF"]:
 
@@ -1051,7 +1051,7 @@ class FuzzingFactory:
             f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
 
          else:
-            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0]), str(t))
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
 
          i += 1
 
