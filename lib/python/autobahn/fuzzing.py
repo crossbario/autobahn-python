@@ -269,7 +269,7 @@ class FuzzingProtocol:
 
          ## FF does not yet implement binary messages
          ##
-         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
+         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9, 6), (9, 8)]:
             print "Skipping binary message test case for Firefox !!!"
             self.runCase = None
             self.sendClose()
@@ -631,14 +631,14 @@ class FuzzingFactory:
       pre.wirelog_tcp_closed_by_me {color: #fff; margin: 0; background-color: #008; padding: 2px;}
       pre.wirelog_tcp_closed_by_peer {color: #fff; margin: 0; background-color: #000; padding: 2px;}
    """
-   
+
     ## CSS for Agent/Case detail report
    ##
    def js_master(self):
       return """
-   
+
    var isClosed = false;
-   
+
    function closeHelper(display,colspan) {
       // hide all close codes
       var a = document.getElementsByClassName("close_hide");
@@ -647,19 +647,19 @@ class FuzzingFactory:
             a[i].style.display = display;
          }
       }
-      
+
       // set colspans
       var a = document.getElementsByClassName("close_flex");
       for (var i in a) {
          a[i].colSpan = colspan;
       }
-      
+
       var a = document.getElementsByClassName("case_subcategory");
       for (var i in a) {
          a[i].colSpan = """+str(len(self.agents.keys()))+"""*colspan + 1;
       }
    }
-   
+
    function toggleClose() {
       if (window.isClosed == false) {
          closeHelper("none",1);
@@ -669,7 +669,7 @@ class FuzzingFactory:
          window.isClosed = false;
       }
    }
-   
+
    """
 
    def __init__(self, debug = False, outdir = "reports"):
@@ -745,9 +745,9 @@ class FuzzingFactory:
       f.write('<p id="intro">Test summary report generated on</p>')
       f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
       f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
-      
+
       f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
-      
+
       f.write('<h2>Test Results</h2>')
 
       f.write('<table id="agent_case_results">')
@@ -998,11 +998,11 @@ class FuzzingFactory:
             else:
                css_class = "wirelog_tx_frame"
 
-         elif t[0] in ["CT", "CTE", "KL", "LKE", "TI", "TIE", "WLM"]:
+         elif t[0] in ["CT", "CTE", "KL", "KLE", "TI", "TIE", "WLM"]:
             pass
 
          else:
-            raise Exception("logic error")
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0]), str(t))
 
          if t[0] in ["RO", "TO", "RF", "TF"]:
 
@@ -1051,7 +1051,7 @@ class FuzzingFactory:
             f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
 
          else:
-            raise Exception("logic error")
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0]), str(t))
 
          i += 1
 

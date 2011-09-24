@@ -52,8 +52,8 @@ CaseSubCategories = {"1.1": "Text Messages",
                      "9.4": "Fragmented Binary Message (fixed size, increasing fragment size)",
                      "9.5": "Text Message (fixed size, increasing chop size)",
                      "9.6": "Binary Text Message (fixed size, increasing chop size)",
-                     "9.7": "Text Message Roundtrip Time (fixed number of 1000, increasing size)",
-                     "9.8": "Binary Message Roundtrip Time (fixed number of 1000, increasing size)"}
+                     "9.7": "Text Message Roundtrip Time (fixed number, increasing size)",
+                     "9.8": "Binary Message Roundtrip Time (fixed number, increasing size)"}
 
 ##
 ## Cases
