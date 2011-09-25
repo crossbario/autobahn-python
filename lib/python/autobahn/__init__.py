@@ -22,6 +22,7 @@ import fuzzing
 import case
 import prefixmap
 import utf8validator
+import util
 
 try:
    import pkg_resources

@@ -29,11 +29,8 @@ from twisted.internet import reactor
 from twisted.python import log
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
+from util import utcnow
 
-
-def getUtcNow():
-   now = datetime.datetime.utcnow()
-   return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def parseSpecCases(spec):
    specCases = []
@@ -743,7 +740,7 @@ class FuzzingFactory:
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
       f.write('<p id="intro">Test summary report generated on</p>')
-      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
+      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % utcnow())
       f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
 
       f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
@@ -1109,7 +1106,7 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
             raise Exception("need case to run")
          if not self.caseAgent:
             raise Exception("need agent to run case")
-         self.caseStarted = getUtcNow()
+         self.caseStarted = utcnow()
          print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, connectionRequest.peerstr)
 
       elif connectionRequest.path == "/updateReports":
@@ -1154,7 +1151,7 @@ class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
       self.case = self.factory.currentCaseIndex
       self.Case = Cases[self.case - 1]
       self.runCase = self.Case(self)
-      self.caseStarted = getUtcNow()
+      self.caseStarted = utcnow()
       print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
 
 

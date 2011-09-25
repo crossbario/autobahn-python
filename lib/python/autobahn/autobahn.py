@@ -25,6 +25,7 @@ from websocket import WebSocketProtocol, HttpException
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
 from prefixmap import PrefixMap
+from util import newid
 
 
 def exportRpc(arg = None):
@@ -120,23 +121,23 @@ class AutobahnProtocol:
    ERROR_DESC_GENERIC = "generic error"
 
 
-   def __init__(self, debug = False):
-      self.debug = debug
+   def connectionMade(self):
+      self.debug_autobahn = self.factory.debug_autobahn
       self.prefixes = PrefixMap()
 
 
-   def _newid(self):
-      return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
+   def connectionLost(self, reason):
+      pass
 
 
    def _protocolError(self, reason):
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("Closing Autobahn session on protocol violation : %s" % reason)
       #self.failConnection()
       self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Autobahn RPC/PubSub protocol violation ('%s')" % reason)
 
 
-   def shrinkUri(self, uri):
+   def shrink(self, uri):
       """
       Shrink given URI to CURIE according to current prefix mapping.
       If no appropriate prefix mapping is available, return original URI.
@@ -148,7 +149,7 @@ class AutobahnProtocol:
       return self.prefixes.shrink(uri)
 
 
-   def resolveCurie(self, curieOrUri):
+   def resolve(self, curieOrUri):
       """
       Resolve given CURIE/URI according to current prefix mapping or return
       None if cannot be resolved.
@@ -160,7 +161,7 @@ class AutobahnProtocol:
       return self.prefixes.resolve(curieOrUri)
 
 
-   def resolveCurieOrPass(self, curieOrUri):
+   def resolveOrPass(self, curieOrUri):
       """
       Resolve given CURIE/URI according to current prefix mapping or return
       string verbatim if cannot be resolved.
@@ -177,9 +178,9 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
    Server factory for Autobahn RPC/PubSub.
    """
 
-   def __init__(self, debug = False):
-      WebSocketServerProtocol.__init__(self, debug)
-      AutobahnProtocol.__init__(self)
+   def connectionMade(self):
+      WebSocketServerProtocol.connectionMade(self)
+      AutobahnProtocol.connectionMade(self)
 
       ## RPCs registered in this session (a URI map of (object, procedure)
       ## pairs for object methods or (None, procedure) for free standing procedures)
@@ -195,8 +196,10 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
 
 
    def connectionLost(self, reason):
-      WebSocketServerProtocol.connectionLost(self, reason)
       self.factory._unsubscribeClient(self)
+
+      AutobahnProtocol.connectionLost(self, reason)
+      WebSocketServerProtocol.connectionLost(self, reason)
 
 
    def _getPubHandler(self, topicuri):
@@ -236,7 +239,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       """
       self.pubHandlers[topicUri] = (None, None, prefixMatch)
       self.subHandlers[topicUri] = (None, None, prefixMatch)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered topic %s" % topicUri)
 
 
@@ -279,7 +282,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       self.subHandlers[uri] = (obj, proc, prefixMatch)
       if not self.pubHandlers.has_key(uri):
          self.pubHandlers[uri] = (None, None, False)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered subscription handler for topic %s" % uri)
 
 
@@ -299,7 +302,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       self.pubHandlers[uri] = (obj, proc, prefixMatch)
       if not self.subHandlers.has_key(uri):
          self.subHandlers[uri] = (None, None, False)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered publication handler for topic %s" % uri)
 
 
@@ -332,7 +335,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       :type proc: unbound method
       """
       self.procs[uri] = (obj, proc)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -346,7 +349,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       :type proc: function/procedure
       """
       self.procs[uri] = (None, proc)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -416,7 +419,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
    def onMessage(self, msg, binary):
       ## Internal method handling Autobahn messages received from client.
 
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("AutobahnServerProtocol message received : %s" % str(msg))
 
       if not binary:
@@ -462,13 +465,13 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                               if a:
                                  self.factory._subscribeClient(self, topicuri)
                            except:
-                              if self.debug:
+                              if self.debug_autobahn:
                                  log.msg("execption during topic subscription handler")
                      else:
-                        if self.debug:
+                        if self.debug_autobahn:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug:
+                     if self.debug_autobahn:
                         log.msg("no topic / subscription handler registered for %s" % topicuri)
 
                ## Unsubscribe Message
@@ -507,13 +510,13 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                               if e:
                                  self.factory._dispatchEvent(topicuri, e)
                            except:
-                              if self.debug:
+                              if self.debug_autobahn:
                                  log.msg("execption during topic publication handler")
                      else:
-                        if self.debug:
+                        if self.debug_autobahn:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug:
+                     if self.debug_autobahn:
                         log.msg("no topic / publication handler registered for %s" % topicuri)
 
                ## Define prefix to be used in CURIEs
@@ -540,10 +543,15 @@ class AutobahnServerFactory(WebSocketServerFactory):
 
    protocol = AutobahnServerProtocol
 
+   def __init__(self, debug = False, debug_autobahn = False):
+      WebSocketServerFactory.__init__(self, debug = debug)
+      self.debug_autobahn = debug_autobahn
+
+
    def _subscribeClient(self, proto, topicuri):
       ## Internal method called from proto to subscribe client for topic.
 
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicuri))
 
       if not self.subscriptions.has_key(topicuri):
@@ -557,12 +565,12 @@ class AutobahnServerFactory(WebSocketServerFactory):
       if topicuri:
          if self.subscriptions.has_key(topicuri):
             self.subscriptions[topicuri] = filter(lambda o: o != proto, self.subscriptions[topicuri])
-         if self.debug:
+         if self.debug_autobahn:
             log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicuri))
       else:
          for t in self.subscriptions:
             self.subscriptions[t] = filter(lambda o: o != proto, self.subscriptions[t])
-         if self.debug:
+         if self.debug_autobahn:
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
@@ -570,7 +578,7 @@ class AutobahnServerFactory(WebSocketServerFactory):
       ## Internal method called from proto to publish an received event
       ## to all peers subscribed to the event topic.
 
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("publish event %s for topicuri %s" % (str(event), topicuri))
 
       if self.subscriptions.has_key(topicuri):
@@ -587,13 +595,13 @@ class AutobahnServerFactory(WebSocketServerFactory):
 
 
    def startFactory(self):
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("AutobahnServerFactory starting")
       self.subscriptions = {}
 
 
    def stopFactory(self):
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("AutobahnServerFactory stopped")
 
 
@@ -602,11 +610,17 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
    Client protocol for Autobahn RPC/PubSub.
    """
 
-   def __init__(self, debug = False):
-      WebSocketClientProtocol.__init__(self, debug)
-      AutobahnProtocol.__init__(self)
+   def connectionMade(self):
+      WebSocketClientProtocol.connectionMade(self)
+      AutobahnProtocol.connectionMade(self)
+
       self.calls = {}
       self.subscriptions = {}
+
+
+   def connectionLost(self, reason):
+      AutobahnProtocol.connectionLost(self, reason)
+      WebSocketClientProtocol.connectionLost(self, reason)
 
 
    def onMessage(self, msg, binary):
@@ -671,7 +685,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
             else:
                raise Exception("logic error")
          else:
-            if self.debug:
+            if self.debug_autobahn:
                log.msg("callid not found for received call result/error message")
       elif msgtype == AutobahnProtocol.MESSAGE_TYPEID_EVENT:
          if len(obj) != 3:
@@ -707,7 +721,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
       procuri = args[0]
       while True:
-         callid = self._newid()
+         callid = newid()
          if not self.calls.has_key(callid):
             break
       d = Deferred()
@@ -812,3 +826,7 @@ class AutobahnClientFactory(WebSocketClientFactory):
    """
 
    protocol = AutobahnClientProtocol
+
+   def __init__(self, debug = False, debug_autobahn = False):
+      WebSocketClientFactory.__init__(self, debug = debug)
+      self.debug_autobahn = debug_autobahn
