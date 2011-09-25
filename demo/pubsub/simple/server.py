@@ -94,7 +94,7 @@ class SimpleServerProtocol(AutobahnServerProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnServerFactory(debug = False)
+   factory = AutobahnServerFactory(debug_autobahn = True)
    factory.protocol = SimpleServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()
