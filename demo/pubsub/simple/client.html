@@ -32,7 +32,7 @@
 
          function test()
          {
-            sess.publish("event:simple", {name: "foo", value: "bar", num: 23});
+            sess.publish("event:simple", {name: "foo", created: new Date(), num: 23, rand: Math.random()});
             sess.publish("event:simple-foobar", {name: "foo", value: "bar", num: 333});
             sess.publish("event:foobar1", {count: 42});
             sess.publish("event:foobar1", {count: -1});

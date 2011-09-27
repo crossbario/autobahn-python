@@ -1,3 +1,60 @@
+Common Tasks
+============
+
+1. Build Python Documentation
+-----------------------------
+
+1.1 Building the documentation
+..............................
+
+Requires Sphinx:
+
+   easy_install sphinx
+
+To build the documentation, do
+
+   cd doc/python
+   make html
+
+This will create the documentation under
+
+   doc/python/_build/html
+
+
+1.2 Deployment to Tavendo Web site
+..................................
+
+The generated contents of above folder then needs to
+be checked into the
+
+   wwwtavendo
+
+repository in this directory
+
+   tavendo/tavendo/static/autobahn/doc/python
+
+The repository change has to be pulled on the
+Web site production host www.tavendo.de
+
+
+2. Publishing to PyPi
+---------------------
+
+   cd lib/python
+
+The distribution has to be registered
+
+   python setup.py register
+
+Now build and upload the following build variants:
+
+   python setup.py sdist upload
+   python setup.py bdist_egg upload
+   python setup.py bdist_wininst upload
+
+
+
+
 Test Suite
 ==========
 

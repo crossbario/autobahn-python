@@ -586,6 +586,8 @@ class AutobahnServerFactory(WebSocketServerFactory):
             o = [AutobahnProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
             try:
                msg = json.dumps(o)
+               if self.debug_autobahn:
+                  log.msg("serialized event msg: " + str(msg))
             except:
                raise Exception("invalid type for event (not JSON serializable)")
             for proto in self.subscriptions[topicuri]:
