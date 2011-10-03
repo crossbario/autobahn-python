@@ -1510,12 +1510,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
    def connectionMade(self):
       self.isServer = True
       WebSocketProtocol.connectionMade(self)
+      self.factory.countConnections += 1
       if self.debug:
          log.msg("connection accepted from peer %s" % self.peerstr)
 
 
    def connectionLost(self, reason):
       WebSocketProtocol.connectionLost(self, reason)
+      self.factory.countConnections -= 1
       if self.debug:
          log.msg("connection from %s lost" % self.peerstr)
 
@@ -1800,8 +1802,23 @@ class WebSocketServerFactory(protocol.ServerFactory):
       self.closeHandshakeTimeout = closeHandshakeTimeout
       self.tcpNoDelay = tcpNoDelay
 
+      ## number of currently connected clients
+      ##
+      self.countConnections = 0
+
+
+   def getConnectionCount(self):
+      """
+      Get number of currently connected clients.
+
+      :returns int -- Number of currently connected clients.
+      """
+      return self.countConnections
+
+
    def startFactory(self):
       pass
+
 
    def stopFactory(self):
       pass
