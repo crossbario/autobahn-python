@@ -68,7 +68,7 @@ REQ = someone asked for it
 
   - REQ: Overview report gets too broad: maybe rotate agent labels in report 90° counterclock => css
 
-  - REQ: make NON-STRICT more green (yes, was asked by some project to do;)
+  - REQ: make NON-STRICT more green (yes, was asked by some project to do;) => td.case_almost
 
   - REQ: add notice at top of report overview, explaining diff. beetween PASS, NON-STRICT and FAIL
 
@@ -111,6 +111,8 @@ Misc Cases
 
   - server must fail for unmasked client frames
 
+  - sending a 2^63 frame.
+
 
 Closing Handshake Cases
 -----------------------
@@ -145,6 +147,10 @@ Closing Handshake Cases
     does the peer reply to those? does it time out on his close iniation and fail the connection?
 
   - when the fuzzer == server, test client timeout on drop TCP after close
+
+  - sending close codes 1005 and 1006 : isn't allowed.
+
+  - sending close codes <1000 >=5000 / 1004 is "reserved"
 
 
 Probably, we need to have a way to instruct the tested peer to iniate a
@@ -183,6 +189,8 @@ Core
 ====
 
 WebSocket Protocol
+
+  - changes for Hybi-16 .. see also: http://code.google.com/p/pywebsocket/wiki/WebSocketProtocolSpec
 
   - allow FIN = true on beginMessageFrame instead of endMessage
 
