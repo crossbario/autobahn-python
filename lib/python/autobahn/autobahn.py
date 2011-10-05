@@ -590,12 +590,15 @@ class AutobahnServerFactory(WebSocketServerFactory):
                   log.msg("serialized event msg: " + str(msg))
             except:
                raise Exception("invalid type for event (not JSON serializable)")
+            rc = 0
             for proto in self.subscriptions[topicuri]:
                if self.debug_autobahn:
                   log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
                proto.sendMessage(msg)
+               rc += 1
+            return rc
       else:
-         pass
+         return 0
 
 
    def startFactory(self):
