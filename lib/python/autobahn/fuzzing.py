@@ -24,9 +24,9 @@ import random
 import textwrap
 import os
 import re
-import pkg_resources
 from twisted.internet import reactor
 from twisted.python import log
+import autobahn
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
 from util import utcnow
@@ -1136,7 +1136,7 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
-      print "Autobahn WebSockets Fuzzing Server"
+      print "Autobahn WebSockets %s Fuzzing Server" % autobahn.version
       print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
       print "Cases = %s" % str(self.specCases)
 
@@ -1171,7 +1171,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
-      print "Autobahn WebSockets Fuzzing Client"
+      print "Autobahn WebSockets %s Fuzzing Client" % autobahn.version
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
       print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + str(x["port"]) for x in spec["servers"]])
@@ -1190,13 +1190,11 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
          ##
          s = self.spec["servers"][self.currServer]
 
-         autobahn_version = pkg_resources.get_distribution("autobahn").version
-
          ## agent (=server) string for reports
          ##
          self.agent = s.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
-            self.agent = "AutobahnServer/%s" % autobahn_version
+            self.agent = "AutobahnServer/%s" % autobahn.version
 
          ## used to establish TCP connection
          ##
@@ -1210,7 +1208,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
          self.origin = s.get("origin", None)
          self.subprotocols = s.get("subprotocols", [])
          self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
-         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn_version
+         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version
          return True
       else:
          return False

@@ -17,9 +17,9 @@
 ###############################################################################
 
 import sys
-import pkg_resources
 from twisted.python import log
 from twisted.internet import reactor
+import autobahn
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
 from autobahn.case import Cases, CaseCategories, caseClasstoId
 
@@ -51,7 +51,7 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
       self.currentCaseId = 0
 
       self.updateReports = True
-      self.agent = "AutobahnClient/%s" % pkg_resources.get_distribution("autobahn").version
+      self.agent = "AutobahnClient/%s" % autobahn.version
       self.path = "/getCaseCount"
 
    def clientConnectionLost(self, connector, reason):
