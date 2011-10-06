@@ -19,7 +19,7 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
-from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
 class Calc:
@@ -66,7 +66,7 @@ class Calc:
       return d
 
 
-class SimpleServerProtocol(AutobahnServerProtocol):
+class SimpleServerProtocol(WampServerProtocol):
    """
    Demonstrates creating a simple server with Autobahn WebSockets that
    responds to RPC calls.
@@ -86,7 +86,7 @@ class SimpleServerProtocol(AutobahnServerProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnServerFactory(debug = False)
+   factory = WampServerFactory(debug = False)
    factory.protocol = SimpleServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

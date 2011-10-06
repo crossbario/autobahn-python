@@ -17,7 +17,7 @@
 ###############################################################################
 
 import websocket
-import autobahn
+import wamp
 import fuzzing
 import case
 import prefixmap
