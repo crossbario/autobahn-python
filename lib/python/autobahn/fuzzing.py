@@ -200,7 +200,7 @@ class FuzzingProtocol:
 
    def executeKillAfter(self):
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         self.wirelog.append(("KLE"))
+         self.wirelog.append(("KLE", ))
          self.failConnection()
       else:
          pass # connection already gone
