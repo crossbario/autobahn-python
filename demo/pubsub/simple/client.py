@@ -20,10 +20,10 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
-from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
+from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
-class ClientProtocol(AutobahnClientProtocol):
+class MyClientProtocol(WampClientProtocol):
    """
    Demonstrates simple Publish & Subscribe (PubSub) with
    Autobahn WebSockets and Twisted Deferreds.
@@ -53,14 +53,14 @@ class ClientProtocol(AutobahnClientProtocol):
       self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
       self.publish("event:foobar-extended", {"name": "foo", "value": "bar", "num": 42})
       self.publish("event:foobar-limited", {"name": "foo", "value": "bar", "num": 23})
-      
+
       #self.done()
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnClientFactory(debug = False)
-   factory.protocol = ClientProtocol
+   factory = WampClientFactory(debug = False)
+   factory.protocol = MyClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

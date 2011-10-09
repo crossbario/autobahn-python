@@ -1,4 +1,4 @@
 {
-   "servers": [{"agent": "WebSocket++ snapshot", "hostname": "thor-websocket.zaphoyd.net", "port": 9002, "version": 13}],
-   "cases": ["1.*","2.*","3.*","4.*","5.*","6.*","7.*"]
+   "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000, "version": 13}],
+   "cases": ["*"]
 }

@@ -24,16 +24,13 @@ import random
 import textwrap
 import os
 import re
-import pkg_resources
 from twisted.internet import reactor
 from twisted.python import log
+import autobahn
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
+from util import utcnow
 
-
-def getUtcNow():
-   now = datetime.datetime.utcnow()
-   return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 def parseSpecCases(spec):
    specCases = []
@@ -140,6 +137,12 @@ class FuzzingProtocol:
       return dd
 
 
+   def enableWirelog(self, enable):
+      if enable != self.createWirelog:
+         self.createWirelog = enable
+         self.wirelog.append(("WLM", enable))
+
+
    def logRxOctets(self, data):
       if self.createStats:
          l = len(data)
@@ -210,7 +213,7 @@ class FuzzingProtocol:
 
    def executeCloseAfter(self):
       if self.state != WebSocketProtocol.STATE_CLOSED:
-         self.wirelog.append(("TIE"))
+         self.wirelog.append(("TIE", ))
          self.sendClose()
       else:
          pass # connection already gone
@@ -263,7 +266,7 @@ class FuzzingProtocol:
 
          ## FF does not yet implement binary messages
          ##
-         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9,6)]:
+         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9, 6), (9, 8)]:
             print "Skipping binary message test case for Firefox !!!"
             self.runCase = None
             self.sendClose()
@@ -625,14 +628,14 @@ class FuzzingFactory:
       pre.wirelog_tcp_closed_by_me {color: #fff; margin: 0; background-color: #008; padding: 2px;}
       pre.wirelog_tcp_closed_by_peer {color: #fff; margin: 0; background-color: #000; padding: 2px;}
    """
-   
+
     ## CSS for Agent/Case detail report
    ##
    def js_master(self):
       return """
-   
+
    var isClosed = false;
-   
+
    function closeHelper(display,colspan) {
       // hide all close codes
       var a = document.getElementsByClassName("close_hide");
@@ -641,19 +644,19 @@ class FuzzingFactory:
             a[i].style.display = display;
          }
       }
-      
+
       // set colspans
       var a = document.getElementsByClassName("close_flex");
       for (var i in a) {
          a[i].colSpan = colspan;
       }
-      
+
       var a = document.getElementsByClassName("case_subcategory");
       for (var i in a) {
          a[i].colSpan = """+str(len(self.agents.keys()))+"""*colspan + 1;
       }
    }
-   
+
    function toggleClose() {
       if (window.isClosed == false) {
          closeHelper("none",1);
@@ -663,7 +666,7 @@ class FuzzingFactory:
          window.isClosed = false;
       }
    }
-   
+
    """
 
    def __init__(self, debug = False, outdir = "reports"):
@@ -737,11 +740,11 @@ class FuzzingFactory:
       f.write('<h1>WebSockets Protocol Test Report</h1>')
 
       f.write('<p id="intro">Test summary report generated on</p>')
-      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % getUtcNow())
+      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % utcnow())
       f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
-      
+
       f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
-      
+
       f.write('<h2>Test Results</h2>')
 
       f.write('<table id="agent_case_results">')
@@ -992,11 +995,11 @@ class FuzzingFactory:
             else:
                css_class = "wirelog_tx_frame"
 
-         elif t[0] in ["CT", "CTE", "KL", "LKE", "TI", "TIE"]:
+         elif t[0] in ["CT", "CTE", "KL", "KLE", "TI", "TIE", "WLM"]:
             pass
 
          else:
-            raise Exception("logic error")
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
 
          if t[0] in ["RO", "TO", "RF", "TF"]:
 
@@ -1020,6 +1023,12 @@ class FuzzingFactory:
                for ll in lines:
                   f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
 
+         elif t[0] == "WLM":
+            if t[1]:
+               f.write('<pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>' % (i))
+            else:
+               f.write('<pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>' % (i))
+
          elif t[0] == "CT":
             f.write('<pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>' % (i, t[1], t[2]))
 
@@ -1039,7 +1048,7 @@ class FuzzingFactory:
             f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
 
          else:
-            raise Exception("logic error")
+            raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
 
          i += 1
 
@@ -1097,7 +1106,7 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
             raise Exception("need case to run")
          if not self.caseAgent:
             raise Exception("need agent to run case")
-         self.caseStarted = getUtcNow()
+         self.caseStarted = utcnow()
          print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, connectionRequest.peerstr)
 
       elif connectionRequest.path == "/updateReports":
@@ -1127,7 +1136,7 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
-      print "Autobahn WebSockets Fuzzing Server"
+      print "Autobahn WebSockets %s Fuzzing Server" % autobahn.version
       print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
       print "Cases = %s" % str(self.specCases)
 
@@ -1142,7 +1151,7 @@ class FuzzingClientProtocol(FuzzingProtocol, WebSocketClientProtocol):
       self.case = self.factory.currentCaseIndex
       self.Case = Cases[self.case - 1]
       self.runCase = self.Case(self)
-      self.caseStarted = getUtcNow()
+      self.caseStarted = utcnow()
       print "Running test case ID %s for agent %s from peer %s" % (caseClasstoId(self.Case), self.caseAgent, self.peerstr)
 
 
@@ -1162,7 +1171,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
-      print "Autobahn WebSockets Fuzzing Client"
+      print "Autobahn WebSockets %s Fuzzing Client" % autobahn.version
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
       print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + str(x["port"]) for x in spec["servers"]])
@@ -1181,13 +1190,11 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
          ##
          s = self.spec["servers"][self.currServer]
 
-         autobahn_version = pkg_resources.get_distribution("autobahn").version
-
          ## agent (=server) string for reports
          ##
          self.agent = s.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
-            self.agent = "AutobahnServer/%s" % autobahn_version
+            self.agent = "AutobahnServer/%s" % autobahn.version
 
          ## used to establish TCP connection
          ##
@@ -1201,7 +1208,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
          self.origin = s.get("origin", None)
          self.subprotocols = s.get("subprotocols", [])
          self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
-         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn_version
+         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version
          return True
       else:
          return False

@@ -25,6 +25,7 @@ from websocket import WebSocketProtocol, HttpException
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
 from prefixmap import PrefixMap
+from util import newid
 
 
 def exportRpc(arg = None):
@@ -63,9 +64,9 @@ def exportPub(arg, prefixMatch = False):
    return inner
 
 
-class AutobahnProtocol:
+class WampProtocol:
    """
-   Base protocol class for Autobahn RPC/PubSub.
+   Base protocol class for Wamp RPC/PubSub.
    """
 
    MESSAGE_TYPEID_NULL           = 0
@@ -120,23 +121,23 @@ class AutobahnProtocol:
    ERROR_DESC_GENERIC = "generic error"
 
 
-   def __init__(self, debug = False):
-      self.debug = debug
+   def connectionMade(self):
+      self.debug_autobahn = self.factory.debug_autobahn
       self.prefixes = PrefixMap()
 
 
-   def _newid(self):
-      return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
+   def connectionLost(self, reason):
+      pass
 
 
    def _protocolError(self, reason):
-      if self.debug:
-         log.msg("Closing Autobahn session on protocol violation : %s" % reason)
+      if self.debug_autobahn:
+         log.msg("Closing Wamp session on protocol violation : %s" % reason)
       #self.failConnection()
-      self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Autobahn RPC/PubSub protocol violation ('%s')" % reason)
+      self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Wamp RPC/PubSub protocol violation ('%s')" % reason)
 
 
-   def shrinkUri(self, uri):
+   def shrink(self, uri):
       """
       Shrink given URI to CURIE according to current prefix mapping.
       If no appropriate prefix mapping is available, return original URI.
@@ -148,7 +149,7 @@ class AutobahnProtocol:
       return self.prefixes.shrink(uri)
 
 
-   def resolveCurie(self, curieOrUri):
+   def resolve(self, curieOrUri):
       """
       Resolve given CURIE/URI according to current prefix mapping or return
       None if cannot be resolved.
@@ -160,7 +161,7 @@ class AutobahnProtocol:
       return self.prefixes.resolve(curieOrUri)
 
 
-   def resolveCurieOrPass(self, curieOrUri):
+   def resolveOrPass(self, curieOrUri):
       """
       Resolve given CURIE/URI according to current prefix mapping or return
       string verbatim if cannot be resolved.
@@ -172,14 +173,14 @@ class AutobahnProtocol:
       return self.prefixes.resolveOrPass(curieOrUri)
 
 
-class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
+class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
    """
-   Server factory for Autobahn RPC/PubSub.
+   Server factory for Wamp RPC/PubSub.
    """
 
-   def __init__(self, debug = False):
-      WebSocketServerProtocol.__init__(self, debug)
-      AutobahnProtocol.__init__(self)
+   def connectionMade(self):
+      WebSocketServerProtocol.connectionMade(self)
+      WampProtocol.connectionMade(self)
 
       ## RPCs registered in this session (a URI map of (object, procedure)
       ## pairs for object methods or (None, procedure) for free standing procedures)
@@ -195,8 +196,10 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
 
 
    def connectionLost(self, reason):
-      WebSocketServerProtocol.connectionLost(self, reason)
       self.factory._unsubscribeClient(self)
+
+      WampProtocol.connectionLost(self, reason)
+      WebSocketServerProtocol.connectionLost(self, reason)
 
 
    def _getPubHandler(self, topicuri):
@@ -236,7 +239,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       """
       self.pubHandlers[topicUri] = (None, None, prefixMatch)
       self.subHandlers[topicUri] = (None, None, prefixMatch)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered topic %s" % topicUri)
 
 
@@ -279,7 +282,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       self.subHandlers[uri] = (obj, proc, prefixMatch)
       if not self.pubHandlers.has_key(uri):
          self.pubHandlers[uri] = (None, None, False)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered subscription handler for topic %s" % uri)
 
 
@@ -299,7 +302,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       self.pubHandlers[uri] = (obj, proc, prefixMatch)
       if not self.subHandlers.has_key(uri):
          self.subHandlers[uri] = (None, None, False)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered publication handler for topic %s" % uri)
 
 
@@ -332,7 +335,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       :type proc: unbound method
       """
       self.procs[uri] = (obj, proc)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -346,7 +349,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       :type proc: function/procedure
       """
       self.procs[uri] = (None, proc)
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -379,7 +382,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
    def _sendCallResult(self, result, callid):
       ## Internal method for marshaling/sending an RPC success result.
 
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
+      msg = [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
       try:
          o = json.dumps(msg)
       except:
@@ -394,12 +397,12 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
       eargs = error.value.args
 
       if len(eargs) == 0:
-         erroruri = AutobahnProtocol.ERROR_URI_GENERIC
-         errordesc = AutobahnProtocol.ERROR_DESC_GENERIC
+         erroruri = WampProtocol.ERROR_URI_GENERIC
+         errordesc = WampProtocol.ERROR_DESC_GENERIC
       elif len(eargs) == 1:
          if type(eargs[0]) not in [str, unicode]:
             raise Exception("invalid type for exception description")
-         erroruri = AutobahnProtocol.ERROR_URI_GENERIC
+         erroruri = WampProtocol.ERROR_URI_GENERIC
          errordesc = eargs[0]
       else:
          if type(eargs[0]) not in [str, unicode]:
@@ -409,15 +412,15 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
          erroruri = eargs[0]
          errordesc = eargs[1]
 
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
+      msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
       self.sendMessage(json.dumps(msg))
 
 
    def onMessage(self, msg, binary):
-      ## Internal method handling Autobahn messages received from client.
+      ## Internal method handling Wamp messages received from client.
 
-      if self.debug:
-         log.msg("AutobahnServerProtocol message received : %s" % str(msg))
+      if self.debug_autobahn:
+         log.msg("WampServerProtocol message received : %s" % str(msg))
 
       if not binary:
          try:
@@ -426,7 +429,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
 
                ## Call Message
                ##
-               if obj[0] == AutobahnProtocol.MESSAGE_TYPEID_CALL:
+               if obj[0] == WampProtocol.MESSAGE_TYPEID_CALL:
                   callid = obj[1]
                   procuri = self.prefixes.resolveOrPass(obj[2])
                   arg = obj[3:]
@@ -436,7 +439,7 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
 
                ## Subscribe Message
                ##
-               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_SUBSCRIBE:
+               elif obj[0] == WampProtocol.MESSAGE_TYPEID_SUBSCRIBE:
                   topicuri = self.prefixes.resolveOrPass(obj[1])
                   h = self._getSubHandler(topicuri)
                   if h:
@@ -462,24 +465,24 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                               if a:
                                  self.factory._subscribeClient(self, topicuri)
                            except:
-                              if self.debug:
+                              if self.debug_autobahn:
                                  log.msg("execption during topic subscription handler")
                      else:
-                        if self.debug:
+                        if self.debug_autobahn:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug:
+                     if self.debug_autobahn:
                         log.msg("no topic / subscription handler registered for %s" % topicuri)
 
                ## Unsubscribe Message
                ##
-               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_UNSUBSCRIBE:
+               elif obj[0] == WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE:
                   topicuri = self.prefixes.resolveOrPass(obj[1])
                   self.factory._unsubscribeClient(self, topicuri)
 
                ## Publish Message
                ##
-               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_PUBLISH:
+               elif obj[0] == WampProtocol.MESSAGE_TYPEID_PUBLISH:
                   topicuri = self.prefixes.resolveOrPass(obj[1])
                   h = self._getPubHandler(topicuri)
                   if h:
@@ -507,18 +510,18 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
                               if e:
                                  self.factory._dispatchEvent(topicuri, e)
                            except:
-                              if self.debug:
+                              if self.debug_autobahn:
                                  log.msg("execption during topic publication handler")
                      else:
-                        if self.debug:
+                        if self.debug_autobahn:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug:
+                     if self.debug_autobahn:
                         log.msg("no topic / publication handler registered for %s" % topicuri)
 
                ## Define prefix to be used in CURIEs
                ##
-               elif obj[0] == AutobahnProtocol.MESSAGE_TYPEID_PREFIX:
+               elif obj[0] == WampProtocol.MESSAGE_TYPEID_PREFIX:
                   prefix = obj[1]
                   uri = obj[2]
                   self.prefixes.set(prefix, uri)
@@ -533,17 +536,22 @@ class AutobahnServerProtocol(WebSocketServerProtocol, AutobahnProtocol):
          log.msg("binary message")
 
 
-class AutobahnServerFactory(WebSocketServerFactory):
+class WampServerFactory(WebSocketServerFactory):
    """
-   Server factory for Autobahn RPC/PubSub.
+   Server factory for Wamp RPC/PubSub.
    """
 
-   protocol = AutobahnServerProtocol
+   protocol = WampServerProtocol
+
+   def __init__(self, debug = False, debug_autobahn = False):
+      WebSocketServerFactory.__init__(self, debug = debug)
+      self.debug_autobahn = debug_autobahn
+
 
    def _subscribeClient(self, proto, topicuri):
       ## Internal method called from proto to subscribe client for topic.
 
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicuri))
 
       if not self.subscriptions.has_key(topicuri):
@@ -557,12 +565,12 @@ class AutobahnServerFactory(WebSocketServerFactory):
       if topicuri:
          if self.subscriptions.has_key(topicuri):
             self.subscriptions[topicuri] = filter(lambda o: o != proto, self.subscriptions[topicuri])
-         if self.debug:
+         if self.debug_autobahn:
             log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicuri))
       else:
          for t in self.subscriptions:
             self.subscriptions[t] = filter(lambda o: o != proto, self.subscriptions[t])
-         if self.debug:
+         if self.debug_autobahn:
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
@@ -570,47 +578,60 @@ class AutobahnServerFactory(WebSocketServerFactory):
       ## Internal method called from proto to publish an received event
       ## to all peers subscribed to the event topic.
 
-      if self.debug:
+      if self.debug_autobahn:
          log.msg("publish event %s for topicuri %s" % (str(event), topicuri))
 
       if self.subscriptions.has_key(topicuri):
          if len(self.subscriptions[topicuri]) > 0:
-            o = [AutobahnProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
+            o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
             try:
                msg = json.dumps(o)
+               if self.debug_autobahn:
+                  log.msg("serialized event msg: " + str(msg))
             except:
                raise Exception("invalid type for event (not JSON serializable)")
+            rc = 0
             for proto in self.subscriptions[topicuri]:
+               if self.debug_autobahn:
+                  log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
                proto.sendMessage(msg)
+               rc += 1
+            return rc
       else:
-         pass
+         return 0
 
 
    def startFactory(self):
-      if self.debug:
-         log.msg("AutobahnServerFactory starting")
+      if self.debug_autobahn:
+         log.msg("WampServerFactory starting")
       self.subscriptions = {}
 
 
    def stopFactory(self):
-      if self.debug:
-         log.msg("AutobahnServerFactory stopped")
+      if self.debug_autobahn:
+         log.msg("WampServerFactory stopped")
 
 
-class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
+class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
    """
-   Client protocol for Autobahn RPC/PubSub.
+   Client protocol for Wamp RPC/PubSub.
    """
 
-   def __init__(self, debug = False):
-      WebSocketClientProtocol.__init__(self, debug)
-      AutobahnProtocol.__init__(self)
+   def connectionMade(self):
+      WebSocketClientProtocol.connectionMade(self)
+      WampProtocol.connectionMade(self)
+
       self.calls = {}
       self.subscriptions = {}
 
 
+   def connectionLost(self, reason):
+      WampProtocol.connectionLost(self, reason)
+      WebSocketClientProtocol.connectionLost(self, reason)
+
+
    def onMessage(self, msg, binary):
-      ## Internal method to handle received Autobahn messages.
+      ## Internal method to handle received Wamp messages.
 
       if binary:
          self._protocolError("binary message received")
@@ -634,10 +655,10 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
       msgtype = obj[0]
 
-      if msgtype not in [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR, AutobahnProtocol.MESSAGE_TYPEID_EVENT]:
+      if msgtype not in [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, WampProtocol.MESSAGE_TYPEID_CALL_ERROR, WampProtocol.MESSAGE_TYPEID_EVENT]:
          self._protocolError("invalid message type '%d'" % msgtype)
 
-      if msgtype in [AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT, AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR]:
+      if msgtype in [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, WampProtocol.MESSAGE_TYPEID_CALL_ERROR]:
          if len(obj) < 2:
             self._protocolError("call result/error message without callid")
             return
@@ -647,13 +668,13 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
          callid = str(obj[1])
          d = self.calls.pop(callid, None)
          if d:
-            if msgtype == AutobahnProtocol.MESSAGE_TYPEID_CALL_RESULT:
+            if msgtype == WampProtocol.MESSAGE_TYPEID_CALL_RESULT:
                if len(obj) != 3:
                   self._protocolError("call result message invalid length")
                   return
                result = obj[2]
                d.callback(result)
-            elif msgtype == AutobahnProtocol.MESSAGE_TYPEID_CALL_ERROR:
+            elif msgtype == WampProtocol.MESSAGE_TYPEID_CALL_ERROR:
                if len(obj) != 4:
                   self._protocolError("call error message invalid length")
                   return
@@ -671,9 +692,9 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
             else:
                raise Exception("logic error")
          else:
-            if self.debug:
+            if self.debug_autobahn:
                log.msg("callid not found for received call result/error message")
-      elif msgtype == AutobahnProtocol.MESSAGE_TYPEID_EVENT:
+      elif msgtype == WampProtocol.MESSAGE_TYPEID_EVENT:
          if len(obj) != 3:
             self._protocolError("event message invalid length")
             return
@@ -707,12 +728,12 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
       procuri = args[0]
       while True:
-         callid = self._newid()
+         callid = newid()
          if not self.calls.has_key(callid):
             break
       d = Deferred()
       self.calls[callid] = d
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_CALL, callid, procuri]
+      msg = [WampProtocol.MESSAGE_TYPEID_CALL, callid, procuri]
       msg.extend(args[1:])
 
       try:
@@ -746,7 +767,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
 
       self.prefixes.set(prefix, uri)
 
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_PREFIX, prefix, uri]
+      msg = [WampProtocol.MESSAGE_TYPEID_PREFIX, prefix, uri]
 
       self.sendMessage(json.dumps(msg))
 
@@ -766,7 +787,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
       if type(topicuri) not in [unicode, str]:
          raise Exception("invalid type for URI")
 
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event]
+      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event]
 
       try:
          o = json.dumps(msg)
@@ -786,7 +807,7 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
       """
       d = Deferred()
       self.subscriptions[self.prefixes.resolveOrPass(topicuri)] = d
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicuri]
+      msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicuri]
       o = json.dumps(msg)
       self.sendMessage(o)
       return d
@@ -800,15 +821,19 @@ class AutobahnClientProtocol(WebSocketClientProtocol, AutobahnProtocol):
       :type topicuri: str
       """
       del self.subscriptions[topicuri]
-      msg = [AutobahnProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicuri]
+      msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicuri]
       o = json.dumps(msg)
       self.sendMessage(o)
       return d
 
 
-class AutobahnClientFactory(WebSocketClientFactory):
+class WampClientFactory(WebSocketClientFactory):
    """
-   Client factory for Autobahn RPC/PubSub.
+   Client factory for Wamp RPC/PubSub.
    """
 
-   protocol = AutobahnClientProtocol
+   protocol = WampClientProtocol
+
+   def __init__(self, debug = False, debug_autobahn = False):
+      WebSocketClientFactory.__init__(self, debug = debug)
+      self.debug_autobahn = debug_autobahn

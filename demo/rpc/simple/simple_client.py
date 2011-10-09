@@ -20,10 +20,10 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
-from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
+from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
-class SimpleClientProtocol(AutobahnClientProtocol):
+class SimpleClientProtocol(WampClientProtocol):
    """
    Demonstrates simple Remote Procedure Calls (RPC) with
    Autobahn WebSockets and Twisted Deferreds.
@@ -66,7 +66,7 @@ class SimpleClientProtocol(AutobahnClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnClientFactory(debug = False)
+   factory = WampClientFactory(debug = False)
    factory.protocol = SimpleClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

@@ -19,10 +19,10 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
-from autobahn.autobahn import AutobahnClientFactory, AutobahnClientProtocol
+from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
-class KeyValueClientProtocol(AutobahnClientProtocol):
+class KeyValueClientProtocol(WampClientProtocol):
 
    def done(self, *args):
       self.sendClose()
@@ -42,7 +42,7 @@ class KeyValueClientProtocol(AutobahnClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnClientFactory(debug = False)
+   factory = WampClientFactory(debug = False)
    factory.protocol = KeyValueClientProtocol
    reactor.connectTCP("localhost", 9000, factory)
    reactor.run()

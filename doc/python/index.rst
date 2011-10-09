@@ -41,7 +41,7 @@ Contents
    websocketprotocol
    websocketclient
    websocketserver
-   autobahnprotocol
+   wamp
 
 
 Protocol Classes
@@ -50,8 +50,8 @@ Protocol Classes
 * :class:`autobahn.websocket.WebSocketProtocol`
 * :class:`autobahn.websocket.WebSocketClientProtocol`
 * :class:`autobahn.websocket.WebSocketServerProtocol`
-* :class:`autobahn.autobahn.AutobahnClientProtocol`
-* :class:`autobahn.autobahn.AutobahnServerProtocol`
+* :class:`autobahn.wamp.WampClientProtocol`
+* :class:`autobahn.wamp.WampServerProtocol`
 
 .. image:: protocolclasses.png
 
@@ -60,8 +60,8 @@ Factory Classes
 
 * :class:`autobahn.websocket.WebSocketClientFactory`
 * :class:`autobahn.websocket.WebSocketServerFactory`
-* :class:`autobahn.autobahn.AutobahnClientFactory`
-* :class:`autobahn.autobahn.AutobahnServerFactory`
+* :class:`autobahn.wamp.WampClientFactory`
+* :class:`autobahn.wamp.WampServerFactory`
 
 .. image:: factoryclasses.png
 

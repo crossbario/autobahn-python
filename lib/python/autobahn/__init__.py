@@ -16,16 +16,17 @@
 ##
 ###############################################################################
 
-import websocket
-import autobahn
-import fuzzing
-import case
-import prefixmap
-import utf8validator
-
 try:
    import pkg_resources
    version = pkg_resources.require("Autobahn")[0].version
 except:
-   ## i.e. no setuptools installed ..
-   version = None
+   ## i.e. no setuptools or no package installed ..
+   version = "?.?.?"
+
+import websocket
+import wamp
+import fuzzing
+import case
+import prefixmap
+import utf8validator
+import util

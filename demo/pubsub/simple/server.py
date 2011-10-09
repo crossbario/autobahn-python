@@ -19,10 +19,10 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
-from autobahn.autobahn import exportSub, exportPub, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.wamp import exportSub, exportPub, WampServerFactory, WampServerProtocol
 
 
-class TopicService:
+class MyTopicService:
 
    def __init__(self, allowedTopicIds):
       self.allowedTopicIds = allowedTopicIds
@@ -73,7 +73,7 @@ class TopicService:
          return None
 
 
-class SimpleServerProtocol(AutobahnServerProtocol):
+class MyServerProtocol(WampServerProtocol):
 
    def onConnect(self, connectionRequest):
 
@@ -87,14 +87,14 @@ class SimpleServerProtocol(AutobahnServerProtocol):
       #self.registerForPubSub("", True)
 
       ## register a topic handler to control topic subscriptions/publications
-      self.topicservice = TopicService([1, 3, 7])
+      self.topicservice = MyTopicService([1, 3, 7])
       self.registerHandlerForPubSub(self.topicservice, "http://example.com/event/")
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = AutobahnServerFactory(debug = False)
-   factory.protocol = SimpleServerProtocol
+   factory = WampServerFactory(debug_autobahn = True)
+   factory.protocol = MyServerProtocol
    reactor.listenTCP(9000, factory)
    reactor.run()

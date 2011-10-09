@@ -1065,8 +1065,8 @@ class WebSocketProtocol(protocol.Protocol):
       of payload data to peers without having to construct potentially large messges
       themselfes.
       """
-      if payload_len:
-         if payload_len < 1 or len(payload) < 1:
+      if payload_len is not None:
+         if len(payload) < 1:
             raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
          l = payload_len
          pl = ''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
@@ -1510,12 +1510,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
    def connectionMade(self):
       self.isServer = True
       WebSocketProtocol.connectionMade(self)
+      self.factory.countConnections += 1
       if self.debug:
          log.msg("connection accepted from peer %s" % self.peerstr)
 
 
    def connectionLost(self, reason):
       WebSocketProtocol.connectionLost(self, reason)
+      self.factory.countConnections -= 1
       if self.debug:
          log.msg("connection from %s lost" % self.peerstr)
 
@@ -1800,8 +1802,23 @@ class WebSocketServerFactory(protocol.ServerFactory):
       self.closeHandshakeTimeout = closeHandshakeTimeout
       self.tcpNoDelay = tcpNoDelay
 
+      ## number of currently connected clients
+      ##
+      self.countConnections = 0
+
+
+   def getConnectionCount(self):
+      """
+      Get number of currently connected clients.
+
+      :returns int -- Number of currently connected clients.
+      """
+      return self.countConnections
+
+
    def startFactory(self):
       pass
+
 
    def stopFactory(self):
       pass

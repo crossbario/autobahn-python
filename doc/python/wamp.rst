@@ -1,45 +1,45 @@
-Autobahn RPC/PubSub
-===================
+Autobahn WebSockets RPC/PubSub
+==============================
 
 RPC/PubSub Servers
 ------------------
 
-The classes :class:`autobahn.autobahn.AutobahnServerProtocol` and
-:class:`autobahn.autobahn.AutobahnServerFactory` are the base classes
-you derive from to implement Autobahn RPC/PubSub servers.
+The classes :class:`autobahn.wamp.WampServerProtocol` and
+:class:`autobahn.wamp.WampServerFactory` are the base classes
+you derive from to implement Autobahn WebSockets RPC/PubSub servers.
 
 
-.. autoclass:: autobahn.autobahn.AutobahnServerProtocol
+.. autoclass:: autobahn.wamp.WampServerProtocol
    :members: registerForRpc,
              registerMethodForRpc,
              registerProcedureForRpc
 
-.. autoclass:: autobahn.autobahn.AutobahnServerFactory
+.. autoclass:: autobahn.wamp.WampServerFactory
 
 
 RPC/PubSub Clients
 ------------------
 
-The classes :class:`autobahn.autobahn.AutobahnClientProtocol` and
-:class:`autobahn.autobahn.AutobahnClientFactory` are the base classes
-you derive from to implement Autobahn RPC/PubSub clients.
+The classes :class:`autobahn.wamp.WampClientProtocol` and
+:class:`autobahn.wamp.WampClientFactory` are the base classes
+you derive from to implement Autobahn WebSockets RPC/PubSub clients.
 
 
-.. autoclass:: autobahn.autobahn.AutobahnClientProtocol
+.. autoclass:: autobahn.wamp.WampClientProtocol
    :members: prefix,
              call,
              subscribe,
              unsubscribe,
              publish
 
-.. autoclass:: autobahn.autobahn.AutobahnClientFactory
+.. autoclass:: autobahn.wamp.WampClientFactory
 
 
 
 RPC/PubSub Protocol
 -------------------
 
-.. autoclass:: autobahn.autobahn.AutobahnProtocol
+.. autoclass:: autobahn.wamp.WampProtocol
    :members: MESSAGE_TYPEID_NULL,
              MESSAGE_TYPEID_PREFIX,
              MESSAGE_TYPEID_CALL,

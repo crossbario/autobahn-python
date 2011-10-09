@@ -19,7 +19,7 @@
 import sys, shelve
 from twisted.python import log
 from twisted.internet import reactor, defer
-from autobahn.autobahn import exportRpc, AutobahnServerFactory, AutobahnServerProtocol
+from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
 class KeyValue:
@@ -48,7 +48,7 @@ class KeyValue:
       return self.store.keys()
 
 
-class KeyValueServerProtocol(AutobahnServerProtocol):
+class KeyValueServerProtocol(WampServerProtocol):
    """
    Demonstrates creating a server with Autobahn WebSockets that provides
    a persistent key-value store which can we access via RPCs.
@@ -60,12 +60,12 @@ class KeyValueServerProtocol(AutobahnServerProtocol):
       self.registerForRpc(self.factory.keyvalue, "http://example.com/simple/keyvalue#")
 
 
-class KeyValueServerFactory(AutobahnServerFactory):
+class KeyValueServerFactory(WampServerFactory):
 
    protocol = KeyValueServerProtocol
 
    def __init__(self, debug = False):
-      AutobahnServerFactory.__init__(self, debug)
+      WampServerFactory.__init__(self, debug)
 
       ## the key-value store resides on the factory object, since it is to
       ## be shared among all client connections
