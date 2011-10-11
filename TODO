@@ -113,6 +113,14 @@ Misc Cases
 
   - sending a 2^63 frame.
 
+  - send frames having non-minimal payload length encoding
+
+
+Opening Handshake
+-----------------
+
+  - send handshake chopped up, followed by message frame
+
 
 Closing Handshake Cases
 -----------------------
