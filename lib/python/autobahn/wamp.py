@@ -353,6 +353,22 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered remote procedure on %s" % uri)
 
 
+   def dispatch(self, topicuri, event, exclude = []):
+      """
+      Dispatch an event for a topic to all clients subscribed to
+      and authorized for that topic. Optionally, exclude list of
+      clients.
+
+      :param topicuri: URI of topic to publish event to.
+      :type topicuri: str
+      :param event: Event to dispatch.
+      :type event: obj
+      :param exclude: Optional list of clients (protocol instances) to exclude.
+      :type exclude: list of obj
+      """
+      self.factory._dispatchEvent(topicuri, event, exclude)
+
+
    def _callProcedure(self, uri, arg = None):
       ## Internal method for calling a procedure invoked via RPC.
 
@@ -574,7 +590,7 @@ class WampServerFactory(WebSocketServerFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
-   def _dispatchEvent(self, topicuri, event):
+   def _dispatchEvent(self, topicuri, event, exclude = []):
       ## Internal method called from proto to publish an received event
       ## to all peers subscribed to the event topic.
 
@@ -591,7 +607,11 @@ class WampServerFactory(WebSocketServerFactory):
             except:
                raise Exception("invalid type for event (not JSON serializable)")
             rc = 0
-            for proto in self.subscriptions[topicuri]:
+            if len(exclude) > 0:
+               recvs = list(set(self.subscriptions[topicuri]) - set(exclude))
+            else:
+               recvs = self.subscriptions[topicuri]
+            for proto in recvs:
                if self.debug_autobahn:
                   log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
                proto.sendMessage(msg)
