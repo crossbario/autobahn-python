@@ -20,9 +20,17 @@ import datetime
 import time
 import random
 
+UTC_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
 def utcnow():
    now = datetime.datetime.utcnow()
-   return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+   return now.strftime(UTC_TIMESTAMP_FORMAT)
+
+def parseutc(s):
+   try:
+      return datetime.datetime.strptime(s, UTC_TIMESTAMP_FORMAT)
+   except:
+      return None
 
 def newid():
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
