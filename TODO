@@ -250,3 +250,18 @@ WAMP
    * WAMP message types
    * server-side hooks
    * client API
+
+6) uses of topic handlers:
+
+     - fine-grained publish/subscribe authorization
+     - topic event content-based filtering
+     - content-based subscriptions
+
+7) Tutorials
+
+   - Simple
+   - Topic Handlers (publish/subscribe authorization)
+   - Server-Side dispatching
+   - Prefix Subscriptions?
+   - Topic meta events (aka "presence")
+   - Direct c2c Messaging?
