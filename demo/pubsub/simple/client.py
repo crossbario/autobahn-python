@@ -19,42 +19,34 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, DeferredList
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
 class MyClientProtocol(WampClientProtocol):
    """
-   Demonstrates simple Publish & Subscribe (PubSub) with
-   Autobahn WebSockets and Twisted Deferreds.
+   Demonstrates simple Publish & Subscribe (PubSub) with Autobahn WebSockets.
    """
 
-   def show(self, result):
-      print "SUCCESS:", result
+   def printEvent(self, topicUri, event):
+      print "printEvent", topicUri, event
 
-   def logerror(self, e):
-      erroruri, errodesc = e.value.args
-      print "ERROR: %s ('%s')" % (erroruri, errodesc)
+   def sendSimpleEvent(self):
+      self.publish("http://example.com/simple", None)
+      reactor.callLater(2, self.sendSimpleEvent)
 
-   def done(self, *args):
-      self.sendClose()
-
-   def onFoobar(self, arg):
-      print "FOOBAR", arg
-      arg[3].addCallback(self.onFoobar)
+   def onEvent1(self, topicUri, event):
+      self.counter += 1
+      self.publish("event:myevent2", {"trigger": event, "counter": self.counter})
 
    def onOpen(self):
 
-      self.prefix("event", "http://resource.example.com/schema/event#")
+      self.counter = 0
+      self.subscribe("http://example.com/simple", self.printEvent)
+      self.sendSimpleEvent()
 
-      self.subscribe("event:foobar").addCallback(self.onFoobar)
-
-      self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
-      self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
-      self.publish("event:foobar-extended", {"name": "foo", "value": "bar", "num": 42})
-      self.publish("event:foobar-limited", {"name": "foo", "value": "bar", "num": 23})
-
-      #self.done()
+      self.prefix("event", "http://example.com/event#")
+      self.subscribe("event:myevent1", self.onEvent1)
+      self.subscribe("event:myevent2", self.printEvent)
 
 
 if __name__ == '__main__':
