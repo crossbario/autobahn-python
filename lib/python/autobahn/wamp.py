@@ -507,9 +507,19 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                         event = obj[2]
 
+                        if len(obj) >= 4:
+                           excludeMe = obj[3]
+                        else:
+                           excludeMe = True
+
+                        if excludeMe:
+                           exclude = [self]
+                        else:
+                           exclude = []
+
                         ## direct topic
                         if h[2] is None and h[3] is None:
-                           self.factory._dispatchEvent(topicuri, event)
+                           self.factory._dispatchEvent(topicuri, event, exclude)
 
                         ## topic handled by publication handler
                         else:
@@ -524,7 +534,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                               ## only dispatch event if handler did return event
                               if e:
-                                 self.factory._dispatchEvent(topicuri, e)
+                                 self.factory._dispatchEvent(topicuri, e, exclude)
                            except:
                               if self.debug_autobahn:
                                  log.msg("execption during topic publication handler")
@@ -809,8 +819,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       if type(excludeMe) != bool:
          raise Exception("invalid type for parameter 'excludeMe' - must be bool (was %s)" % str(type(excludeMe)))
 
-      #msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event, excludeMe]
-      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event]
+      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event, excludeMe]
 
       try:
          o = json.dumps(msg)
