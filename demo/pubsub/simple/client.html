@@ -39,20 +39,17 @@
          function publishEvent()
          {
             evt = {};
-            evt.value1 = document.getElementById('value1').value;
-            evt.value2 = document.getElementById('value2').checked;
+            evt.num = 23;
+            evt.name = document.getElementById('form_message').value;
+            evt.flag = document.getElementById('form_flag').checked;
+            evt.created = new Date();
+            evt.rand = Math.random();
+
             var excludeMe = document.getElementById('exclude_me').checked;
-
             if (document.getElementById('event1').checked) {
-
-               evt.value3 = new Date();
                sess.publish("event:myevent1", evt, excludeMe);
-
             } else {
-
-               evt.value3 = Math.random();
                sess.publish("event:myevent2", evt, excludeMe);
-
             }
          }
      </script>
@@ -74,8 +71,8 @@
             Publish an event containing data.
          </p>
          <form>
-            <p>Value 1: <input id="value1" type="text" size="50" maxlength="50" value="Hello, world!"></p>
-            <p>Value 2: <input id="value2" type="checkbox"></p>
+            <p>Message: <input id="form_message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
+            <p>Flag: <input id="form_flag" type="checkbox"></p>
             <p>Event:
                <input id="event1" type="radio" name="eventtype" checked>Event 1
                <input type="radio" name="eventtype">Event 2
