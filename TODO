@@ -214,19 +214,30 @@ class in connectionMade():
 
 Masking
 
-   maskServerFrames (false)
-   acceptMaskedServerFrames (false)
    applyMask (true)
 
-Close Handling
+Client Reconnects
 
-   failConnectionWithClose (false)
+   truncated binary exponential backoff
 
 Automatic Pings
 
 Automatic Fragmentation
 
 Frame/Message Size Limits
+
+Extended Close Codes: Reason + Reconnect (ms)
+
+  - internal service error
+  - service restart
+  - service overload
+
+
+"Please note that according to [RFC2616] all header field names in
+both HTTP requests and HTTP responses are case-insensitive."
+
+Sec-WebSocket-Extensions header
+
 
 
 WAMP

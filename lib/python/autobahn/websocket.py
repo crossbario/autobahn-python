@@ -82,20 +82,39 @@ class WebSocketProtocol(protocol.Protocol):
    for clients and servers.
    """
 
-   ## The WebSocket specification versions supported by this
-   ## implementation. Note, that this is spec, not protocol version.
-   ## I.e. specs 10-12 all use protocol version 8, but specs 13,14 uses protocol 13 also
-   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14]
+   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17]
+   """
+   WebSockets protocol spec (draft) versions supported by this implementation.
+   """
+
    SUPPORTED_PROTOCOL_VERSIONS = [8, 13]
+   """
+   WebSockets protocol versions supported by this implementation.
+   """
 
-   ## The default spec version we speak.
+   SPEC_TO_PROTOCOL_VERSION = {10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13}
+   """
+   Mapping from protocol spec (draft) version to protocol version.
+   """
+
+   PROTOCOL_TO_SPEC_VERSION = {8: 12, 13: 17}
+   """
+   Mapping from protocol version to the latest protocol spec (draft) version
+   using that protocol version.
+   """
+
    DEFAULT_SPEC_VERSION = 10
+   """
+   Default WebSockets protocol spec (draft) version this implementation speaks.
+   We use Hybi-10, since this is what is currently targeted by widely distributed
+   browsers (namely Firefox 8 and the like).
+   """
 
-   ## magic used during WebSocket handshake
-   ##
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+   """Protocol defined magic used during WebSocket handshake."""
 
    QUEUED_WRITE_DELAY = 0.00001
+   """For synched/chopped writes, this is the reactor reentry delay in seconds."""
 
    MESSAGE_TYPE_TEXT = 1
    """WebSockets text message type (UTF-8 payload)."""
@@ -542,12 +561,14 @@ class WebSocketProtocol(protocol.Protocol):
 
       self.utf8validator = Utf8Validator()
       self.utf8validateIncoming = getattr(self.factory, "utf8validateIncoming", True)
+      self.acceptMaskedServerFrames = getattr(self.factory, "acceptMaskedServerFrames", False)
       self.requireMaskedClientFrames = getattr(self.factory, "requireMaskedClientFrames", True)
+      self.maskServerFrames = getattr(self.factory, "maskServerFrames", False)
       self.maskClientFrames = getattr(self.factory, "maskClientFrames", True)
       self.failByDrop = getattr(self.factory, "failByDrop", True)
       self.echoCloseCodeReason = getattr(self.factory, "echoCloseCodeReason", False)
-      self.serverConnectionDropTimeout = getattr(self.factory, "serverConnectionDropTimeout", False)
-      self.closeHandshakeTimeout = getattr(self.factory, "closeHandshakeTimeout", False)
+      self.serverConnectionDropTimeout = getattr(self.factory, "serverConnectionDropTimeout", 1)
+      self.closeHandshakeTimeout = getattr(self.factory, "closeHandshakeTimeout", 1)
 
       ## for chopped/synched sends, we need to queue to maintain
       ## ordering when recalling the reactor to actually "force"
@@ -778,7 +799,13 @@ class WebSocketProtocol(protocol.Protocol):
             ## all client-to-server frames MUST be masked
             ##
             if self.isServer and self.requireMaskedClientFrames and not frame_masked:
-               if self.protocolViolation("unmasked client to server frame"):
+               if self.protocolViolation("unmasked client-to-server frame"):
+                  return False
+
+            ## all server-to-client frames MUST NOT be masked
+            ##
+            if not self.isServer and not self.acceptMaskedServerFrames and frame_masked:
+               if self.protocolViolation("masked server-to-client frame"):
                   return False
 
             ## check frame
@@ -1086,7 +1113,7 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       b1 = 0
       el = ""
-      if mask or (not self.isServer and self.maskClientFrames):
+      if mask or (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
          b1 |= 1 << 7
          if mask:
             mv = struct.pack("!I", mask)
@@ -1303,11 +1330,15 @@ class WebSocketProtocol(protocol.Protocol):
          if len(mask) != 4:
             raise Exception("mask must have length 4")
          self.send_message_frame_mask = mask
-      elif not self.isServer and self.maskClientFrames:
-         ## client-to-server masking (if not deactivated)
+      elif (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
+         ## automatic mask:
+         ##  - client-to-server masking (if not deactivated)
+         ##  - server-to-client masking (if activated)
          ##
          self.send_message_frame_mask = random.getrandbits(32)
       else:
+         ## no mask
+         ##
          self.send_message_frame_mask = None
 
       ## first byte
@@ -1751,6 +1782,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
                 subprotocols = [],
                 version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
                 utf8validateIncoming = True,
+                maskServerFrames = False,
                 requireMaskedClientFrames = True,
                 failByDrop = True,
                 echoCloseCodeReason = False,
@@ -1763,23 +1795,25 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       :param subprotocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type subprotocols: list of strings
-      :param version: The WebSockets protocol spec version to be used (must be one of 10-14).
+      :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
-      :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
+      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
-      :param requireMaskedClientFrames: Require client frames to be masked.
+      :param maskServerFrames: Mask server-to-client frames (default: False).
+      :type maskServerFrames: bool
+      :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: True).
       :type requireMaskedClientFrames: bool
-      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake.
+      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: True).
       :type failbyDrop: bool
-      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "".
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
       :type echoCloseCodeReason: bool
-      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
       :type closeHandshakeTimeout: float
-      :param tcpNoDelay: TCP NODELAY socket option.
+      :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
-      :param debug: Debug mode (false/true).
+      :param debug: Debug mode (default: False).
       :type debug: bool
-      :param debugCodePaths: Debug code paths mode (false/true).
+      :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
       """
       self.debug = debug
@@ -1797,6 +1831,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       ##
       self.utf8validateIncoming = utf8validateIncoming
       self.requireMaskedClientFrames = requireMaskedClientFrames
+      self.maskServerFrames = maskServerFrames
       self.failByDrop = failByDrop
       self.echoCloseCodeReason = echoCloseCodeReason
       self.closeHandshakeTimeout = closeHandshakeTimeout
@@ -2030,6 +2065,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
                 version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
                 useragent = None,
                 utf8validateIncoming = True,
+                acceptMaskedServerFrames = False,
                 maskClientFrames = True,
                 failByDrop = True,
                 echoCloseCodeReason = False,
@@ -2041,35 +2077,37 @@ class WebSocketClientFactory(protocol.ClientFactory):
       """
       Create instance of WebSocket client factory.
 
-      :param path: The path to be sent in WebSockets opening handshake.
+      :param path: The path to be sent in WebSockets opening handshake (default: "/").
       :type path: str
-      :param host: The host to be sent in WebSockets opening handshake.
+      :param host: The host to be sent in WebSockets opening handshake (default: "localhost").
       :type host: str
-      :param origin: The origin to be sent in WebSockets opening handshake.
+      :param origin: The origin to be sent in WebSockets opening handshake or None (default: None).
       :type origin: str
       :param subprotocols: List of subprotocols the client should announce in WebSockets opening handshake.
       :type subprotocols: list of strings
-      :param version: The WebSockets protocol spec version to be used (must be one of 10-14).
+      :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
-      :param useragent: User agent as announced in HTTP header.
+      :param useragent: User agent as announced in HTTP header or None (default: None).
       :type useragent: str
-      :param utf8validateIncoming: Incremental validation of incoming UTF-8 in text message payloads.
+      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
-      :param maskClientFrames: Mask client to server frames.
+      :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: False).
+      :type acceptMaskedServerFrames: bool
+      :param maskClientFrames: Mask client-to-server frames (default: True).
       :type maskClientFrames: bool
-      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake.
+      :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: True).
       :type failbyDrop: bool
-      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "".
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
       :type echoCloseCodeReason: bool
-      :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds.
+      :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: 1).
       :type serverConnectionDropTimeout: float
-      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds.
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
       :type closeHandshakeTimeout: float
-      :param tcpNoDelay: TCP NODELAY socket option.
+      :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
-      :param debug: Debug mode (false/true).
+      :param debug: Debug mode (default: False).
       :type debug: bool
-      :param debugCodePaths: Debug code paths mode (false/true).
+      :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
       """
       self.debug = debug
@@ -2090,6 +2128,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       ## default for protocol instances
       ##
       self.utf8validateIncoming = utf8validateIncoming
+      self.acceptMaskedServerFrames = acceptMaskedServerFrames
       self.maskClientFrames = maskClientFrames
       self.failByDrop = failByDrop
       self.echoCloseCodeReason = echoCloseCodeReason
