@@ -233,10 +233,26 @@ Extended Close Codes: Reason + Reconnect (ms)
   - service overload
 
 
-"Please note that according to [RFC2616] all header field names in
-both HTTP requests and HTTP responses are case-insensitive."
+Clients: Host header field "Host: server.example.com"
+  => multiple host names on one IP address
 
-Sec-WebSocket-Extensions header
+Client: supply protocols, extensions and origin
+
+_Subprotocol In Use_
+
+_Cookies Set During the Server's Opening Handshake_
+
+
+
+   After sending a control frame indicating the connection should be
+   closed, a peer does not send any further data; after receiving a
+   control frame indicating the connection should be closed, a peer
+   discards any further data received.
+
+
+There MUST be no more than one connection in a
+       CONNECTING state.  If multiple connections to the same IP address
+       are attempted simultaneously, the client MUST serialize them
 
 
 

@@ -23,10 +23,11 @@ except:
    ## i.e. no setuptools or no package installed ..
    version = "?.?.?"
 
-import websocket
-import wamp
-import fuzzing
-import case
-import prefixmap
-import utf8validator
 import util
+import httpstatus
+import utf8validator
+import websocket
+import case
+import fuzzing
+import prefixmap
+import wamp
