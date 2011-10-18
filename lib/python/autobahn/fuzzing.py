@@ -32,9 +32,12 @@ from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, 
 from util import utcnow
 
 
-def parseSpecCases(spec):
+def resolveCasePatternList(patterns):
+   """
+   Return list of test cases that match against a list of case patterns.
+   """
    specCases = []
-   for c in spec["cases"]:
+   for c in patterns:
       if c.find('*') >= 0:
          s = c.replace('.', '\.').replace('*', '.*')
          p = re.compile(s)
@@ -47,6 +50,20 @@ def parseSpecCases(spec):
       else:
          specCases.append(c)
    return specCases
+
+
+def parseSpecCases(spec):
+   """
+   Return list of test cases that match against case patterns, minus exclude patterns.
+   """
+   specCases = resolveCasePatternList(spec["cases"])
+   if spec.has_key("exclude-cases"):
+      excludeCases = resolveCasePatternList(spec["exclude-cases"])
+   else:
+      excludeCases = []
+   c = list(set(specCases) - set(excludeCases))
+   cases = [caseIdTupletoId(y) for y in sorted([caseIdtoIdTuple(x) for x in c])]
+   return cases
 
 
 class FuzzingProtocol:

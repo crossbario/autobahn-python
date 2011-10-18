@@ -1,3 +1,4 @@
 {
-   "cases": ["*"]
+   "cases": ["*"],
+   "exclude-cases": []
 }
