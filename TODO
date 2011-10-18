@@ -63,14 +63,7 @@ Features
 
 REQ = someone asked for it
 
-
-  - REQ: Allow to specify case exclusion patterns
-
-  - REQ: Overview report gets too broad: maybe rotate agent labels in report 90° counterclock => css
-
-  - REQ: make NON-STRICT more green (yes, was asked by some project to do;) => td.case_almost
-
-  - REQ: add notice at top of report overview, explaining diff. beetween PASS, NON-STRICT and FAIL
+  - control WS options from specs
 
   - exhaustively test UTF-8 non-chars : EF BF [BE-BF] or F[0-7] [89AB]F BF [BE-BF] (any codepoint whose low 16 bits are 0xFFFE or 0xFFFF ??)
     see: https://bugzilla.mozilla.org/show_bug.cgi?id=686312

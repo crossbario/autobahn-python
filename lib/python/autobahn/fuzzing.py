@@ -393,38 +393,68 @@ class FuzzingFactory:
          font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
       }
 
+      table
+      {
+         border-collapse: collapse;
+         border-spacing: 0px;
+      }
+
+      td
+      {
+         margin: 0;
+         border: 1px solid #fff;
+         padding-top: 6px;
+         padding-bottom: 6px;
+         padding-left: 16px;
+         padding-right: 16px;
+         font-size: 0.9em;
+         color: #fff;
+      }
+
       p#intro
       {
-         margin-left: 30px;
-         font-size: 1.2em;
+         font-family: Cambria,serif;
+         font-size: 1.1em;
+         color: #444;
       }
 
-      p#case_desc
+      p#intro a
       {
-         border-radius: 10px;
-         background-color: #eee;
-         padding: 20px;
+         color: #444;
+      }
+
+      p#intro a:visited
+      {
+         color: #444;
+      }
+
+      .block
+      {
+         background-color: #e0e0e0;
+         padding: 16px;
          margin: 20px;
       }
 
-      p#case_expect
+      p#case_desc,p#case_expect
       {
          border-radius: 10px;
-         background-color: #eee;
-         padding: 20px;
-         margin: 20px;
+         border: 1px solid #aaa;
+         padding: 16px;
+         margin: 8px;
+         color: #444;
       }
 
       p#case_result,p#close_result
       {
          border-radius: 10px;
-         background-color: #eee;
+         background-color: #e8e2d1;
          padding: 20px;
          margin: 20px;
       }
 
       h1
       {
+         margin-left: 60px;
       }
 
       h2
@@ -437,18 +467,54 @@ class FuzzingFactory:
       {
          margin-left: 50px;
       }
+
+      a.up
+      {
+         float: right;
+         border-radius: 16px;
+         margin-top: 16px;
+         margin-bottom: 10px;
+
+         margin-right: 30px;
+         padding-left: 10px;
+         padding-right: 10px;
+         padding-bottom: 2px;
+         padding-top: 2px;
+         background-color: #666;
+         color: #fff;
+         text-decoration: none;
+         font-size: 0.8em;
+      }
+
+      a.up:visited
+      {
+      }
+
+      a.up:hover
+      {
+         background-color: #028ec9;
+      }
    """
 
    ## CSS for Master report
    ##
    css_master = """
-      table
+      table#agent_case_results
       {
          border-collapse: collapse;
          border-spacing: 0px;
-         margin-left: 40px;
+         border-radius: 10px;
+         margin-left: 20px;
+         margin-right: 20px;
          margin-bottom: 40px;
-         margin-top: 20px;
+      }
+
+      h3#case_desc_title
+      {
+         color: #666;
+         margin-left: 50px;
+         margin-top: 36px;
+         margin-bottom: 6px;
       }
 
       td
@@ -459,6 +525,14 @@ class FuzzingFactory:
          padding-bottom: 6px;
          padding-left: 16px;
          padding-right: 16px;
+         font-size: 0.9em;
+         color: #fff;
+      }
+
+      td.outcome_desc {
+         width: 100%;
+         color: #333;
+         font-size: 0.8em;
       }
 
       tr#agent_case_result_row a
@@ -466,18 +540,20 @@ class FuzzingFactory:
          color: #eee;
       }
 
-      td.agent
+      table#agent_case_results td.agent
       {
          color: #fff;
          font-size: 1.0em;
-         min-width: 140px;
          text-align: center;
          background-color: #048;
+         font-size: 0.8em;
+         word-wrap: break-word;
+         padding: 4px;
+         width: 140px;
       }
 
       td#case_category
       {
-         min-width: 180px;
          color: #fff;
          background-color: #000;
          text-align: left;
@@ -514,6 +590,7 @@ class FuzzingFactory:
          padding: 6px;
          font-size: 0.7em;
          color: #fff;
+         min-width: 0px;
       }
 
       td.case_ok
@@ -528,9 +605,9 @@ class FuzzingFactory:
          text-align: center;
       }
 
-      td.case_non_strict,td.case_no_close
+      td.case_non_strict, td.case_no_close
       {
-         background-color: #aa0;
+         background-color: #9a0;
          text-align: center;
       }
 
@@ -545,6 +622,28 @@ class FuzzingFactory:
          color: #fff;
          background-color: #a05a2c;
          text-align: center;
+      }
+
+      *.unselectable {
+         user-select: none;
+         -moz-user-select: -moz-none;
+         -webkit-user-select: none;
+         -khtml-user-select: none;
+      }
+
+      div#toggle_button {
+         position: fixed;
+         bottom: 10px;
+         right: 10px;
+         background-color: rgba(60, 60, 60, 0.5);
+         border-radius: 12px;
+         color: #fff;
+         font-size: 0.7em;
+         padding: 5px 10px;
+      }
+
+      div#toggle_button:hover {
+         background-color: #028ec9;
       }
    """
 
@@ -570,7 +669,7 @@ class FuzzingFactory:
       {
          color: #fff;
          border-radius: 10px;
-         background-color: #990;
+         background-color: #9a0;
          padding: 20px;
          margin: 20px;
          font-size: 1.2em;
@@ -752,17 +851,52 @@ class FuzzingFactory:
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style><script language="javascript">%s</script></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master, self.js_master()))
+      f.write('<!DOCTYPE html><html>')
+      f.write('<head><meta charset="utf-8" /><style lang="css">%s %s</style><script language="javascript">%s</script></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master, self.js_master()))
 
-      f.write('<h1>WebSockets Protocol Test Report</h1>')
+      f.write("""
+         <body>
+         <a name="top"></a>
+         <br/>
+         <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>
+         <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>
+      """)
 
-      f.write('<p id="intro">Test summary report generated on</p>')
-      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % utcnow())
-      f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
+      f.write('<a href="#"><div id="toggle_button" class="unselectable" onclick="toggleClose();">Toggle Details</div></a>')
 
-      f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
+      f.write('<div class="block">')
 
-      f.write('<h2>Test Results</h2>')
+      f.write('<p id="intro">Test summary report generated on %s (UTC) ' % utcnow())
+      f.write('by <a href="%s">Autobahn WebSockets</a> v%s.</p>' % ("http://www.tavendo.de/autobahn", str(autobahn.version)))
+
+      f.write("""
+               <table>
+                  <tr>
+                     <td class="case_ok">Pass</td>
+                     <td class="outcome_desc">Test case was executed and passed successfully.</td>
+                  </tr>
+                  <tr>
+                     <td class="case_non_strict">Non-Strict</td>
+                     <td class="outcome_desc">Test case was executed and passed non-strictly.
+                     A non-strict behavior is one that does not adhere to a SHOULD-behavior as described in the protocol specification or
+                     a well-defined, canonical behavior that appears to be desirable but left open in the protocol specification.
+                     An implementation with non-strict behavior is still conformant to the protocol specification.</td>
+                  </tr>
+                  <tr>
+                     <td class="case_failed">Fail</td>
+                     <td class="outcome_desc">Test case was executed and failed. An implementation which fails a test case - other
+                     than a performance/limits related one - is non-conforming to a MUST-behavior as described in the protocol specification.</td>
+                  </tr>
+                  <tr>
+                     <td class="case_missing">Missing</td>
+                     <td class="outcome_desc">Test case is missing, either because it was skipped via the test suite configuration
+                     or deactivated, i.e. because the implementation does not implement the tested feature or breaks during running
+                     the test case.</td>
+                  </tr>
+               </table>
+              """)
+
+      f.write('</div>')
 
       f.write('<table id="agent_case_results">')
 
@@ -793,7 +927,8 @@ class FuzzingFactory:
 
          ## Category row
          ##
-         if caseCategory != lastCaseCategory:
+         repeatAgentRowPerSubcategory = True
+         if caseCategory != lastCaseCategory or (repeatAgentRowPerSubcategory and caseSubCategory != lastCaseSubCategory):
             f.write('<tr id="case_category_row">')
             f.write('<td id="case_category">%s %s</td>' % (caseCategoryIndex, caseCategory))
             for agentId in agentList:
@@ -860,16 +995,19 @@ class FuzzingFactory:
 
       f.write("</table>")
 
-      f.write('<h2>Test Cases</h2>')
+      #f.write('<h2>Test Cases</h2>')
 
       for caseId in caseList:
 
          CCase = CasesById[caseId]
 
          f.write('<a name="case_desc_%s"></a>' % caseId.replace('.', '_'))
-         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseId)
-         f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % CCase.DESCRIPTION)
-         f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % CCase.EXPECTATION)
+         #f.write('<div class="block">')
+         f.write('<h3 id="case_desc_title">Test Case %s</h3>' % caseId)
+         f.write('<a class="up" href="#top">Up</a>')
+         f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % CCase.DESCRIPTION)
+         f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % CCase.EXPECTATION)
+         #f.write('</div>')
 
       f.write("</body></html>")
 
