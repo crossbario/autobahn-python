@@ -28,6 +28,7 @@ import httpstatus
 import utf8validator
 import websocket
 import case
+import report
 import fuzzing
 import prefixmap
 import wamp
