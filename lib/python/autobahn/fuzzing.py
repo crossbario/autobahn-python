@@ -68,6 +68,9 @@ def parseSpecCases(spec):
 
 
 class FuzzingProtocol:
+   """
+   Common mixin-base class for fuzzing server and client protocols.
+   """
 
    MAX_WIRE_LOG_DATA = 256
 
@@ -383,23 +386,24 @@ class FuzzingProtocol:
 
 
 class FuzzingFactory:
+   """
+   Common mixin-base class for fuzzing server and client protocol factory.
+   """
+
+   MAX_CASE_PICKLE_LEN = 1000
 
    def __init__(self, debug = False, outdir = "reports"):
+      self.repeatAgentRowPerSubcategory = True
       self.debug = debug
       self.outdir = outdir
       self.agents = {}
       self.cases = {}
 
 
-   def startFactory(self):
-      pass
-
-
-   def stopFactory(self):
-      pass
-
-
    def logCase(self, caseResults):
+      """
+      Called from FuzzingProtocol instances when case has been finished to store case results.
+      """
 
       agent = caseResults["agent"]
       case = caseResults["id"]
@@ -417,23 +421,31 @@ class FuzzingFactory:
       self.cases[case][agent] = caseResults
 
 
-   def getCase(self, agent, case):
-      return self.agents[agent][case]
-
-
    def createReports(self):
+      """
+      Create reports from all data stored for test cases which have been executed.
+      """
 
+      ## create output directory when non-existent
+      ##
       if not os.path.exists(self.outdir):
          os.makedirs(self.outdir)
 
+      ## create master report
+      ##
       self.createMasterReport(self.outdir)
 
+      ## create case detail reports
+      ##
       for agentId in self.agents:
          for caseId in self.agents[agentId]:
             self.createAgentCaseReport(agentId, caseId, self.outdir)
 
 
    def cleanForFilename(self, str):
+      """
+      Clean a string for use as filename.
+      """
       s0 = ''.join([c if c in "abcdefghjiklmnopqrstuvwxyz0123456789" else " " for c in str.strip().lower()])
       s1 = s0.strip()
       s2 = s1.replace(' ', '_')
@@ -441,63 +453,89 @@ class FuzzingFactory:
 
 
    def makeAgentCaseReportFilename(self, agentId, caseId):
+      """
+      Create filename for case detail report from agent and case.
+      """
       c = caseId.replace('.', '_')
       return self.cleanForFilename(agentId) + "_case_" + c + ".html"
 
 
-   def createMasterReport(self, outdir):
+   def limitString(self, s, limit, indicator = " ..."):
+      ss = str(s)
+      if len(ss) > limit - len(indicator):
+         return ss[:limit - len(indicator)] + indicator
+      else:
+         return ss
 
+
+   def createMasterReport(self, outdir):
+      """
+      Create report master HTML file.
+
+      :param outdir: Directory where to create file.
+      :type outdir: str
+      :returns: str -- Name of created file.
+      """
+
+      ## open report file in create / write-truncate mode
+      ##
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html>')
-      f.write('<head><meta charset="utf-8" /><style lang="css">%s %s</style><script language="javascript">%s</script></head>' % (CSS_COMMON, CSS_MASTER_REPORT, JS_MASTER_REPORT % {"agents_cnt": len(self.agents.keys())}))
+      ## write HTML
+      ##
+      f.write('<!DOCTYPE html>\n')
+      f.write('<html>\n')
+      f.write('   <head>\n')
+      f.write('      <meta charset="utf-8" />\n')
+      f.write('      <style lang="css">%s</style>\n' % CSS_COMMON)
+      f.write('      <style lang="css">%s</style>\n' % CSS_MASTER_REPORT)
+      f.write('      <script language="javascript">%s</script>\n' % JS_MASTER_REPORT % {"agents_cnt": len(self.agents.keys())})
+      f.write('   </head>\n')
+      f.write('   <body>\n')
+      f.write('      <a href="#"><div id="toggle_button" class="unselectable" onclick="toggleClose();">Toggle Details</div></a>\n')
+      f.write('      <a name="top"></a>\n')
+      f.write('      <br/>\n')
 
+      ## top logos
+      f.write('      <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>\n')
+      f.write('      <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>\n')
+
+      ## write report header
+      ##
+      f.write('      <div id="master_report_header" class="block">\n')
+      f.write('         <p id="intro">Summary report generated on %s (UTC) by <a href="%s">Autobahn WebSockets</a> v%s.</p>\n' % (utcnow(), "http://www.tavendo.de/autobahn", str(autobahn.version)))
       f.write("""
-         <body>
-         <a name="top"></a>
-         <br/>
-         <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>
-         <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>
+      <table id="case_outcome_desc">
+         <tr>
+            <td class="case_ok">Pass</td>
+            <td class="outcome_desc">Test case was executed and passed successfully.</td>
+         </tr>
+         <tr>
+            <td class="case_non_strict">Non-Strict</td>
+            <td class="outcome_desc">Test case was executed and passed non-strictly.
+            A non-strict behavior is one that does not adhere to a SHOULD-behavior as described in the protocol specification or
+            a well-defined, canonical behavior that appears to be desirable but left open in the protocol specification.
+            An implementation with non-strict behavior is still conformant to the protocol specification.</td>
+         </tr>
+         <tr>
+            <td class="case_failed">Fail</td>
+            <td class="outcome_desc">Test case was executed and failed. An implementation which fails a test case - other
+            than a performance/limits related one - is non-conforming to a MUST-behavior as described in the protocol specification.</td>
+         </tr>
+         <tr>
+            <td class="case_missing">Missing</td>
+            <td class="outcome_desc">Test case is missing, either because it was skipped via the test suite configuration
+            or deactivated, i.e. because the implementation does not implement the tested feature or breaks during running
+            the test case.</td>
+         </tr>
+      </table>
       """)
+      f.write('      </div>\n')
 
-      f.write('<a href="#"><div id="toggle_button" class="unselectable" onclick="toggleClose();">Toggle Details</div></a>')
-
-      f.write('<div class="block">')
-
-      f.write('<p id="intro">Test summary report generated on %s (UTC) ' % utcnow())
-      f.write('by <a href="%s">Autobahn WebSockets</a> v%s.</p>' % ("http://www.tavendo.de/autobahn", str(autobahn.version)))
-
-      f.write("""
-               <table>
-                  <tr>
-                     <td class="case_ok">Pass</td>
-                     <td class="outcome_desc">Test case was executed and passed successfully.</td>
-                  </tr>
-                  <tr>
-                     <td class="case_non_strict">Non-Strict</td>
-                     <td class="outcome_desc">Test case was executed and passed non-strictly.
-                     A non-strict behavior is one that does not adhere to a SHOULD-behavior as described in the protocol specification or
-                     a well-defined, canonical behavior that appears to be desirable but left open in the protocol specification.
-                     An implementation with non-strict behavior is still conformant to the protocol specification.</td>
-                  </tr>
-                  <tr>
-                     <td class="case_failed">Fail</td>
-                     <td class="outcome_desc">Test case was executed and failed. An implementation which fails a test case - other
-                     than a performance/limits related one - is non-conforming to a MUST-behavior as described in the protocol specification.</td>
-                  </tr>
-                  <tr>
-                     <td class="case_missing">Missing</td>
-                     <td class="outcome_desc">Test case is missing, either because it was skipped via the test suite configuration
-                     or deactivated, i.e. because the implementation does not implement the tested feature or breaks during running
-                     the test case.</td>
-                  </tr>
-               </table>
-              """)
-
-      f.write('</div>')
-
-      f.write('<table id="agent_case_results">')
+      ## write big agent/case report table
+      ##
+      f.write('      <table id="agent_case_results">\n')
 
       ## sorted list of agents for which test cases where run
       ##
@@ -524,27 +562,31 @@ class FuzzingFactory:
          caseSubCategoryIndex = '.'.join(caseId.split('.')[:2])
          caseSubCategory = CaseSubCategories.get(caseSubCategoryIndex, None)
 
-         ## Category row
+         ## Category/Agents row
          ##
-         repeatAgentRowPerSubcategory = True
-         if caseCategory != lastCaseCategory or (repeatAgentRowPerSubcategory and caseSubCategory != lastCaseSubCategory):
-            f.write('<tr id="case_category_row">')
-            f.write('<td id="case_category">%s %s</td>' % (caseCategoryIndex, caseCategory))
+         if caseCategory != lastCaseCategory or (self.repeatAgentRowPerSubcategory and caseSubCategory != lastCaseSubCategory):
+            f.write('         <tr class="case_category_row">\n')
+            f.write('            <td class="case_category">%s %s</td>\n' % (caseCategoryIndex, caseCategory))
             for agentId in agentList:
-               f.write('<td class="agent close_flex" colspan="2">%s</td>' % agentId)
-            f.write('</tr>')
+               f.write('            <td class="agent close_flex" colspan="2">%s</td>\n' % agentId)
+            f.write('         </tr>\n')
             lastCaseCategory = caseCategory
             lastCaseSubCategory = None
 
+         ## Subcategory row
+         ##
          if caseSubCategory != lastCaseSubCategory:
-            f.write('<tr id="case_subcategory_row">')
-            f.write('<td class="case_subcategory" colspan="%d">%s %s</td>' % (len(agentList)*2 + 1, caseSubCategoryIndex, caseSubCategory))
+            f.write('         <tr class="case_subcategory_row">\n')
+            f.write('            <td class="case_subcategory" colspan="%d">%s %s</td>\n' % (len(agentList) * 2 + 1, caseSubCategoryIndex, caseSubCategory))
+            f.write('         </tr>\n')
             lastCaseSubCategory = caseSubCategory
 
-         f.write('<tr id="agent_case_result_row">')
-         f.write('<td id="case"><a href="#case_desc_%s">Case %s</a></td>' % (caseId.replace('.', '_'), caseId))
+         ## Cases row
+         ##
+         f.write('         <tr class="agent_case_result_row">\n')
+         f.write('            <td class="case"><a href="#case_desc_%s">Case %s</a></td>\n' % (caseId.replace('.', '_'), caseId))
 
-         ## Agent/Case Result
+         ## Case results
          ##
          for agentId in agentList:
             if self.agents[agentId].has_key(caseId):
@@ -583,38 +625,55 @@ class FuzzingFactory:
                   ctd_class = "case_failed"
 
                if case["reportTime"]:
-                  f.write('<td class="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
+                  f.write('            <td class="%s"><a href="%s">%s</a><br/><span class="case_duration">%s ms</span></td><td class="close close_hide %s"><span class="close_code">%s</span></td>\n' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
                else:
-                  f.write('<td class="%s"><a href="%s">%s</a></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
+                  f.write('            <td class="%s"><a href="%s">%s</a></td><td class="close close_hide %s"><span class="close_code">%s</span></td>\n' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
 
             else:
-               f.write('<td class="case_missing close_flex" colspan="2">Missing</td>')
+               f.write('            <td class="case_missing close_flex" colspan="2">Missing</td>\n')
 
-         f.write("</tr>")
+         f.write("         </tr>\n")
 
-      f.write("</table>")
+      f.write("      </table>\n")
+      f.write("      <br/><hr/>\n")
 
-      #f.write('<h2>Test Cases</h2>')
-
+      ## Case descriptions
+      ##
+      f.write('      <div id="test_case_descriptions">\n')
       for caseId in caseList:
-
          CCase = CasesById[caseId]
+         f.write('      <br/>\n')
+         f.write('      <a name="case_desc_%s"></a>\n' % caseId.replace('.', '_'))
+         f.write('      <h2>Case %s</h2>\n' % caseId)
+         f.write('      <a class="up" href="#top">Up</a>\n')
+         f.write('      <p class="case_text_block case_desc"><b>Case Description</b><br/><br/>%s</p>\n' % CCase.DESCRIPTION)
+         f.write('      <p class="case_text_block case_expect"><b>Case Expectation</b><br/><br/>%s</p>\n' % CCase.EXPECTATION)
+      f.write('      </div>\n')
+      f.write("      <br/><hr/>\n")
 
-         f.write('<a name="case_desc_%s"></a>' % caseId.replace('.', '_'))
-         #f.write('<div class="block">')
-         f.write('<h3 id="case_desc_title">Test Case %s</h3>' % caseId)
-         f.write('<a class="up" href="#top">Up</a>')
-         f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % CCase.DESCRIPTION)
-         f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % CCase.EXPECTATION)
-         #f.write('</div>')
+      ## end of HTML
+      ##
+      f.write("   </body>\n")
+      f.write("</html>\n")
 
-      f.write("</body></html>")
-
+      ## close created HTML file and return filename
+      ##
       f.close()
       return report_filename
 
 
    def createAgentCaseReport(self, agentId, caseId, outdir):
+      """
+      Create case detail report HTML file.
+
+      :param agentId: ID of agent for which to generate report.
+      :type agentId: str
+      :param caseId: ID of case for which to generate report.
+      :type caseId: str
+      :param outdir: Directory where to create file.
+      :type outdir: str
+      :returns: str -- Name of created file.
+      """
 
       if not self.agents.has_key(agentId):
          raise Exception("no test data stored for agent %s" % agentId)
@@ -622,107 +681,128 @@ class FuzzingFactory:
       if not self.agents[agentId].has_key(caseId):
          raise Exception("no test data stored for case %s with agent %s" % (caseId, agentId))
 
+      ## get case to generate report for
+      ##
       case = self.agents[agentId][caseId]
 
+      ## open report file in create / write-truncate mode
+      ##
       report_filename = self.makeAgentCaseReportFilename(agentId, caseId)
-
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html><head><meta charset="utf-8" /><body><head><style lang="css">%s %s</style></head><body>' % (CSS_COMMON, CSS_DETAIL_REPORT))
+      ## write HTML
+      ##
+      f.write('<!DOCTYPE html>\n')
+      f.write('<html>\n')
+      f.write('   <head>\n')
+      f.write('      <meta charset="utf-8" />\n')
+      f.write('      <style lang="css">%s</style>\n' % CSS_COMMON)
+      f.write('      <style lang="css">%s</style>\n' % CSS_DETAIL_REPORT)
+      f.write('   </head>\n')
+      f.write('   <body>\n')
+      f.write('      <a name="top"></a>\n')
+      f.write('      <br/>\n')
 
-      f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], caseId))
+      ## top logos
+      f.write('      <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>\n')
+      f.write('      <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>\n')
+      f.write('      <br/>\n')
 
+
+      ## Case Summary
+      ##
       if case["behavior"] == Case.OK:
-         f.write('<p id="case_ok"><b>Pass</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_ok"
+         text = "Pass"
       elif case["behavior"] ==  Case.NON_STRICT:
-         f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_non_strict"
+         text = "Non-Strict"
       else:
-         f.write('<p id="case_failed"><b>Fail</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_failed"
+         text = "Fail"
+      f.write('      <p class="case %s">%s - <span style="font-size: 1.3em;"><b>Case %s</b></span> : %s - <span style="font-size: 0.9em;"><b>%d</b> ms @ %s</a></p>\n' % (style, case["agent"], caseId, text, case["duration"], case["started"]))
 
-      f.write('<h2>Case</h2>')
-      f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % case["description"])
-      f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % case["expectation"])
 
-      f.write('<h2>Result</h2>')
+      ## Case Description, Expectation, Outcome, Case Closing Behavior
+      ##
+      f.write('      <p class="case_text_block case_desc"><b>Case Description</b><br/><br/>%s</p>\n' % case["description"])
+      f.write('      <p class="case_text_block case_expect"><b>Case Expectation</b><br/><br/>%s</p>\n' % case["expectation"])
+      f.write("""
+      <p class="case_text_block case_outcome">
+         <b>Case Outcome</b><br/><br/>%s<br/><br/>
+         <i>Expected:</i><br/><span class="case_pickle">%s</span><br/><br/>
+         <i>Observed:</i><br><span class="case_pickle">%s</span>
+      </p>\n""" % (case.get("result", ""), self.limitString(case.get("expected", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN), self.limitString(case.get("received", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN)))
+      f.write('      <p class="case_text_block case_closing_beh"><b>Case Closing Behavior</b><br/><br/>%s (%s)</p>\n' % (case.get("resultClose", ""), case.get("behaviorClose", "")))
+      f.write("      <br/><hr/>\n")
 
-      if case["result"] and case["result"] != "":
-         f.write('<p id="case_result">%s</p>' % case["result"])
 
-      if case["expected"] and case["received"]:
-         es = str(case["expected"])
-         if len(es) > 400:
-            es = es[:400] + " ..."
-         f.write('<p id="case_result">Expected = %s</p>' % es)
+      ## Closing Behavior
+      ##
+      f.write('      <h2>Closing Behavior</h2>\n')
+      f.write('      <table>\n')
+      f.write('         <tr class="stats_header"><td>Key</td><td class="left">Value</td></tr>\n')
+      f.write('         <tr class="stats_row"><td>isServer</td><td class="left">%s</td></tr>\n' % case["isServer"])
+      f.write('         <tr class="stats_row"><td>closedByMe</td><td class="left">%s</td></tr>\n' % case["closedByMe"])
+      f.write('         <tr class="stats_row"><td>failedByMe</td><td class="left">%s</td></tr>\n' % case["failedByMe"])
+      f.write('         <tr class="stats_row"><td>droppedByMe</td><td class="left">%s</td></tr>\n' % case["droppedByMe"])
+      f.write('         <tr class="stats_row"><td>wasClean</td><td class="left">%s</td></tr>\n' % case["wasClean"])
+      f.write('         <tr class="stats_row"><td>wasNotCleanReason</td><td class="left">%s</td></tr>\n' % case["wasNotCleanReason"])
+      f.write('         <tr class="stats_row"><td>wasServerConnectionDropTimeout</td><td class="left">%s</td></tr>\n' % case["wasServerConnectionDropTimeout"])
+      f.write('         <tr class="stats_row"><td>wasCloseHandshakeTimeout</td><td class="left">%s</td></tr>\n' % case["wasCloseHandshakeTimeout"])
+      f.write('         <tr class="stats_row"><td>localCloseCode</td><td class="left">%s</td></tr>\n' % str(case["localCloseCode"]))
+      f.write('         <tr class="stats_row"><td>localCloseReason</td><td class="left">%s</td></tr>\n' % str(case["localCloseReason"]))
+      f.write('         <tr class="stats_row"><td>remoteCloseCode</td><td class="left">%s</td></tr>\n' % str(case["remoteCloseCode"]))
+      f.write('         <tr class="stats_row"><td>remoteCloseReason</td><td class="left">%s</td></tr>\n' % case["remoteCloseReason"])
+      f.write('      </table>')
+      f.write("      <br/><hr/>\n")
 
-         rs = str(case["received"])
-         if len(rs) > 400:
-            rs = rs[:400] + " ..."
-         f.write('<p id="case_result">Actual = %s</p>' % rs)
 
-      f.write('<h2>Close Result</h2>')
-      if case["resultClose"] and case["resultClose"] != "":
-         f.write('<p id="close_result">%s: %s</p>' % (case["behaviorClose"],case["resultClose"]))
-
-      f.write('<h2>Closing Behavior</h2>')
-      f.write('<table>')
-      f.write('<tr id="stats_header"><td>Key</td><td>Value</td></tr>')
-      f.write('<tr id="stats_row"><td>isServer</td><td>%s</td></tr>' % case["isServer"])
-      f.write('<tr id="stats_row"><td>closedByMe</td><td>%s</td></tr>' % case["closedByMe"])
-      f.write('<tr id="stats_row"><td>failedByMe</td><td>%s</td></tr>' % case["failedByMe"])
-      f.write('<tr id="stats_row"><td>droppedByMe</td><td>%s</td></tr>' % case["droppedByMe"])
-      f.write('<tr id="stats_row"><td>wasClean</td><td>%s</td></tr>' % case["wasClean"])
-      f.write('<tr id="stats_row"><td>wasNotCleanReason</td><td>%s</td></tr>' % case["wasNotCleanReason"])
-      f.write('<tr id="stats_row"><td>wasServerConnectionDropTimeout</td><td>%s</td></tr>' % case["wasServerConnectionDropTimeout"])
-      f.write('<tr id="stats_row"><td>wasCloseHandshakeTimeout</td><td>%s</td></tr>' % case["wasCloseHandshakeTimeout"])
-      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%s</td></tr>' % str(case["localCloseCode"]))
-      f.write('<tr id="stats_row"><td>localCloseReason</td><td>%s</td></tr>' % str(case["localCloseReason"]))
-      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%s</td></tr>' % str(case["remoteCloseCode"]))
-      f.write('<tr id="stats_row"><td>remoteCloseReason</td><td>%s</td></tr>' % case["remoteCloseReason"])
-      f.write('</table>')
-
-      f.write('<h2>Statistics</h2>')
-
+      ## Wire Statistics
+      ##
+      f.write('      <h2>Wire Statistics</h2>\n')
       if not case["createStats"]:
-         f.write('<p style="margin-left: 40px; color: #f00;"><i>Statistics for octets/frames disabled!</i></p>')
+         f.write('      <p style="margin-left: 40px; color: #f00;"><i>Statistics for octets/frames disabled!</i></p>\n')
       else:
          ## octet stats
          ##
          for statdef in [("Received", case["rxOctetStats"]), ("Transmitted", case["txOctetStats"])]:
-            f.write('<h3>Octets %s by Chop Size</h3>' % statdef[0])
-            f.write('<table>')
+            f.write('      <h3>Octets %s by Chop Size</h3>\n' % statdef[0])
+            f.write('      <table>\n')
             stats = statdef[1]
             total_cnt = 0
             total_octets = 0
-            f.write('<tr id="stats_header"><td>Chop Size</td><td>Count</td><td>Octets</td></tr>')
+            f.write('         <tr class="stats_header"><td>Chop Size</td><td>Count</td><td>Octets</td></tr>\n')
             for s in sorted(stats.keys()):
-               f.write('<tr id="stats_row"><td>%d</td><td>%d</td><td>%d</td></tr>' % (s, stats[s], s * stats[s]))
+               f.write('         <tr class="stats_row"><td>%d</td><td>%d</td><td>%d</td></tr>\n' % (s, stats[s], s * stats[s]))
                total_cnt += stats[s]
                total_octets += s * stats[s]
-            f.write('<tr id="stats_total"><td>Total</td><td>%d</td><td>%d</td></tr>' % (total_cnt, total_octets))
-            f.write('</table>')
+            f.write('         <tr class="stats_total"><td>Total</td><td>%d</td><td>%d</td></tr>\n' % (total_cnt, total_octets))
+            f.write('      </table>\n')
 
          ## frame stats
          ##
          for statdef in [("Received", case["rxFrameStats"]), ("Transmitted", case["txFrameStats"])]:
-            f.write('<h3>Frames %s by Opcode</h3>' % statdef[0])
-            f.write('<table>')
+            f.write('      <h3>Frames %s by Opcode</h3>\n' % statdef[0])
+            f.write('      <table>\n')
             stats = statdef[1]
             total_cnt = 0
-            f.write('<tr id="stats_header"><td>Opcode</td><td>Count</td></tr>')
+            f.write('         <tr class="stats_header"><td>Opcode</td><td>Count</td></tr>\n')
             for s in sorted(stats.keys()):
-               f.write('<tr id="stats_row"><td>%d</td><td>%d</td></tr>' % (s, stats[s]))
+               f.write('         <tr class="stats_row"><td>%d</td><td>%d</td></tr>\n' % (s, stats[s]))
                total_cnt += stats[s]
-            f.write('<tr id="stats_total"><td>Total</td><td>%d</td></tr>' % (total_cnt))
-            f.write('</table>')
+            f.write('         <tr class="stats_total"><td>Total</td><td>%d</td></tr>\n' % (total_cnt))
+            f.write('      </table>\n')
+      f.write("      <br/><hr/>\n")
 
-      f.write('<h2>Wire Log</h2>')
 
-      if not case["createWirelog"]:
-         f.write('<p style="margin-left: 40px; color: #f00;"><i>Wire log after handshake disabled!</i></p>')
-
-      ## write out wire log
+      ## Wire Log
       ##
-      f.write('<div id="wirelog">')
+      f.write('      <h2>Wire Log</h2>\n')
+      if not case["createWirelog"]:
+         f.write('      <p style="margin-left: 40px; color: #f00;"><i>Wire log after handshake disabled!</i></p>\n')
+
+      f.write('      <div id="wirelog">\n')
       wl = case["wirelog"]
       i = 0
       for t in wl:
@@ -760,46 +840,46 @@ class FuzzingFactory:
             lines = textwrap.wrap(t[1], 100)
             if t[0] in ["RO", "TO"]:
                if len(lines) > 0:
-                  f.write('<pre class="%s">%03d %s: %s</pre>' % (css_class, i, prefix, lines[0]))
+                  f.write('         <pre class="%s">%03d %s: %s</pre>\n' % (css_class, i, prefix, lines[0]))
                   for ll in lines[1:]:
-                     f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+                     f.write('         <pre class="%s">%s%s</pre>\n' % (css_class, (2+4+len(prefix))*" ", ll))
             else:
                if t[0] == "RF":
                   if t[6]:
                      mmask = binascii.b2a_hex(t[6])
                   else:
                      mmask = str(t[6])
-                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
+                  f.write('         <pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>\n' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
                elif t[0] == "TF":
-                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
+                  f.write('         <pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>\n' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
                else:
                   raise Exception("logic error")
                for ll in lines:
-                  f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+                  f.write('         <pre class="%s">%s%s</pre>\n' % (css_class, (2+4+len(prefix))*" ", ll))
 
          elif t[0] == "WLM":
             if t[1]:
-               f.write('<pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>' % (i))
+               f.write('         <pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>\n' % (i))
             else:
-               f.write('<pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>' % (i))
+               f.write('         <pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>\n' % (i))
 
          elif t[0] == "CT":
-            f.write('<pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>' % (i, t[1], t[2]))
+            f.write('         <pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>\n' % (i, t[1], t[2]))
 
          elif t[0] == "CTE":
-            f.write('<pre class="wirelog_delay">%03d DELAY TIMEOUT on TAG %s</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_delay">%03d DELAY TIMEOUT on TAG %s</pre>\n' % (i, t[1]))
 
          elif t[0] == "KL":
-            f.write('<pre class="wirelog_kill_after">%03d FAIL CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_kill_after">%03d FAIL CONNECTION AFTER %f sec</pre>\n' % (i, t[1]))
 
          elif t[0] == "KLE":
-            f.write('<pre class="wirelog_kill_after">%03d FAILING CONNECTION</pre>' % (i))
+            f.write('         <pre class="wirelog_kill_after">%03d FAILING CONNECTION</pre>\n' % (i))
 
          elif t[0] == "TI":
-            f.write('<pre class="wirelog_kill_after">%03d CLOSE CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_kill_after">%03d CLOSE CONNECTION AFTER %f sec</pre>\n' % (i, t[1]))
 
          elif t[0] == "TIE":
-            f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
+            f.write('         <pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>\n' % (i))
 
          else:
             raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
@@ -807,13 +887,19 @@ class FuzzingFactory:
          i += 1
 
       if case["droppedByMe"]:
-         f.write('<pre class="wirelog_tcp_closed_by_me">%03d TCP DROPPED BY ME</pre>' % i)
+         f.write('         <pre class="wirelog_tcp_closed_by_me">%03d TCP DROPPED BY ME</pre>\n' % i)
       else:
-         f.write('<pre class="wirelog_tcp_closed_by_peer">%03d TCP DROPPED BY PEER</pre>' % i)
-      f.write('</div>')
+         f.write('         <pre class="wirelog_tcp_closed_by_peer">%03d TCP DROPPED BY PEER</pre>\n' % i)
+      f.write('      </div>\n')
+      f.write("      <br/><hr/>\n")
 
-      f.write("</body></html>")
+      ## end of HTML
+      ##
+      f.write("   </body>\n")
+      f.write("</html>\n")
 
+      ## close created HTML file and return filename
+      ##
       f.close()
       return report_filename
 

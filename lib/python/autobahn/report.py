@@ -19,90 +19,78 @@
 ## CSS common for all reports
 ##
 CSS_COMMON = """
-body
-{
+body {
    background-color: #F4F4F4;
    color: #333;
    font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
 }
 
-table
-{
-   border-collapse: collapse;
-   border-spacing: 0px;
-}
-
-td
-{
-   margin: 0;
-   border: 1px solid #fff;
-   padding-top: 6px;
-   padding-bottom: 6px;
-   padding-left: 16px;
-   padding-right: 16px;
-   font-size: 0.9em;
-   color: #fff;
-}
-
-p#intro
-{
+p#intro {
    font-family: Cambria,serif;
    font-size: 1.1em;
    color: #444;
 }
 
-p#intro a
-{
+p#intro a {
    color: #444;
 }
 
-p#intro a:visited
-{
+p#intro a:visited {
    color: #444;
 }
 
-.block
-{
+.block {
    background-color: #e0e0e0;
    padding: 16px;
    margin: 20px;
 }
 
-p#case_desc,p#case_expect
-{
+p.case_text_block {
    border-radius: 10px;
    border: 1px solid #aaa;
    padding: 16px;
-   margin: 8px;
+   margin: 4px 20px;
    color: #444;
 }
 
-p#case_result,p#close_result
-{
+p.case_desc {
+}
+
+p.case_expect {
+}
+
+p.case_outcome {
+}
+
+p.case_closing_beh {
+}
+
+span.case_pickle {
+   font-family: Consolas, "Courier New", monospace;
+   font-size: 0.7em;
+   color: #000;
+}
+
+p#case_result,p#close_result {
    border-radius: 10px;
    background-color: #e8e2d1;
    padding: 20px;
    margin: 20px;
 }
 
-h1
-{
+h1 {
    margin-left: 60px;
 }
 
-h2
-{
-   margin-top: 60px;
+h2 {
    margin-left: 30px;
 }
 
-h3
-{
+h3 {
    margin-left: 50px;
 }
 
-a.up
-{
+a.up {
    float: right;
    border-radius: 16px;
    margin-top: 16px;
@@ -119,12 +107,10 @@ a.up
    font-size: 0.8em;
 }
 
-a.up:visited
-{
+a.up:visited {
 }
 
-a.up:hover
-{
+a.up:hover {
    background-color: #028ec9;
 }
 """
@@ -132,28 +118,14 @@ a.up:hover
 ## CSS for Master report
 ##
 CSS_MASTER_REPORT = """
-table#agent_case_results
-{
+table {
    border-collapse: collapse;
    border-spacing: 0px;
-   border-radius: 10px;
-   margin-left: 20px;
-   margin-right: 20px;
-   margin-bottom: 40px;
 }
 
-h3#case_desc_title
-{
-   color: #666;
-   margin-left: 50px;
-   margin-top: 36px;
-   margin-bottom: 6px;
-}
-
-td
-{
+td {
    margin: 0;
-   border: 1px #fff solid;
+   border: 1px solid #fff;
    padding-top: 6px;
    padding-bottom: 6px;
    padding-left: 16px;
@@ -162,19 +134,26 @@ td
    color: #fff;
 }
 
+table#agent_case_results {
+   border-collapse: collapse;
+   border-spacing: 0px;
+   border-radius: 10px;
+   margin-left: 20px;
+   margin-right: 20px;
+   margin-bottom: 40px;
+}
+
 td.outcome_desc {
    width: 100%;
    color: #333;
    font-size: 0.8em;
 }
 
-tr#agent_case_result_row a
-{
+tr.agent_case_result_row a {
    color: #eee;
 }
 
-table#agent_case_results td.agent
-{
+td.agent {
    color: #fff;
    font-size: 1.0em;
    text-align: center;
@@ -185,8 +164,14 @@ table#agent_case_results td.agent
    width: 140px;
 }
 
-td#case_category
-{
+td.case {
+   background-color: #666;
+   text-align: left;
+   padding-left: 40px;
+   font-size: 0.9em;
+}
+
+td.case_category {
    color: #fff;
    background-color: #000;
    text-align: left;
@@ -194,8 +179,7 @@ td#case_category
    font-size: 1.0em;
 }
 
-td.case_subcategory
-{
+td.case_subcategory {
    color: #fff;
    background-color: #333;
    text-align: left;
@@ -203,22 +187,7 @@ td.case_subcategory
    font-size: 0.9em;
 }
 
-td#case
-{
-   background-color: #666;
-   text-align: left;
-   padding-left: 40px;
-   font-size: 0.9em;
-}
-
-span#case_duration
-{
-   font-size: 0.7em;
-   color: #fff;
-}
-
-td.close
-{
+td.close {
    width: 15px;
    padding: 6px;
    font-size: 0.7em;
@@ -226,35 +195,35 @@ td.close
    min-width: 0px;
 }
 
-td.case_ok
-{
+td.case_ok {
    background-color: #0a0;
    text-align: center;
 }
 
-td.case_almost
-{
+td.case_almost {
    background-color: #6d6;
    text-align: center;
 }
 
-td.case_non_strict, td.case_no_close
-{
+td.case_non_strict, td.case_no_close {
    background-color: #9a0;
    text-align: center;
 }
 
-td.case_failed
-{
+td.case_failed {
    background-color: #900;
    text-align: center;
 }
 
-td.case_missing
-{
+td.case_missing {
    color: #fff;
    background-color: #a05a2c;
    text-align: center;
+}
+
+span.case_duration {
+   font-size: 0.7em;
+   color: #fff;
 }
 
 *.unselectable {
@@ -283,47 +252,31 @@ div#toggle_button:hover {
 ## CSS for Agent/Case detail report
 ##
 CSS_DETAIL_REPORT = """
-h2
-{
-   margin-top: 30px;
-}
-
-p#case_ok
-{
+p.case {
    color: #fff;
    border-radius: 10px;
+   padding: 20px;
+   margin: 12px 20px;
+   font-size: 1.2em;
+}
+
+p.case_ok {
    background-color: #0a0;
-   padding: 20px;
-   margin: 20px;
-   font-size: 1.2em;
 }
 
-p#case_non_strict,p#case_no_close
-{
-   color: #fff;
-   border-radius: 10px;
+p.case_non_strict, p.case_no_close {
    background-color: #9a0;
-   padding: 20px;
-   margin: 20px;
-   font-size: 1.2em;
 }
 
-p#case_failed
-{
-   color: #fff;
-   border-radius: 10px;
+p.case_failed {
    background-color: #900;
-   padding: 20px;
-   margin: 20px;
-   font-size: 1.2em;
 }
 
-table
-{
+table {
    border-collapse: collapse;
    border-spacing: 0px;
    margin-left: 80px;
-   margin-bottom: 40px;
+   margin-bottom: 12px;
    margin-top: 0px;
 }
 
@@ -331,34 +284,38 @@ td
 {
    margin: 0;
    font-size: 0.8em;
-   text-align: right;
    border: 1px #fff solid;
    padding-top: 6px;
    padding-bottom: 6px;
    padding-left: 16px;
    padding-right: 16px;
+   text-align: right;
 }
 
-tr#stats_header
-{
+td.right {
+   text-align: right;
+}
+
+td.left {
+   text-align: left;
+}
+
+tr.stats_header {
    color: #eee;
    background-color: #000;
 }
 
-tr#stats_row
-{
-   background-color: #fc3;
+tr.stats_row {
    color: #000;
+   background-color: #fc3;
 }
 
-tr#stats_total
-{
+tr.stats_total {
    color: #fff;
    background-color: #888;
 }
 
-div#wirelog
-{
+div#wirelog {
    margin-top: 20px;
    margin-bottom: 80px;
 }
