@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
    <head>
 
@@ -55,6 +56,7 @@
             if (agent == null || agent == "")
             {
                ua = navigator.userAgent;
+               console.log("user agent = " + ua);
                if (ua.indexOf("Chrome") > -1)
                {
                   i = ua.indexOf("Chrome");
@@ -77,6 +79,14 @@
                {
                   i = ua.indexOf("Safari");
                   j = ua.indexOf(" ", i);
+                  if (j < 0) j = ua.length;
+                  agent = ua.slice(i, j);
+                  updateStatus("Detected user agent " + agent + ".");
+               }
+               else if (ua.indexOf("MSIE") > -1)
+               {
+                  i = ua.indexOf("MSIE");
+                  j = ua.indexOf(";", i);
                   if (j < 0) j = ua.length;
                   agent = ua.slice(i, j);
                   updateStatus("Detected user agent " + agent + ".");
@@ -110,14 +120,14 @@
 
          function openWebSocket(ws_uri)
          {
-            try
-            {
+            if ("WebSocket" in window) {
+               // Chrome, IE10
                webSocket = new WebSocket(ws_uri);
-            }
-            catch (e)
-            {
-               // Firefox 7/8 currently prefixes the object
+            } else if ("MozWebSocket" in window) {
+               // Firefox 7-10 (currently vendor prefixed)
                webSocket = new MozWebSocket(ws_uri);
+            } else {
+               throw "neither WebSocket nor MozWebSocket available";
             }
             return webSocket;
          }
@@ -194,6 +204,8 @@
                      updateReports();
                   }
                }
+
+            webSocket.onerror = webSocket.onclose;
 
             webSocket.onmessage =
                function(e)

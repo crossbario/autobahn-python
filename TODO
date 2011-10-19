@@ -64,6 +64,10 @@ Features
 REQ = someone asked for it
 
   - control WS options from specs
+  
+  - exclude cases per agent
+  
+  - generate settings page for report (with WS option settings)
 
   - exhaustively test UTF-8 non-chars : EF BF [BE-BF] or F[0-7] [89AB]F BF [BE-BF] (any codepoint whose low 16 bits are 0xFFFE or 0xFFFF ??)
     see: https://bugzilla.mozilla.org/show_bug.cgi?id=686312
