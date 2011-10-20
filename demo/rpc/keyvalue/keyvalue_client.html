@@ -1,33 +1,93 @@
  <html>
    <head>
-      <title>Autobahn WebSockets Simple Remote Key-Value Store Demo</title>
 
-      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <style type="text/css">
+         .block {
+            background-color: #ccc;
+            padding: 1em;
+            margin: 1em;
+         }
+      </style>
+
+      <script src="http://code.jquery.com/jquery.min.js"></script>
       <script src="../../../lib/javascript/autobahn.js"></script>
-      <script>
 
+      <script>
          var sess = null;
 
          $(document).ready(function()
          {
             sess = new ab.Session("ws://localhost:9000", function() {
-                                                            console.log("Connected!");
-                                                            sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
+               console.log("Connected!");
+               sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
             });
 
          });
 
-         function test()
-         {
-            sess.call("keyvalue:set", "heinz", {name: "Heinzelmann", karma: 666, modified: new Date()});
-            sess.call("keyvalue:set", "otto", {name: "Otto der Dritte", karma: 50, modified: new Date()});
-            sess.call("keyvalue:get", "heinz").then(console.log);
-            sess.call("keyvalue:keys").then(console.log);
+         function setKeyValue() {
+
+            var k = document.getElementById('form_key').value;
+            var v1 = document.getElementById('form_value1').value;
+            var v2 = document.getElementById('form_value2').value;
+            var v3 = document.getElementById('form_value3').checked;
+
+            sess.call("keyvalue:set",
+                      k,
+                      {value1: v1,
+                       value2: v2,
+                       value3: v3,
+                       modified: new Date()}).then(function () {
+               console.log("ok, value set");
+            });
          }
 
+         function getValue() {
+
+            var k = document.getElementById('form_key').value;
+
+            sess.call("keyvalue:get", k).then(function (val) {
+               console.log("ok, got value");
+               document.getElementById('form_value1').value = val.value1;
+               document.getElementById('form_value2').value = val.value2;
+               document.getElementById('form_value3').checked = val.value3;
+            });
+         }
+
+         function deleteKey() {
+
+            var k = document.getElementById('form_key').value;
+
+            sess.call("keyvalue:set", k).then(function () {
+               console.log("ok, key gone");
+            });
+         }
+
+         function getAll() {
+            sess.call("keyvalue:get").then(console.log);
+         }
+
+         function deleteAll() {
+            sess.call("keyvalue:set").then(console.log);
+         }
      </script>
    </head>
    <body>
-      <button onclick="test()">Run Test</button>
+
+      <h1>Autobahn WebSockets: Simple Remote Key-Value Store Demo</h1>
+
+      <div class="block"><button onclick="getAll()">Get all</button> Retrieve all key-value pairs from store and log to console.</div>
+      <div class="block"><button onclick="deleteAll()">Delete all</button> Delete all data from store.</div>
+      <div class="block">
+         <form>
+            <p>Key: <input id="form_key" type="text" size="50" maxlength="50"></p>
+            <p>Value 1: <input id="form_value1" type="text" size="50" maxlength="50"></p>
+            <p>Value 2: <input id="form_value2" type="text" size="50" maxlength="50"></p>
+            <p>Value 3: <input id="form_value3" type="checkbox"></p>
+         </form>
+         <p><button onclick="setKeyValue()">Set Value</button> Set key-value pair.</p>
+         <p><button onclick="deleteKey()">Delete Key</button> Delete key-value by key.</p>
+         <p><button onclick="getValue()">Get Key</button> Get key-value by key.</p>
+      </div>
+
    </body>
  </html>

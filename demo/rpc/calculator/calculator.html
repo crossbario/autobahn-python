@@ -32,12 +32,20 @@
             min-width: 3em;
          }
       </style>
-      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script src="http://code.jquery.com/jquery.min.js"></script>
       <script src="../../../lib/javascript/autobahn.js"></script>
       <script>
-
          var sess = null;
          var clearFirst = false;
+
+         $(document).ready(function()
+         {
+            sess = new ab.Session("ws://localhost:9000", function() {
+               console.log("Connected!");
+               sess.prefix("calculator", "http://example.com/simple/calculator#");
+            });
+
+         });
 
          function key_digit(d) {
 
@@ -80,18 +88,6 @@
 
             clearFirst = true;
          }
-
-         var sess = null;
-
-         $(document).ready(function()
-         {
-            sess = new ab.Session("ws://localhost:9000", function() {
-                                                            console.log("Connected!");
-                                                            sess.prefix("calculator", "http://example.com/simple/calculator#");
-            });
-
-         });
-
      </script>
    </head>
    <body>

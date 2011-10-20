@@ -18,7 +18,7 @@
 
 import sys, shelve
 from twisted.python import log
-from twisted.internet import reactor, defer
+from twisted.internet import reactor
 from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
@@ -31,17 +31,23 @@ class KeyValue:
       self.store = shelve.open(filename)
 
    @exportRpc
-   def set(self, key, value):
-      k = str(key)
-      if value:
-         self.store[k] = value
+   def set(self, key = None, value = None):
+      if key is not None:
+         k = str(key)
+         if value is not None:
+            self.store[k] = value
+         else:
+            if self.store.has_key(k):
+               del self.store[k]
       else:
-         if self.store.has_key(k):
-            del self.store[k]
+         self.store.clear()
 
    @exportRpc
-   def get(self, key):
-      return self.store.get(str(key), None)
+   def get(self, key = None):
+      if key is None:
+         return self.store.items()
+      else:
+         return self.store.get(str(key), None)
 
    @exportRpc
    def keys(self):

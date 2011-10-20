@@ -1,8 +1,6 @@
  <html>
    <head>
-      <title>Autobahn WebSockets Simple RPC Demo</title>
-
-      <script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+      <script src="http://code.jquery.com/jquery.min.js"></script>
       <script src="../../../lib/javascript/autobahn.js"></script>
       <script>
 
@@ -14,9 +12,9 @@
             // create a new session providing the server URL and (optional)
             // onOpen and onClose/Error handlers
             sess = new ab.Session("ws://localhost:9000", function() {
-                                                            console.log("Connected!");
-                                                            // we register a prefix so we can abbreviate procedure URIs later
-                                                            sess.prefix("calc", "http://example.com/simple/calc#");
+               console.log("Connected!");
+               // we register a prefix so we can abbreviate procedure URIs later
+               sess.prefix("calc", "http://example.com/simple/calc#");
             });
 
          });
@@ -59,6 +57,11 @@
      </script>
    </head>
    <body>
-      <button onclick="test()">Run Test</button>
+
+      <h1>Autobahn WebSockets: Simple RPC Demo</h1>
+      <p>
+         To run the demo, open browser console (press F12 on Firefox/Chrome) and press button:
+         <button onclick="test()">Run Test</button>
+      </p>
    </body>
  </html>

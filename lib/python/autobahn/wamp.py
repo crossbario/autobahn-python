@@ -353,6 +353,22 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered remote procedure on %s" % uri)
 
 
+   def dispatch(self, topicuri, event, exclude = []):
+      """
+      Dispatch an event for a topic to all clients subscribed to
+      and authorized for that topic. Optionally, exclude list of
+      clients.
+
+      :param topicuri: URI of topic to publish event to.
+      :type topicuri: str
+      :param event: Event to dispatch.
+      :type event: obj
+      :param exclude: Optional list of clients (protocol instances) to exclude.
+      :type exclude: list of obj
+      """
+      self.factory._dispatchEvent(topicuri, event, exclude)
+
+
    def _callProcedure(self, uri, arg = None):
       ## Internal method for calling a procedure invoked via RPC.
 
@@ -491,9 +507,19 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                         event = obj[2]
 
+                        if len(obj) >= 4:
+                           excludeMe = obj[3]
+                        else:
+                           excludeMe = True
+
+                        if excludeMe:
+                           exclude = [self]
+                        else:
+                           exclude = []
+
                         ## direct topic
                         if h[2] is None and h[3] is None:
-                           self.factory._dispatchEvent(topicuri, event)
+                           self.factory._dispatchEvent(topicuri, event, exclude)
 
                         ## topic handled by publication handler
                         else:
@@ -508,7 +534,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                               ## only dispatch event if handler did return event
                               if e:
-                                 self.factory._dispatchEvent(topicuri, e)
+                                 self.factory._dispatchEvent(topicuri, e, exclude)
                            except:
                               if self.debug_autobahn:
                                  log.msg("execption during topic publication handler")
@@ -574,7 +600,7 @@ class WampServerFactory(WebSocketServerFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
-   def _dispatchEvent(self, topicuri, event):
+   def _dispatchEvent(self, topicuri, event, exclude = []):
       ## Internal method called from proto to publish an received event
       ## to all peers subscribed to the event topic.
 
@@ -591,7 +617,11 @@ class WampServerFactory(WebSocketServerFactory):
             except:
                raise Exception("invalid type for event (not JSON serializable)")
             rc = 0
-            for proto in self.subscriptions[topicuri]:
+            if len(exclude) > 0:
+               recvs = list(set(self.subscriptions[topicuri]) - set(exclude))
+            else:
+               recvs = self.subscriptions[topicuri]
+            for proto in recvs:
                if self.debug_autobahn:
                   log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
                proto.sendMessage(msg)
@@ -705,10 +735,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          topicuri = self.prefixes.resolveOrPass(unresolvedTopicUri)
          if self.subscriptions.has_key(topicuri):
             event = obj[2]
-            cur_d = self.subscriptions[topicuri]
-            new_d = Deferred()
-            self.subscriptions[topicuri] = new_d
-            cur_d.callback([unresolvedTopicUri, topicuri, event, new_d])
+            self.subscriptions[topicuri](topicuri, event)
       else:
          raise Exception("logic error")
 
@@ -772,7 +799,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       self.sendMessage(json.dumps(msg))
 
 
-   def publish(self, topicuri, event):
+   def publish(self, topicuri, event, excludeMe = True):
       """
       Publish an event under a topic URI. The latter may be abbreviated using a
       CURIE which has been previously defined using prefix(). The event must
@@ -782,49 +809,65 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       :type topicuri: str
       :param event: Event to be published (must be JSON serializable) or None.
       :type event: value
+      :param excludeMe: When True, don't deliver the published event to myself (when I'm subscribed). Default: True.
+      :type excludeMe: bool
       """
 
       if type(topicuri) not in [unicode, str]:
-         raise Exception("invalid type for URI")
+         raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % str(type(topicUri)))
 
-      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event]
+      if type(excludeMe) != bool:
+         raise Exception("invalid type for parameter 'excludeMe' - must be bool (was %s)" % str(type(excludeMe)))
+
+      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicuri, event, excludeMe]
 
       try:
          o = json.dumps(msg)
       except:
-         raise Exception("event argument not JSON serializable")
+         raise Exception("invalid type for parameter 'event' - not JSON serializable")
 
       self.sendMessage(o)
 
 
-   def subscribe(self, topicuri):
+   def subscribe(self, topicuri, handler):
       """
-      Subscribe to topic.
+      Subscribe to topic. When already subscribed, will overwrite the handler.
 
       :param topicuri: URI or CURIE of topic to subscribe to.
       :type topicuri: str
-      :returns -- Twisted Deferred.
+      :param handler: Event handler to be invoked upon receiving events for topic.
+      :type handler: Python callable, will be called as in <callable>(eventUri, event).
       """
-      d = Deferred()
-      self.subscriptions[self.prefixes.resolveOrPass(topicuri)] = d
-      msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicuri]
-      o = json.dumps(msg)
-      self.sendMessage(o)
-      return d
+      if type(topicuri) not in [unicode, str]:
+         raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % str(type(topicUri)))
+
+      if type(handler) not in [types.FunctionType, types.MethodType, types.BuiltinFunctionType, types.BuiltinMethodType]:
+         raise Exception("invalid type for parameter 'handler' - must be a callable (was %s)" % str(type(handler)))
+
+      turi = self.prefixes.resolveOrPass(topicuri)
+      if not self.subscriptions.has_key(turi):
+         msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicuri]
+         o = json.dumps(msg)
+         self.sendMessage(o)
+      self.subscriptions[turi] = handler
 
 
    def unsubscribe(self, topicuri):
       """
-      Unsubscribe from topic.
+      Unsubscribe from topic. Will do nothing when currently not subscribed to the topic.
 
       :param topicuri: URI or CURIE of topic to unsubscribe from.
       :type topicuri: str
       """
-      del self.subscriptions[topicuri]
-      msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicuri]
-      o = json.dumps(msg)
-      self.sendMessage(o)
-      return d
+      if type(topicuri) not in [unicode, str]:
+         raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % str(type(topicUri)))
+
+      turi = self.prefixes.resolveOrPass(topicuri)
+      if self.subscriptions.has_key(turi):
+         msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicuri]
+         o = json.dumps(msg)
+         self.sendMessage(o)
+         del self.subscriptions[topicuri]
 
 
 class WampClientFactory(WebSocketClientFactory):
