@@ -969,7 +969,7 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   def __init__(self, spec, debug = False, outdir = "reports/clients"):
+   def __init__(self, spec, debug = False, outdir = "./reports/clients"):
 
       WebSocketServerFactory.__init__(self, debug = debug)
       FuzzingFactory.__init__(self, debug = debug, outdir = outdir)

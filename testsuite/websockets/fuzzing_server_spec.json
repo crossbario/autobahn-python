@@ -1,4 +1,10 @@
 {
+   "websocket-port": 9001,
+   "web-port": 9090,
+   "output-dir": "./reports/clients",
+   "web-dir": ".",
+   "debug": false,
+   "debug_autobahn": false,
    "cases": ["*"],
    "exclude-cases": []
 }

@@ -30,15 +30,17 @@ if __name__ == '__main__':
    spec = json.loads(open("fuzzing_server_spec.json").read())
 
    ## fuzzing server
-   fuzzer = FuzzingServerFactory(spec, debug = False, outdir = "reports/clients")
+   fuzzer = FuzzingServerFactory(spec,
+                                 debug = spec.get("debug", False),
+                                 outdir = spec.get("output-directory", "./reports/clients"))
    #fuzzer.requireMaskedClientFrames = False
    #fuzzer.utf8validateIncoming = False
    fuzzer.failByDrop = False
-   reactor.listenTCP(9001, fuzzer)
+   reactor.listenTCP(spec.get("websocket-port", 9001), fuzzer)
 
    ## web server
-   webdir = File(".")
+   webdir = File(spec.get("web-dir", "."))
    web = Site(webdir)
-   reactor.listenTCP(9090, web)
+   reactor.listenTCP(spec.get("web-port", 9090), web)
 
    reactor.run()
