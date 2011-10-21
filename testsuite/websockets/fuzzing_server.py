@@ -22,6 +22,7 @@ from twisted.internet import reactor
 from twisted.web.server import Site
 from twisted.web.static import File
 from autobahn.fuzzing import FuzzingServerFactory
+from autobahn.websocket import listenWS
 
 
 if __name__ == '__main__':
@@ -30,17 +31,12 @@ if __name__ == '__main__':
    spec = json.loads(open("fuzzing_server_spec.json").read())
 
    ## fuzzing server
-   fuzzer = FuzzingServerFactory(spec,
-                                 debug = spec.get("debug", False),
-                                 outdir = spec.get("output-directory", "./reports/clients"))
-   #fuzzer.requireMaskedClientFrames = False
-   #fuzzer.utf8validateIncoming = False
-   fuzzer.failByDrop = False
-   reactor.listenTCP(spec.get("websocket-port", 9001), fuzzer)
+   fuzzer = FuzzingServerFactory(spec)
+   listenWS(fuzzer)
 
    ## web server
-   webdir = File(spec.get("web-dir", "."))
+   webdir = File(spec.get("webdir", "."))
    web = Site(webdir)
-   reactor.listenTCP(spec.get("web-port", 9090), web)
+   reactor.listenTCP(spec.get("webport", 9090), web)
 
    reactor.run()

@@ -16,6 +16,17 @@
 ##
 ###############################################################################
 
+## The Python urlparse module currently does not contain the ws/wss
+## schemes, so we add those dynamically (which is a hack of course).
+##
+import urlparse
+wsschemes = ["ws", "wss"]
+urlparse.uses_relative.extend(wsschemes)
+urlparse.uses_netloc.extend(wsschemes)
+urlparse.uses_params.extend(wsschemes)
+urlparse.uses_query.extend(wsschemes)
+urlparse.uses_fragment.extend(wsschemes)
+
 from twisted.internet import reactor, protocol
 from twisted.python import log
 import binascii
@@ -23,11 +34,86 @@ import hashlib
 import base64
 import struct
 import random
-import urlparse
 import os
 from collections import deque
 from utf8validator import Utf8Validator
 from httpstatus import *
+
+
+def parseWsUrl(url):
+   """
+   Parses as WebSocket URL into it's components and returns a tuple (isSecure?, host, port, resource).
+
+   isSecure is a flag which is True for wss URIs.
+   host is the hostname or IP from the URI.
+   port is the port from the URI or None.
+   resource is the /resource name/ from the URI, which is /path/ and together with the (optional) /query/ component.
+
+   :param url: A valid WebSocket URL, i.e. ws://localhost:9000/myresource?param1=23&param2=666
+   :type url: str
+   :returns tuple - A tuple (isSecure, host, port, resource)
+   """
+   parsed = urlparse.urlparse(url)
+   if parsed.scheme not in ["ws", "wss"]:
+      raise Exception("invalid WebSocket scheme '%s'" % parsed.scheme)
+   if parsed.fragment is not None and parsed.fragment != "":
+      raise Exception("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
+   if parsed.path is not None and parsed.path != "":
+      path = parsed.path
+   else:
+      path = "/"
+   if parsed.query is not None and parsed.query != "":
+      resource = path + "?" + parsed.query
+   else:
+      resource = path
+   return (parsed.scheme == "wss", parsed.hostname, parsed.port, resource)
+
+
+def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
+   """
+   Establish WebSockets connection to a server.
+
+   :param factory: The WebSockets protocol factory to be used for creating client protocol instances.
+   :type factory: An autobahn.websocket.WebSocketClientFactory instance.
+   :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
+   :type contextFactory: A twisted.internet.ssl.ClientContextFactory instance.
+   :param timeout: Number of seconds to wait before assuming the connection has failed.
+   :type timeout: int
+   :param bindAddress: A (host, port) tuple of local address to bind to, or None.
+   :type bindAddress: tuple
+   :returns obj - An object which provides twisted.interface.IConnector.
+   """
+   if factory.isSecure:
+      if contextFactory is None:
+         raise Exception("Secure WebSocket connection requested, but no SSL context factory given")
+      conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
+   else:
+      conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
+   return conn
+
+
+def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
+   """
+   Listen for incoming WebSocket connections from clients.
+
+   :param factory: The WebSockets protocol factory to be used for creating server protocol instances.
+   :type factory: An autobahn.websocket.WebSocketServerFactory instance.
+   :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
+   :type contextFactory: A twisted.internet.ssl.ContextFactory.
+   :param backlog: Size of the listen queue.
+   :type backlog: int
+   :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
+   :type interface: str
+   :returns obj - An object that provides twisted.interface.IListeningPort.
+   """
+   if factory.isSecure:
+      if contextFactory is None:
+         raise Exception("Secure WebSocket listen requested, but no SSL context factory given")
+      listener = reactor.listenSSL(factory.port, factory, contextFactory, backlog, interface)
+   else:
+      listener = reactor.listenTCP(factory.port, factory, backlog, interface)
+   return listener
+
 
 class FrameHeader:
    """
@@ -105,7 +191,7 @@ class ConnectionRequest():
       :type version: int
       :param origin: The HTTP origin header or None.
       :type origin: str
-      :param protocols: The WebSockets subprotocols the client announced.
+      :param protocols: The WebSockets protocols the client announced.
       :type protocols: array of strings
       :param extensions: The WebSockets protocol extensions the client announced (and will be spoken, when the connection is accepted).
       :type extensions: array of strings
@@ -591,14 +677,48 @@ class WebSocketProtocol(protocol.Protocol):
       This is called by Twisted framework when a new TCP connection has been established
       and handed over to a Protocol instance (an instance of this class).
       """
+
+      ## copy default options from factory (so we are not affected by changed on those)
+      ##
       self.debug = self.factory.debug
-      self.debugCodePaths = getattr(self.factory, "debugCodepaths", self.factory.debug)
-      self.transport.setTcpNoDelay(getattr(self.factory, "tcpNoDelay", True))
+      self.debugCodePaths = self.factory.debugCodePaths
+
+      self.utf8validateIncoming = self.factory.utf8validateIncoming
+      self.failByDrop = self.factory.failByDrop
+      self.echoCloseCodeReason = self.factory.echoCloseCodeReason
+      self.closeHandshakeTimeout = self.factory.closeHandshakeTimeout
+      self.tcpNoDelay = self.factory.tcpNoDelay
+
+      if self.isServer:
+         #self.versions = self.factory.versions
+         self.requireMaskedClientFrames = self.factory.requireMaskedClientFrames
+         self.maskServerFrames = self.factory.maskServerFrames
+      else:
+         #self.version = self.factory.version
+         self.acceptMaskedServerFrames = self.factory.acceptMaskedServerFrames
+         self.maskClientFrames = self.factory.maskClientFrames
+         self.serverConnectionDropTimeout = self.factory.serverConnectionDropTimeout
+
+      ## Set "Nagle"
+      self.transport.setTcpNoDelay(self.tcpNoDelay)
+
+      ## the peer we are connected to
       self.peer = self.transport.getPeer()
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
+
+      ## initial state
       self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
+
+      ## for chopped/synched sends, we need to queue to maintain
+      ## ordering when recalling the reactor to actually "force"
+      ## the octets to wire (see test/trickling in the repo)
+      self.send_queue = deque()
+      self.triggered = False
+
+      ## incremental UTF8 validator
+      self.utf8validator = Utf8Validator()
 
       ## the following vars are related to connection close handling/tracking
 
@@ -639,23 +759,6 @@ class WebSocketProtocol(protocol.Protocol):
 
       # The close reason the peer sent me in close frame (if any)
       self.remoteCloseReason = None
-
-      self.utf8validator = Utf8Validator()
-      self.utf8validateIncoming = getattr(self.factory, "utf8validateIncoming", True)
-      self.acceptMaskedServerFrames = getattr(self.factory, "acceptMaskedServerFrames", False)
-      self.requireMaskedClientFrames = getattr(self.factory, "requireMaskedClientFrames", True)
-      self.maskServerFrames = getattr(self.factory, "maskServerFrames", False)
-      self.maskClientFrames = getattr(self.factory, "maskClientFrames", True)
-      self.failByDrop = getattr(self.factory, "failByDrop", True)
-      self.echoCloseCodeReason = getattr(self.factory, "echoCloseCodeReason", False)
-      self.serverConnectionDropTimeout = getattr(self.factory, "serverConnectionDropTimeout", 1)
-      self.closeHandshakeTimeout = getattr(self.factory, "closeHandshakeTimeout", 1)
-
-      ## for chopped/synched sends, we need to queue to maintain
-      ## ordering when recalling the reactor to actually "force"
-      ## the octets to wire (see test/trickling in the repo)
-      self.send_queue = deque()
-      self.triggered = False
 
 
    def connectionLost(self, reason):
@@ -1731,11 +1834,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             version = int(self.http_headers["sec-websocket-version"])
 
-            if version not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
+            if version not in self.factory.versions:
 
                ## respond with list of supported versions (descending order)
                ##
-               sv = sorted(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)
+               sv = sorted(self.factory.versions)
                sv.reverse()
                svs = ','.join([str(x) for x in sv])
                return self.failHandshake("Sec-WebSocket-Version %d not supported (supported versions: %s)" % (version, svs),
@@ -1847,6 +1950,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## send response to complete WebSocket handshake
          ##
          response  = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
+
+         if self.factory.server is not None and self.factory.server != "":
+            response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+
          response += "Upgrade: websocket\x0d\x0a"
          response += "Connection: Upgrade\x0d\x0a"
          response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
@@ -1908,24 +2015,108 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
 
    def __init__(self,
-                subprotocols = [],
-                version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
-                utf8validateIncoming = True,
-                maskServerFrames = False,
-                requireMaskedClientFrames = True,
-                failByDrop = True,
-                echoCloseCodeReason = False,
-                closeHandshakeTimeout = 1,
-                tcpNoDelay = True,
+
+                ## WebSockect session parameters
+                url = None,
+                protocols = [],
+                server = None,
+
+                ## debugging
                 debug = False,
                 debugCodePaths = False):
       """
       Create instance of WebSocket server factory.
 
-      :param subprotocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
-      :type subprotocols: list of strings
-      :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
-      :type version: int
+      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :type url: str
+      :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
+      :type protocols: list of strings
+      :param server: Server as announced in HTTP response header or None (default: None).
+      :type server: str
+      :param debug: Debug mode (default: False).
+      :type debug: bool
+      :param debugCodePaths: Debug code paths mode (default: False).
+      :type debugCodePaths: bool
+      """
+      self.debug = debug
+      self.debugCodePaths = debugCodePaths
+
+      ## seed RNG which is used for WS frame masks generation
+      random.seed()
+
+      ## default WS session parameters
+      ##
+      self.setSessionParameters(url, protocols, server)
+
+      ## default WebSocket protocol options
+      ##
+      self.resetProtocolOptions()
+
+      ## number of currently connected clients
+      ##
+      self.countConnections = 0
+
+
+   def setSessionParameters(self, url = None, protocols = [], server = None):
+      """
+      Set WebSocket session parameters.
+
+      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :type url: str
+      :param origin: The origin to be sent in opening handshake or None (default: None).
+      :type origin: str
+      :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
+      :type protocols: list of strings
+      :param useragent: User agent as announced in HTTP request header during opening handshake or None (default: None).
+      :type useragent: str
+      """
+      if url is not None:
+         ## parse WebSocket URI into components
+         (isSecure, host, port, resource) = parseWsUrl(url)
+         self.url = url
+         self.isSecure = isSecure
+         self.host = host
+         self.port = port
+         self.resource = resource
+      else:
+         self.url = None
+         self.isSecure = None
+         self.host = None
+         self.port = None
+         self.resource = None
+
+      self.protocols = protocols
+      self.server = server
+
+
+   def resetProtocolOptions(self):
+      """
+      Reset all WebSocket protocol options to defaults.
+      """
+      self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
+      self.utf8validateIncoming = True
+      self.requireMaskedClientFrames = True
+      self.maskServerFrames = False
+      self.failByDrop = True
+      self.echoCloseCodeReason = False
+      self.closeHandshakeTimeout = 1
+      self.tcpNoDelay = True
+
+
+   def setProtocolOptions(self,
+                          versions = None,
+                          utf8validateIncoming = None,
+                          maskServerFrames = None,
+                          requireMaskedClientFrames = None,
+                          failByDrop = None,
+                          echoCloseCodeReason = None,
+                          closeHandshakeTimeout = None,
+                          tcpNoDelay = None):
+      """
+      Set WebSocket protocol options used as defaults for new protocol instances.
+
+      :param versions: The WebSockets protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
+      :type versions: list of ints
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
       :param maskServerFrames: Mask server-to-client frames (default: False).
@@ -1940,35 +2131,34 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
-      :param debug: Debug mode (default: False).
-      :type debug: bool
-      :param debugCodePaths: Debug code paths mode (default: False).
-      :type debugCodePaths: bool
       """
-      self.debug = debug
-      self.debugCodePaths = debugCodePaths
+      if versions is not None:
+         for v in versions:
+            if v not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
+               raise Exception("invalid WebSockets protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
+         if set(versions) != set(self.versions):
+            self.versions = versions
 
-      if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
-         raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
-      self.version = version
+      if utf8validateIncoming is not None and utf8validateIncoming != self.utf8validateIncoming:
+         self.utf8validateIncoming = utf8validateIncoming
 
-      ## FIXME: check args
-      ##
-      self.subprotocols = subprotocols
+      if requireMaskedClientFrames is not None and requireMaskedClientFrames != self.requireMaskedClientFrames:
+         self.requireMaskedClientFrames = requireMaskedClientFrames
 
-      ## default for protocol instances
-      ##
-      self.utf8validateIncoming = utf8validateIncoming
-      self.requireMaskedClientFrames = requireMaskedClientFrames
-      self.maskServerFrames = maskServerFrames
-      self.failByDrop = failByDrop
-      self.echoCloseCodeReason = echoCloseCodeReason
-      self.closeHandshakeTimeout = closeHandshakeTimeout
-      self.tcpNoDelay = tcpNoDelay
+      if maskServerFrames is not None and maskServerFrames != self.maskServerFrames:
+         self.maskServerFrames = maskServerFrames
 
-      ## number of currently connected clients
-      ##
-      self.countConnections = 0
+      if failByDrop is not None and failByDrop != self.failByDrop:
+         self.failByDrop = failByDrop
+
+      if echoCloseCodeReason is not None and echoCloseCodeReason != self.echoCloseCodeReason:
+         self.echoCloseCodeReason = echoCloseCodeReason
+
+      if closeHandshakeTimeout is not None and closeHandshakeTimeout != self.closeHandshakeTimeout:
+         self.closeHandshakeTimeout = closeHandshakeTimeout
+
+      if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
+         self.tcpNoDelay = tcpNoDelay
 
 
    def getConnectionCount(self):
@@ -2014,9 +2204,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       ## construct WS opening handshake HTTP header
       ##
-      request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.path.encode("utf-8")
+      request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource.encode("utf-8")
 
-      if self.factory.useragent:
+      if self.factory.useragent is not None and self.factory.useragent != "":
          request += "User-Agent: %s\x0d\x0a" % self.factory.useragent.encode("utf-8")
 
       request += "Host: %s\x0d\x0a" % self.factory.host.encode("utf-8")
@@ -2038,8 +2228,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       ## optional list of WS subprotocols announced
       ##
-      if len(self.factory.subprotocols) > 0:
-         request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(self.factory.subprotocols)
+      if len(self.factory.protocols) > 0:
+         request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(self.factory.protocols)
 
       ## set WS protocol version depending on WS spec version
       ##
@@ -2151,8 +2341,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
          if self.http_headers.has_key("sec-websocket-protocol"):
             sp = self.http_headers["sec-websocket-protocol"].strip()
             if sp != "":
-               if sp not in self.factory.subprotocols:
-                  return self.failHandshake("subprotocol selected by server (%s) not in subprotocol list requested by client (%s)" % (sp, str(self.factory.subprotocols)))
+               if sp not in self.factory.protocols:
+                  return self.failHandshake("subprotocol selected by server (%s) not in subprotocol list requested by client (%s)" % (sp, str(self.factory.protocols)))
                else:
                   ## ok, subprotocol in use
                   ##
@@ -2194,37 +2384,110 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
 
    def __init__(self,
-                path = "/",
-                host = "localhost",
+
+                ## WebSockect session parameters
+                url = None,
                 origin = None,
-                subprotocols = [],
-                version = WebSocketProtocol.DEFAULT_SPEC_VERSION,
+                protocols = [],
                 useragent = None,
-                utf8validateIncoming = True,
-                acceptMaskedServerFrames = False,
-                maskClientFrames = True,
-                failByDrop = True,
-                echoCloseCodeReason = False,
-                serverConnectionDropTimeout = 1,
-                closeHandshakeTimeout = 1,
-                tcpNoDelay = True,
+
+                ## debugging
                 debug = False,
                 debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
-      :param path: The path to be sent in WebSockets opening handshake (default: "/").
-      :type path: str
-      :param host: The host to be sent in WebSockets opening handshake (default: "localhost").
-      :type host: str
+      :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :type url: str
       :param origin: The origin to be sent in WebSockets opening handshake or None (default: None).
       :type origin: str
-      :param subprotocols: List of subprotocols the client should announce in WebSockets opening handshake.
-      :type subprotocols: list of strings
+      :param protocols: List of subprotocols the client should announce in WebSockets opening handshake.
+      :type protocols: list of strings
+      :param useragent: User agent as announced in HTTP request header or None (default: None).
+      :type useragent: str
+      :param debug: Debug mode (default: False).
+      :type debug: bool
+      :param debugCodePaths: Debug code paths mode (default: False).
+      :type debugCodePaths: bool
+      """
+      self.debug = debug
+      self.debugCodePaths = debugCodePaths
+
+      ## seed RNG which is used for WS opening handshake key and WS frame masks generation
+      random.seed()
+
+      ## default WS session parameters
+      ##
+      self.setSessionParameters(url, origin, protocols, useragent)
+
+      ## default WebSocket protocol options
+      ##
+      self.resetProtocolOptions()
+
+
+   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None):
+      """
+      Set WebSocket session parameters.
+
+      :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :type url: str
+      :param origin: The origin to be sent in opening handshake or None (default: None).
+      :type origin: str
+      :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
+      :type protocols: list of strings
+      :param useragent: User agent as announced in HTTP request header during opening handshake or None (default: None).
+      :type useragent: str
+      """
+      if url is not None:
+         ## parse WebSocket URI into components
+         (isSecure, host, port, resource) = parseWsUrl(url)
+         self.url = url
+         self.isSecure = isSecure
+         self.host = host
+         self.port = port
+         self.resource = resource
+      else:
+         self.url = None
+         self.isSecure = None
+         self.host = None
+         self.port = None
+         self.resource = None
+
+      self.origin = origin
+      self.protocols = protocols
+      self.useragent = useragent
+
+
+   def resetProtocolOptions(self):
+      """
+      Reset all WebSocket protocol options to defaults.
+      """
+      self.version = WebSocketProtocol.DEFAULT_SPEC_VERSION
+      self.utf8validateIncoming = True
+      self.acceptMaskedServerFrames = False
+      self.maskClientFrames = True
+      self.failByDrop = True
+      self.echoCloseCodeReason = False
+      self.serverConnectionDropTimeout = 1
+      self.closeHandshakeTimeout = 1
+      self.tcpNoDelay = True
+
+
+   def setProtocolOptions(self,
+                          version = None,
+                          utf8validateIncoming = None,
+                          acceptMaskedServerFrames = None,
+                          maskClientFrames = None,
+                          failByDrop = None,
+                          echoCloseCodeReason = None,
+                          serverConnectionDropTimeout = None,
+                          closeHandshakeTimeout = None,
+                          tcpNoDelay = None):
+      """
+      Set WebSocket protocol options used as defaults for new protocol instances.
+
       :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
-      :param useragent: User agent as announced in HTTP header or None (default: None).
-      :type useragent: str
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
       :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: False).
@@ -2241,42 +2504,42 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
-      :param debug: Debug mode (default: False).
-      :type debug: bool
-      :param debugCodePaths: Debug code paths mode (default: False).
-      :type debugCodePaths: bool
       """
-      self.debug = debug
-      self.debugCodePaths = debugCodePaths
 
-      if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
-         raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
-      self.version = version
+      if version is not None:
+         if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
+            raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
+         if version != self.version:
+            self.version = version
 
-      ## FIXME: check args
-      ##
-      self.path = path
-      self.host = host
-      self.origin = origin
-      self.subprotocols = subprotocols
-      self.useragent = useragent
+      if utf8validateIncoming is not None and utf8validateIncoming != self.utf8validateIncoming:
+         self.utf8validateIncoming = utf8validateIncoming
 
-      ## default for protocol instances
-      ##
-      self.utf8validateIncoming = utf8validateIncoming
-      self.acceptMaskedServerFrames = acceptMaskedServerFrames
-      self.maskClientFrames = maskClientFrames
-      self.failByDrop = failByDrop
-      self.echoCloseCodeReason = echoCloseCodeReason
-      self.serverConnectionDropTimeout = serverConnectionDropTimeout
-      self.closeHandshakeTimeout = closeHandshakeTimeout
-      self.tcpNoDelay = tcpNoDelay
+      if acceptMaskedServerFrames is not None and acceptMaskedServerFrames != self.acceptMaskedServerFrames:
+         self.acceptMaskedServerFrames = acceptMaskedServerFrames
 
-      ## seed RNG which is used for WS opening handshake key generation and WS frame mask generation
-      random.seed()
+      if maskClientFrames is not None and maskClientFrames != self.maskClientFrames:
+         self.maskClientFrames = maskClientFrames
+
+      if failByDrop is not None and failByDrop != self.failByDrop:
+         self.failByDrop = failByDrop
+
+      if echoCloseCodeReason is not None and echoCloseCodeReason != self.echoCloseCodeReason:
+         self.echoCloseCodeReason = echoCloseCodeReason
+
+      if serverConnectionDropTimeout is not None and serverConnectionDropTimeout != self.serverConnectionDropTimeout:
+         self.serverConnectionDropTimeout = serverConnectionDropTimeout
+
+      if closeHandshakeTimeout is not None and closeHandshakeTimeout != self.closeHandshakeTimeout:
+         self.closeHandshakeTimeout = closeHandshakeTimeout
+
+      if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
+         self.tcpNoDelay = tcpNoDelay
+
 
    def clientConnectionFailed(self, connector, reason):
       reactor.stop()
+
 
    def clientConnectionLost(self, connector, reason):
       reactor.stop()

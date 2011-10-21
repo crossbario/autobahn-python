@@ -28,6 +28,7 @@ from twisted.internet import reactor
 from twisted.python import log
 import autobahn
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
+from websocket import connectWS, listenWS
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
 from util import utcnow
 from report import CSS_COMMON, CSS_DETAIL_REPORT, CSS_MASTER_REPORT, JS_MASTER_REPORT
@@ -246,6 +247,8 @@ class FuzzingProtocol:
 
 
    def onOpen(self):
+
+      print "XXXX", self.path
 
       if self.runCase:
 
@@ -969,10 +972,23 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   def __init__(self, spec, debug = False, outdir = "./reports/clients"):
+   def __init__(self, spec):
 
-      WebSocketServerFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+      debug = spec.get("debug", False)
+      debugCodePaths = spec.get("debugCodePaths", False)
+
+      WebSocketServerFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
+      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/clients/"))
+
+      ## WebSocket session parameters
+      ##
+      self.setSessionParameters(url = spec["url"],
+                                protocols = spec.get("protocols", []),
+                                server = "AutobahnWebSocketsTestSuite/%s" % autobahn.version)
+
+      ## WebSocket protocol options
+      ##
+      self.setProtocolOptions(**spec.get("options", {}))
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
@@ -1004,22 +1020,25 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
    protocol = FuzzingClientProtocol
 
-   def __init__(self, spec, debug = False, outdir = "reports/servers"):
+   def __init__(self, spec):
 
-      WebSocketClientFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+      debug = spec.get("debug", False)
+      debugCodePaths = spec.get("debugCodePaths", False)
+
+      WebSocketClientFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
+      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/servers/"))
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
       print "Autobahn WebSockets %s Fuzzing Client" % autobahn.version
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
-      print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + str(x["port"]) for x in spec["servers"]])
+      print "Servers = %s" % str([x["url"] + "@" + x["agent"] for x in spec["servers"]])
 
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():
-            reactor.connectTCP(self.hostname, self.port, self)
+            connectWS(self)
 
 
    def nextServer(self):
@@ -1028,27 +1047,26 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       if self.currServer < len(self.spec["servers"]):
          ## run tests for next server
          ##
-         s = self.spec["servers"][self.currServer]
+         server = self.spec["servers"][self.currServer]
 
          ## agent (=server) string for reports
          ##
-         self.agent = s.get("agent", "UnknownServer")
+         self.agent = server.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
             self.agent = "AutobahnServer/%s" % autobahn.version
 
-         ## used to establish TCP connection
+         ## WebSocket session parameters
          ##
-         self.hostname = s.get("hostname", "localhost")
-         self.port = s.get("port", 80)
+         self.setSessionParameters(url = server["url"],
+                                   origin = server.get("origin", None),
+                                   protocols = server.get("protocols", []),
+                                   useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version)
 
-         ## used in HTTP header for WS opening handshake
+         ## WebSocket protocol options
          ##
-         self.path = s.get("path", "/")
-         self.host = s.get("host", self.hostname)
-         self.origin = s.get("origin", None)
-         self.subprotocols = s.get("subprotocols", [])
-         self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
-         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version
+         self.resetProtocolOptions() # reset to defaults
+         self.setProtocolOptions(**self.spec.get("options", {})) # set spec global options
+         self.setProtocolOptions(**server.get("options", {})) # set server specific options
          return True
       else:
          return False
@@ -1070,7 +1088,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       else:
          if self.nextServer():
             if self.nextCase():
-               reactor.connectTCP(self.hostname, self.port, self)
+               connectWS(self)
          else:
             self.createReports()
             reactor.stop()

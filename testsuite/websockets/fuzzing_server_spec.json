@@ -1,10 +1,12 @@
 {
-   "websocket-port": 9001,
-   "web-port": 9090,
-   "output-dir": "./reports/clients",
-   "web-dir": ".",
-   "debug": false,
-   "debug_autobahn": false,
-   "cases": ["*"],
-   "exclude-cases": []
+   "url": "ws://localhost:9001",
+   "options": {"failByDrop": false},
+
+   "webport": 9090,
+   "webdir": ".",
+
+   "outdir": "./reports/clients",
+
+   "cases": ["1.*", "2.*"],
+   "exclude-cases": ["9.*"]
 }

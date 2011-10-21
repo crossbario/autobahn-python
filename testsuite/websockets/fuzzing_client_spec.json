@@ -1,5 +1,8 @@
 {
-   "servers": [{"agent": "AutobahnServer", "hostname": "localhost", "port": 9000, "version": 13}],
+   "options": {"failByDrop": false},
+
+   "servers": [{"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 13}}],
+
    "cases": ["*"],
-   "exclude-cases": []
+   "exclude-cases": ["6.4.*", "9.*"]
 }
