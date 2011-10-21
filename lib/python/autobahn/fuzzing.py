@@ -248,8 +248,6 @@ class FuzzingProtocol:
 
    def onOpen(self):
 
-      print "XXXX", self.path
-
       if self.runCase:
 
          cc = caseClasstoIdTuple(self.runCase.__class__)
