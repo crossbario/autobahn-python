@@ -1,20 +1,29 @@
+<!DOCTYPE html>
 <html>
    <head>
       <script type="text/javascript">
          window.onload = function() {
 
-            var ws_uri = "wss://localhost:9000";
+            var hostname = window.location.hostname;
+            var wsuri = "wss://" + hostname + ":" + 9000;
 
             if ("WebSocket" in window) {
-               webSocket = new WebSocket(ws_uri);
+               webSocket = new WebSocket(wsuri);
             }
             else {
-               // Firefox 7/8 currently prefixes the WebSocket object
-               webSocket = new MozWebSocket(ws_uri);
+               webSocket = new MozWebSocket(wsuri);
+            }
+
+            webSocket.onopen = function() {
+               console.log("ok, websocket connected!");
+            }
+
+            webSocket.onclose = function(e) {
+               console.log("websocket closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
             }
 
             webSocket.onmessage = function(e) {
-               console.log("Got echo: " + e.data);
+               console.log("message received: " + e.data);
             }
 
             webSocket.onerror = function(e) {
@@ -24,7 +33,7 @@
       </script>
    </head>
    <body>
-      <h1>Autobahn WebSockets Echo Test</h1>
+      <h1>Autobahn WebSockets - TLS Echo Test</h1>
       <button onclick='webSocket.send("Hello, world!");'>Send Hello</button>
    </body>
 </html>

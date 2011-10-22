@@ -27,19 +27,19 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
    def sendHello(self):
       if self.send_hello:
-         for i in xrange(0, 3):
-            self.sendMessage("*" * (self.count * 5))
          self.count += 1
-         reactor.callLater(1, self.sendHello)
+         self.sendMessage("Hello from server (%d)" % self.count)
+         reactor.callLater(2, self.sendHello)
 
    def onOpen(self):
-      self.count = 1
+      self.count = 0
       self.send_hello = True
-      #self.sendHello()
+      self.sendHello()
 
    def onMessage(self, msg, binary):
-      print msg
-      self.sendMessage(msg, binary)
+      if not binary:
+         print msg
+         self.sendMessage("Echo from server ('%s')" % msg)
 
    def connectionLost(self, reason):
       WebSocketServerProtocol.connectionLost(self, reason)
@@ -56,16 +56,20 @@ if __name__ == '__main__':
    factory.protocol = EchoServerProtocol
 
    ## SSL server context: load server key and certificate
+   ## We use this for both WS and Web!
    ##
    contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key', 'keys/server.crt')
 
-   ## now start listening ..
+   ## Listen for incoming WebSocket connections: wss://localhost:9000
+   ##
    listenWS(factory, contextFactory)
 
-
-   ## https://localhost:9090/
+   ## Setup Web serving (for convenience): https://localhost:9090/
+   ##
    webdir = File(".")
    web = Site(webdir)
    reactor.listenSSL(9090, web, contextFactory)
 
+   ## Run everything ..
+   ##
    reactor.run()
