@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+from optparse import OptionParser
 from twisted.python import log
 from twisted.internet import reactor, ssl
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
@@ -39,14 +40,21 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
+   parser = OptionParser()
+   parser.add_option("-u", "--url", dest = "url", help = "The WebSocket URL", default = "wss://localhost:9000")
+   (options, args) = parser.parse_args()
+
    ## create a WS server factory with our protocol
    ##
-   factory = WebSocketClientFactory("wss://localhost:9000", debug = False)
+   factory = WebSocketClientFactory(options.url, debug = False)
    factory.protocol = EchoClientProtocol
 
    ## SSL client context: default
    ##
-   contextFactory = ssl.ClientContextFactory()
+   if factory.isSecure:
+      contextFactory = ssl.ClientContextFactory()
+   else:
+      contextFactory = None
 
    connectWS(factory, contextFactory)
    reactor.run()
