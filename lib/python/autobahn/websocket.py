@@ -42,16 +42,16 @@ from httpstatus import *
 
 def parseWsUrl(url):
    """
-   Parses as WebSocket URL into it's components and returns a tuple (isSecure?, host, port, resource).
+   Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource).
 
-   isSecure is a flag which is True for wss URIs.
-   host is the hostname or IP from the URI.
-   port is the port from the URI or None.
-   resource is the /resource name/ from the URI, which is /path/ and together with the (optional) /query/ component.
+   isSecure is a flag which is True for wss URLs.
+   host is the hostname or IP from the URL.
+   port is the port from the URL or None.
+   resource is the /resource name/ from the URL, the /path/ together with the (optional) /query/ component.
 
    :param url: A valid WebSocket URL, i.e. ws://localhost:9000/myresource?param1=23&param2=666
    :type url: str
-   :returns tuple - A tuple (isSecure, host, port, resource)
+   :returns: tuple -- A tuple (isSecure, host, port, resource)
    """
    parsed = urlparse.urlparse(url)
    if parsed.scheme not in ["ws", "wss"]:
@@ -71,17 +71,18 @@ def parseWsUrl(url):
 
 def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
    """
-   Establish WebSockets connection to a server.
+   Establish WebSockets connection to a server. The connection parameters like target
+   host, port, resource and others are provided via the factory.
 
    :param factory: The WebSockets protocol factory to be used for creating client protocol instances.
-   :type factory: An autobahn.websocket.WebSocketClientFactory instance.
+   :type factory: An :class:`autobahn.websocket.WebSocketClientFactory` instance.
    :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
    :type contextFactory: A twisted.internet.ssl.ClientContextFactory instance.
    :param timeout: Number of seconds to wait before assuming the connection has failed.
    :type timeout: int
    :param bindAddress: A (host, port) tuple of local address to bind to, or None.
    :type bindAddress: tuple
-   :returns obj - An object which provides twisted.interface.IConnector.
+   :returns: obj -- An object which provides twisted.interface.IConnector.
    """
    if factory.isSecure:
       if contextFactory is None:
@@ -94,17 +95,18 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
 
 def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    """
-   Listen for incoming WebSocket connections from clients.
+   Listen for incoming WebSocket connections from clients. The connection parameters like
+   listening port and others are provided via the factory.
 
    :param factory: The WebSockets protocol factory to be used for creating server protocol instances.
-   :type factory: An autobahn.websocket.WebSocketServerFactory instance.
+   :type factory: An :class:`autobahn.websocket.WebSocketServerFactory` instance.
    :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
    :type contextFactory: A twisted.internet.ssl.ContextFactory.
    :param backlog: Size of the listen queue.
    :type backlog: int
    :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
    :type interface: str
-   :returns obj - An object that provides twisted.interface.IListeningPort.
+   :returns: obj -- An object that provides twisted.interface.IListeningPort.
    """
    if factory.isSecure:
       if contextFactory is None:
@@ -151,7 +153,8 @@ class FrameHeader:
 class HttpException():
    """
    Throw an instance of this class to deny a WebSockets connection
-   during handshake in WebSocketServerProtocol.onConnect().
+   during handshake in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
+   You can find definitions of HTTP status codes in module :mod:`autobahn.httpstatus`.
    """
 
    def __init__(self, code, reason):
@@ -170,8 +173,8 @@ class HttpException():
 class ConnectionRequest():
    """
    Thin-wrapper for WebSockets connection request information
-   provided in WebSocketServerProtocol.onConnect when WebSockets
-   client establishes a connection to WebSockets server.
+   provided in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect` when a WebSockets
+   client establishes a connection to a WebSockets server.
    """
    def __init__(self, peer, peerstr, host, path, params, version, origin, protocols, extensions):
       """
@@ -632,7 +635,6 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("skipping failConnection since connection is already closed")
 
 
-
    def protocolViolation(self, reason):
       """
       Fired when a WebSockets protocol violation/error occurs.
@@ -775,19 +777,6 @@ class WebSocketProtocol(protocol.Protocol):
             self.onClose(self.wasClean, self.localCloseCode, self.localCloseReason)
          else:
             self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
-
-
-   def setValidateIncomingUtf8(self, enabled):
-      """
-      Enable/disable validation of incoming text message UTF-8 payload.
-      This is enabled by default (and normally should be). This option
-      does only applies to new incoming text messages (not a currently
-      received message and not binary messages).
-
-      :param enabled: True to enable, False to disable.
-      :type enabled: bool
-      """
-      self.utf8validateIncoming = enabled
 
 
    def logRxOctets(self, data):
@@ -1713,23 +1702,30 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
    def onConnect(self, connectionRequest):
       """
-      Callback fired during WebSocket handshake when new WebSocket client
-      connection is to be established.
+      Callback fired during WebSocket opening handshake when new WebSocket client
+      connection is about to be established.
 
       Throw HttpException when you don't want to accept the WebSocket
-      connection request.
+      connection request. For example, throw a
+      HttpException(httpstatus.HTTP_STATUS_CODE_UNAUTHORIZED[0], "You are not authorized for this!").
 
-      When you want to accept the connection, return accepted subprotocol
-      from list of protocols provided by client or None to speak
-      the base WS protocol without extensions.
+      When you want to accept the connection, return the accepted protocol
+      from list of WebSockets (sub)protocols provided by client or None to
+      speak no specific one or when the client list was empty.
 
       :param connectionRequest: WebSocket connection request information.
-      :type connectionRequest: ConnectionRequest
+      :type connectionRequest: instance of :class:`autobahn.websocket.ConnectionRequest`
       """
       return None
 
 
    def connectionMade(self):
+      """
+      Called by Twisted when new TCP connection from client was accepted. Default
+      implementation will prepare for initial WebSocket opening handshake.
+      When overriding in derived class, make sure to call this base class
+      implementation _before_ your code.
+      """
       self.isServer = True
       WebSocketProtocol.connectionMade(self)
       self.factory.countConnections += 1
@@ -1738,6 +1734,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 
    def connectionLost(self, reason):
+      """
+      Called by Twisted when established TCP connection from client was lost. Default
+      implementation will tear down all state properly.
+      When overriding in derived class, make sure to call this base class
+      implementation _after_ your code.
+      """
       WebSocketProtocol.connectionLost(self, reason)
       self.factory.countConnections -= 1
       if self.debug:
@@ -2012,6 +2014,9 @@ class WebSocketServerFactory(protocol.ServerFactory):
    """
 
    protocol = WebSocketServerProtocol
+   """
+   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketServerProtocol`.
+   """
 
 
    def __init__(self,
@@ -2063,11 +2068,11 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str
-      :param origin: The origin to be sent in opening handshake or None (default: None).
+      :param origin: The origin to be sent in opening handshake.
       :type origin: str
       :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header during opening handshake or None (default: None).
+      :param useragent: User agent as announced in HTTP request header during opening handshake.
       :type useragent: str
       """
       if url is not None:
@@ -2165,16 +2170,24 @@ class WebSocketServerFactory(protocol.ServerFactory):
       """
       Get number of currently connected clients.
 
-      :returns int -- Number of currently connected clients.
+      :returns: int -- Number of currently connected clients.
       """
       return self.countConnections
 
 
    def startFactory(self):
+      """
+      Called by Twisted before starting to listen on port for incoming connections.
+      Default implementation does nothing. Override in derived class when appropriate.
+      """
       pass
 
 
    def stopFactory(self):
+      """
+      Called by Twisted before stopping to listen on port for incoming connections.
+      Default implementation does nothing. Override in derived class when appropriate.
+      """
       pass
 
 
@@ -2184,6 +2197,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
    """
 
    def connectionMade(self):
+      """
+      Called by Twisted when new TCP connection to server was established. Default
+      implementation will start the initial WebSocket opening handshake.
+      When overriding in derived class, make sure to call this base class
+      implementation _before_ your code.
+      """
       self.isServer = False
       WebSocketProtocol.connectionMade(self)
       if self.debug:
@@ -2192,6 +2211,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
 
    def connectionLost(self, reason):
+      """
+      Called by Twisted when established TCP connection to server was lost. Default
+      implementation will tear down all state properly.
+      When overriding in derived class, make sure to call this base class
+      implementation _after_ your code.
+      """
       WebSocketProtocol.connectionLost(self, reason)
       if self.debug:
          log.msg("connection to %s lost" % self.peerstr)
@@ -2374,13 +2399,15 @@ class WebSocketClientProtocol(WebSocketProtocol):
       self.dropConnection()
 
 
-
 class WebSocketClientFactory(protocol.ClientFactory):
    """
    A Twisted factory for WebSockets client protocols.
    """
 
    protocol = WebSocketClientProtocol
+   """
+   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketClientProtocol`.
+   """
 
 
    def __init__(self,
@@ -2401,7 +2428,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type url: str
       :param origin: The origin to be sent in WebSockets opening handshake or None (default: None).
       :type origin: str
-      :param protocols: List of subprotocols the client should announce in WebSockets opening handshake.
+      :param protocols: List of subprotocols the client should announce in WebSockets opening handshake (default: []).
       :type protocols: list of strings
       :param useragent: User agent as announced in HTTP request header or None (default: None).
       :type useragent: str
@@ -2431,11 +2458,11 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
       :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str
-      :param origin: The origin to be sent in opening handshake or None (default: None).
+      :param origin: The origin to be sent in opening handshake.
       :type origin: str
       :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header during opening handshake or None (default: None).
+      :param useragent: User agent as announced in HTTP request header during opening handshake.
       :type useragent: str
       """
       if url is not None:
@@ -2484,7 +2511,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None):
       """
-      Set WebSocket protocol options used as defaults for new protocol instances.
+      Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
       :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
@@ -2538,8 +2565,16 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
 
    def clientConnectionFailed(self, connector, reason):
+      """
+      Called by Twisted when the connection to server has failed. Default implementation
+      will stop the reactor. Override in derived class when appropriate.
+      """
       reactor.stop()
 
 
    def clientConnectionLost(self, connector, reason):
+      """
+      Called by Twisted when the connection to server was lost. Default implementation
+      will stop the reactor. Override in derived class when appropriate.
+      """
       reactor.stop()
