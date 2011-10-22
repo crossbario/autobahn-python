@@ -50,15 +50,15 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   ## create a WS server factory with our protocol
-   ##
-   factory = WebSocketServerFactory("wss://localhost:9000", debug = False)
-   factory.protocol = EchoServerProtocol
-
    ## SSL server context: load server key and certificate
    ## We use this for both WS and Web!
    ##
    contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key', 'keys/server.crt')
+
+   ## create a WS server factory with our protocol
+   ##
+   factory = WebSocketServerFactory("wss://localhost:9000", debug = False)
+   factory.protocol = EchoServerProtocol
 
    ## Listen for incoming WebSocket connections: wss://localhost:9000
    ##

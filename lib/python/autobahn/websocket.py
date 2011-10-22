@@ -38,6 +38,7 @@ import os
 from collections import deque
 from utf8validator import Utf8Validator
 from httpstatus import *
+import autobahn # need autobahn.version
 
 
 def parseWsUrl(url):
@@ -693,6 +694,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       if self.isServer:
          #self.versions = self.factory.versions
+         self.webStatus = self.factory.webStatus
          self.requireMaskedClientFrames = self.factory.requireMaskedClientFrames
          self.maskServerFrames = self.factory.maskServerFrames
       else:
@@ -1812,7 +1814,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Upgrade
          ##
          if not self.http_headers.has_key("upgrade"):
-            return self.failHandshake("HTTP Upgrade header missing", HTTP_STATUS_CODE_UPGRADE_REQUIRED[0])
+            if self.webStatus:
+               self.sendServerStatus()
+               self.dropConnection()
+               return
+            else:
+               return self.failHandshake("HTTP Upgrade header missing", HTTP_STATUS_CODE_UPGRADE_REQUIRED[0])
          if self.http_headers["upgrade"].lower() != "websocket":
             return self.failHandshake("HTTP Upgrade header different from 'websocket' (case-insensitive)")
 
@@ -2008,6 +2015,37 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.sendData(response)
 
 
+   def sendHtml(self, html):
+      raw = html.encode("utf-8")
+      response  = "HTTP/1.1 %d %s\x0d\x0a" % (HTTP_STATUS_CODE_OK[0], HTTP_STATUS_CODE_OK[1])
+      if self.factory.server is not None and self.factory.server != "":
+         response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+      response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
+      response += "Content-Length: %d\x0d\x0a" % len(raw)
+      response += "\x0d\x0a"
+      response += raw
+      self.sendData(response)
+
+
+   def sendServerStatus(self):
+      """
+      Used to send out server status/version upon receiving a HTTP/GET without
+      upgrade to WebSocket header (and option serverStatus is True).
+      """
+      html = """
+<!DOCTYPE html>
+<html>
+   <body>
+      <h1>Autobahn WebSockets %s</h1>
+      <p>I am not Web server, but a WebSocket endpoint. You can talk to me
+      in the WebSocket protocol versions %s.</p>
+      <p>For more information, please visit <a href="http://www.tavendo.de/autobahn">my homepage</a>.</p>
+   </body>
+</html>
+""" % (str(autobahn.version), str(sorted(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
+      self.sendHtml(html)
+
+
 class WebSocketServerFactory(protocol.ServerFactory):
    """
    A Twisted factory for WebSockets server protocols.
@@ -2099,6 +2137,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       Reset all WebSocket protocol options to defaults.
       """
       self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
+      self.webStatus = True
       self.utf8validateIncoming = True
       self.requireMaskedClientFrames = True
       self.maskServerFrames = False
@@ -2110,6 +2149,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
    def setProtocolOptions(self,
                           versions = None,
+                          webStatus = None,
                           utf8validateIncoming = None,
                           maskServerFrames = None,
                           requireMaskedClientFrames = None,
@@ -2122,6 +2162,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       :param versions: The WebSockets protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
       :type versions: list of ints
+      :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: True).
+      :type webStatus: bool
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
       :param maskServerFrames: Mask server-to-client frames (default: False).
@@ -2143,6 +2185,9 @@ class WebSocketServerFactory(protocol.ServerFactory):
                raise Exception("invalid WebSockets protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
          if set(versions) != set(self.versions):
             self.versions = versions
+
+      if webStatus is not None and webStatus != self.webStatus:
+         self.webStatus = webStatus
 
       if utf8validateIncoming is not None and utf8validateIncoming != self.utf8validateIncoming:
          self.utf8validateIncoming = utf8validateIncoming
