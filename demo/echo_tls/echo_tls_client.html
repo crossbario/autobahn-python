@@ -5,7 +5,12 @@
          window.onload = function() {
 
             var hostname = window.location.hostname;
+            if (hostname == null || hostname == "") {
+               hostname = "localhost";
+            }
+
             var wsuri = "wss://" + hostname + ":" + 9000;
+            console.log("opening websocket connection to " + wsuri);
 
             if ("WebSocket" in window) {
                webSocket = new WebSocket(wsuri);
