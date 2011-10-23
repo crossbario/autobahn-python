@@ -1674,22 +1674,32 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          opcode = 1
 
+      ## explicit payload_frag_size arguments overrides autoFragmentSize setting
+      ##
+      if payload_frag_size is not None:
+         pfs = payload_frag_size
+      else:
+         if self.autoFragmentSize > 0:
+            pfs = self.autoFragmentSize
+         else:
+            pfs = None
+
       ## send unfragmented
       ##
-      if payload_frag_size is None or len(payload) <= payload_frag_size:
+      if pfs is None or len(payload) <= pfs:
          self.sendFrame(opcode = opcode, payload = payload, sync = sync)
 
       ## send data message in fragments
       ##
       else:
-         if payload_frag_size < 1:
-            raise Exception("payload fragment size must be at least 1 (was %d)" % payload_frag_size)
-         i = 0
+         if pfs < 1:
+            raise Exception("payload fragment size must be at least 1 (was %d)" % pfs)
          n = len(payload)
+         i = 0
          done = False
          first = True
          while not done:
-            j = i + payload_frag_size
+            j = i + pfs
             if j > n:
                done = True
                j = n
@@ -1698,7 +1708,7 @@ class WebSocketProtocol(protocol.Protocol):
                first = False
             else:
                self.sendFrame(opcode = 0, payload = payload[i:j], fin = done, sync = sync)
-            i += payload_frag_size
+            i += pfs
 
 
 class WebSocketServerProtocol(WebSocketProtocol):
@@ -2190,7 +2200,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type maxFramePayloadSize: int
       :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
       :type maxMessagePayloadSize: int
-      :param autoFragmentSize: Automatic fragmentation of outgoing messages into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
       :type autoFragmentSize: int
       :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: True).
       :type failbyDrop: bool
@@ -2616,7 +2626,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type maxFramePayloadSize: int
       :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
       :type maxMessagePayloadSize: int
-      :param autoFragmentSize: Automatic fragmentation of outgoing messages into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
       :type autoFragmentSize: int
       :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: True).
       :type failbyDrop: bool

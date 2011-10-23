@@ -36,7 +36,8 @@ CaseCategories = {"0": "Handshake",
                   "6": "UTF-8 Handling",
                   "7": "Close Handling",
                   "8": "Misc",
-                  "9": "Limits/Performance"}
+                  "9": "Limits/Performance",
+                  "10": "Autobahn Protocol Options"}
 
 CaseSubCategories = {"1.1": "Text Messages",
                      "1.2": "Binary Messages",
@@ -53,7 +54,8 @@ CaseSubCategories = {"1.1": "Text Messages",
                      "9.5": "Text Message (fixed size, increasing chop size)",
                      "9.6": "Binary Text Message (fixed size, increasing chop size)",
                      "9.7": "Text Message Roundtrip Time (fixed number, increasing size)",
-                     "9.8": "Binary Message Roundtrip Time (fixed number, increasing size)"}
+                     "9.8": "Binary Message Roundtrip Time (fixed number, increasing size)",
+                     "10.1": "Auto-Fragmentation"}
 
 ##
 ## Cases
@@ -203,6 +205,9 @@ from case9_6_6 import *
 
 from case9_7_X import *
 
+from case10_1_1 import *
+
+
 ##
 ## This is the list of Case classes that will be run by the fuzzing server/client
 ##
@@ -234,6 +239,8 @@ Cases += [Case9_6_1, Case9_6_2, Case9_6_3, Case9_6_4, Case9_6_5, Case9_6_6]
 # this produces case 9.7.X and 9.8.X ... all come from one file: Case9_7_X .. its a bit hacky, ok.
 Cases.extend(Case9_7_X)
 Cases.extend(Case9_8_X)
+
+Cases += [Case10_1_1]
 
 
 ## Class1_2_3 => '1.2.3'
