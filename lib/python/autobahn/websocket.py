@@ -2066,7 +2066,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
                 ## WebSockect session parameters
                 url = None,
                 protocols = [],
-                server = None,
+                server = "AutobahnWebSockets/%s" % autobahn.version,
 
                 ## debugging
                 debug = False,
@@ -2078,7 +2078,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
-      :param server: Server as announced in HTTP response header or None (default: None).
+      :param server: Server as announced in HTTP response header during opening handshake or None (default: "AutobahnWebSockets/x.x.x").
       :type server: str
       :param debug: Debug mode (default: False).
       :type debug: bool
@@ -2114,8 +2114,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type origin: str
       :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header during opening handshake.
-      :type useragent: str
+      :param server: Server as announced in HTTP response header during opening handshake.
+      :type server: str
       """
       if url is not None:
          ## parse WebSocket URI into components
@@ -2493,7 +2493,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
                 url = None,
                 origin = None,
                 protocols = [],
-                useragent = None,
+                useragent = "AutobahnWebSockets/%s" % autobahn.version,
 
                 ## debugging
                 debug = False,
@@ -2507,7 +2507,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type origin: str
       :param protocols: List of subprotocols the client should announce in WebSockets opening handshake (default: []).
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header or None (default: None).
+      :param useragent: User agent as announced in HTTP request header or None (default: "AutobahnWebSockets/x.x.x").
       :type useragent: str
       :param debug: Debug mode (default: False).
       :type debug: bool
