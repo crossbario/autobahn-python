@@ -920,7 +920,7 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
       if self.debug:
-         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (connectionRequest.peerstr, connectionRequest.host, connectionRequest.path, str(connectionRequest.params), connectionRequest.origin, str(connectionRequest.protocols)))
+         log.msg("connection received from %s speaking WebSockets protocol %d - upgrade request for host '%s', path '%s', params %s, origin '%s', protocols %s, headers %s" % (connectionRequest.peerstr, connectionRequest.version, connectionRequest.host, connectionRequest.path, str(connectionRequest.params), connectionRequest.origin, str(connectionRequest.protocols), str(connectionRequest.headers)))
 
       if connectionRequest.params.has_key("agent"):
          if len(connectionRequest.params["agent"]) > 1:
