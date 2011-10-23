@@ -181,23 +181,23 @@ class ConnectionRequest():
       """
       Constructor.
 
-      :param peer: IP address/port of client.
+      :param peer: IP address/port of the connecting client.
       :type peer: object
-      :param peerstr: IP address/port of client as string.
+      :param peerstr: IP address/port of the connecting client as string.
       :type peerstr: str
-      :param host: Hostname from opening handshake HTTP header.
+      :param host: Host from opening handshake HTTP header.
       :type host: str
-      :param path: Path from HTTP header resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to "/myservice".
+      :param path: Path from requested HTTP resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to "/myservice".
       :type path: str
-      :param params: Query parameters (if any) from HTTP header resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to {'foo': ['23', '66'], 'bar': ['2']}.
+      :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to {'foo': ['23', '66'], 'bar': ['2']}.
       :type params: dict of arrays of strings
       :param version: The WebSockets protocol version the client announced (and will be spoken, when connection is accepted).
       :type version: int
-      :param origin: The HTTP origin header or None.
+      :param origin: The WebSockets origin header or None. Note that this only a reliable source of information for browser clients!
       :type origin: str
-      :param protocols: The WebSockets protocols the client announced.
+      :param protocols: The WebSockets (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
       :type protocols: array of strings
-      :param extensions: The WebSockets protocol extensions the client announced (and will be spoken, when the connection is accepted).
+      :param extensions: The WebSockets extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
       :type extensions: array of strings
       """
       self.peer = peer
@@ -2074,6 +2074,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       """
       Create instance of WebSocket server factory.
 
+      Note that you MUST set URL either here or using setSessionParameters() _before_ the factory is started.
+
       :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
@@ -2500,6 +2502,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
                 debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
+
+      Note that you MUST set URL either here or using setSessionParameters() _before_ the factory is started.
 
       :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str
