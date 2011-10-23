@@ -371,6 +371,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       self.message_opcode = opcode
       self.message_data = []
+      self.message_data_total_length = 0
 
 
    def onMessageFrameBegin(self, length, reserved):
@@ -378,14 +379,21 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when receiving a new message frame has begun. Default implementation will
       prepare to buffer message frame data. Override in derived class.
 
-      :param length: Length of message frame which is received.
+      :param length: Payload length of message frame which is to be received.
       :type length: int
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
       """
-      self.frame_length = length
-      self.frame_reserved = reserved
-      self.frame_data = []
+      if not self.failedByMe:
+         self.message_data_total_length += length
+         if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
+            self.wasMaxMessagePayloadSizeExceeded = True
+            self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+         else:
+            self.frame_length = length
+            self.frame_reserved = reserved
+            self.frame_data = []
+            self.frame_data_total_length = 0
 
 
    def onMessageFrameData(self, payload):
@@ -396,7 +404,13 @@ class WebSocketProtocol(protocol.Protocol):
       :param payload: Partial payload for message frame.
       :type payload: str
       """
-      self.frame_data.append(payload)
+      if not self.failedByMe:
+         self.frame_data_total_length += len(payload)
+         if self.maxFramePayloadSize > 0 and self.frame_data_total_length > self.maxFramePayloadSize:
+            self.wasMaxFramePayloadSizeExceeded = True
+            self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
+         else:
+            self.frame_data.append(payload)
 
 
    def onMessageFrameEnd(self):
@@ -405,9 +419,10 @@ class WebSocketProtocol(protocol.Protocol):
       will flatten the buffered frame data and callback onMessageFrame. Override
       in derived class.
       """
-      data = bytearray().join(self.frame_data)
-      self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, data)
-      self.onMessageFrame(data, self.frame_reserved)
+      if not self.failedByMe:
+         data = bytearray().join(self.frame_data)
+         self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, data)
+         self.onMessageFrame(data, self.frame_reserved)
 
 
    def onMessageFrame(self, payload, reserved):
@@ -420,7 +435,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
       """
-      self.message_data.append(payload)
+      if not self.failedByMe:
+         self.message_data.append(payload)
 
 
    def onMessageEnd(self):
@@ -429,10 +445,11 @@ class WebSocketProtocol(protocol.Protocol):
       will flatten the buffered frames and callback onMessage. Override
       in derived class.
       """
-      data = bytearray().join(self.message_data)
-      self.onMessage(str(data), self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
-      self.message_opcode = None
-      self.message_data = None
+      if not self.failedByMe:
+         data = bytearray().join(self.message_data)
+         self.onMessage(str(data), self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
+         self.message_opcode = None
+         self.message_data = None
 
 
    def onMessage(self, payload, binary):
@@ -727,6 +744,10 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## incremental UTF8 validator
       self.utf8validator = Utf8Validator()
+
+      ## track when frame/message payload sizes (incoming) were exceeded
+      self.wasMaxFramePayloadSizeExceeded = False
+      self.wasMaxMessagePayloadSizeExceeded = False
 
       ## the following vars are related to connection close handling/tracking
 
