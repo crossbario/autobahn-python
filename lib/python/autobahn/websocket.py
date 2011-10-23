@@ -1150,7 +1150,7 @@ class WebSocketProtocol(protocol.Protocol):
          if length > 0:
             ## unmask payload
             ##
-            if self.current_frame.mask:
+            if self.current_frame.mask and self.applyMask:
                for k in xrange(0, length):
                   payload[k] ^= self.current_frame.mask_array[(k + self.current_frame.ptr) % 4]
 
@@ -1326,10 +1326,13 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## mask frame payload
          ##
-         pl_ba = bytearray(pl)
-         for k in xrange(0, l):
-            pl_ba[k] ^= frame_mask[k % 4]
-         plm = str(pl_ba)
+         if self.applyMask:
+            pl_ba = bytearray(pl)
+            for k in xrange(0, l):
+               pl_ba[k] ^= frame_mask[k % 4]
+            plm = str(pl_ba)
+         else:
+            plm = pl
 
       else:
          mv = ""
@@ -1623,7 +1626,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## mask frame payload
       ##
-      if self.send_message_frame_mask:
+      if self.send_message_frame_mask and self.applyMask:
          w = self.send_message_frame_octets_sent % 4
          for k in xrange(0, l):
             pl_ba[k] ^= self.send_message_frame_mask_array[(w + k) % 4]
