@@ -47,6 +47,7 @@ class Case:
       self.resultClose = "TCP connection was dropped without close handshake"
       self.reportTime = False
       self.subcase = None
+      self.suppressClose = False # suppresses automatic close behavior (used in cases that deliberately send bad close behavior)
       self.init()
 
    def getSubcaseCount(self):
@@ -110,6 +111,6 @@ class Case:
       for e in self.expected:
          if not self.compare(self.received, self.expected[e]):
             return
-      if self.expectedClose["failedByMe"]:
+      if self.expectedClose["failedByMe"] and not self.suppressClose:
          self.p.sendClose(self.expectedClose["closeCode"])
                

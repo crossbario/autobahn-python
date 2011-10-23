@@ -1,8 +1,9 @@
 {
    "options": {"failByDrop": false},
 
-   "servers": [{"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 13}}],
+   "servers": [{"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 13}},
+	           {"agent": "WebSocket++", "url": "ws://localhost:9002", "options": {"version": 13}}],
 
-   "cases": ["*"],
-   "exclude-cases": ["6.4.*", "9.*"]
+   "cases": ["7.*"],
+   "exclude-cases": ["9.*"]
 }

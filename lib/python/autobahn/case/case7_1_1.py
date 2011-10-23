@@ -18,11 +18,11 @@
 
 from case import Case
 
-class Case7_2(Case):
+class Case7_1_1(Case):
 
-   DESCRIPTION = """Send ping after close"""
+   DESCRIPTION = """Send a message followed by a close frame"""
 
-   EXPECTATION = """Receive echo'ed text message. Clean close with normal code."""
+   EXPECTATION = """Echoed message followed by clean close with normal code."""
 
    def onOpen(self):
       payload = "Hello World!"
@@ -30,7 +30,7 @@ class Case7_2(Case):
       self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
       self.p.sendFrame(opcode = 1, payload = payload)
       #self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL);
-      #self.p.sendFrame(opcode = 9)
+      #self.p.sendFrame(opcode = 1, payload = payload)
       self.p.killAfter(1)
 
       
