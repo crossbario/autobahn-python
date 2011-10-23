@@ -687,6 +687,10 @@ class WebSocketProtocol(protocol.Protocol):
       self.debugCodePaths = self.factory.debugCodePaths
 
       self.utf8validateIncoming = self.factory.utf8validateIncoming
+      self.applyMask = self.factory.applyMask
+      self.maxFramePayloadSize = self.factory.maxFramePayloadSize
+      self.maxMessagePayloadSize = self.factory.maxMessagePayloadSize
+      self.autoFragmentSize = self.factory.autoFragmentSize
       self.failByDrop = self.factory.failByDrop
       self.echoCloseCodeReason = self.factory.echoCloseCodeReason
       self.closeHandshakeTimeout = self.factory.closeHandshakeTimeout
@@ -2141,6 +2145,10 @@ class WebSocketServerFactory(protocol.ServerFactory):
       self.utf8validateIncoming = True
       self.requireMaskedClientFrames = True
       self.maskServerFrames = False
+      self.applyMask = True
+      self.maxFramePayloadSize = 0
+      self.maxMessagePayloadSize = 0
+      self.autoFragmentSize = 0
       self.failByDrop = True
       self.echoCloseCodeReason = False
       self.closeHandshakeTimeout = 1
@@ -2153,6 +2161,10 @@ class WebSocketServerFactory(protocol.ServerFactory):
                           utf8validateIncoming = None,
                           maskServerFrames = None,
                           requireMaskedClientFrames = None,
+                          applyMask = None,
+                          maxFramePayloadSize = None,
+                          maxMessagePayloadSize = None,
+                          autoFragmentSize = None,
                           failByDrop = None,
                           echoCloseCodeReason = None,
                           closeHandshakeTimeout = None,
@@ -2170,6 +2182,14 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type maskServerFrames: bool
       :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: True).
       :type requireMaskedClientFrames: bool
+      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: True).
+      :type applyMask: bool
+      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or 0 for unlimited (default: 0).
+      :type maxFramePayloadSize: int
+      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
+      :type maxMessagePayloadSize: int
+      :param autoFragmentSize: Automatic fragmentation of outgoing messages into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :type autoFragmentSize: int
       :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: True).
       :type failbyDrop: bool
       :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
@@ -2197,6 +2217,18 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       if maskServerFrames is not None and maskServerFrames != self.maskServerFrames:
          self.maskServerFrames = maskServerFrames
+
+      if applyMask is not None and applyMask != self.applyMask:
+         self.applyMask = applyMask
+
+      if maxFramePayloadSize is not None and maxFramePayloadSize != self.maxFramePayloadSize:
+         self.maxFramePayloadSize = maxFramePayloadSize
+
+      if maxMessagePayloadSize is not None and maxMessagePayloadSize != self.maxMessagePayloadSize:
+         self.maxMessagePayloadSize = maxMessagePayloadSize
+
+      if autoFragmentSize is not None and autoFragmentSize != self.autoFragmentSize:
+         self.autoFragmentSize = autoFragmentSize
 
       if failByDrop is not None and failByDrop != self.failByDrop:
          self.failByDrop = failByDrop
@@ -2538,6 +2570,10 @@ class WebSocketClientFactory(protocol.ClientFactory):
       self.utf8validateIncoming = True
       self.acceptMaskedServerFrames = False
       self.maskClientFrames = True
+      self.applyMask = True
+      self.maxFramePayloadSize = 0
+      self.maxMessagePayloadSize = 0
+      self.autoFragmentSize = 0
       self.failByDrop = True
       self.echoCloseCodeReason = False
       self.serverConnectionDropTimeout = 1
@@ -2550,6 +2586,10 @@ class WebSocketClientFactory(protocol.ClientFactory):
                           utf8validateIncoming = None,
                           acceptMaskedServerFrames = None,
                           maskClientFrames = None,
+                          applyMask = None,
+                          maxFramePayloadSize = None,
+                          maxMessagePayloadSize = None,
+                          autoFragmentSize = None,
                           failByDrop = None,
                           echoCloseCodeReason = None,
                           serverConnectionDropTimeout = None,
@@ -2566,6 +2606,14 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type acceptMaskedServerFrames: bool
       :param maskClientFrames: Mask client-to-server frames (default: True).
       :type maskClientFrames: bool
+      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: True).
+      :type applyMask: bool
+      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or 0 for unlimited (default: 0).
+      :type maxFramePayloadSize: int
+      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
+      :type maxMessagePayloadSize: int
+      :param autoFragmentSize: Automatic fragmentation of outgoing messages into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :type autoFragmentSize: int
       :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: True).
       :type failbyDrop: bool
       :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
@@ -2592,6 +2640,18 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
       if maskClientFrames is not None and maskClientFrames != self.maskClientFrames:
          self.maskClientFrames = maskClientFrames
+
+      if applyMask is not None and applyMask != self.applyMask:
+         self.applyMask = applyMask
+
+      if maxFramePayloadSize is not None and maxFramePayloadSize != self.maxFramePayloadSize:
+         self.maxFramePayloadSize = maxFramePayloadSize
+
+      if maxMessagePayloadSize is not None and maxMessagePayloadSize != self.maxMessagePayloadSize:
+         self.maxMessagePayloadSize = maxMessagePayloadSize
+
+      if autoFragmentSize is not None and autoFragmentSize != self.autoFragmentSize:
+         self.autoFragmentSize = autoFragmentSize
 
       if failByDrop is not None and failByDrop != self.failByDrop:
          self.failByDrop = failByDrop
