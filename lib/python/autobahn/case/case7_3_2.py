@@ -31,7 +31,6 @@ class Case7_3_2(Case):
       Case.onConnectionLost(self, failedByMe)
       
       if self.behaviorClose == Case.WRONG_CODE:
-         self.behaviorClose = Case.FAILED
          self.behavior = Case.FAILED
          self.passed = False
          self.result = self.resultClose
