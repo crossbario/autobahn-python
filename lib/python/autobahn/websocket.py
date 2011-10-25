@@ -1417,7 +1417,14 @@ class WebSocketProtocol(protocol.Protocol):
          payload += struct.pack("!H", code)
          if reasonUtf8 is not None:
             payload += reasonUtf8
-
+      
+      ## update state
+      self.state = WebSocketProtocol.STATE_CLOSING
+      self.closedByMe = not isReply
+      
+      self.localCloseCode = code
+      self.localCloseReason = reason
+      
       self.sendFrame(opcode = 8, payload = payload)
 
 
@@ -1468,12 +1475,7 @@ class WebSocketProtocol(protocol.Protocol):
          ## send close frame using raw sendCloseFrame()
          self.sendCloseFrame(code, reasonUtf8)
 
-         ## update state
-         self.state = WebSocketProtocol.STATE_CLOSING
-         self.closedByMe = not isReply
-
-         self.localCloseCode = code
-         self.localCloseReason = reason
+         
 
          ## drop connection when timeout on receiving close handshake reply
          if self.closedByMe:
