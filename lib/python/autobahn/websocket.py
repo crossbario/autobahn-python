@@ -537,7 +537,11 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("WebSocketProtocol.onCloseFrame")
 
       self.remoteCloseCode = code
-      self.remoteCloseReason = reason
+      
+      if reason is not None:
+         self.remoteCloseReason = reason.encode("UTF-8",errors='replace')
+      else:
+         self.remoteCloseReason = reason
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
