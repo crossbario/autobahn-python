@@ -95,9 +95,9 @@ class Case:
       elif self.expectedClose["requireClean"] and not self.p.wasClean:
          self.behaviorClose = Case.UNCLEAN
          self.resultClose = "The spec requires the connection to be failed cleanly here"
-      elif self.p.remoteCloseCode != None and self.p.remoteCloseCode != self.expectedClose["closeCode"]:
+      elif self.p.remoteCloseCode != None and self.p.remoteCloseCode not in self.expectedClose["closeCode"]:
          self.behaviorClose = Case.WRONG_CODE
-         self.resultClose = "The close code should have been %d or empty" % self.expectedClose["closeCode"]
+         self.resultClose = "The close code should have been %s or empty" % ','.join(map(str,self.expectedClose["closeCode"]))
       elif not self.p.isServer and self.p.droppedByMe:
          self.behaviorClose = Case.FAILED_BY_CLIENT
          self.resultClose = "It is preferred that the server close the TCP connection"
@@ -112,5 +112,5 @@ class Case:
          if not self.compare(self.received, self.expected[e]):
             return
       if self.expectedClose["failedByMe"] and not self.suppressClose:
-         self.p.sendClose(self.expectedClose["closeCode"])
+         self.p.sendClose(self.expectedClose["closeCode"][0])
                
