@@ -30,7 +30,7 @@ class Case7_3_6(Case):
    def onOpen(self):
       self.payload = "\x03\xe8"+("*" * 125)
       self.expected[Case.OK] = []      
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
       self.p.sendCloseFrame(self.p.CLOSE_STATUS_CODE_NORMAL, reasonUtf8 = self.payload)
       self.p.killAfter(1)
 

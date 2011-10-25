@@ -30,7 +30,7 @@ class Case7_1_5(Case):
    def onOpen(self):
       fragments = ["fragment1", "fragment2"]
       self.expected[Case.OK] = []      
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0])
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
       self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1])

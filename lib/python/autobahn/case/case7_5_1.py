@@ -28,37 +28,18 @@ class Case7_5_1(Case):
       self.suppressClose = True
    
    def onConnectionLost(self, failedByMe):
-      # check if we passed the test
-      for e in self.expected:
-         if self.compare(self.received, self.expected[e]):
-            self.behavior = e
-            self.passed = True
-            self.result = "Actual events match at least one expected."
-            break
-      # check the close status
-      if self.expectedClose["failedByMe"] != self.p.closedByMe:
+      Case.onConnectionLost(self, failedByMe)
+      
+      if self.behaviorClose == Case.WRONG_CODE:
          self.behaviorClose = Case.FAILED
-         self.resultClose = "The connection was failed by the wrong endpoint"
-      elif self.expectedClose["requireClean"] and not self.p.wasClean:
-         self.behaviorClose = Case.FAILED
-         self.resultClose = "The spec requires the connection to be failed cleanly here"
-      elif self.p.remoteCloseCode != None and self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR and self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD:
-         self.behaviorClose = Case.FAILED
-         self.resultClose = "The close code should have been 1002, 1007, or empty"
          self.behavior = Case.FAILED
          self.passed = False
-         self.result = "The close code should have been 1002, 1007, or empty"
-      elif not self.p.isServer and self.p.droppedByMe:
-         self.behaviorClose = Case.FAILED_BY_CLIENT
-         self.resultClose = "It is preferred that the server close the TCP connection"
-      else:
-         self.behaviorClose = Case.OK
-         self.resultClose = "Connection was properly closed"
+         self.result = self.resultClose
    
    def onOpen(self):
       self.payload = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5\xed\xa0\x80\x65\x64\x69\x74\x65\x64'
       self.expected[Case.OK] = []      
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
       #self.p.sendFrame(opcode = 8,payload = self.payload)
       self.p.sendCloseFrame(self.p.CLOSE_STATUS_CODE_NORMAL, reasonUtf8 = self.payload)
       self.p.killAfter(1)
