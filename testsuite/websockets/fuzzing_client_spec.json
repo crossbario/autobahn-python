@@ -5,5 +5,5 @@
 	           {"agent": "WebSocket++", "url": "ws://localhost:9002", "options": {"version": 13}}],
 
    "cases": ["7.*"],
-   "exclude-cases": ["9.*"]
+   "exclude-cases": []
 }

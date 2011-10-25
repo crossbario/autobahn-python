@@ -27,7 +27,7 @@ class Case2_9(Case):
    def onOpen(self):
       payload = "ping payload"
       self.expected[Case.OK] = [("pong",payload)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 10, payload = "unsolicited pong payload")
       self.p.sendFrame(opcode = 9, payload = payload)
       self.p.closeAfter(1)

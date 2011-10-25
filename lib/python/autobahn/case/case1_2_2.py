@@ -27,6 +27,6 @@ class Case1_2_2(Case):
    def onOpen(self):
       payload = "\xfe" * 125
       self.expected[Case.OK] = [("message", payload, True)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 2, payload = payload)
       self.p.killAfter(1)

@@ -28,7 +28,7 @@ class Case10_1_1(Case):
       self.payload = "*" * 65536
       self.p.autoFragmentSize = 1300
       self.expected[Case.OK] = [("message", self.payload, False)]
-      self.expectedClose = {"failedByMe": True, "closeCode": self.p.CLOSE_STATUS_CODE_NORMAL, "requireClean": True}
+      self.expectedClose = {"failedByMe": True, "closeCode": [self.p.CLOSE_STATUS_CODE_NORMAL], "requireClean": True}
       self.p.sendMessage(self.payload)
       self.p.killAfter(10)
 
