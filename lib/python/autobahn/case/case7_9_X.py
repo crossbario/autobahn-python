@@ -43,7 +43,7 @@ def onOpen(self):
 i = 1
 for s in tests:
    DESCRIPTION = """Send close with close code %d""" % s
-   EXPECTATION = """Clean close with normal or echoed code"""
+   EXPECTATION = """Clean close with protocol error code or drop TCP"""
    C = type("Case7_9_%d" % i,
 			(object, Case, ),
 			{"CLOSE_CODE": s,
