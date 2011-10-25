@@ -27,6 +27,15 @@ class Case7_3_2(Case):
    def init(self):
       self.suppressClose = True
       
+   def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+      
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behaviorClose = Case.FAILED
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = "The close code should have been %d or empty" % self.expectedClose["closeCode"] 
+            
    def onOpen(self):
       self.expected[Case.OK] = []      
       self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}

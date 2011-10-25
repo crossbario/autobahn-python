@@ -45,6 +45,9 @@ class Case7_5_1(Case):
       elif self.p.remoteCloseCode != None and self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR and self.p.remoteCloseCode != self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD:
          self.behaviorClose = Case.FAILED
          self.resultClose = "The close code should have been 1002, 1007, or empty"
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = "The close code should have been 1002, 1007, or empty"
       elif not self.p.isServer and self.p.droppedByMe:
          self.behaviorClose = Case.FAILED_BY_CLIENT
          self.resultClose = "It is preferred that the server close the TCP connection"
@@ -55,8 +58,9 @@ class Case7_5_1(Case):
    def onOpen(self):
       self.payload = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5\xed\xa0\x80\x65\x64\x69\x74\x65\x64'
       self.expected[Case.OK] = []      
-      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
-      self.p.sendFrame(opcode = 8,payload = self.payload)
+      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
+      #self.p.sendFrame(opcode = 8,payload = self.payload)
+      self.p.sendCloseFrame(self.p.CLOSE_STATUS_CODE_NORMAL, reasonUtf8 = self.payload)
       self.p.killAfter(1)
 
       
