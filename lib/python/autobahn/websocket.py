@@ -177,7 +177,7 @@ class ConnectionRequest():
    provided in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect` when a WebSockets
    client establishes a connection to a WebSockets server.
    """
-   def __init__(self, peer, peerstr, host, path, params, version, origin, protocols, extensions):
+   def __init__(self, peer, peerstr, headers, host, path, params, version, origin, protocols, extensions):
       """
       Constructor.
 
@@ -185,6 +185,8 @@ class ConnectionRequest():
       :type peer: object
       :param peerstr: IP address/port of the connecting client as string.
       :type peerstr: str
+      :param headers: HTTP headers from opening handshake request.
+      :type headers: dict
       :param host: Host from opening handshake HTTP header.
       :type host: str
       :param path: Path from requested HTTP resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to "/myservice".
@@ -202,6 +204,7 @@ class ConnectionRequest():
       """
       self.peer = peer
       self.peerstr = peerstr
+      self.headers = headers
       self.host = host
       self.path = path
       self.params = params
@@ -1921,9 +1924,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          self.websocket_origin = None
          if self.http_headers.has_key("sec-websocket-origin") and self.websocket_version < 13:
-            origin = self.http_headers["sec-websocket-origin"].strip()
+            self.websocket_origin = self.http_headers["sec-websocket-origin"].strip()
          elif self.http_headers.has_key("origin") and self.websocket_version >= 13:
-            origin = self.http_headers["origin"].strip()
+            self.websocket_origin = self.http_headers["origin"].strip()
 
          ## Sec-WebSocket-Extensions
          ##
@@ -1963,6 +1966,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          try:
             connectionRequest = ConnectionRequest(self.peer,
                                                   self.peerstr,
+                                                  self.http_headers,
                                                   self.http_request_host,
                                                   self.http_request_path,
                                                   self.http_request_params,
