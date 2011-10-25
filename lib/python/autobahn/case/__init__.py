@@ -55,7 +55,7 @@ CaseSubCategories = {"1.1": "Text Messages",
 #                     "7.6": "Close frame structure: payload value (peer initiated)",
                      "7.7": "Close frame structure: valid close codes (fuzzer initiated)",
 #                     "7.8": "Close frame structure: valid close codes (peer initiated)",
-#                     "7.9": "Close frame structure: invalid close codes (fuzzer initiated)",
+                     "7.9": "Close frame structure: invalid close codes (fuzzer initiated)",
 #                     "7.10": "Close frame structure: invalid close codes (peer initiated)",
 #                     "7.11": "Peer initiated timeouts",
                      "9.1": "Text Message (increasing size)",
@@ -179,6 +179,7 @@ from case7_3_6 import *
 from case7_5_1 import *
 
 from case7_7_X import *
+from case7_9_X import *
 
 from case9_1_1 import *
 from case9_1_2 import *
@@ -257,6 +258,7 @@ Cases += [Case7_1_1, Case7_1_2, Case7_1_3, Case7_1_4, Case7_1_5]
 Cases += [Case7_3_1, Case7_3_2, Case7_3_3, Case7_3_4, Case7_3_5, Case7_3_6]
 Cases += [Case7_5_1]
 Cases.extend(Case7_7_X)
+Cases.extend(Case7_9_X)
 Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]
