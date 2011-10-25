@@ -1242,7 +1242,10 @@ class WebSocketProtocol(protocol.Protocol):
          reason = None
 
          plen = len(payload)
-         if plen > 0:
+         if plen == 1:
+            if self.protocolViolation("received close frame payload with 1 byte"):
+               return False
+         elif plen > 1:
 
             ## If there is a body, the first two bytes of the body MUST be a 2-byte
             ## unsigned integer (in network byte order) representing a status code
@@ -1406,7 +1409,7 @@ class WebSocketProtocol(protocol.Protocol):
          self.sendFrame(opcode = 10)
 
 
-   def sendCloseFrame(self, code = None, reasonUtf8 = None):
+   def sendCloseFrame(self, code = None, reasonUtf8 = None, isReply = False):
       """Send close frame to WebSockets peer.
 
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
@@ -1426,7 +1429,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.closedByMe = not isReply
       
       self.localCloseCode = code
-      self.localCloseReason = reason
+      self.localCloseReason = reasonUtf8
       
       self.sendFrame(opcode = 8, payload = payload)
 
@@ -1476,7 +1479,7 @@ class WebSocketProtocol(protocol.Protocol):
                raise Exception("status reason '%s' without status code in close frame" % reason)
 
          ## send close frame using raw sendCloseFrame()
-         self.sendCloseFrame(code, reasonUtf8)
+         self.sendCloseFrame(code, reasonUtf8, isReply)
 
          
 
