@@ -1,8 +1,7 @@
 {
    "options": {"failByDrop": false},
-
-   "servers": [{"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 13}}],
-
+   "servers": [{"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 17}},
+               {"agent": "Jetty/7.5.4", "url": "ws://localhost:8080", "options": {"version": 17}}],
    "cases": ["*"],
-   "exclude-cases": ["6.4.*", "9.*"]
+   "exclude-cases": []
 }
