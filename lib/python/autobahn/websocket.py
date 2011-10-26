@@ -1798,9 +1798,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
       end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
+         http_request_data = self.data[:end_of_header]
+         if self.debug:
+            log.msg("received HTTP request:\n\n%s\n\n" % http_request_data)
+
          ## extract HTTP status line and headers
          ##
-         (self.http_status_line, self.http_headers) = parseHttpHeader(self.data[:end_of_header])
+         (self.http_status_line, self.http_headers) = parseHttpHeader(http_request_data)
 
          ## remember rest (after HTTP headers, if any)
          ##

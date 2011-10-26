@@ -322,7 +322,7 @@ class FuzzingProtocol:
          self.runCase.onClose(wasClean, code, reason)
       else:
          if self.debug:
-            log.msg("Close received: " + code + " - " + reason)
+            log.msg("Close received: %s - %s" % (code, reason))
 
    def onMessage(self, msg, binary):
 
