@@ -559,18 +559,18 @@ class WebSocketProtocol(protocol.Protocol):
 
          self.wasClean = True
 
-         ## Either reply with same code/reason, or code == NORMAL
+         ## Either reply with same code/reason, or code == NORMAL/reason=None
          if self.echoCloseCodeReason:
-            self.sendClose(code = code, reason = reason, isReply = True)
+            self.sendCloseFrame(code = code, reasonRaw = reason.encode("UTF-8"), isReply = True)
          else:
-            self.sendClose(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
+            self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
 
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection()
          else:
             ## When we are a client, we expect the server to drop the TCP,
-            ## and when the server fails to do so, a timeout in sendClose()
+            ## and when the server fails to do so, a timeout in sendCloseFrame()
             ## will set wasClean = False back again.
             pass
 
@@ -647,7 +647,7 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             ## perform WebSockets closing handshake
             if self.state != WebSocketProtocol.STATE_CLOSING:
-               self.sendClose(code = code, reason = reason, isReply = False)
+               self.sendCloseFrame(code = code, reasonRaw = reason.encode("UTF-8"), isReply = False)
             else:
                if self.debugCodePaths:
                   log.msg("skipping failConnection since connection is already closing")
@@ -1406,77 +1406,41 @@ class WebSocketProtocol(protocol.Protocol):
          self.sendFrame(opcode = 10)
 
 
-   def sendCloseFrame(self, code = None, reasonUtf8 = None):
-      """Send close frame to WebSockets peer.
-
-      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-      :type code: int
-      :param reason: An optional close reason (normally MUST be UTF-8 encoded and when present, a status code MUST also be present).
-      :type reason: str
+   def sendCloseFrame(self, code = None, reasonRaw = None, isReply = False):
       """
-      payload = ""
-
-      if code is not None:
-         payload += struct.pack("!H", code)
-         if reasonUtf8 is not None:
-            payload += reasonUtf8
-
-      self.sendFrame(opcode = 8, payload = payload)
-
-
-   def sendClose(self, code = None, reason = None, isReply = False):
-      """Starts a closing handshake.
-
-      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-      :type code: int
-      :param reason: An optional close reason (when present, a status code MUST also be present).
-      :type reason: str
+      Send a close frame and update protocol state. Note, that this is
+      an internal method which deliberately allows not send close
+      frame with invalid payload.
       """
+
       if self.state == WebSocketProtocol.STATE_CLOSING:
          if self.debugCodePaths:
-            log.msg("ignoring sendClose since connection is closing")
+            log.msg("ignoring sendCloseFrame since connection is closing")
 
       elif self.state == WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
-            log.msg("ignoring sendClose since connection already closed")
+            log.msg("ignoring sendCloseFrame since connection already closed")
 
       elif self.state == WebSocketProtocol.STATE_CONNECTING:
          raise Exception("cannot close a connection not yet connected")
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
 
-         ## validate code/reason for close frame sending
-         reasonUtf8 = None
-
-         ## 11.7.  WebSocket Close Code Number Registry
-         ##
-         ## Status code range 1000-2999 is for the WS protocol itself (IANA registered)
-         ## Status code range 3000-3999 is for libraries, frameworks and applications (IANA registered by "first-come-first-serve").
-         ## Status code range 4000-4999 is for private use.
-         ##
+         ## construct close frame payload and send frame
+         payload = ""
          if code is not None:
-            if (not (code >= 3000 and code <= 3999)) and \
-               (not (code >= 4000 and code <= 4999)) and \
-               code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED:
-               raise Exception("invalid status code %d for close frame" % code)
-
-            if reason is not None:
-               reasonUtf8 = reason.encode("UTF-8")
-               if len(reasonUtf8) + 2 > 125:
-                  raise Exception("close frame payload larger than 125 octets")
-         else:
-            if reason is not None and reason != "":
-               raise Exception("status reason '%s' without status code in close frame" % reason)
-
-         ## send close frame using raw sendCloseFrame()
-         self.sendCloseFrame(code, reasonUtf8)
+            payload += struct.pack("!H", code)
+         if reasonRaw is not None:
+            payload += reasonRaw
+         self.sendFrame(opcode = 8, payload = payload)
 
          ## update state
          self.state = WebSocketProtocol.STATE_CLOSING
          self.closedByMe = not isReply
 
+         ## remember payload of close frame we sent
          self.localCloseCode = code
-         self.localCloseReason = reason
+         self.localCloseReason = reasonRaw
 
          ## drop connection when timeout on receiving close handshake reply
          if self.closedByMe:
@@ -1484,6 +1448,33 @@ class WebSocketProtocol(protocol.Protocol):
 
       else:
          raise Exception("logic error")
+
+
+   def sendClose(self, code = None, reason = None):
+      """
+      Starts a closing handshake.
+
+      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_NORMAL or 3000-4999).
+      :type code: int
+      :param reason: An optional close reason (a string that when present, a status code MUST also be present).
+      :type reason: str
+      """
+      if code is not None:
+         if type(code) != int:
+            raise Exception("invalid type %s for close code" % type(code))
+         if code != 1000 and not (code >= 3000 and code <= 4999):
+            raise Exception("invalid close code %d" % code)
+      if reason is not None:
+         if code is None:
+            raise Exception("close reason without close code")
+         if type(reason) not in [str, unicode]:
+            raise Exception("invalid type %s for close reason" % type(reason))
+         reasonUtf8 = reason.encode("UTF-8")
+         if len(reasonUtf8) + 2 > 125:
+            raise Exception("close reason too long (%d)" % len(reasonUtf8))
+      else:
+         reasonUtf8 = None
+      self.sendCloseFrame(code = code, reasonRaw = reasonUtf8, isReply = False)
 
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):

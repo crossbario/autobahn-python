@@ -133,8 +133,10 @@ class WampProtocol:
    def _protocolError(self, reason):
       if self.debug_autobahn:
          log.msg("Closing Wamp session on protocol violation : %s" % reason)
-      #self.failConnection()
-      self.sendClose(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "Wamp RPC/PubSub protocol violation ('%s')" % reason)
+
+      ## FIXME: subprotocols are probably not supposed to close with CLOSE_STATUS_CODE_PROTOCOL_ERROR
+      ##
+      self.protocolViolation("Wamp RPC/PubSub protocol violation ('%s')" % reason)
 
 
    def shrink(self, uri):
