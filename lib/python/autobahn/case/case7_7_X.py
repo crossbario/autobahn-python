@@ -28,7 +28,7 @@ def __init__(self, protocol):
 
 def onOpen(self):
    self.expected[Case.OK] = []
-   self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL,self.CLOSE_CODE],"requireClean":True}
+   self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL,self.CLOSE_CODE],"requireClean":True}
    self.p.sendCloseFrame(self.CLOSE_CODE)
    self.p.killAfter(1)
 

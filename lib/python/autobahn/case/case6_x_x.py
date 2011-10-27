@@ -34,10 +34,10 @@ def onOpen(self):
 
    if self.isValid:
       self.expected[Case.OK] = [("message", self.PAYLOAD, False)]
-      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
    else:
       self.expected[Case.OK] = []
-      self.expectedClose = {"failedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
+      self.expectedClose = {"closedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
 
    self.p.sendMessage(self.PAYLOAD, binary = False)
    self.p.killAfter(0.5)

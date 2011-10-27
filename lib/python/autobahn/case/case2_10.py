@@ -33,5 +33,5 @@ class Case2_10(Case):
          payload = "payload-%d" % i
          self.expected[Case.OK].append(("pong", payload))
          self.p.sendFrame(opcode = 9, payload = payload, chopsize = self.chopsize)
-      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.closeAfter(3)

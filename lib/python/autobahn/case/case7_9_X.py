@@ -36,7 +36,7 @@ def onConnectionLost(self, failedByMe):
 
 def onOpen(self):
    self.expected[Case.OK] = []
-   self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
+   self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
    self.p.sendCloseFrame(self.CLOSE_CODE)
    self.p.killAfter(1)
 

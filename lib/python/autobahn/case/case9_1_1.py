@@ -34,7 +34,7 @@ class Case9_1_1(Case):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
 
-      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
 
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
       self.p.sendFrame(opcode = 1, payload = self.PAYLOAD, payload_len = self.DATALEN)

@@ -89,7 +89,7 @@ class Case:
             self.result = "Actual events match at least one expected."
             break
       # check the close status
-      if self.expectedClose["failedByMe"] != self.p.closedByMe:
+      if self.expectedClose["closedByMe"] != self.p.closedByMe:
          self.behaviorClose = Case.FAILED
          self.resultClose = "The connection was failed by the wrong endpoint"
       elif self.expectedClose["requireClean"] and not self.p.wasClean:
@@ -111,6 +111,6 @@ class Case:
       for e in self.expected:
          if not self.compare(self.received, self.expected[e]):
             return
-      if self.expectedClose["failedByMe"] and not self.suppressClose:
+      if self.expectedClose["closedByMe"] and not self.suppressClose:
          self.p.sendClose(self.expectedClose["closeCode"][0])
                

@@ -37,6 +37,6 @@ class Case7_3_2(Case):
 
    def onOpen(self):
       self.expected[Case.OK] = []
-      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
       self.p.sendCloseFrame(reasonUtf8 = "a")
       self.p.killAfter(1)
