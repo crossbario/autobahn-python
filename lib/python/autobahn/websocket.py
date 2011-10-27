@@ -539,7 +539,7 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("WebSocketProtocol.onCloseFrame")
 
       self.remoteCloseCode = code
-      self.remoteCloseReason = None
+      self.remoteCloseReason = reasonRaw
 
       ## reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
       ##
@@ -549,6 +549,8 @@ class WebSocketProtocol(protocol.Protocol):
       ## closing reason
       ##
       if reasonRaw is not None:
+         ## we use our own UTF-8 validator to get consistent and fully conformant
+         ## UTF-8 validation behavior
          u = Utf8Validator()
          val = u.validate(bytearray(reasonRaw))
          if not val[0]:
