@@ -549,9 +549,9 @@ class WebSocketProtocol(protocol.Protocol):
       ## closing reason
       ##
       if reasonRaw is not None:
-         try:
-            self.remoteCloseReason = unicode(reasonRaw, 'utf8')
-         except UnicodeDecodeError:
+         u = Utf8Validator()
+         val = u.validate(bytearray(reasonRaw))
+         if not val[0]:
             return self.invalidPayload("invalid close reason (non-UTF-8 payload)")
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
@@ -576,7 +576,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## Either reply with same code/reason, or code == NORMAL/reason=None
          if self.echoCloseCodeReason:
-            self.sendCloseFrame(code = code, reasonRaw = reason.encode("UTF-8"), isReply = True)
+            self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = True)
          else:
             self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
 
@@ -662,7 +662,7 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             ## perform WebSockets closing handshake
             if self.state != WebSocketProtocol.STATE_CLOSING:
-               self.sendCloseFrame(code = code, reasonRaw = reason.encode("UTF-8"), isReply = False)
+               self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = False)
             else:
                if self.debugCodePaths:
                   log.msg("skipping failConnection since connection is already closing")
@@ -1254,7 +1254,7 @@ class WebSocketProtocol(protocol.Protocol):
          code = None
          reasonRaw = None
          ll = len(payload)
-         if ll > 0: # note that we catched the case ll == 1 already earlier, so its either ll == 0 or ll >= 2
+         if ll > 1:
             code = struct.unpack("!H", payload[0:2])[0]
             if ll > 2:
                reasonRaw = payload[2:]
@@ -1406,7 +1406,7 @@ class WebSocketProtocol(protocol.Protocol):
          self.sendFrame(opcode = 10)
 
 
-   def sendCloseFrame(self, code = None, reasonRaw = None, isReply = False):
+   def sendCloseFrame(self, code = None, reasonUtf8 = None, isReply = False):
       """
       Send a close frame and update protocol state. Note, that this is
       an internal method which deliberately allows not send close
@@ -1430,8 +1430,8 @@ class WebSocketProtocol(protocol.Protocol):
          payload = ""
          if code is not None:
             payload += struct.pack("!H", code)
-         if reasonRaw is not None:
-            payload += reasonRaw
+         if reasonUtf8 is not None:
+            payload += reasonUtf8
          self.sendFrame(opcode = 8, payload = payload)
 
          ## update state
@@ -1440,7 +1440,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## remember payload of close frame we sent
          self.localCloseCode = code
-         self.localCloseReason = reasonRaw
+         self.localCloseReason = reasonUtf8
 
          ## drop connection when timeout on receiving close handshake reply
          if self.closedByMe:
@@ -1474,7 +1474,7 @@ class WebSocketProtocol(protocol.Protocol):
             raise Exception("close reason too long (%d)" % len(reasonUtf8))
       else:
          reasonUtf8 = None
-      self.sendCloseFrame(code = code, reasonRaw = reasonUtf8, isReply = False)
+      self.sendCloseFrame(code = code, reasonUtf8 = reasonUtf8, isReply = False)
 
 
    def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
