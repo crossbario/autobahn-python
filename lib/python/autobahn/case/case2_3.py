@@ -28,6 +28,6 @@ class Case2_3(Case):
       payload = "\x00\xff\xfe\xfd\xfc\xfb\x00\xff"
       
       self.expected[Case.OK] = [("pong", payload)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 9, payload = payload)
       self.p.closeAfter(1)

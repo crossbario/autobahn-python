@@ -37,7 +37,7 @@ def __init__(self, protocol):
 def onOpen(self):
    self.p.enableWirelog(False)
    self.behavior = Case.FAILED
-   self.expectedClose = {"failedByMe": True, "closeCode": self.p.CLOSE_STATUS_CODE_NORMAL, "requireClean": True}
+   self.expectedClose = {"failedByMe": True, "closeCode": [self.p.CLOSE_STATUS_CODE_NORMAL], "requireClean": True}
    self.result = "Case did not finish within %d seconds." % self.WAITSECS
    self.p.closeAfter(self.WAITSECS)
    self.count = 0

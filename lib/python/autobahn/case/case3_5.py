@@ -27,6 +27,6 @@ class Case3_5(Case):
    def onOpen(self):
       payload = "\x00\xff\xfe\xfd\xfc\xfb\x00\xff"
       self.expected[Case.OK] = []
-      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR,"requireClean":False}
+      self.expectedClose = {"failedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
       self.p.sendFrame(opcode = 2, payload = payload, rsv = 5)
       self.p.killAfter(1)

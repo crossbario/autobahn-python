@@ -59,7 +59,7 @@ class Case6_4_3(Case6_3_1):
       self.expected[Case.OK] = [("timeout", "A")]
       self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
 
-      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
+      self.expectedClose = {"failedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
 
       self.producer = StarFrameProducer(self.p)
 

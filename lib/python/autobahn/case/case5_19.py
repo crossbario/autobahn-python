@@ -40,7 +40,7 @@ class Case5_19(Case):
       self.pings = ["pongme 1!", "pongme 2!"]
 
       self.expected[Case.OK] = [("pong", self.pings[0]), ("pong", self.pings[1]), ("message", ''.join(self.fragments), False)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
 
       self.p.sendFrame(opcode = 1, fin = False, payload = self.fragments[0], sync = self.sync)
       self.p.sendFrame(opcode = 0, fin = False, payload = self.fragments[1], sync = self.sync)
