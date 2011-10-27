@@ -296,7 +296,8 @@ class WebSocketProtocol(protocol.Protocol):
    MESSAGE_TYPE_BINARY = 2
    """WebSockets binary message type (arbitrary binary payload)."""
 
-   ## WebSockets protocol state
+   ## WebSockets protocol state:
+   ## STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
    ##
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
@@ -522,11 +523,12 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg(s)
 
 
-   def onCloseFrame(self, code, reason):
+   def onCloseFrame(self, code, reasonRaw):
       """
       Callback when a Close frame was received. The default implementation answers by
-      sending a normal Close when no Close was sent before. Otherwise it drops
-      the connection. Override in derived class.
+      sending a Close when no Close was sent before. Otherwise it drops
+      the TCP connection either immediately (when we are a server) or after a timeout
+      (when we are a client and expect the server to drop the TCP).
 
       :param code: None or close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -537,7 +539,20 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("WebSocketProtocol.onCloseFrame")
 
       self.remoteCloseCode = code
-      self.remoteCloseReason = reason
+      self.remoteCloseReason = None
+
+      ## reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
+      ##
+      if code is not None and (code < 1000 or (code >= 1000 and code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
+         return self.protocolViolation("invalid close code %d" % code)
+
+      ## closing reason
+      ##
+      if reasonRaw is not None:
+         try:
+            self.remoteCloseReason = unicode(reasonRaw, 'utf8')
+         except UnicodeDecodeError:
+            return self.invalidPayload("invalid close reason (non-UTF-8 payload)")
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
@@ -642,7 +657,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.failByDrop:
             ## brutally drop the TCP connection
             self.wasClean = False
-            self.wasNotCleanReason = "I failed the WS connection by dropping the TCP"
+            self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
             self.dropConnection()
          else:
             ## perform WebSockets closing handshake
@@ -678,7 +693,8 @@ class WebSocketProtocol(protocol.Protocol):
    def invalidPayload(self, reason):
       """
       Fired when invalid payload is encountered. Currently, this only happens
-      for text message when payload is invalid UTF-8.
+      for text message when payload is invalid UTF-8 or close frames with
+      close reason that is invalid UTF-8.
 
       :param reason: What was invalid for the payload (human readable).
       :type reason: str
@@ -800,13 +816,10 @@ class WebSocketProtocol(protocol.Protocol):
       self.state = WebSocketProtocol.STATE_CLOSED
       if not self.wasClean:
          if not self.droppedByMe and self.wasNotCleanReason is None:
-            self.wasNotCleanReason = "peer failed the WS connection by dropping the TCP"
+            self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
          self.onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
       else:
-         if self.closedByMe:
-            self.onClose(self.wasClean, self.localCloseCode, self.localCloseReason)
-         else:
-            self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+         self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def logRxOctets(self, data):
@@ -1239,28 +1252,15 @@ class WebSocketProtocol(protocol.Protocol):
       if self.current_frame.opcode == 8:
 
          code = None
-         reason = None
-
-         plen = len(payload)
-         if plen > 0:
-
-            ## If there is a body, the first two bytes of the body MUST be a 2-byte
-            ## unsigned integer (in network byte order) representing a status code
-            ##
+         reasonRaw = None
+         ll = len(payload)
+         if ll > 0: # note that we catched the case ll == 1 already earlier, so its either ll == 0 or ll >= 2
             code = struct.unpack("!H", payload[0:2])[0]
+            if ll > 2:
+               reasonRaw = payload[2:]
 
-            ## Following the 2-byte integer the body MAY contain UTF-8
-            ## encoded data with value /reason/, the interpretation of which is not
-            ## defined by this specification.
-            ##
-            if plen > 2:
-               try:
-                  reason = unicode(payload[2:], 'utf8')
-               except UnicodeDecodeError:
-                  if self.invalidPayload("received non-UTF-8 payload as close frame reason"):
-                     return False
-
-         self.onCloseFrame(code, reason)
+         if self.onCloseFrame(code, reasonRaw):
+            return False
 
       ## PING frame
       ##
