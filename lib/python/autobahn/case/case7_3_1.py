@@ -20,17 +20,15 @@ from case import Case
 
 class Case7_3_1(Case):
 
-   DESCRIPTION = """Send a close frame with payload length 0"""
+   DESCRIPTION = """Send a close frame with payload length 0 (no close code, no close reason)"""
 
    EXPECTATION = """Clean close with normal code."""
-   
+
    def init(self):
       self.suppressClose = True
-      
-   def onOpen(self):
-      self.expected[Case.OK] = []      
-      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
-      self.p.sendCloseFrame(self.p.CLOSE_STATUS_CODE_NORMAL, reasonUtf8 = "")
-      self.p.killAfter(1)
 
-      
+   def onOpen(self):
+      self.expected[Case.OK] = []
+      self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
+      self.p.sendCloseFrame()
+      self.p.killAfter(1)

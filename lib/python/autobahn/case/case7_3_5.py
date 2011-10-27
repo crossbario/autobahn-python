@@ -20,18 +20,16 @@ from case import Case
 
 class Case7_3_5(Case):
 
-   DESCRIPTION = """Send a close frame with payload length 125"""
+   DESCRIPTION = """Send a close frame with close code and close reason of maximum length (123)"""
 
    EXPECTATION = """Clean close with normal code."""
-   
+
    def init(self):
       self.suppressClose = True
-      
+
    def onOpen(self):
       self.payload = "*" * 123
-      self.expected[Case.OK] = []      
+      self.expected[Case.OK] = []
       self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL,self.payload)
       self.p.killAfter(1)
-
-      

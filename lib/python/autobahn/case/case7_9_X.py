@@ -18,40 +18,40 @@
 
 from case import Case
 
-## list of (payload length, message count, case timeout)
-tests = [0,999,1004,1005,1006,1100,2000,5000,65535]
+## list of some invalid close codes
+tests = [0,999,1004,1005,1006,1011,1100,2000,2999,5000,65535]
 
 Case7_9_X = []
 
 def __init__(self, protocol):
    Case.__init__(self, protocol)
-   
+
 def onConnectionLost(self, failedByMe):
       Case.onConnectionLost(self, failedByMe)
-      
+
       if self.behaviorClose == Case.WRONG_CODE:
          self.behavior = Case.FAILED
          self.passed = False
          self.result = self.resultClose
-         
+
 def onOpen(self):
-   self.expected[Case.OK] = []      
+   self.expected[Case.OK] = []
    self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_PROTOCOL_ERROR],"requireClean":False}
-   self.p.sendCloseFrame(self.CLOSE_CODE, reasonUtf8 = "")
+   self.p.sendCloseFrame(self.CLOSE_CODE)
    self.p.killAfter(1)
 
 i = 1
 for s in tests:
-   DESCRIPTION = """Send close with close code %d""" % s
+   DESCRIPTION = """Send close with invalid close code %d""" % s
    EXPECTATION = """Clean close with protocol error code or drop TCP"""
    C = type("Case7_9_%d" % i,
-			(object, Case, ),
-			{"CLOSE_CODE": s,
-			 "DESCRIPTION": """%s""" % DESCRIPTION,
-			 "EXPECTATION": """%s""" % EXPECTATION,
-			 "__init__": __init__,
-			 "onOpen": onOpen,
-			 "onConnectionLost": onConnectionLost,
-			 })
+            (object, Case, ),
+            {"CLOSE_CODE": s,
+             "DESCRIPTION": """%s""" % DESCRIPTION,
+             "EXPECTATION": """%s""" % EXPECTATION,
+             "__init__": __init__,
+             "onOpen": onOpen,
+             "onConnectionLost": onConnectionLost,
+             })
    Case7_9_X.append(C)
    i += 1

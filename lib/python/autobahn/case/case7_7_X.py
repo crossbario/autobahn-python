@@ -29,12 +29,12 @@ def __init__(self, protocol):
 def onOpen(self):
    self.expected[Case.OK] = []
    self.expectedClose = {"failedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL,self.CLOSE_CODE],"requireClean":True}
-   self.p.sendCloseFrame(self.CLOSE_CODE, reasonUtf8 = "")
+   self.p.sendCloseFrame(self.CLOSE_CODE)
    self.p.killAfter(1)
 
 i = 1
 for s in tests:
-   DESCRIPTION = """Send close with close code %d""" % s
+   DESCRIPTION = """Send close with valid close code %d""" % s
    EXPECTATION = """Clean close with normal or echoed code"""
    C = type("Case7_7_%d" % i,
          (object, Case, ),
