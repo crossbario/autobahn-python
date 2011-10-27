@@ -44,8 +44,8 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
 
    protocol = WebSocketTestClientProtocol
 
-   def __init__(self, url, debug):
-      WebSocketClientFactory.__init__(self, url, debug = debug)
+   def __init__(self, url, debug, debugCodePaths):
+      WebSocketClientFactory.__init__(self, url, debug = debug, debugCodePaths = debugCodePaths)
 
       self.endCaseId = None
       self.currentCaseId = 0
@@ -70,7 +70,7 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WebSocketTestClientFactory("ws://localhost:9001", debug = False)
+   factory = WebSocketTestClientFactory("ws://localhost:9001", debug = False, debugCodePaths = False)
    factory.setProtocolOptions(failByDrop = False)
    connectWS(factory)
    reactor.run()
