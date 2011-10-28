@@ -1,10 +1,13 @@
 {
    "options": {"failByDrop": false},
+
    "servers": [
                {"agent": "websocket++/HEAD", "url": "ws://localhost:9002", "options": {"version": 17}},
                {"agent": "Jetty/7.5.4", "url": "ws://localhost:8080", "options": {"version": 17}},
                {"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 17}}
                ],
+
    "cases": ["*"],
-   "exclude-cases": []
+   "exclude-cases": [],
+   "exclude-agent-cases": {"FoobarServer*": ["4.*", "1.1.3"]}
 }
