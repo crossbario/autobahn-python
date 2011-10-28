@@ -18,67 +18,43 @@
 ##
 ###############################################################################
 
-from case import Case
-from case6_3_1 import Case6_3_1
 import binascii
-from zope.interface import implements
-from twisted.internet import reactor, interfaces
+from case import Case
+from case6_4_1 import Case6_4_1
+from autobahn.websocket import WebSocketProtocol
 
 
-class StarFrameProducer:
+class Case6_4_3(Case6_4_1):
 
-   implements(interfaces.IPushProducer)
+   DESCRIPTION = """Same as Case 6.4.1, but we send message not in 3 frames, but in 3 chops of the same message frame.
+<br><br>MESSAGE PARTS:<br>
+PART1 = %s (%s)<br>
+PART2 = %s (%s)<br>
+PART3 = %s (%s)<br>
+""" % (Case6_4_1.PAYLOAD1, binascii.b2a_hex(Case6_4_1.PAYLOAD1), Case6_4_1.PAYLOAD2, binascii.b2a_hex(Case6_4_1.PAYLOAD2), Case6_4_1.PAYLOAD3, binascii.b2a_hex(Case6_4_1.PAYLOAD3))
 
-   def __init__(self, proto):
-      self.proto = proto
-      self.paused = False
-      self.stopped = False
-
-   def pauseProducing(self):
-      self.paused = True
-
-   def resumeProducing(self):
-      if self.stopped:
-         return
-      self.paused = False
-      while not self.paused:
-         self.proto.sendFrame(opcode = 0, fin = False, payload = "*"*16, payload_len = 2**16/16)
-
-   def stopProducing(self):
-      self.stopped = True
-
-
-class Case6_4_3(Case6_3_1):
-
-   DESCRIPTION = """Send invalid UTF-8 text message in 3 fragments plus more. First is valid, then wait, then 2nd which contains the octet making the sequence invalid, then wait, then 3rd with rest. Then we send 64k frames forever.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
-
-   EXPECTATION = """The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
+   EXPECTATION = """The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the complete message payload is not valid UTF-8."""
 
    def onOpen(self):
 
       self.expected[Case.OK] = [("timeout", "A")]
       self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
 
-      self.expectedClose = {"closedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
+      self.expectedClose = {"closedByMe": False, "closeCode": [self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD], "requireClean": False}
 
-      self.producer = StarFrameProducer(self.p)
-
-      self.p.sendFrame(opcode = 1, fin = False, payload = self.PAYLOAD[:12])
+      self.p.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_TEXT)
+      self.p.beginMessageFrame(len(self.PAYLOAD))
+      self.p.sendMessageFrameData(self.PAYLOAD1)
       self.p.continueLater(1, self.part2, "A")
 
    def part2(self):
       self.received.append(("timeout", "A"))
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD[12])
+      self.p.sendMessageFrameData(self.PAYLOAD2)
       self.p.continueLater(1, self.part3, "B")
 
    def part3(self):
       self.received.append(("timeout", "B"))
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD[13:])
+      self.p.sendMessageFrameData(self.PAYLOAD3)
+      self.p.endMessage()
 
-      self.p.createWirelog = False
-      self.p.registerProducer(self.producer, True)
-      self.producer.resumeProducing()
-
-   def onConnectionLost(self, failedByMe):
-      self.producer.stopProducing()
-      Case6_3_1.onConnectionLost(self, failedByMe)
+      self.p.killAfter(1)

@@ -19,31 +19,43 @@
 ###############################################################################
 
 from case import Case
-from case6_3_1 import Case6_3_1
 import binascii
 
-class Case6_4_1(Case6_3_1):
+class Case6_4_1(Case):
 
-   DESCRIPTION = """Send invalid UTF-8 text message in 3 fragments (frames). First frame payload is valid, then wait, then 2nd frame which contains the payload octet making the sequence invalid, then wait, then 3rd frame with rest.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
+   PAYLOAD1 = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'
+   #PAYLOAD2 = '\xed\xa0\x80' # invalid exactly on byte 12 (\xa0)
+   PAYLOAD2 = '\xf4\x90\x80\x80' #invalid exactly on byte 12 (\x90)
+   PAYLOAD3 = '\x65\x64\x69\x74\x65\x64'
+   PAYLOAD = PAYLOAD1 + PAYLOAD2 + PAYLOAD3
 
-   EXPECTATION = """The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
+   DESCRIPTION = """Send invalid UTF-8 text message in 3 fragments (frames).
+First frame payload is valid, then wait, then 2nd frame which contains the payload making the sequence invalid, then wait, then 3rd frame with rest.
+Note that PART1 and PART3 are valid UTF-8 in themselves, PART2 is a 0x11000 encoded as in the UTF-8 integer encoding scheme, but the codepoint is invalid (out of range).
+<br><br>MESSAGE PARTS:<br>
+PART1 = %s (%s)<br>
+PART2 = %s (%s)<br>
+PART3 = %s (%s)<br>
+""" % (PAYLOAD1, binascii.b2a_hex(PAYLOAD1), PAYLOAD2, binascii.b2a_hex(PAYLOAD2), PAYLOAD3, binascii.b2a_hex(PAYLOAD3))
+
+   EXPECTATION = """The first frame is accepted, we expect to timeout on the first wait. The 2nd frame should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the complete message payload is not valid UTF-8."""
 
    def onOpen(self):
 
       self.expected[Case.OK] = [("timeout", "A")]
       self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
 
-      self.expectedClose = {"closedByMe":False,"closeCode":[self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD],"requireClean":False}
+      self.expectedClose = {"closedByMe": False, "closeCode": [self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD], "requireClean": False}
 
-      self.p.sendFrame(opcode = 1, fin = False, payload = self.PAYLOAD[:12])
+      self.p.sendFrame(opcode = 1, fin = False, payload = self.PAYLOAD1)
       self.p.continueLater(1, self.part2, "A")
 
    def part2(self):
       self.received.append(("timeout", "A"))
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD[12])
+      self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD2)
       self.p.continueLater(1, self.part3, "B")
 
    def part3(self):
       self.received.append(("timeout", "B"))
-      self.p.sendFrame(opcode = 0, fin = True, payload = self.PAYLOAD[13:])
+      self.p.sendFrame(opcode = 0, fin = True, payload = self.PAYLOAD3)
       self.p.killAfter(1)
