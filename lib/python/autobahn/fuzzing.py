@@ -740,21 +740,24 @@ class FuzzingFactory:
 
       ## Closing Behavior
       ##
+      cbv = [("isServer", "True, iff I (the fuzzer) am a server, and the peer is a client."),
+             ("closedByMe", "True, iff I have initiated closing handshake (that is, did send close first)."),
+             ("failedByMe", "True, iff I have failed the WS connection (i.e. due to protocol error). Failing can be either by initiating closing handshake or brutal drop TCP."),
+             ("droppedByMe", "True, iff I dropped the TCP connection."),
+             ("wasClean", "True, iff full WebSockets closing handshake was performed (close frame sent and received) _and_ the server dropped the TCP (which is its responsibility)."),
+             ("wasNotCleanReason", "When wasClean == False, the reason what happened."),
+             ("wasServerConnectionDropTimeout", "When we are a client, and we expected the server to drop the TCP, but that didn't happen in time, this gets True."),
+             ("wasCloseHandshakeTimeout", "When we initiated a closing handshake, but the peer did not respond in time, this gets True."),
+             ("localCloseCode", "The close code I sent in close frame (if any)."),
+             ("localCloseReason", "The close reason I sent in close frame (if any)."),
+             ("remoteCloseCode", "The close code the peer sent me in close frame (if any)."),
+             ("remoteCloseReason", "The close reason the peer sent me in close frame (if any).")
+            ]
       f.write('      <h2>Closing Behavior</h2>\n')
       f.write('      <table>\n')
-      f.write('         <tr class="stats_header"><td>Key</td><td class="left">Value</td></tr>\n')
-      f.write('         <tr class="stats_row"><td>isServer</td><td class="left">%s</td></tr>\n' % case["isServer"])
-      f.write('         <tr class="stats_row"><td>closedByMe</td><td class="left">%s</td></tr>\n' % case["closedByMe"])
-      f.write('         <tr class="stats_row"><td>failedByMe</td><td class="left">%s</td></tr>\n' % case["failedByMe"])
-      f.write('         <tr class="stats_row"><td>droppedByMe</td><td class="left">%s</td></tr>\n' % case["droppedByMe"])
-      f.write('         <tr class="stats_row"><td>wasClean</td><td class="left">%s</td></tr>\n' % case["wasClean"])
-      f.write('         <tr class="stats_row"><td>wasNotCleanReason</td><td class="left">%s</td></tr>\n' % case["wasNotCleanReason"])
-      f.write('         <tr class="stats_row"><td>wasServerConnectionDropTimeout</td><td class="left">%s</td></tr>\n' % case["wasServerConnectionDropTimeout"])
-      f.write('         <tr class="stats_row"><td>wasCloseHandshakeTimeout</td><td class="left">%s</td></tr>\n' % case["wasCloseHandshakeTimeout"])
-      f.write('         <tr class="stats_row"><td>localCloseCode</td><td class="left">%s</td></tr>\n' % str(case["localCloseCode"]))
-      f.write('         <tr class="stats_row"><td>localCloseReason</td><td class="left">%s</td></tr>\n' % str(case["localCloseReason"]))
-      f.write('         <tr class="stats_row"><td>remoteCloseCode</td><td class="left">%s</td></tr>\n' % str(case["remoteCloseCode"]))
-      f.write('         <tr class="stats_row"><td>remoteCloseReason</td><td class="left">%s</td></tr>\n' % case["remoteCloseReason"])
+      f.write('         <tr class="stats_header"><td>Key</td><td class="left">Value</td><td class="left">Description</td></tr>\n')
+      for c in cbv:
+         f.write('         <tr class="stats_row"><td>%s</td><td class="left">%s</td><td class="left">%s</td></tr>\n' % (c[0], case[c[0]], c[1]))
       f.write('      </table>')
       f.write("      <br/><hr/>\n")
 
