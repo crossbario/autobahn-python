@@ -68,6 +68,40 @@ def parseSpecCases(spec):
    return cases
 
 
+def parseExcludeAgentCases(spec):
+   """
+   Parses "exclude-agent-cases" from the spec into a list of pairs
+   of agent pattern and case pattern list.
+   """
+   if spec.has_key("exclude-agent-cases"):
+      ee = spec["exclude-agent-cases"]
+      pats1 = []
+      for e in ee:
+         s1 = e.replace('.', '\.').replace('*', '.*')
+         p1 = re.compile(s1)
+         pats2 = []
+         for z in ee[e]:
+            s2 = z.replace('.', '\.').replace('*', '.*')
+            p2 = re.compile(s2)
+            pats2.append(p2)
+         pats1.append((p1, pats2))
+      return pats1
+   else:
+      return []
+
+
+def checkAgentCaseExclude(patterns, agent, case):
+   """
+   Check if we should exclude a specific case for given agent.
+   """
+   for p in patterns:
+      if p[0].match(agent):
+         for pp in p[1]:
+            if pp.match(case):
+               return True
+   return False
+
+
 class FuzzingProtocol:
    """
    Common mixin-base class for fuzzing server and client protocols.
@@ -250,52 +284,15 @@ class FuzzingProtocol:
 
       if self.runCase:
 
-         cc = caseClasstoIdTuple(self.runCase.__class__)
-
-         ## IE10 crashes on these
-         ##
-         if self.caseAgent.find("MSIE") >= 0 and (cc[0:3] in [(6, 4, 3), (6, 4, 5)] or
-                                                  cc[0:2] in [(2, 5)] or
-                                                  cc[0:1][0] in [3, 4, 5]):
-            print "Skipping test case for IE10 (crashes) !!!"
+         cc_id = caseClasstoId(self.runCase.__class__)
+         if checkAgentCaseExclude(self.factory.specExcludeAgentCases, self.caseAgent, cc_id):
+            print "Skipping test case %s for agent %s by test configuration!" % (cc_id, self.caseAgent)
             self.runCase = None
             self.sendClose()
             return
-
-         ## Chrome crashes on these
-         ##
-         if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
-            print "Skipping forever sending data after invalid UTF-8 for Chrome (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF7 crashes on these
-         ##
-         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
-            print "Skipping fragmented message test case for Firefox/7 (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF7 crashes on these
-         ##
-         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:3] in [(6, 4, 2), (6, 4, 3), (6, 4, 4), (6, 4, 5)]:
-            print "Skipping invalid UTF-8 test for Firefox/7 (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF does not yet implement binary messages
-         ##
-         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9, 6), (9, 8)]:
-            print "Skipping binary message test case for Firefox !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         self.caseStart = time.time()
-         self.runCase.onOpen()
+         else:
+            self.caseStart = time.time()
+            self.runCase.onOpen()
 
       elif self.path == "/updateReports":
          self.factory.createReports()
@@ -929,6 +926,9 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
          if len(connectionRequest.params["agent"]) > 1:
             raise Exception("multiple agents specified")
          self.caseAgent = connectionRequest.params["agent"][0]
+      else:
+         #raise Exception("no agent specified")
+         self.caseAgent = None
 
       if connectionRequest.params.has_key("case"):
          if len(connectionRequest.params["case"]) > 1:
@@ -993,6 +993,7 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
+      self.specExcludeAgentCases = parseExcludeAgentCases(self.spec)
       print "Autobahn WebSockets %s Fuzzing Server" % autobahn.version
       print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
       print "Cases = %s" % str(self.specCases)
@@ -1031,6 +1032,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
+      self.specExcludeAgentCases = parseExcludeAgentCases(self.spec)
       print "Autobahn WebSockets %s Fuzzing Client" % autobahn.version
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
