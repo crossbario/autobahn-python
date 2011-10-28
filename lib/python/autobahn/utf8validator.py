@@ -276,8 +276,18 @@ def setTestSequences():
    # 5.3 Other illegal code positions
    # Those are non-character code points and valid UTF-8 by RFC 3629
    vs = ["Non-character code points (valid UTF-8)", []]
+   # https://bug686312.bugzilla.mozilla.org/attachment.cgi?id=561257
+   # non-characters: EF BF [BE-BF]
    vs[1].append((True, '\xef\xbf\xbe'))
    vs[1].append((True, '\xef\xbf\xbf'))
+   # non-characters: F[0-7] [89AB]F BF [BE-BF]
+   for z1 in ['\xf0', '\xf1', '\xf2', '\xf3', '\xf4']:
+      for z2 in ['\x8f', '\x9f', '\xaf', '\xbf']:
+         if not (z1 == '\xf4' and z2 != '\x8f'): # those encode codepoints >U+10FFFF
+            for z3 in ['\xbe', '\xbf']:
+               zz = z1 + z2 + '\xbf' + z3
+               if zz not in ['\xf0\x8f\xbf\xbe', '\xf0\x8f\xbf\xbf']: # filter overlong sequences
+                  vs[1].append((True, zz))
    UTF8_TEST_SEQUENCES.append(vs)
 
    # Unicode replacement character
