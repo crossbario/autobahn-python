@@ -1095,3 +1095,13 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
          else:
             self.createReports()
             reactor.stop()
+
+
+   def clientConnectionFailed(self, connector, reason):
+      print "Connection to %s failed (%s)" % (self.spec["servers"][self.currServer]["url"], reason.getErrorMessage())
+      if self.nextServer():
+         if self.nextCase():
+            connectWS(self)
+      else:
+         self.createReports()
+         reactor.stop()
