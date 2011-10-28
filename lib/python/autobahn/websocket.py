@@ -29,6 +29,7 @@ urlparse.uses_fragment.extend(wsschemes)
 
 from twisted.internet import reactor, protocol
 from twisted.python import log
+import urllib
 import binascii
 import hashlib
 import base64
@@ -41,18 +42,58 @@ from httpstatus import *
 import autobahn # need autobahn.version
 
 
+def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
+   """
+   Create a WbeSocket URL from components.
+
+   :param hostname: WebSocket server hostname.
+   :type hostname: str
+   :param port: WebSocket service port or None (to select default ports 80/443 depending on isSecure).
+   :type port: int
+   :param isSecure: Set True for secure WebSockets ("wss" scheme).
+   :type isSecure: bool
+   :param path: Path component of addressed resource (will be properly URL escaped).
+   :type path: str
+   :param params: A dictionary of key-values to construct the query component of the addressed resource (will be properly URL escaped).
+   :type params: dict
+   :returns str -- Constructed WebSocket URL.
+   """
+   if port is not None:
+      netloc = "%s:%d" % (hostname, port)
+   else:
+      if isSecure:
+         netloc = "%s:443" % hostname
+      else:
+         netloc = "%s:80" % hostname
+   if isSecure:
+      scheme = "wss"
+   else:
+      scheme = "ws"
+   if path is not None:
+      ppath = urllib.quote(path)
+   else:
+      ppath = "/"
+   if params is not None:
+      query = urllib.urlencode(params)
+   else:
+      query = None
+   return urlparse.urlunparse((scheme, netloc, ppath, None, query, None))
+
+
 def parseWsUrl(url):
    """
-   Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource).
+   Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource, path, params).
 
    isSecure is a flag which is True for wss URLs.
    host is the hostname or IP from the URL.
    port is the port from the URL or None.
    resource is the /resource name/ from the URL, the /path/ together with the (optional) /query/ component.
+   path is the /path/ component properly unescaped.
+   params is the /query) component properly unescaped and returned as dictionary.
 
    :param url: A valid WebSocket URL, i.e. ws://localhost:9000/myresource?param1=23&param2=666
    :type url: str
-   :returns: tuple -- A tuple (isSecure, host, port, resource)
+   :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
    """
    parsed = urlparse.urlparse(url)
    if parsed.scheme not in ["ws", "wss"]:
@@ -60,14 +101,18 @@ def parseWsUrl(url):
    if parsed.fragment is not None and parsed.fragment != "":
       raise Exception("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
    if parsed.path is not None and parsed.path != "":
-      path = parsed.path
+      ppath = parsed.path
+      path = urllib.unquote(ppath)
    else:
-      path = "/"
+      ppath = "/"
+      path = ppath
    if parsed.query is not None and parsed.query != "":
-      resource = path + "?" + parsed.query
+      resource = ppath + "?" + parsed.query
+      params = urlparse.parse_qs(parsed.query)
    else:
-      resource = path
-   return (parsed.scheme == "wss", parsed.hostname, parsed.port, resource)
+      resource = ppath
+      params = {}
+   return (parsed.scheme == "wss", parsed.hostname, parsed.port, resource, path, params)
 
 
 def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
@@ -2145,7 +2190,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       """
       Set WebSocket session parameters.
 
-      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ].
       :type url: str
       :param origin: The origin to be sent in opening handshake.
       :type origin: str
@@ -2156,18 +2201,20 @@ class WebSocketServerFactory(protocol.ServerFactory):
       """
       if url is not None:
          ## parse WebSocket URI into components
-         (isSecure, host, port, resource) = parseWsUrl(url)
+         (isSecure, host, port, resource, path, params) = parseWsUrl(url)
+         if path != "/":
+            raise Exception("path specified for server WebSocket URL")
+         if len(params) > 0:
+            raise Exception("query parameters specified for server WebSocket URL")
          self.url = url
          self.isSecure = isSecure
          self.host = host
          self.port = port
-         self.resource = resource
       else:
          self.url = None
          self.isSecure = None
          self.host = None
          self.port = None
-         self.resource = None
 
       self.protocols = protocols
       self.server = server
@@ -2583,18 +2630,22 @@ class WebSocketClientFactory(protocol.ClientFactory):
       """
       if url is not None:
          ## parse WebSocket URI into components
-         (isSecure, host, port, resource) = parseWsUrl(url)
+         (isSecure, host, port, resource, path, params) = parseWsUrl(url)
          self.url = url
          self.isSecure = isSecure
          self.host = host
          self.port = port
          self.resource = resource
+         self.path = path
+         self.params = params
       else:
          self.url = None
          self.isSecure = None
          self.host = None
          self.port = None
          self.resource = None
+         self.path = None
+         self.params = None
 
       self.origin = origin
       self.protocols = protocols

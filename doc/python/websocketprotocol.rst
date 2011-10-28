@@ -82,4 +82,6 @@ Auxiliary Classes
 Auxiliary Functions
 -------------------
 
+.. autofunction:: autobahn.websocket.createWsUrl
+
 .. autofunction:: autobahn.websocket.parseWsUrl
