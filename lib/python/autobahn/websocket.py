@@ -1846,13 +1846,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
       end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
-         http_request_data = self.data[:end_of_header]
+         self.http_request_data = self.data[:end_of_header + 4]
          if self.debug:
-            log.msg("received HTTP request:\n\n%s\n\n" % http_request_data)
+            log.msg("received HTTP request:\n\n%s\n\n" % self.http_request_data)
 
          ## extract HTTP status line and headers
          ##
-         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(http_request_data)
+         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.http_request_data)
 
          ## remember rest (after HTTP headers, if any)
          ##
@@ -2095,8 +2095,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % self.websocket_protocol_in_use
 
          response += "\x0d\x0a"
+         self.http_response_data = response
 
-         self.sendData(response)
+         self.sendData(self.http_response_data)
 
          ## opening handshake completed, move WebSockets connection into OPEN state
          ##
@@ -2459,11 +2460,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
       request += "Sec-WebSocket-Version: %d\x0d\x0a" % WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.factory.version]
 
       request += "\x0d\x0a"
+      self.http_request_data = request
 
       if self.debug:
-         log.msg(request)
+         log.msg(self.http_request_data)
 
-      self.sendData(request)
+      self.sendData(self.http_request_data)
 
 
    def processHandshake(self):
@@ -2475,9 +2477,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
       end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
+         self.http_response_data = self.data[:end_of_header + 4]
+         if self.debug:
+            log.msg("received HTTP response:\n\n%s\n\n" % self.http_response_data)
+
          ## extract HTTP status line and headers
          ##
-         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.data[:end_of_header])
+         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.http_response_data)
 
          ## remember rest (after HTTP headers, if any)
          ##

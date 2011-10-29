@@ -171,7 +171,9 @@ class FuzzingProtocol:
                        "rxOctetStats": self.rxOctetStats,
                        "rxFrameStats": self.rxFrameStats,
                        "txOctetStats": self.txOctetStats,
-                       "txFrameStats": self.txFrameStats}
+                       "txFrameStats": self.txFrameStats,
+                       "httpRequest": self.http_request_data,
+                       "httpResponse": self.http_response_data}
          self.factory.logCase(caseResult)
       # parent's connectionLost does useful things
       WebSocketProtocol.connectionLost(self,reason)
@@ -732,6 +734,14 @@ class FuzzingFactory:
          <i>Observed:</i><br><span class="case_pickle">%s</span>
       </p>\n""" % (case.get("result", ""), self.limitString(case.get("expected", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN), self.limitString(case.get("received", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN)))
       f.write('      <p class="case_text_block case_closing_beh"><b>Case Closing Behavior</b><br/><br/>%s (%s)</p>\n' % (case.get("resultClose", ""), case.get("behaviorClose", "")))
+      f.write("      <br/><hr/>\n")
+
+
+      ## Opening Handshake
+      ##
+      f.write('      <h2>Opening Handshake</h2>\n')
+      f.write('      <pre class="http_dump">%s</pre>\n' % case["httpRequest"].strip())
+      f.write('      <pre class="http_dump">%s</pre>\n' % case["httpResponse"].strip())
       f.write("      <br/><hr/>\n")
 
 

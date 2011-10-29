@@ -65,6 +65,16 @@ p.case_outcome {
 p.case_closing_beh {
 }
 
+pre.http_dump {
+   font-family: Consolas, "Courier New", monospace;
+   font-size: 0.8em;
+   color: #333;
+   border-radius: 10px;
+   border: 1px solid #aaa;
+   padding: 16px;
+   margin: 4px 20px;
+}
+
 span.case_pickle {
    font-family: Consolas, "Courier New", monospace;
    font-size: 0.7em;
