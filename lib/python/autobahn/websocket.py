@@ -599,7 +599,8 @@ class WebSocketProtocol(protocol.Protocol):
       ## reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
       ##
       if code is not None and (code < 1000 or (code >= 1000 and code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
-         return self.protocolViolation("invalid close code %d" % code)
+         if self.protocolViolation("invalid close code %d" % code):
+            return True
 
       ## closing reason
       ##
@@ -609,7 +610,8 @@ class WebSocketProtocol(protocol.Protocol):
          u = Utf8Validator()
          val = u.validate(bytearray(reasonRaw))
          if not val[0]:
-            return self.invalidPayload("invalid close reason (non-UTF-8 payload)")
+            if self.invalidPayload("invalid close reason (non-UTF-8 payload)"):
+               return True
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
