@@ -1651,7 +1651,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME
 
 
-   def sendMessageFrameData(self, payload):
+   def sendMessageFrameData(self, payload, sync = False):
       """
       Send out data when within message frame (message was begun, frame was begun).
       Note that the frame is automatically ended when enough data has been sent
@@ -1692,7 +1692,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## send frame payload
       ##
-      self.sendData(str(pl_ba))
+      self.sendData(str(pl_ba), sync = sync)
 
       pl_ba = None
 
