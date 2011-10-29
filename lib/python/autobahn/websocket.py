@@ -647,8 +647,7 @@ class WebSocketProtocol(protocol.Protocol):
             pass
 
       else:
-         ## STATE_CONNECTING
-         ## STATE_CLOSED
+         ## STATE_CONNECTING, STATE_CLOSED
          raise Exception("logic error")
 
 
@@ -929,7 +928,9 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       if self.state in [WebSocketProtocol.STATE_OPEN, WebSocketProtocol.STATE_CLOSING]:
 
-         while self.processData():
+         ## process until no more buffered data left or WS was closed
+         ##
+         while self.processData() and self.state != WebSocketProtocol.STATE_CLOSED:
             pass
 
       ## WebSocket needs handshake
@@ -945,7 +946,11 @@ class WebSocketProtocol(protocol.Protocol):
       ## we failed the connection .. don't process any more data!
       ##
       elif self.state == WebSocketProtocol.STATE_CLOSED:
-         log.msg("received data in STATE_CLOSED")
+
+         ## ignore any data received after WS was closed
+         ##
+         if self.debugCodePaths:
+            log.msg("received data in STATE_CLOSED")
 
       ## should not arrive here (invalid state)
       ##
