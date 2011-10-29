@@ -18,8 +18,10 @@
 ##
 ###############################################################################
 
-from case import Case
 import binascii
+from case import Case
+from autobahn.websocket import WebSocketProtocol
+
 
 class Case6_4_1(Case):
 
@@ -51,11 +53,13 @@ PART3 = %s (%s)<br>
       self.p.continueLater(1, self.part2, "A")
 
    def part2(self):
-      self.received.append(("timeout", "A"))
-      self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD2)
-      self.p.continueLater(1, self.part3, "B")
+      if self.p.state == WebSocketProtocol.STATE_OPEN:
+         self.received.append(("timeout", "A"))
+         self.p.sendFrame(opcode = 0, fin = False, payload = self.PAYLOAD2)
+         self.p.continueLater(1, self.part3, "B")
 
    def part3(self):
-      self.received.append(("timeout", "B"))
-      self.p.sendFrame(opcode = 0, fin = True, payload = self.PAYLOAD3)
-      self.p.killAfter(1)
+      if self.p.state == WebSocketProtocol.STATE_OPEN:
+         self.received.append(("timeout", "B"))
+         self.p.sendFrame(opcode = 0, fin = True, payload = self.PAYLOAD3)
+         self.p.killAfter(1)
