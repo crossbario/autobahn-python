@@ -86,7 +86,7 @@ def parseWsUrl(url):
 
    isSecure is a flag which is True for wss URLs.
    host is the hostname or IP from the URL.
-   port is the port from the URL or None.
+   port is the port from the URL or standard port derived from scheme (ws = 80, wss = 443).
    resource is the /resource name/ from the URL, the /path/ together with the (optional) /query/ component.
    path is the /path/ component properly unescaped.
    params is the /query) component properly unescaped and returned as dictionary.
@@ -98,6 +98,13 @@ def parseWsUrl(url):
    parsed = urlparse.urlparse(url)
    if parsed.scheme not in ["ws", "wss"]:
       raise Exception("invalid WebSocket scheme '%s'" % parsed.scheme)
+   if parsed.port is None or parsed.port == "":
+      if parsed.scheme == "ws":
+         port = 80
+      else:
+         port = 443
+   else:
+      port = int(parsed.port)
    if parsed.fragment is not None and parsed.fragment != "":
       raise Exception("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
    if parsed.path is not None and parsed.path != "":
@@ -112,7 +119,7 @@ def parseWsUrl(url):
    else:
       resource = ppath
       params = {}
-   return (parsed.scheme == "wss", parsed.hostname, parsed.port, resource, path, params)
+   return (parsed.scheme == "wss", parsed.hostname, port, resource, path, params)
 
 
 def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
@@ -1898,18 +1905,36 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if http_headers_cnt["host"] > 1:
             return self.failHandshake("HTTP Host header appears more than once in opening handshake request")
          self.http_request_host = self.http_headers["host"].strip()
+         if self.http_request_host.find(":") >= 0:
+            (h, p) = self.http_request_host.split(":")
+            try:
+               port = int(p.strip())
+               if port != self.factory.port:
+                  return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %d" % (port, str(self.http_request_host), self.factory.port))
+            except:
+               return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (p.strip(), str(self.http_request_host)))
+         else:
+            if not ((self.factory.isSecure and self.factory.port == 443) or (not self.factory.isSecure and self.factory.port == 80)):
+               return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.port, self.factory.isSecure))
 
          ## Upgrade
          ##
          if not self.http_headers.has_key("upgrade"):
+            ## When no WS upgrade, render HTML server status page
+            ##
             if self.webStatus:
                self.sendServerStatus()
                self.dropConnection()
                return
             else:
                return self.failHandshake("HTTP Upgrade header missing", HTTP_STATUS_CODE_UPGRADE_REQUIRED[0])
-         if self.http_headers["upgrade"].lower() != "websocket":
-            return self.failHandshake("HTTP Upgrade header different from 'websocket' (case-insensitive)")
+         upgradeWebSocket = False
+         for u in self.http_headers["upgrade"].split(","):
+            if u.strip().lower() == "websocket":
+               upgradeWebSocket = True
+               break
+         if not upgradeWebSocket:
+            return self.failHandshake("HTTP Upgrade headers do not include 'websocket' value (case-insensitive) : %s" % self.http_headers["upgrade"])
 
          ## Connection
          ##
@@ -1921,7 +1946,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                connectionUpgrade = True
                break
          if not connectionUpgrade:
-            return self.failHandshake("HTTP Connection header does not include 'upgrade' value (case-insensitive) : %s" % self.http_headers["connection"])
+            return self.failHandshake("HTTP Connection headers do not include 'upgrade' value (case-insensitive) : %s" % self.http_headers["connection"])
 
          ## Sec-WebSocket-Version
          ##
@@ -1968,13 +1993,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Origin
          ## http://tools.ietf.org/html/draft-ietf-websec-origin-02
          ##
-         ## FIXME: checking
-         ##
          self.websocket_origin = None
-         if self.http_headers.has_key("sec-websocket-origin") and self.websocket_version < 13:
-            self.websocket_origin = self.http_headers["sec-websocket-origin"].strip()
-         elif self.http_headers.has_key("origin") and self.websocket_version >= 13:
-            self.websocket_origin = self.http_headers["origin"].strip()
+         if self.websocket_version < 13:
+            websocket_origin_header_key = "sec-websocket-origin"
+         else:
+            websocket_origin_header_key = "origin"
+         if self.http_headers.has_key(websocket_origin_header_key):
+            if http_headers_cnt[websocket_origin_header_key] > 1:
+               return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
+            self.websocket_origin = self.http_headers[websocket_origin_header_key].strip()
 
          ## Sec-WebSocket-Extensions
          ##
@@ -2405,7 +2432,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       if self.factory.useragent is not None and self.factory.useragent != "":
          request += "User-Agent: %s\x0d\x0a" % self.factory.useragent.encode("utf-8")
 
-      request += "Host: %s\x0d\x0a" % self.factory.host.encode("utf-8")
+      request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
       request += "Upgrade: websocket\x0d\x0a"
       request += "Connection: Upgrade\x0d\x0a"
 
