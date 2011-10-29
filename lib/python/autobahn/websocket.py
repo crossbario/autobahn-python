@@ -273,6 +273,7 @@ def parseHttpHeader(data):
    raw = data.splitlines()
    http_status_line = raw[0].strip()
    http_headers = {}
+   http_headers_cnt = {}
    for h in raw[1:]:
       i = h.find(":")
       if i > 0:
@@ -285,12 +286,14 @@ def parseHttpHeader(data):
          ## handle HTTP headers split across multiple lines
          if http_headers.has_key(key):
             http_headers[key] += ", %s" % value
+            http_headers_cnt[key] += 1
          else:
             http_headers[key] = value
+            http_headers_cnt[key] = 1
       else:
          # skip bad HTTP header
          pass
-   return (http_status_line, http_headers)
+   return (http_status_line, http_headers, http_headers_cnt)
 
 
 class WebSocketProtocol(protocol.Protocol):
@@ -1842,7 +1845,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## extract HTTP status line and headers
          ##
-         (self.http_status_line, self.http_headers) = parseHttpHeader(http_request_data)
+         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(http_request_data)
 
          ## remember rest (after HTTP headers, if any)
          ##
@@ -1891,7 +1894,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Host
          ##
          if not self.http_headers.has_key("host"):
-            return self.failHandshake("HTTP Host header missing")
+            return self.failHandshake("HTTP Host header missing in opening handshake request")
+         if http_headers_cnt["host"] > 1:
+            return self.failHandshake("HTTP Host header appears more than once in opening handshake request")
          self.http_request_host = self.http_headers["host"].strip()
 
          ## Upgrade
@@ -1921,8 +1926,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Version
          ##
          if not self.http_headers.has_key("sec-websocket-version"):
-            return self.failHandshake("HTTP Sec-WebSocket-Version header missing")
+            return self.failHandshake("HTTP Sec-WebSocket-Version header missing in opening handshake request")
          try:
+
+            if http_headers_cnt["sec-websocket-version"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
 
             version = int(self.http_headers["sec-websocket-version"])
 
@@ -1939,7 +1947,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             else:
                self.websocket_version = version
          except:
-            return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s'" % self.http_headers["sec-websocket-version"])
+            return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
 
          ## Sec-WebSocket-Protocol
          ##
@@ -1988,6 +1996,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          if not self.http_headers.has_key("sec-websocket-key"):
             return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
+         if http_headers_cnt["sec-websocket-key"] > 1:
+            return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
          key = self.http_headers["sec-websocket-key"].strip()
          if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
             return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
@@ -2440,7 +2450,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
          ## extract HTTP status line and headers
          ##
-         (self.http_status_line, self.http_headers) = parseHttpHeader(self.data[:end_of_header])
+         (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.data[:end_of_header])
 
          ## remember rest (after HTTP headers, if any)
          ##
@@ -2503,8 +2513,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## compute Sec-WebSocket-Accept
          ##
          if not self.http_headers.has_key("sec-websocket-accept"):
-            return self.failHandshake("HTTP Sec-WebSocket-Accept header missing")
+            return self.failHandshake("HTTP Sec-WebSocket-Accept header missing in opening handshake reply")
          else:
+            if http_headers_cnt["sec-websocket-accept"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Accept header appears more than once in opening handshake reply")
             sec_websocket_accept_got = self.http_headers["sec-websocket-accept"].strip()
 
             sha1 = hashlib.sha1()
@@ -2518,13 +2530,21 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ##
          self.websocket_extensions_in_use = []
          if self.http_headers.has_key("sec-websocket-extensions"):
+            if http_headers_cnt["sec-websocket-extensions"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
             exts = self.http_headers["sec-websocket-extensions"].strip()
+            ##
+            ## we don't support any extension, but if we did, we needed
+            ## to set self.websocket_extensions_in_use here, and don't fail the handshake
+            ##
             return self.failHandshake("server wants to use extensions (%s), but no extensions implemented" % exts)
 
          ## handle "subprotocol in use" - if any
          ##
          self.websocket_protocol_in_use = None
          if self.http_headers.has_key("sec-websocket-protocol"):
+            if http_headers_cnt["sec-websocket-protocol"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Protocol header appears more than once in opening handshake reply")
             sp = self.http_headers["sec-websocket-protocol"].strip()
             if sp != "":
                if sp not in self.factory.protocols:
