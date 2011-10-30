@@ -35,13 +35,6 @@ class Case7_3_4(Case):
          self.passed = False
          self.result = self.resultClose
 
-   def onConnectionLost(self, failedByMe):
-      Case.onConnectionLost(self, failedByMe)
-      
-      if self.behaviorClose == Case.WRONG_CODE:
-         self.behavior = Case.FAILED
-         self.passed = False
-         self.result = self.resultClose 
    def onOpen(self):
       self.payload = "Hello World!"
       self.expected[Case.OK] = []

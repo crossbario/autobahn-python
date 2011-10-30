@@ -26,7 +26,7 @@ class Case7_3_1(Case):
 
    def init(self):
       self.suppressClose = True
-      
+
    def onConnectionLost(self, failedByMe):
       Case.onConnectionLost(self, failedByMe)
 
@@ -34,7 +34,7 @@ class Case7_3_1(Case):
          self.behavior = Case.FAILED
          self.passed = False
          self.result = self.resultClose
-         
+
    def onOpen(self):
       self.expected[Case.OK] = []
       self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}

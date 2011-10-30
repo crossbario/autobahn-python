@@ -34,7 +34,7 @@ class Case7_1_4(Case):
          self.behavior = Case.FAILED
          self.passed = False
          self.result = self.resultClose
-   
+  
    def onOpen(self):
       payload = "Hello World!"
       self.expected[Case.OK] = [("message", payload, False)]      
