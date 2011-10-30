@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+from optparse import OptionParser
 from twisted.python import log
 from twisted.internet import reactor
 import autobahn
@@ -66,11 +67,20 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
       else:
          reactor.stop()
 
+   def clientConnectionFailed(self, connector, reason):
+      print "Connection to %s failed (%s)" % (self.url, reason.getErrorMessage())
+      reactor.stop()
+
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WebSocketTestClientFactory("ws://localhost:9001", debug = False, debugCodePaths = False)
+
+   parser = OptionParser()
+   parser.add_option("-u", "--url", dest = "url", help = "The WebSocket URL of the fuzzing server.", default = "ws://localhost:9001")
+   (options, args) = parser.parse_args()
+
+   factory = WebSocketTestClientFactory(options.url, debug = False, debugCodePaths = False)
    factory.setProtocolOptions(failByDrop = False)
    connectWS(factory)
    reactor.run()
