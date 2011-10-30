@@ -52,6 +52,12 @@ Now build and upload the following build variants:
    python setup.py bdist_egg upload
    python setup.py bdist_wininst upload
 
+Authorization for PyPi in ~/.pypirc:
+
+[server-login]
+username:XXXX
+password:YYYYY
+
 
 WAMP
 ====
