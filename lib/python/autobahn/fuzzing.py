@@ -28,13 +28,18 @@ from twisted.internet import reactor
 from twisted.python import log
 import autobahn
 from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
+from websocket import connectWS, listenWS
 from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
 from util import utcnow
+from report import CSS_COMMON, CSS_DETAIL_REPORT, CSS_MASTER_REPORT, JS_MASTER_REPORT
 
 
-def parseSpecCases(spec):
+def resolveCasePatternList(patterns):
+   """
+   Return list of test cases that match against a list of case patterns.
+   """
    specCases = []
-   for c in spec["cases"]:
+   for c in patterns:
       if c.find('*') >= 0:
          s = c.replace('.', '\.').replace('*', '.*')
          p = re.compile(s)
@@ -49,7 +54,58 @@ def parseSpecCases(spec):
    return specCases
 
 
+def parseSpecCases(spec):
+   """
+   Return list of test cases that match against case patterns, minus exclude patterns.
+   """
+   specCases = resolveCasePatternList(spec["cases"])
+   if spec.has_key("exclude-cases"):
+      excludeCases = resolveCasePatternList(spec["exclude-cases"])
+   else:
+      excludeCases = []
+   c = list(set(specCases) - set(excludeCases))
+   cases = [caseIdTupletoId(y) for y in sorted([caseIdtoIdTuple(x) for x in c])]
+   return cases
+
+
+def parseExcludeAgentCases(spec):
+   """
+   Parses "exclude-agent-cases" from the spec into a list of pairs
+   of agent pattern and case pattern list.
+   """
+   if spec.has_key("exclude-agent-cases"):
+      ee = spec["exclude-agent-cases"]
+      pats1 = []
+      for e in ee:
+         s1 = e.replace('.', '\.').replace('*', '.*')
+         p1 = re.compile(s1)
+         pats2 = []
+         for z in ee[e]:
+            s2 = z.replace('.', '\.').replace('*', '.*')
+            p2 = re.compile(s2)
+            pats2.append(p2)
+         pats1.append((p1, pats2))
+      return pats1
+   else:
+      return []
+
+
+def checkAgentCaseExclude(patterns, agent, case):
+   """
+   Check if we should exclude a specific case for given agent.
+   """
+   for p in patterns:
+      if p[0].match(agent):
+         for pp in p[1]:
+            if pp.match(case):
+               return True
+   return False
+
+
 class FuzzingProtocol:
+   """
+   Common mixin-base class for fuzzing server and client protocols.
+   """
 
    MAX_WIRE_LOG_DATA = 256
 
@@ -115,7 +171,9 @@ class FuzzingProtocol:
                        "rxOctetStats": self.rxOctetStats,
                        "rxFrameStats": self.rxFrameStats,
                        "txOctetStats": self.txOctetStats,
-                       "txFrameStats": self.txFrameStats}
+                       "txFrameStats": self.txFrameStats,
+                       "httpRequest": self.http_request_data,
+                       "httpResponse": self.http_response_data}
          self.factory.logCase(caseResult)
       # parent's connectionLost does useful things
       WebSocketProtocol.connectionLost(self,reason)
@@ -228,52 +286,15 @@ class FuzzingProtocol:
 
       if self.runCase:
 
-         cc = caseClasstoIdTuple(self.runCase.__class__)
-
-         ## IE10 crashes on these
-         ##
-         if self.caseAgent.find("MSIE") >= 0 and (cc[0:3] in [(6, 4, 3), (6, 4, 5)] or
-                                                  cc[0:2] in [(2, 5)] or
-                                                  cc[0:1][0] in [3, 4, 5]):
-            print "Skipping test case for IE10 (crashes) !!!"
+         cc_id = caseClasstoId(self.runCase.__class__)
+         if checkAgentCaseExclude(self.factory.specExcludeAgentCases, self.caseAgent, cc_id):
+            print "Skipping test case %s for agent %s by test configuration!" % (cc_id, self.caseAgent)
             self.runCase = None
             self.sendClose()
             return
-
-         ## Chrome crashes on these
-         ##
-         if self.caseAgent.find("Chrome") >= 0 and cc[0:3] in [(6, 4, 3), (6, 4, 5)]:
-            print "Skipping forever sending data after invalid UTF-8 for Chrome (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF7 crashes on these
-         ##
-         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:2] == (9, 3):
-            print "Skipping fragmented message test case for Firefox/7 (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF7 crashes on these
-         ##
-         if self.caseAgent.find("Firefox/7") >= 0 and cc[0:3] in [(6, 4, 2), (6, 4, 3), (6, 4, 4), (6, 4, 5)]:
-            print "Skipping invalid UTF-8 test for Firefox/7 (crashes) !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         ## FF does not yet implement binary messages
-         ##
-         if self.caseAgent.find("Firefox") >= 0 and cc[0:2] in [(1, 2), (9, 2), (9, 4), (9, 6), (9, 8)]:
-            print "Skipping binary message test case for Firefox !!!"
-            self.runCase = None
-            self.sendClose()
-            return
-
-         self.caseStart = time.time()
-         self.runCase.onOpen()
+         else:
+            self.caseStart = time.time()
+            self.runCase.onOpen()
 
       elif self.path == "/updateReports":
          self.factory.createReports()
@@ -300,7 +321,7 @@ class FuzzingProtocol:
          self.runCase.onClose(wasClean, code, reason)
       else:
          if self.debug:
-            log.msg("Close received: " + code + " - " + reason)
+            log.msg("Close received: %s - %s" % (code, reason))
 
    def onMessage(self, msg, binary):
 
@@ -365,326 +386,24 @@ class FuzzingProtocol:
 
 
 class FuzzingFactory:
-
-   ## CSS common for all reports
-   ##
-   css_common = """
-      body
-      {
-         background-color: #F4F4F4;
-         color: #333;
-         font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
-      }
-
-      p#intro
-      {
-         margin-left: 30px;
-         font-size: 1.2em;
-      }
-
-      p#case_desc
-      {
-         border-radius: 10px;
-         background-color: #eee;
-         padding: 20px;
-         margin: 20px;
-      }
-
-      p#case_expect
-      {
-         border-radius: 10px;
-         background-color: #eee;
-         padding: 20px;
-         margin: 20px;
-      }
-
-      p#case_result,p#close_result
-      {
-         border-radius: 10px;
-         background-color: #eee;
-         padding: 20px;
-         margin: 20px;
-      }
-
-      h1
-      {
-      }
-
-      h2
-      {
-         margin-top: 60px;
-         margin-left: 30px;
-      }
-
-      h3
-      {
-         margin-left: 50px;
-      }
+   """
+   Common mixin-base class for fuzzing server and client protocol factory.
    """
 
-   ## CSS for Master report
-   ##
-   css_master = """
-      table
-      {
-         border-collapse: collapse;
-         border-spacing: 0px;
-         margin-left: 40px;
-         margin-bottom: 40px;
-         margin-top: 20px;
-      }
-
-      td
-      {
-         margin: 0;
-         border: 1px #fff solid;
-         padding-top: 6px;
-         padding-bottom: 6px;
-         padding-left: 16px;
-         padding-right: 16px;
-      }
-
-      tr#agent_case_result_row a
-      {
-         color: #eee;
-      }
-
-      td.agent
-      {
-         color: #fff;
-         font-size: 1.0em;
-         min-width: 140px;
-         text-align: center;
-         background-color: #048;
-      }
-
-      td#case_category
-      {
-         min-width: 180px;
-         color: #fff;
-         background-color: #000;
-         text-align: left;
-         padding-left: 20px;
-         font-size: 1.0em;
-      }
-
-      td.case_subcategory
-      {
-         color: #fff;
-         background-color: #333;
-         text-align: left;
-         padding-left: 30px;
-         font-size: 0.9em;
-      }
-
-      td#case
-      {
-         background-color: #666;
-         text-align: left;
-         padding-left: 40px;
-         font-size: 0.9em;
-      }
-
-      span#case_duration
-      {
-         font-size: 0.7em;
-         color: #fff;
-      }
-
-      td.close
-      {
-         width: 15px;
-         padding: 6px;
-         font-size: 0.7em;
-         color: #fff;
-      }
-
-      td.case_ok
-      {
-         background-color: #0a0;
-         text-align: center;
-      }
-
-      td.case_almost
-      {
-         background-color: #6d6;
-         text-align: center;
-      }
-
-      td.case_non_strict,td.case_no_close
-      {
-         background-color: #aa0;
-         text-align: center;
-      }
-
-      td.case_failed
-      {
-         background-color: #900;
-         text-align: center;
-      }
-
-      td.case_missing
-      {
-         color: #fff;
-         background-color: #a05a2c;
-         text-align: center;
-      }
-   """
-
-   ## CSS for Agent/Case detail report
-   ##
-   css_detail = """
-      h2
-      {
-         margin-top: 30px;
-      }
-
-      p#case_ok
-      {
-         color: #fff;
-         border-radius: 10px;
-         background-color: #0a0;
-         padding: 20px;
-         margin: 20px;
-         font-size: 1.2em;
-      }
-
-      p#case_non_strict,p#case_no_close
-      {
-         color: #fff;
-         border-radius: 10px;
-         background-color: #990;
-         padding: 20px;
-         margin: 20px;
-         font-size: 1.2em;
-      }
-
-      p#case_failed
-      {
-         color: #fff;
-         border-radius: 10px;
-         background-color: #900;
-         padding: 20px;
-         margin: 20px;
-         font-size: 1.2em;
-      }
-
-      table
-      {
-         border-collapse: collapse;
-         border-spacing: 0px;
-         margin-left: 80px;
-         margin-bottom: 40px;
-         margin-top: 0px;
-      }
-
-      td
-      {
-         margin: 0;
-         font-size: 0.8em;
-         text-align: right;
-         border: 1px #fff solid;
-         padding-top: 6px;
-         padding-bottom: 6px;
-         padding-left: 16px;
-         padding-right: 16px;
-      }
-
-      tr#stats_header
-      {
-         color: #eee;
-         background-color: #000;
-      }
-
-      tr#stats_row
-      {
-         background-color: #fc3;
-         color: #000;
-      }
-
-      tr#stats_total
-      {
-         color: #fff;
-         background-color: #888;
-      }
-
-      div#wirelog
-      {
-         margin-top: 20px;
-         margin-bottom: 80px;
-      }
-
-      pre.wirelog_rx_octets {color: #aaa; margin: 0; background-color: #060; padding: 2px;}
-      pre.wirelog_tx_octets {color: #aaa; margin: 0; background-color: #600; padding: 2px;}
-      pre.wirelog_tx_octets_sync {color: #aaa; margin: 0; background-color: #606; padding: 2px;}
-
-      pre.wirelog_rx_frame {color: #fff; margin: 0; background-color: #0a0; padding: 2px;}
-      pre.wirelog_tx_frame {color: #fff; margin: 0; background-color: #a00; padding: 2px;}
-      pre.wirelog_tx_frame_sync {color: #fff; margin: 0; background-color: #a0a; padding: 2px;}
-
-      pre.wirelog_delay {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-      pre.wirelog_kill_after {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-
-      pre.wirelog_tcp_closed_by_me {color: #fff; margin: 0; background-color: #008; padding: 2px;}
-      pre.wirelog_tcp_closed_by_peer {color: #fff; margin: 0; background-color: #000; padding: 2px;}
-   """
-
-    ## CSS for Agent/Case detail report
-   ##
-   def js_master(self):
-      return """
-
-   var isClosed = false;
-
-   function closeHelper(display,colspan) {
-      // hide all close codes
-      var a = document.getElementsByClassName("close_hide");
-      for (var i in a) {
-         if (a[i].style) {
-            a[i].style.display = display;
-         }
-      }
-
-      // set colspans
-      var a = document.getElementsByClassName("close_flex");
-      for (var i in a) {
-         a[i].colSpan = colspan;
-      }
-
-      var a = document.getElementsByClassName("case_subcategory");
-      for (var i in a) {
-         a[i].colSpan = """+str(len(self.agents.keys()))+"""*colspan + 1;
-      }
-   }
-
-   function toggleClose() {
-      if (window.isClosed == false) {
-         closeHelper("none",1);
-         window.isClosed = true;
-      } else {
-         closeHelper("table-cell",2);
-         window.isClosed = false;
-      }
-   }
-
-   """
+   MAX_CASE_PICKLE_LEN = 1000
 
    def __init__(self, debug = False, outdir = "reports"):
+      self.repeatAgentRowPerSubcategory = True
       self.debug = debug
       self.outdir = outdir
       self.agents = {}
       self.cases = {}
 
 
-   def startFactory(self):
-      pass
-
-
-   def stopFactory(self):
-      pass
-
-
    def logCase(self, caseResults):
+      """
+      Called from FuzzingProtocol instances when case has been finished to store case results.
+      """
 
       agent = caseResults["agent"]
       case = caseResults["id"]
@@ -702,23 +421,31 @@ class FuzzingFactory:
       self.cases[case][agent] = caseResults
 
 
-   def getCase(self, agent, case):
-      return self.agents[agent][case]
-
-
    def createReports(self):
+      """
+      Create reports from all data stored for test cases which have been executed.
+      """
 
+      ## create output directory when non-existent
+      ##
       if not os.path.exists(self.outdir):
          os.makedirs(self.outdir)
 
+      ## create master report
+      ##
       self.createMasterReport(self.outdir)
 
+      ## create case detail reports
+      ##
       for agentId in self.agents:
          for caseId in self.agents[agentId]:
             self.createAgentCaseReport(agentId, caseId, self.outdir)
 
 
    def cleanForFilename(self, str):
+      """
+      Clean a string for use as filename.
+      """
       s0 = ''.join([c if c in "abcdefghjiklmnopqrstuvwxyz0123456789" else " " for c in str.strip().lower()])
       s1 = s0.strip()
       s2 = s1.replace(' ', '_')
@@ -726,28 +453,89 @@ class FuzzingFactory:
 
 
    def makeAgentCaseReportFilename(self, agentId, caseId):
+      """
+      Create filename for case detail report from agent and case.
+      """
       c = caseId.replace('.', '_')
       return self.cleanForFilename(agentId) + "_case_" + c + ".html"
 
 
-   def createMasterReport(self, outdir):
+   def limitString(self, s, limit, indicator = " ..."):
+      ss = str(s)
+      if len(ss) > limit - len(indicator):
+         return ss[:limit - len(indicator)] + indicator
+      else:
+         return ss
 
+
+   def createMasterReport(self, outdir):
+      """
+      Create report master HTML file.
+
+      :param outdir: Directory where to create file.
+      :type outdir: str
+      :returns: str -- Name of created file.
+      """
+
+      ## open report file in create / write-truncate mode
+      ##
       report_filename = "index.html"
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><style lang="css">%s %s</style><script language="javascript">%s</script></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_master, self.js_master()))
+      ## write HTML
+      ##
+      f.write('<!DOCTYPE html>\n')
+      f.write('<html>\n')
+      f.write('   <head>\n')
+      f.write('      <meta charset="utf-8" />\n')
+      f.write('      <style lang="css">%s</style>\n' % CSS_COMMON)
+      f.write('      <style lang="css">%s</style>\n' % CSS_MASTER_REPORT)
+      f.write('      <script language="javascript">%s</script>\n' % JS_MASTER_REPORT % {"agents_cnt": len(self.agents.keys())})
+      f.write('   </head>\n')
+      f.write('   <body>\n')
+      f.write('      <a href="#"><div id="toggle_button" class="unselectable" onclick="toggleClose();">Toggle Details</div></a>\n')
+      f.write('      <a name="top"></a>\n')
+      f.write('      <br/>\n')
 
-      f.write('<h1>WebSockets Protocol Test Report</h1>')
+      ## top logos
+      f.write('      <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>\n')
+      f.write('      <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>\n')
 
-      f.write('<p id="intro">Test summary report generated on</p>')
-      f.write('<p id="intro" style="margin-left: 80px;"><i>%s</i></p>' % utcnow())
-      f.write('<p id="intro">by <a href="%s">Autobahn</a> WebSockets.</p>' % "http://www.tavendo.de/autobahn")
+      ## write report header
+      ##
+      f.write('      <div id="master_report_header" class="block">\n')
+      f.write('         <p id="intro">Summary report generated on %s (UTC) by <a href="%s">Autobahn WebSockets</a> v%s.</p>\n' % (utcnow(), "http://www.tavendo.de/autobahn", str(autobahn.version)))
+      f.write("""
+      <table id="case_outcome_desc">
+         <tr>
+            <td class="case_ok">Pass</td>
+            <td class="outcome_desc">Test case was executed and passed successfully.</td>
+         </tr>
+         <tr>
+            <td class="case_non_strict">Non-Strict</td>
+            <td class="outcome_desc">Test case was executed and passed non-strictly.
+            A non-strict behavior is one that does not adhere to a SHOULD-behavior as described in the protocol specification or
+            a well-defined, canonical behavior that appears to be desirable but left open in the protocol specification.
+            An implementation with non-strict behavior is still conformant to the protocol specification.</td>
+         </tr>
+         <tr>
+            <td class="case_failed">Fail</td>
+            <td class="outcome_desc">Test case was executed and failed. An implementation which fails a test case - other
+            than a performance/limits related one - is non-conforming to a MUST-behavior as described in the protocol specification.</td>
+         </tr>
+         <tr>
+            <td class="case_missing">Missing</td>
+            <td class="outcome_desc">Test case is missing, either because it was skipped via the test suite configuration
+            or deactivated, i.e. because the implementation does not implement the tested feature or breaks during running
+            the test case.</td>
+         </tr>
+      </table>
+      """)
+      f.write('      </div>\n')
 
-      f.write('<p id="intro"><a href="#" onclick="toggleClose();">Toggle Close Results</a></p>')
-
-      f.write('<h2>Test Results</h2>')
-
-      f.write('<table id="agent_case_results">')
+      ## write big agent/case report table
+      ##
+      f.write('      <table id="agent_case_results">\n')
 
       ## sorted list of agents for which test cases where run
       ##
@@ -774,26 +562,31 @@ class FuzzingFactory:
          caseSubCategoryIndex = '.'.join(caseId.split('.')[:2])
          caseSubCategory = CaseSubCategories.get(caseSubCategoryIndex, None)
 
-         ## Category row
+         ## Category/Agents row
          ##
-         if caseCategory != lastCaseCategory:
-            f.write('<tr id="case_category_row">')
-            f.write('<td id="case_category">%s %s</td>' % (caseCategoryIndex, caseCategory))
+         if caseCategory != lastCaseCategory or (self.repeatAgentRowPerSubcategory and caseSubCategory != lastCaseSubCategory):
+            f.write('         <tr class="case_category_row">\n')
+            f.write('            <td class="case_category">%s %s</td>\n' % (caseCategoryIndex, caseCategory))
             for agentId in agentList:
-               f.write('<td class="agent close_flex" colspan="2">%s</td>' % agentId)
-            f.write('</tr>')
+               f.write('            <td class="agent close_flex" colspan="2">%s</td>\n' % agentId)
+            f.write('         </tr>\n')
             lastCaseCategory = caseCategory
             lastCaseSubCategory = None
 
+         ## Subcategory row
+         ##
          if caseSubCategory != lastCaseSubCategory:
-            f.write('<tr id="case_subcategory_row">')
-            f.write('<td class="case_subcategory" colspan="%d">%s %s</td>' % (len(agentList)*2 + 1, caseSubCategoryIndex, caseSubCategory))
+            f.write('         <tr class="case_subcategory_row">\n')
+            f.write('            <td class="case_subcategory" colspan="%d">%s %s</td>\n' % (len(agentList) * 2 + 1, caseSubCategoryIndex, caseSubCategory))
+            f.write('         </tr>\n')
             lastCaseSubCategory = caseSubCategory
 
-         f.write('<tr id="agent_case_result_row">')
-         f.write('<td id="case"><a href="#case_desc_%s">Case %s</a></td>' % (caseId.replace('.', '_'), caseId))
+         ## Cases row
+         ##
+         f.write('         <tr class="agent_case_result_row">\n')
+         f.write('            <td class="case"><a href="#case_desc_%s">Case %s</a></td>\n' % (caseId.replace('.', '_'), caseId))
 
-         ## Agent/Case Result
+         ## Case results
          ##
          for agentId in agentList:
             if self.agents[agentId].has_key(caseId):
@@ -832,35 +625,55 @@ class FuzzingFactory:
                   ctd_class = "case_failed"
 
                if case["reportTime"]:
-                  f.write('<td class="%s"><a href="%s">%s</a><br/><span id="case_duration">%s ms</span></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
+                  f.write('            <td class="%s"><a href="%s">%s</a><br/><span class="case_duration">%s ms</span></td><td class="close close_hide %s"><span class="close_code">%s</span></td>\n' % (td_class, agent_case_report_file, td_text, case["duration"],ctd_class,ctd_text))
                else:
-                  f.write('<td class="%s"><a href="%s">%s</a></td><td class="close close_hide %s"><span class="close_code">%s</span></td>' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
+                  f.write('            <td class="%s"><a href="%s">%s</a></td><td class="close close_hide %s"><span class="close_code">%s</span></td>\n' % (td_class, agent_case_report_file, td_text,ctd_class,ctd_text))
 
             else:
-               f.write('<td class="case_missing close_flex" colspan="2">Missing</td>')
+               f.write('            <td class="case_missing close_flex" colspan="2">Missing</td>\n')
 
-         f.write("</tr>")
+         f.write("         </tr>\n")
 
-      f.write("</table>")
+      f.write("      </table>\n")
+      f.write("      <br/><hr/>\n")
 
-      f.write('<h2>Test Cases</h2>')
-
+      ## Case descriptions
+      ##
+      f.write('      <div id="test_case_descriptions">\n')
       for caseId in caseList:
-
          CCase = CasesById[caseId]
+         f.write('      <br/>\n')
+         f.write('      <a name="case_desc_%s"></a>\n' % caseId.replace('.', '_'))
+         f.write('      <h2>Case %s</h2>\n' % caseId)
+         f.write('      <a class="up" href="#top">Up</a>\n')
+         f.write('      <p class="case_text_block case_desc"><b>Case Description</b><br/><br/>%s</p>\n' % CCase.DESCRIPTION)
+         f.write('      <p class="case_text_block case_expect"><b>Case Expectation</b><br/><br/>%s</p>\n' % CCase.EXPECTATION)
+      f.write('      </div>\n')
+      f.write("      <br/><hr/>\n")
 
-         f.write('<a name="case_desc_%s"></a>' % caseId.replace('.', '_'))
-         f.write('<h3 id="case_desc_title">Case %s</h2>' % caseId)
-         f.write('<p id="case_desc"><i>Description</i><br/><br/> %s</p>' % CCase.DESCRIPTION)
-         f.write('<p id="case_expect"><i>Expectation</i><br/><br/> %s</p>' % CCase.EXPECTATION)
+      ## end of HTML
+      ##
+      f.write("   </body>\n")
+      f.write("</html>\n")
 
-      f.write("</body></html>")
-
+      ## close created HTML file and return filename
+      ##
       f.close()
       return report_filename
 
 
    def createAgentCaseReport(self, agentId, caseId, outdir):
+      """
+      Create case detail report HTML file.
+
+      :param agentId: ID of agent for which to generate report.
+      :type agentId: str
+      :param caseId: ID of case for which to generate report.
+      :type caseId: str
+      :param outdir: Directory where to create file.
+      :type outdir: str
+      :returns: str -- Name of created file.
+      """
 
       if not self.agents.has_key(agentId):
          raise Exception("no test data stored for agent %s" % agentId)
@@ -868,107 +681,139 @@ class FuzzingFactory:
       if not self.agents[agentId].has_key(caseId):
          raise Exception("no test data stored for case %s with agent %s" % (caseId, agentId))
 
+      ## get case to generate report for
+      ##
       case = self.agents[agentId][caseId]
 
+      ## open report file in create / write-truncate mode
+      ##
       report_filename = self.makeAgentCaseReportFilename(agentId, caseId)
-
       f = open(os.path.join(outdir, report_filename), 'w')
 
-      f.write('<!DOCTYPE html><html><body><head><meta charset="utf-8" /><body><head><style lang="css">%s %s</style></head>' % (FuzzingFactory.css_common, FuzzingFactory.css_detail))
+      ## write HTML
+      ##
+      f.write('<!DOCTYPE html>\n')
+      f.write('<html>\n')
+      f.write('   <head>\n')
+      f.write('      <meta charset="utf-8" />\n')
+      f.write('      <style lang="css">%s</style>\n' % CSS_COMMON)
+      f.write('      <style lang="css">%s</style>\n' % CSS_DETAIL_REPORT)
+      f.write('   </head>\n')
+      f.write('   <body>\n')
+      f.write('      <a name="top"></a>\n')
+      f.write('      <br/>\n')
 
-      f.write('<h1>%s - Test Case %s</h1>' % (case["agent"], caseId))
+      ## top logos
+      f.write('      <center><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report.png" border="0" width="820" height="46" alt="WebSockets Protocol Test Report"></img></a></center>\n')
+      f.write('      <center><a href="http://www.tavendo.de/autobahn" title="Autobahn WebSockets"><img src="http://www.tavendo.de/static/autobahn/ws_protocol_test_report_autobahn.png" border="0" width="300" height="68" alt="Autobahn WebSockets"></img></a></center>\n')
+      f.write('      <br/>\n')
 
+
+      ## Case Summary
+      ##
       if case["behavior"] == Case.OK:
-         f.write('<p id="case_ok"><b>Pass</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_ok"
+         text = "Pass"
       elif case["behavior"] ==  Case.NON_STRICT:
-         f.write('<p id="case_non_strict"><b>Non-Strict</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_non_strict"
+         text = "Non-Strict"
       else:
-         f.write('<p id="case_failed"><b>Fail</b> (%s - %d ms)</p>' % (case["started"], case["duration"]))
+         style = "case_failed"
+         text = "Fail"
+      f.write('      <p class="case %s">%s - <span style="font-size: 1.3em;"><b>Case %s</b></span> : %s - <span style="font-size: 0.9em;"><b>%d</b> ms @ %s</a></p>\n' % (style, case["agent"], caseId, text, case["duration"], case["started"]))
 
-      f.write('<h2>Case</h2>')
-      f.write('<p id="case_desc"><i>Description</i><br/><br/>%s</p>' % case["description"])
-      f.write('<p id="case_expect"><i>Expectation</i><br/><br/>%s</p>' % case["expectation"])
 
-      f.write('<h2>Result</h2>')
+      ## Case Description, Expectation, Outcome, Case Closing Behavior
+      ##
+      f.write('      <p class="case_text_block case_desc"><b>Case Description</b><br/><br/>%s</p>\n' % case["description"])
+      f.write('      <p class="case_text_block case_expect"><b>Case Expectation</b><br/><br/>%s</p>\n' % case["expectation"])
+      f.write("""
+      <p class="case_text_block case_outcome">
+         <b>Case Outcome</b><br/><br/>%s<br/><br/>
+         <i>Expected:</i><br/><span class="case_pickle">%s</span><br/><br/>
+         <i>Observed:</i><br><span class="case_pickle">%s</span>
+      </p>\n""" % (case.get("result", ""), self.limitString(case.get("expected", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN), self.limitString(case.get("received", ""), FuzzingFactory.MAX_CASE_PICKLE_LEN)))
+      f.write('      <p class="case_text_block case_closing_beh"><b>Case Closing Behavior</b><br/><br/>%s (%s)</p>\n' % (case.get("resultClose", ""), case.get("behaviorClose", "")))
+      f.write("      <br/><hr/>\n")
 
-      if case["result"] and case["result"] != "":
-         f.write('<p id="case_result">%s</p>' % case["result"])
 
-      if case["expected"] and case["received"]:
-         es = str(case["expected"])
-         if len(es) > 400:
-            es = es[:400] + " ..."
-         f.write('<p id="case_result">Expected = %s</p>' % es)
+      ## Opening Handshake
+      ##
+      f.write('      <h2>Opening Handshake</h2>\n')
+      f.write('      <pre class="http_dump">%s</pre>\n' % case["httpRequest"].strip())
+      f.write('      <pre class="http_dump">%s</pre>\n' % case["httpResponse"].strip())
+      f.write("      <br/><hr/>\n")
 
-         rs = str(case["received"])
-         if len(rs) > 400:
-            rs = rs[:400] + " ..."
-         f.write('<p id="case_result">Actual = %s</p>' % rs)
 
-      f.write('<h2>Close Result</h2>')
-      if case["resultClose"] and case["resultClose"] != "":
-         f.write('<p id="close_result">%s: %s</p>' % (case["behaviorClose"],case["resultClose"]))
+      ## Closing Behavior
+      ##
+      cbv = [("isServer", "True, iff I (the fuzzer) am a server, and the peer is a client."),
+             ("closedByMe", "True, iff I have initiated closing handshake (that is, did send close first)."),
+             ("failedByMe", "True, iff I have failed the WS connection (i.e. due to protocol error). Failing can be either by initiating closing handshake or brutal drop TCP."),
+             ("droppedByMe", "True, iff I dropped the TCP connection."),
+             ("wasClean", "True, iff full WebSockets closing handshake was performed (close frame sent and received) _and_ the server dropped the TCP (which is its responsibility)."),
+             ("wasNotCleanReason", "When wasClean == False, the reason what happened."),
+             ("wasServerConnectionDropTimeout", "When we are a client, and we expected the server to drop the TCP, but that didn't happen in time, this gets True."),
+             ("wasCloseHandshakeTimeout", "When we initiated a closing handshake, but the peer did not respond in time, this gets True."),
+             ("localCloseCode", "The close code I sent in close frame (if any)."),
+             ("localCloseReason", "The close reason I sent in close frame (if any)."),
+             ("remoteCloseCode", "The close code the peer sent me in close frame (if any)."),
+             ("remoteCloseReason", "The close reason the peer sent me in close frame (if any).")
+            ]
+      f.write('      <h2>Closing Behavior</h2>\n')
+      f.write('      <table>\n')
+      f.write('         <tr class="stats_header"><td>Key</td><td class="left">Value</td><td class="left">Description</td></tr>\n')
+      for c in cbv:
+         f.write('         <tr class="stats_row"><td>%s</td><td class="left">%s</td><td class="left">%s</td></tr>\n' % (c[0], case[c[0]], c[1]))
+      f.write('      </table>')
+      f.write("      <br/><hr/>\n")
 
-      f.write('<h2>Closing Behavior</h2>')
-      f.write('<table>')
-      f.write('<tr id="stats_header"><td>Key</td><td>Value</td></tr>')
-      f.write('<tr id="stats_row"><td>isServer</td><td>%s</td></tr>' % case["isServer"])
-      f.write('<tr id="stats_row"><td>closedByMe</td><td>%s</td></tr>' % case["closedByMe"])
-      f.write('<tr id="stats_row"><td>failedByMe</td><td>%s</td></tr>' % case["failedByMe"])
-      f.write('<tr id="stats_row"><td>droppedByMe</td><td>%s</td></tr>' % case["droppedByMe"])
-      f.write('<tr id="stats_row"><td>wasClean</td><td>%s</td></tr>' % case["wasClean"])
-      f.write('<tr id="stats_row"><td>wasNotCleanReason</td><td>%s</td></tr>' % case["wasNotCleanReason"])
-      f.write('<tr id="stats_row"><td>wasServerConnectionDropTimeout</td><td>%s</td></tr>' % case["wasServerConnectionDropTimeout"])
-      f.write('<tr id="stats_row"><td>wasCloseHandshakeTimeout</td><td>%s</td></tr>' % case["wasCloseHandshakeTimeout"])
-      f.write('<tr id="stats_row"><td>localCloseCode</td><td>%s</td></tr>' % str(case["localCloseCode"]))
-      f.write('<tr id="stats_row"><td>localCloseReason</td><td>%s</td></tr>' % str(case["localCloseReason"]))
-      f.write('<tr id="stats_row"><td>remoteCloseCode</td><td>%s</td></tr>' % str(case["remoteCloseCode"]))
-      f.write('<tr id="stats_row"><td>remoteCloseReason</td><td>%s</td></tr>' % case["remoteCloseReason"])
-      f.write('</table>')
 
-      f.write('<h2>Statistics</h2>')
-
+      ## Wire Statistics
+      ##
+      f.write('      <h2>Wire Statistics</h2>\n')
       if not case["createStats"]:
-         f.write('<p style="margin-left: 40px; color: #f00;"><i>Statistics for octets/frames disabled!</i></p>')
+         f.write('      <p style="margin-left: 40px; color: #f00;"><i>Statistics for octets/frames disabled!</i></p>\n')
       else:
          ## octet stats
          ##
          for statdef in [("Received", case["rxOctetStats"]), ("Transmitted", case["txOctetStats"])]:
-            f.write('<h3>Octets %s by Chop Size</h3>' % statdef[0])
-            f.write('<table>')
+            f.write('      <h3>Octets %s by Chop Size</h3>\n' % statdef[0])
+            f.write('      <table>\n')
             stats = statdef[1]
             total_cnt = 0
             total_octets = 0
-            f.write('<tr id="stats_header"><td>Chop Size</td><td>Count</td><td>Octets</td></tr>')
+            f.write('         <tr class="stats_header"><td>Chop Size</td><td>Count</td><td>Octets</td></tr>\n')
             for s in sorted(stats.keys()):
-               f.write('<tr id="stats_row"><td>%d</td><td>%d</td><td>%d</td></tr>' % (s, stats[s], s * stats[s]))
+               f.write('         <tr class="stats_row"><td>%d</td><td>%d</td><td>%d</td></tr>\n' % (s, stats[s], s * stats[s]))
                total_cnt += stats[s]
                total_octets += s * stats[s]
-            f.write('<tr id="stats_total"><td>Total</td><td>%d</td><td>%d</td></tr>' % (total_cnt, total_octets))
-            f.write('</table>')
+            f.write('         <tr class="stats_total"><td>Total</td><td>%d</td><td>%d</td></tr>\n' % (total_cnt, total_octets))
+            f.write('      </table>\n')
 
          ## frame stats
          ##
          for statdef in [("Received", case["rxFrameStats"]), ("Transmitted", case["txFrameStats"])]:
-            f.write('<h3>Frames %s by Opcode</h3>' % statdef[0])
-            f.write('<table>')
+            f.write('      <h3>Frames %s by Opcode</h3>\n' % statdef[0])
+            f.write('      <table>\n')
             stats = statdef[1]
             total_cnt = 0
-            f.write('<tr id="stats_header"><td>Opcode</td><td>Count</td></tr>')
+            f.write('         <tr class="stats_header"><td>Opcode</td><td>Count</td></tr>\n')
             for s in sorted(stats.keys()):
-               f.write('<tr id="stats_row"><td>%d</td><td>%d</td></tr>' % (s, stats[s]))
+               f.write('         <tr class="stats_row"><td>%d</td><td>%d</td></tr>\n' % (s, stats[s]))
                total_cnt += stats[s]
-            f.write('<tr id="stats_total"><td>Total</td><td>%d</td></tr>' % (total_cnt))
-            f.write('</table>')
+            f.write('         <tr class="stats_total"><td>Total</td><td>%d</td></tr>\n' % (total_cnt))
+            f.write('      </table>\n')
+      f.write("      <br/><hr/>\n")
 
-      f.write('<h2>Wire Log</h2>')
 
-      if not case["createWirelog"]:
-         f.write('<p style="margin-left: 40px; color: #f00;"><i>Wire log after handshake disabled!</i></p>')
-
-      ## write out wire log
+      ## Wire Log
       ##
-      f.write('<div id="wirelog">')
+      f.write('      <h2>Wire Log</h2>\n')
+      if not case["createWirelog"]:
+         f.write('      <p style="margin-left: 40px; color: #f00;"><i>Wire log after handshake disabled!</i></p>\n')
+
+      f.write('      <div id="wirelog">\n')
       wl = case["wirelog"]
       i = 0
       for t in wl:
@@ -1006,46 +851,46 @@ class FuzzingFactory:
             lines = textwrap.wrap(t[1], 100)
             if t[0] in ["RO", "TO"]:
                if len(lines) > 0:
-                  f.write('<pre class="%s">%03d %s: %s</pre>' % (css_class, i, prefix, lines[0]))
+                  f.write('         <pre class="%s">%03d %s: %s</pre>\n' % (css_class, i, prefix, lines[0]))
                   for ll in lines[1:]:
-                     f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+                     f.write('         <pre class="%s">%s%s</pre>\n' % (css_class, (2+4+len(prefix))*" ", ll))
             else:
                if t[0] == "RF":
                   if t[6]:
                      mmask = binascii.b2a_hex(t[6])
                   else:
                      mmask = str(t[6])
-                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
+                  f.write('         <pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASKED=%s, MASK=%s</pre>\n' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), mmask))
                elif t[0] == "TF":
-                  f.write('<pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
+                  f.write('         <pre class="%s">%03d %s: OPCODE=%s, FIN=%s, RSV=%s, MASK=%s, PAYLOAD-REPEAT-LEN=%s, CHOPSIZE=%s, SYNC=%s</pre>\n' % (css_class, i, prefix, str(t[2]), str(t[3]), str(t[4]), str(t[5]), str(t[6]), str(t[7]), str(t[8])))
                else:
                   raise Exception("logic error")
                for ll in lines:
-                  f.write('<pre class="%s">%s%s</pre>' % (css_class, (2+4+len(prefix))*" ", ll))
+                  f.write('         <pre class="%s">%s%s</pre>\n' % (css_class, (2+4+len(prefix))*" ", ll))
 
          elif t[0] == "WLM":
             if t[1]:
-               f.write('<pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>' % (i))
+               f.write('         <pre class="wirelog_delay">%03d WIRELOG ENABLED</pre>\n' % (i))
             else:
-               f.write('<pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>' % (i))
+               f.write('         <pre class="wirelog_delay">%03d WIRELOG DISABLED</pre>\n' % (i))
 
          elif t[0] == "CT":
-            f.write('<pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>' % (i, t[1], t[2]))
+            f.write('         <pre class="wirelog_delay">%03d DELAY %f sec for TAG %s</pre>\n' % (i, t[1], t[2]))
 
          elif t[0] == "CTE":
-            f.write('<pre class="wirelog_delay">%03d DELAY TIMEOUT on TAG %s</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_delay">%03d DELAY TIMEOUT on TAG %s</pre>\n' % (i, t[1]))
 
          elif t[0] == "KL":
-            f.write('<pre class="wirelog_kill_after">%03d FAIL CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_kill_after">%03d FAIL CONNECTION AFTER %f sec</pre>\n' % (i, t[1]))
 
          elif t[0] == "KLE":
-            f.write('<pre class="wirelog_kill_after">%03d FAILING CONNECTION</pre>' % (i))
+            f.write('         <pre class="wirelog_kill_after">%03d FAILING CONNECTION</pre>\n' % (i))
 
          elif t[0] == "TI":
-            f.write('<pre class="wirelog_kill_after">%03d CLOSE CONNECTION AFTER %f sec</pre>' % (i, t[1]))
+            f.write('         <pre class="wirelog_kill_after">%03d CLOSE CONNECTION AFTER %f sec</pre>\n' % (i, t[1]))
 
          elif t[0] == "TIE":
-            f.write('<pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>' % (i))
+            f.write('         <pre class="wirelog_kill_after">%03d CLOSING CONNECTION</pre>\n' % (i))
 
          else:
             raise Exception("logic error (unrecognized wire log row type %s - row %s)" % (t[0], str(t)))
@@ -1053,13 +898,19 @@ class FuzzingFactory:
          i += 1
 
       if case["droppedByMe"]:
-         f.write('<pre class="wirelog_tcp_closed_by_me">%03d TCP DROPPED BY ME</pre>' % i)
+         f.write('         <pre class="wirelog_tcp_closed_by_me">%03d TCP DROPPED BY ME</pre>\n' % i)
       else:
-         f.write('<pre class="wirelog_tcp_closed_by_peer">%03d TCP DROPPED BY PEER</pre>' % i)
-      f.write('</div>')
+         f.write('         <pre class="wirelog_tcp_closed_by_peer">%03d TCP DROPPED BY PEER</pre>\n' % i)
+      f.write('      </div>\n')
+      f.write("      <br/><hr/>\n")
 
-      f.write("</body></html>")
+      ## end of HTML
+      ##
+      f.write("   </body>\n")
+      f.write("</html>\n")
 
+      ## close created HTML file and return filename
+      ##
       f.close()
       return report_filename
 
@@ -1079,12 +930,15 @@ class FuzzingServerProtocol(FuzzingProtocol, WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
       if self.debug:
-         log.msg("connection received from %s for host %s, path %s, parms %s, origin %s, protocols %s" % (connectionRequest.peerstr, connectionRequest.host, connectionRequest.path, str(connectionRequest.params), connectionRequest.origin, str(connectionRequest.protocols)))
+         log.msg("connection received from %s speaking WebSockets protocol %d - upgrade request for host '%s', path '%s', params %s, origin '%s', protocols %s, headers %s" % (connectionRequest.peerstr, connectionRequest.version, connectionRequest.host, connectionRequest.path, str(connectionRequest.params), connectionRequest.origin, str(connectionRequest.protocols), str(connectionRequest.headers)))
 
       if connectionRequest.params.has_key("agent"):
          if len(connectionRequest.params["agent"]) > 1:
             raise Exception("multiple agents specified")
          self.caseAgent = connectionRequest.params["agent"][0]
+      else:
+         #raise Exception("no agent specified")
+         self.caseAgent = None
 
       if connectionRequest.params.has_key("case"):
          if len(connectionRequest.params["case"]) > 1:
@@ -1129,13 +983,27 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    protocol = FuzzingServerProtocol
 
-   def __init__(self, spec, debug = False, outdir = "reports/clients"):
+   def __init__(self, spec):
 
-      WebSocketServerFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+      debug = spec.get("debug", False)
+      debugCodePaths = spec.get("debugCodePaths", False)
+
+      WebSocketServerFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
+      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/clients/"))
+
+      ## WebSocket session parameters
+      ##
+      self.setSessionParameters(url = spec["url"],
+                                protocols = spec.get("protocols", []),
+                                server = "AutobahnWebSocketsTestSuite/%s" % autobahn.version)
+
+      ## WebSocket protocol options
+      ##
+      self.setProtocolOptions(**spec.get("options", {}))
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
+      self.specExcludeAgentCases = parseExcludeAgentCases(self.spec)
       print "Autobahn WebSockets %s Fuzzing Server" % autobahn.version
       print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
       print "Cases = %s" % str(self.specCases)
@@ -1164,22 +1032,26 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
    protocol = FuzzingClientProtocol
 
-   def __init__(self, spec, debug = False, outdir = "reports/servers"):
+   def __init__(self, spec):
 
-      WebSocketClientFactory.__init__(self, debug = debug)
-      FuzzingFactory.__init__(self, debug = debug, outdir = outdir)
+      debug = spec.get("debug", False)
+      debugCodePaths = spec.get("debugCodePaths", False)
+
+      WebSocketClientFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
+      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/servers/"))
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
+      self.specExcludeAgentCases = parseExcludeAgentCases(self.spec)
       print "Autobahn WebSockets %s Fuzzing Client" % autobahn.version
       print "Ok, will run %d test cases against %d servers" % (len(self.specCases), len(spec["servers"]))
       print "Cases = %s" % str(self.specCases)
-      print "Servers = %s" % str([x["agent"] + "@" + x["hostname"] + ":" + str(x["port"]) for x in spec["servers"]])
+      print "Servers = %s" % str([x["url"] + "@" + x["agent"] for x in spec["servers"]])
 
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():
-            reactor.connectTCP(self.hostname, self.port, self)
+            connectWS(self)
 
 
    def nextServer(self):
@@ -1188,27 +1060,26 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       if self.currServer < len(self.spec["servers"]):
          ## run tests for next server
          ##
-         s = self.spec["servers"][self.currServer]
+         server = self.spec["servers"][self.currServer]
 
          ## agent (=server) string for reports
          ##
-         self.agent = s.get("agent", "UnknownServer")
+         self.agent = server.get("agent", "UnknownServer")
          if self.agent == "AutobahnServer":
             self.agent = "AutobahnServer/%s" % autobahn.version
 
-         ## used to establish TCP connection
+         ## WebSocket session parameters
          ##
-         self.hostname = s.get("hostname", "localhost")
-         self.port = s.get("port", 80)
+         self.setSessionParameters(url = server["url"],
+                                   origin = server.get("origin", None),
+                                   protocols = server.get("protocols", []),
+                                   useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version)
 
-         ## used in HTTP header for WS opening handshake
+         ## WebSocket protocol options
          ##
-         self.path = s.get("path", "/")
-         self.host = s.get("host", self.hostname)
-         self.origin = s.get("origin", None)
-         self.subprotocols = s.get("subprotocols", [])
-         self.version = s.get("version", WebSocketProtocol.DEFAULT_SPEC_VERSION)
-         self.useragent = "AutobahnWebSocketsTestSuite/%s" % autobahn.version
+         self.resetProtocolOptions() # reset to defaults
+         self.setProtocolOptions(**self.spec.get("options", {})) # set spec global options
+         self.setProtocolOptions(**server.get("options", {})) # set server specific options
          return True
       else:
          return False
@@ -1230,7 +1101,17 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       else:
          if self.nextServer():
             if self.nextCase():
-               reactor.connectTCP(self.hostname, self.port, self)
+               connectWS(self)
          else:
             self.createReports()
             reactor.stop()
+
+
+   def clientConnectionFailed(self, connector, reason):
+      print "Connection to %s failed (%s)" % (self.spec["servers"][self.currServer]["url"], reason.getErrorMessage())
+      if self.nextServer():
+         if self.nextCase():
+            connectWS(self)
+      else:
+         self.createReports()
+         reactor.stop()

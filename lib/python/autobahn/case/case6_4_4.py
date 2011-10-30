@@ -18,24 +18,29 @@
 ##
 ###############################################################################
 
-from case import Case
-from case6_3_1 import Case6_3_1
 import binascii
+from case import Case
+from case6_4_1 import Case6_4_1
 from autobahn.websocket import WebSocketProtocol
 
 
-class Case6_4_4(Case6_3_1):
+class Case6_4_4(Case6_4_1):
 
-   DESCRIPTION = """Send invalid UTF-8 text message in one frame, but 3 chops. First chop is valid, then wait, then send 2nd chop with payload octet making the sequence invalid, then wait, then send test rest of payload in last chop.<br><br>MESSAGE:<br>%s<br>%s""" % (Case6_3_1.PAYLOAD, binascii.b2a_hex(Case6_3_1.PAYLOAD))
+   DESCRIPTION = """Same as Case 6.4.2, but we send message not in 3 frames, but in 3 chops of the same message frame.
+<br><br>MESSAGE PARTS:<br>
+PART1 = %s (%s)<br>
+PART2 = %s (%s)<br>
+PART3 = %s (%s)<br>
+""" % (Case6_4_1.PAYLOAD[:12], binascii.b2a_hex(Case6_4_1.PAYLOAD[:12]), Case6_4_1.PAYLOAD[12], binascii.b2a_hex(Case6_4_1.PAYLOAD[12]), Case6_4_1.PAYLOAD3[13:], binascii.b2a_hex(Case6_4_1.PAYLOAD3[13:]))
 
-   EXPECTATION = """The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8) upon receiving the offending octet. If we timeout, we expect the connection is failed at least then, since the payload is not valid UTF-8."""
+   EXPECTATION = """The first chop is accepted, we expect to timeout on the first wait. The 2nd chop should be rejected immediately (fail fast on UTF-8). If we timeout, we expect the connection is failed at least then, since the complete message payload is not valid UTF-8."""
 
    def onOpen(self):
 
       self.expected[Case.OK] = [("timeout", "A")]
       self.expected[Case.NON_STRICT] = [("timeout", "A"), ("timeout", "B")]
 
-      self.expectedClose = {"failedByMe":False,"closeCode":self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD,"requireClean":False}
+      self.expectedClose = {"closedByMe": False, "closeCode": [self.p.CLOSE_STATUS_CODE_INVALID_PAYLOAD], "requireClean": False}
 
       self.p.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_TEXT)
       self.p.beginMessageFrame(len(self.PAYLOAD))
@@ -43,13 +48,14 @@ class Case6_4_4(Case6_3_1):
       self.p.continueLater(1, self.part2, "A")
 
    def part2(self):
-      self.received.append(("timeout", "A"))
-      self.p.sendMessageFrameData(self.PAYLOAD[12])
-      self.p.continueLater(1, self.part3, "B")
+      if self.p.state == WebSocketProtocol.STATE_OPEN:
+         self.received.append(("timeout", "A"))
+         self.p.sendMessageFrameData(self.PAYLOAD[12])
+         self.p.continueLater(1, self.part3, "B")
 
    def part3(self):
-      self.received.append(("timeout", "B"))
-      self.p.sendMessageFrameData(self.PAYLOAD[13:])
-      self.p.endMessage()
-
-      self.p.killAfter(1)
+      if self.p.state == WebSocketProtocol.STATE_OPEN:
+         self.received.append(("timeout", "B"))
+         self.p.sendMessageFrameData(self.PAYLOAD[13:])
+         self.p.endMessage()
+         self.p.killAfter(1)

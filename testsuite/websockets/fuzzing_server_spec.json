@@ -1,3 +1,15 @@
 {
-   "cases": ["1.*"]
+   "url": "ws://localhost:9001",
+   "options": {"failByDrop": false},
+
+   "webport": 9090,
+   "webdir": ".",
+
+   "outdir": "./reports/clients",
+
+   "cases": ["*"],
+   "exclude-cases": [],
+   "exclude-agent-cases": {"Firefox*": ["1.2.*", "9.2.*", "9.4.*", "9.6.*", "9.8.*"],
+                           "Firefox/7*": ["9.3.*", "10.*"],
+                           "MSIE*": ["3.*", "4.*", "5.*", "2.5.*"]}
 }

@@ -17,7 +17,7 @@
 ###############################################################################
 
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
@@ -28,7 +28,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketServerFactory()
+   factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = EchoServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()

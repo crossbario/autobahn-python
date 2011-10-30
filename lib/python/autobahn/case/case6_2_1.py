@@ -32,6 +32,6 @@ class Case6_2_1(Case):
    def onOpen(self):
 
       self.expected[Case.OK] = [("message", self.PAYLOAD, False)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendMessage(self.PAYLOAD, binary = False)
       self.p.closeAfter(1)

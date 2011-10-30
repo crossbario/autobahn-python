@@ -28,7 +28,7 @@ class Case5_6(Case):
       ping_payload = "ping payload"
       fragments = ["fragment1", "fragment2"]
       self.expected[Case.OK] = [("pong", ping_payload), ("message", ''.join(fragments), False)]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 1, fin = False, payload = fragments[0])
       self.p.sendFrame(opcode = 9, fin = True, payload = ping_payload)
       self.p.sendFrame(opcode = 0, fin = True, payload = fragments[1])

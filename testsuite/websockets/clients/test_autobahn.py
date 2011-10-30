@@ -17,10 +17,11 @@
 ###############################################################################
 
 import sys
+from optparse import OptionParser
 from twisted.python import log
 from twisted.internet import reactor
 import autobahn
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.case import Cases, CaseCategories, caseClasstoId
 
 
@@ -44,33 +45,42 @@ class WebSocketTestClientFactory(WebSocketClientFactory):
 
    protocol = WebSocketTestClientProtocol
 
-   def __init__(self, debug):
-      WebSocketClientFactory.__init__(self, debug = debug)
+   def __init__(self, url, debug, debugCodePaths):
+      WebSocketClientFactory.__init__(self, url, debug = debug, debugCodePaths = debugCodePaths)
 
       self.endCaseId = None
       self.currentCaseId = 0
 
       self.updateReports = True
       self.agent = "AutobahnClient/%s" % autobahn.version
-      self.path = "/getCaseCount"
+      self.resource = "/getCaseCount"
 
    def clientConnectionLost(self, connector, reason):
       self.currentCaseId += 1
       if self.currentCaseId <= self.endCaseId:
-         self.path = "/runCase?case=%d&agent=%s" % (self.currentCaseId, self.agent)
+         self.resource = "/runCase?case=%d&agent=%s" % (self.currentCaseId, self.agent)
          connector.connect()
       elif self.updateReports:
-         self.path = "/updateReports?agent=%s" % self.agent
+         self.resource = "/updateReports?agent=%s" % self.agent
          self.updateReports = False
          connector.connect()
       else:
          reactor.stop()
 
+   def clientConnectionFailed(self, connector, reason):
+      print "Connection to %s failed (%s)" % (self.url, reason.getErrorMessage())
+      reactor.stop()
+
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WebSocketTestClientFactory(debug = False)
-   factory.failByDrop = False
-   reactor.connectTCP("localhost", 9001, factory)
+
+   parser = OptionParser()
+   parser.add_option("-u", "--url", dest = "url", help = "The WebSocket URL of the fuzzing server.", default = "ws://localhost:9001")
+   (options, args) = parser.parse_args()
+
+   factory = WebSocketTestClientFactory(options.url, debug = False, debugCodePaths = False)
+   factory.setProtocolOptions(failByDrop = False)
+   connectWS(factory)
    reactor.run()

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         window.onload = function() {
+            document.getElementById('wslink').href = "https://" + window.location.hostname + ":" + 9000;
+         }
+      </script>
+   </head>
+   <body>
+      <h1>Autobahn WebSockets - TLS Echo Test</h1>
+      <p><a href="#" id="wslink">Click me the first time</a>, to install the TLS certificate for the WebSockets endpoint.</p>
+      <p>Then <a href="echo_tls_client.html">start the TLS echo client</a>, which connects to the WebSockets endpoint via secure WS.</p>
+   </body>
+</html>

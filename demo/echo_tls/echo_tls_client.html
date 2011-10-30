@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         window.onload = function() {
+
+            var hostname = window.location.hostname;
+            if (hostname == null || hostname == "") {
+               hostname = "localhost";
+            }
+
+            var wsuri = "wss://" + hostname + ":" + 9000;
+            console.log("opening websocket connection to " + wsuri);
+
+            if ("WebSocket" in window) {
+               webSocket = new WebSocket(wsuri);
+            }
+            else {
+               webSocket = new MozWebSocket(wsuri);
+            }
+
+            webSocket.onopen = function() {
+               console.log("ok, websocket connected!");
+            }
+
+            webSocket.onclose = function(e) {
+               console.log("websocket closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+            }
+
+            webSocket.onmessage = function(e) {
+               console.log("message received: " + e.data);
+            }
+
+            webSocket.onerror = function(e) {
+               console.log(e);
+            }
+         }
+      </script>
+   </head>
+   <body>
+      <h1>Autobahn WebSockets - TLS Echo Test</h1>
+      <p>Open browser console (press F12) to watch messages ..</p>
+      <p>Press <button onclick='webSocket.send("Hello, world!");'>Send Hello</button> to send a message and get an echo from the WebSockets server.</p>
+   </body>
+</html>

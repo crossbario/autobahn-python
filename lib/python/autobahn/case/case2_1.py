@@ -26,6 +26,6 @@ class Case2_1(Case):
 
    def onOpen(self):
       self.expected[Case.OK] = [("pong", "")]
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendFrame(opcode = 9)
       self.p.closeAfter(1)

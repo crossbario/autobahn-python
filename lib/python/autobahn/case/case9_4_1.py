@@ -35,7 +35,7 @@ class Case9_4_1(Case):
       self.p.createWirelog = False
       self.behavior = Case.FAILED
       self.result = "Did not receive message within %d seconds." % self.WAITSECS
-      self.expectedClose = {"failedByMe":True,"closeCode":self.p.CLOSE_STATUS_CODE_NORMAL,"requireClean":True}
+      self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
       self.p.sendMessage(payload = self.PAYLOAD, binary = True, payload_frag_size = self.FRAGSIZE)
       self.p.closeAfter(self.WAITSECS)
 
