@@ -32,6 +32,14 @@ def onOpen(self):
    self.p.sendCloseFrame(self.CLOSE_CODE)
    self.p.killAfter(1)
 
+def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = self.resultClose
+
 i = 1
 for s in tests:
    DESCRIPTION = """Send close with valid close code %d""" % s
@@ -43,6 +51,7 @@ for s in tests:
           "EXPECTATION": """%s""" % EXPECTATION,
           "__init__": __init__,
           "onOpen": onOpen,
+          "onConnectionLost": onConnectionLost,
           })
    Case7_7_X.append(C)
    i += 1

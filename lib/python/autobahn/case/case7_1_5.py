@@ -26,7 +26,15 @@ class Case7_1_5(Case):
    
    def init(self):
       self.suppressClose = True
-   
+
+   def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+      
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = self.resultClose
+
    def onOpen(self):
       fragments = ["fragment1", "fragment2"]
       self.expected[Case.OK] = []      

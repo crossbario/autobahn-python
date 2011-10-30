@@ -24,6 +24,14 @@ class Case7_1_1(Case):
 
    EXPECTATION = """Echoed message followed by clean close with normal code."""
 
+   def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+      
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = self.resultClose
+
    def onOpen(self):
       payload = "Hello World!"
       self.expected[Case.OK] = [("message", payload, False)]      
