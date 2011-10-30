@@ -29,12 +29,16 @@
 
          function setHostname()
          {
-            hostname = document.getElementById('hostname').value;
+            var hn = window.location.hostname;
+            if (hn == null || hn == "") {
+               hn = "127.0.0.1";
+            }
 
+            hostname = document.getElementById('hostname').value;
             if (hostname == null || hostname == "")
             {
-               hostname = "127.0.0.1";
-               document.getElementById('hostname').value = hostname;
+               hostname = hn;
+               document.getElementById('hostname').value = hn;
             }
          }
 
