@@ -20,12 +20,20 @@ from case import Case
 
 class Case7_1_5(Case):
 
-   DESCRIPTION = """Send message fragment1 followed by close then fragment"""
+   DESCRIPTION = """Send message fragment1 followed by close then fragment2"""
 
    EXPECTATION = """Clean close with normal code."""
    
    def init(self):
       self.suppressClose = True
+
+   def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = self.resultClose
    
    def onOpen(self):
       fragments = ["fragment1", "fragment2"]

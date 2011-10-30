@@ -26,6 +26,14 @@ Case7_7_X = []
 def __init__(self, protocol):
    Case.__init__(self, protocol)
 
+def onConnectionLost(self, failedByMe):
+      Case.onConnectionLost(self, failedByMe)
+
+      if self.behaviorClose == Case.WRONG_CODE:
+         self.behavior = Case.FAILED
+         self.passed = False
+         self.result = self.resultClose
+
 def onOpen(self):
    self.expected[Case.OK] = []
    self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL,self.CLOSE_CODE],"requireClean":True}
@@ -43,6 +51,7 @@ for s in tests:
           "EXPECTATION": """%s""" % EXPECTATION,
           "__init__": __init__,
           "onOpen": onOpen,
+          "onConnectionLost": onConnectionLost,
           })
    Case7_7_X.append(C)
    i += 1
