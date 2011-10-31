@@ -1037,6 +1037,12 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       debug = spec.get("debug", False)
       debugCodePaths = spec.get("debugCodePaths", False)
 
+      if spec.get("enable-ssl", False):
+         from twisted.internet import ssl
+         self.contextFactory = ssl.ClientContextFactory()
+      else:
+         self.contextFactory = None
+
       WebSocketClientFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
       FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/servers/"))
 
@@ -1051,7 +1057,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():
-            connectWS(self)
+            connectWS(self, contextFactory = self.contextFactory)
 
 
    def nextServer(self):
@@ -1101,7 +1107,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       else:
          if self.nextServer():
             if self.nextCase():
-               connectWS(self)
+               connectWS(self, contextFactory = self.contextFactory)
          else:
             self.createReports()
             reactor.stop()
