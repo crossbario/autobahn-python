@@ -77,11 +77,11 @@ def parseExcludeAgentCases(spec):
       ee = spec["exclude-agent-cases"]
       pats1 = []
       for e in ee:
-         s1 = e.replace('.', '\.').replace('*', '.*')
+         s1 = "^" + e.replace('.', '\.').replace('*', '.*') + "$"
          p1 = re.compile(s1)
          pats2 = []
          for z in ee[e]:
-            s2 = z.replace('.', '\.').replace('*', '.*')
+            s2 = "^" + z.replace('.', '\.').replace('*', '.*') + "$"
             p2 = re.compile(s2)
             pats2.append(p2)
          pats1.append((p1, pats2))
