@@ -1,5 +1,6 @@
 {
    "options": {"failByDrop": false},
+   "enable-ssl": false,
 
    "servers": [
                {"agent": "websocket++/HEAD", "url": "ws://localhost:9002", "options": {"version": 17}},

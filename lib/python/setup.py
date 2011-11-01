@@ -24,7 +24,7 @@ setup (
    description = 'Autobahn WebSockets',
    long_description = """Twisted-based WebSockets client and server framework.
 
-   Autobahn provides a WebSockets (Hybi Draft 10-14) Twisted-based framework for
+   Autobahn provides a WebSockets (Hybi-10 to -17) Twisted-based framework for
    creating WebSockets clients and servers.
 
    Autobahn also includes a light-weight, asynchronous RPC/PubSub over JSON-WebSockets

@@ -4,6 +4,7 @@
 
    "webport": 9090,
    "webdir": ".",
+   "debug": false,
 
    "outdir": "./reports/clients",
 

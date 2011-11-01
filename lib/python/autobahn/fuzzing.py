@@ -77,11 +77,11 @@ def parseExcludeAgentCases(spec):
       ee = spec["exclude-agent-cases"]
       pats1 = []
       for e in ee:
-         s1 = e.replace('.', '\.').replace('*', '.*')
+         s1 = "^" + e.replace('.', '\.').replace('*', '.*') + "$"
          p1 = re.compile(s1)
          pats2 = []
          for z in ee[e]:
-            s2 = z.replace('.', '\.').replace('*', '.*')
+            s2 = "^" + z.replace('.', '\.').replace('*', '.*') + "$"
             p2 = re.compile(s2)
             pats2.append(p2)
          pats1.append((p1, pats2))
@@ -1037,6 +1037,12 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       debug = spec.get("debug", False)
       debugCodePaths = spec.get("debugCodePaths", False)
 
+      if spec.get("enable-ssl", False):
+         from twisted.internet import ssl
+         self.contextFactory = ssl.ClientContextFactory()
+      else:
+         self.contextFactory = None
+
       WebSocketClientFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
       FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/servers/"))
 
@@ -1051,7 +1057,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():
-            connectWS(self)
+            connectWS(self, contextFactory = self.contextFactory)
 
 
    def nextServer(self):
@@ -1101,7 +1107,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       else:
          if self.nextServer():
             if self.nextCase():
-               connectWS(self)
+               connectWS(self, contextFactory = self.contextFactory)
          else:
             self.createReports()
             reactor.stop()

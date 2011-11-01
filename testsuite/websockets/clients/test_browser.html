@@ -15,6 +15,7 @@
          var hostname = null;
          var port = null;
          var agent = null;
+         var ua = null;
          var webSocket = null;
          var currentCaseId = null;
          var caseCount = null;
@@ -56,10 +57,11 @@
          function setAgent()
          {
             agent = document.getElementById('agent').value;
+            ua = navigator.userAgent;
+            document.getElementById('ua-detected').innerHTML = ua;
 
             if (agent == null || agent == "")
             {
-               ua = navigator.userAgent;
                console.log("user agent = " + ua);
                if (ua.indexOf("Chrome") > -1)
                {
@@ -72,11 +74,17 @@
                {
                   i = ua.indexOf("Firefox");
                   j = ua.indexOf(" ", i);
+                  if (j < i) j = ua.length;
                   s1 = ua.slice(i, j);
+                  console.log(s1);
                   i = ua.indexOf("Gecko/");
                   j = ua.indexOf(" ", i);
-                  s2 = ua.slice(i + "Gecko/".length, j);
-                  agent = s1 + "(" + s2 + ")";
+                  s2 = ua.slice(i + "Gecko/".length, j).trim();
+                  if (s2 != "") {
+                     agent = s1 + "-" + s2;
+                  } else {
+                     agent = s1;
+                  }
                   updateStatus("Detected user agent " + agent + ".");
                }
                else if (ua.indexOf("Safari") > -1)
@@ -227,7 +235,8 @@
       <form>
          <p>Fuzzing Server Hostname<br/><input id="hostname" type="text" size="20" maxlength="40"></p>
          <p>Fuzzing Server Port<br/><input id="port" type="text" size="5" maxlength="5"></p>
-         <p>User Agent Identifier<br/><input id="agent" type="text" size="30" maxlength="30"></p>
+         <p>User Agent Identifier<br/><input id="agent" type="text" size="30" maxlength="30"><br/>
+         <span style="font-size: 0.7em;" id="ua-detected"></span></p>
       </form>
       <br/>
       <p><button onclick='startTestRun();'>Start Tests</button> &nbsp;&nbsp; <i>Status:</i> <span id="statusline">Ready</span></p>
