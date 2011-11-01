@@ -1915,11 +1915,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if self.http_request_host.find(":") >= 0:
             (h, p) = self.http_request_host.split(":")
             try:
-               port = int(p.strip())
-               if port != self.factory.port:
-                  return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %d" % (port, str(self.http_request_host), self.factory.port))
+               port = int(str(p.strip()))
             except:
-               return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (p.strip(), str(self.http_request_host)))
+               return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
+            if port != self.factory.port:
+               return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.port))
          else:
             if not ((self.factory.isSecure and self.factory.port == 443) or (not self.factory.isSecure and self.factory.port == 80)):
                return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.port, self.factory.isSecure))
