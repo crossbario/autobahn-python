@@ -16,6 +16,11 @@
 ##
 ###############################################################################
 
+import sys
+if sys.platform in ['freebsd8']:
+   from twisted.internet import kqreactor
+   kqreactor.install()
+
 import sys, json
 from twisted.python import log
 from twisted.internet import reactor
@@ -39,4 +44,5 @@ if __name__ == '__main__':
    web = Site(webdir)
    reactor.listenTCP(spec.get("webport", 9090), web)
 
+   log.msg("Using Twisted reactor class %s" % str(reactor.__class__))
    reactor.run()
