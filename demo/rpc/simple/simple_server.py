@@ -83,11 +83,10 @@ class SimpleServerProtocol(WampServerProtocol):
    responds to RPC calls.
    """
 
-   def onConnect(self, connectionRequest):
+   def onOpen(self):
 
-      # when a client connects, we can check if we
-      # want to accept here, and if so, we create
-      # instances of our service classes ..
+      # when connection is established, we create our
+      # service instances ...
       self.calc = Calc()
 
       # .. and register them for RPC. that's it.

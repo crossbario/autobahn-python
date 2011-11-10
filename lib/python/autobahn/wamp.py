@@ -24,6 +24,7 @@ from twisted.internet.defer import Deferred, maybeDeferred
 from websocket import WebSocketProtocol, HttpException
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
+from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from prefixmap import PrefixMap
 from util import newid
 
@@ -179,6 +180,18 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
    """
    Server factory for Wamp RPC/PubSub.
    """
+
+   def onConnect(self, connectionRequest):
+      """
+      Default implementation for WAMP connection acceptance:
+      check if client announced WAMP subprotocol, and only accept connection
+      if client did so.
+      """
+      for p in connectionRequest.protocols:
+         if p in self.factory.protocols:
+            return p
+      raise HttpException(HTTP_STATUS_CODE_BAD_REQUEST[0], "this server only speaks WAMP")
+
 
    def connectionMade(self):
       WebSocketServerProtocol.connectionMade(self)
@@ -589,7 +602,7 @@ class WampServerFactory(WebSocketServerFactory):
    protocol = WampServerProtocol
 
    def __init__(self, url):
-      WebSocketServerFactory.__init__(self, url)
+      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"])
       self.debug_autobahn = False
 
 
@@ -665,6 +678,11 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
    """
    Client protocol for Wamp RPC/PubSub.
    """
+
+   def onConnect(self, connectionResponse):
+      if connectionResponse.protocol not in self.factory.protocols:
+         raise Exception("server does not speak WAMP")
+
 
    def connectionMade(self):
       WebSocketClientProtocol.connectionMade(self)
@@ -901,5 +919,5 @@ class WampClientFactory(WebSocketClientFactory):
    protocol = WampClientProtocol
 
    def __init__(self, url):
-      WebSocketClientFactory.__init__(self, url)
+      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"])
       self.debug_autobahn = False

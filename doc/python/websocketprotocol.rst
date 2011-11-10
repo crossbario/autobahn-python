@@ -75,6 +75,9 @@ Auxiliary Classes
 .. autoclass:: autobahn.websocket.ConnectionRequest
    :members: __init__
 
+.. autoclass:: autobahn.websocket.ConnectionResponse
+   :members: __init__
+
 .. autoclass:: autobahn.websocket.HttpException
    :members: __init__
 

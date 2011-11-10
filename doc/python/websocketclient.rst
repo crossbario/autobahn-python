@@ -20,7 +20,8 @@ which is where you find all the callbacks and methods.
 
 
 .. autoclass:: autobahn.websocket.WebSocketClientProtocol
-   :members: connectionMade,
+   :members: onConnect,
+             connectionMade,
              connectionLost
 
 

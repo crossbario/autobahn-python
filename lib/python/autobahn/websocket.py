@@ -266,6 +266,37 @@ class ConnectionRequest():
       self.extensions = extensions
 
 
+class ConnectionResponse():
+   """
+   Thin-wrapper for WebSockets connection response information
+   provided in :meth:`autobahn.websocket.WebSocketClientProtocol.onConnect` when a WebSockets
+   client has established a connection to a WebSockets server.
+   """
+   def __init__(self, peer, peerstr, headers, version, protocol, extensions):
+      """
+      Constructor.
+
+      :param peer: IP address/port of the connected server.
+      :type peer: object
+      :param peerstr: IP address/port of the connected server as string.
+      :type peerstr: str
+      :param headers: HTTP headers from opening handshake response.
+      :type headers: dict
+      :param version: The WebSockets protocol version that is spoken.
+      :type version: int
+      :param protocol: The WebSockets (sub)protocol in use.
+      :type protocol: str
+      :param extensions: The WebSockets extensions in use.
+      :type extensions: array of strings
+      """
+      self.peer = peer
+      self.peerstr = peerstr
+      self.headers = headers
+      self.version = version
+      self.protocol = protocol
+      self.extensions = extensions
+
+
 def parseHttpHeader(data):
    """
    Parses the beginning of a HTTP request header (the data up to the \n\n line) into a pair
@@ -1984,7 +2015,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Protocol
          ##
          if self.http_headers.has_key("sec-websocket-protocol"):
-            protocols = [x.strip() for x in self.http_headers["sec-websocket-protocol"].split(",")]
+            protocols = [str(x.strip()) for x in self.http_headers["sec-websocket-protocol"].split(",")]
             # check for duplicates in protocol header
             pp = {}
             for p in protocols:
@@ -2099,7 +2130,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
 
          if self.websocket_protocol_in_use is not None:
-            response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % self.websocket_protocol_in_use
+            response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
 
          response += "\x0d\x0a"
          self.http_response_data = response
@@ -2402,6 +2433,17 @@ class WebSocketClientProtocol(WebSocketProtocol):
    Client protocol for WebSockets.
    """
 
+   def onConnect(self, connectionResponse):
+      """
+      Callback fired directly after WebSocket opening handshake when new WebSocket server
+      connection was established.
+
+      :param connectionResponse: WebSocket connection response information.
+      :type connectionResponse: instance of :class:`autobahn.websocket.ConnectionResponse`
+      """
+      pass
+
+
    def connectionMade(self):
       """
       Called by Twisted when new TCP connection to server was established. Default
@@ -2585,7 +2627,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          if self.http_headers.has_key("sec-websocket-protocol"):
             if http_headers_cnt["sec-websocket-protocol"] > 1:
                return self.failHandshake("HTTP Sec-WebSocket-Protocol header appears more than once in opening handshake reply")
-            sp = self.http_headers["sec-websocket-protocol"].strip()
+            sp = str(self.http_headers["sec-websocket-protocol"].strip())
             if sp != "":
                if sp not in self.factory.protocols:
                   return self.failHandshake("subprotocol selected by server (%s) not in subprotocol list requested by client (%s)" % (sp, str(self.factory.protocols)))
@@ -2600,9 +2642,27 @@ class WebSocketClientProtocol(WebSocketProtocol):
          self.current_frame = None
          self.inside_message = False
 
-         ## fire handler on derived class
-         ##
-         self.onOpen()
+         ## we handle this symmetrical to server-side .. that is, give the
+         ## client a chance to bail out .. i.e. on no subprotocol selected
+         ## by server
+         try:
+            connectionResponse = ConnectionResponse(self.peer,
+                                                    self.peerstr,
+                                                    self.http_headers,
+                                                    None, # FIXME
+                                                    self.websocket_protocol_in_use,
+                                                    self.websocket_extensions_in_use)
+
+            self.onConnect(connectionResponse)
+
+         except Exception, e:
+            ## immediately close the WS connection
+            ##
+            self.sendClose(1000, str(e))
+         else:
+            ## fire handler on derived class
+            ##
+            self.onOpen()
 
          ## process rest, if any
          ##
