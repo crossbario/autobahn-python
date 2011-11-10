@@ -413,25 +413,42 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       ## Internal method for marshaling/sending an RPC error result.
 
       eargs = error.value.args
+      leargs = len(eargs)
 
-      if len(eargs) == 0:
+      if leargs == 0:
          erroruri = WampProtocol.ERROR_URI_GENERIC
          errordesc = WampProtocol.ERROR_DESC_GENERIC
-      elif len(eargs) == 1:
+         errordetails = None
+      elif leargs == 1:
          if type(eargs[0]) not in [str, unicode]:
-            raise Exception("invalid type for exception description")
+            raise Exception("invalid type %s for errorDesc" % str(type(eargs[0])))
          erroruri = WampProtocol.ERROR_URI_GENERIC
          errordesc = eargs[0]
-      else:
+         errordetails = None
+      elif leargs in [2, 3]:
          if type(eargs[0]) not in [str, unicode]:
-            raise Exception("invalid type for exception URI")
-         if type(eargs[1]) not in [str, unicode]:
-            raise Exception("invalid type for exception description")
+            raise Exception("invalid type %s for errorUri" % str(type(eargs[0])))
          erroruri = eargs[0]
+         if type(eargs[1]) not in [str, unicode]:
+            raise Exception("invalid type %s for errorDesc" % str(type(eargs[1])))
          errordesc = eargs[1]
+         if leargs > 2:
+            errordetails = eargs[2] # this must be JSON serializable .. if not, we get exception later in sendMessage
+         else:
+            errordetails = None
+      else:
+         raise Exception("invalid args length %d for exception" % leargs)
 
-      msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
-      self.sendMessage(json.dumps(msg))
+      if errordetails is not None:
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
+      else:
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
+
+      try:
+         rmsg = json.dumps(msg)
+      except Exception, e:
+         raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
+      self.sendMessage(rmsg)
 
 
    def onMessage(self, msg, binary):
@@ -571,9 +588,9 @@ class WampServerFactory(WebSocketServerFactory):
 
    protocol = WampServerProtocol
 
-   def __init__(self, debug = False, debug_autobahn = False):
-      WebSocketServerFactory.__init__(self, debug = debug)
-      self.debug_autobahn = debug_autobahn
+   def __init__(self, url):
+      WebSocketServerFactory.__init__(self, url)
+      self.debug_autobahn = False
 
 
    def _subscribeClient(self, proto, topicuri):
@@ -702,24 +719,28 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          if d:
             if msgtype == WampProtocol.MESSAGE_TYPEID_CALL_RESULT:
                if len(obj) != 3:
-                  self._protocolError("call result message invalid length")
+                  self._protocolError("call result message invalid length %d" % len(obj))
                   return
                result = obj[2]
                d.callback(result)
             elif msgtype == WampProtocol.MESSAGE_TYPEID_CALL_ERROR:
-               if len(obj) != 4:
-                  self._protocolError("call error message invalid length")
+               if len(obj) not in [4, 5]:
+                  self._protocolError("call error message invalid length %d" % len(obj))
                   return
                if type(obj[2]) not in [unicode, str]:
-                  self._protocolError("invalid type for errorid in call error message")
+                  self._protocolError("invalid type %s for errorUri in call error message" % str(type(obj[2])))
                   return
                erroruri = str(obj[2])
                if type(obj[3]) not in [unicode, str]:
-                  self._protocolError("invalid type for errordesc in call error message")
+                  self._protocolError("invalid type %s for errorDesc in call error message" % str(type(obj[3])))
                   return
                errordesc = str(obj[3])
+               if len(obj) > 4:
+                  errordetails = obj[4]
+               else:
+                  errordetails = None
                e = Exception()
-               e.args = (erroruri, errordesc)
+               e.args = (erroruri, errordesc, errordetails)
                d.errback(e)
             else:
                raise Exception("logic error")
@@ -879,6 +900,6 @@ class WampClientFactory(WebSocketClientFactory):
 
    protocol = WampClientProtocol
 
-   def __init__(self, debug = False, debug_autobahn = False):
-      WebSocketClientFactory.__init__(self, debug = debug)
-      self.debug_autobahn = debug_autobahn
+   def __init__(self, url):
+      WebSocketClientFactory.__init__(self, url)
+      self.debug_autobahn = False

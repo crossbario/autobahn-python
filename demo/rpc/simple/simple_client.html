@@ -19,8 +19,11 @@
 
          });
 
-         function logerror(erroruri, errordesc) {
+         function logerror(erroruri, errordesc, errordetails) {
             console.log(erroruri + ' ("' + errordesc + '")');
+            if (errordetails != null) {
+               console.log(errordetails);
+            }
          }
 
          function test()
@@ -52,6 +55,9 @@
             // the result of the latter is received first, RPC is really asynchronous
             sess.call("calc:asum", [1, 2, 3]).then(console.log);
             sess.call("calc:sum", [4, 5, 6]).then(console.log);
+
+            // demonstrates how we can throw (see server) and receive a custom error
+            sess.call("calc:pickySum", [0,1,2,3,4,5,6,7,8,9]).then(console.log, logerror);
          }
 
      </script>

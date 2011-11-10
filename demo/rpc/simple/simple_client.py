@@ -20,6 +20,7 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
+from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
@@ -33,8 +34,8 @@ class SimpleClientProtocol(WampClientProtocol):
       print "SUCCESS:", result
 
    def logerror(self, e):
-      erroruri, errodesc = e.value.args
-      print "ERROR: %s ('%s')" % (erroruri, errodesc)
+      erroruri, errodesc, errordetails = e.value.args
+      print "ERROR: %s ('%s') - %s" % (erroruri, errodesc, errordetails)
 
    def done(self, *args):
       self.sendClose()
@@ -59,14 +60,16 @@ class SimpleClientProtocol(WampClientProtocol):
       d7 = self.call("calc:asum", [1, 2, 3]).addCallback(self.show)
       d8 = self.call("calc:sum", [4, 5, 6]).addCallback(self.show)
 
+      d9 = self.call("calc:pickySum", range(0, 30)).addCallbacks(self.show, self.logerror)
+
       ## we want to shutdown the client exactly when all deferreds are finished
-      DeferredList([d1, d2, d3, d4, d5, d6, d7, d8]).addCallback(self.done)
+      DeferredList([d1, d2, d3, d4, d5, d6, d7, d8, d9]).addCallback(self.done)
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory(debug = False)
+   factory = WampClientFactory("ws://localhost:9000")
    factory.protocol = SimpleClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

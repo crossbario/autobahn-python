@@ -19,6 +19,7 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
+from autobahn.websocket import listenWS
 from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
@@ -55,6 +56,16 @@ class Calc:
       return reduce(lambda x, y: x + y, list)
 
    @exportRpc
+   def pickySum(self, list):
+      errs = []
+      for i in list:
+         if i % 3 == 0:
+            errs.append(i)
+      if len(errs) > 0:
+         raise Exception("http://example.com/error#invalid_numbers", "one or more numbers are multiples of 3", errs)
+      return reduce(lambda x, y: x + y, list)
+
+   @exportRpc
    def sqrt(self, x):
       return math.sqrt(x)
 
@@ -86,7 +97,7 @@ class SimpleServerProtocol(WampServerProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampServerFactory(debug = False)
+   factory = WampServerFactory("ws://localhost:9000")
    factory.protocol = SimpleServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()

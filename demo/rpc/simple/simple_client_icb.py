@@ -20,6 +20,7 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, returnValue, inlineCallbacks
+from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
@@ -71,7 +72,7 @@ class SimpleClientProtocol(WampClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory(debug = False)
+   factory = WampClientFactory("ws://localhost:9000")
    factory.protocol = SimpleClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()
