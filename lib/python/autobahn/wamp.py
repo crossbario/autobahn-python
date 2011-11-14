@@ -613,8 +613,8 @@ class WampServerFactory(WebSocketServerFactory):
          log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicuri))
 
       if not self.subscriptions.has_key(topicuri):
-         self.subscriptions[topicuri] = []
-      self.subscriptions[topicuri].append(proto)
+         self.subscriptions[topicuri] = set()
+      self.subscriptions[topicuri].add(proto)
 
 
    def _unsubscribeClient(self, proto, topicuri = None):
@@ -622,12 +622,12 @@ class WampServerFactory(WebSocketServerFactory):
 
       if topicuri:
          if self.subscriptions.has_key(topicuri):
-            self.subscriptions[topicuri] = filter(lambda o: o != proto, self.subscriptions[topicuri])
+            self.subscriptions[topicuri].discard(proto)
          if self.debug_autobahn:
             log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicuri))
       else:
          for t in self.subscriptions:
-            self.subscriptions[t] = filter(lambda o: o != proto, self.subscriptions[t])
+            self.subscriptions[t].discard(proto)
          if self.debug_autobahn:
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
@@ -650,7 +650,7 @@ class WampServerFactory(WebSocketServerFactory):
                raise Exception("invalid type for event (not JSON serializable)")
             rc = 0
             if len(exclude) > 0:
-               recvs = list(set(self.subscriptions[topicuri]) - set(exclude))
+               recvs = self.subscriptions[topicuri] - set(exclude)
             else:
                recvs = self.subscriptions[topicuri]
             for proto in recvs:
