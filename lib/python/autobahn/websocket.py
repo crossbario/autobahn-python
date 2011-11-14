@@ -2882,14 +2882,14 @@ class WebSocketClientFactory(protocol.ClientFactory):
    def clientConnectionFailed(self, connector, reason):
       """
       Called by Twisted when the connection to server has failed. Default implementation
-      will stop the reactor. Override in derived class when appropriate.
+      does nothing. Override in derived class when appropriate.
       """
-      reactor.stop()
+      pass
 
 
    def clientConnectionLost(self, connector, reason):
       """
       Called by Twisted when the connection to server was lost. Default implementation
-      will stop the reactor. Override in derived class when appropriate.
+      does nothing. Override in derived class when appropriate.
       """
-      reactor.stop()
+      pass
