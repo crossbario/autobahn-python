@@ -20,6 +20,7 @@ import json
 import random
 import inspect, types
 from twisted.python import log
+from twisted.internet import reactor
 from twisted.internet.defer import Deferred, maybeDeferred
 from websocket import WebSocketProtocol, HttpException
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
@@ -648,19 +649,33 @@ class WampServerFactory(WebSocketServerFactory):
                   log.msg("serialized event msg: " + str(msg))
             except:
                raise Exception("invalid type for event (not JSON serializable)")
-            rc = 0
             if len(exclude) > 0:
                recvs = self.subscriptions[topicuri] - set(exclude)
             else:
                recvs = self.subscriptions[topicuri]
-            for proto in recvs:
-               if self.debug_autobahn:
-                  log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
-               proto.sendMessage(msg)
-               rc += 1
-            return rc
-      else:
-         return 0
+
+            self._dispatchEventChunk(msg, recvs.copy())
+
+
+   def _dispatchEventChunk(self, msg, recvs):
+
+      ## We dispatch published events to receivers in chunks and
+      ## reenter the reactor in-between, so that other stuff can run.
+
+      ## FIXME: this might break ordering of event delivery from a
+      ## receiver perspective. We might need to have send queues
+      ## per receiver ..
+
+      for i in xrange(0, 256):
+         try:
+            proto = recvs.pop()
+            if self.debug_autobahn:
+               log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
+            proto.sendMessage(msg)
+         except KeyError:
+            break
+      if len(recvs) > 0:
+         reactor.callLater(0, self._dispatchEventChunk, msg, recvs)
 
 
    def startFactory(self):
