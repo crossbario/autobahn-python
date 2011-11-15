@@ -667,6 +667,9 @@ class WampServerFactory(WebSocketServerFactory):
          ## FIXME: this might break ordering of event delivery from a
          ## receiver perspective. We might need to have send queues
          ## per receiver OR do recvs = deque(sorted(..))
+
+         ## However, see http://twistedmatrix.com/trac/ticket/1396
+
          if len(exclude) > 0:
             recvs = self.subscriptions[topicuri] - set(exclude)
          else:
