@@ -634,48 +634,83 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def _dispatchEvent(self, topicuri, event, exclude = []):
-      ## Internal method called from proto to publish an received event
-      ## to all peers subscribed to the event topic.
+      """
+      Internal method called from proto to publish an received event
+      to all peers subscribed to the event topic.
 
+      :param topicuri: Topic to publish event to.
+      :type topicuri: str
+      :param event: Event to publish (must be JSON serializable).
+      :type event: obj
+      :param exclude: List of protocol instances to exclude from receivers.
+      :type exclude: List of obj
+      :returns twisted.internet.defer.Deferred -- Will be fired when event was
+      dispatched to all subscribers. The return value provided to the deferred
+      is a pair (dispatched, requested), where dispatched = number of actual
+      receivers, and requested = number of subscribers - excluded.
+      """
       if self.debug_autobahn:
          log.msg("publish event %s for topicuri %s" % (str(event), topicuri))
 
-      if self.subscriptions.has_key(topicuri):
-         if len(self.subscriptions[topicuri]) > 0:
-            o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
-            try:
-               msg = json.dumps(o)
-               if self.debug_autobahn:
-                  log.msg("serialized event msg: " + str(msg))
-            except:
-               raise Exception("invalid type for event (not JSON serializable)")
-            if len(exclude) > 0:
-               recvs = self.subscriptions[topicuri] - set(exclude)
-            else:
-               recvs = self.subscriptions[topicuri]
+      d = Deferred()
 
-            self._dispatchEventChunk(msg, recvs.copy())
+      if self.subscriptions.has_key(topicuri) and len(self.subscriptions[topicuri]) > 0:
+
+         o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
+         try:
+            msg = json.dumps(o)
+            if self.debug_autobahn:
+               log.msg("serialized event msg: " + str(msg))
+         except:
+            raise Exception("invalid type for event (not JSON serializable)")
+
+         ## FIXME: this might break ordering of event delivery from a
+         ## receiver perspective. We might need to have send queues
+         ## per receiver OR do recvs = deque(sorted(..))
+         if len(exclude) > 0:
+            recvs = self.subscriptions[topicuri] - set(exclude)
+         else:
+            recvs = self.subscriptions[topicuri]
+
+         l = len(recvs)
+         if l > 0:
+            self._dispatchEventChunk(msg, recvs.copy(), 0, l, d)
+      else:
+         d.callback((0, 0))
+
+      return d
 
 
-   def _dispatchEventChunk(self, msg, recvs):
-
-      ## We dispatch published events to receivers in chunks and
-      ## reenter the reactor in-between, so that other stuff can run.
-
-      ## FIXME: this might break ordering of event delivery from a
-      ## receiver perspective. We might need to have send queues
-      ## per receiver ..
-
+   def _dispatchEventChunk(self, msg, recvs, dispatched, requested, d):
+      """
+      Internal method that dispatches published events to receivers in chunks
+      and reenters the reactor in-between, so that other stuff can run.
+      """
+      ## dispatch a chunk
+      done = False
       for i in xrange(0, 256):
          try:
             proto = recvs.pop()
-            if self.debug_autobahn:
-               log.msg("publish event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
-            proto.sendMessage(msg)
+            if proto.state == WebSocketProtocol.STATE_OPEN:
+               try:
+                  proto.sendMessage(msg)
+               except:
+                  pass
+               else:
+                  if self.debug_autobahn:
+                     log.msg("published event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
+                  dispatched += 1
          except KeyError:
+            # all receivers done
+            done = True
             break
-      if len(recvs) > 0:
-         reactor.callLater(0, self._dispatchEventChunk, msg, recvs)
+
+      if not done:
+         ## if there are receivers left, redo
+         reactor.callLater(0, self._dispatchEventChunk, msg, recvs, dispatched, requested, d)
+      else:
+         ## else fire final result
+         d.callback((dispatched, requested))
 
 
    def startFactory(self):
