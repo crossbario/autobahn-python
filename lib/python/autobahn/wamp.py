@@ -122,6 +122,8 @@ class WampProtocol:
    ERROR_URI_GENERIC = ERROR_URI_BASE + "generic"
    ERROR_DESC_GENERIC = "generic error"
 
+   ERROR_URI_INTERNAL = ERROR_URI_BASE + "internal"
+   ERROR_DESC_INTERNAL = "internal error"
 
    def connectionMade(self):
       self.debug_autobahn = self.factory.debug_autobahn
@@ -424,45 +426,63 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
 
    def _sendCallError(self, error, callid):
-      ## Internal method for marshaling/sending an RPC error result.
-
-      eargs = error.value.args
-      leargs = len(eargs)
-
-      if leargs == 0:
-         erroruri = WampProtocol.ERROR_URI_GENERIC
-         errordesc = WampProtocol.ERROR_DESC_GENERIC
-         errordetails = None
-      elif leargs == 1:
-         if type(eargs[0]) not in [str, unicode]:
-            raise Exception("invalid type %s for errorDesc" % str(type(eargs[0])))
-         erroruri = WampProtocol.ERROR_URI_GENERIC
-         errordesc = eargs[0]
-         errordetails = None
-      elif leargs in [2, 3]:
-         if type(eargs[0]) not in [str, unicode]:
-            raise Exception("invalid type %s for errorUri" % str(type(eargs[0])))
-         erroruri = eargs[0]
-         if type(eargs[1]) not in [str, unicode]:
-            raise Exception("invalid type %s for errorDesc" % str(type(eargs[1])))
-         errordesc = eargs[1]
-         if leargs > 2:
-            errordetails = eargs[2] # this must be JSON serializable .. if not, we get exception later in sendMessage
-         else:
-            errordetails = None
-      else:
-         raise Exception("invalid args length %d for exception" % leargs)
-
-      if errordetails is not None:
-         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
-      else:
-         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
-
+      """
+      Internal method for marshaling/sending an RPC error result.
+      """
       try:
-         rmsg = json.dumps(msg)
+
+         eargs = error.value.args
+         leargs = len(eargs)
+
+         if leargs == 0:
+            erroruri = WampProtocol.ERROR_URI_GENERIC
+            errordesc = WampProtocol.ERROR_DESC_GENERIC
+            errordetails = None
+
+         elif leargs == 1:
+            if type(eargs[0]) not in [str, unicode]:
+               raise Exception("invalid type %s for errorDesc" % str(type(eargs[0])))
+            erroruri = WampProtocol.ERROR_URI_GENERIC
+            errordesc = eargs[0]
+            errordetails = None
+
+         elif leargs in [2, 3]:
+            if type(eargs[0]) not in [str, unicode]:
+               raise Exception("invalid type %s for errorUri" % str(type(eargs[0])))
+            erroruri = eargs[0]
+            if type(eargs[1]) not in [str, unicode]:
+               raise Exception("invalid type %s for errorDesc" % str(type(eargs[1])))
+            errordesc = eargs[1]
+            if leargs > 2:
+               errordetails = eargs[2] # this must be JSON serializable .. if not, we get exception later in sendMessage
+            else:
+               errordetails = None
+
+         else:
+            raise Exception("invalid args length %d for exception" % leargs)
+
+         if errordetails is not None:
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
+         else:
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
+
+         try:
+            rmsg = json.dumps(msg)
+         except Exception, e:
+            raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
+
       except Exception, e:
-         raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
-      self.sendMessage(rmsg)
+
+         log.err(str(e))
+         log.err(error.getTraceback())
+
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.ERROR_URI_INTERNAL), WampProtocol.ERROR_DESC_INTERNAL]
+         rmsg = json.dumps(msg)
+
+      finally:
+
+         self.sendMessage(rmsg)
+
 
 
    def onMessage(self, msg, binary):
