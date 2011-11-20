@@ -21,7 +21,11 @@ if sys.platform in ['freebsd8']:
    from twisted.internet import kqreactor
    kqreactor.install()
 
-import sys, json
+import sys
+try:
+   import simplejson as json
+except ImportError:
+   import json
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.web.server import Site

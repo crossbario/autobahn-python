@@ -16,7 +16,11 @@
 ##
 ###############################################################################
 
-import sys, json
+import sys
+try:
+   import simplejson as json
+except ImportError:
+   import json
 from twisted.python import log
 from twisted.internet import reactor
 from autobahn.fuzzing import FuzzingClientFactory
