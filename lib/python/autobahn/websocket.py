@@ -2168,9 +2168,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       Send out HTTP error response.
       """
-      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason)
+      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason.encode("utf-8"))
       for h in responseHeaders:
-         response += "%s: %s\x0d\x0a" % h
+         response += "%s: %s\x0d\x0a" % (h[0], h[1].encode("utf-8"))
       response += "\x0d\x0a"
       self.sendData(response)
 
