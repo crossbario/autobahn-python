@@ -47,7 +47,10 @@ def utcstr(dt):
    Convert an UTC datetime instance into an ISO 8601 combined date and time,
    like i.e. 2011-11-23T12:23Z
    """
-   return dt.strftime(UTC_TIMESTAMP_FORMAT)
+   try:
+      return dt.strftime(UTC_TIMESTAMP_FORMAT)
+   except:
+      return None
 
 
 def newid():
