@@ -19,6 +19,7 @@
 import json
 import random
 import inspect, types
+import traceback
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, maybeDeferred
@@ -126,7 +127,7 @@ class WampProtocol:
    ERROR_DESC_INTERNAL = "internal error"
 
    def connectionMade(self):
-      self.debug_autobahn = self.factory.debug_autobahn
+      self.debugWamp = self.factory.debugWamp
       self.prefixes = PrefixMap()
 
 
@@ -135,7 +136,7 @@ class WampProtocol:
 
 
    def _protocolError(self, reason):
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("Closing Wamp session on protocol violation : %s" % reason)
 
       ## FIXME: subprotocols are probably not supposed to close with CLOSE_STATUS_CODE_PROTOCOL_ERROR
@@ -257,7 +258,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       self.pubHandlers[topicUri] = (None, None, prefixMatch)
       self.subHandlers[topicUri] = (None, None, prefixMatch)
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("registered topic %s" % topicUri)
 
 
@@ -300,7 +301,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       self.subHandlers[uri] = (obj, proc, prefixMatch)
       if not self.pubHandlers.has_key(uri):
          self.pubHandlers[uri] = (None, None, False)
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("registered subscription handler for topic %s" % uri)
 
 
@@ -320,7 +321,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       self.pubHandlers[uri] = (obj, proc, prefixMatch)
       if not self.subHandlers.has_key(uri):
          self.subHandlers[uri] = (None, None, False)
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("registered publication handler for topic %s" % uri)
 
 
@@ -353,7 +354,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type proc: unbound method
       """
       self.procs[uri] = (obj, proc)
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -367,7 +368,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type proc: function/procedure
       """
       self.procs[uri] = (None, proc)
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("registered remote procedure on %s" % uri)
 
 
@@ -488,7 +489,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
    def onMessage(self, msg, binary):
       ## Internal method handling Wamp messages received from client.
 
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("WampServerProtocol message received : %s" % str(msg))
 
       if not binary:
@@ -534,13 +535,13 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                               if a:
                                  self.factory._subscribeClient(self, topicuri)
                            except:
-                              if self.debug_autobahn:
+                              if self.debugWamp:
                                  log.msg("execption during topic subscription handler")
                      else:
-                        if self.debug_autobahn:
+                        if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug_autobahn:
+                     if self.debugWamp:
                         log.msg("no topic / subscription handler registered for %s" % topicuri)
 
                ## Unsubscribe Message
@@ -589,13 +590,13 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                               if e:
                                  self.factory._dispatchEvent(topicuri, e, exclude)
                            except:
-                              if self.debug_autobahn:
+                              if self.debugWamp:
                                  log.msg("execption during topic publication handler")
                      else:
-                        if self.debug_autobahn:
+                        if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicuri)
                   else:
-                     if self.debug_autobahn:
+                     if self.debugWamp:
                         log.msg("no topic / publication handler registered for %s" % topicuri)
 
                ## Define prefix to be used in CURIEs
@@ -610,7 +611,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             else:
                log.msg("msg not a list")
          except Exception, e:
-            log.msg("JSON parse error " + str(e))
+            traceback.print_exc()
       else:
          log.msg("binary message")
 
@@ -622,15 +623,15 @@ class WampServerFactory(WebSocketServerFactory):
 
    protocol = WampServerProtocol
 
-   def __init__(self, url):
-      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"])
-      self.debug_autobahn = False
+   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
+      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
+      self.debugWamp = debugWamp
 
 
    def _subscribeClient(self, proto, topicuri):
       ## Internal method called from proto to subscribe client for topic.
 
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicuri))
 
       if not self.subscriptions.has_key(topicuri):
@@ -644,12 +645,12 @@ class WampServerFactory(WebSocketServerFactory):
       if topicuri:
          if self.subscriptions.has_key(topicuri):
             self.subscriptions[topicuri].discard(proto)
-         if self.debug_autobahn:
+         if self.debugWamp:
             log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicuri))
       else:
          for t in self.subscriptions:
             self.subscriptions[t].discard(proto)
-         if self.debug_autobahn:
+         if self.debugWamp:
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
@@ -669,7 +670,7 @@ class WampServerFactory(WebSocketServerFactory):
       is a pair (dispatched, requested), where dispatched = number of actual
       receivers, and requested = number of subscribers - excluded.
       """
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("publish event %s for topicuri %s" % (str(event), topicuri))
 
       d = Deferred()
@@ -679,7 +680,7 @@ class WampServerFactory(WebSocketServerFactory):
          o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicuri, event]
          try:
             msg = json.dumps(o)
-            if self.debug_autobahn:
+            if self.debugWamp:
                log.msg("serialized event msg: " + str(msg))
          except:
             raise Exception("invalid type for event (not JSON serializable)")
@@ -720,8 +721,8 @@ class WampServerFactory(WebSocketServerFactory):
                except:
                   pass
                else:
-                  if self.debug_autobahn:
-                     log.msg("published event for topicuri %s to peer %s" % (topicuri, proto.peerstr))
+                  if self.debugWamp:
+                     log.msg("dispatched event to peer %s" % proto.peerstr)
                   dispatched += 1
          except KeyError:
             # all receivers done
@@ -737,13 +738,13 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def startFactory(self):
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("WampServerFactory starting")
       self.subscriptions = {}
 
 
    def stopFactory(self):
-      if self.debug_autobahn:
+      if self.debugWamp:
          log.msg("WampServerFactory stopped")
 
 
@@ -836,7 +837,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
             else:
                raise Exception("logic error")
          else:
-            if self.debug_autobahn:
+            if self.debugWamp:
                log.msg("callid not found for received call result/error message")
       elif msgtype == WampProtocol.MESSAGE_TYPEID_EVENT:
          if len(obj) != 3:
@@ -991,6 +992,6 @@ class WampClientFactory(WebSocketClientFactory):
 
    protocol = WampClientProtocol
 
-   def __init__(self, url):
-      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"])
-      self.debug_autobahn = False
+   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
+      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
+      self.debugWamp = debugWamp

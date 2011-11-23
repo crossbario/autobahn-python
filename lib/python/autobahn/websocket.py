@@ -461,7 +461,6 @@ class WebSocketProtocol(protocol.Protocol):
       """
       self.message_opcode = opcode
       self.message_data = []
-      self.message_data_total_length = 0
 
 
    def onMessageFrameBegin(self, length, reserved):
@@ -1301,6 +1300,7 @@ class WebSocketProtocol(protocol.Protocol):
             else:
                self.utf8validateIncomingCurrentMessage = False
 
+            self.message_data_total_length = 0
             self.onMessageBegin(self.current_frame.opcode)
 
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
