@@ -20,13 +20,13 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
+from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
 class MyClientProtocol(WampClientProtocol):
    """
-   Demonstrates simple Publish & Subscribe (PubSub) with
-   Autobahn WebSockets and Twisted Deferreds.
+   Demonstrates simple Publish & Subscribe (PubSub) with Autobahn WebSockets.
    """
 
    def show(self, result):
@@ -39,15 +39,14 @@ class MyClientProtocol(WampClientProtocol):
    def done(self, *args):
       self.sendClose()
 
-   def onFoobar(self, arg):
-      print "FOOBAR", arg
-      arg[3].addCallback(self.onFoobar)
+   def onFoobar(self, topicUri, event):
+      print "FOOBAR", topicUri, event
 
    def onOpen(self):
 
       self.prefix("event", "http://resource.example.com/schema/event#")
 
-      self.subscribe("event:foobar").addCallback(self.onFoobar)
+      self.subscribe("event:foobar", self.onFoobar)
 
       self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
       self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
@@ -60,7 +59,7 @@ class MyClientProtocol(WampClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory(debug = False)
+   factory = WampClientFactory("ws://localhost:9000")
    factory.protocol = MyClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

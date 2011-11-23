@@ -19,6 +19,7 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
+from autobahn.websocket import listenWS
 from autobahn.wamp import exportSub, exportPub, WampServerFactory, WampServerProtocol
 
 
@@ -90,11 +91,13 @@ class MyServerProtocol(WampServerProtocol):
       self.topicservice = MyTopicService([1, 3, 7])
       self.registerHandlerForPubSub(self.topicservice, "http://example.com/event/")
 
+      return WampServerProtocol.onConnect(self, connectionRequest)
+
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampServerFactory(debug_autobahn = True)
+   factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = MyServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()

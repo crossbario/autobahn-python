@@ -19,6 +19,7 @@
 import sys, shelve
 from twisted.python import log
 from twisted.internet import reactor
+from autobahn.websocket import listenWS
 from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
@@ -65,13 +66,15 @@ class KeyValueServerProtocol(WampServerProtocol):
       ## this connection
       self.registerForRpc(self.factory.keyvalue, "http://example.com/simple/keyvalue#")
 
+      return WampServerProtocol.onConnect(self, connectionRequest)
+
 
 class KeyValueServerFactory(WampServerFactory):
 
    protocol = KeyValueServerProtocol
 
-   def __init__(self, debug = False):
-      WampServerFactory.__init__(self, debug)
+   def __init__(self, url):
+      WampServerFactory.__init__(self, url)
 
       ## the key-value store resides on the factory object, since it is to
       ## be shared among all client connections
@@ -81,6 +84,6 @@ class KeyValueServerFactory(WampServerFactory):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = KeyValueServerFactory(debug = False)
-   reactor.listenTCP(9000, factory)
+   factory = KeyValueServerFactory("ws://localhost:9000")
+   listenWS(factory)
    reactor.run()

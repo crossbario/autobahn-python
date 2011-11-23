@@ -18,7 +18,7 @@
 
 import random
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
 
 class BroadcastClientProtocol(WebSocketClientProtocol):
@@ -36,7 +36,7 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketClientFactory()
+   factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = BroadcastClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

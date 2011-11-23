@@ -19,6 +19,7 @@
 import sys, decimal
 from twisted.python import log
 from twisted.internet import reactor
+from autobahn.websocket import listenWS
 from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 
@@ -27,10 +28,10 @@ class CalculatorServerProtocol(WampServerProtocol):
    def onConnect(self, connectionRequest):
       self.registerForRpc(self, "http://example.com/simple/calculator#")
       self.clear()
+      return WampServerProtocol.onConnect(self, connectionRequest)
 
 
    def clear(self, arg = None):
-
       self.op = None
       self.current = decimal.Decimal(0)
 
@@ -70,7 +71,7 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
    decimal.getcontext().prec = 20
-   factory = WampServerFactory(debug = False)
+   factory = WampServerFactory("ws://localhost:9000")
    factory.protocol = CalculatorServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()

@@ -35,7 +35,7 @@ class EchoClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketClientFactory("ws://localhost:9000", debug = True)
+   factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = EchoClientProtocol
    connectWS(factory)
    reactor.run()

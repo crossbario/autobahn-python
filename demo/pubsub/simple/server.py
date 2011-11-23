@@ -19,6 +19,7 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
+from autobahn.websocket import listenWS
 from autobahn.wamp import WampServerFactory, WampServerProtocol
 
 
@@ -35,11 +36,13 @@ class MyServerProtocol(WampServerProtocol):
       ## register any URI (string) as topic
       #self.registerForPubSub("", True)
 
+      return WampServerProtocol.onConnect(self, connectionRequest)
+
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampServerFactory(debug_autobahn = True)
+   factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = MyServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()

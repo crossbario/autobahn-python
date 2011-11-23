@@ -19,6 +19,7 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
+from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
 
@@ -42,7 +43,7 @@ class KeyValueClientProtocol(WampClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory(debug = False)
+   factory = WampClientFactory("ws://localhost:9000")
    factory.protocol = KeyValueClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

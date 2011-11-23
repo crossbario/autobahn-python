@@ -18,7 +18,7 @@
 
 from ranstring import randomByteString
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
 FRAME_SIZE = 1 * 2**20
 
@@ -48,7 +48,7 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketClientFactory()
+   factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = FrameBasedHashClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

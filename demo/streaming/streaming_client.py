@@ -19,7 +19,7 @@
 from ranstring import randomByteString
 from zope.interface import implements
 from twisted.internet import reactor, interfaces
-from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol, connectWS
 
 BATCH_SIZE = 1 * 2**20
 
@@ -54,7 +54,7 @@ class StreamingHashClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketClientFactory()
+   factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = StreamingHashClientProtocol
-   reactor.connectTCP("localhost", 9000, factory)
+   connectWS(factory)
    reactor.run()

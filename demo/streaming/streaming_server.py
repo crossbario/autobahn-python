@@ -18,7 +18,7 @@
 
 import hashlib
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
 from streaming_client import BATCH_SIZE
 
 
@@ -75,7 +75,7 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == '__main__':
-   factory = WebSocketServerFactory()
+   factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = StreamingHashServerProtocol
-   reactor.listenTCP(9000, factory)
+   listenWS(factory)
    reactor.run()
