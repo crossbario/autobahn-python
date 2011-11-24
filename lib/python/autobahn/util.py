@@ -22,15 +22,36 @@ import random
 
 UTC_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
+
 def utcnow():
+   """
+   Get current time in UTC as ISO 8601 string.
+   """
    now = datetime.datetime.utcnow()
    return now.strftime(UTC_TIMESTAMP_FORMAT)
 
+
 def parseutc(s):
+   """
+   Parse an ISO 8601 combined date and time string, like i.e. 2011-11-23T12:23Z
+   into a UTC datetime instance.
+   """
    try:
       return datetime.datetime.strptime(s, UTC_TIMESTAMP_FORMAT)
    except:
       return None
 
+
+def utcstr(dt):
+   """
+   Convert an UTC datetime instance into an ISO 8601 combined date and time,
+   like i.e. 2011-11-23T12:23Z
+   """
+   return dt.strftime(UTC_TIMESTAMP_FORMAT)
+
+
 def newid():
+   """
+   Generate a new random object ID.
+   """
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(16)])
