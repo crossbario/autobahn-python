@@ -325,7 +325,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered publication handler for topic %s" % uri)
 
 
-   def registerForRpc(self, obj, baseUri = ""):
+   def registerForRpc(self, obj, baseUri = "", methods = None):
       """
       Register an service object for RPC. A service object has methods
       which are decorated using @exportRpc.
@@ -334,12 +334,17 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type obj: Object with methods decorated using @exportRpc.
       :param baseUri: Optional base URI which is prepended to method names for export.
       :type baseUri: String.
+      :param methods: If not None, a list of unbound class methods corresponding to obj
+                     which should be registered. This can be used to register only a subset
+                     of the methods decorated with @exportRpc.
+      :type methods: List of unbound class methods.
       """
       for k in inspect.getmembers(obj.__class__, inspect.ismethod):
          if k[1].__dict__.has_key("_autobahn_rpc_id"):
-            uri = baseUri + k[1].__dict__["_autobahn_rpc_id"]
-            proc = k[1]
-            self.registerMethodForRpc(uri, obj, proc)
+            if methods is None or k[1] in methods:
+               uri = baseUri + k[1].__dict__["_autobahn_rpc_id"]
+               proc = k[1]
+               self.registerMethodForRpc(uri, obj, proc)
 
 
    def registerMethodForRpc(self, uri, obj, proc):
