@@ -372,11 +372,16 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered remote procedure on %s" % uri)
 
 
-   def dispatch(self, topicuri, event, exclude = []):
+   def dispatch(self, topicuri, event, exclude = [], eligible = None):
       """
       Dispatch an event for a topic to all clients subscribed to
-      and authorized for that topic. Optionally, exclude list of
-      clients.
+      and authorized for that topic.
+
+      Optionally, exclude list of clients and/or only consider clients
+      from explicit eligibles. In other words, the event is delivered
+      to the set
+
+         (subscribers - excluded) & eligible
 
       :param topicuri: URI of topic to publish event to.
       :type topicuri: str
@@ -384,8 +389,10 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type event: obj
       :param exclude: Optional list of clients (protocol instances) to exclude.
       :type exclude: list of obj
+      :param eligible: Optional list of clients (protocol instances) eligible at all (or None for all).
+      :type eligible: list of obj
       """
-      self.factory._dispatchEvent(topicuri, event, exclude)
+      self.factory._dispatchEvent(topicuri, event, exclude, eligible)
 
 
    def _callProcedure(self, uri, arg = None):
@@ -654,7 +661,7 @@ class WampServerFactory(WebSocketServerFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
-   def _dispatchEvent(self, topicuri, event, exclude = []):
+   def _dispatchEvent(self, topicuri, event, exclude = [], eligible = None):
       """
       Internal method called from proto to publish an received event
       to all peers subscribed to the event topic.
@@ -665,10 +672,12 @@ class WampServerFactory(WebSocketServerFactory):
       :type event: obj
       :param exclude: List of protocol instances to exclude from receivers.
       :type exclude: List of obj
+      :param eligible: List of protocol instances eligible as receivers (or None for all).
+      :type eligible: List of obj
       :returns twisted.internet.defer.Deferred -- Will be fired when event was
       dispatched to all subscribers. The return value provided to the deferred
-      is a pair (dispatched, requested), where dispatched = number of actual
-      receivers, and requested = number of subscribers - excluded.
+      is a pair (delivered, requested), where delivered = number of actual
+      receivers, and requested = number of (subscribers - excluded) & eligible.
       """
       if self.debugWamp:
          log.msg("publish event %s for topicuri %s" % (str(event), topicuri))
@@ -691,26 +700,31 @@ class WampServerFactory(WebSocketServerFactory):
 
          ## However, see http://twistedmatrix.com/trac/ticket/1396
 
-         if len(exclude) > 0:
-            recvs = self.subscriptions[topicuri] - set(exclude)
+         if eligible is not None:
+            subscrbs = set(eligible) & self.subscriptions[topicuri]
          else:
-            recvs = self.subscriptions[topicuri]
+            subscrbs = self.subscriptions[topicuri]
+
+         if len(exclude) > 0:
+            recvs = subscrbs - set(exclude)
+         else:
+            recvs = subscrbs
 
          l = len(recvs)
          if l > 0:
-            self._dispatchEventChunk(msg, recvs.copy(), 0, l, d)
+            self._sendEvents(msg, recvs.copy(), 0, l, d)
       else:
          d.callback((0, 0))
 
       return d
 
 
-   def _dispatchEventChunk(self, msg, recvs, dispatched, requested, d):
+   def _sendEvents(self, msg, recvs, delivered, requested, d):
       """
-      Internal method that dispatches published events to receivers in chunks
-      and reenters the reactor in-between, so that other stuff can run.
+      Internal method that delivers events to receivers in chunks and
+      reenters the reactor in-between, so that other stuff can run.
       """
-      ## dispatch a chunk
+      ## deliver a batch of events
       done = False
       for i in xrange(0, 256):
          try:
@@ -722,8 +736,8 @@ class WampServerFactory(WebSocketServerFactory):
                   pass
                else:
                   if self.debugWamp:
-                     log.msg("dispatched event to peer %s" % proto.peerstr)
-                  dispatched += 1
+                     log.msg("delivered event to peer %s" % proto.peerstr)
+                  delivered += 1
          except KeyError:
             # all receivers done
             done = True
@@ -731,10 +745,10 @@ class WampServerFactory(WebSocketServerFactory):
 
       if not done:
          ## if there are receivers left, redo
-         reactor.callLater(0, self._dispatchEventChunk, msg, recvs, dispatched, requested, d)
+         reactor.callLater(0, self._sendEvents, msg, recvs, delivered, requested, d)
       else:
          ## else fire final result
-         d.callback((dispatched, requested))
+         d.callback((delivered, requested))
 
 
    def startFactory(self):
