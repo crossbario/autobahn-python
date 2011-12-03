@@ -482,12 +482,18 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             errordesc = WampProtocol.ERROR_DESC_GENERIC
             errordetails = None
 
+            log.msg("WampProtocol.ERROR_URI_GENERIC")
+            log.msg(error.getTraceback())
+
          elif leargs == 1:
             if type(eargs[0]) not in [str, unicode]:
                raise Exception("invalid type %s for errorDesc" % str(type(eargs[0])))
             erroruri = WampProtocol.ERROR_URI_GENERIC
             errordesc = eargs[0]
             errordetails = None
+
+            log.msg("WampProtocol.ERROR_URI_GENERIC")
+            log.msg(error.getTraceback())
 
          elif leargs in [2, 3]:
             if type(eargs[0]) not in [str, unicode]:
