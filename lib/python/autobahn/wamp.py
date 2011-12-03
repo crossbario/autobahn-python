@@ -250,7 +250,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       return None
 
 
-   def registerForPubSub(self, topicUri, prefixMatch = False, pubsub = SUBSCRIBE | SUBSCRIBE):
+   def registerForPubSub(self, topicUri, prefixMatch = False, pubsub = PUBLISH | SUBSCRIBE):
       """
       Register a topic URI as publish/subscribe channel in this session.
 
@@ -261,7 +261,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :param pubsub: Allow publication and/or subscription.
       :type pubsub: WampServerProtocol.PUB, WampServerProtocol.SUB, WampServerProtocol.PUB | WampServerProtocol.SUB
       """
-      if pubsub & WampServerProtocol.SUBSCRIBE:
+      if pubsub & WampServerProtocol.PUBLISH:
          self.pubHandlers[topicUri] = (None, None, prefixMatch)
          if self.debugWamp:
             log.msg("registered topic %s for publication" % topicUri)
