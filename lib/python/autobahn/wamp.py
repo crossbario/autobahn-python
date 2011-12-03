@@ -786,6 +786,9 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def _addSession(self, proto, session_id):
+      """
+      Add proto for session ID.
+      """
       if not self.protoToSessions.has_key(proto):
          self.protoToSessions[proto] = session_id
       else:
@@ -797,11 +800,25 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def _removeSession(self, proto):
+      """
+      Remove session by proto.
+      """
       if self.protoToSessions.has_key(proto):
          session_id = self.protoToSessions[proto]
          del self.protoToSessions[proto]
          if self.sessionsToProto.has_key(session_id):
             del self.sessionsToProto[session_id]
+
+
+   def _sessionIdsToProtos(self, sessionIds):
+      """
+      Map session IDs to protos.
+      """
+      protos = []
+      for s in sessionIds:
+         if self.sessionsToProto.has_key(s):
+            protos.append(self.sessionsToProto[s])
+      return protos
 
 
    def startFactory(self):

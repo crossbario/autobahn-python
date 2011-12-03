@@ -20,7 +20,7 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
-   version = '0.4.8',
+   version = '0.4.9',
    description = 'Autobahn WebSockets',
    long_description = """Twisted-based WebSockets client and server framework.
 
