@@ -61,12 +61,10 @@ class KeyValueServerProtocol(WampServerProtocol):
    a persistent key-value store which can we access via RPCs.
    """
 
-   def onConnect(self, connectionRequest):
+   def onSessionOpen(self):
       ## register the key-value store, which resides on the factory within
       ## this connection
       self.registerForRpc(self.factory.keyvalue, "http://example.com/simple/keyvalue#")
-
-      return WampServerProtocol.onConnect(self, connectionRequest)
 
 
 class KeyValueServerFactory(WampServerFactory):

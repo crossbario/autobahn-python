@@ -25,10 +25,9 @@ from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
 class CalculatorServerProtocol(WampServerProtocol):
 
-   def onConnect(self, connectionRequest):
+   def onSessionOpen(self):
       self.registerForRpc(self, "http://example.com/simple/calculator#")
       self.clear()
-      return WampServerProtocol.onConnect(self, connectionRequest)
 
 
    def clear(self, arg = None):

@@ -76,7 +76,7 @@ class MyTopicService:
 
 class MyServerProtocol(WampServerProtocol):
 
-   def onConnect(self, connectionRequest):
+   def onSessionOpen(self):
 
       ## register a single, fixed URI as PubSub topic
       self.registerForPubSub("http://example.com/event/simple")
@@ -90,8 +90,6 @@ class MyServerProtocol(WampServerProtocol):
       ## register a topic handler to control topic subscriptions/publications
       self.topicservice = MyTopicService([1, 3, 7])
       self.registerHandlerForPubSub(self.topicservice, "http://example.com/event/")
-
-      return WampServerProtocol.onConnect(self, connectionRequest)
 
 
 if __name__ == '__main__':

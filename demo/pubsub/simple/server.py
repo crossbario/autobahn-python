@@ -25,7 +25,7 @@ from autobahn.wamp import WampServerFactory, WampServerProtocol
 
 class MyServerProtocol(WampServerProtocol):
 
-   def onConnect(self, connectionRequest):
+   def onSessionOpen(self):
 
       ## register a single, fixed URI as PubSub topic
       self.registerForPubSub("http://example.com/simple")
@@ -35,8 +35,6 @@ class MyServerProtocol(WampServerProtocol):
 
       ## register any URI (string) as topic
       #self.registerForPubSub("", True)
-
-      return WampServerProtocol.onConnect(self, connectionRequest)
 
 
 if __name__ == '__main__':

@@ -72,9 +72,9 @@ class WampProtocol:
    Base protocol class for Wamp RPC/PubSub.
    """
 
-   MESSAGE_TYPEID_NULL           = 0
+   MESSAGE_TYPEID_WELCOME        = 0
    """
-   Placeholder for message type of no message.
+   Server-to-client welcome message containing session ID.
    """
 
    MESSAGE_TYPEID_PREFIX         = 1
@@ -187,6 +187,25 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
    SUBSCRIBE = 1
    PUBLISH = 2
+
+   def onSessionOpen(self):
+      """
+      Callback fired when WAMP session was fully established.
+      """
+      pass
+
+
+   def onOpen(self):
+      """
+      Default implementation for WAMP connection opened sends
+      Welcome message containing session ID.
+      """
+      self.session_id = newid()
+      msg = [WampProtocol.MESSAGE_TYPEID_WELCOME, self.session_id]
+      o = json.dumps(msg)
+      self.sendMessage(o)
+      self.onSessionOpen()
+
 
    def onConnect(self, connectionRequest):
       """
@@ -506,7 +525,6 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          self.sendMessage(rmsg)
 
 
-
    def onMessage(self, msg, binary):
       ## Internal method handling Wamp messages received from client.
 
@@ -780,6 +798,17 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
    """
    Client protocol for Wamp RPC/PubSub.
    """
+
+   def onSessionOpen(self):
+      """
+      Callback fired when WAMP session was fully established.
+      """
+      pass
+
+
+   def onOpen(self):
+      self.onSessionOpen()
+
 
    def onConnect(self, connectionResponse):
       if connectionResponse.protocol not in self.factory.protocols:
