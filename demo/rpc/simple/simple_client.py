@@ -41,7 +41,7 @@ class SimpleClientProtocol(WampClientProtocol):
       self.sendClose()
 
 
-   def onOpen(self):
+   def onSessionOpen(self):
 
       self.prefix("calc", "http://example.com/simple/calc#")
 

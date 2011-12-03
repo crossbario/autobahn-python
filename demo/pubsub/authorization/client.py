@@ -42,7 +42,7 @@ class MyClientProtocol(WampClientProtocol):
    def onFoobar(self, topicUri, event):
       print "FOOBAR", topicUri, event
 
-   def onOpen(self):
+   def onSessionOpen(self):
 
       self.prefix("event", "http://resource.example.com/schema/event#")
 

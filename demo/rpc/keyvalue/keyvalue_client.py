@@ -35,7 +35,7 @@ class KeyValueClientProtocol(WampClientProtocol):
       for key in keys:
          self.call("keyvalue:get", key).addCallback(lambda value, key = key: self.show(key, value))
 
-   def onOpen(self):
+   def onSessionOpen(self):
       self.prefix("keyvalue", "http://example.com/simple/keyvalue#")
       self.call("keyvalue:keys").addCallbacks(self.get).addCallback(self.done)
 

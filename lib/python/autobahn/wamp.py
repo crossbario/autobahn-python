@@ -204,6 +204,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       msg = [WampProtocol.MESSAGE_TYPEID_WELCOME, self.session_id]
       o = json.dumps(msg)
       self.sendMessage(o)
+      self.factory._addSession(self, self.session_id)
       self.onSessionOpen()
 
 
@@ -238,6 +239,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
    def connectionLost(self, reason):
       self.factory._unsubscribeClient(self)
+      self.factory._removeSession(self)
 
       WampProtocol.connectionLost(self, reason)
       WebSocketServerProtocol.connectionLost(self, reason)
@@ -783,10 +785,31 @@ class WampServerFactory(WebSocketServerFactory):
          d.callback((delivered, requested))
 
 
+   def _addSession(self, proto, session_id):
+      if not self.protoToSessions.has_key(proto):
+         self.protoToSessions[proto] = session_id
+      else:
+         raise Exception("logic error - dublicate _addSession for protoToSessions")
+      if not self.sessionsToProto.has_key(session_id):
+         self.sessionsToProto[session_id] = proto
+      else:
+         raise Exception("logic error - dublicate _addSession for sessionsToProto")
+
+
+   def _removeSession(self, proto):
+      if self.protoToSessions.has_key(proto):
+         session_id = self.protoToSessions[proto]
+         del self.protoToSessions[proto]
+         if self.sessionsToProto.has_key(session_id):
+            del self.sessionsToProto[session_id]
+
+
    def startFactory(self):
       if self.debugWamp:
          log.msg("WampServerFactory starting")
       self.subscriptions = {}
+      self.protoToSessions = {}
+      self.sessionsToProto = {}
 
 
    def stopFactory(self):
@@ -807,7 +830,9 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
 
    def onOpen(self):
-      self.onSessionOpen()
+      ## do nothing here .. onSessionOpen is only fired when welcome
+      ## message was received (and thus session ID set)
+      pass
 
 
    def onConnect(self, connectionResponse):
@@ -847,14 +872,20 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
       if len(obj) < 1:
          self._protocolError("message without message type")
+         return
 
       if type(obj[0]) != int:
          self._protocolError("message type not an integer")
+         return
 
       msgtype = obj[0]
 
-      if msgtype not in [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, WampProtocol.MESSAGE_TYPEID_CALL_ERROR, WampProtocol.MESSAGE_TYPEID_EVENT]:
+      if msgtype not in [WampProtocol.MESSAGE_TYPEID_WELCOME,
+                         WampProtocol.MESSAGE_TYPEID_CALL_RESULT,
+                         WampProtocol.MESSAGE_TYPEID_CALL_ERROR,
+                         WampProtocol.MESSAGE_TYPEID_EVENT]:
          self._protocolError("invalid message type '%d'" % msgtype)
+         return
 
       if msgtype in [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, WampProtocol.MESSAGE_TYPEID_CALL_ERROR]:
          if len(obj) < 2:
@@ -908,6 +939,15 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          if self.subscriptions.has_key(topicuri):
             event = obj[2]
             self.subscriptions[topicuri](topicuri, event)
+      elif msgtype == WampProtocol.MESSAGE_TYPEID_WELCOME:
+         if len(obj) != 2:
+            self._protocolError("event message invalid length")
+            return
+         if type(obj[1]) not in [unicode, str]:
+            self._protocolError("invalid type for sessionid in welcome message")
+            return
+         self.session_id = str(obj[1])
+         self.onSessionOpen()
       else:
          raise Exception("logic error")
 

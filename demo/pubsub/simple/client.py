@@ -39,7 +39,7 @@ class MyClientProtocol(WampClientProtocol):
       self.counter += 1
       self.publish("event:myevent2", {"trigger": event, "counter": self.counter})
 
-   def onOpen(self):
+   def onSessionOpen(self):
 
       self.counter = 0
       self.subscribe("http://example.com/simple", self.printEvent)
