@@ -185,6 +185,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
    Server factory for Wamp RPC/PubSub.
    """
 
+   SUB = 1
+   PUB = 2
+
    def onConnect(self, connectionRequest):
       """
       Default implementation for WAMP connection acceptance:
@@ -247,7 +250,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       return None
 
 
-   def registerForPubSub(self, topicUri, prefixMatch = False):
+   def registerForPubSub(self, topicUri, prefixMatch = False, pubsub = WampServerProtocol.PUB | WampServerProtocol.SUB):
       """
       Register a topic URI as publish/subscribe channel in this session.
 
@@ -255,11 +258,17 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type topicUri: str
       :param prefixMatch: Allow to match this topic URI by prefix.
       :type prefixMatch: bool
+      :param pubsub: Allow publication and/or subscription.
+      :type pubsub: WampServerProtocol.PUB, WampServerProtocol.SUB, WampServerProtocol.PUB | WampServerProtocol.SUB
       """
-      self.pubHandlers[topicUri] = (None, None, prefixMatch)
-      self.subHandlers[topicUri] = (None, None, prefixMatch)
-      if self.debugWamp:
-         log.msg("registered topic %s" % topicUri)
+      if pubsub & WampServerProtocol.PUB:
+         self.pubHandlers[topicUri] = (None, None, prefixMatch)
+         if self.debugWamp:
+            log.msg("registered topic %s for publication" % topicUri)
+      if pubsub & WampServerProtocol.SUB:
+         self.subHandlers[topicUri] = (None, None, prefixMatch)
+         if self.debugWamp:
+            log.msg("registered topic %s for subscription" % topicUri)
 
 
    def registerHandlerForPubSub(self, obj, baseUri = ""):
