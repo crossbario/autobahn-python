@@ -20,9 +20,9 @@ from case import Case
 
 class Case7_1_2(Case):
 
-   DESCRIPTION = """Send message followed by two close frames"""
+   DESCRIPTION = """Send two close frames"""
 
-   EXPECTATION = """Receive echo'ed text message. Clean close with normal code."""
+   EXPECTATION = """Clean close with normal code. Second close frame ignored."""
    
    def init(self):
       self.suppressClose = True
@@ -37,9 +37,8 @@ class Case7_1_2(Case):
    
    def onOpen(self):
       payload = "Hello World!"
-      self.expected[Case.OK] = [("message", payload, False)]      
+      self.expected[Case.OK] = []      
       self.expectedClose = {"closedByMe":True,"closeCode":[self.p.CLOSE_STATUS_CODE_NORMAL],"requireClean":True}
-      self.p.sendFrame(opcode = 1, payload = payload)
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
       self.p.sendFrame(opcode = 8)
       self.p.killAfter(1)
