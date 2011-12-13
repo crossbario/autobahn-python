@@ -604,6 +604,9 @@ class FuzzingFactory:
                elif case["behavior"] == Case.NO_CLOSE:
                   td_text = "No Close"
                   td_class = "case_no_close"
+               elif case["behavior"] == Case.INFORMATIONAL:
+                  td_text = "Info"
+                  td_class = "case_info"
                else:
                   td_text = "Fail"
                   td_class = "case_failed"
@@ -620,6 +623,9 @@ class FuzzingFactory:
                elif case["behaviorClose"] == Case.UNCLEAN:
                   ctd_text = "Unclean"
                   ctd_class = "case_failed"
+               elif case["behaviorClose"] == Case.INFORMATIONAL:
+                  ctd_text = "%s" % str(case["remoteCloseCode"])
+                  ctd_class = "case_info"
                else:
                   ctd_text = "Fail"
                   ctd_class = "case_failed"
@@ -717,6 +723,9 @@ class FuzzingFactory:
       elif case["behavior"] ==  Case.NON_STRICT:
          style = "case_non_strict"
          text = "Non-Strict"
+      elif case["behavior"] ==  Case.INFORMATIONAL:
+         style = "case_info"
+         text = "Informational"
       else:
          style = "case_failed"
          text = "Fail"

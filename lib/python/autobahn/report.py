@@ -220,6 +220,11 @@ td.case_non_strict, td.case_no_close {
    text-align: center;
 }
 
+td.case_info {
+   background-color: #4095BF;
+   text-align: center;
+}
+
 td.case_failed {
    background-color: #900;
    text-align: center;
@@ -276,6 +281,10 @@ p.case_ok {
 
 p.case_non_strict, p.case_no_close {
    background-color: #9a0;
+}
+
+p.case_info {
+   background-color: #4095BF;
 }
 
 p.case_failed {
