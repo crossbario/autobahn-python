@@ -524,6 +524,11 @@ class FuzzingFactory:
             than a performance/limits related one - is non-conforming to a MUST-behavior as described in the protocol specification.</td>
          </tr>
          <tr>
+            <td class="case_info">Info</td>
+            <td class="outcome_desc">Informational test case which detects certain implementation behavior left unspecified by the spec
+            but nevertheless potentially interesting to implementors.</td>
+         </tr>
+         <tr>
             <td class="case_missing">Missing</td>
             <td class="outcome_desc">Test case is missing, either because it was skipped via the test suite configuration
             or deactivated, i.e. because the implementation does not implement the tested feature or breaks during running
