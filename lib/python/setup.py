@@ -20,11 +20,11 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
-   version = '0.4.9',
+   version = '0.4.10',
    description = 'Autobahn WebSockets',
    long_description = """Twisted-based WebSockets client and server framework.
 
-   Autobahn provides a WebSockets (Hybi-10 to -17) Twisted-based framework for
+   Autobahn provides a WebSockets (Hybi-10 to -17 / RFC6455) Twisted-based framework for
    creating WebSockets clients and servers.
 
    Autobahn also includes a light-weight, asynchronous RPC/PubSub over JSON-WebSockets

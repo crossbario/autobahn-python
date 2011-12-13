@@ -342,9 +342,11 @@ class WebSocketProtocol(protocol.Protocol):
    for clients and servers.
    """
 
-   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17]
+   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17, 18]
    """
    WebSockets protocol spec (draft) versions supported by this implementation.
+   Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
+   draft spec versions.
    """
 
    SUPPORTED_PROTOCOL_VERSIONS = [8, 13]
@@ -352,12 +354,12 @@ class WebSocketProtocol(protocol.Protocol):
    WebSockets protocol versions supported by this implementation.
    """
 
-   SPEC_TO_PROTOCOL_VERSION = {10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13}
+   SPEC_TO_PROTOCOL_VERSION = {10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
    """
    Mapping from protocol spec (draft) version to protocol version.
    """
 
-   PROTOCOL_TO_SPEC_VERSION = {8: 12, 13: 17}
+   PROTOCOL_TO_SPEC_VERSION = {8: 12, 13: 18}
    """
    Mapping from protocol version to the latest protocol spec (draft) version
    using that protocol version.
@@ -431,6 +433,12 @@ class WebSocketProtocol(protocol.Protocol):
    CLOSE_STATUS_CODE_MANDATORY_EXTENSION = 1010
    """Mandatory extension."""
 
+   CLOSE_STATUS_CODE_INTERNAL_ERROR = 1011
+   """The peer encountered an unexpected condition or internal error."""
+
+   CLOSE_STATUS_CODE_TLS_HANDSHAKE_FAILED = 1015 # MUST NOT be set in close frame!
+   """TLS handshake failed, i.e. server certificate could not be verified. (MUST NOT be used as status code when sending a close)."""
+
    CLOSE_STATUS_CODES_ALLOWED = [CLOSE_STATUS_CODE_NORMAL,
                                  CLOSE_STATUS_CODE_GOING_AWAY,
                                  CLOSE_STATUS_CODE_PROTOCOL_ERROR,
@@ -438,7 +446,8 @@ class WebSocketProtocol(protocol.Protocol):
                                  CLOSE_STATUS_CODE_INVALID_PAYLOAD,
                                  CLOSE_STATUS_CODE_POLICY_VIOLATION,
                                  CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
-                                 CLOSE_STATUS_CODE_MANDATORY_EXTENSION]
+                                 CLOSE_STATUS_CODE_MANDATORY_EXTENSION,
+                                 CLOSE_STATUS_CODE_INTERNAL_ERROR]
    """Status codes allowed to send in close."""
 
 
