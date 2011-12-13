@@ -58,6 +58,7 @@ CaseSubCategories = {"1.1": "Text Messages",
                      "7.9": "Close frame structure: invalid close codes (fuzzer initiated)",
 #                     "7.10": "Close frame structure: invalid close codes (peer initiated)",
 #                     "7.11": "Peer initiated timeouts",
+                     "7.13": "Informational close information (fuzzer initiated)",
                      "9.1": "Text Message (increasing size)",
                      "9.2": "Binary Message (increasing size)",
                      "9.3": "Fragmented Text Message (fixed size, increasing fragment size)",
@@ -169,6 +170,7 @@ from case7_1_2 import *
 from case7_1_3 import *
 from case7_1_4 import *
 from case7_1_5 import *
+from case7_1_6 import *
 
 from case7_3_1 import *
 from case7_3_2 import *
@@ -181,6 +183,9 @@ from case7_5_1 import *
 
 from case7_7_X import *
 from case7_9_X import *
+
+from case7_13_1 import *
+from case7_13_2 import *
 
 from case9_1_1 import *
 from case9_1_2 import *
@@ -254,11 +259,12 @@ Cases += [Case6_3_1, Case6_3_2]
 Cases += [Case6_4_1, Case6_4_2, Case6_4_3, Case6_4_4]
 Cases.extend(Case6_X_X)
 CaseSubCategories.update(Case6_X_X_CaseSubCategories)
-Cases += [Case7_1_1, Case7_1_2, Case7_1_3, Case7_1_4, Case7_1_5]
+Cases += [Case7_1_1, Case7_1_2, Case7_1_3, Case7_1_4, Case7_1_5, Case7_1_6]
 Cases += [Case7_3_1, Case7_3_2, Case7_3_3, Case7_3_4, Case7_3_5, Case7_3_6]
 Cases += [Case7_5_1]
 Cases.extend(Case7_7_X)
 Cases.extend(Case7_9_X)
+Cases += [Case7_13_1, Case7_13_2]
 Cases += [Case9_1_1, Case9_1_2, Case9_1_3, Case9_1_4, Case9_1_5, Case9_1_6]
 Cases += [Case9_2_1, Case9_2_2, Case9_2_3, Case9_2_4, Case9_2_5, Case9_2_6]
 Cases += [Case9_3_1, Case9_3_2, Case9_3_3, Case9_3_4, Case9_3_5, Case9_3_6, Case9_3_7, Case9_3_8, Case9_3_9]
