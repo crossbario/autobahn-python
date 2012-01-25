@@ -62,7 +62,7 @@
             Publish a simple event containing to data. Open a 2nd browser window/tab and you see events being received.
          </p>
          <button onclick="sess.subscribe('http://example.com/simple', onEvent);">Subscribe</button>
-         <button onclick="sess.unsubscribe('http://example.com/simple', null);">Unsubscribe</button>
+         <button onclick="sess.unsubscribe('http://example.com/simple');">Unsubscribe</button>
          <button onclick="sess.publish('http://example.com/simple', null);">Publish</button>
       </div>
 
