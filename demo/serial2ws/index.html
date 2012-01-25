@@ -1,0 +1,49 @@
+ <html>
+   <head>
+      <script src="http://code.jquery.com/jquery.min.js"></script>
+      <script src="http://www.tavendo.de/static/autobahn/autobahn-latest.js"></script>
+      <script>
+
+         var sess = null;
+
+         function onMeasure1(topicUri, event) {
+            //console.log(topicUri);
+            //console.log(event);
+            console.log("got measurement 1:")
+            console.log("temp = " + event[0])
+            console.log("humidity = " + event[1])
+         }
+
+         function onKeepAlive(topicUri, event) {
+            //console.log(topicUri);
+            //console.log(event);
+            console.log("got keep alive " + event)
+         }
+
+         function controlLed(status) {
+            sess.call("rpc:control-led", status).always(ab.log);
+         }
+
+         $(document).ready(function()
+         {
+            sess = new ab.Session("ws://localhost:9000", function() {
+
+               console.log("Connected!");
+
+               sess.prefix("event", "http://example.com/mcu#");
+               sess.subscribe("event:measure1", onMeasure1);
+               sess.subscribe("event:keepalive", onKeepAlive);
+
+               sess.prefix("rpc", "http://example.com/mcu-control#");
+            });
+         });
+     </script>
+   </head>
+   <body>
+      <h1>Autobahn WebSockets: MCU to WS Gateway Demo</h1>
+      <p>Press F12 to open debugging console and see messages / events received</p>
+
+      <button onclick="controlLed(false)">LED Off</button>
+      <button onclick="controlLed(true)">LED On</button>
+   </body>
+ </html>
