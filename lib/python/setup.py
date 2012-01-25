@@ -20,16 +20,19 @@ from setuptools import setup, find_packages
 
 setup (
    name = 'autobahn',
-   version = '0.4.10',
+   version = '0.4.11',
    description = 'Autobahn WebSockets',
    long_description = """Twisted-based WebSockets client and server framework.
 
-   Autobahn provides a WebSockets (Hybi-10 to -17 / RFC6455) Twisted-based framework for
-   creating WebSockets clients and servers.
+   Autobahn provides a WebSockets (RFC6455 + Hybi-10 to -17) Twisted-based
+   framework for creating WebSockets clients and servers.
 
-   Autobahn also includes a light-weight, asynchronous RPC/PubSub over JSON-WebSockets
-   protocol implementation and a fuzzing test framework which can test WebSockets client
-   and server implementations.""",
+   Autobahn also includes an implementation of WAMP (WebSockets Application
+   Message Protocol), a light-weight, asynchronous RPC/PubSub over
+   JSON/WebSockets protocol.
+
+   Autobahn (source package) further provides a fuzzing test framework which can
+   test WebSockets client and server implementations.""",
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://www.tavendo.de/autobahn',
@@ -41,7 +44,7 @@ setup (
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
    classifiers = ["License :: OSI Approved :: Apache Software License",
-                  "Development Status :: 4 - Beta",
+                  "Development Status :: 5 - Production/Stable",
                   "Environment :: Console",
                   "Framework :: Twisted",
                   "Intended Audience :: Developers",
