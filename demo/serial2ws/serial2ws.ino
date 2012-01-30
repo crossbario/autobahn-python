@@ -21,7 +21,7 @@ const int pot1Pin = 0;
 const int pot2Pin = 1;
 
 const int minVal = 0;
-const int maxVal = 100;
+const int maxVal = 400;
 
 int last1 = 0;
 int last2 = 0;
@@ -62,5 +62,5 @@ void loop() {
   getAnalog(pot2Pin, 1, &last2);
 
   // limit update frequency to 20Hz
-  delay(50);
+  delay(20);
 }
