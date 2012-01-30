@@ -5,45 +5,76 @@
       <script>
 
          var sess = null;
+         var wsuri = "ws://" + window.location.hostname + ":9000";
+         var retryCount = 0;
+         var retryDelay = 2;
 
-         function onMeasure1(topicUri, event) {
-            //console.log(topicUri);
-            //console.log(event);
-            console.log("got measurement 1:")
-            console.log("temp = " + event[0])
-            console.log("humidity = " + event[1])
-         }
+         var analog0 = null;
+         var analog1 = null;
 
-         function onKeepAlive(topicUri, event) {
-            //console.log(topicUri);
-            //console.log(event);
-            console.log("got keep alive " + event)
+         function onAnalogValue(topicUri, event) {
+            switch (event.id) {
+               case 0:
+                  analog0.innerHTML = event.value;
+                  break;
+               case 1:
+                  analog1.innerHTML = event.value;
+                  break;
+               default:
+                  break;
+            }
          }
 
          function controlLed(status) {
             sess.call("rpc:control-led", status).always(ab.log);
          }
 
+         function connect() {
+
+            statusline = document.getElementById('statusline');
+
+            sess = new ab.Session(wsuri,
+               function() {
+
+                  statusline.innerHTML = "Connected to " + wsuri;
+                  retryCount = 0;
+
+                  sess.prefix("event", "http://example.com/mcu#");
+                  sess.subscribe("event:analog-value", onAnalogValue);
+
+                  sess.prefix("rpc", "http://example.com/mcu-control#");
+               },
+               function() {
+                  console.log(retryCount);
+                  retryCount = retryCount + 1;
+                  statusline.innerHTML = "Connection lost. Reconnecting (" + retryCount + ") in " + retryDelay + " secs ..";
+                  window.setTimeout(connect, retryDelay * 1000);
+               }
+            );
+         }
+
+
          $(document).ready(function()
          {
-            sess = new ab.Session("ws://localhost:9000", function() {
+            analog0 = document.getElementById('analog0');
+            analog1 = document.getElementById('analog1');
 
-               console.log("Connected!");
-
-               sess.prefix("event", "http://example.com/mcu#");
-               sess.subscribe("event:measure1", onMeasure1);
-               sess.subscribe("event:keepalive", onKeepAlive);
-
-               sess.prefix("rpc", "http://example.com/mcu-control#");
-            });
+            connect();
          });
      </script>
    </head>
    <body>
       <h1>Autobahn WebSockets: MCU to WS Gateway Demo</h1>
-      <p>Press F12 to open debugging console and see messages / events received</p>
 
+      <h2>Control LED</h2>
       <button onclick="controlLed(false)">LED Off</button>
       <button onclick="controlLed(true)">LED On</button>
+
+      <h2>Analog Values</h2>
+      <p>Analog 0 : <span id="analog0">-</span></p>
+      <p>Analog 1 : <span id="analog1">-</span></p>
+
+      <h2>Status</h2>
+      <div id="statusline"></div>
    </body>
  </html>

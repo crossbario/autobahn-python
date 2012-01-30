@@ -57,57 +57,18 @@ class McuProtocol(LineReceiver):
    ##
    def __init__(self, wsMcuFactory):
       self.wsMcuFactory = wsMcuFactory
-      self.lastTemp = 0.0
-      self.lastRH = 0.0
-      self.lastTimestamp = 0
 
 
+   ## this method is exported as RPC and can be called by connected clients
+   ##
    @exportRpc("control-led")
    def controlLed(self, status):
-      ## use self.transport.write to send control to MCU via serial
-      ##
       if status:
          print "turn on LED"
+         self.transport.write('1')
       else:
          print "turn off LED"
-
-
-   def processData(self, data):
-      """Convert raw ADC counts into SI units as per datasheets"""
-      # Skip bad reads
-      if len(data) != 2:
-         return
-
-      tempCts = int(data[0])
-      rhCts = int(data[1])
-
-      rhVolts = rhCts * 0.0048828125
-      # 10mV/degree, 1024 count/5V
-      temp = tempCts * 0.48828125
-      # RH temp correction is -0.7% per deg C
-      rhcf = (-0.7 * (temp - 25.0)) / 100.0
-
-      # Uncorrected humidity
-      humidity = (rhVolts * 45.25) - 42.76
-
-      # Add correction factor
-      humidity = humidity + (rhcf * humidity)
-
-      self.lastTemp = tempCts
-      self.lastRH = rhCts
-
-      if (time.time() - self.lastTimestamp) > 20.0:
-
-         ## dispatch Temp/Humidity as a PubSub event to all clients subscribed to
-         ## topic http://example.com/mcu#measure1
-         ##
-         self.wsMcuFactory._dispatchEvent("http://example.com/mcu#measure1", (temp, humidity))
-
-         log.msg('Temp: %f C Relative humidity: %f %%' % (temp, humidity))
-         log.msg('Temp: %f counts: %d RH: %f counts: %d volts: %f' % (temp, tempCts, humidity, rhCts, rhVolts))
-         self.lastTimestamp = time.time()
-
-      return temp, humidity
+         self.transport.write('0')
 
 
    def connectionMade(self):
@@ -116,12 +77,21 @@ class McuProtocol(LineReceiver):
 
    def lineReceived(self, line):
       try:
-         data = line.split()
-         log.msg(data)
-         self.processData(data)
+         ## parse data received from MCU
+         ##
+         data = [int(x) for x in line.split()]
+
+         ## construct PubSub event from raw data
+         ##
+         evt = {'id': data[0], 'value': data[1]}
+
+         ## publish event to all clients subscribed to topic
+         ##
+         self.wsMcuFactory._dispatchEvent("http://example.com/mcu#analog-value", evt)
+
+         log.msg("Analog value: %s" % str(evt));
       except ValueError:
-         log.err('Unable to parse data %s' % line)
-         return
+         log.err('Unable to parse value %s' % line)
 
 
 ## WS-MCU protocol
@@ -129,7 +99,7 @@ class McuProtocol(LineReceiver):
 class WsMcuProtocol(WampServerProtocol):
 
    def onSessionOpen(self):
-      ## register topic under which we will publish MCU measurements
+      ## register topic prefix under which we will publish MCU measurements
       ##
       self.registerForPubSub("http://example.com/mcu#", True)
 
@@ -147,18 +117,6 @@ class WsMcuFactory(WampServerFactory):
    def __init__(self, url):
       WampServerFactory.__init__(self, url)
       self.mcuProtocol = McuProtocol(self)
-
-
-   def pubKeepAlive(self):
-      self.keepAlive += 1
-      self._dispatchEvent("http://example.com/mcu#keepalive", self.keepAlive)
-      reactor.callLater(1, self.pubKeepAlive)
-
-
-   def startFactory(self):
-      WampServerFactory.startFactory(self)
-      self.keepAlive = 0
-      self.pubKeepAlive()
 
 
 if __name__ == '__main__':
