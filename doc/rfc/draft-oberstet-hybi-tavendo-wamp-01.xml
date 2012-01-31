@@ -3,8 +3,10 @@
      which is available here: http://xml.resource.org. -->
 <!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
 <!-- One method to get references from the online citation libraries.
-     There has to be one entity for each item to be referenced. 
+     There has to be one entity for each item to be referenced.
      An alternate method (rfc include) is described in the references. -->
+
+<!ENTITY RFC6455 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml">
 
 <!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
 <!ENTITY RFC2629 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2629.xml">
@@ -13,7 +15,7 @@
 ]>
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 <!-- used by XSLT processors -->
-<!-- For a complete list and description of processing instructions (PIs), 
+<!-- For a complete list and description of processing instructions (PIs),
      please see http://xml.resource.org/authoring/README.html. -->
 <!-- Below are generally applicable Processing Instructions (PIs) that most I-Ds might want to use.
      (Here they are set differently than their defaults in xml2rfc v1.32) -->
@@ -29,76 +31,40 @@
 <!-- use symbolic references tags, i.e, [RFC2119] instead of [1] -->
 <?rfc sortrefs="yes" ?>
 <!-- sort the reference entries alphabetically -->
-<!-- control vertical white space 
+<!-- control vertical white space
      (using these PIs as follows is recommended by the RFC Editor) -->
 <?rfc compact="yes" ?>
 <!-- do not start each main section on a new page -->
 <?rfc subcompact="no" ?>
 <!-- keep one blank line between list items -->
 <!-- end of list of popular I-D processing instructions -->
-<rfc category="info" docName="draft-ietf-xml2rfc-template-05" ipr="full3978">
+<rfc category="std" docName="draft-oberstet-hybi-tavendo-wamp-01" ipr="trust200902">
   <!-- category values: std, bcp, info, exp, and historic
-     ipr values: full3667, noModification3667, noDerivatives3667
-     you can add the attributes updates="NNNN" and obsoletes="NNNN" 
+     full3978 ipr values: full3667, noModification3667, noDerivatives3667
+     you can add the attributes updates="NNNN" and obsoletes="NNNN"
      they will automatically be output with "(if approved)" -->
 
   <!-- ***** FRONT MATTER ***** -->
 
   <front>
-    <!-- The abbreviated title is used in the page header - it is only necessary if the 
-         full title is longer than 39 characters -->
 
-    <title abbrev="Abbreviated Title">Put Your Internet Draft Title
-    Here</title>
+    <title abbrev="WebSocket Application Messaging Protocol">The WebSocket Application Messaging Protocol</title>
 
-    <!-- add 'role="editor"' below for the editors if appropriate -->
-
-    <!-- Another author who claims to be an editor -->
-
-    <author fullname="Elwyn Davies" initials="E.B." role="editor"
-            surname="Davies">
-      <organization>Folly Consulting</organization>
-
+    <author fullname="Tobias G. Oberstein" initials="T.O." surname="Oberstein">
+      <organization>Tavendo GmbH</organization>
       <address>
-        <postal>
-          <street></street>
-
-          <!-- Reorder these if your country does things differently -->
-
-          <city>Soham</city>
-
-          <region></region>
-
-          <code></code>
-
-          <country>UK</country>
-        </postal>
-
-        <phone>+44 7889 488 335</phone>
-
-        <email>elwynd@dial.pipex.com</email>
-
-        <!-- uri and facsimile elements may also be added -->
+        <email>tobias.oberstein@tavendo.de</email>
       </address>
     </author>
 
-    <date month="March" year="2007" />
-
-    <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
-         in the current day for you. If only the current year is specified, xml2rfc will fill 
-	 in the current day and month for you. If the year is not the current one, it is 
-	 necessary to specify at least a month (xml2rfc assumes day="1" if not specified for the 
-	 purpose of calculating the expiry date).  With drafts it is normally sufficient to 
-	 specify just the year. -->
-
-    <!-- Meta-data Declarations -->
+    <date month="January" year="2012" />
 
     <area>General</area>
 
-    <workgroup>Internet Engineering Task Force</workgroup>
+    <workgroup>HyBi Working Group</workgroup>
 
     <!-- WG name at the upperleft corner of the doc,
-         IETF is fine for individual submissions.  
+         IETF is fine for individual submissions.
 	 If this element is not present, the default is "Network Working Group",
          which is used by the RFC Editor as a nod to the history of the IETF. -->
 
@@ -110,8 +76,9 @@
          keywords will be used for the search engine. -->
 
     <abstract>
-      <t>Insert an abstract: MANDATORY. This template is for creating an
-      Internet Draft.</t>
+      <t>Bla, bla, bla.</t>
+
+      <t>Please send feedback to the hybi@ietf.org mailing list.</t>
     </abstract>
   </front>
 
@@ -321,21 +288,40 @@ main(int argc, char *argv[])
 
     <!-- Possibly a 'Contributors' section ... -->
 
-    <section anchor="IANA" title="IANA Considerations">
-      <t>This memo includes no request to IANA.</t>
-
-      <t>All drafts are required to have an IANA considerations section (see
-      <xref target="I-D.narten-iana-considerations-rfc2434bis">the update of
-      RFC 2434</xref> for a guide). If the draft does not require IANA to do
-      anything, the section contains an explicit statement that this is the
-      case (as above). If there are no requirements for IANA, the section will
-      be removed during conversion into an RFC by the RFC Editor.</t>
-    </section>
-
     <section anchor="Security" title="Security Considerations">
       <t>All drafts are required to have a security considerations section.
       See <xref target="RFC3552">RFC 3552</xref> for a guide.</t>
     </section>
+
+    <section anchor="IANA" title="IANA Considerations">
+
+      <t>This specification is registering a value of the Sec-WebSocket-Protocol
+      header field in accordance with Sections 11.3.4 and 11.5 of the WebSocket
+      protocol <xref target="RFC6455"></xref> as follows:</t>
+
+      <t>Subprotocol Identifier
+        <list hangIndent="3" style="empty">
+          <t>wamp</t>
+        </list>
+      </t>
+
+      <t>Subprotocol Common Name
+        <list hangIndent="3" style="empty">
+          <t>WebSocket Application Messaging Protocol</t>
+        </list>
+      </t>
+
+      <t>Subprotocol Definition
+        <list hangIndent="3" style="empty">
+          <t>
+            This document [draft-oberstet-hybi-tavendo-wamp] defines the wamp
+            subprotocol.
+          </t>
+        </list>
+      </t>
+
+    </section>
+
   </middle>
 
   <!--  *****BACK MATTER ***** -->
@@ -357,6 +343,9 @@ main(int argc, char *argv[])
     <references title="Normative References">
       <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml"?-->
       &RFC2119;
+
+      <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml"?-->
+      &RFC6455;
 
       <reference anchor="min_ref">
         <!-- the following is the minimum to make xml2rfc happy -->
@@ -380,8 +369,6 @@ main(int argc, char *argv[])
 
       &RFC3552;
 
-      &I-D.narten-iana-considerations-rfc2434bis;
-
       <!-- A reference written by by an organization not a person. -->
 
       <reference anchor="DOMINATION"
@@ -402,21 +389,5 @@ main(int argc, char *argv[])
       <t>This becomes an Appendix.</t>
     </section>
 
-    <!-- Change Log
-
-v00 2006-03-15  EBD   Initial version
-
-v01 2006-04-03  EBD   Moved PI location back to position 1 -
-                      v3.1 of XMLmind is better with them at this location.
-v02 2007-03-07  AH    removed extraneous nested_list attribute,
-                      other minor corrections
-v03 2007-03-09  EBD   Added comments on null IANA sections and fixed heading capitalization.
-                      Modified comments around figure to reflect non-implementation of
-                      figure indent control.  Put in reference using anchor="DOMINATION".
-                      Fixed up the date specification comments to reflect current truth.
-v04 2007-03-09 AH     Major changes: shortened discussion of PIs,
-                      added discussion of rfc include.
-v05 2007-03-10 EBD    Added preamble to C program example to tell about ABNF and alternative 
-                      images. Removed meta-characters from comments (causes problems).  -->
   </back>
 </rfc>
