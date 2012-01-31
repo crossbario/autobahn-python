@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<!-- This template is for creating an Internet Draft using xml2rfc,
+     which is available here: http://xml.resource.org. -->
+<!DOCTYPE rfc SYSTEM "rfc2629.dtd" [
+<!-- One method to get references from the online citation libraries.
+     There has to be one entity for each item to be referenced. 
+     An alternate method (rfc include) is described in the references. -->
+
+<!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
+<!ENTITY RFC2629 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2629.xml">
+<!ENTITY RFC3552 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.3552.xml">
+<!ENTITY I-D.narten-iana-considerations-rfc2434bis SYSTEM "http://xml.resource.org/public/rfc/bibxml3/reference.I-D.narten-iana-considerations-rfc2434bis.xml">
+]>
+<?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
+<!-- used by XSLT processors -->
+<!-- For a complete list and description of processing instructions (PIs), 
+     please see http://xml.resource.org/authoring/README.html. -->
+<!-- Below are generally applicable Processing Instructions (PIs) that most I-Ds might want to use.
+     (Here they are set differently than their defaults in xml2rfc v1.32) -->
+<?rfc strict="yes" ?>
+<!-- give errors regarding ID-nits and DTD validation -->
+<!-- control the table of contents (ToC) -->
+<?rfc toc="yes"?>
+<!-- generate a ToC -->
+<?rfc tocdepth="4"?>
+<!-- the number of levels of subsections in ToC. default: 3 -->
+<!-- control references -->
+<?rfc symrefs="yes"?>
+<!-- use symbolic references tags, i.e, [RFC2119] instead of [1] -->
+<?rfc sortrefs="yes" ?>
+<!-- sort the reference entries alphabetically -->
+<!-- control vertical white space 
+     (using these PIs as follows is recommended by the RFC Editor) -->
+<?rfc compact="yes" ?>
+<!-- do not start each main section on a new page -->
+<?rfc subcompact="no" ?>
+<!-- keep one blank line between list items -->
+<!-- end of list of popular I-D processing instructions -->
+<rfc category="info" docName="draft-ietf-xml2rfc-template-05" ipr="full3978">
+  <!-- category values: std, bcp, info, exp, and historic
+     ipr values: full3667, noModification3667, noDerivatives3667
+     you can add the attributes updates="NNNN" and obsoletes="NNNN" 
+     they will automatically be output with "(if approved)" -->
+
+  <!-- ***** FRONT MATTER ***** -->
+
+  <front>
+    <!-- The abbreviated title is used in the page header - it is only necessary if the 
+         full title is longer than 39 characters -->
+
+    <title abbrev="Abbreviated Title">Put Your Internet Draft Title
+    Here</title>
+
+    <!-- add 'role="editor"' below for the editors if appropriate -->
+
+    <!-- Another author who claims to be an editor -->
+
+    <author fullname="Elwyn Davies" initials="E.B." role="editor"
+            surname="Davies">
+      <organization>Folly Consulting</organization>
+
+      <address>
+        <postal>
+          <street></street>
+
+          <!-- Reorder these if your country does things differently -->
+
+          <city>Soham</city>
+
+          <region></region>
+
+          <code></code>
+
+          <country>UK</country>
+        </postal>
+
+        <phone>+44 7889 488 335</phone>
+
+        <email>elwynd@dial.pipex.com</email>
+
+        <!-- uri and facsimile elements may also be added -->
+      </address>
+    </author>
+
+    <date month="March" year="2007" />
+
+    <!-- If the month and year are both specified and are the current ones, xml2rfc will fill 
+         in the current day for you. If only the current year is specified, xml2rfc will fill 
+	 in the current day and month for you. If the year is not the current one, it is 
+	 necessary to specify at least a month (xml2rfc assumes day="1" if not specified for the 
+	 purpose of calculating the expiry date).  With drafts it is normally sufficient to 
+	 specify just the year. -->
+
+    <!-- Meta-data Declarations -->
+
+    <area>General</area>
+
+    <workgroup>Internet Engineering Task Force</workgroup>
+
+    <!-- WG name at the upperleft corner of the doc,
+         IETF is fine for individual submissions.  
+	 If this element is not present, the default is "Network Working Group",
+         which is used by the RFC Editor as a nod to the history of the IETF. -->
+
+    <keyword>template</keyword>
+
+    <!-- Keywords will be incorporated into HTML output
+         files in a meta tag but they have no effect on text or nroff
+         output. If you submit your draft to the RFC Editor, the
+         keywords will be used for the search engine. -->
+
+    <abstract>
+      <t>Insert an abstract: MANDATORY. This template is for creating an
+      Internet Draft.</t>
+    </abstract>
+  </front>
+
+  <middle>
+    <section title="Introduction">
+      <t>The original specification of xml2rfc format is in <xref
+      target="RFC2629">RFC&nbsp;2629</xref>.</t>
+
+      <section title="Requirements Language">
+        <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+        "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+        document are to be interpreted as described in <xref
+        target="RFC2119">RFC 2119</xref>.</t>
+      </section>
+    </section>
+
+    <section anchor="simple_list" title="Simple List">
+      <t>List styles: 'empty', 'symbols', 'letters', 'numbers', 'hanging',
+      'format'.</t>
+
+      <t><list style="symbols">
+          <t>First bullet</t>
+
+          <t>Second bullet</t>
+        </list> You can write text here as well.</t>
+    </section>
+
+    <section title="Figures">
+      <t>Figures should not exceed 69 characters wide to allow for the indent
+      of sections.</t>
+
+      <figure align="center" anchor="xml_happy">
+        <preamble>Preamble text - can be omitted or empty.</preamble>
+
+        <artwork align="left"><![CDATA[
++-----------------------+
+| Use XML, be Happy :-) |
+|_______________________|
+            ]]></artwork>
+
+        <postamble>Cross-references allowed in pre- and postamble. <xref
+        target="min_ref" />.</postamble>
+      </figure>
+
+      <t>The CDATA means you don't need to escape meta-characters (especially
+      &lt;&nbsp;(&amp;lt;) and &amp;&nbsp;(&amp;amp;)) but is not essential.
+      Figures may also have a title attribute but it won't be displayed unless
+      there is also an anchor. White space, both horizontal and vertical, is
+      significant in figures even if you don't use CDATA.</t>
+    </section>
+
+    <!-- This PI places the pagebreak correctly (before the section title) in the text output. -->
+
+    <?rfc needLines="8" ?>
+
+    <section title="Subsections and Tables">
+      <section title="A Subsection">
+        <t>By default 3 levels of nesting show in table of contents but that
+        can be adjusted with the value of the "tocdepth" processing
+        instruction.</t>
+      </section>
+
+      <section title="Tables">
+        <t>.. are very similar to figures:</t>
+
+        <texttable anchor="table_example" title="A Very Simple Table">
+          <preamble>Tables use ttcol to define column headers and widths.
+          Every cell then has a "c" element for its content.</preamble>
+
+          <ttcol align="center">ttcol #1</ttcol>
+
+          <ttcol align="center">ttcol #2</ttcol>
+
+          <c>c #1</c>
+
+          <c>c #2</c>
+
+          <c>c #3</c>
+
+          <c>c #4</c>
+
+          <c>c #5</c>
+
+          <c>c #6</c>
+
+          <postamble>which is a very simple example.</postamble>
+        </texttable>
+      </section>
+    </section>
+
+    <section anchor="nested_lists" title="More about Lists">
+      <t>Lists with 'hanging labels': the list item is indented the amount of
+      the hangIndent: <list hangIndent="8" style="hanging">
+          <t hangText="short">With a label shorter than the hangIndent.</t>
+
+          <t hangText="fantastically long label">With a label longer than the
+          hangIndent.</t>
+
+          <t hangText="vspace_trick"><vspace blankLines="0" />Forces the new
+          item to start on a new line.</t>
+        </list></t>
+
+      <!-- It would be nice to see the next piece (12 lines) all on one page. -->
+
+      <?rfc needLines="12" ?>
+
+      <t>Simulating more than one paragraph in a list item using
+      &lt;vspace&gt;: <list style="letters">
+          <t>First, a short item.</t>
+
+          <t>Second, a longer list item.<vspace blankLines="1" /> And
+          something that looks like a separate pararaph..</t>
+        </list></t>
+
+      <t>Simple indented paragraph using the "empty" style: <list
+          hangIndent="10" style="empty">
+          <t>The quick, brown fox jumped over the lazy dog and lived to fool
+          many another hunter in the great wood in the west.</t>
+        </list></t>
+
+      <section title="Numbering Lists across Lists and Sections">
+        <t>Numbering items continuously although they are in separate
+        &lt;list&gt; elements, maybe in separate sections using the "format"
+        style and a "counter" variable.</t>
+
+        <t>First list: <list counter="reqs" hangIndent="4" style="format R%d">
+            <t>#1</t>
+
+            <t>#2</t>
+
+            <t>#3</t>
+          </list> Specify the indent explicitly so that all the items line up
+        nicely.</t>
+
+        <t>Second list: <list counter="reqs" hangIndent="4" style="format R%d">
+            <t>#4</t>
+
+            <t>#5</t>
+
+            <t>#6</t>
+          </list></t>
+      </section>
+
+      <section title="Where the List Numbering Continues">
+        <t>List continues here.</t>
+
+        <t>Third list: <list counter="reqs" hangIndent="4" style="format R%d">
+            <t>#7</t>
+
+            <t>#8</t>
+
+            <t>#9</t>
+
+            <t>#10</t>
+          </list> The end of the list.</t>
+      </section>
+    </section>
+
+    <section anchor="codeExample"
+             title="Example of Code or MIB Module To Be Extracted">
+      <figure>
+        <preamble>The &lt;artwork&gt; element has a number of extra attributes
+        that can be used to substitute a more aesthetically pleasing rendition
+        into HTML output while continuing to use the ASCII art version in the
+        text and nroff outputs (see the xml2rfc README for details). It also
+        has a "type" attribute. This is currently ignored except in the case
+        'type="abnf"'. In this case the "artwork" is expected to contain a
+        piece of valid Augmented Backus-Naur Format (ABNF) grammar. This will
+        be syntax checked by xml2rfc and any errors will cause a fatal error
+        if the "strict" processing instruction is set to "yes". The ABNF will
+        also be colorized in HTML output to highlight the syntactic
+        components. Checking of additional "types" may be provided in future
+        versions of xml2rfc.</preamble>
+
+        <artwork><![CDATA[
+
+/**** an example C program */
+
+#include <stdio.h>
+
+void
+main(int argc, char *argv[])
+{
+    int i;
+
+    printf("program arguments are:\n");
+    for (i = 0; i < argc; i++) {
+        printf("%d: \"%s\"\n", i, argv[i]);
+    }
+
+    exit(0);
+} /* main */
+
+/* end of file */
+
+            ]]></artwork>
+      </figure>
+    </section>
+
+    <section anchor="Acknowledgements" title="Acknowledgements">
+      <t>This template was derived from an initial version written by Pekka
+      Savola and contributed by him to the xml2rfc project.</t>
+
+      <t>This document is part of a plan to make xml2rfc indispensable <xref
+      target="DOMINATION"></xref>.</t>
+    </section>
+
+    <!-- Possibly a 'Contributors' section ... -->
+
+    <section anchor="IANA" title="IANA Considerations">
+      <t>This memo includes no request to IANA.</t>
+
+      <t>All drafts are required to have an IANA considerations section (see
+      <xref target="I-D.narten-iana-considerations-rfc2434bis">the update of
+      RFC 2434</xref> for a guide). If the draft does not require IANA to do
+      anything, the section contains an explicit statement that this is the
+      case (as above). If there are no requirements for IANA, the section will
+      be removed during conversion into an RFC by the RFC Editor.</t>
+    </section>
+
+    <section anchor="Security" title="Security Considerations">
+      <t>All drafts are required to have a security considerations section.
+      See <xref target="RFC3552">RFC 3552</xref> for a guide.</t>
+    </section>
+  </middle>
+
+  <!--  *****BACK MATTER ***** -->
+
+  <back>
+    <!-- References split into informative and normative -->
+
+    <!-- There are 2 ways to insert reference entries from the citation libraries:
+     1. define an ENTITY at the top, and use "ampersand character"RFC2629; here (as shown)
+     2. simply use a PI "less than character"?rfc include="reference.RFC.2119.xml"?> here
+        (for I-Ds: include="reference.I-D.narten-iana-considerations-rfc2434bis.xml")
+
+     Both are cited textually in the same manner: by using xref elements.
+     If you use the PI option, xml2rfc will, by default, try to find included files in the same
+     directory as the including file. You can also define the XML_LIBRARY environment variable
+     with a value containing a set of directories to search.  These can be either in the local
+     filing system or remote ones accessed by http (http://domain/dir/... ).-->
+
+    <references title="Normative References">
+      <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml"?-->
+      &RFC2119;
+
+      <reference anchor="min_ref">
+        <!-- the following is the minimum to make xml2rfc happy -->
+
+        <front>
+          <title>Minimal Reference</title>
+
+          <author initials="authInitials" surname="authSurName">
+            <organization></organization>
+          </author>
+
+          <date year="2006" />
+        </front>
+      </reference>
+    </references>
+
+    <references title="Informative References">
+      <!-- Here we use entities that we defined at the beginning. -->
+
+      &RFC2629;
+
+      &RFC3552;
+
+      &I-D.narten-iana-considerations-rfc2434bis;
+
+      <!-- A reference written by by an organization not a person. -->
+
+      <reference anchor="DOMINATION"
+                 target="http://www.example.com/dominator.html">
+        <front>
+          <title>Ultimate Plan for Taking Over the World</title>
+
+          <author>
+            <organization>Mad Dominators, Inc.</organization>
+          </author>
+
+          <date year="1984" />
+        </front>
+      </reference>
+    </references>
+
+    <section anchor="app-additional" title="Additional Stuff">
+      <t>This becomes an Appendix.</t>
+    </section>
+
+    <!-- Change Log
+
+v00 2006-03-15  EBD   Initial version
+
+v01 2006-04-03  EBD   Moved PI location back to position 1 -
+                      v3.1 of XMLmind is better with them at this location.
+v02 2007-03-07  AH    removed extraneous nested_list attribute,
+                      other minor corrections
+v03 2007-03-09  EBD   Added comments on null IANA sections and fixed heading capitalization.
+                      Modified comments around figure to reflect non-implementation of
+                      figure indent control.  Put in reference using anchor="DOMINATION".
+                      Fixed up the date specification comments to reflect current truth.
+v04 2007-03-09 AH     Major changes: shortened discussion of PIs,
+                      added discussion of rfc include.
+v05 2007-03-10 EBD    Added preamble to C program example to tell about ABNF and alternative 
+                      images. Removed meta-characters from comments (causes problems).  -->
+  </back>
+</rfc>
