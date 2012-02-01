@@ -6,9 +6,12 @@
      There has to be one entity for each item to be referenced.
      An alternate method (rfc include) is described in the references. -->
 
-<!ENTITY RFC6455 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml">
-
 <!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
+<!ENTITY RFC6455 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml">
+<!ENTITY RFC3629 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.3629.xml">
+<!ENTITY RFC4627 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.4627.xml">
+<!ENTITY RFC3986 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.3986.xml">
+
 <!ENTITY RFC2629 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2629.xml">
 <!ENTITY RFC3552 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.3552.xml">
 <!ENTITY I-D.narten-iana-considerations-rfc2434bis SYSTEM "http://xml.resource.org/public/rfc/bibxml3/reference.I-D.narten-iana-considerations-rfc2434bis.xml">
@@ -84,8 +87,7 @@
 
   <middle>
     <section title="Introduction">
-      <t>The original specification of xml2rfc format is in <xref
-      target="RFC2629">RFC&nbsp;2629</xref>.</t>
+      <t>Bla, bla, bla.</t>
 
       <section title="Requirements Language">
         <t>The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
@@ -120,7 +122,7 @@
             ]]></artwork>
 
         <postamble>Cross-references allowed in pre- and postamble. <xref
-        target="min_ref" />.</postamble>
+        target="CURIE" />.</postamble>
       </figure>
 
       <t>The CDATA means you don't need to escape meta-characters (especially
@@ -297,7 +299,7 @@ main(int argc, char *argv[])
 
       <t>This specification is registering a value of the Sec-WebSocket-Protocol
       header field in accordance with Sections 11.3.4 and 11.5 of the WebSocket
-      protocol <xref target="RFC6455"></xref> as follows:</t>
+      protocol <xref target="RFC6455">[RFC6455]</xref> as follows:</t>
 
       <t>Subprotocol Identifier
         <list hangIndent="3" style="empty">
@@ -347,19 +349,30 @@ main(int argc, char *argv[])
       <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.6455.xml"?-->
       &RFC6455;
 
-      <reference anchor="min_ref">
-        <!-- the following is the minimum to make xml2rfc happy -->
+      <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.3629.xml"?-->
+      &RFC3629;
 
+      <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.4627.xml"?-->
+      &RFC4627;
+
+      <!--?rfc include="http://xml.resource.org/public/rfc/bibxml/reference.RFC.3986.xml"?-->
+      &RFC3986;
+
+      <!-- http://greenbytes.de/tech/webdav/rfc2629xslt/w3c-references.html -->
+      <reference anchor='CURIE'
+                 target='http://www.w3.org/TR/2010/NOTE-curie-20101216'>
         <front>
-          <title>Minimal Reference</title>
-
-          <author initials="authInitials" surname="authSurName">
-            <organization></organization>
-          </author>
-
-          <date year="2006" />
+          <title>CURIE Syntax 1.0</title>
+          <author fullname='Mark Birbeck' surname='Birbeck' initials='M. '/>
+          <author fullname='Shane McCarron' surname='McCarron' initials='S. '/>
+          <date year='2010' month='December' day='16'/>
         </front>
+        <seriesInfo name='W3C Group Note' value='NOTE-curie-20101216'/>
+        <annotation>
+          Latest version available at <eref target='http://www.w3.org/TR/curie'/>.
+        </annotation>
       </reference>
+
     </references>
 
     <references title="Informative References">
