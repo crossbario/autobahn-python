@@ -61,6 +61,6 @@ void loop() {
   getAnalog(pot1Pin, 0, &last1);
   getAnalog(pot2Pin, 1, &last2);
 
-  // limit update frequency to 20Hz
+  // limit update frequency to 50Hz
   delay(20);
 }

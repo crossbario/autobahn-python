@@ -1,5 +1,6 @@
  <html>
    <head>
+      <title>Autobahn Serial2Ws</title>
       <script src="http://code.jquery.com/jquery.min.js"></script>
       <script src="http://www.tavendo.de/static/autobahn/autobahn-latest.js"></script>
       <script src="smoothie.js"></script>
@@ -19,7 +20,11 @@
          var line0 = new TimeSeries();
          var line1 = new TimeSeries();
 
+         var eventCnt = 0;
+         var eventCntUpdateInterval = 2;
+
          function onAnalogValue(topicUri, event) {
+            eventCnt += 1;
             event.value = event.value / 400 * 100;
             event.value = event.value.toFixed(2);
             switch (event.id) {
@@ -48,6 +53,11 @@
             sess.call("rpc:control-led", status).always(ab.log);
          }
 
+         function updateEventCnt() {
+            document.getElementById("event-cnt").innerHTML = Math.round(eventCnt/eventCntUpdateInterval) + " events/s";
+            eventCnt = 0;
+         }
+
          function connect() {
 
             statusline = document.getElementById('statusline');
@@ -62,6 +72,10 @@
                   sess.subscribe("event:analog-value", onAnalogValue);
 
                   sess.prefix("rpc", "http://example.com/mcu-control#");
+
+                  eventCnt = 0;
+
+                  window.setInterval(updateEventCnt, eventCntUpdateInterval * 1000);
                },
                function() {
                   console.log(retryCount);
@@ -109,7 +123,9 @@
       <p>Analog 0 : <span id="analog0">-</span></p>
       <p>Analog 1 : <span id="analog1">-</span></p>
 
-      <canvas id="mycanvas" width="400" height="100"></canvas>
+      <div id="event-cnt" style="color: #f60; font-weight: 700; font-size: 24px;">-</div>
+
+      <canvas id="mycanvas" width="800" height="400"></canvas>
 
       <h2>Status</h2>
       <div id="statusline"></div>
