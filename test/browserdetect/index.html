@@ -56,7 +56,11 @@
 
             ab.debug(true, true);
 
-            connect();
+            if (ab.browserSupported) {
+               connect();
+            } else {
+               $("#statusline").html("Sorry, your browser is not supported. You need one of the following: " + ab.supportedBrowsers);
+            }
          });
       </script>
    </head>
