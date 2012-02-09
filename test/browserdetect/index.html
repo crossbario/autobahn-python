@@ -37,8 +37,10 @@
 
          $(document).ready(function() {
 
+            log("Detected", ab.getBrowser());
+
             log("Autobahn version", ab.version);
-            log("Autobahn hasWebSockets", ab.hasWebSockets);
+            log("Autobahn browserSupported", ab.browserSupported);
 
             log("navigator.userAgent", navigator.userAgent);
             log("navigator.appCodeName", navigator.appCodeName);
