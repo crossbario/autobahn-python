@@ -285,11 +285,11 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       if pubsub & WampServerProtocol.PUBLISH:
          self.pubHandlers[topicUri] = (None, None, prefixMatch)
          if self.debugWamp:
-            log.msg("registered topic %s for publication" % topicUri)
+            log.msg("registered topic %s for publication (match by prefix = %s)" % (topicUri, prefixMatch))
       if pubsub & WampServerProtocol.SUBSCRIBE:
          self.subHandlers[topicUri] = (None, None, prefixMatch)
          if self.debugWamp:
-            log.msg("registered topic %s for subscription" % topicUri)
+            log.msg("registered topic %s for subscription (match by prefix = %s)" % (topicUri, prefixMatch))
 
 
    def registerHandlerForPubSub(self, obj, baseUri = ""):

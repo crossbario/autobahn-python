@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script src="http://code.jquery.com/jquery.min.js"></script>
+
+      <!-- use local version (<repo>/lib/javascript/autobahn.js) -->
+      <script src="autobahn.js"></script>
+
+      <!-- use production version -->
+      <!-- <script src="http://www.tavendo.de/static/autobahn/autobahn-latest.js"></script> -->
+
+      <script type="text/javascript">
+
+         function log(msg, obj) {
+            $("#log").append("<tr><td>" + msg + "</td><td>" + JSON.stringify(obj) + "</td></tr>");
+         };
+
+         var sess = null;
+         var wsuri = "ws://" + window.location.hostname + ":9000";
+         var retryCount = 0;
+         var retryDelay = 2;
+
+         function connect() {
+            sess = new ab.Session(wsuri,
+               function() {
+                  $("#statusline").html("Connected to " + wsuri);
+                  retryCount = 0;
+               },
+               function() {
+                  retryCount = retryCount + 1;
+                  $("#statusline").html("Connection lost. Reconnecting (" + retryCount + ") in " + retryDelay + " secs ..");
+                  window.setTimeout(connect, retryDelay * 1000);
+               },
+               {skipSubprotocolCheck: true}
+            );
+         }
+
+         $(document).ready(function() {
+
+            log("Autobahn version", ab.version);
+            log("Autobahn hasWebSockets", ab.hasWebSockets);
+
+            log("navigator.userAgent", navigator.userAgent);
+            log("navigator.appCodeName", navigator.appCodeName);
+            log("navigator.appName", navigator.appName);
+            log("navigator.appVersion", navigator.appVersion);
+            log("navigator.cookieEnabled", navigator.cookieEnabled);
+            log("navigator.platform", navigator.platform);
+
+            log("jQuery detected browser", $.browser);
+
+            log("WebSocket object", "WebSocket" in window);
+            log("MozWebSocket object", "MozWebSocket" in window);
+
+            ab.debug(true, true);
+
+            connect();
+         });
+      </script>
+   </head>
+   <body>
+      <h1>Browser and WebSocket Feature Detection Test</h1>
+      <p>WebSocket Connection Status: <span id="statusline"></span></p>
+      <table id="log"></table>
+   </body>
+</html>
