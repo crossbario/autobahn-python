@@ -10,7 +10,5 @@
 
    "cases": ["*"],
    "exclude-cases": [],
-   "exclude-agent-cases": {"Firefox*": ["1.2.*", "9.2.*", "9.4.*", "9.6.*", "9.8.*"],
-                           "Firefox/7*": ["9.3.*", "10.*"],
-                           "MSIE*": ["3.*", "4.*", "5.*", "2.5.*"]}
+   "exclude-agent-cases": {}
 }

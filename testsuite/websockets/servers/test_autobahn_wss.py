@@ -17,6 +17,16 @@
 ###############################################################################
 
 import sys
+
+if sys.platform in ['freebsd8']:
+   from twisted.internet import kqreactor
+   kqreactor.install()
+
+if sys.platform in ['win32']:
+   from twisted.application.reactors import installReactor
+   installReactor("iocp")
+
+import sys
 from twisted.python import log
 from twisted.internet import reactor, ssl
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
@@ -46,4 +56,5 @@ if __name__ == '__main__':
    ##
    listenWS(factory, contextFactory)
 
+   log.msg("Using Twisted reactor class %s" % str(reactor.__class__))
    reactor.run()
