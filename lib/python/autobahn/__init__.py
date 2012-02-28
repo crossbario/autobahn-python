@@ -24,6 +24,7 @@ except:
    version = "?.?.?"
 
 import util
+import useragent
 import httpstatus
 import utf8validator
 import websocket
