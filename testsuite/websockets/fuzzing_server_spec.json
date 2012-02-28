@@ -9,6 +9,6 @@
    "outdir": "./reports/clients",
 
    "cases": ["*"],
-   "exclude-cases": [],
-   "exclude-agent-cases": {}
+   "exclude-cases": ["9.5.1", "9.5.2", "9.6.1", "9.6.2"],
+   "exclude-agent-cases": {"Firefox/10*": ["1.2.*", "9.2.*", "9.4.*", "9.6.*", "9.8.*"]}
 }
