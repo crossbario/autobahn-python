@@ -3,9 +3,8 @@
    "enable-ssl": false,
 
    "servers": [
-               {"agent": "websocket++/HEAD", "url": "ws://localhost:9002", "options": {"version": 17}},
-               {"agent": "Jetty/7.5.4", "url": "ws://localhost:8080", "options": {"version": 17}},
-               {"agent": "AutobahnServer", "url": "ws://localhost:9000", "options": {"version": 17}}
+               {"agent": "AutobahnServer/0.4.11", "url": "ws://192.168.1.141:9000", "options": {"version": 17}},
+               {"agent": "Tornado/2.2", "url": "ws://192.168.1.141:9010", "options": {"version": 17}}
                ],
 
    "cases": ["*"],
