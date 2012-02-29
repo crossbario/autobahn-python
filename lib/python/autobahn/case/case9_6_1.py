@@ -30,7 +30,7 @@ class Case9_6_1(Case):
    def init(self):
       self.DATALEN = 1 * 2**20
       self.PAYLOAD = "\x00\xfe\x23\xfa\xf0"
-      self.WAITSECS = 600
+      self.WAITSECS = 1000
       self.reportTime = True
       self.setChopSize()
 
@@ -55,5 +55,3 @@ class Case9_6_1(Case):
             self.result = "Received binary message of length %d." % len(msg)
       self.p.createWirelog = True
       self.p.sendClose(self.p.CLOSE_STATUS_CODE_NORMAL)
-
-

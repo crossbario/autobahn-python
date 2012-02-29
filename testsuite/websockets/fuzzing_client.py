@@ -18,13 +18,13 @@
 
 import sys
 
-if sys.platform in ['freebsd8']:
-   from twisted.internet import kqreactor
-   kqreactor.install()
+#if sys.platform in ['freebsd8']:
+#   from twisted.internet import kqreactor
+#   kqreactor.install()
 
-if sys.platform in ['win32']:
-   from twisted.application.reactors import installReactor
-   installReactor("iocp")
+#if sys.platform in ['win32']:
+#   from twisted.application.reactors import installReactor
+#   installReactor("iocp")
 
 import sys, json
 from twisted.python import log
