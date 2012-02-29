@@ -26,7 +26,10 @@ if sys.platform in ['win32']:
    from twisted.application.reactors import installReactor
    installReactor("iocp")
 
-import sys
+if sys.platform in ['linux2']:
+   from twisted.internet import epollreactor
+   epollreactor.install()
+
 from twisted.python import log
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
