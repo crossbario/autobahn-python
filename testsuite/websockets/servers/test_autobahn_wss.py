@@ -18,15 +18,22 @@
 
 import sys
 
-if sys.platform in ['freebsd8']:
-   from twisted.internet import kqreactor
-   kqreactor.install()
+if 'bsd' in sys.platform or sys.platform.startswith('darwin'):
+   try:
+      from twisted.internet import kqreactor
+      kqreactor.install()
+   except:
+      # kqueue only available on Twisted trunk ()
+      pass
 
 if sys.platform in ['win32']:
    from twisted.application.reactors import installReactor
    installReactor("iocp")
 
-import sys
+if sys.platform.startswith('linux'):
+   from twisted.internet import epollreactor
+   epollreactor.install()
+
 from twisted.python import log
 from twisted.internet import reactor, ssl
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
