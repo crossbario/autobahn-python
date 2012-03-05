@@ -27,15 +27,26 @@ TESTCMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(coun
 SERVERS = [{'name': 'Autobahn/0.4.11', 'uri': 'ws://192.168.1.120:9000/'},
            {'name': 'WebSocket++/HEAD', 'uri': 'ws://192.168.1.133:9002/'}]
 
-#SIZES = [0, 16, 64, 256, 1024, 4096]
-SIZES = [[10000, 0]]
+SIZES = [[10000, 0],
+         [10000, 16],
+         [10000, 64],
+         [10000, 256],
+         [10000, 1024],
+         [10000, 4096],
+         ]
+
+#SIZES = [[10000, 0]]
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
    def sendNext(self):
       if self.current == len(self.tests):
          return True
-      cmd = TESTCMD % self.tests[self.current]
+      test = self.tests[self.current]
+      cmd = TESTCMD % test
+      if self.factory.debugWsPerf:
+         print cmd
+      print "Starting test for testee %s" % test['name']
       self.sendMessage(cmd)
       self.current += 1
 
@@ -51,8 +62,17 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             self.tests.append(test)
             self.testdefs[id] = test
 
+   def onTestsComplete(self):
+      print "ALL TESTS COMPLETE!"
+      if factory.debugWsPerf:
+         self.pp.pprint(self.testresults)
+      for test in self.tests:
+         result = self.testresults[test['token']]
+         median_microsecs = int(round(result['data']['median'] / 1000))
+         print ','.join([str(x) for x in [test['name'], test['size'], median_microsecs]])
+      reactor.stop()
+
    def onOpen(self):
-      self.debug = False
       self.pp = pprint.PrettyPrinter(indent = 3)
       self.tests = []
       self.testdefs = {}
@@ -67,11 +87,10 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             o = json.loads(msg)
             if o['type'] == u'test_complete':
                if self.sendNext():
-                  print "ALL TESTS COMPLETE!"
-                  self.pp.pprint(self.testresults)
-                  reactor.stop()
+                  self.onTestsComplete()
             elif o['type'] == u'test_data':
-               self.pp.pprint(o)
+               if self.factory.debugWsPerf:
+                  self.pp.pprint(o)
                self.testresults[o['token']] = o
          except ValueError, e:
             pass
@@ -81,6 +100,7 @@ if __name__ == '__main__':
 
    #log.startLogging(sys.stdout)
    factory = WebSocketClientFactory("ws://192.168.1.141:9002", debug = False)
+   factory.debugWsPerf = False
    factory.protocol = WsPerfCommanderProtocol
    connectWS(factory)
    reactor.run()
