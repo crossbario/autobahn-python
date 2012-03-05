@@ -22,7 +22,8 @@ from twisted.python import log, usage
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.util import newid
 
-WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=length;"""
+#WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=length;"""
+WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=false;sync=true;correctness=length;"""
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
@@ -67,7 +68,7 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
          outfile = open(self.factory.outfile, 'w')
       else:
          outfile = sys.stdout
-      outfile.write(factory.sep.join(['name', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
+      outfile.write(factory.sep.join(['name', 'count', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
       for i in xrange(10):
          outfile.write(factory.sep)
          outfile.write("q%d" % i)
@@ -75,6 +76,7 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       for test in self.tests:
          result = self.testresults[test['token']]
          outfile.write(factory.sep.join([str(x) for x in [test['name'],
+                                                          test['count'],
                                                           test['size'],
                                                           self.getMicroSec(result, 'min'),
                                                           self.getMicroSec(result, 'median'),
