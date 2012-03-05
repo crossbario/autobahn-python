@@ -22,27 +22,43 @@ from twisted.python import log
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.util import newid
 
-TESTCMD = """message_test:uri=ws://192.168.1.120:9000/;token=%(token)s;size=%(size)d;count=10000;timeout=10000;binary=true;sync=true;correctness=exact;"""
+TESTCMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=exact;"""
 
-SERVERS = [{'name': 'Autobahn/0.4.11', 'uri': 'ws://192.168.1.120:9000'},
-           {'name': 'WebSocket++/HEAD', 'uri': 'ws://192.168.1.141:9002'}]
+SERVERS = [{'name': 'Autobahn/0.4.11', 'uri': 'ws://192.168.1.120:9000/'},
+           {'name': 'WebSocket++/HEAD', 'uri': 'ws://192.168.1.133:9002/'}]
 
-SIZES = [0, 16, 64, 256, 1024, 4096]
-#SIZES = [0]
+#SIZES = [0, 16, 64, 256, 1024, 4096]
+SIZES = [[10000, 0]]
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
    def sendNext(self):
-      id = newid()
-      cmd = TESTCMD % {'size': SIZES[self.current],
-                       'token': id}
-      print cmd
+      if self.current == len(self.tests):
+         return True
+      cmd = TESTCMD % self.tests[self.current]
       self.sendMessage(cmd)
       self.current += 1
 
+   def setupTests(self):
+      for server in SERVERS:
+         for size in SIZES:
+            id = newid()
+            test = {'uri': server['uri'],
+                    'name': server['name'],
+                    'count': size[0],
+                    'size': size[1],
+                    'token': id}
+            self.tests.append(test)
+            self.testdefs[id] = test
+
    def onOpen(self):
+      self.debug = False
       self.pp = pprint.PrettyPrinter(indent = 3)
+      self.tests = []
+      self.testdefs = {}
+      self.testresults = {}
       self.current = 0
+      self.setupTests()
       self.sendNext()
 
    def onMessage(self, msg, binary):
@@ -50,13 +66,13 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
          try:
             o = json.loads(msg)
             if o['type'] == u'test_complete':
-               if self.current < len(SIZES) - 1:
-                  self.sendNext()
-               else:
+               if self.sendNext():
                   print "ALL TESTS COMPLETE!"
+                  self.pp.pprint(self.testresults)
                   reactor.stop()
             elif o['type'] == u'test_data':
                self.pp.pprint(o)
+               self.testresults[o['token']] = o
          except ValueError, e:
             pass
 
