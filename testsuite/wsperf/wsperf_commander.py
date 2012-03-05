@@ -18,24 +18,11 @@
 
 import sys, json, pprint
 from twisted.internet import reactor
-from twisted.python import log
+from twisted.python import log, usage
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.util import newid
 
-TESTCMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=exact;"""
-
-SERVERS = [{'name': 'Autobahn/0.4.11', 'uri': 'ws://192.168.1.120:9000/'},
-           {'name': 'WebSocket++/HEAD', 'uri': 'ws://192.168.1.133:9002/'}]
-
-SIZES = [[10000, 0],
-         [10000, 16],
-         [10000, 64],
-         [10000, 256],
-         [10000, 1024],
-         [10000, 4096],
-         ]
-
-#SIZES = [[10000, 0]]
+WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=exact;"""
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
@@ -43,27 +30,30 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       if self.current == len(self.tests):
          return True
       test = self.tests[self.current]
-      cmd = TESTCMD % test
+      cmd = WSPERF_CMD % test
       if self.factory.debugWsPerf:
          print cmd
-      print "Starting test for testee %s" % test['name']
+      #print "Starting test for testee %s" % test['name']
+      sys.stdout.write('.')
       self.sendMessage(cmd)
       self.current += 1
 
    def setupTests(self):
-      for server in SERVERS:
-         for size in SIZES:
+      for server in factory.spec['servers']:
+         for size in factory.spec['sizes']:
             id = newid()
-            test = {'uri': server['uri'],
-                    'name': server['name'],
+            test = {'uri': server['uri'].encode('utf8'),
+                    'name': server['name'].encode('utf8'),
                     'count': size[0],
                     'size': size[1],
                     'token': id}
             self.tests.append(test)
             self.testdefs[id] = test
+      sys.stdout.write("Running %d tests against %d servers: " % (len(factory.spec['sizes']), len(factory.spec['servers'])))
 
    def onTestsComplete(self):
-      print "ALL TESTS COMPLETE!"
+      print " - all tests finished."
+      print
       if factory.debugWsPerf:
          self.pp.pprint(self.testresults)
       for test in self.tests:
@@ -96,11 +86,36 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             pass
 
 
+class WsPerfCommanderOptions(usage.Options):
+   optParameters = [
+      ['wsperf', 'w', None, 'URI of wsperf running in master mode.']
+   ]
+
+   optFlags = [
+      ['debug', 'd', 'Debug wsperf commander/protocol.']
+   ]
+
+   def postOptions(self):
+      if not self['wsperf']:
+         raise usage.UsageError, "need wsperf URI!"
+
 if __name__ == '__main__':
 
+   o = WsPerfCommanderOptions()
+   try:
+      o.parseOptions()
+   except usage.UsageError, errortext:
+      print '%s %s' % (sys.argv[0], errortext)
+      print 'Try %s --help for usage details' % sys.argv[0]
+      sys.exit(1)
+
+   wsperf = str(o.opts['wsperf'])
+   debug = o.opts['debug'] != 0
+
    #log.startLogging(sys.stdout)
-   factory = WebSocketClientFactory("ws://192.168.1.141:9002", debug = False)
-   factory.debugWsPerf = False
+   factory = WebSocketClientFactory(wsperf)
+   factory.debugWsPerf = debug
+   factory.spec = json.loads(open("wsperf_commander.json").read())
    factory.protocol = WsPerfCommanderProtocol
    connectWS(factory)
    reactor.run()
