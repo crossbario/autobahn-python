@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys, json
+import sys, json, pprint
 from twisted.internet import reactor
 from twisted.python import log
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
@@ -27,20 +27,21 @@ TESTCMD = """message_test:uri=ws://192.168.1.120:9000/;token=foo;size=4096;count
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
+      self.pp = pprint.PrettyPrinter(indent = 3)
       self.sendMessage(TESTCMD)
 
    def onMessage(self, msg, binary):
       if not binary:
          try:
             o = json.loads(msg)
-            print o
+            self.pp.pprint(o)
          except ValueError, e:
             pass
 
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
+   #log.startLogging(sys.stdout)
    factory = WebSocketClientFactory("ws://192.168.1.141:9002", debug = False)
    factory.protocol = WsPerfCommanderProtocol
    connectWS(factory)
