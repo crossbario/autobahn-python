@@ -52,8 +52,11 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       sys.stdout.write("Running %d tests against %d servers: " % (len(factory.spec['sizes']), len(factory.spec['servers'])))
 
 
-   def toMicroSec(self, result, field):
-      return int(round(result['data'][field] / 1000))
+   def toMicroSec(self, value):
+      return str(int(round(value / 1000)))
+
+   def getMicroSec(self, result, field):
+      return self.toMicroSec(result['data'][field])
 
    def onTestsComplete(self):
       print " All tests finished."
@@ -65,17 +68,24 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       else:
          outfile = sys.stdout
       outfile.write(factory.sep.join(['name', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
+      for i in xrange(10):
+         outfile.write(factory.sep)
+         outfile.write("q%d" % i)
       outfile.write('\n')
       for test in self.tests:
          result = self.testresults[test['token']]
          outfile.write(factory.sep.join([str(x) for x in [test['name'],
                                                           test['size'],
-                                                          self.toMicroSec(result, 'min'),
-                                                          self.toMicroSec(result, 'median'),
-                                                          self.toMicroSec(result, 'max'),
-                                                          self.toMicroSec(result, 'avg'),
-                                                          self.toMicroSec(result, 'stddev'),
+                                                          self.getMicroSec(result, 'min'),
+                                                          self.getMicroSec(result, 'median'),
+                                                          self.getMicroSec(result, 'max'),
+                                                          self.getMicroSec(result, 'avg'),
+                                                          self.getMicroSec(result, 'stddev'),
                                                           ]]))
+         for i in xrange(10):
+            outfile.write(factory.sep)
+            if result['data'].has_key('quantiles'):
+               outfile.write(self.toMicroSec(result['data']['quantiles'][i]))
          outfile.write('\n')
       if self.factory.outfile:
          print "Test data written to %s." % self.factory.outfile
