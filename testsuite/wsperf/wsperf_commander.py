@@ -22,17 +22,18 @@ from twisted.python import log, usage
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.util import newid
 
-
-WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=length;"""
-#WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=false;sync=true;correctness=length;"""
+# wsperf [port] [num_workers]
+# count, size, timeout, binary, sync, correctness
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
+
+   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;correctness=%(correctness)s;"""
 
    def sendNext(self):
       if self.current == len(self.tests):
          return True
       test = self.tests[self.current]
-      cmd = WSPERF_CMD % test
+      cmd = self.WSPERF_CMD % test
       if self.factory.debugWsPerf:
          print cmd
       #print "Starting test for testee %s" % test['name']
@@ -47,6 +48,10 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             test = {'uri': server['uri'].encode('utf8'),
                     'name': server['name'].encode('utf8'),
                     'count': size[0],
+                    'timeout': size[2],
+                    'binary': 'true' if size[3] else 'false',
+                    'sync': 'true' if size[4] else 'false',
+                    'correctness': 'exact' if size[5] else 'length',
                     'size': size[1],
                     'token': id}
             self.tests.append(test)
@@ -55,7 +60,13 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
 
    def toMicroSec(self, value):
-      return str(int(round(value / 1000)))
+      return str(round(float(value) / 1000., 1))
+      val = int(round(float(value) / 1000.))
+      #if val > 0:
+      #   return str(val)
+      #else:
+      #   return str(float(value) / 1000.)
+      #   #return "<1"
 
    def getMicroSec(self, result, field):
       return self.toMicroSec(result['data'][field])
@@ -69,27 +80,42 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
          outfile = open(self.factory.outfile, 'w')
       else:
          outfile = sys.stdout
-      outfile.write(factory.sep.join(['name', 'count', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
+      outfile.write(factory.sep.join(['name', 'outcome', 'count', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
       for i in xrange(10):
          outfile.write(factory.sep)
          outfile.write("q%d" % i)
       outfile.write('\n')
       for test in self.tests:
          result = self.testresults[test['token']]
-         outfile.write(factory.sep.join([str(x) for x in [test['name'],
-                                                          test['count'],
-                                                          test['size'],
-                                                          self.getMicroSec(result, 'min'),
-                                                          self.getMicroSec(result, 'median'),
-                                                          self.getMicroSec(result, 'max'),
-                                                          self.getMicroSec(result, 'avg'),
-                                                          self.getMicroSec(result, 'stddev'),
-                                                          ]]))
-         for i in xrange(10):
-            outfile.write(factory.sep)
-            if result['data'].has_key('quantiles'):
-               outfile.write(self.toMicroSec(result['data']['quantiles'][i]))
-         outfile.write('\n')
+
+         outcome = result['data']['result']
+         if outcome == 'connection_failed':
+            outfile.write(factory.sep.join([test['name'], 'UNREACHABLE']))
+            outfile.write('\n')
+         elif outcome == 'time_out':
+            outfile.write(factory.sep.join([test['name'], 'TIMEOUT']))
+            outfile.write('\n')
+         elif outcome == 'fail':
+            outfile.write(factory.sep.join([test['name'], 'FAILED']))
+            outfile.write('\n')
+         elif outcome == 'pass':
+            outfile.write(factory.sep.join([str(x) for x in [test['name'],
+                                                             'PASSED',
+                                                             test['count'],
+                                                             test['size'],
+                                                             self.getMicroSec(result, 'min'),
+                                                             self.getMicroSec(result, 'median'),
+                                                             self.getMicroSec(result, 'max'),
+                                                             self.getMicroSec(result, 'avg'),
+                                                             self.getMicroSec(result, 'stddev'),
+                                                             ]]))
+            for i in xrange(10):
+               outfile.write(factory.sep)
+               if result['data'].has_key('quantiles'):
+                  outfile.write(self.toMicroSec(result['data']['quantiles'][i]))
+            outfile.write('\n')
+         else:
+            raise Exception("unknown case outcome '%s'" % outcome)
       if self.factory.outfile:
          print "Test data written to %s." % self.factory.outfile
       reactor.stop()
