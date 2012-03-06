@@ -27,7 +27,7 @@ from autobahn.util import newid
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
-   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;correctness=%(correctness)s;"""
+   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantiles=%(quantiles)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
 
    def sendNext(self):
       if self.current == len(self.tests):
@@ -48,9 +48,11 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             test = {'uri': server['uri'].encode('utf8'),
                     'name': server['name'].encode('utf8'),
                     'count': size[0],
+                    'quantiles': self.factory.spec['options']['quantiles'],
                     'timeout': size[2],
                     'binary': 'true' if size[3] else 'false',
                     'sync': 'true' if size[4] else 'false',
+                    'rtts': 'true' if self.factory.spec['options']['rtts'] else 'false',
                     'correctness': 'exact' if size[5] else 'length',
                     'size': size[1],
                     'token': id}
@@ -59,7 +61,7 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       sys.stdout.write("Running %d tests against %d servers: " % (len(factory.spec['sizes']), len(factory.spec['servers'])))
 
    def toMicroSec(self, value):
-      return ("%." + str(self.factory.digits) + "f") % round(float(value) / 1000., self.factory.digits)
+      return ("%." + str(self.factory.digits) + "f") % round(float(value), self.factory.digits)
 
    def getMicroSec(self, result, field):
       return self.toMicroSec(result['data'][field])
@@ -74,7 +76,10 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
       else:
          outfile = sys.stdout
       outfile.write(factory.sep.join(['name', 'outcome', 'count', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
-      for i in xrange(10):
+
+      quantile_count = self.factory.spec['options']['quantiles']
+
+      for i in xrange(quantile_count):
          outfile.write(factory.sep)
          outfile.write("q%d" % i)
       outfile.write('\n')
@@ -102,10 +107,10 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
                                                              self.getMicroSec(result, 'avg'),
                                                              self.getMicroSec(result, 'stddev'),
                                                              ]]))
-            for i in xrange(10):
+            for i in xrange(quantile_count):
                outfile.write(factory.sep)
                if result['data'].has_key('quantiles'):
-                  outfile.write(self.toMicroSec(result['data']['quantiles'][i]))
+                  outfile.write(self.toMicroSec(result['data']['quantiles'][i][1]))
             outfile.write('\n')
          else:
             raise Exception("unknown case outcome '%s'" % outcome)
@@ -139,8 +144,8 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
 class WsPerfCommanderOptions(usage.Options):
    optParameters = [
-      ['wsperf', 'w', None, 'URI of wsperf running in master mode.'],
-      ['spec', 's', 'wsperf_commander.json', 'Test specification file [default: wsperf_commander.json].'],
+      ['wsperf', 'w', None, 'URI of wsperf running in master mode [required].'],
+      ['spec', 's', None, 'Test specification file [required].'],
       ['outfile', 'o', None, 'Test report output file [default: None].'],
       ['comma', 'c', '\t', 'Separator character [default: tab].'],
       ['digits', 'e', 0, 'Decimal digits [default: 0].'],
@@ -152,7 +157,9 @@ class WsPerfCommanderOptions(usage.Options):
 
    def postOptions(self):
       if not self['wsperf']:
-         raise usage.UsageError, "need wsperf URI!"
+         raise usage.UsageError, "Need wsperf URI!"
+      if not self['spec']:
+         raise usage.UsageError, "Need test spec file!"
 
 
 if __name__ == '__main__':
@@ -161,8 +168,9 @@ if __name__ == '__main__':
    try:
       o.parseOptions()
    except usage.UsageError, errortext:
-      print '%s %s' % (sys.argv[0], errortext)
-      print 'Try %s --help for usage details' % sys.argv[0]
+      print '%s %s\n' % (sys.argv[0], errortext)
+      print 'Try %s --help for usage details\n' % sys.argv[0]
+      print 'Example: python wsperf_commander.py -w ws://localhost:9002 -s test_autobahn.json -o report.txt'
       sys.exit(1)
 
    wsperf = str(o.opts['wsperf'])
