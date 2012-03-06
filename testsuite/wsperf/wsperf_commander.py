@@ -58,15 +58,8 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             self.testdefs[id] = test
       sys.stdout.write("Running %d tests against %d servers: " % (len(factory.spec['sizes']), len(factory.spec['servers'])))
 
-
    def toMicroSec(self, value):
-      return str(round(float(value) / 1000., 1))
-      val = int(round(float(value) / 1000.))
-      #if val > 0:
-      #   return str(val)
-      #else:
-      #   return str(float(value) / 1000.)
-      #   #return "<1"
+      return ("%." + str(self.factory.digits) + "f") % round(float(value) / 1000., self.factory.digits)
 
    def getMicroSec(self, result, field):
       return self.toMicroSec(result['data'][field])
@@ -149,7 +142,8 @@ class WsPerfCommanderOptions(usage.Options):
       ['wsperf', 'w', None, 'URI of wsperf running in master mode.'],
       ['spec', 's', 'wsperf_commander.json', 'Test specification file [default: wsperf_commander.json].'],
       ['outfile', 'o', None, 'Test report output file [default: None].'],
-      ['comma', 'c', '\t', 'Separator character [default: tab].']
+      ['comma', 'c', '\t', 'Separator character [default: tab].'],
+      ['digits', 'e', 0, 'Decimal digits [default: 0].'],
    ]
 
    optFlags = [
@@ -175,6 +169,7 @@ if __name__ == '__main__':
    debug = o.opts['debug'] != 0
    spec = str(o.opts['spec'])
    sep = str(o.opts['comma'])[0]
+   digits = int(o.opts['digits'])
 
    #log.startLogging(sys.stdout)
    factory = WebSocketClientFactory(wsperf)
@@ -182,6 +177,7 @@ if __name__ == '__main__':
    factory.spec = json.loads(open(spec).read())
    factory.outfile = o.opts['outfile']
    factory.sep = sep
+   factory.digits = digits
    factory.protocol = WsPerfCommanderProtocol
    connectWS(factory)
    reactor.run()
