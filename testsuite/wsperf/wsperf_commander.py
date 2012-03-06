@@ -22,7 +22,6 @@ from twisted.python import log, usage
 from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
 from autobahn.util import newid
 
-
 WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=true;sync=true;correctness=length;"""
 #WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;timeout=10000;binary=false;sync=true;correctness=length;"""
 
