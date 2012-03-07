@@ -24,6 +24,7 @@ from autobahn.util import newid
 
 # wsperf [port] [num_workers]
 # count, size, timeout, binary, sync, correctness
+# top-N => N largest RTTs
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
