@@ -12,7 +12,7 @@ you derive from to implement WebSockets servers.
 Server Protocol
 ---------------
 
-Usually, you implement your WebSocket client by creating a protocol that
+Usually, you implement your WebSocket server by creating a protocol that
 derives from :class:`autobahn.websocket.WebSocketServerProtocol`.
 
 This class in turn derives from :class:`autobahn.websocket.WebSocketProtocol`,
