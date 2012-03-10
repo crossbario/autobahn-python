@@ -15,6 +15,7 @@ $(document).ready(function() {
 
       sess.subscribe("event:slaveConnected", onSlaveConnected);
       sess.subscribe("event:slaveDisconnected", onSlaveDisconnected);
+      sess.subscribe("event:caseResult", onCaseResult);
    });
 
    function onSlaveConnected(topic, event) {
@@ -26,4 +27,19 @@ $(document).ready(function() {
       ab.log("wsperf slave " + "[" + event.id + "] disconnected.");
       ab.log(event);
    };
+
+   function onCaseResult(topic, event) {
+      ab.log("wsperf case result");
+      ab.log(event);
+   };
 });
+
+function runCase() {
+
+   var cd = {};
+   cd.size = parseInt($("#runcase_size").val());
+   cd.binary = $("#runcase_binary").attr("checked") != undefined;
+   ab.log(cd);
+
+   sess.call("api:runCase", cd).always(ab.log);
+};

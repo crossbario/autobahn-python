@@ -43,7 +43,13 @@ URI_EVENT = "http://wsperf.org/event#"
 class WsPerfProtocol(WebSocketServerProtocol):
 
    WSPERF_PROTOCOL_ERROR = 3000
-   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantiles=%(quantiles)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
+   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantile_count=%(quantile_count)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
+
+   def toMicroSec(self, value):
+      return ("%." + str(self.factory.digits) + "f") % round(float(value), self.factory.digits)
+
+   def getMicroSec(self, result, field):
+      return self.toMicroSec(result['data'][field])
 
    def onConnect(self, connectionRequest):
       if 'wsperf' in connectionRequest.protocols:
@@ -53,13 +59,32 @@ class WsPerfProtocol(WebSocketServerProtocol):
                              "You need to speak wsperf subprotocol with this server!")
 
    def onOpen(self):
+      self.pp = pprint.PrettyPrinter(indent = 3)
       self.slaveConnected = False
       self.slaveId = newid()
 
    def onClose(self, wasClean, code, reason):
+      self.factory.removeSlave(self.slaveId)
       self.factory.uiFactory.slaveDisconnected(self.slaveId)
       self.slaveConnected = False
       self.slaveId = None
+
+   def runCase(self, caseDef):
+      id = newid()
+      test = {'uri': "ws://localhost:9000",
+              'name': "foobar",
+              'count': 100,
+              'quantile_count': 10,
+              'timeout': 10000,
+              'binary': 'true' if True else 'false',
+              'sync': 'true' if True else 'false',
+              'rtts': 'true' if False else 'false',
+              'correctness': 'exact' if False else 'length',
+              'size': 4096,
+              'token': id}
+      cmd = self.WSPERF_CMD % test
+      print cmd
+      self.sendMessage(cmd)
 
    def protocolError(self, msg):
       self.sendClose(self, self.WSPERF_PROTOCOL_ERROR, msg)
@@ -69,13 +94,15 @@ class WsPerfProtocol(WebSocketServerProtocol):
       if not binary:
          try:
             o = json.loads(msg)
-            if o['type'] == u'test_complete':
-               if self.sendNext():
-                  self.onTestsComplete()
+            if self.factory.debugWsPerf:
+               self.pp.pprint(o)
+
+            if o['type'] == u'error':
+               pass
+            elif o['type'] == u'test_complete':
+               pass
             elif o['type'] == u'test_data':
-               if self.factory.debugWsPerf:
-                  self.pp.pprint(o)
-               self.testresults[o['token']] = o
+               self.factory.uiFactory.caseResult(o)
 
             ## WELCOME
             ##
@@ -86,16 +113,43 @@ class WsPerfProtocol(WebSocketServerProtocol):
                   self.protocolError("duplicate welcome message")
                else:
                   self.slaveConnected = True
+                  self.factory.addSlave(self, self.slaveId)
                   self.factory.uiFactory.slaveConnected(self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
          except ValueError, e:
             raise Exception("could not decode text message as JSON (%s)" % str(e))
       else:
-         raise Exception("unexecpted binary message")
+         raise Exception("unexpected binary message")
 
 
 class WsPerfFactory(WebSocketServerFactory):
 
    protocol = WsPerfProtocol
+
+   def startFactory(self):
+      self.slavesToProtos = {}
+      self.protoToSlaves = {}
+
+   def addSlave(self, proto, id):
+      if not self.protoToSlaves.has_key(proto):
+         self.protoToSlaves[proto] = id
+      else:
+         raise Exception("logic error - duplicate proto in addSlave")
+      if not self.slavesToProtos.has_key(id):
+         self.slavesToProtos[id] = proto
+      else:
+         raise Exception("logic error - duplicate id in addSlave")
+
+   def removeSlave(self, proto):
+      if self.protoToSlaves.has_key(proto):
+         id = self.protoToSlaves[proto]
+         del self.protoToSlaves[proto]
+         if self.slavesToProtos.has_key(id):
+            del self.slavesToProtos[id]
+
+   def runCase(self, caseDef):
+      for proto in self.protoToSlaves:
+         print "runCase", proto
+         proto.runCase(caseDef)
 
 
 
@@ -104,6 +158,11 @@ class WsPerfUiProtocol(WampServerProtocol):
    @exportRpc
    def sum(self, list):
       return reduce(lambda x, y: x + y, list)
+
+   @exportRpc
+   def runCase(self, caseDef):
+      print "runCase", caseDef
+      self.factory.slaveFactory.runCase(caseDef)
 
    def onSessionOpen(self):
       self.registerForRpc(self, URI_RPC)
@@ -125,6 +184,9 @@ class WsPerfUiFactory(WampServerFactory):
    def slaveDisconnected(self, id):
       self._dispatchEvent(URI_EVENT + "slaveDisconnected", {'id': id})
 
+   def caseResult(self, result):
+      self._dispatchEvent(URI_EVENT + "caseResult", result)
+
 
 
 if __name__ == '__main__':
@@ -135,6 +197,7 @@ if __name__ == '__main__':
    ##
    wsperf = WsPerfFactory("ws://localhost:9090")
    #wsperf.debug = True
+   wsperf.debugWsPerf = True
    listenWS(wsperf)
 
    ## Web Server for UI static files
