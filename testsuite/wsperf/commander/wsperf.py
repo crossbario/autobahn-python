@@ -40,6 +40,8 @@ URI_RPC = "http://wsperf.org/api#"
 URI_EVENT = "http://wsperf.org/event#"
 
 
+# wsperf -c -u ws://localhost:9090 -i "win1"
+
 class WsPerfProtocol(WebSocketServerProtocol):
 
    WSPERF_PROTOCOL_ERROR = 3000
@@ -64,26 +66,25 @@ class WsPerfProtocol(WebSocketServerProtocol):
       self.slaveId = newid()
 
    def onClose(self, wasClean, code, reason):
-      self.factory.removeSlave(self.slaveId)
-      self.factory.uiFactory.slaveDisconnected(self.slaveId)
+      self.factory.removeSlave(self)
       self.slaveConnected = False
       self.slaveId = None
 
-   def runCase(self, caseDef):
-      id = newid()
-      test = {'uri': "ws://localhost:9000",
+   def runCase(self, runId, caseDef):
+      test = {'uri': caseDef['uri'].encode('utf8'),
               'name': "foobar",
-              'count': 100,
-              'quantile_count': 10,
-              'timeout': 10000,
-              'binary': 'true' if True else 'false',
-              'sync': 'true' if True else 'false',
+              'count': caseDef['count'],
+              'quantile_count': caseDef['quantile_count'],
+              'timeout': caseDef['timeout'],
+              'binary': 'true' if caseDef['binary'] else 'false',
+              'sync': 'true' if caseDef['sync'] else 'false',
               'rtts': 'true' if False else 'false',
-              'correctness': 'exact' if False else 'length',
-              'size': 4096,
-              'token': id}
+              'correctness': str(caseDef['correctness']),
+              'size': caseDef['size'],
+              'token': runId}
       cmd = self.WSPERF_CMD % test
-      print cmd
+      if self.factory.debugWsPerf:
+         self.pp.pprint(cmd)
       self.sendMessage(cmd)
 
    def protocolError(self, msg):
@@ -102,7 +103,9 @@ class WsPerfProtocol(WebSocketServerProtocol):
             elif o['type'] == u'test_complete':
                pass
             elif o['type'] == u'test_data':
-               self.factory.uiFactory.caseResult(o)
+               runId = o['token']
+               result = o['data']
+               self.factory.caseResult(self.slaveId, runId, result)
 
             ## WELCOME
             ##
@@ -113,8 +116,7 @@ class WsPerfProtocol(WebSocketServerProtocol):
                   self.protocolError("duplicate welcome message")
                else:
                   self.slaveConnected = True
-                  self.factory.addSlave(self, self.slaveId)
-                  self.factory.uiFactory.slaveConnected(self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
+                  self.factory.addSlave(self, self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
          except ValueError, e:
             raise Exception("could not decode text message as JSON (%s)" % str(e))
       else:
@@ -128,8 +130,9 @@ class WsPerfFactory(WebSocketServerFactory):
    def startFactory(self):
       self.slavesToProtos = {}
       self.protoToSlaves = {}
+      self.slaves = {}
 
-   def addSlave(self, proto, id):
+   def addSlave(self, proto, id, host, port, version, ident):
       if not self.protoToSlaves.has_key(proto):
          self.protoToSlaves[proto] = id
       else:
@@ -138,6 +141,8 @@ class WsPerfFactory(WebSocketServerFactory):
          self.slavesToProtos[id] = proto
       else:
          raise Exception("logic error - duplicate id in addSlave")
+      self.slaves[id] = {'id': id, 'host': host, 'port': port, 'version': version, 'ident': ident}
+      self.uiFactory.slaveConnected(id, host, port, version, ident)
 
    def removeSlave(self, proto):
       if self.protoToSlaves.has_key(proto):
@@ -145,29 +150,36 @@ class WsPerfFactory(WebSocketServerFactory):
          del self.protoToSlaves[proto]
          if self.slavesToProtos.has_key(id):
             del self.slavesToProtos[id]
+         if self.slaves.has_key(id):
+            del self.slaves[id]
+         self.uiFactory.slaveDisconnected(id)
+
+   def getSlaves(self):
+      return self.slaves.values()
 
    def runCase(self, caseDef):
+      runId = newid()
       for proto in self.protoToSlaves:
-         print "runCase", proto
-         proto.runCase(caseDef)
+         proto.runCase(runId, caseDef)
+      return runId
 
+   def caseResult(self, slaveId, runId, result):
+      self.uiFactory.caseResult(slaveId, runId, result)
 
 
 class WsPerfUiProtocol(WampServerProtocol):
 
    @exportRpc
-   def sum(self, list):
-      return reduce(lambda x, y: x + y, list)
+   def runCase(self, caseDef):
+      return self.factory.runCase(caseDef)
 
    @exportRpc
-   def runCase(self, caseDef):
-      print "runCase", caseDef
-      self.factory.slaveFactory.runCase(caseDef)
+   def getSlaves(self):
+      return self.factory.getSlaves()
 
    def onSessionOpen(self):
       self.registerForRpc(self, URI_RPC)
       self.registerForPubSub(URI_EVENT, True)
-      #reactor.callLater(1, self.slaveConnected)
 
 
 class WsPerfUiFactory(WampServerFactory):
@@ -184,8 +196,15 @@ class WsPerfUiFactory(WampServerFactory):
    def slaveDisconnected(self, id):
       self._dispatchEvent(URI_EVENT + "slaveDisconnected", {'id': id})
 
-   def caseResult(self, result):
-      self._dispatchEvent(URI_EVENT + "caseResult", result)
+   def getSlaves(self):
+      return self.slaveFactory.getSlaves()
+
+   def runCase(self, caseDef):
+      return self.slaveFactory.runCase(caseDef)
+
+   def caseResult(self, slaveId, runId, result):
+      event = {'slaveId': slaveId, 'runId': runId, 'result': result}
+      self._dispatchEvent(URI_EVENT + "caseResult", event)
 
 
 
@@ -196,8 +215,8 @@ if __name__ == '__main__':
    ## WAMP Server for wsperf slaves
    ##
    wsperf = WsPerfFactory("ws://localhost:9090")
-   #wsperf.debug = True
-   wsperf.debugWsPerf = True
+   wsperf.debug = False
+   wsperf.debugWsPerf = False
    listenWS(wsperf)
 
    ## Web Server for UI static files
@@ -209,6 +228,8 @@ if __name__ == '__main__':
    ## WAMP Server for UI
    ##
    wsperfUi = WsPerfUiFactory("ws://localhost:9091")
+   wsperfUi.debug = False
+   wsperfUi.debugWamp = False
    listenWS(wsperfUi)
 
    ## Connect servers

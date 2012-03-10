@@ -11,11 +11,23 @@
       <h2>Run Case</h2>
       <form name="runcase">
 
-         <p>Size: <input id="runcase_size" type="text" size="10" maxlength="10" value="4096"></p>
-         <p>Binary: <input id="runcase_binary" type="checkbox"></p>
+         <p>Testee URI: <input id="runcase_uri" type="text" size="30" maxlength="50" value="ws://localhost:9000"></p>
+         <p>Count: <input id="runcase_count" type="text" size="6" maxlength="6" value="100"></p>
+         <p>Size: <input id="runcase_size" type="text" size="9" maxlength="9" value="4096"></p>
+         <p>Timeout: <input id="runcase_timeout" type="text" size="5" maxlength="5" value="1000"></p>
+         <p>Binary: <input id="runcase_binary" type="checkbox" checked></p>
+         <p>Sync: <input id="runcase_sync" type="checkbox" checked></p>
+         <p>Bins: <input id="runcase_bins" type="text" size="4" maxlength="4" value="10"></p>
+         <p>
+            Check Mode:
+            <input type="radio" name="checkmode" value="length" checked> Length
+            <input type="radio" name="checkmode" value="hash"> Hash
+         </p>
 
       </form>
-      <button onclick="runCase();">Run</button>
+      <button onclick="runCase();">Start</button>
 
+      <br/><br/><br/>
+      <div id="statusline"></div>
    </body>
 </html>
