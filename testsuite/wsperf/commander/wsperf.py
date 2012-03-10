@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys
+import sys, json, pprint
 
 from twisted.python import log
 from twisted.internet import reactor
@@ -31,20 +31,66 @@ from autobahn.wamp import exportRpc, \
                           WampServerFactory, \
                           WampServerProtocol
 
+from autobahn.util import newid, utcnow
+
+from autobahn.websocket import HttpException
+from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 
 URI_RPC = "http://wsperf.org/api#"
 URI_EVENT = "http://wsperf.org/event#"
 
 
-
 class WsPerfProtocol(WebSocketServerProtocol):
 
+   WSPERF_PROTOCOL_ERROR = 3000
+   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantiles=%(quantiles)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
+
    def onConnect(self, connectionRequest):
-      self.factory.uiFactory.slaveConnected()
-      return "wsperf"
+      if 'wsperf' in connectionRequest.protocols:
+         return 'wsperf'
+      else:
+         raise HttpException(httpstatus.HTTP_STATUS_CODE_BAD_REQUEST[0],
+                             "You need to speak wsperf subprotocol with this server!")
+
+   def onOpen(self):
+      self.slaveConnected = False
+      self.slaveId = newid()
+
+   def onClose(self, wasClean, code, reason):
+      self.factory.uiFactory.slaveDisconnected(self.slaveId)
+      self.slaveConnected = False
+      self.slaveId = None
+
+   def protocolError(self, msg):
+      self.sendClose(self, self.WSPERF_PROTOCOL_ERROR, msg)
+      log.err("WSPERF_PROTOCOL_ERROR - %s" % msg)
 
    def onMessage(self, msg, binary):
-      print msg
+      if not binary:
+         try:
+            o = json.loads(msg)
+            if o['type'] == u'test_complete':
+               if self.sendNext():
+                  self.onTestsComplete()
+            elif o['type'] == u'test_data':
+               if self.factory.debugWsPerf:
+                  self.pp.pprint(o)
+               self.testresults[o['token']] = o
+
+            ## WELCOME
+            ##
+            ## {"type":"test_welcome","version":"wsperf/0.2.0dev WebSocket++/0.2.0dev","ident":"win1"}
+            ##
+            elif o['type'] == u'test_welcome':
+               if self.slaveConnected:
+                  self.protocolError("duplicate welcome message")
+               else:
+                  self.slaveConnected = True
+                  self.factory.uiFactory.slaveConnected(self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
+         except ValueError, e:
+            raise Exception("could not decode text message as JSON (%s)" % str(e))
+      else:
+         raise Exception("unexecpted binary message")
 
 
 class WsPerfFactory(WebSocketServerFactory):
@@ -69,8 +115,15 @@ class WsPerfUiFactory(WampServerFactory):
 
    protocol = WsPerfUiProtocol
 
-   def slaveConnected(self):
-      self._dispatchEvent(URI_EVENT + "slaveConnected", "foobar")
+   def slaveConnected(self, id, host, port, version, ident):
+      self._dispatchEvent(URI_EVENT + "slaveConnected", {'id': id,
+                                                         'host': host,
+                                                         'port': port,
+                                                         'version': version,
+                                                         'ident': ident})
+
+   def slaveDisconnected(self, id):
+      self._dispatchEvent(URI_EVENT + "slaveDisconnected", {'id': id})
 
 
 

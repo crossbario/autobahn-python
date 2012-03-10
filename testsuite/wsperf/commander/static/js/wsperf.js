@@ -14,9 +14,16 @@ $(document).ready(function() {
       sess.call("api:sum", [1,2,3,4,5,6]).then(ab.log);
 
       sess.subscribe("event:slaveConnected", onSlaveConnected);
+      sess.subscribe("event:slaveDisconnected", onSlaveDisconnected);
    });
 
    function onSlaveConnected(topic, event) {
-      ab.log("slave connected!");
+      ab.log("wsperf slave " + event.ident + "[" + event.id + "] connected.");
+      ab.log(event);
+   };
+
+   function onSlaveDisconnected(topic, event) {
+      ab.log("wsperf slave " + "[" + event.id + "] disconnected.");
+      ab.log(event);
    };
 });
