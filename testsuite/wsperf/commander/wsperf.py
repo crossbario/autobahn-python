@@ -74,7 +74,7 @@ class WsPerfProtocol(WebSocketServerProtocol):
       self.slaveConnected = False
       self.slaveId = None
 
-   def runCase(self, runId, caseDef):
+   def runCase(self, workerRunId, caseDef):
       test = {'uri': caseDef['uri'].encode('utf8'),
               'name': "foobar",
               'count': caseDef['count'],
@@ -85,11 +85,13 @@ class WsPerfProtocol(WebSocketServerProtocol):
               'rtts': 'true' if False else 'false',
               'correctness': str(caseDef['correctness']),
               'size': caseDef['size'],
-              'token': runId}
+              'token': workerRunId}
+
       cmd = self.WSPERF_CMD % test
       if self.factory.debugWsPerf:
          self.pp.pprint(cmd)
       self.sendMessage(cmd)
+      return self.slaveId
 
    def protocolError(self, msg):
       self.sendClose(self, self.WSPERF_PROTOCOL_ERROR, msg)
@@ -108,15 +110,22 @@ class WsPerfProtocol(WebSocketServerProtocol):
                   log.err("received ERROR")
                   self.pp.pprint(o)
 
-               ## COMPLETE
-               elif o['type'] == u'test_complete':
-                  pass
+               ## START
+               elif o['type'] == u'test_start':
+                  workerRunId = o['token']
+                  workerId = o['data']['worker_id']
+                  self.factory.caseStarted(workerRunId, workerId)
 
                ## DATA
                elif o['type'] == u'test_data':
-                  runId = o['token']
+                  workerRunId = o['token']
                   result = o['data']
-                  self.factory.caseResult(self.slaveId, runId, result)
+                  self.factory.caseResult(workerRunId, result)
+
+               ## COMPLETE
+               elif o['type'] == u'test_complete':
+                  workerRunId = o['token']
+                  self.factory.caseCompleted(workerRunId)
 
                ## WELCOME
                elif o['type'] == u'test_welcome':
@@ -124,7 +133,7 @@ class WsPerfProtocol(WebSocketServerProtocol):
                      self.protocolError("duplicate welcome message")
                   else:
                      self.slaveConnected = True
-                     self.factory.addSlave(self, self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
+                     self.factory.addSlave(self, self.slaveId, self.peer.host, self.peer.port, o['version'], o['num_workers'], o['ident'])
 
             except ValueError, e:
                self.protocolError("could not decode text message as JSON (%s)" % str(e))
@@ -142,8 +151,10 @@ class WsPerfFactory(WebSocketServerFactory):
       self.slavesToProtos = {}
       self.protoToSlaves = {}
       self.slaves = {}
+      self.runs = {}
+      self.workerRunsToRuns = {}
 
-   def addSlave(self, proto, id, host, port, version, ident):
+   def addSlave(self, proto, id, host, port, version, num_workers, ident):
       if not self.protoToSlaves.has_key(proto):
          self.protoToSlaves[proto] = id
       else:
@@ -152,8 +163,8 @@ class WsPerfFactory(WebSocketServerFactory):
          self.slavesToProtos[id] = proto
       else:
          raise Exception("logic error - duplicate id in addSlave")
-      self.slaves[id] = {'id': id, 'host': host, 'port': port, 'version': version, 'ident': ident}
-      self.uiFactory.slaveConnected(id, host, port, version, ident)
+      self.slaves[id] = {'id': id, 'host': host, 'port': port, 'version': version, 'ident': ident, 'num_workers': num_workers}
+      self.uiFactory.slaveConnected(id, host, port, version, num_workers, ident)
 
    def removeSlave(self, proto):
       if self.protoToSlaves.has_key(proto):
@@ -169,13 +180,38 @@ class WsPerfFactory(WebSocketServerFactory):
       return self.slaves.values()
 
    def runCase(self, caseDef):
+      """
+      Start a new test run on all currently connected slaves.
+      """
       runId = newid()
+      self.runs[runId] = {}
+      workerRunCount = 0
       for proto in self.protoToSlaves:
-         proto.runCase(runId, caseDef)
+         workerRunId = newid()
+         slaveId = proto.runCase(workerRunId, caseDef)
+         self.runs[runId][workerRunId] = {'slaveId': slaveId,
+                                          'results': []}
+         self.workerRunsToRuns[workerRunId] = runId
       return runId
 
-   def caseResult(self, slaveId, runId, result):
-      self.uiFactory.caseResult(slaveId, runId, result)
+   def caseStarted(self, workerRunId, workerId):
+      runId = self.workerRunsToRuns[workerRunId]
+      run = self.runs[runId][workerRunId]
+      run['workerId'] = workerId
+
+   def caseResult(self, workerRunId, result):
+      runId = self.workerRunsToRuns[workerRunId]
+      run = self.runs[runId][workerRunId]
+      run['results'].append(result)
+      self.uiFactory.caseResult(runId,
+                                run['slaveId'],
+                                run['workerId'],
+                                result)
+
+   def caseCompleted(self, workerRunId):
+      runId = self.workerRunsToRuns[workerRunId]
+      #del self.workerRunsToRuns[workerRunId]
+      #del self.runs[runId]
 
 
 class WsPerfUiProtocol(WampServerProtocol):
@@ -197,11 +233,12 @@ class WsPerfUiFactory(WampServerFactory):
 
    protocol = WsPerfUiProtocol
 
-   def slaveConnected(self, id, host, port, version, ident):
+   def slaveConnected(self, id, host, port, version, num_workers, ident):
       self._dispatchEvent(URI_EVENT + "slaveConnected", {'id': id,
                                                          'host': host,
                                                          'port': port,
                                                          'version': version,
+                                                         'num_workers': num_workers,
                                                          'ident': ident})
 
    def slaveDisconnected(self, id):
@@ -213,8 +250,11 @@ class WsPerfUiFactory(WampServerFactory):
    def runCase(self, caseDef):
       return self.slaveFactory.runCase(caseDef)
 
-   def caseResult(self, slaveId, runId, result):
-      event = {'slaveId': slaveId, 'runId': runId, 'result': result}
+   def caseResult(self, runId, slaveId, workerId, result):
+      event = {'runId': runId,
+               'slaveId': slaveId,
+               'workerId': workerId,
+               'result': result}
       self._dispatchEvent(URI_EVENT + "caseResult", event)
 
 
@@ -227,7 +267,7 @@ if __name__ == '__main__':
    ##
    wsperf = WsPerfFactory("ws://localhost:9090")
    wsperf.debug = False
-   wsperf.debugWsPerf = False
+   wsperf.debugWsPerf = True
    listenWS(wsperf)
 
    ## Web Server for UI static files
