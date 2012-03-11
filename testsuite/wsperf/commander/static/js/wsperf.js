@@ -17,7 +17,7 @@ function onConnect() {
       }
 
       updateStartButton();
-      ab.log("currently connected slaves", slaves);
+      ab.log("currently connected slaves", JSON.stringify(slaves));
 
       sess.subscribe("event:slaveConnected", onSlaveConnected);
       sess.subscribe("event:slaveDisconnected", onSlaveDisconnected);

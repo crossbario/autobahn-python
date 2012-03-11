@@ -11,10 +11,10 @@
       <h2>Run Case</h2>
       <form name="runcase">
 
-         <p>Testee URI: <input id="runcase_uri" type="text" size="30" maxlength="50" value="ws://192.168.1.132:9000"></p>
+         <p>Testee URI: <input id="runcase_uri" type="text" size="30" maxlength="50" value="ws://localhost:9000"></p>
          <p>Message Count: <input id="runcase_count" type="text" size="6" maxlength="6" value="100"></p>
          <p>Message Size (bytes): <input id="runcase_size" type="text" size="9" maxlength="9" value="4096"></p>
-         <p>Timeout (secs): <input id="runcase_timeout" type="text" size="5" maxlength="5" value="20"></p>
+         <p>Timeout (secs or 0 for no timeout): <input id="runcase_timeout" type="text" size="5" maxlength="5" value="0"></p>
          <p>Binary Message: <input id="runcase_binary" type="checkbox" checked></p>
          <p>Sync: <input id="runcase_sync" type="checkbox" checked></p>
          <p>Number of Bins: <input id="runcase_bins" type="text" size="4" maxlength="4" value="10"></p>

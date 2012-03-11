@@ -41,10 +41,8 @@ URI_EVENT = "http://wsperf.org/event#"
 
 
 # https://github.com/zaphoyd/websocketpp/wiki/wsperf
-# wsperf -c -u ws://localhost:9090 -i "win1"
-# wsperf -c -u ws://localhost:9090 -i "win2" --num_threads=1
-# ./build/release/wsperf/wsperf -c -u ws://192.168.1.132:9090 -i "klon0" --num_threads=1
-# ./build/debug/wsperf/wsperf -c -u ws://192.168.1.132:9090 -i "klon0" --num_threads=1
+# wsperf -c -u ws://localhost:9090 --ident=%COMPUTERNAME% --num_threads=0 --reconnect=1
+
 
 class WsPerfProtocol(WebSocketServerProtocol):
 
@@ -267,7 +265,7 @@ if __name__ == '__main__':
    ##
    wsperf = WsPerfFactory("ws://localhost:9090")
    wsperf.debug = False
-   wsperf.debugWsPerf = True
+   wsperf.debugWsPerf = False
    listenWS(wsperf)
 
    ## Web Server for UI static files
