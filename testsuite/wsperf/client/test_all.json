@@ -1,4 +1,8 @@
 {
+   "options": {
+      "rtts": false,
+      "quantile_count": 10
+   },
    "servers":  [
                   {
                      "name": "AutobahnPyPyKqueue/0.4.11",

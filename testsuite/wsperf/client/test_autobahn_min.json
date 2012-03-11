@@ -1,7 +1,7 @@
 {
    "options": {
       "rtts": false,
-      "quantiles": 10
+      "quantile_count": 10
    },
    "servers":  [
                   {

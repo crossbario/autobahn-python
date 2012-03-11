@@ -28,7 +28,7 @@ from autobahn.util import newid
 
 class WsPerfCommanderProtocol(WebSocketClientProtocol):
 
-   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantiles=%(quantiles)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
+   WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantile_count=%(quantile_count)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
 
    def sendNext(self):
       if self.current == len(self.tests):
@@ -49,7 +49,7 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
             test = {'uri': server['uri'].encode('utf8'),
                     'name': server['name'].encode('utf8'),
                     'count': size[0],
-                    'quantiles': self.factory.spec['options']['quantiles'],
+                    'quantile_count': self.factory.spec['options']['quantile_count'],
                     'timeout': size[2],
                     'binary': 'true' if size[3] else 'false',
                     'sync': 'true' if size[4] else 'false',
@@ -78,7 +78,7 @@ class WsPerfCommanderProtocol(WebSocketClientProtocol):
          outfile = sys.stdout
       outfile.write(factory.sep.join(['name', 'outcome', 'count', 'size', 'min', 'median', 'max', 'avg', 'stddev']))
 
-      quantile_count = self.factory.spec['options']['quantiles']
+      quantile_count = self.factory.spec['options']['quantile_count']
 
       for i in xrange(quantile_count):
          outfile.write(factory.sep)
