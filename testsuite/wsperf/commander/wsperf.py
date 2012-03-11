@@ -40,7 +40,11 @@ URI_RPC = "http://wsperf.org/api#"
 URI_EVENT = "http://wsperf.org/event#"
 
 
+# https://github.com/zaphoyd/websocketpp/wiki/wsperf
 # wsperf -c -u ws://localhost:9090 -i "win1"
+# wsperf -c -u ws://localhost:9090 -i "win2" --num_threads=1
+# ./build/release/wsperf/wsperf -c -u ws://192.168.1.132:9090 -i "klon0" --num_threads=1
+# ./build/debug/wsperf/wsperf -c -u ws://192.168.1.132:9090 -i "klon0" --num_threads=1
 
 class WsPerfProtocol(WebSocketServerProtocol):
 
@@ -93,34 +97,41 @@ class WsPerfProtocol(WebSocketServerProtocol):
 
    def onMessage(self, msg, binary):
       if not binary:
-         try:
-            o = json.loads(msg)
-            if self.factory.debugWsPerf:
-               self.pp.pprint(o)
+         if msg is not None:
+            try:
+               o = json.loads(msg)
+               if self.factory.debugWsPerf:
+                  self.pp.pprint(o)
 
-            if o['type'] == u'error':
-               pass
-            elif o['type'] == u'test_complete':
-               pass
-            elif o['type'] == u'test_data':
-               runId = o['token']
-               result = o['data']
-               self.factory.caseResult(self.slaveId, runId, result)
+               ## ERROR
+               if o['type'] == u'error':
+                  log.err("received ERROR")
+                  self.pp.pprint(o)
 
-            ## WELCOME
-            ##
-            ## {"type":"test_welcome","version":"wsperf/0.2.0dev WebSocket++/0.2.0dev","ident":"win1"}
-            ##
-            elif o['type'] == u'test_welcome':
-               if self.slaveConnected:
-                  self.protocolError("duplicate welcome message")
-               else:
-                  self.slaveConnected = True
-                  self.factory.addSlave(self, self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
-         except ValueError, e:
-            raise Exception("could not decode text message as JSON (%s)" % str(e))
+               ## COMPLETE
+               elif o['type'] == u'test_complete':
+                  pass
+
+               ## DATA
+               elif o['type'] == u'test_data':
+                  runId = o['token']
+                  result = o['data']
+                  self.factory.caseResult(self.slaveId, runId, result)
+
+               ## WELCOME
+               elif o['type'] == u'test_welcome':
+                  if self.slaveConnected:
+                     self.protocolError("duplicate welcome message")
+                  else:
+                     self.slaveConnected = True
+                     self.factory.addSlave(self, self.slaveId, self.peer.host, self.peer.port, o['version'], o['ident'])
+
+            except ValueError, e:
+               self.protocolError("could not decode text message as JSON (%s)" % str(e))
+         else:
+            self.protocolError("unexpected empty message")
       else:
-         raise Exception("unexpected binary message")
+         self.protocolError("unexpected binary message")
 
 
 class WsPerfFactory(WebSocketServerFactory):

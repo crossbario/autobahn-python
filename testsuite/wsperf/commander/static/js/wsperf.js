@@ -15,6 +15,7 @@ function onConnect() {
       for (var i in res) {
          slaves[res[i].id] = res[i];
       }
+      updateStartButton();
       ab.log("currently connected slaves", slaves);
    }, ab.log);
 
@@ -25,6 +26,7 @@ function onConnect() {
 function onSlaveConnected(topic, event) {
    if (!(event.id in slaves)) {
       slaves[event.id] = event;
+      updateStartButton();
       ab.log("new slave connected", event);
    }
 };
@@ -33,10 +35,18 @@ function onSlaveConnected(topic, event) {
 function onSlaveDisconnected(topic, event) {
    if (event.id in slaves) {
       delete slaves[event.id];
+      updateStartButton();
       ab.log("slave disconnected", event);
    }
 };
 
+function updateStartButton() {
+   if (Object.keys(slaves).length > 0) {
+      $("#start:button").removeAttr("disabled");
+   } else {
+      $("#start:button").attr("disabled", "true");
+   }
+}
 
 function onCaseResult(topic, event) {
    ab.log("got result: case " + event.runId + " from slave " + event.slaveId, event);
@@ -49,11 +59,11 @@ function runCase() {
    cd.uri = $("#runcase_uri").val();
    cd.count = parseInt($("#runcase_count").val());
    cd.size = parseInt($("#runcase_size").val());
-   cd.timeout = parseInt($("#runcase_timeout").val());
+   cd.timeout = 1000 * parseInt($("#runcase_timeout").val());
    cd.binary = $("#runcase_binary").attr("checked") != undefined;
    cd.sync = $("#runcase_sync").attr("checked") != undefined;
    cd.quantile_count = parseInt($("#runcase_bins").val());
-   cd.correctness = 'length';
+   cd.correctness = $('input:radio[name=checkmode]:checked').val();
 
    sess.call("api:runCase", cd).then(function (runId) {
       ab.log("case " + runId + " started", cd);
