@@ -2,21 +2,26 @@ var sess;
 var retryCount = 0;
 var retryDelay = 1;
 
-var slaves = {};
+var slaves;
 
 function onConnect() {
+
+   slaves = {};
+
    sess.prefix("api", "http://wsperf.org/api#");
    sess.prefix("event", "http://wsperf.org/event#");
-
-   sess.subscribe("event:slaveConnected", onSlaveConnected);
-   sess.subscribe("event:slaveDisconnected", onSlaveDisconnected);
 
    sess.call("api:getSlaves").then(function (res) {
       for (var i in res) {
          slaves[res[i].id] = res[i];
       }
+
       updateStartButton();
       ab.log("currently connected slaves", slaves);
+
+      sess.subscribe("event:slaveConnected", onSlaveConnected);
+      sess.subscribe("event:slaveDisconnected", onSlaveDisconnected);
+
    }, ab.log);
 
    sess.subscribe("event:caseResult", onCaseResult);
