@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,22 +16,39 @@
 ##
 ###############################################################################
 
-import json
-import binascii
-import datetime
-import time
-import random
-import textwrap
-import os
-import re
-from twisted.internet import reactor
+import sys, os, re, json, binascii, datetime, time, random, textwrap
+
 from twisted.python import log
+from twisted.internet import reactor
+
 import autobahn
-from websocket import WebSocketProtocol, WebSocketServerFactory, WebSocketServerProtocol,  WebSocketClientFactory, WebSocketClientProtocol, HttpException
-from websocket import connectWS, listenWS
-from case import Case, Cases, CaseCategories, CaseSubCategories, caseClasstoId, caseClasstoIdTuple, CasesIndices, CasesById, caseIdtoIdTuple, caseIdTupletoId
+
+from websocket import WebSocketProtocol, \
+                      WebSocketServerFactory, \
+                      WebSocketServerProtocol, \
+                      WebSocketClientFactory, \
+                      WebSocketClientProtocol, \
+                      HttpException, \
+                      connectWS, \
+                      listenWS
+
+from case import Case, \
+                 Cases, \
+                 CaseCategories, \
+                 CaseSubCategories, \
+                 caseClasstoId, \
+                 caseClasstoIdTuple, \
+                 CasesIndices, \
+                 CasesById, \
+                 caseIdtoIdTuple, \
+                 caseIdTupletoId
+
 from util import utcnow
-from report import CSS_COMMON, CSS_DETAIL_REPORT, CSS_MASTER_REPORT, JS_MASTER_REPORT
+
+from report import CSS_COMMON, \
+                   CSS_DETAIL_REPORT, \
+                   CSS_MASTER_REPORT, \
+                   JS_MASTER_REPORT
 
 
 def resolveCasePatternList(patterns):
