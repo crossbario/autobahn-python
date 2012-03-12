@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,31 +16,39 @@
 ##
 ###############################################################################
 
-from setuptools import setup, find_packages
+from setuptools import setup
+
+LONGSDESC = """
+Twisted-based WebSockets client and server framework.
+
+Autobahn provides a WebSockets (RFC6455 + Hybi-10 to -17) Twisted-based
+framework for creating WebSockets clients and servers.
+
+Autobahn also includes an implementation of WAMP (WebSockets Application
+Message Protocol), a light-weight, asynchronous RPC/PubSub over
+JSON/WebSockets protocol.
+
+Autobahn (source package) further provides a fuzzing test framework which can
+test WebSockets client and server implementations.
+"""
 
 setup (
    name = 'autobahn',
-   version = '0.4.11',
-   description = 'Autobahn WebSockets',
-   long_description = """Twisted-based WebSockets client and server framework.
-
-   Autobahn provides a WebSockets (RFC6455 + Hybi-10 to -17) Twisted-based
-   framework for creating WebSockets clients and servers.
-
-   Autobahn also includes an implementation of WAMP (WebSockets Application
-   Message Protocol), a light-weight, asynchronous RPC/PubSub over
-   JSON/WebSockets protocol.
-
-   Autobahn (source package) further provides a fuzzing test framework which can
-   test WebSockets client and server implementations.""",
+   version = '0.5.0',
+   description = 'Autobahn WebSockets for Python',
+   long_description = LONGSDESC,
+   license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
-   url = 'http://www.tavendo.de/autobahn',
+   url = 'http://autobahn.ws',
    platforms = ('Any'),
-   install_requires = ['Twisted>=11.0'],
-   packages = find_packages(),
+   install_requires = ['setuptools', 'Twisted>=11.0'],
+   packages = ['autobahn', 'wstest'],
    zip_safe = False,
-
+   entry_points = {
+      'console_scripts': [
+         'wstest = wstest.wstest:run'
+      ]},
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
    classifiers = ["License :: OSI Approved :: Apache Software License",
@@ -52,5 +60,6 @@ setup (
                   "Programming Language :: Python",
                   "Topic :: Internet",
                   "Topic :: Software Development :: Libraries",
-                  "Topic :: Software Development :: Testing"]
+                  "Topic :: Software Development :: Testing"],
+   keywords = 'autobahn autobahn.ws websocket realtime test testsuite rfc6455 rpc pubsub'
 )
