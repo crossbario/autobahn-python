@@ -45,6 +45,7 @@ setup (
    install_requires = ['setuptools', 'Twisted>=11.0'],
    packages = find_packages(),
    #packages = ['autobahn', 'wstest'],
+   include_package_data = True,
    zip_safe = False,
    entry_points = {
       'console_scripts': [

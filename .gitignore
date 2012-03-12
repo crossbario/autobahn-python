@@ -1,8 +1,8 @@
 *.pyc
 *.pyo
 *.dat
-/lib/python/build/*
-/lib/python/dist/*
-/lib/python/autobahn.egg-info*/
-testsuite/websockets/reports/*
+/autobahn/build/*
+/autobahn/dist/*
+/autobahn/autobahn.egg-info*/
+examples/fuzzing/reports/*
 doc/python/_build/*

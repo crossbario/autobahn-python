@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-import sys, json
+import sys, os, json, pkg_resources
 
 from twisted.python import log, usage
 from twisted.internet import reactor
@@ -132,11 +132,12 @@ def run():
       spec = str(o.opts['spec'])
       spec = json.loads(open(spec).read())
 
-      webdir = File(spec.get("webdir", "."))
-      web = Site(webdir)
-      reactor.listenTCP(spec.get("webport", 9090), web)
-
       if mode == 'fuzzingserver':
+
+         webdir = File(pkg_resources.resource_filename("wstest", "web/fuzzingserver"))
+         web = Site(webdir)
+         reactor.listenTCP(spec.get("webport", 9090), web)
+
          factory = FuzzingServerFactory(spec)
          listenWS(factory, createWssContext(o, factory))
 
