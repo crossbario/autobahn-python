@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 LONGSDESC = """
 Twisted-based WebSockets client and server framework.
@@ -43,7 +43,8 @@ setup (
    url = 'http://autobahn.ws',
    platforms = ('Any'),
    install_requires = ['setuptools', 'Twisted>=11.0'],
-   packages = ['autobahn', 'wstest'],
+   packages = find_packages(),
+   #packages = ['autobahn', 'wstest'],
    zip_safe = False,
    entry_points = {
       'console_scripts': [
