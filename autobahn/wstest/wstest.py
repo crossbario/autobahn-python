@@ -28,6 +28,7 @@ from autobahn.fuzzing import FuzzingClientFactory, FuzzingServerFactory
 
 from echo import EchoClientFactory, EchoServerFactory
 from testee import TesteeClientFactory, TesteeServerFactory
+from wsperfcontrol import WsPerfControlFactory
 
 
 class WsTestOptions(usage.Options):
@@ -60,16 +61,20 @@ class WsTestOptions(usage.Options):
    ]
 
    def postOptions(self):
+
       if not self['mode']:
          raise usage.UsageError, "a mode must be specified to run!"
+
       if not self['mode'] in WsTestOptions.MODES:
          raise usage.UsageError, "invalid mode %s" % self['mode']
-      if self['mode'] in ['fuzzingclient', 'fuzzingserver']:
+
+      if self['mode'] in ['fuzzingclient', 'fuzzingserver', 'wsperfcontrol']:
          if not self['spec']:
-            raise usage.UsageError, "fuzzing modes need a test specification file!"
-      elif self['mode'] in ['echoclient', 'echoserver', 'testeeclient', 'testeeserver']:
+            raise usage.UsageError, "mode needs a spec file!"
+
+      if self['mode'] in ['echoclient', 'echoserver', 'testeeclient', 'testeeserver', 'wsperfcontrol']:
          if not self['wsuri']:
-            raise usage.UsageError, "echo, testee modes need a WebSocket URI!"
+            raise usage.UsageError, "mode needs a WebSocket URI!"
 
 
 OPENSSL_HELP = """
@@ -179,6 +184,22 @@ def run():
 
       else:
          raise Exception("logic error")
+
+   elif mode == 'wsperfcontrol':
+
+      wsuri = str(o.opts['wsuri'])
+
+      spec = str(o.opts['spec'])
+      spec = json.loads(open(spec).read())
+
+      factory = WsPerfControlFactory(wsuri)
+      factory.spec = spec
+      factory.debugWsPerf = spec['options']['debug']
+      factory.outfile = spec['options']['outfile']
+      factory.sep = spec['options']['sep']
+      factory.digits = spec['options']['digits']
+
+      connectWS(factory, createWssContext(o, factory))
 
    else:
 

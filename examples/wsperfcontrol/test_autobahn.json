@@ -1,7 +1,11 @@
 {
    "options": {
       "rtts": false,
-      "quantile_count": 10
+      "quantile_count": 10,
+      "digits": 0,
+      "sep": "\t",
+      "outfile": "report.txt",
+      "debug": false
    },
    "servers":  [
                   {

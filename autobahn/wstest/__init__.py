@@ -20,3 +20,4 @@ import choosereactor # This MUST BE the FIRST file imported here! Do NOT touch.
 import wstest
 import echo
 import testee
+import wsperfcontrol
