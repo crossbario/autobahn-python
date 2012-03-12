@@ -1,5 +1,5 @@
 Autobahn WebSockets
--------------------
+===================
 
 Autobahn WebSockets for Python provides an implementation of the WebSockets
 protocol which can be used to build WebSockets clients and servers.
@@ -13,6 +13,7 @@ protocol which can be used to build WebSockets clients and servers.
    * supports secure WebSockets (TLS)
    * Open-source (Apache 2 license)
 
+
 Browser Support
 ---------------
 
@@ -24,6 +25,7 @@ Browser Support
    support via Adobe Flash 10+ (see below):
       * Microsoft Internet Explorer 8, 9
       * Safari 5
+
 
 RPC/PubSub
 ----------
@@ -42,12 +44,13 @@ Publish & Subscribe messaging patterns.
    * usable for clients and servers
    * companion client libraries for jQuery and Android
 
+
 Testsuite
 ---------
 
 Autobahn WebSockets also includes a WebSockets test suite which can used to
 test client and server implementations for protocol conformance.
-The test suite includes over 200 test cases and has broad protocol coverage.
+The test suite includes nearly 300 test cases and has broad protocol coverage.
 
 
 Using WebSocket Flash bridge
@@ -78,4 +81,4 @@ and include the following (in this order!) in the HTML head element:
 Where to go
 -----------
 
-For more information, please visit: http://www.tavendo.de/autobahn
+For more information, please visit: http://autobahn.ws
