@@ -49,14 +49,14 @@ class WsTestOptions(usage.Options):
 
    optParameters = [
       ['mode', 'm', None, 'Test mode, one of: %s [required]' % ', '.join(MODES)],
-      ['spec', 's', None, 'Test specification file [required in fuzzing modes].'],
-      ['wsuri', 'w', None, 'WebSocket URI [required in echo modes].'],
+      ['spec', 's', None, 'Test specification file [required in some modes].'],
+      ['wsuri', 'w', None, 'WebSocket URI [required in some modes].'],
       ['key', 'k', None, 'Server private key file for secure WebSocket (WSS) [required in server modes for WSS].'],
       ['cert', 'c', None, 'Server certificate file for secure WebSocket (WSS) [required in server modes for WSS].'],
    ]
 
    optFlags = [
-      ['debug', 'd', 'Debug wsperf commander/protocol [default: off].']
+      ['debug', 'd', 'Debug output [default: off].']
    ]
 
    def postOptions(self):
@@ -148,7 +148,7 @@ def run():
 
          webdir = File(pkg_resources.resource_filename("wstest", "web/fuzzingserver"))
          web = Site(webdir)
-         reactor.listenTCP(spec.get("webport", 9090), web)
+         reactor.listenTCP(spec.get("webport", 8080), web)
 
          factory = FuzzingServerFactory(spec)
          listenWS(factory, createWssContext(o, factory))
@@ -182,6 +182,11 @@ def run():
       wsuri = str(o.opts['wsuri'])
 
       if mode == 'echoserver':
+
+         webdir = File(pkg_resources.resource_filename("wstest", "web/echoserver"))
+         web = Site(webdir)
+         reactor.listenTCP(8080, web)
+
          factory = EchoServerFactory(wsuri)
          listenWS(factory, createWssContext(o, factory))
 
@@ -255,8 +260,12 @@ def run():
       wsperf.uiFactory = wsperfUi
       wsperfUi.slaveFactory = wsperf
 
-   else:
+   elif mode in ['testeeclient', 'testeeserver']:
 
       raise Exception("not yet implemented")
+
+   else:
+
+      raise Exception("logic error")
 
    reactor.run()

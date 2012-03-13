@@ -1,11 +1,8 @@
 {
    "url": "ws://localhost:9001",
    "options": {"failByDrop": false},
-
-   "webport": 9090,
-   "webdir": ".",
+   "webport": 8080,
    "debug": false,
-
    "outdir": "./reports/clients",
 
    "cases": ["*"],
