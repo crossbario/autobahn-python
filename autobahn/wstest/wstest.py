@@ -27,6 +27,7 @@ from autobahn.websocket import connectWS, listenWS
 from autobahn.fuzzing import FuzzingClientFactory, FuzzingServerFactory
 
 from echo import EchoClientFactory, EchoServerFactory
+from broadcast import BroadcastClientFactory, BroadcastServerFactory
 from testee import TesteeClientFactory, TesteeServerFactory
 from wsperfcontrol import WsPerfControlFactory
 from wsperfmaster import WsPerfMasterFactory, WsPerfMasterUiFactory
@@ -66,11 +67,19 @@ class WsTestOptions(usage.Options):
       if not self['mode'] in WsTestOptions.MODES:
          raise usage.UsageError, "invalid mode %s" % self['mode']
 
-      if self['mode'] in ['fuzzingclient', 'fuzzingserver', 'wsperfcontrol']:
+      if self['mode'] in ['fuzzingclient',
+                          'fuzzingserver',
+                          'wsperfcontrol']:
          if not self['spec']:
             raise usage.UsageError, "mode needs a spec file!"
 
-      if self['mode'] in ['echoclient', 'echoserver', 'testeeclient', 'testeeserver', 'wsperfcontrol']:
+      if self['mode'] in ['echoclient',
+                          'echoserver',
+                          'broadcastclient',
+                          'broadcastserver',
+                          'testeeclient',
+                          'testeeserver',
+                          'wsperfcontrol']:
          if not self['wsuri']:
             raise usage.UsageError, "mode needs a WebSocket URI!"
 
@@ -178,6 +187,26 @@ def run():
 
       elif mode == 'echoclient':
          factory = EchoClientFactory(wsuri)
+         connectWS(factory, createWssContext(o, factory))
+
+      else:
+         raise Exception("logic error")
+
+   elif mode in ['broadcastclient', 'broadcastserver']:
+
+      wsuri = str(o.opts['wsuri'])
+
+      if mode == 'broadcastserver':
+
+         webdir = File(pkg_resources.resource_filename("wstest", "web/broadcastserver"))
+         web = Site(webdir)
+         reactor.listenTCP(8080, web)
+
+         factory = BroadcastServerFactory(wsuri)
+         listenWS(factory, createWssContext(o, factory))
+
+      elif mode == 'broadcastclient':
+         factory = BroadcastClientFactory(wsuri)
          connectWS(factory, createWssContext(o, factory))
 
       else:

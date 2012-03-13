@@ -1,0 +1,35 @@
+<html>
+   <head>
+      <script type="text/javascript">
+         window.onload = function() {
+
+            var wsuri = "ws://localhost:9000";
+
+            if ("WebSocket" in window) {
+               webSocket = new WebSocket(wsuri);
+            }
+            else {
+               // Firefox currently prefixes the WebSocket object
+               webSocket = new MozWebSocket(wsuri);
+            }
+
+            webSocket.onmessage = function(e) {
+               document.getElementById("log").innerHTML += e.data + "\n";
+            }
+         }
+
+         function broadcast() {
+            webSocket.send(document.getElementById("message").value);
+         }
+      </script>
+   </head>
+   <body>
+      <h1>Autobahn WebSockets Broadcast Demo</h1>
+      <form>
+         <p>Broadcast Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
+      </form>
+      <button onclick='broadcast();'>Send</button>
+      <h2>Broadcast Messages received:</h2>
+      <pre id="log"></pre>
+   </body>
+</html>
