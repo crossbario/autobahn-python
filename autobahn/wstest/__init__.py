@@ -21,3 +21,4 @@ import wstest
 import echo
 import testee
 import wsperfcontrol
+import wsperfmaster

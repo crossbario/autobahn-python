@@ -29,6 +29,7 @@ from autobahn.fuzzing import FuzzingClientFactory, FuzzingServerFactory
 from echo import EchoClientFactory, EchoServerFactory
 from testee import TesteeClientFactory, TesteeServerFactory
 from wsperfcontrol import WsPerfControlFactory
+from wsperfmaster import WsPerfMasterFactory, WsPerfMasterUiFactory
 
 
 class WsTestOptions(usage.Options):
@@ -36,15 +37,12 @@ class WsTestOptions(usage.Options):
             'echoclient',
             'broadcastclient',
             'broadcastserver',
-
             'fuzzingserver',
             'fuzzingclient',
             'testeeserver',
             'testeeclient',
-
             'wsperfcontrol',
             'wsperfmaster',
-
             'wampserver',
             'wampclient']
 
@@ -200,6 +198,33 @@ def run():
       factory.digits = spec['options']['digits']
 
       connectWS(factory, createWssContext(o, factory))
+
+   elif mode == 'wsperfmaster':
+
+      ## WAMP Server for wsperf slaves
+      ##
+      wsperf = WsPerfMasterFactory("ws://localhost:9090")
+      wsperf.debug = False
+      wsperf.debugWsPerf = False
+      listenWS(wsperf)
+
+      ## Web Server for UI static files
+      ##
+      webdir = File(pkg_resources.resource_filename("wstest", "web/wsperfmaster"))
+      web = Site(webdir)
+      reactor.listenTCP(8080, web)
+
+      ## WAMP Server for UI
+      ##
+      wsperfUi = WsPerfMasterUiFactory("ws://localhost:9091")
+      wsperfUi.debug = False
+      wsperfUi.debugWamp = False
+      listenWS(wsperfUi)
+
+      ## Connect servers
+      ##
+      wsperf.uiFactory = wsperfUi
+      wsperfUi.slaveFactory = wsperf
 
    else:
 

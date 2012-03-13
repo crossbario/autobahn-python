@@ -19,32 +19,20 @@
 import sys, json, pprint
 
 from twisted.python import log
-from twisted.internet import reactor
-from twisted.web.server import Site
-from twisted.web.static import File
-
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
-
-from autobahn.wamp import exportRpc, \
-                          WampServerFactory, \
-                          WampServerProtocol
 
 from autobahn.util import newid, utcnow
 
-from autobahn.websocket import HttpException
 from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
+from autobahn.websocket import HttpException
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.wamp import WampServerFactory, WampServerProtocol, exportRpc
+
 
 URI_RPC = "http://wsperf.org/api#"
 URI_EVENT = "http://wsperf.org/event#"
 
 
-# https://github.com/zaphoyd/websocketpp/wiki/wsperf
-# wsperf -c -u ws://localhost:9090 --ident=%COMPUTERNAME% --num_threads=0 --reconnect=1
-
-
-class WsPerfProtocol(WebSocketServerProtocol):
+class WsPerfMasterProtocol(WebSocketServerProtocol):
 
    WSPERF_PROTOCOL_ERROR = 3000
    WSPERF_CMD = """message_test:uri=%(uri)s;token=%(token)s;size=%(size)d;count=%(count)d;quantile_count=%(quantile_count)d;timeout=%(timeout)d;binary=%(binary)s;sync=%(sync)s;rtts=%(rtts)s;correctness=%(correctness)s;"""
@@ -141,9 +129,9 @@ class WsPerfProtocol(WebSocketServerProtocol):
          self.protocolError("unexpected binary message")
 
 
-class WsPerfFactory(WebSocketServerFactory):
+class WsPerfMasterFactory(WebSocketServerFactory):
 
-   protocol = WsPerfProtocol
+   protocol = WsPerfMasterProtocol
 
    def startFactory(self):
       self.slavesToProtos = {}
@@ -212,7 +200,7 @@ class WsPerfFactory(WebSocketServerFactory):
       #del self.runs[runId]
 
 
-class WsPerfUiProtocol(WampServerProtocol):
+class WsPerfMasterUiProtocol(WampServerProtocol):
 
    @exportRpc
    def runCase(self, caseDef):
@@ -227,9 +215,9 @@ class WsPerfUiProtocol(WampServerProtocol):
       self.registerForPubSub(URI_EVENT, True)
 
 
-class WsPerfUiFactory(WampServerFactory):
+class WsPerfMasterUiFactory(WampServerFactory):
 
-   protocol = WsPerfUiProtocol
+   protocol = WsPerfMasterUiProtocol
 
    def slaveConnected(self, id, host, port, version, num_workers, ident):
       self._dispatchEvent(URI_EVENT + "slaveConnected", {'id': id,
@@ -254,38 +242,3 @@ class WsPerfUiFactory(WampServerFactory):
                'workerId': workerId,
                'result': result}
       self._dispatchEvent(URI_EVENT + "caseResult", event)
-
-
-
-if __name__ == '__main__':
-
-   log.startLogging(sys.stdout)
-
-   ## WAMP Server for wsperf slaves
-   ##
-   wsperf = WsPerfFactory("ws://localhost:9090")
-   wsperf.debug = False
-   wsperf.debugWsPerf = False
-   listenWS(wsperf)
-
-   ## Web Server for UI static files
-   ##
-   webdir = File("static")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
-
-   ## WAMP Server for UI
-   ##
-   wsperfUi = WsPerfUiFactory("ws://localhost:9091")
-   wsperfUi.debug = False
-   wsperfUi.debugWamp = False
-   listenWS(wsperfUi)
-
-   ## Connect servers
-   ##
-   wsperf.uiFactory = wsperfUi
-   wsperfUi.slaveFactory = wsperf
-
-   ## Run everything ..
-   ##
-   reactor.run()
