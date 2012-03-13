@@ -1,5 +1,1 @@
-include README
-include LICENSE
-include NOTICE
-recursive-include autobahn *
 recursive-include wstest/web *
