@@ -1874,6 +1874,71 @@ class WebSocketProtocol(protocol.Protocol):
             i += pfs
 
 
+class WebSocketFactory:
+   """
+   Mixin for WebSocketClientFactory and WebSocketServerFactory.
+   """
+
+   def prepareMessage(self, payload, binary = False, masked = None):
+      """
+      Prepare a WebSocket message. This can be later used on multiple
+      instances of WebSocketProtocol using sendData().
+
+      By doing so, you can avoid the (small) overhead of framing the
+      _same_ payload into WS messages when that payload is to be sent
+      out on multiple connections.
+
+      Caveats! Only use when you know what you are doing. I.e. calling
+      sendData() on the _same_ protocol instance multiples times with
+      the same prepared message might break the spec. Since i.e. the
+      frame mask will be the same!
+      """
+      if masked is None:
+         masked = self.isServer
+
+      l = len(payload)
+
+      ## first byte
+      ##
+      b0 = ((1 << 7) | 2) if binary else ((1 << 7) | 1)
+
+      ## second byte, payload len bytes and mask
+      ##
+      if masked:
+         b1 = 1 << 7
+         mask = struct.pack("!I", random.getrandbits(32))
+         if l == 0:
+            plm = payload
+         elif l < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
+            plm = XorMaskerSimple(mask).process(payload)
+         else:
+            plm = XorMaskerShifted1(mask).process(payload)
+      else:
+         b1 = 0
+         mask = ""
+         plm = payload
+
+      ## payload extended length
+      ##
+      el = ""
+      if l <= 125:
+         b1 |= l
+      elif l <= 0xFFFF:
+         b1 |= 126
+         el = struct.pack("!H", l)
+      elif l <= 0x7FFFFFFFFFFFFFFF:
+         b1 |= 127
+         el = struct.pack("!Q", l)
+      else:
+         raise Exception("invalid payload length")
+
+      ## raw WS message (single frame)
+      ##
+      raw = ''.join([chr(b0), chr(b1), el, mask, plm])
+
+      return raw
+
+
 class WebSocketServerProtocol(WebSocketProtocol):
    """
    A Twisted protocol for WebSockets servers.
@@ -2260,7 +2325,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.sendHtml(html)
 
 
-class WebSocketServerFactory(protocol.ServerFactory):
+class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
    A Twisted factory for WebSockets server protocols.
    """
@@ -2299,6 +2364,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       """
       self.debug = debug
       self.debugCodePaths = debugCodePaths
+
+      self.isServer = True
 
       ## seed RNG which is used for WS frame masks generation
       random.seed()
@@ -2741,7 +2808,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       self.dropConnection(abort = True)
 
 
-class WebSocketClientFactory(protocol.ClientFactory):
+class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
    A Twisted factory for WebSockets client protocols.
    """
@@ -2783,6 +2850,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
       """
       self.debug = debug
       self.debugCodePaths = debugCodePaths
+
+      self.isServer = False
 
       ## seed RNG which is used for WS opening handshake key and WS frame masks generation
       random.seed()
