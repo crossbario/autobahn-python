@@ -36,6 +36,7 @@ import base64
 import struct
 import random
 import os
+from array import array
 from collections import deque
 from utf8validator import Utf8Validator
 from httpstatus import *
@@ -177,7 +178,7 @@ class FrameHeader:
    FOR INTERNAL USE ONLY!
    """
 
-   def __init__(self, opcode, fin, rsv, length, mask, mask_array):
+   def __init__(self, opcode, fin, rsv, length, mask, applyMask):
       """
       Constructor.
 
@@ -189,10 +190,10 @@ class FrameHeader:
       :type rsv: int
       :param length: Frame payload length.
       :type length: int
-      :param mask: Frame mask (or None) as (binary) string.
+      :param mask: Frame mask (binary string) or None.
       :type mask: str
-      :param mask_array: Frame mask (or None) as array (of length 4) of ints.
-      :type mask_array: array of ints
+      :param applyMask: Indicates whether to actually apply the mask (if one is present).
+      :type applyMask: bool
       """
       self.opcode = opcode
       self.fin = fin
@@ -200,7 +201,24 @@ class FrameHeader:
       self.length = length
       self.ptr = 0
       self.mask = mask
-      self.mask_array = mask_array
+      self.applyMask = applyMask
+
+      if mask and applyMask:
+         self.mask_array = array('B', mask)
+         self.mask_array_long = array('L', mask)
+
+
+   def unmask(self, data):
+      length = len(data)
+      if self.mask and self.applyMask:
+         payload = array('B', data)
+         for k in xrange(length):
+            payload[k] ^= self.mask_array[self.ptr & 3]
+            self.ptr += 1
+         return [payload.tostring()]
+      else:
+         self.ptr += length
+         return [data]
 
 
 class HttpException():
@@ -470,6 +488,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       self.message_opcode = opcode
       self.message_data = []
+      self.message_data_total_length = 0
 
 
    def onMessageFrameBegin(self, length, reserved):
@@ -487,11 +506,13 @@ class WebSocketProtocol(protocol.Protocol):
          if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
             self.wasMaxMessagePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+         elif self.maxFramePayloadSize > 0 and length > self.maxFramePayloadSize:
+            self.wasMaxFramePayloadSizeExceeded = True
+            self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
          else:
             self.frame_length = length
             self.frame_reserved = reserved
             self.frame_data = []
-            self.frame_data_total_length = 0
 
 
    def onMessageFrameData(self, payload):
@@ -500,15 +521,10 @@ class WebSocketProtocol(protocol.Protocol):
       buffer data for frame. Override in derived class.
 
       :param payload: Partial payload for message frame.
-      :type payload: str
+      :type payload: list of array.array
       """
       if not self.failedByMe:
-         self.frame_data_total_length += len(payload)
-         if self.maxFramePayloadSize > 0 and self.frame_data_total_length > self.maxFramePayloadSize:
-            self.wasMaxFramePayloadSizeExceeded = True
-            self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
-         else:
-            self.frame_data.append(payload)
+         self.frame_data.extend(payload)
 
 
    def onMessageFrameEnd(self):
@@ -517,10 +533,13 @@ class WebSocketProtocol(protocol.Protocol):
       will flatten the buffered frame data and callback onMessageFrame. Override
       in derived class.
       """
+      if self.debug:
+         self.logRxFrame(self.current_frame, self.frame_data)
+
       if not self.failedByMe:
-         data = bytearray().join(self.frame_data)
-         self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, data)
-         self.onMessageFrame(data, self.frame_reserved)
+         self.onMessageFrame(self.frame_data, self.frame_reserved)
+
+      self.frame_data = None
 
 
    def onMessageFrame(self, payload, reserved):
@@ -529,12 +548,12 @@ class WebSocketProtocol(protocol.Protocol):
       will buffer frame for message. Override in derived class.
 
       :param payload: Message frame payload.
-      :type payload: str
+      :type payload: list of array('B')
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
       """
       if not self.failedByMe:
-         self.message_data.append(payload)
+         self.message_data.extend(payload)
 
 
    def onMessageEnd(self):
@@ -544,10 +563,10 @@ class WebSocketProtocol(protocol.Protocol):
       in derived class.
       """
       if not self.failedByMe:
-         data = bytearray().join(self.message_data)
-         self.onMessage(str(data), self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
-         self.message_opcode = None
-         self.message_data = None
+         payload = ''.join(self.message_data)
+         self.onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
+
+      self.message_data = None
 
 
    def onMessage(self, payload, binary):
@@ -647,7 +666,7 @@ class WebSocketProtocol(protocol.Protocol):
          ## we use our own UTF-8 validator to get consistent and fully conformant
          ## UTF-8 validation behavior
          u = Utf8Validator()
-         val = u.validate(bytearray(reasonRaw))
+         val = u.validateList(reasonRaw)
          if not val[0]:
             if self.invalidPayload("invalid close reason (non-UTF-8 payload)"):
                return True
@@ -920,9 +939,7 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def logRxOctets(self, data):
-      if self.debug:
-         d = str(buffer(data))
-         log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(d)))
+      log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
 
 
    def logTxOctets(self, data, sync):
@@ -931,14 +948,20 @@ class WebSocketProtocol(protocol.Protocol):
          log.msg("TX Octets to %s : %s" % (self.peerstr, binascii.b2a_hex(d)))
 
 
-   def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
-      if self.debug:
-         d = str(buffer(payload))
-         if mask:
-            mmask = binascii.b2a_hex(mask)
-         else:
-            mmask = str(mask)
-         log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), str(masked), str(payload_len), mmask, binascii.b2a_hex(d)))
+   def logRxFrame(self, frameHeader, payload):
+      d = ''.join(payload)
+      if frameHeader.mask is not None:
+         mmask = binascii.b2a_hex(frameHeader.mask)
+      else:
+         mmask = str(mask)
+      log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr,
+                                                                                                                              str(frameHeader.fin),
+                                                                                                                              str(frameHeader.rsv),
+                                                                                                                              str(frameHeader.opcode),
+                                                                                                                              str(frameHeader.mask is not None),
+                                                                                                                              str(frameHeader.length),
+                                                                                                                              mmask,
+                                                                                                                              binascii.b2a_hex(d)))
 
 
    def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
@@ -955,7 +978,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
       """
-      self.logRxOctets(data)
+      if self.debug:
+         self.logRxOctets(data)
 
       self.data += data
       self.consumeData()
@@ -963,11 +987,9 @@ class WebSocketProtocol(protocol.Protocol):
 
    def consumeData(self):
 
-      buffered_len = len(self.data)
-
       ## WebSocket is open (handshake was completed) or close was sent
       ##
-      if self.state in [WebSocketProtocol.STATE_OPEN, WebSocketProtocol.STATE_CLOSING]:
+      if self.state == WebSocketProtocol.STATE_OPEN or self.state == WebSocketProtocol.STATE_CLOSING:
 
          ## process until no more buffered data left or WS was closed
          ##
@@ -1197,6 +1219,8 @@ class WebSocketProtocol(protocol.Protocol):
             ##
             if buffered_len >= frame_header_len:
 
+               ## minimum frame header length (already consumed)
+               ##
                i = 2
 
                ## extract extended payload length
@@ -1222,11 +1246,8 @@ class WebSocketProtocol(protocol.Protocol):
                ## when payload is masked, extract frame mask
                ##
                frame_mask = None
-               frame_mask_array = []
                if frame_masked:
                   frame_mask = self.data[i:i+4]
-                  for j in range(0, 4):
-                     frame_mask_array.append(ord(frame_mask[j]))
                   i += 4
 
                ## remember rest (payload of current frame after header and everything thereafter)
@@ -1235,7 +1256,12 @@ class WebSocketProtocol(protocol.Protocol):
 
                ## ok, got complete frame header
                ##
-               self.current_frame = FrameHeader(frame_opcode, frame_fin, frame_rsv, frame_payload_len, frame_mask, frame_mask_array)
+               self.current_frame = FrameHeader(frame_opcode,
+                                                frame_fin,
+                                                frame_rsv,
+                                                frame_payload_len,
+                                                frame_mask,
+                                                self.applyMask)
 
                ## process begin on new frame
                ##
@@ -1258,20 +1284,18 @@ class WebSocketProtocol(protocol.Protocol):
          ##
          rest = self.current_frame.length - self.current_frame.ptr
          if buffered_len >= rest:
-            payload = bytearray(self.data[:rest])
+            data = self.data[:rest]
             length = rest
             self.data = self.data[rest:]
          else:
-            payload = bytearray(self.data)
+            data = self.data
             length = buffered_len
             self.data = ""
 
          if length > 0:
             ## unmask payload
             ##
-            if self.current_frame.mask and self.applyMask:
-               for k in xrange(0, length):
-                  payload[k] ^= self.current_frame.mask_array[(k + self.current_frame.ptr) % 4]
+            payload = self.current_frame.unmask(data)
 
             ## process frame data
             ##
@@ -1281,7 +1305,6 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## advance payload pointer and fire frame end handler when frame payload is complete
          ##
-         self.current_frame.ptr += length
          if self.current_frame.ptr == self.current_frame.length:
             fr = self.onFrameEnd()
             if fr == False:
@@ -1294,7 +1317,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def onFrameBegin(self):
       if self.current_frame.opcode > 7:
-         self.control_frame_data = bytearray()
+         self.control_frame_data = []
       else:
          ## new message started
          ##
@@ -1309,7 +1332,6 @@ class WebSocketProtocol(protocol.Protocol):
             else:
                self.utf8validateIncomingCurrentMessage = False
 
-            self.message_data_total_length = 0
             self.onMessageBegin(self.current_frame.opcode)
 
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
@@ -1322,7 +1344,7 @@ class WebSocketProtocol(protocol.Protocol):
          ## incrementally validate UTF-8 payload
          ##
          if self.utf8validateIncomingCurrentMessage:
-            self.utf8validateLast = self.utf8validator.validate(payload)
+            self.utf8validateLast = self.utf8validator.validateList(payload)
             if not self.utf8validateLast[0]:
                if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                   return False
@@ -1346,10 +1368,12 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def processControlFrame(self):
-      payload = str(self.control_frame_data)
-      self.control_frame_data = None
 
-      self.logRxFrame(self.current_frame.fin, self.current_frame.rsv, self.current_frame.opcode, self.current_frame.mask is not None, self.current_frame.length, self.current_frame.mask, payload)
+      if self.debug:
+         self.logRxFrame(self.current_frame, self.control_frame_data)
+
+      payload = ''.join(self.control_frame_data)
+      self.control_frame_data = None
 
       ## CLOSE frame
       ##

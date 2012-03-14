@@ -20,7 +20,7 @@
 
 import binascii
 from case import Case
-from autobahn.utf8validator import UTF8_TEST_SEQUENCES
+from autobahn.utf8validator import createUtf8TestSequences
 
 
 Case6_X_X = []
@@ -43,7 +43,7 @@ def onOpen(self):
    self.p.killAfter(0.5)
 
 i = 5
-for t in UTF8_TEST_SEQUENCES:
+for t in createUtf8TestSequences():
    j = 1
    Case6_X_X_CaseSubCategories["6.%d" % i] = t[0]
    for p in t[1]:
@@ -64,4 +64,3 @@ for t in UTF8_TEST_SEQUENCES:
       Case6_X_X.append(C)
       j += 1
    i += 1
-

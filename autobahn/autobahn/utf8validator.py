@@ -103,24 +103,32 @@ class Utf8Validator:
       total amount of consumed bytes.
       """
       l = len(ba)
-      for i in xrange(0, l):
+      for i in xrange(l):
          ## optimized version of decode(), since we are not interested in actual code points
-         self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + (self.state << 4) + Utf8Validator.UTF8VALIDATOR_DFA[ba[i]]]
+         self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + (self.state << 4) + Utf8Validator.UTF8VALIDATOR_DFA[ord(ba[i])]]
          if self.state == Utf8Validator.UTF8_REJECT:
             self.i += i
             return False, False, i, self.i
       self.i += l
       return True, self.state == Utf8Validator.UTF8_ACCEPT, l, self.i
 
+   def validateList(self, ls):
+      r = None
+      for l in ls:
+         r = self.validate(l)
+         if not r[0]:
+            return r
+      return r
 
-UTF8_TEST_SEQUENCES = []
 
 
-def setTestSequences():
+def createUtf8TestSequences():
    """
-   Setup test sequences for UTF-8 decoder tests from
+   Create test sequences for UTF-8 decoder tests from
    http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
    """
+
+   UTF8_TEST_SEQUENCES = []
 
    # 1 Some correct UTF-8 text
    vss = '\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5'
@@ -133,7 +141,7 @@ def setTestSequences():
    v = Utf8Validator()
    for i in xrange(1, len(vss) + 1):
       v.reset()
-      res = v.validate(bytearray(vss[:i]))
+      res = v.validate(vss[:i])
       vs[1].append((res[0] and res[1], vss[:i]))
    UTF8_TEST_SEQUENCES.append(vs)
 
@@ -295,11 +303,10 @@ def setTestSequences():
    vs[1].append((True, '\xef\xbf\xbd'))
    UTF8_TEST_SEQUENCES.append(vs)
 
+   return UTF8_TEST_SEQUENCES
 
-setTestSequences()
 
-
-def test_utf8():
+def test_utf8(UTF8_TEST_SEQUENCES):
    """
    These tests verify the UTF-8 decoder/validator on the various test cases from
    http://www.cl.cam.ac.uk/~mgk25/ucs/examples/UTF-8-test.txt
@@ -371,4 +378,6 @@ if __name__ == '__main__':
    Run unit tests.
    """
    test_utf8_incremental()
+
+   UTF8_TEST_SEQUENCES = createUtf8TestSequences()
    test_utf8()
