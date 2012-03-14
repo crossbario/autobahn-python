@@ -39,6 +39,7 @@ import os
 from array import array
 from collections import deque
 from utf8validator import Utf8Validator
+from xormasker import XorMaskerNull, XorMaskerSimple, XorMaskerShifted1
 from httpstatus import *
 import autobahn # need autobahn.version
 
@@ -173,12 +174,12 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 class FrameHeader:
    """
-   Thin-wrapper for storing WebSockets frame metadata and current frame pointer.
+   Thin-wrapper for storing WebSockets frame metadata.
 
    FOR INTERNAL USE ONLY!
    """
 
-   def __init__(self, opcode, fin, rsv, length, mask, applyMask):
+   def __init__(self, opcode, fin, rsv, length, mask):
       """
       Constructor.
 
@@ -192,33 +193,12 @@ class FrameHeader:
       :type length: int
       :param mask: Frame mask (binary string) or None.
       :type mask: str
-      :param applyMask: Indicates whether to actually apply the mask (if one is present).
-      :type applyMask: bool
       """
       self.opcode = opcode
       self.fin = fin
       self.rsv = rsv
       self.length = length
-      self.ptr = 0
       self.mask = mask
-      self.applyMask = applyMask
-
-      if mask and applyMask:
-         self.mask_array = array('B', mask)
-         self.mask_array_long = array('L', mask)
-
-
-   def unmask(self, data):
-      length = len(data)
-      if self.mask and self.applyMask:
-         payload = array('B', data)
-         for k in xrange(length):
-            payload[k] ^= self.mask_array[self.ptr & 3]
-            self.ptr += 1
-         return [payload.tostring()]
-      else:
-         self.ptr += length
-         return [data]
 
 
 class HttpException():
@@ -524,7 +504,7 @@ class WebSocketProtocol(protocol.Protocol):
       :type payload: list of array.array
       """
       if not self.failedByMe:
-         self.frame_data.extend(payload)
+         self.frame_data.append(payload)
 
 
    def onMessageFrameEnd(self):
@@ -666,7 +646,7 @@ class WebSocketProtocol(protocol.Protocol):
          ## we use our own UTF-8 validator to get consistent and fully conformant
          ## UTF-8 validation behavior
          u = Utf8Validator()
-         val = u.validateList(reasonRaw)
+         val = u.validate(reasonRaw)
          if not val[0]:
             if self.invalidPayload("invalid close reason (non-UTF-8 payload)"):
                return True
@@ -1250,6 +1230,15 @@ class WebSocketProtocol(protocol.Protocol):
                   frame_mask = self.data[i:i+4]
                   i += 4
 
+               if frame_masked and frame_payload_len > 0 and self.applyMask:
+                  if frame_payload_len < 128:
+                     self.current_frame_masker = XorMaskerSimple(frame_mask)
+                  else:
+                     self.current_frame_masker = XorMaskerShifted1(frame_mask)
+               else:
+                  self.current_frame_masker = XorMaskerNull()
+
+
                ## remember rest (payload of current frame after header and everything thereafter)
                ##
                self.data = self.data[i:]
@@ -1260,8 +1249,7 @@ class WebSocketProtocol(protocol.Protocol):
                                                 frame_fin,
                                                 frame_rsv,
                                                 frame_payload_len,
-                                                frame_mask,
-                                                self.applyMask)
+                                                frame_mask)
 
                ## process begin on new frame
                ##
@@ -1282,7 +1270,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## cut out rest of frame payload
          ##
-         rest = self.current_frame.length - self.current_frame.ptr
+         rest = self.current_frame.length - self.current_frame_masker.pointer()
          if buffered_len >= rest:
             data = self.data[:rest]
             length = rest
@@ -1295,7 +1283,7 @@ class WebSocketProtocol(protocol.Protocol):
          if length > 0:
             ## unmask payload
             ##
-            payload = self.current_frame.unmask(data)
+            payload = self.current_frame_masker.process(data)
 
             ## process frame data
             ##
@@ -1303,9 +1291,9 @@ class WebSocketProtocol(protocol.Protocol):
             if fr == False:
                return False
 
-         ## advance payload pointer and fire frame end handler when frame payload is complete
+         ## fire frame end handler when frame payload is complete
          ##
-         if self.current_frame.ptr == self.current_frame.length:
+         if self.current_frame_masker.pointer() == self.current_frame.length:
             fr = self.onFrameEnd()
             if fr == False:
                return False
@@ -1339,12 +1327,12 @@ class WebSocketProtocol(protocol.Protocol):
 
    def onFrameData(self, payload):
       if self.current_frame.opcode > 7:
-         self.control_frame_data.extend(payload)
+         self.control_frame_data.append(payload)
       else:
          ## incrementally validate UTF-8 payload
          ##
          if self.utf8validateIncomingCurrentMessage:
-            self.utf8validateLast = self.utf8validator.validateList(payload)
+            self.utf8validateLast = self.utf8validator.validate(payload)
             if not self.utf8validateLast[0]:
                if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                   return False
