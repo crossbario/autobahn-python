@@ -31,7 +31,7 @@ class XorMaskerNull:
       self.ptr = 0
 
    def process(self, data):
-      self.ptr += dlen
+      self.ptr += len(data)
       return data
 
 

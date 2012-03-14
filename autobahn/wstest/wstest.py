@@ -134,8 +134,8 @@ def run():
       print 'Try %s --help for usage details\n' % sys.argv[0]
       sys.exit(1)
 
-   log.startLogging(sys.stdout)
-   log.msg("Using Twisted reactor class %s" % str(reactor.__class__))
+   #log.startLogging(sys.stdout)
+   print "Using Twisted reactor class %s" % str(reactor.__class__)
 
    mode = str(o.opts['mode'])
 
@@ -171,8 +171,8 @@ def run():
 
       elif mode == 'testeeclient':
          factory = TesteeClientFactory(wsuri)
-         # no connectWS done here, since this is done within
-         # TesteeClientFactory automatically to orchestrate tests
+         factory.setProtocolOptions(failByDrop = False)
+         connectWS(factory)
 
       else:
          raise Exception("logic error")

@@ -2218,12 +2218,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
 <html>
    <body>
       <h1>Autobahn WebSockets %s</h1>
-      <p>I am not Web server, but a WebSocket endpoint. You can talk to me
-      in the WebSocket protocol versions %s.</p>
-      <p>For more information, please visit <a href="http://www.tavendo.de/autobahn">my homepage</a>.</p>
+      <p>
+         I am not Web server, but a WebSocket endpoint.
+         You can talk to me using the WebSocket <a href="http://tools.ietf.org/html/rfc6455">protocol</a>.
+      </p>
+      <p>
+         For more information, please visit <a href="http://autobahn.ws">my homepage</a>.
+      </p>
    </body>
 </html>
-""" % (str(autobahn.version), str(sorted(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
+""" % str(autobahn.version)
       self.sendHtml(html)
 
 
