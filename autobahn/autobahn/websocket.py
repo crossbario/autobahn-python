@@ -713,6 +713,24 @@ class WebSocketProtocol(protocol.Protocol):
             log.msg("skipping onServerConnectionDropTimeout since connection is already closed")
 
 
+   def onOpenHandshakeTimeout(self):
+      """
+      We expected the peer to complete the opening handshake with to us.
+      It didn't do so (in time self.openHandshakeTimeout).
+      So we drop the connection, but set self.wasClean = False.
+      """
+      if self.state == WebSocketProtocol.STATE_CONNECTING:
+         if self.debugCodePaths:
+            log.msg("onOpenHandshakeTimeout fired")
+         self.wasClean = False
+         self.wasNotCleanReason = "peer did not finish (in time) the opening handshake"
+         self.wasOpenHandshakeTimeout = True
+         self.dropConnection(abort = True)
+      else:
+         if self.debugCodePaths:
+            log.msg("skipping onOpenHandshakeTimeout since opening handshake is already finished")
+
+
    def onCloseHandshakeTimeout(self):
       """
       We expected the peer to respond to us initiating a close handshake. It didn't
@@ -836,6 +854,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.autoFragmentSize = self.factory.autoFragmentSize
       self.failByDrop = self.factory.failByDrop
       self.echoCloseCodeReason = self.factory.echoCloseCodeReason
+      self.openHandshakeTimeout = self.factory.openHandshakeTimeout
       self.closeHandshakeTimeout = self.factory.closeHandshakeTimeout
       self.tcpNoDelay = self.factory.tcpNoDelay
 
@@ -899,6 +918,9 @@ class WebSocketProtocol(protocol.Protocol):
       # didn't happen in time, this gets True
       self.wasServerConnectionDropTimeout = False
 
+      # When the initial WebSocket opening handshake times out, this gets True
+      self.wasOpenHandshakeTimeout = False
+
       # When we initiated a closing handshake, but the peer did not respond in
       # time, this gets True
       self.wasCloseHandshakeTimeout = False
@@ -914,6 +936,10 @@ class WebSocketProtocol(protocol.Protocol):
 
       # The close reason the peer sent me in close frame (if any)
       self.remoteCloseReason = None
+
+      # set opening handshake timeout handler
+      if self.openHandshakeTimeout > 0:
+         reactor.callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
 
    def connectionLost(self, reason):
@@ -2339,6 +2365,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
       self.autoFragmentSize = 0
       self.failByDrop = True
       self.echoCloseCodeReason = False
+      self.openHandshakeTimeout = 0
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
@@ -2355,6 +2382,7 @@ class WebSocketServerFactory(protocol.ServerFactory):
                           autoFragmentSize = None,
                           failByDrop = None,
                           echoCloseCodeReason = None,
+                          openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None):
       """
@@ -2382,6 +2410,8 @@ class WebSocketServerFactory(protocol.ServerFactory):
       :type failbyDrop: bool
       :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
       :type echoCloseCodeReason: bool
+      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or 0 to deactivate (default: 0).
+      :type openHandshakeTimeout: float
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
@@ -2423,6 +2453,9 @@ class WebSocketServerFactory(protocol.ServerFactory):
 
       if echoCloseCodeReason is not None and echoCloseCodeReason != self.echoCloseCodeReason:
          self.echoCloseCodeReason = echoCloseCodeReason
+
+      if openHandshakeTimeout is not None and openHandshakeTimeout != self.openHandshakeTimeout:
+         self.openHandshakeTimeout = openHandshakeTimeout
 
       if closeHandshakeTimeout is not None and closeHandshakeTimeout != self.closeHandshakeTimeout:
          self.closeHandshakeTimeout = closeHandshakeTimeout
@@ -2815,6 +2848,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
       self.failByDrop = True
       self.echoCloseCodeReason = False
       self.serverConnectionDropTimeout = 1
+      self.openHandshakeTimeout = 0
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
@@ -2831,6 +2865,7 @@ class WebSocketClientFactory(protocol.ClientFactory):
                           failByDrop = None,
                           echoCloseCodeReason = None,
                           serverConnectionDropTimeout = None,
+                          openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None):
       """
@@ -2858,6 +2893,8 @@ class WebSocketClientFactory(protocol.ClientFactory):
       :type echoCloseCodeReason: bool
       :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: 1).
       :type serverConnectionDropTimeout: float
+      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or 0 to deactivate (default: 0).
+      :type openHandshakeTimeout: float
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
@@ -2899,6 +2936,9 @@ class WebSocketClientFactory(protocol.ClientFactory):
 
       if serverConnectionDropTimeout is not None and serverConnectionDropTimeout != self.serverConnectionDropTimeout:
          self.serverConnectionDropTimeout = serverConnectionDropTimeout
+
+      if openHandshakeTimeout is not None and openHandshakeTimeout != self.openHandshakeTimeout:
+         self.openHandshakeTimeout = openHandshakeTimeout
 
       if closeHandshakeTimeout is not None and closeHandshakeTimeout != self.closeHandshakeTimeout:
          self.closeHandshakeTimeout = closeHandshakeTimeout
