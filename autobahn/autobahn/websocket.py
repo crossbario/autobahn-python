@@ -376,6 +376,10 @@ class WebSocketProtocol(protocol.Protocol):
    QUEUED_WRITE_DELAY = 0.00001
    """For synched/chopped writes, this is the reactor reentry delay in seconds."""
 
+   PAYLOAD_LEN_XOR_BREAKEVEN = 128
+   """Tuning parameter which chooses XORer used for masking/unmasking based on
+   payload length."""
+
    MESSAGE_TYPE_TEXT = 1
    """WebSockets text message type (UTF-8 payload)."""
 
@@ -1231,7 +1235,7 @@ class WebSocketProtocol(protocol.Protocol):
                   i += 4
 
                if frame_masked and frame_payload_len > 0 and self.applyMask:
-                  if frame_payload_len < 128:
+                  if frame_payload_len < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
                      self.current_frame_masker = XorMaskerSimple(frame_mask)
                   else:
                      self.current_frame_masker = XorMaskerShifted1(frame_mask)
@@ -1431,25 +1435,22 @@ class WebSocketProtocol(protocol.Protocol):
       ## second byte, payload len bytes and mask
       ##
       b1 = 0
-      el = ""
       if mask or (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
          b1 |= 1 << 7
-         if mask:
-            mv = struct.pack("!I", mask)
+         if not mask:
+            mask = struct.pack("!I", random.getrandbits(32))
+            mv = mask
          else:
-            mv = struct.pack("!I", random.getrandbits(32))
-
-         frame_mask = []
-         for j in range(0, 4):
-            frame_mask.append(ord(mv[j]))
+            mv = ""
 
          ## mask frame payload
          ##
-         if self.applyMask:
-            pl_ba = bytearray(pl)
-            for k in xrange(0, l):
-               pl_ba[k] ^= frame_mask[k % 4]
-            plm = str(pl_ba)
+         if l > 0 and self.applyMask:
+            if l < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
+               masker = XorMaskerSimple(mask)
+            else:
+               masker = XorMaskerShifted1(mask)
+            plm = masker.process(pl)
          else:
             plm = pl
 
@@ -1457,6 +1458,7 @@ class WebSocketProtocol(protocol.Protocol):
          mv = ""
          plm = pl
 
+      el = ""
       if l <= 125:
          b1 |= l
       elif l <= 0xFFFF:
@@ -1640,26 +1642,35 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("invalid value for reserved bits")
 
       self.send_message_frame_length = length
-      self.send_message_frame_octets_sent = 0
 
       if mask:
          ## explicit mask given
          ##
-         if type(mask) is not str:
-            raise Exception("mask must be a (byte) string")
-         if len(mask) != 4:
-            raise Exception("mask must have length 4")
+         assert type(mask) == str
+         assert len(mask) == 4
          self.send_message_frame_mask = mask
+
       elif (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
          ## automatic mask:
          ##  - client-to-server masking (if not deactivated)
          ##  - server-to-client masking (if activated)
          ##
-         self.send_message_frame_mask = random.getrandbits(32)
+         self.send_message_frame_mask = struct.pack("!I", random.getrandbits(32))
+
       else:
          ## no mask
          ##
          self.send_message_frame_mask = None
+
+      ## payload masker
+      ##
+      if self.send_message_frame_mask and length > 0 and self.applyMask:
+         if length < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
+            self.send_message_frame_masker = XorMaskerSimple(self.send_message_frame_mask)
+         else:
+            self.send_message_frame_masker = XorMaskerShifted1(self.send_message_frame_mask)
+      else:
+         self.send_message_frame_masker = XorMaskerNull()
 
       ## first byte
       ##
@@ -1674,16 +1685,13 @@ class WebSocketProtocol(protocol.Protocol):
       ## second byte, payload len bytes and mask
       ##
       b1 = 0
-      el = ""
       if self.send_message_frame_mask:
          b1 |= 1 << 7
-         mv = struct.pack("!I", self.send_message_frame_mask)
-         self.send_message_frame_mask_array = []
-         for j in range(0, 4):
-            self.send_message_frame_mask_array.append(ord(mv[j]))
+         mv = self.send_message_frame_mask
       else:
          mv = ""
 
+      el = ""
       if length <= 125:
          b1 |= length
       elif length <= 0xFFFF:
@@ -1725,38 +1733,26 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
 
       rl = len(payload)
-      if self.send_message_frame_octets_sent + rl > self.send_message_frame_length:
-         l = self.send_message_frame_length - self.send_message_frame_octets_sent
+      if self.send_message_frame_masker.pointer() + rl > self.send_message_frame_length:
+         l = self.send_message_frame_length - self.send_message_frame_masker.pointer()
          rest = -(rl - l)
-         pl_ba = bytearray(payload[:l])
+         pl = payload[:l]
       else:
          l = rl
-         rest = self.send_message_frame_length - self.send_message_frame_octets_sent - l
-         pl_ba = bytearray(payload)
+         rest = self.send_message_frame_length - self.send_message_frame_masker.pointer() - l
+         pl = payload
 
       ## mask frame payload
       ##
-      if self.send_message_frame_mask and self.applyMask:
-         w = self.send_message_frame_octets_sent % 4
-         for k in xrange(0, l):
-            pl_ba[k] ^= self.send_message_frame_mask_array[(w + k) % 4]
-            ## WARNING. This is silly: if you do it instead like the uncommended line, the memory footprint
-            ## will run away ...
-#            pl_ba[k] ^= self.send_message_frame_mask_array[(self.send_message_frame_octets_sent + k) % 4]
+      plm = self.send_message_frame_masker(pl)
 
       ## send frame payload
       ##
-      self.sendData(str(pl_ba), sync = sync)
-
-      pl_ba = None
-
-      ## advance frame payload pointer and check if frame payload was completely sent
-      ##
-      self.send_message_frame_octets_sent += l
+      self.sendData(plm, sync = sync)
 
       ## if we are done with frame, move back into "inside message" state
       ##
-      if self.send_message_frame_octets_sent >= self.send_message_frame_length:
+      if self.send_message_frame_masker.pointer() >= self.send_message_frame_length:
          self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
 
       ## when =0 : frame was completed exactly
