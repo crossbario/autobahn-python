@@ -42,7 +42,7 @@ setup (
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws',
    platforms = ('Any'),
-   install_requires = ['setuptools', 'Twisted>=11.0'],
+   install_requires = ['setuptools', 'Twisted>=11.1'],
    packages = find_packages(),
    #packages = ['autobahn', 'wstest'],
    include_package_data = True,

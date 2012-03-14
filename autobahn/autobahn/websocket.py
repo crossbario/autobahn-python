@@ -663,7 +663,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
-            self.dropConnection()
+            self.dropConnection(abort = True)
          else:
             ## When we are a client, the server should drop the TCP
             ## If that doesn't happen, we do. And that will set wasClean = False.
@@ -683,7 +683,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
-            self.dropConnection()
+            self.dropConnection(abort = False)
          else:
             ## When we are a client, we expect the server to drop the TCP,
             ## and when the server fails to do so, a timeout in sendCloseFrame()
@@ -707,7 +707,7 @@ class WebSocketProtocol(protocol.Protocol):
          self.wasClean = False
          self.wasNotCleanReason = "server did not drop TCP connection (in time)"
          self.wasServerConnectionDropTimeout = True
-         self.dropConnection()
+         self.dropConnection(abort = True)
       else:
          if self.debugCodePaths:
             log.msg("skipping onServerConnectionDropTimeout since connection is already closed")
@@ -725,22 +725,29 @@ class WebSocketProtocol(protocol.Protocol):
          self.wasClean = False
          self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
          self.wasCloseHandshakeTimeout = True
-         self.dropConnection()
+         self.dropConnection(abort = True)
       else:
          if self.debugCodePaths:
             log.msg("skipping onCloseHandshakeTimeout since connection is already closed")
 
 
-   def dropConnection(self):
+   def dropConnection(self, abort = False):
       """
-      Drop the underlying TCP connection.
+      Drop the underlying TCP connection. For abort parameter, see:
+
+        * http://twistedmatrix.com/documents/current/core/howto/servers.html#auto2
+        * https://github.com/tavendo/AutobahnPython/issues/96
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
             log.msg("dropping connection")
          self.droppedByMe = True
          self.state = WebSocketProtocol.STATE_CLOSED
-         self.transport.loseConnection()
+
+         if False or abort:
+            self.transport.abortConnection()
+         else:
+            self.transport.loseConnection()
       else:
          if self.debugCodePaths:
             log.msg("skipping dropConnection since connection is already closed")
@@ -758,7 +765,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## brutally drop the TCP connection
             self.wasClean = False
             self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
-            self.dropConnection()
+            self.dropConnection(abort = True)
          else:
             ## perform WebSockets closing handshake
             if self.state != WebSocketProtocol.STATE_CLOSING:
@@ -1979,7 +1986,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ##
             if self.webStatus:
                self.sendServerStatus()
-               self.dropConnection()
+               self.dropConnection(abort = False)
                return
             else:
                return self.failHandshake("HTTP Upgrade header missing", HTTP_STATUS_CODE_UPGRADE_REQUIRED[0])
@@ -2178,7 +2185,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       if self.debug:
          log.msg("failing WebSockets opening handshake ('%s')" % reason)
       self.sendHttpErrorResponse(code, reason, responseHeaders)
-      self.dropConnection()
+      self.dropConnection(abort = False)
 
 
    def sendHttpErrorResponse(self, code, reason, responseHeaders = []):
@@ -2698,7 +2705,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       """
       if self.debug:
          log.msg("failing WebSockets opening handshake ('%s')" % reason)
-      self.dropConnection()
+      self.dropConnection(abort = True)
 
 
 class WebSocketClientFactory(protocol.ClientFactory):
