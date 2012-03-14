@@ -1751,7 +1751,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## mask frame payload
       ##
-      plm = self.send_message_frame_masker(pl)
+      plm = self.send_message_frame_masker.process(pl)
 
       ## send frame payload
       ##
