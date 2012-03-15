@@ -1069,12 +1069,6 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
    def __init__(self, spec):
 
-      if spec.get("enable-ssl", False):
-         from twisted.internet import ssl
-         self.contextFactory = ssl.ClientContextFactory()
-      else:
-         self.contextFactory = None
-
       WebSocketClientFactory.__init__(self)
       FuzzingFactory.__init__(self, spec.get("outdir", "./reports/servers/"))
 

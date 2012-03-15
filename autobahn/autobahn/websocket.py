@@ -141,7 +141,9 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
    """
    if factory.isSecure:
       if contextFactory is None:
-         raise Exception("Secure WebSocket connection requested, but no SSL context factory given")
+         # create default client SSL context factory when none given
+         from twisted.internet import ssl
+         contextFactory = ssl.ClientContextFactory()
       conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
    else:
       conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
