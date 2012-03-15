@@ -20,7 +20,7 @@ from case import Case
 
 class Case10_1_1(Case):
 
-   DESCRIPTION = """Send text message with payload of length 65536 and <b>autoFragmentSize = 1300</b>."""
+   DESCRIPTION = """Send text message with payload of length 65536 auto-fragmented with <b>autoFragmentSize = 1300</b>."""
 
    EXPECTATION = """Receive echo'ed text message (with payload as sent and transmitted frame counts as expected). Clean close with normal code."""
 

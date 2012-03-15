@@ -37,7 +37,7 @@ CaseCategories = {"0": "Handshake",
                   "7": "Close Handling",
                   "8": "Misc",
                   "9": "Limits/Performance",
-                  "10": "Autobahn Protocol Options"}
+                  "10": "Misc"}
 
 CaseSubCategories = {"1.1": "Text Messages",
                      "1.2": "Binary Messages",
