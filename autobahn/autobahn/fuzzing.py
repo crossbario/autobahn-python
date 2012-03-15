@@ -1039,7 +1039,7 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
       self.specExcludeAgentCases = parseExcludeAgentCases(self.spec)
-      print "Autobahn WebSockets %s Fuzzing Server" % autobahn.version
+      print "Autobahn WebSockets %s Fuzzing Server (Port %d%s)" % (autobahn.version, self.port, ' TLS' if self.isSecure else '')
       print "Ok, will run %d test cases for any clients connecting" % len(self.specCases)
       print "Cases = %s" % str(self.specCases)
 
@@ -1087,7 +1087,7 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
       self.currServer = -1
       if self.nextServer():
          if self.nextCase():
-            connectWS(self, contextFactory = self.contextFactory)
+            connectWS(self)
 
 
    def nextServer(self):

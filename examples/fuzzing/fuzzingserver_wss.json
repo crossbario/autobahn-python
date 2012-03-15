@@ -1,0 +1,13 @@
+{
+   "url": "wss://localhost:9001",
+   "key": "wss/server.key",
+   "cert": "wss/server.crt",
+
+   "options": {"failByDrop": false},
+   "outdir": "./reports/clients",
+   "webport": 8080,
+
+   "cases": ["*"],
+   "exclude-cases": [],
+   "exclude-agent-cases": {}
+}

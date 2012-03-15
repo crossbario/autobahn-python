@@ -149,6 +149,12 @@ def run():
          web = Site(webdir)
          reactor.listenTCP(spec.get("webport", 8080), web)
 
+         ## use TLS server key/cert from spec, but allow overriding from cmd line
+         if not o.opts['key']:
+            o.opts['key'] = spec.get('key', None)
+         if not o.opts['cert']:
+            o.opts['cert'] = spec.get('cert', None)
+
          factory = FuzzingServerFactory(spec)
          listenWS(factory, createWssContext(o, factory))
 
