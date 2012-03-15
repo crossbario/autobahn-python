@@ -517,9 +517,6 @@ class WebSocketProtocol(protocol.Protocol):
       will flatten the buffered frame data and callback onMessageFrame. Override
       in derived class.
       """
-      if self.debug:
-         self.logRxFrame(self.current_frame, self.frame_data)
-
       if not self.failedByMe:
          self.onMessageFrame(self.frame_data, self.frame_reserved)
 
@@ -844,8 +841,12 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## copy default options from factory (so we are not affected by changed on those)
       ##
+
       self.debug = self.factory.debug
       self.debugCodePaths = self.factory.debugCodePaths
+
+      self.logOctets = self.factory.logOctets
+      self.logFrames = self.factory.logFrames
 
       self.utf8validateIncoming = self.factory.utf8validateIncoming
       self.applyMask = self.factory.applyMask
@@ -956,48 +957,58 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def logRxOctets(self, data):
-      log.msg("RX Octets from %s : %s" % (self.peerstr, binascii.b2a_hex(data)))
+      """
+      Hook fired right after raw octets have been received, but only when self.logOctets == True.
+      """
+      log.msg("RX Octets from %s : octets = %s" % (self.peerstr, binascii.b2a_hex(data)))
 
 
    def logTxOctets(self, data, sync):
-      if self.debug:
-         d = str(buffer(data))
-         log.msg("TX Octets to %s : %s" % (self.peerstr, binascii.b2a_hex(d)))
+      """
+      Hook fired right after raw octets have been sent, but only when self.logOctets == True.
+      """
+      log.msg("TX Octets to %s : sync = %s, octets = %s" % (self.peerstr, binascii.b2a_hex(data)))
 
 
    def logRxFrame(self, frameHeader, payload):
-      d = ''.join(payload)
-      if frameHeader.mask is not None:
-         mmask = binascii.b2a_hex(frameHeader.mask)
-      else:
-         mmask = str(mask)
-      log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, masked = %s, payload_len = %s, mask = %s, payload = %s" % (self.peerstr,
-                                                                                                                              str(frameHeader.fin),
-                                                                                                                              str(frameHeader.rsv),
-                                                                                                                              str(frameHeader.opcode),
-                                                                                                                              str(frameHeader.mask is not None),
-                                                                                                                              str(frameHeader.length),
-                                                                                                                              mmask,
-                                                                                                                              binascii.b2a_hex(d)))
+      """
+      Hook fired right after WebSocket frame has been received and decoded, but only when self.logFrames == True.
+      """
+      info = (self.peerstr,
+              frameHeader.fin,
+              frameHeader.rsv,
+              frameHeader.opcode,
+              binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
+              frameHeader.length,
+              binascii.b2a_hex(''.join(payload)))
+
+      log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
 
 
-   def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
-      if self.debug:
-         d = str(buffer(payload))
-         if mask:
-            mmask = binascii.b2a_hex(mask)
-         else:
-            mmask = str(mask)
-         log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, payload_len = %s, chopsize = %s, sync = %s, payload = %s" % (self.peerstr, str(fin), str(rsv), str(opcode), mmask, str(payload_len), str(chopsize), str(sync), binascii.b2a_hex(d)))
+   def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
+      """
+      Hook fired right after WebSocket frame has been encoded and sent, but only when self.logFrames == True.
+      """
+      info = (self.peerstr,
+              frameHeader.fin,
+              frameHeader.rsv,
+              frameHeader.opcode,
+              binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
+              frameHeader.length,
+              repeatLength,
+              chopsize,
+              sync,
+              binascii.b2a_hex(payload))
+
+      log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
 
 
    def dataReceived(self, data):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
       """
-      if self.debug:
+      if self.logOctets:
          self.logRxOctets(data)
-
       self.data += data
       self.consumeData()
 
@@ -1074,8 +1085,9 @@ class WebSocketProtocol(protocol.Protocol):
       if len(self.send_queue) > 0:
          e = self.send_queue.popleft()
          if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.logTxOctets(e[0], e[1])
             self.transport.write(e[0])
+            if self.logOctets:
+               self.logTxOctets(e[0], e[1])
          else:
             if self.debugCodePaths:
                log.msg("skipped delayed write, since connection is closed")
@@ -1115,8 +1127,9 @@ class WebSocketProtocol(protocol.Protocol):
             self.send_queue.append((data, sync))
             self._trigger()
          else:
-            self.logTxOctets(data, False)
             self.transport.write(data)
+            if self.logOctets:
+               self.logTxOctets(data, False)
 
 
    def processData(self):
@@ -1379,8 +1392,12 @@ class WebSocketProtocol(protocol.Protocol):
 
    def onFrameEnd(self):
       if self.current_frame.opcode > 7:
+         if self.logFrames:
+            self.logRxFrame(self.current_frame, self.control_frame_data)
          self.processControlFrame()
       else:
+         if self.logFrames:
+            self.logRxFrame(self.current_frame, self.frame_data)
          self.onMessageFrameEnd()
          if self.current_frame.fin:
             if self.utf8validateIncomingCurrentMessage:
@@ -1393,9 +1410,6 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def processControlFrame(self):
-
-      if self.debug:
-         self.logRxFrame(self.current_frame, self.control_frame_data)
 
       payload = ''.join(self.control_frame_data)
       self.control_frame_data = None
@@ -1505,13 +1519,9 @@ class WebSocketProtocol(protocol.Protocol):
 
       raw = ''.join([chr(b0), chr(b1), el, mv, plm])
 
-      ## log frame TX
-      ##
-      if mv != "":
-         mmv = binascii.b2a_hex(mv)
-      else:
-         mmv = None
-      self.logTxFrame(opcode, payload, fin, rsv, mmv, payload_len, chopsize, sync)
+      if self.logFrames:
+         frameHeader = FrameHeader(opcode, fin, rsv, l, mask)
+         self.logTxFrame(frameHeader, payload, payload_len, chopsize, sync)
 
       ## send frame octets
       ##
@@ -2365,6 +2375,9 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.debug = debug
       self.debugCodePaths = debugCodePaths
 
+      self.logOctets = debug
+      self.logFrames = debug
+
       self.isServer = True
 
       ## seed RNG which is used for WS frame masks generation
@@ -2850,6 +2863,9 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       """
       self.debug = debug
       self.debugCodePaths = debugCodePaths
+
+      self.logOctets = debug
+      self.logFrames = debug
 
       self.isServer = False
 

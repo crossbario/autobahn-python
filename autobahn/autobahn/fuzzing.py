@@ -224,10 +224,7 @@ class FuzzingProtocol:
          l = len(data)
          self.rxOctetStats[l] = self.rxOctetStats.get(l, 0) + 1
       if self.createWirelog:
-         d = str(buffer(data))
-         self.wirelog.append(("RO", self.binLogData(d)))
-      else:
-         WebSocketProtocol.logRxOctets(self, data)
+         self.wirelog.append(("RO", self.binLogData(data)))
 
 
    def logTxOctets(self, data, sync):
@@ -235,30 +232,35 @@ class FuzzingProtocol:
          l = len(data)
          self.txOctetStats[l] = self.txOctetStats.get(l, 0) + 1
       if self.createWirelog:
-         d = str(buffer(data))
-         self.wirelog.append(("TO", self.binLogData(d), sync))
-      else:
-         WebSocketProtocol.logTxOctets(self, data, sync)
+         self.wirelog.append(("TO", self.binLogData(data), sync))
 
 
-   def logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload):
+   def logRxFrame(self, frameHeader, payload):
       if self.createStats:
-         self.rxFrameStats[opcode] = self.rxFrameStats.get(opcode, 0) + 1
+         self.rxFrameStats[frameHeader.opcode] = self.rxFrameStats.get(frameHeader.opcode, 0) + 1
       if self.createWirelog:
-         d = str(buffer(payload))
-         self.wirelog.append(("RF", self.asciiLogData(d), opcode, fin, rsv, masked, mask))
-      else:
-         WebSocketProtocol.logRxFrame(self, fin, rsv, opcode, masked, payload_len, mask, payload)
+         self.wirelog.append(("RF",
+                              self.asciiLogData(''.join(payload)),
+                              frameHeader.opcode,
+                              frameHeader.fin,
+                              frameHeader.rsv,
+                              frameHeader.mask is not None,
+                              binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else None))
 
 
-   def logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync):
+   def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
       if self.createStats:
-         self.txFrameStats[opcode] = self.txFrameStats.get(opcode, 0) + 1
+         self.txFrameStats[frameHeader.opcode] = self.txFrameStats.get(frameHeader.opcode, 0) + 1
       if self.createWirelog:
-         d = str(buffer(payload))
-         self.wirelog.append(("TF", self.asciiLogData(d), opcode, fin, rsv, mask, payload_len, chopsize, sync))
-      else:
-         WebSocketProtocol.logTxFrame(self, opcode, payload, fin, rsv, mask, payload_len, chopsize, sync)
+         self.wirelog.append(("TF",
+                              self.asciiLogData(payload),
+                              frameHeader.opcode,
+                              frameHeader.fin,
+                              frameHeader.rsv,
+                              binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else None,
+                              repeatLength,
+                              chopsize,
+                              sync))
 
 
    def executeContinueLater(self, fun, tag):
@@ -410,9 +412,8 @@ class FuzzingFactory:
 
    MAX_CASE_PICKLE_LEN = 1000
 
-   def __init__(self, debug = False, outdir = "reports"):
+   def __init__(self, outdir):
       self.repeatAgentRowPerSubcategory = True
-      self.debug = debug
       self.outdir = outdir
       self.agents = {}
       self.cases = {}
@@ -1018,11 +1019,12 @@ class FuzzingServerFactory(FuzzingFactory, WebSocketServerFactory):
 
    def __init__(self, spec):
 
-      debug = spec.get("debug", False)
-      debugCodePaths = spec.get("debugCodePaths", False)
+      WebSocketServerFactory.__init__(self)
+      FuzzingFactory.__init__(self, spec.get("outdir", "./reports/clients/"))
 
-      WebSocketServerFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
-      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/clients/"))
+      # needed for wire log / stats
+      self.logOctets = True
+      self.logFrames = True
 
       ## WebSocket session parameters
       ##
@@ -1067,17 +1069,18 @@ class FuzzingClientFactory(FuzzingFactory, WebSocketClientFactory):
 
    def __init__(self, spec):
 
-      debug = spec.get("debug", False)
-      debugCodePaths = spec.get("debugCodePaths", False)
-
       if spec.get("enable-ssl", False):
          from twisted.internet import ssl
          self.contextFactory = ssl.ClientContextFactory()
       else:
          self.contextFactory = None
 
-      WebSocketClientFactory.__init__(self, debug = debug, debugCodePaths = debugCodePaths)
-      FuzzingFactory.__init__(self, debug = debug, outdir = spec.get("outdir", "./reports/servers/"))
+      WebSocketClientFactory.__init__(self)
+      FuzzingFactory.__init__(self, spec.get("outdir", "./reports/servers/"))
+
+      # needed for wire log / stats
+      self.logOctets = True
+      self.logFrames = True
 
       self.spec = spec
       self.specCases = parseSpecCases(self.spec)
