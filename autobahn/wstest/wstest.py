@@ -134,7 +134,6 @@ def run():
       print 'Try %s --help for usage details\n' % sys.argv[0]
       sys.exit(1)
 
-   #log.startLogging(sys.stdout)
    print "Using Twisted reactor class %s" % str(reactor.__class__)
 
    mode = str(o.opts['mode'])
@@ -167,11 +166,12 @@ def run():
 
       if mode == 'testeeserver':
          factory = TesteeServerFactory(wsuri)
+         factory.setProtocolOptions(failByDrop = False) # spec conformance
          listenWS(factory, createWssContext(o, factory))
 
       elif mode == 'testeeclient':
          factory = TesteeClientFactory(wsuri)
-         factory.setProtocolOptions(failByDrop = False)
+         factory.setProtocolOptions(failByDrop = False) # spec conformance
          connectWS(factory)
 
       else:
