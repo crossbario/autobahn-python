@@ -31,7 +31,11 @@ def _lookupWsSupport(ua):
 
    Returns a tuple of booleans
 
-      (ws_supported, needs_flash)
+      (ws_supported, needs_flash, detected)
+
+      ws_supported = WebSocket is supported
+      needs_flash = Flash Bridge is needed for support
+      detected = the code has explicitly mapped the support/nosupport
 
    Params:
 
@@ -45,7 +49,7 @@ def _lookupWsSupport(ua):
    if ua.find("MSIE") >= 0:
       # IE10 has native support
       if ua.find("MSIE 10") >= 0:
-         return (True, False)
+         return (True, False, True)
 
       # first, check for Google Chrome Frame
       if ua.find("chromeframe") >= 0:
@@ -55,15 +59,15 @@ def _lookupWsSupport(ua):
          try:
             v = int(r.groups()[0])
             if v >= 14:
-               return (True, False)
+               return (True, False, True)
          except:
-            pass
+            return (False, False, False)
 
       # Flash fallback
       if ua.find("MSIE 8") >= 0 or ua.find("MSIE 9") >= 0:
-         return (True, True)
+         return (True, True, True)
 
-      return (False, False)
+      return (False, False, True)
 
 
    ## Firefox
@@ -74,13 +78,13 @@ def _lookupWsSupport(ua):
       try:
          v = int(r.groups()[0])
          if v >= 7:
-            return (True, False)
+            return (True, False, True)
          elif v >= 3:
-            return (True, True)
+            return (True, True, True)
          else:
-            return (False, False)
+            return (False, False, True)
       except:
-         return (False, False)
+         return (False, False, True)
 
 
    ## Safari
@@ -103,15 +107,15 @@ def _lookupWsSupport(ua):
       try:
          v = r.groups()[0]
          if ua.find("Windows") >= 0 and v in ["534+"]:
-            return (True, False)
+            return (True, False, True)
          if ua.find("Macintosh") >= 0:
             vv = v.replace('+', '').split('.')
             if (int(vv[0]) == 535 and int(vv[1]) >= 24) or int(vv[0]) > 535:
-               return (True, False)
+               return (True, False, True)
       except:
-         pass
+         return (False, False, False)
 
-      return (True, True)
+      return (True, True, True)
 
 
    ## Chrome
@@ -122,13 +126,13 @@ def _lookupWsSupport(ua):
       try:
          v = int(r.groups()[0])
          if v >= 14:
-            return (True, False)
+            return (True, False, True)
          elif v >= 4:
-            return (True, True)
+            return (True, True, True)
          else:
-            return (False, False)
+            return (False, False, True)
       except:
-         return (False, False)
+         return (False, False, False)
 
 
    ## Android
@@ -139,14 +143,14 @@ def _lookupWsSupport(ua):
       ##
       if ua.find("Firefox") >= 0:
          # Mozilla/5.0 (Android; Linux armv7l; rv:10.0.2) Gecko/20120215 Firefox/10.0.2 Fennec/10.0.2
-         return (True, False)
+         return (True, False, True)
 
       ## Chrome for Android
       ##
       if ua.find("CrMo") >= 0:
          # Mozilla/5.0 (Linux; U; Android-4.0.3; en-us; Galaxy Nexus Build/IML74K) AppleWebKit/535.7 (KHTML, like Gecko) CrMo/16.0.912.75 Mobile Safari/535.7
          # http://code.google.com/chrome/mobile/docs/faq.html
-         return (True, False)
+         return (True, False, True)
 
       ## Opera Mobile
       ##
@@ -154,17 +158,31 @@ def _lookupWsSupport(ua):
          # Opera/9.80 (Android 2.2; Linux; Opera Tablet/ADR-1202231246; U; en) Presto/2.10.254 Version/12.00
 
          # no native support, Flash bridge does not seem to work
-         return (False, False)
+         return (False, False, True)
 
       ## Android Browser
       ##
       if ua.find("AppleWebKit") >= 0:
+
+         # Samsung Galaxy Tab 1
          # Mozilla/5.0 (Linux; U; Android 2.2; de-de; GT-P1000 Build/FROYO) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1
-         return (True, True)
+
+         # Samsung Galaxy S
+         # Mozilla/5.0 (Linux; U; Android 2.3.3; de-de; GT-I9000 Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1
+
+         # Samsung Galaxy Note
+         # Mozilla/5.0 (Linux; U; Android 2.3.6; de-de; GT-N7000 Build/GINGERBREAD) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1
+         return (True, True, True)
+
+         # Though we return WS = True, and Flash = True here, when the device has no actual Flash support, that
+         # will get later detected in JS. This applies to i.e.
+
+         # Samsung Galaxy ACE (no Flash since ARM)
+         # Mozilla/5.0 (Linux; U; Android 2.2.1; de-de; GT-S5830 Build/FROYO) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1
 
       ## unidentified browser
       ##
-      return (False, False)
+      return (False, False, False)
 
 
    ## iOS
@@ -173,12 +191,12 @@ def _lookupWsSupport(ua):
       # https://developer.apple.com/library/ios/DOCUMENTATION/AppleApplications/Reference/SafariWebContent/OptimizingforSafarioniPhone/OptimizingforSafarioniPhone.html#//apple_ref/doc/uid/TP40006517-SW3
 
       ## no native support, no flash, no alternative browsers => no support
-      return (False, False)
+      return (False, False, True)
 
 
    ## Unidentified / No support
    ##
-   return (False, False)
+   return (False, False, False)
 
 
 UA_DETECT_WS_SUPPORT_DB = {}
@@ -188,5 +206,16 @@ def lookupWsSupport(ua, debug = True):
    if debug:
       if not UA_DETECT_WS_SUPPORT_DB.has_key(ua):
          UA_DETECT_WS_SUPPORT_DB[ua] = ws
-      print "DETECT_WS_SUPPORT", ua, ws[0], ws[1]
+
+      if not ws[2]:
+         msg = "UNDETECTED"
+      elif ws[0]:
+         msg = "SUPPORTED"
+      elif not ws[0]:
+         msg = "UNSUPPORTED"
+      else:
+         msg = "ERROR"
+
+      print "DETECT_WS_SUPPORT", ua, ws[0], ws[1], ws[2], msg
+
    return ws
