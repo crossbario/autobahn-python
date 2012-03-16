@@ -181,10 +181,12 @@ def _lookupWsSupport(ua):
    return (False, False)
 
 
+UA_DETECT_WS_SUPPORT_DB = {}
 
-
-def lookupWsSupport(ua):
+def lookupWsSupport(ua, debug = True):
    ws = _lookupWsSupport(ua)
-   #print ua
-   #print ws
+   if debug:
+      if not UA_DETECT_WS_SUPPORT_DB.has_key(ua):
+         UA_DETECT_WS_SUPPORT_DB[ua] = ws
+      print "DETECT_WS_SUPPORT", ua, ws[0], ws[1]
    return ws
