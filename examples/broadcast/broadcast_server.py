@@ -16,9 +16,7 @@
 ##
 ###############################################################################
 
-import sys
 from twisted.internet import reactor
-from twisted.python import log
 from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
 
 
@@ -70,7 +68,6 @@ class BroadcastServerFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
    factory = BroadcastServerFactory("ws://localhost:9000")
    listenWS(factory)
    reactor.run()

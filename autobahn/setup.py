@@ -41,7 +41,7 @@ setup (
    platforms = ('Any'),
    install_requires = ['setuptools', 'Twisted>=11.1'],
    packages = ['autobahn'],
-   zip_safe = True,
+   zip_safe = False,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
    classifiers = ["License :: OSI Approved :: Apache Software License",

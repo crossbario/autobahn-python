@@ -969,20 +969,21 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Hook fired right after raw octets have been sent, but only when self.logOctets == True.
       """
-      log.msg("TX Octets to %s : sync = %s, octets = %s" % (self.peerstr, binascii.b2a_hex(data)))
+      log.msg("TX Octets to %s : sync = %s, octets = %s" % (self.peerstr, sync, binascii.b2a_hex(data)))
 
 
    def logRxFrame(self, frameHeader, payload):
       """
       Hook fired right after WebSocket frame has been received and decoded, but only when self.logFrames == True.
       """
+      data = ''.join(payload)
       info = (self.peerstr,
               frameHeader.fin,
               frameHeader.rsv,
               frameHeader.opcode,
               binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
               frameHeader.length,
-              binascii.b2a_hex(''.join(payload)))
+              data if frameHeader.opcode == 1 else binascii.b2a_hex(data))
 
       log.msg("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
 
@@ -1000,7 +1001,7 @@ class WebSocketProtocol(protocol.Protocol):
               repeatLength,
               chopsize,
               sync,
-              binascii.b2a_hex(payload))
+              payload if frameHeader.opcode == 1 else binascii.b2a_hex(payload))
 
       log.msg("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
 
@@ -1132,6 +1133,14 @@ class WebSocketProtocol(protocol.Protocol):
             self.transport.write(data)
             if self.logOctets:
                self.logTxOctets(data, False)
+
+
+   def sendPreparedMessage(self, preparedMsg):
+      """
+      Send a message that was previously prepared with
+      WebSocketFactory.prepareMessage().
+      """
+      self.sendData(preparedMsg)
 
 
    def processData(self):
@@ -1894,19 +1903,23 @@ class WebSocketFactory:
    def prepareMessage(self, payload, binary = False, masked = None):
       """
       Prepare a WebSocket message. This can be later used on multiple
-      instances of WebSocketProtocol using sendData().
+      instances of WebSocketProtocol using sendPreparedMessage().
 
       By doing so, you can avoid the (small) overhead of framing the
       _same_ payload into WS messages when that payload is to be sent
       out on multiple connections.
 
-      Caveats! Only use when you know what you are doing. I.e. calling
-      sendData() on the _same_ protocol instance multiples times with
-      the same prepared message might break the spec. Since i.e. the
-      frame mask will be the same!
+      Caveats:
+
+      1) Only use when you know what you are doing. I.e. calling
+      sendPreparedMessage() on the _same_ protocol instance multiples
+      times with the same prepared message might break the spec.
+      Since i.e. the frame mask will be the same!
+
+      2) Treat the object returned as opaque. It may change!
       """
       if masked is None:
-         masked = self.isServer
+         masked = not self.isServer
 
       l = len(payload)
 
@@ -1949,6 +1962,7 @@ class WebSocketFactory:
       raw = ''.join([chr(b0), chr(b1), el, mask, plm])
 
       return raw
+
 
 
 class WebSocketServerProtocol(WebSocketProtocol):
