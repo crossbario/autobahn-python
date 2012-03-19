@@ -2353,7 +2353,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                 ## WebSockect session parameters
                 url = None,
                 protocols = [],
-                server = "AutobahnWebSockets/%s" % autobahn.version,
+                server = "AutobahnPython/%s" % autobahn.version,
 
                 ## debugging
                 debug = False,
@@ -2840,7 +2840,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                 url = None,
                 origin = None,
                 protocols = [],
-                useragent = "AutobahnWebSockets/%s" % autobahn.version,
+                useragent = "AutobahnPython/%s" % autobahn.version,
 
                 ## debugging
                 debug = False,
