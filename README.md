@@ -58,25 +58,14 @@ and Publish & Subscribe messaging patterns.
    * companion client libraries for jQuery and Android
 
 
-Testsuite
----------
-
-Autobahn WebSockets also includes a WebSockets test suite which can used to
-test client and server implementations for protocol conformance.
-
-The Autobahn WebSockets Test Suite executes nearly 300 automated test cases
-and has an extensive test coverage.
-
-For current test reports and a list of users (over 20 projects/companies),
-please visit:
-
-   http://autobahn.ws/testsuite
-
-
 Where to go
 -----------
 
-For more information, please visit: http://autobahn.ws
+For more information, please visit: http://autobahn.ws/developers
+
+
+Contact
+-------
 
 Get in touch on IRC #autobahn on chat.freenode.net or join the mailing
 list on http://groups.google.com/group/autobahnws.

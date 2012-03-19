@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 LONGSDESC = """
 Twisted-based WebSockets client and server framework.
@@ -27,9 +27,6 @@ framework for creating WebSockets clients and servers.
 Autobahn also includes an implementation of WAMP (WebSockets Application
 Message Protocol), a light-weight, asynchronous RPC/PubSub over
 JSON/WebSockets protocol.
-
-Autobahn (source package) further provides a fuzzing test framework which can
-test WebSockets client and server implementations.
 """
 
 setup (
@@ -40,17 +37,11 @@ setup (
    license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
-   url = 'http://autobahn.ws',
+   url = 'http://autobahn.ws/developers',
    platforms = ('Any'),
    install_requires = ['setuptools', 'Twisted>=11.1'],
-   packages = find_packages(),
-   #packages = ['autobahn', 'wstest'],
-   include_package_data = True,
-   zip_safe = False,
-   entry_points = {
-      'console_scripts': [
-         'wstest = wstest.wstest:run'
-      ]},
+   packages = ['autobahn'],
+   zip_safe = True,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
    classifiers = ["License :: OSI Approved :: Apache Software License",
@@ -61,7 +52,6 @@ setup (
                   "Operating System :: OS Independent",
                   "Programming Language :: Python",
                   "Topic :: Internet",
-                  "Topic :: Software Development :: Libraries",
-                  "Topic :: Software Development :: Testing"],
-   keywords = 'autobahn autobahn.ws websocket realtime test testsuite rfc6455 rpc pubsub'
+                  "Topic :: Software Development :: Libraries"],
+   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 rpc pubsub'
 )
