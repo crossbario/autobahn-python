@@ -507,7 +507,7 @@ class WebSocketProtocol(protocol.Protocol):
       buffer data for frame. Override in derived class.
 
       :param payload: Partial payload for message frame.
-      :type payload: list of array.array
+      :type payload: str
       """
       if not self.failedByMe:
          self.frame_data.append(payload)
@@ -531,7 +531,7 @@ class WebSocketProtocol(protocol.Protocol):
       will buffer frame for message. Override in derived class.
 
       :param payload: Message frame payload.
-      :type payload: list of array('B')
+      :type payload: list of str
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
       """

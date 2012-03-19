@@ -33,13 +33,14 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
    """
 
    def onMessageBegin(self, opcode):
+      WebSocketServerProtocol.onMessageBegin(self, opcode)
       self.sha256 = hashlib.sha256()
       self.count = 0
       self.received = 0
       self.next = BATCH_SIZE
 
    def onMessageFrameBegin(self, length, reserved):
-      pass
+      WebSocketServerProtocol.onMessageFrameBegin(self, length, reserved)
 
    def onMessageFrameData(self, data):
       length = len(data)
@@ -50,7 +51,7 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
 
          ## update digest up to batch size
          rest = length - (self.received - self.next)
-         self.sha256.update(str(data[:rest]))
+         self.sha256.update(data[:rest])
 
          ## send digest
          digest = self.sha256.hexdigest()
@@ -62,10 +63,10 @@ class StreamingHashServerProtocol(WebSocketServerProtocol):
          self.count += 1
 
          ## .. and update the digest for the rest
-         self.sha256.update(str(data[rest:]))
+         self.sha256.update(data[rest:])
       else:
          ## otherwise we just update the digest for received data
-         self.sha256.update(str(data))
+         self.sha256.update(data)
 
    def onMessageFrameEnd(self):
       pass
