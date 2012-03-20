@@ -1,23 +1,31 @@
  <html>
    <head>
-      <script src="http://code.jquery.com/jquery.min.js"></script>
-      <script src="../../../lib/javascript/autobahn.js"></script>
+      <!--
+         For development, this is convenient: use AutobahnJS source from
+         a repo clone residing parallel to this.
+      -->
+      <script src="../../../../AutobahnJS/build/autobahn.min.js"></script>
       <script>
 
          var sess = null;
 
-         $(document).ready(function()
-         {
+         window.onload = function() {
+            connect();
+         };
+
+         function connect() {
             // To connect to a Autobahn WebSockets RPC server, just
             // create a new session providing the server URL and (optional)
             // onOpen and onClose/Error handlers
-            sess = new ab.Session("ws://localhost:9000", function() {
-               ab.log("Connected!");
+            sess = new ab.Session("ws://localhost:9000",
+               function (sessionid, version, server) {
+               ab.log("Connected!", sessionid, version, server);
                // we register a prefix so we can abbreviate procedure URIs later
                sess.prefix("calc", "http://example.com/simple/calc#");
+            }, function (reason) {
+               console.log("Connection closed: " + reason);
             });
-
-         });
+         };
 
          function test()
          {
@@ -60,7 +68,9 @@
       <h1>Autobahn WebSockets: Simple RPC Demo</h1>
       <p>
          To run the demo, open browser console (press F12 on Firefox/Chrome) and press button:
-         <button onclick="test()">Run Test</button>
+         <button onclick="test();">Run Test</button>
+         <button onclick="sess.close();">Close</button>
+         <button onclick="connect();">Connect</button>
       </p>
    </body>
  </html>

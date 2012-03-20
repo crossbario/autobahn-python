@@ -9,20 +9,21 @@
          }
       </style>
 
-      <script src="http://code.jquery.com/jquery.min.js"></script>
-      <script src="../../../lib/javascript/autobahn.js"></script>
+      <!--
+         For development, this is convenient: use AutobahnJS source from
+         a repo clone residing parallel to this.
+      -->
+      <script src="../../../../AutobahnJS/build/autobahn.min.js"></script>
 
       <script>
 
          var sess = null;
 
-         function onEvent(topicUri, event) {
-            console.log(topicUri);
-            console.log(event);
-         }
+         window.onload = function() {
+            connect();
+         };
 
-         $(document).ready(function()
-         {
+         function connect() {
             sess = new ab.Session("ws://localhost:9000", function() {
 
                console.log("Connected!");
@@ -33,8 +34,12 @@
                sess.subscribe("event:myevent1", onEvent);
                sess.subscribe("event:myevent2", onEvent);
             });
+         };
 
-         });
+         function onEvent(topicUri, event) {
+            console.log(topicUri);
+            console.log(event);
+         }
 
          function publishEvent()
          {

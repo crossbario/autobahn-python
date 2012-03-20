@@ -69,7 +69,7 @@ class SimpleClientProtocol(WampClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory("ws://localhost:9000")
+   factory = WampClientFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = SimpleClientProtocol
    connectWS(factory)
    reactor.run()
