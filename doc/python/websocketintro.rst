@@ -1,8 +1,8 @@
-WebSocket Introduction
-======================
+Introduction
+============
 
-The class :class:`autobahn.websocket.WebSocketProtocol` implements the core
-WebSockets protocol.
+The class :class:`autobahn.websocket.WebSocketProtocol` implements the
+WebSocket protocol.
 
 Though you will use methods and override callbacks from this class, you must
 implement your clients/servers by deriving from the classes
@@ -10,8 +10,9 @@ implement your clients/servers by deriving from the classes
 :class:`autobahn.websocket.WebSocketServerProtocol`.
 
 
-Protocol Classes
-----------------
+Class Diagrams
+--------------
+
 
 * :class:`autobahn.websocket.WebSocketProtocol`
 * :class:`autobahn.websocket.WebSocketClientProtocol`
@@ -21,9 +22,6 @@ Protocol Classes
 
 .. image:: protocolclasses.png
 
-
-Factory Classes
----------------
 
 * :class:`autobahn.websocket.WebSocketClientFactory`
 * :class:`autobahn.websocket.WebSocketServerFactory`
@@ -36,7 +34,7 @@ Factory Classes
 Basic API
 ---------
 
-Most of the time, the basic API offered by Autobahn WebSockets for Python
+Most of the time, the basic API offered by *AutobahnPython*
 will be the one you want to use. It is easy to use and gets out of your way.
 
 The basic API is the one to use, unless you have specific needs (frame-based

@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -74,7 +74,7 @@ def exportPub(arg, prefixMatch = False):
 
 class WampProtocol:
    """
-   Base protocol class for Wamp RPC/PubSub.
+   WAMP protocol base class. Mixin for WampServerProtocol and WampClientProtocol.
    """
 
    WAMP_PROTOCOL_VERSION         = 1
@@ -137,6 +137,7 @@ class WampProtocol:
    ERROR_URI_INTERNAL = ERROR_URI_BASE + "internal"
    ERROR_DESC_INTERNAL = "internal error"
 
+
    def connectionMade(self):
       self.debugWamp = self.factory.debugWamp
       self.prefixes = PrefixMap()
@@ -155,25 +156,27 @@ class WampProtocol:
       self.protocolViolation("Wamp RPC/PubSub protocol violation ('%s')" % reason)
 
 
-   def shrink(self, uri):
+   def shrink(self, uri, passthrough = False):
       """
       Shrink given URI to CURIE according to current prefix mapping.
       If no appropriate prefix mapping is available, return original URI.
 
       :param uri: URI to shrink.
       :type uri: str
+
       :returns str -- CURIE or original URI.
       """
       return self.prefixes.shrink(uri)
 
 
-   def resolve(self, curieOrUri):
+   def resolve(self, curieOrUri, passthrough = False):
       """
       Resolve given CURIE/URI according to current prefix mapping or return
       None if cannot be resolved.
 
       :param curieOrUri: CURIE or URI.
       :type curieOrUri: str
+
       :returns: str -- Full URI for CURIE or None.
       """
       return self.prefixes.resolve(curieOrUri)
@@ -186,9 +189,20 @@ class WampProtocol:
 
       :param curieOrUri: CURIE or URI.
       :type curieOrUri: str
+
       :returns: str -- Full URI for CURIE or original string.
       """
       return self.prefixes.resolveOrPass(curieOrUri)
+
+
+
+class WampFactory:
+   """
+   WAMP factory base class. Mixin for WampServerFactory and WampClientFactory.
+   """
+
+   pass
+
 
 
 class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
@@ -436,17 +450,18 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type topicUri: str
       :param event: Event to dispatch.
       :type event: obj
-      :param exclude: Optional list of clients (protocol instances) to exclude.
+      :param exclude: Optional list of clients (WampServerProtocol instances) to exclude.
       :type exclude: list of obj
-      :param eligible: Optional list of clients (protocol instances) eligible at all (or None for all).
+      :param eligible: Optional list of clients (WampServerProtocol instances) eligible at all (or None for all).
       :type eligible: list of obj
       """
-      self.factory._dispatchEvent(topicUri, event, exclude, eligible)
+      self.factory.dispatch(topicUri, event, exclude, eligible)
 
 
    def _callProcedure(self, uri, arg = None):
-      ## Internal method for calling a procedure invoked via RPC.
-
+      """
+      INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
+      """
       if self.procs.has_key(uri):
          m = self.procs[uri]
          if arg:
@@ -471,20 +486,21 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
 
    def _sendCallResult(self, result, callid):
-      ## Internal method for marshaling/sending an RPC success result.
-
+      """
+      INTERNAL METHOD! Marshal and send a RPC success result.
+      """
       msg = [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
       try:
-         o = json.dumps(msg)
+         rmsg = json.dumps(msg)
       except:
          raise Exception("call result not JSON serializable")
-
-      self.sendMessage(o)
+      else:
+         self.sendMessage(rmsg)
 
 
    def _sendCallError(self, error, callid):
       """
-      Internal method for marshaling/sending an RPC error result.
+      INTERNAL METHOD! Marshal and send a RPC error result.
       """
       try:
 
@@ -551,7 +567,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
 
    def onMessage(self, msg, binary):
-      """Internal method to handle WAMP messages received from WAMP client."""
+      """
+      INTERNAL METHOD! Handle WAMP messages received from WAMP client.
+      """
 
       if self.debugWamp:
          log.msg("WampServerProtocol message received : %s" % str(msg))
@@ -636,7 +654,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                                  exclude = []
                            elif type(obj[3]) == list:
                               ## map session IDs to protos
-                              exclude = self.factory._sessionIdsToProtos(obj[3])
+                              exclude = self.factory.sessionIdsToProtos(obj[3])
                            else:
                               ## FIXME: invalid type
                               pass
@@ -647,7 +665,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                         if len(obj) >= 5:
                            if type(obj[4]) == list:
                               ## map session IDs to protos
-                              eligible = self.factory._sessionIdsToProtos(obj[4])
+                              eligible = self.factory.sessionIdsToProtos(obj[4])
                            else:
                               ## FIXME: invalid type
                               pass
@@ -697,12 +715,16 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("binary message")
 
 
-class WampServerFactory(WebSocketServerFactory):
+
+class WampServerFactory(WebSocketServerFactory, WampFactory):
    """
    Server factory for Wamp RPC/PubSub.
    """
 
    protocol = WampServerProtocol
+   """
+   Twisted protocol used by default for WAMP servers.
+   """
 
    def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
       WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
@@ -710,7 +732,9 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def _subscribeClient(self, proto, topicUri):
-      ## Internal method called from proto to subscribe client for topic.
+      """
+      INTERNAL METHOD! Called from proto to subscribe client for topic.
+      """
 
       if self.debugWamp:
          log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicUri))
@@ -721,7 +745,9 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def _unsubscribeClient(self, proto, topicUri = None):
-      ## Internal method called from proto to unsubscribe client from topic.
+      """
+      INTERNAL METHOD! Called from proto to unsubscribe client from topic.
+      """
 
       if topicUri:
          if self.subscriptions.has_key(topicUri):
@@ -735,19 +761,19 @@ class WampServerFactory(WebSocketServerFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
 
-   def _dispatchEvent(self, topicUri, event, exclude = [], eligible = None):
+   def dispatch(self, topicUri, event, exclude = [], eligible = None):
       """
-      Internal method called from proto to publish an received event
-      to all peers subscribed to the event topic.
+      Dispatch an event to all peers subscribed to the event topic.
 
       :param topicUri: Topic to publish event to.
       :type topicUri: str
       :param event: Event to publish (must be JSON serializable).
       :type event: obj
-      :param exclude: List of protocol instances to exclude from receivers.
+      :param exclude: List of WampServerProtocol instances to exclude from receivers.
       :type exclude: List of obj
-      :param eligible: List of protocol instances eligible as receivers (or None for all).
+      :param eligible: List of WampServerProtocol instances eligible as receivers (or None for all).
       :type eligible: List of obj
+
       :returns twisted.internet.defer.Deferred -- Will be fired when event was
       dispatched to all subscribers. The return value provided to the deferred
       is a pair (delivered, requested), where delivered = number of actual
@@ -795,7 +821,7 @@ class WampServerFactory(WebSocketServerFactory):
 
    def _sendEvents(self, msg, recvs, delivered, requested, d):
       """
-      Internal method that delivers events to receivers in chunks and
+      INTERNAL METHOD! Delivers events to receivers in chunks and
       reenters the reactor in-between, so that other stuff can run.
       """
       ## deliver a batch of events
@@ -827,7 +853,7 @@ class WampServerFactory(WebSocketServerFactory):
 
    def _addSession(self, proto, session_id):
       """
-      Add proto for session ID.
+      INTERNAL METHOD! Add proto for session ID.
       """
       if not self.protoToSessions.has_key(proto):
          self.protoToSessions[proto] = session_id
@@ -841,7 +867,7 @@ class WampServerFactory(WebSocketServerFactory):
 
    def _removeSession(self, proto):
       """
-      Remove session by proto.
+      INTERNAL METHOD! Remove session by proto.
       """
       if self.protoToSessions.has_key(proto):
          session_id = self.protoToSessions[proto]
@@ -850,9 +876,14 @@ class WampServerFactory(WebSocketServerFactory):
             del self.sessionsToProto[session_id]
 
 
-   def _sessionIdsToProtos(self, sessionIds):
+   def sessionIdsToProtos(self, sessionIds):
       """
-      Map session IDs to protos.
+      Map session IDs to connected client protocol instances.
+
+      :param sessionIds: List of session IDs to be mapped.
+      :type sessionIds: list of str
+
+      :returns list of WampServerProtocol instances -- List of protocol instances corresponding to the session IDs.
       """
       protos = []
       for s in sessionIds:
@@ -861,7 +892,27 @@ class WampServerFactory(WebSocketServerFactory):
       return protos
 
 
+   def protosToSessionIds(self, protos):
+      """
+      Map connected client protocol instances to session IDs.
+
+      :param protos: List of instances of WampServerProtocol to be mapped.
+      :type protos: list of WampServerProtocol
+
+      :returns list of str -- List of session IDs corresponding to the protos.
+      """
+      sessionIds = []
+      for p in protos:
+         if self.protoToSessions.has_key(p):
+            sessionIds.append(self.protoToSessions[p])
+      return sessionIds
+
+
    def startFactory(self):
+      """
+      Called by Twisted when the factory starts up. When overriding, make
+      sure to call the base method.
+      """
       if self.debugWamp:
          log.msg("WampServerFactory starting")
       self.subscriptions = {}
@@ -870,18 +921,24 @@ class WampServerFactory(WebSocketServerFactory):
 
 
    def stopFactory(self):
+      """
+      Called by Twisted when the factory shuts down. When overriding, make
+      sure to call the base method.
+      """
       if self.debugWamp:
          log.msg("WampServerFactory stopped")
 
 
+
 class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
    """
-   Client protocol for Wamp RPC/PubSub.
+   Twisted client protocol for WAMP.
    """
 
    def onSessionOpen(self):
       """
-      Callback fired when WAMP session was fully established.
+      Callback fired when WAMP session was fully established. Override
+      in derived class.
       """
       pass
 
@@ -1222,9 +1279,10 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          del self.subscriptions[turi]
 
 
-class WampClientFactory(WebSocketClientFactory):
+
+class WampClientFactory(WebSocketClientFactory, WampFactory):
    """
-   Client factory for Wamp RPC/PubSub.
+   Twisted client factory for WAMP.
    """
 
    protocol = WampClientProtocol
@@ -1232,3 +1290,21 @@ class WampClientFactory(WebSocketClientFactory):
    def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
       WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
       self.debugWamp = debugWamp
+
+
+   def startFactory(self):
+      """
+      Called by Twisted when the factory starts up. When overriding, make
+      sure to call the base method.
+      """
+      if self.debugWamp:
+         log.msg("WebSocketClientFactory starting")
+
+
+   def stopFactory(self):
+      """
+      Called by Twisted when the factory shuts down. When overriding, make
+      sure to call the base method.
+      """
+      if self.debugWamp:
+         log.msg("WebSocketClientFactory stopped")

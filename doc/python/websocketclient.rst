@@ -1,32 +1,13 @@
-WebSocket Clients
-=================
-
-Introduction
-------------
+Client
+======
 
 The classes :class:`autobahn.websocket.WebSocketClientProtocol` and
 :class:`autobahn.websocket.WebSocketClientFactory` are the base classes
-you derive from to implement WebSockets clients.
+you derive from to implement WebSocket clients.
 
 
-Client Protocol
----------------
-
-Usually, you implement your WebSocket client by creating a protocol that
-derives from :class:`autobahn.websocket.WebSocketClientProtocol`.
-
-This class in turn derives from :class:`autobahn.websocket.WebSocketProtocol`,
-which is where you find all the callbacks and methods.
-
-
-.. autoclass:: autobahn.websocket.WebSocketClientProtocol
-   :members: onConnect,
-             connectionMade,
-             connectionLost
-
-
-Client Factory
---------------
+Factory
+-------
 
 To create your actual client, you need a factory with the protocol attribute
 set to your protocol.
@@ -44,3 +25,20 @@ extend it's behavior i.e. with state that is available for all client connection
              resetProtocolOptions,
              clientConnectionFailed,
              clientConnectionLost
+
+
+
+Protocol
+--------
+
+Usually, you implement your WebSocket client by creating a protocol that
+derives from :class:`autobahn.websocket.WebSocketClientProtocol`.
+
+This class in turn derives from :class:`autobahn.websocket.WebSocketProtocol`,
+which is where you find all the callbacks and methods.
+
+
+.. autoclass:: autobahn.websocket.WebSocketClientProtocol
+   :members: onConnect,
+             connectionMade,
+             connectionLost

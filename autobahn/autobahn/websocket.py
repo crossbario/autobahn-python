@@ -58,6 +58,7 @@ def createWsUrl(hostname, port = None, isSecure = False, path = None, params = N
    :type path: str
    :param params: A dictionary of key-values to construct the query component of the addressed resource (will be properly URL escaped).
    :type params: dict
+
    :returns str -- Constructed WebSocket URL.
    """
    if port is not None:
@@ -95,6 +96,7 @@ def parseWsUrl(url):
 
    :param url: A valid WebSocket URL, i.e. ws://localhost:9000/myresource?param1=23&param2=666
    :type url: str
+
    :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
    """
    parsed = urlparse.urlparse(url)
@@ -137,6 +139,7 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
    :type timeout: int
    :param bindAddress: A (host, port) tuple of local address to bind to, or None.
    :type bindAddress: tuple
+
    :returns: obj -- An object which provides twisted.interface.IConnector.
    """
    if factory.isSecure:
@@ -163,6 +166,7 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    :type backlog: int
    :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
    :type interface: str
+
    :returns: obj -- An object that provides twisted.interface.IListeningPort.
    """
    if factory.isSecure:
@@ -801,6 +805,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       :param reason: Protocol violation that was encountered (human readable).
       :type reason: str
+
       :returns: bool -- True, when any further processing should be discontinued.
       """
       if self.debugCodePaths:
@@ -822,6 +827,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       :param reason: What was invalid for the payload (human readable).
       :type reason: str
+
       :returns: bool -- True, when any further processing should be discontinued.
       """
       if self.debugCodePaths:
@@ -1777,6 +1783,7 @@ class WebSocketProtocol(protocol.Protocol):
       of frames.
 
       :param payload: Data to send.
+      
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
