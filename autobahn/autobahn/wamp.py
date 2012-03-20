@@ -20,12 +20,17 @@ import json
 import random
 import inspect, types
 import traceback
+
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, maybeDeferred
+
+import autobahn
+
 from websocket import WebSocketProtocol, HttpException
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
+
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from prefixmap import PrefixMap
 from util import newid
@@ -70,6 +75,12 @@ def exportPub(arg, prefixMatch = False):
 class WampProtocol:
    """
    Base protocol class for Wamp RPC/PubSub.
+   """
+
+   WAMP_PROTOCOL_VERSION         = 1
+   """
+   WAMP version this server speaks. Versions are numbered consecutively
+   (integers, no gaps).
    """
 
    MESSAGE_TYPEID_WELCOME        = 0
@@ -201,7 +212,10 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       Welcome message containing session ID.
       """
       self.session_id = newid()
-      msg = [WampProtocol.MESSAGE_TYPEID_WELCOME, self.session_id]
+      msg = [WampProtocol.MESSAGE_TYPEID_WELCOME,
+             self.session_id,
+             WampProtocol.WAMP_PROTOCOL_VERSION,
+             "Autobahn/%s" % autobahn.version]
       o = json.dumps(msg)
       self.sendMessage(o)
       self.factory._addSession(self, self.session_id)
@@ -482,8 +496,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             errordesc = WampProtocol.ERROR_DESC_GENERIC
             errordetails = None
 
-            log.msg("WampProtocol.ERROR_URI_GENERIC")
-            log.msg(error.getTraceback())
+            if self.debugWamp:
+               log.msg("WampProtocol.ERROR_URI_GENERIC")
+               log.msg(error.getTraceback())
 
          elif leargs == 1:
             if type(eargs[0]) not in [str, unicode]:
@@ -492,8 +507,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             errordesc = eargs[0]
             errordetails = None
 
-            log.msg("WampProtocol.ERROR_URI_GENERIC")
-            log.msg(error.getTraceback())
+            if self.debugWamp:
+               log.msg("WampProtocol.ERROR_URI_GENERIC")
+               log.msg(error.getTraceback())
 
          elif leargs in [2, 3]:
             if type(eargs[0]) not in [str, unicode]:
@@ -522,8 +538,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
       except Exception, e:
 
-         log.err(str(e))
-         log.err(error.getTraceback())
+         if self.debugWamp:
+            log.err(str(e))
+            log.err(error.getTraceback())
 
          msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.ERROR_URI_INTERNAL), WampProtocol.ERROR_DESC_INTERNAL]
          rmsg = json.dumps(msg)
@@ -534,7 +551,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
 
    def onMessage(self, msg, binary):
-      ## Internal method handling Wamp messages received from client.
+      """Internal method to handle WAMP messages received from WAMP client."""
 
       if self.debugWamp:
          log.msg("WampServerProtocol message received : %s" % str(msg))
@@ -606,21 +623,38 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                      ## either exact match or prefix match allowed
                      if h[1] == "" or h[4]:
 
+                        ## Event
+                        ##
                         event = obj[2]
 
+                        ## Exclude Sessions List
+                        ##
+                        exclude = [self] # exclude publisher by default
                         if len(obj) >= 4:
-                           excludeMe = obj[3]
-                        else:
-                           excludeMe = True
+                           if type(obj[3]) == bool:
+                              if not obj[3]:
+                                 exclude = []
+                           elif type(obj[3]) == list:
+                              ## map session IDs to protos
+                              exclude = self.factory._sessionIdsToProtos(obj[3])
+                           else:
+                              ## FIXME: invalid type
+                              pass
 
-                        if excludeMe:
-                           exclude = [self]
-                        else:
-                           exclude = []
+                        ## Eligible Sessions List
+                        ##
+                        eligible = None # all sessions are eligible by default
+                        if len(obj) >= 5:
+                           if type(obj[4]) == list:
+                              ## map session IDs to protos
+                              eligible = self.factory._sessionIdsToProtos(obj[4])
+                           else:
+                              ## FIXME: invalid type
+                              pass
 
                         ## direct topic
                         if h[2] is None and h[3] is None:
-                           self.factory._dispatchEvent(topicUri, event, exclude)
+                           self.factory._dispatchEvent(topicUri, event, exclude, eligible)
 
                         ## topic handled by publication handler
                         else:
@@ -635,7 +669,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                               ## only dispatch event if handler did return event
                               if e:
-                                 self.factory._dispatchEvent(topicUri, e, exclude)
+                                 self.factory._dispatchEvent(topicUri, e, exclude, eligible)
                            except:
                               if self.debugWamp:
                                  log.msg("execption during topic publication handler")
@@ -877,71 +911,112 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
 
    def onMessage(self, msg, binary):
-      ## Internal method to handle received Wamp messages.
+      """Internal method to handle WAMP messages received from WAMP server."""
 
+      ## WAMP is text message only
+      ##
       if binary:
-         self._protocolError("binary message received")
+         self._protocolError("binary WebSocket message received")
          return
 
+      ## WAMP is proper JSON payload
+      ##
       try:
          obj = json.loads(msg)
       except:
-         self._protocolError("message payload not valid JSON")
+         self._protocolError("WAMP message payload not valid JSON")
          return
 
+      ## Every WAMP message is a list
+      ##
       if type(obj) != list:
-         self._protocolError("message payload not a list")
+         self._protocolError("WAMP message payload not a list")
          return
 
+      ## Every WAMP message starts with an integer for message type
+      ##
       if len(obj) < 1:
-         self._protocolError("message without message type")
+         self._protocolError("WAMP message without message type")
          return
-
       if type(obj[0]) != int:
-         self._protocolError("message type not an integer")
+         self._protocolError("WAMP message type not an integer")
          return
 
+      ## WAMP message type
+      ##
       msgtype = obj[0]
 
+      ## Valid WAMP message types received by WAMP clients
+      ##
       if msgtype not in [WampProtocol.MESSAGE_TYPEID_WELCOME,
                          WampProtocol.MESSAGE_TYPEID_CALL_RESULT,
                          WampProtocol.MESSAGE_TYPEID_CALL_ERROR,
                          WampProtocol.MESSAGE_TYPEID_EVENT]:
-         self._protocolError("invalid message type '%d'" % msgtype)
+         self._protocolError("invalid WAMP message type %d" % msgtype)
          return
 
+      ## WAMP CALL_RESULT / CALL_ERROR
+      ##
       if msgtype in [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, WampProtocol.MESSAGE_TYPEID_CALL_ERROR]:
+
+         ## Call ID
+         ##
          if len(obj) < 2:
-            self._protocolError("call result/error message without callid")
+            self._protocolError("WAMP CALL_RESULT/CALL_ERROR message without <callid>")
             return
          if type(obj[1]) not in [unicode, str]:
-            self._protocolError("invalid type for callid in call result/error message")
+            self._protocolError("WAMP CALL_RESULT/CALL_ERROR message with invalid type %s for <callid>" % type(obj[1]))
             return
          callid = str(obj[1])
+
+         ## Pop and process Call Deferred
+         ##
          d = self.calls.pop(callid, None)
          if d:
+            ## WAMP CALL_RESULT
+            ##
             if msgtype == WampProtocol.MESSAGE_TYPEID_CALL_RESULT:
+               ## Call Result
+               ##
                if len(obj) != 3:
-                  self._protocolError("call result message invalid length %d" % len(obj))
+                  self._protocolError("WAMP CALL_RESULT message with invalid length %d" % len(obj))
                   return
                result = obj[2]
+
+               ## Fire Call Success Deferred
+               ##
                d.callback(result)
+
+            ## WAMP CALL_ERROR
+            ##
             elif msgtype == WampProtocol.MESSAGE_TYPEID_CALL_ERROR:
                if len(obj) not in [4, 5]:
                   self._protocolError("call error message invalid length %d" % len(obj))
                   return
+
+               ## Error URI
+               ##
                if type(obj[2]) not in [unicode, str]:
                   self._protocolError("invalid type %s for errorUri in call error message" % str(type(obj[2])))
                   return
                erroruri = str(obj[2])
+
+               ## Error Description
+               ##
                if type(obj[3]) not in [unicode, str]:
                   self._protocolError("invalid type %s for errorDesc in call error message" % str(type(obj[3])))
                   return
                errordesc = str(obj[3])
+
+               ## Error Details
+               ##
                if len(obj) > 4:
                   errordetails = obj[4]
                else:
                   errordetails = None
+
+               ## Fire Call Error Deferred
+               ##
                e = Exception()
                e.args = (erroruri, errordesc, errordetails)
                d.errback(e)
@@ -950,27 +1025,69 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          else:
             if self.debugWamp:
                log.msg("callid not found for received call result/error message")
+
+      ## WAMP EVENT
+      ##
       elif msgtype == WampProtocol.MESSAGE_TYPEID_EVENT:
+         ## Topic
+         ##
          if len(obj) != 3:
-            self._protocolError("event message invalid length")
+            self._protocolError("WAMP EVENT message invalid length %d" % len(obj))
             return
          if type(obj[1]) not in [unicode, str]:
-            self._protocolError("invalid type for topicid in event message")
+            self._protocolError("invalid type for <topic> in WAMP EVENT message")
             return
          unresolvedTopicUri = str(obj[1])
          topicUri = self.prefixes.resolveOrPass(unresolvedTopicUri)
+
+         ## Fire PubSub Handler
+         ##
          if self.subscriptions.has_key(topicUri):
             event = obj[2]
             self.subscriptions[topicUri](topicUri, event)
+         else:
+            ## event received for non-subscribed topic (could be because we
+            ## just unsubscribed, and server already sent out event for
+            ## previous subscription)
+            pass
+
+      ## WAMP WELCOME
+      ##
       elif msgtype == WampProtocol.MESSAGE_TYPEID_WELCOME:
-         if len(obj) != 2:
-            self._protocolError("event message invalid length")
+         ## Session ID
+         ##
+         if len(obj) < 2:
+            self._protocolError("WAMP WELCOME message invalid length %d" % len(obj))
             return
          if type(obj[1]) not in [unicode, str]:
-            self._protocolError("invalid type for sessionid in welcome message")
+            self._protocolError("invalid type for <sessionid> in WAMP WELCOME message")
             return
          self.session_id = str(obj[1])
+
+         ## WAMP Protocol Version
+         ##
+         if len(obj) > 2:
+            if type(obj[2]) not in [int]:
+               self._protocolError("invalid type for <version> in WAMP WELCOME message")
+               return
+            else:
+               self.session_protocol_version = obj[2]
+         else:
+            self.session_protocol_version = None
+
+         ## Server Ident
+         ##
+         if len(obj) > 3:
+            if type(obj[3]) not in [unicode, str]:
+               self._protocolError("invalid type for <server> in WAMP WELCOME message")
+               return
+            else:
+               self.session_server = obj[3]
+         else:
+            self.session_server = None
+
          self.onSessionOpen()
+
       else:
          raise Exception("logic error")
 
