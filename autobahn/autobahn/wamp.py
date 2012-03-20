@@ -1210,7 +1210,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       self.sendMessage(json.dumps(msg))
 
 
-   def publish(self, topicUri, event, excludeMe = True):
+   def publish(self, topicUri, event, excludeMe = None, exclude = None, eligible = None):
       """
       Publish an event under a topic URI. The latter may be abbreviated using a
       CURIE which has been previously defined using prefix(). The event must
@@ -1220,17 +1220,47 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       :type topicUri: str
       :param event: Event to be published (must be JSON serializable) or None.
       :type event: value
-      :param excludeMe: When True, don't deliver the published event to myself (when I'm subscribed). Default: True.
+      :param excludeMe: When True, don't deliver the published event to myself (when I'm subscribed).
       :type excludeMe: bool
+      :param exclude: Optional list of session IDs to exclude from receivers.
+      :type exclude: list of str
+      :param eligible: Optional list of session IDs to that are eligible as receivers.
+      :type eligible: list of str
       """
 
       if type(topicUri) not in [unicode, str]:
          raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % type(topicUri))
 
-      if type(excludeMe) != bool:
-         raise Exception("invalid type for parameter 'excludeMe' - must be bool (was %s)" % type(excludeMe))
+      if excludeMe is not None:
+         if type(excludeMe) != bool:
+            raise Exception("invalid type for parameter 'excludeMe' - must be bool (was %s)" % type(excludeMe))
 
-      msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event, excludeMe]
+      if exclude is not None:
+         if type(exclude) != list:
+            raise Exception("invalid type for parameter 'exclude' - must be list (was %s)" % type(exclude))
+
+      if eligible is not None:
+         if type(eligible) != list:
+            raise Exception("invalid type for parameter 'eligible' - must be list (was %s)" % type(eligible))
+
+      if exclude is not None or eligible is not None:
+         if exclude is None:
+            if excludeMe is not None:
+               if excludeMe:
+                  exclude = [self.session_id]
+               else:
+                  exclude = []
+            else:
+               exclude = [self.session_id]
+         if eligible is not None:
+            msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event, exclude, eligible]
+         else:
+            msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event, exclude]
+      else:
+         if excludeMe:
+            msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event]
+         else:
+            msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event, excludeMe]
 
       try:
          o = json.dumps(msg)

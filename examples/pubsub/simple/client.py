@@ -32,7 +32,8 @@ class MyClientProtocol(WampClientProtocol):
       print "printEvent", topicUri, event
 
    def sendSimpleEvent(self):
-      self.publish("http://example.com/simple", None)
+      self.publish("http://example.com/simple", "Hello!")
+#      self.publish("http://example.com/simple", "Hello!", excludeMe = False, eligible = [self.session_id])
       reactor.callLater(2, self.sendSimpleEvent)
 
    def onEvent1(self, topicUri, event):
