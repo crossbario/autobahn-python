@@ -672,7 +672,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                         ## direct topic
                         if h[2] is None and h[3] is None:
-                           self.factory._dispatchEvent(topicUri, event, exclude, eligible)
+                           self.factory.dispatch(topicUri, event, exclude, eligible)
 
                         ## topic handled by publication handler
                         else:
@@ -687,7 +687,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                               ## only dispatch event if handler did return event
                               if e:
-                                 self.factory._dispatchEvent(topicUri, e, exclude, eligible)
+                                 self.factory.dispatch(topicUri, e, exclude, eligible)
                            except:
                               if self.debugWamp:
                                  log.msg("execption during topic publication handler")
@@ -786,14 +786,6 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
       if self.subscriptions.has_key(topicUri) and len(self.subscriptions[topicUri]) > 0:
 
-         o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicUri, event]
-         try:
-            msg = json.dumps(o)
-            if self.debugWamp:
-               log.msg("serialized event msg: " + str(msg))
-         except:
-            raise Exception("invalid type for event (not JSON serializable)")
-
          ## FIXME: this might break ordering of event delivery from a
          ## receiver perspective. We might need to have send queues
          ## per receiver OR do recvs = deque(sorted(..))
@@ -812,14 +804,24 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
          l = len(recvs)
          if l > 0:
-            self._sendEvents(msg, recvs.copy(), 0, l, d)
+
+            o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicUri, event]
+            try:
+               msg = json.dumps(o)
+               if self.debugWamp:
+                  log.msg("serialized event msg: " + str(msg))
+            except:
+               raise Exception("invalid type for event (not JSON serializable)")
+
+            preparedMsg = self.prepareMessage(msg)
+            self._sendEvents(preparedMsg, recvs.copy(), 0, l, d)
       else:
          d.callback((0, 0))
 
       return d
 
 
-   def _sendEvents(self, msg, recvs, delivered, requested, d):
+   def _sendEvents(self, preparedMsg, recvs, delivered, requested, d):
       """
       INTERNAL METHOD! Delivers events to receivers in chunks and
       reenters the reactor in-between, so that other stuff can run.
@@ -831,7 +833,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
             proto = recvs.pop()
             if proto.state == WebSocketProtocol.STATE_OPEN:
                try:
-                  proto.sendMessage(msg)
+                  proto.sendPreparedMessage(preparedMsg)
                except:
                   pass
                else:
@@ -845,7 +847,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
       if not done:
          ## if there are receivers left, redo
-         reactor.callLater(0, self._sendEvents, msg, recvs, delivered, requested, d)
+         reactor.callLater(0, self._sendEvents, preparedMsg, recvs, delivered, requested, d)
       else:
          ## else fire final result
          d.callback((delivered, requested))
