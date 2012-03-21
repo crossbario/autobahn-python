@@ -19,20 +19,25 @@
 from setuptools import setup
 
 LONGSDESC = """
-Twisted-based WebSockets client and server framework.
+Twisted-based WebSocket/WAMP client and server framework.
 
-Autobahn provides a WebSockets (RFC6455 + Hybi-10 to -17) Twisted-based
-framework for creating WebSockets clients and servers.
+AutobahnPython provides a WebSocket (RFC6455 + Hybi-10 to -17)
+framework for creating WebSocket-based clients and servers.
 
-Autobahn also includes an implementation of WAMP (WebSockets Application
-Message Protocol), a light-weight, asynchronous RPC/PubSub over
-JSON/WebSockets protocol.
+AutobahnPython also includes an implementation of WAMP
+(The WebSockets Application Messaging Protocol), a light-weight,
+asynchronous RPC/PubSub over JSON/WebSocket protocol.
+
+More information:
+
+   * http://autobahn.ws/developers
+   * http://wamp.ws
 """
 
 setup (
    name = 'autobahn',
    version = '0.5.0',
-   description = 'Autobahn WebSockets for Python',
+   description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
@@ -53,5 +58,5 @@ setup (
                   "Programming Language :: Python",
                   "Topic :: Internet",
                   "Topic :: Software Development :: Libraries"],
-   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 rpc pubsub'
+   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub'
 )
