@@ -1,6 +1,6 @@
 <html>
    <head>
-      <title>Autobahn WebSockets Decimal Calculator Demo</title>
+      <title>Autobahn: Decimal Calculator Demo</title>
       <style>
          body {
             font-family: Segoe UI,Tahoma,Arial,Verdana,sans-serif;
@@ -32,19 +32,35 @@
             min-width: 3em;
          }
       </style>
+
+      <script src="http://autobahn.ws/public/autobahn.min.js"></script>
       <script src="http://code.jquery.com/jquery.min.js"></script>
-      <script src="../../../lib/javascript/autobahn.js"></script>
+
       <script>
          var sess = null;
          var clearFirst = false;
 
          $(document).ready(function()
          {
-            sess = new ab.Session("ws://localhost:9000", function() {
-               console.log("Connected!");
-               sess.prefix("calculator", "http://example.com/simple/calculator#");
-            });
+            // connect to WAMP server
+            ab.connect("ws://localhost:9000",
 
+               // WAMP session was established
+               function (session) {
+
+                  sess = session;
+                  console.log("Connected!");
+
+                  sess.prefix("calculator", "http://example.com/simple/calculator#");
+               },
+
+               // WAMP session is gone
+               function (code, reason) {
+
+                  sess = null;
+                  alert(reason);
+               }
+            );
          });
 
          function key_digit(d) {
@@ -91,6 +107,7 @@
      </script>
    </head>
    <body>
+      <h1>Autobahn: Decimal Calculator Demo</h1>
       <table id="calc">
          <tr>
             <td id="calcdisplay" colspan="5">0</td>
