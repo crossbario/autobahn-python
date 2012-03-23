@@ -19,6 +19,7 @@
 import sys
 from twisted.python import log
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred, DeferredList
 from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampClientProtocol
 
@@ -27,13 +28,17 @@ class KeyValueClientProtocol(WampClientProtocol):
 
    def done(self, *args):
       self.sendClose()
+      reactor.stop()
 
    def show(self, key, value):
       print key, value
 
    def get(self, keys):
+      defs = []
       for key in keys:
-         self.call("keyvalue:get", key).addCallback(lambda value, key = key: self.show(key, value))
+         d = self.call("keyvalue:get", key).addCallback(lambda value, key = key: self.show(key, value))
+         defs.append(d)
+      return DeferredList(defs)
 
    def onSessionOpen(self):
       self.prefix("keyvalue", "http://example.com/simple/keyvalue#")

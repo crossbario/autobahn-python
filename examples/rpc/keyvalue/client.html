@@ -1,3 +1,4 @@
+<!DOCTYPE html>
  <html>
    <head>
 
@@ -9,20 +10,34 @@
          }
       </style>
 
-      <script src="http://code.jquery.com/jquery.min.js"></script>
-      <script src="../../../lib/javascript/autobahn.js"></script>
+      <!-- include AutobahnJS .. that's all you need -->
+      <script src="http://autobahn.ws/public/autobahn.min.js"></script>
 
       <script>
          var sess = null;
 
-         $(document).ready(function()
-         {
-            sess = new ab.Session("ws://localhost:9000", function() {
-               console.log("Connected!");
-               sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
-            });
+         window.onload = function() {
 
-         });
+            // connect to WAMP server
+            ab.connect("ws://localhost:9000",
+
+               // WAMP session was established
+               function (session) {
+
+                  sess = session;
+                  console.log("Connected!");
+
+                  // establish a prefix, so we can abbreviate procedure URIs ..
+                  sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
+               },
+
+               // WAMP session is gone
+               function (code, reason) {
+
+                  sess = null;
+                  alert(reason);
+               });
+         };
 
          function setKeyValue() {
 
@@ -73,7 +88,7 @@
    </head>
    <body>
 
-      <h1>Autobahn WebSockets: Simple Remote Key-Value Store Demo</h1>
+      <h1>Autobahn: Remote Key-Value Store with WAMP RPCs</h1>
 
       <div class="block"><button onclick="getAll()">Get all</button> Retrieve all key-value pairs from store and log to console.</div>
       <div class="block"><button onclick="deleteAll()">Delete all</button> Delete all data from store.</div>
