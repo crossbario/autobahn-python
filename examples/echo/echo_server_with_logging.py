@@ -31,6 +31,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
          reactor.callLater(1, self.sendHello)
 
    def onOpen(self):
+      print "CONNECTED " + self.peerstr
       self.count = 1
       self.send_hello = True
       #self.sendHello()
@@ -40,6 +41,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
       self.sendMessage(msg, binary)
 
    def connectionLost(self, reason):
+      print "LOST " + self.peerstr
       WebSocketServerProtocol.connectionLost(self, reason)
       self.send_hello = False
 

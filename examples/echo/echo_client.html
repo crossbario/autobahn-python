@@ -1,25 +1,21 @@
 <html>
    <head>
       <script type="text/javascript">
+         var sock;
+
          window.onload = function() {
 
-            var wsuri = "ws://localhost:9000";
-
-            if ("WebSocket" in window) {
-               webSocket = new WebSocket(wsuri);
-            }
-            else {
-               // Firefox currently prefixes the WebSocket object
-               webSocket = new MozWebSocket(wsuri);
-            }
-
-            webSocket.onmessage = function(e) {
-               console.log("Got echo: " + e.data);
-            }
+            sock = new WebSocket("ws://localhost:9000");
          }
 
-         function send() {
-            webSocket.send(document.getElementById("message").value);
+         function doclose() {
+            console.log("sock close");
+            sock.close(1000, "sdflkjs");
+         }
+
+         function setnull() {
+            console.log("sock null");
+            sock = null;
          }
       </script>
    </head>
@@ -28,6 +24,8 @@
       <form>
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
       </form>
+      <button onclick='doclose();'>Close</button>
+      <button onclick='setnull();'>Null</button>
       <button onclick='send();'>Send</button>
    </body>
 </html>

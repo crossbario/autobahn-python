@@ -1,9 +1,10 @@
  <html>
    <head>
       <title>Autobahn Serial2Ws</title>
-      <script src="http://code.jquery.com/jquery.min.js"></script>
-      <script src="http://www.tavendo.de/static/autobahn/autobahn-latest.js"></script>
+
+      <script src="http://autobahn.ws/public/autobahn.min.js"></script>
       <script src="smoothie.js"></script>
+      
       <script>
 
          var sess = null;
@@ -87,7 +88,7 @@
          }
 
 
-         $(document).ready(function()
+         window.onload = function ()
          {
             analog0 = document.getElementById('analog0');
             analog1 = document.getElementById('analog1');
@@ -109,7 +110,7 @@
             smoothie.streamTo(document.getElementById("mycanvas"));
 
             connect();
-         });
+         };
      </script>
    </head>
    <body>

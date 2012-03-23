@@ -1,3 +1,4 @@
+<!DOCTYPE html>
  <html>
    <head>
 
@@ -9,32 +10,38 @@
          }
       </style>
 
-      <!--
-         For development, this is convenient: use AutobahnJS source from
-         a repo clone residing parallel to this.
-      -->
-      <script src="../../../../AutobahnJS/build/autobahn.min.js"></script>
+      <!-- include AutobahnJS .. that's all you need -->
+      <script src="http://autobahn.ws/public/autobahn.min.js"></script>
 
       <script>
-
-         var sess = null;
+         // WAMP session object
+         var sess;
 
          window.onload = function() {
-            //ab.debug(true, true);
-            connect();
-         };
 
-         function connect() {
-            sess = new ab.Session("ws://localhost:9000", function() {
+            // connect to WAMP server
+            ab.connect("ws://localhost:9000",
 
-               console.log("Connected!");
+               // WAMP session was established
+               function (session) {
 
-               sess.subscribe("http://example.com/simple", onEvent);
+                  sess = session;
+                  console.log("Connected!");
 
-               sess.prefix("event", "http://example.com/event#");
-               sess.subscribe("event:myevent1", onEvent);
-               sess.subscribe("event:myevent2", onEvent);
-            });
+                  sess.subscribe("http://example.com/simple", onEvent);
+
+                  sess.prefix("event", "http://example.com/event#");
+                  sess.subscribe("event:myevent1", onEvent);
+                  sess.subscribe("event:myevent2", onEvent);
+               },
+
+               // WAMP session is gone
+               function (code, reason) {
+
+                  sess = null;
+                  alert(reason);
+               }
+            );
          };
 
          function onEvent(topicUri, event) {
@@ -61,7 +68,7 @@
      </script>
    </head>
    <body>
-      <h1>Autobahn WebSockets: Simple PubSub Demo</h1>
+      <h1>Autobahn: Simple PubSub with WAMP</h1>
 
       <div class="block">
          <p>
