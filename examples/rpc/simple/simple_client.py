@@ -39,7 +39,7 @@ class SimpleClientProtocol(WampClientProtocol):
 
    def done(self, *args):
       self.sendClose()
-
+      reactor.stop()
 
    def onSessionOpen(self):
 
@@ -54,13 +54,18 @@ class SimpleClientProtocol(WampClientProtocol):
       d4 = self.call("calc:square", 23).addCallback(lambda res: \
                          self.call("calc:sqrt", res)).addCallback(self.show)
 
-      d5 = self.call("calc:sqrt", -1).addCallbacks(self.show, self.logerror)
-      d6 = self.call("calc:square", 1001).addCallbacks(self.show, self.logerror)
+      d5 = self.call("calc:sqrt", -1).addCallbacks(self.show,
+                                                   self.logerror)
+
+      d6 = self.call("calc:square", 1001).addCallbacks(self.show,
+                                                       self.logerror)
 
       d7 = self.call("calc:asum", [1, 2, 3]).addCallback(self.show)
+
       d8 = self.call("calc:sum", [4, 5, 6]).addCallback(self.show)
 
-      d9 = self.call("calc:pickySum", range(0, 30)).addCallbacks(self.show, self.logerror)
+      d9 = self.call("calc:pickySum", range(0, 30)).addCallbacks(self.show,
+                                                                 self.logerror)
 
       ## we want to shutdown the client exactly when all deferreds are finished
       DeferredList([d1, d2, d3, d4, d5, d6, d7, d8, d9]).addCallback(self.done)
