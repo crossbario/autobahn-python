@@ -33,14 +33,14 @@ class SimpleClientProtocol(WampClientProtocol):
    def show(self, result):
       print "SUCCESS:", result
 
+
    def done(self, *args):
       self.sendClose()
+      reactor.stop()
 
 
    def onSessionOpen(self):
-
       self.prefix("calc", "http://example.com/simple/calc#")
-
       self.myfun(42).addCallback(self.show).addCallback(self.done)
 
 
