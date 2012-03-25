@@ -22,6 +22,13 @@ UA_CHROME = re.compile(".*Chrome/(\d*).*")
 UA_CHROMEFRAME = re.compile(".*chromeframe/(\d*).*")
 UA_WEBKIT = re.compile(".*AppleWebKit/([0-9+\.]*)\w*.*")
 
+# FIXME:
+
+# HP Touchpad: has Qt-WebKit browser with old WS, but has Flash
+# Mozilla/5.0 (hp-tablet; Linux; hpwOS/3.0.5; U; en-US) AppleWebKit/534.6 (KHTML, like Gecko) wOSBrowser/234.83 Safari/534.6 TouchPad/1.0
+# current mapping => True True True SUPPORTED
+# This is correct, but mapped from the "wrong" code ("Safari")
+
 
 def _lookupWsSupport(ua):
    """
