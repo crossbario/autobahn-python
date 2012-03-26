@@ -5,10 +5,18 @@
 
          window.onload = function() {
 
-            sock = new WebSocket("ws://localhost:9000");
+            var wsuri;
+
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
+            sock = new WebSocket(wsuri);
 
             sock.onopen = function() {
-               console.log("Connected!");
+               console.log("Connected to " + wsuri);
             }
 
             sock.onmessage = function(e) {
