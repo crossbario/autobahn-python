@@ -1,8 +1,23 @@
-Serial to WebSocket/WAMP Bridge using Autobahn
-==============================================
+Serial2WebSocket Bridge using Autobahn and Arduino
+==================================================
 
 This demo shows how to shuffle data between WebSocket clients and
 a device connected via a serial port.
+
+We use an *Arduino* device connected to a notebook, and a browser
+running somewhere.
+
+Here are some videos - sorry, bad quality. But you should get the idea:
+
+   * http://www.youtube.com/watch?v=va7j86thW5M
+   * http://www.youtube.com/watch?v=aVJV2z-lQJE
+
+
+Overview
+--------
+
+Here is how stuff is connected:
+
 
       Arduino,
       other serial devices
@@ -11,19 +26,12 @@ a device connected via a serial port.
 
       PC / Autobahn
 
-         <= WebSocket over Internet =>
+         <= WebSocket/WAMP over Internet =>
 
       Browser (AutobahnJS),
       Python (AutobahnPython),
       Smartphone (AutobahnAndroid),
       ...
-
-
-Here are some videos - sorry, bad quality. But you should get the idea:
-
-   * http://www.youtube.com/watch?v=va7j86thW5M
-   * http://www.youtube.com/watch?v=aVJV2z-lQJE
-
 
 
 How it works
@@ -44,6 +52,12 @@ to the device.
 
 The protocol spoken on the serial wire is a very simple, small adhoc text based
 one.
+
+The protocol spoken on the internet connection is WAMP http://wamp.ws over
+WebSocket.
+
+We use *WAMP* running on top of standard WebSocket, since WAMP brings us
+simple *RPC* and *PubSub* .. higher level than raw WebSocket.
 
 
 
@@ -76,7 +90,7 @@ for *WAMP*.
 
 
 
-We want How to do it yourself
+How to do it yourself
 ---------------------
 
 You will need AutobahnPython as server + PySerial for serial support in
