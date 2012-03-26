@@ -27,12 +27,17 @@ Native support:
    * Mozilla Firefox 7+
    * Microsoft Internet Explorer 10+
    * Safari 5+
+   * Android Firefox Mobile 10+ (on ARMv7)
+   * Google Chrome for Android (on ICS+)
+   * Safari iOS
+   * HP Touchpad Browser
 
 Support via Adobe Flash 10+:
 
    * Microsoft Internet Explorer 8, 9
    * Google Chrome 4 - 13
    * Mozilla Firefox 3 - 6
+   * Android WebKit on ARMv7/Flash
 
 Support via Google Chrome Frame:
 
