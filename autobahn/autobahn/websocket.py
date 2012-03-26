@@ -1172,9 +1172,9 @@ class WebSocketProtocol(protocol.Protocol):
       subsequent processing of incoming bytes.
       """
       if self.websocket_version == 0:
-         self.processDataHixie76()
+         return self.processDataHixie76()
       else:
-         self.processDataHybi()
+         return self.processDataHybi()
 
 
    def processDataHixie76(self):
@@ -1949,9 +1949,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Hixie76-Variant of sendMessage().
       """
-      self.sendData('\x00')
-      self.sendData(payload)
-      self.sendData('\xff')
+      self.sendData('\x00' + payload + '\xff')
 
 
    def sendMessageHybi(self, payload, binary = False, payload_frag_size = None, sync = False):
@@ -2123,7 +2121,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          log.msg("connection from %s lost" % self.peerstr)
 
 
-   def parseHixie76Key(key):
+   def parseHixie76Key(self, key):
       return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
 
 
@@ -2236,8 +2234,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Sec-WebSocket-Version
          ##
-         if http_headers_cnt["sec-websocket-version"] > 1:
-            return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
+         if self.http_headers.has_key("sec-websocket-version"):
+            if http_headers_cnt["sec-websocket-version"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
 
          if not self.http_headers.has_key("sec-websocket-version"):
             if self.allowHixie76:
@@ -2284,10 +2283,17 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## http://tools.ietf.org/html/draft-ietf-websec-origin-02
          ##
          self.websocket_origin = None
+
          if self.websocket_version < 13:
-            websocket_origin_header_key = "sec-websocket-origin"
+            # broken apple (and possibly others) poo
+            if self.http_headers.has_key('sec-websocket-origin'):
+               websocket_origin_header_key = 'sec-websocket-origin'
+            else:
+               websocket_origin_header_key = 'origin'
          else:
+            # >= Hybi-13 : must be 'origin' !! otherwise, go feck off!
             websocket_origin_header_key = "origin"
+
          if self.http_headers.has_key(websocket_origin_header_key):
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
@@ -2409,11 +2415,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             if self.websocket_origin:
                ## browser client provide the header, and expect it to be echo'ed
-               response += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.websocket_origin
+               response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
 
             ## FIXME: check this!
             location = "%s://%s%s" % ('wss' if self.factory.isSecure else 'ws', self.http_request_host, self.http_request_uri)
-            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
+            response += "Sec-WebSocket-Location: %s\x0d\x0a" % str(location)
 
             ## end of HTTP response headers
             response += "\x0d\x0a"
@@ -2422,7 +2428,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ##
             accept_val = struct.pack(">II", key1, key2) + key3
             accept = hashlib.md5(accept_val).digest()
-            response += accept
+            response += str(accept)
          else:
             ## compute Sec-WebSocket-Accept
             ##
