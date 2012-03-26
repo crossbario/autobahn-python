@@ -745,9 +745,18 @@ class WebSocketProtocol(protocol.Protocol):
          self.wasNotCleanReason = "peer did not finish (in time) the opening handshake"
          self.wasOpenHandshakeTimeout = True
          self.dropConnection(abort = True)
-      else:
+      elif self.state == WebSocketProtocol.STATE_OPEN:
          if self.debugCodePaths:
-            log.msg("skipping onOpenHandshakeTimeout since opening handshake is already finished")
+            log.msg("skipping onOpenHandshakeTimeout since WebSocket connection is open (opening handshake already finished)")
+      elif self.state == WebSocketProtocol.STATE_CLOSING:
+         if self.debugCodePaths:
+            log.msg("skipping onOpenHandshakeTimeout since WebSocket connection is closing")
+      elif self.state == WebSocketProtocol.STATE_CLOSED:
+         if self.debugCodePaths:
+            log.msg("skipping onOpenHandshakeTimeout since WebSocket connection already closed")
+      else:
+         # should not arrive here
+         raise Exception("logic error")
 
 
    def onCloseHandshakeTimeout(self):
