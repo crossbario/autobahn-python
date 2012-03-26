@@ -1234,9 +1234,12 @@ class WebSocketProtocol(protocol.Protocol):
       Send a message that was previously prepared with
       WebSocketFactory.prepareMessage().
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
       """
-      self.sendData(preparedMsg)
+      if self.websocket_version == 0:
+         self.sendData(preparedMsg.payloadHixie)
+      else:
+         self.sendData(preparedMsg.payloadHybi)
 
 
    def processData(self):
@@ -2134,34 +2137,40 @@ class WebSocketProtocol(protocol.Protocol):
             i += pfs
 
 
-class WebSocketFactory:
+
+class PreparedMessage:
    """
-   Mixin for WebSocketClientFactory and WebSocketServerFactory.
+   Encapsulates a prepared message to be sent later once or multiple
+   times. This is used for optimizing Broadcast/PubSub.
+
+   The message serialization formats currently created internally are:
+      * Hybi
+      * Hixie
+
+   The construction of different formats is needed, since we support
+   mixed clients (speaking different protocol versions).
+
+   It will also be the place to add a 3rd format, when we support
+   the deflate extension, since then, the clients will be mixed
+   between Hybi-Deflate-Unsupported, Hybi-Deflate-Supported and Hixie.
    """
 
-   def prepareMessage(self, payload, binary = False, masked = None):
-      """
-      Prepare a WebSocket message. This can be later used on multiple
-      instances of WebSocketProtocol using sendPreparedMessage().
+   def __init__(self, payload, binary, masked):
+      self.initHixie(payload, binary)
+      self.initHybi(payload, binary, masked)
 
-      By doing so, you can avoid the (small) overhead of framing the
-      _same_ payload into WS messages when that payload is to be sent
-      out on multiple connections.
 
-      Modes: Hybi
+   def initHixie(self, payload, binary):
+      if binary:
+         # silently filter out .. probably do something else:
+         # base64?
+         # dunno
+         self.payloadHixie = ''
+      else:
+         self.payloadHixie = '\x00' + payload + '\xff'
 
-      Caveats:
 
-      1) Only use when you know what you are doing. I.e. calling
-      sendPreparedMessage() on the _same_ protocol instance multiples
-      times with the same prepared message might break the spec.
-      Since i.e. the frame mask will be the same!
-
-      2) Treat the object returned as opaque. It may change!
-      """
-      if masked is None:
-         masked = not self.isServer
-
+   def initHybi(self, payload, binary, masked):
       l = len(payload)
 
       ## first byte
@@ -2200,9 +2209,39 @@ class WebSocketFactory:
 
       ## raw WS message (single frame)
       ##
-      raw = ''.join([chr(b0), chr(b1), el, mask, plm])
+      self.payloadHybi = ''.join([chr(b0), chr(b1), el, mask, plm])
 
-      return raw
+
+
+class WebSocketFactory:
+   """
+   Mixin for WebSocketClientFactory and WebSocketServerFactory.
+   """
+
+   def prepareMessage(self, payload, binary = False, masked = None):
+      """
+      Prepare a WebSocket message. This can be later used on multiple
+      instances of WebSocketProtocol using sendPreparedMessage().
+
+      By doing so, you can avoid the (small) overhead of framing the
+      _same_ payload into WS messages when that payload is to be sent
+      out on multiple connections.
+
+      Modes: Hybi, Hixie
+
+      Caveats:
+
+      1) Only use when you know what you are doing. I.e. calling
+      sendPreparedMessage() on the _same_ protocol instance multiples
+      times with the same prepared message might break the spec.
+      Since i.e. the frame mask will be the same!
+
+      2) Treat the object returned as opaque. It may change!
+      """
+      if masked is None:
+         masked = not self.isServer
+
+      return PreparedMessage(payload, binary, masked)
 
 
 
