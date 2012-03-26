@@ -37,5 +37,6 @@ if __name__ == '__main__':
 
    factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = EchoClientProtocol
+   factory.setProtocolOptions(allowHixie76 = True, version = 0)
    connectWS(factory)
    reactor.run()
