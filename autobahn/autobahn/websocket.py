@@ -33,6 +33,7 @@ import urllib
 import binascii
 import hashlib
 import base64
+from hashlib import md5
 import struct
 import random
 import os
@@ -152,6 +153,8 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
       conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
    return conn
 
+def key_parse(key):
+   return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
 
 def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    """
@@ -856,7 +859,8 @@ class WebSocketProtocol(protocol.Protocol):
       self.logOctets = self.factory.logOctets
       self.logFrames = self.factory.logFrames
 
-      self.utf8validateIncoming = self.factory.utf8validateIncoming
+      self.factory.dodgy_version = False
+      self.utf8validateIncoming = False
       self.applyMask = self.factory.applyMask
       self.maxFramePayloadSize = self.factory.maxFramePayloadSize
       self.maxMessagePayloadSize = self.factory.maxMessagePayloadSize
@@ -1155,6 +1159,19 @@ class WebSocketProtocol(protocol.Protocol):
       subsequent processing of incoming bytes.
       """
       buffered_len = len(self.data)
+
+      ## Handle the old version with start and end markers only.
+	  ##
+      if self.factory.dodgy_version:
+         log.msg("processData: buffered_len = %s, data = %r" % (buffered_len, self.data))
+         if buffered_len >= 2 and '\x00' == self.data[0] and '\xff' in self.data:
+            end_index = self.data.find('\xff')
+            message = self.data[1:end_index]
+            self.data = self.data[end_index+1:]
+            self.onMessage(message, False)
+            return True
+         else:
+            return False
 
       ## outside a frame, that is we are awaiting data which starts a new frame
       ##
@@ -1783,7 +1800,7 @@ class WebSocketProtocol(protocol.Protocol):
       of frames.
 
       :param payload: Data to send.
-      
+
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
@@ -1856,6 +1873,9 @@ class WebSocketProtocol(protocol.Protocol):
       specifiy a payload fragment size. When the latter is given, the payload will
       be split up into frames with payload <= the payload_frag_size given.
       """
+      if self.factory.dodgy_version:
+         self.sendData('\x00' + payload.encode("utf-8") + '\xff')
+         return
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## (initial) frame opcode
@@ -1925,6 +1945,10 @@ class WebSocketFactory:
 
       2) Treat the object returned as opaque. It may change!
       """
+
+      if self.dodgy_version:
+         return '\x00' + payload.encode("utf-8") + '\xff'
+
       if masked is None:
          masked = not self.isServer
 
@@ -2137,28 +2161,30 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Version
          ##
          if not self.http_headers.has_key("sec-websocket-version"):
-            return self.failHandshake("HTTP Sec-WebSocket-Version header missing in opening handshake request")
-         try:
+            self.factory.dodgy_version = True
+            self.websocket_version = 0;
+         else:
+            try:
 
-            if http_headers_cnt["sec-websocket-version"] > 1:
-               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
+               if http_headers_cnt["sec-websocket-version"] > 1:
+                  return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
 
-            version = int(self.http_headers["sec-websocket-version"])
+               version = int(self.http_headers["sec-websocket-version"])
 
-            if version not in self.factory.versions:
+               if version not in self.factory.versions:
 
-               ## respond with list of supported versions (descending order)
-               ##
-               sv = sorted(self.factory.versions)
-               sv.reverse()
-               svs = ','.join([str(x) for x in sv])
-               return self.failHandshake("Sec-WebSocket-Version %d not supported (supported versions: %s)" % (version, svs),
-                                         HTTP_STATUS_CODE_BAD_REQUEST[0],
-                                         [("Sec-WebSocket-Version", svs)])
-            else:
-               self.websocket_version = version
-         except:
-            return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
+                  ## respond with list of supported versions (descending order)
+                  ##
+                  sv = sorted(self.factory.versions)
+                  sv.reverse()
+                  svs = ','.join([str(x) for x in sv])
+                  return self.failHandshake("Sec-WebSocket-Version %d not supported (supported versions: %s)" % (version, svs),
+                                            HTTP_STATUS_CODE_BAD_REQUEST[0],
+                                            [("Sec-WebSocket-Version", svs)])
+               else:
+                  self.websocket_version = version
+            except:
+               return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
 
          ## Sec-WebSocket-Protocol
          ##
@@ -2180,10 +2206,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## http://tools.ietf.org/html/draft-ietf-websec-origin-02
          ##
          self.websocket_origin = None
-         if self.websocket_version < 13:
-            websocket_origin_header_key = "sec-websocket-origin"
-         else:
+         if self.websocket_version >= 13 or self.factory.dodgy_version:
             websocket_origin_header_key = "origin"
+         else:
+            websocket_origin_header_key = "sec-websocket-origin"
          if self.http_headers.has_key(websocket_origin_header_key):
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
@@ -2207,18 +2233,25 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Key
          ## http://tools.ietf.org/html/rfc4648#section-4
          ##
-         if not self.http_headers.has_key("sec-websocket-key"):
-            return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
-         if http_headers_cnt["sec-websocket-key"] > 1:
-            return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
-         key = self.http_headers["sec-websocket-key"].strip()
-         if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
-            return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
-         if key[-2:] != "==": # 24 - ceil(128/6) == 2
-            return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
-         for c in key[:-2]:
-            if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
-               return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
+         if self.factory.dodgy_version:
+            key1 = key_parse(self.http_headers["sec-websocket-key1"].strip())
+            key2 = key_parse(self.http_headers["sec-websocket-key2"].strip())
+            response = struct.pack(">II", key1, key2) + self.data[:8]
+            dodgy_response = md5(response).digest()
+            self.data = self.data[8:]
+         else:
+            if not self.http_headers.has_key("sec-websocket-key"):
+               return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
+            if http_headers_cnt["sec-websocket-key"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
+            key = self.http_headers["sec-websocket-key"].strip()
+            if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
+               return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
+            if key[-2:] != "==": # 24 - ceil(128/6) == 2
+               return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
+            for c in key[:-2]:
+               if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
+                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
 
          ## WebSocket handshake validated => produce opening handshake response
 
@@ -2259,9 +2292,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## compute Sec-WebSocket-Accept
          ##
-         sha1 = hashlib.sha1()
-         sha1.update(key + WebSocketProtocol.WS_MAGIC)
-         sec_websocket_accept = base64.b64encode(sha1.digest())
+         if not self.factory.dodgy_version:
+            sha1 = hashlib.sha1()
+            sha1.update(key + WebSocketProtocol.WS_MAGIC)
+            sec_websocket_accept = base64.b64encode(sha1.digest())
 
          ## send response to complete WebSocket handshake
          ##
@@ -2272,7 +2306,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          response += "Upgrade: websocket\x0d\x0a"
          response += "Connection: Upgrade\x0d\x0a"
-         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
+         if not self.factory.dodgy_version:
+            response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
 
          if len(self.websocket_extensions_in_use) > 0:
             response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
@@ -2280,7 +2315,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
 
+         if self.factory.dodgy_version:
+            response += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.websocket_origin
+            location = "ws://%s%s" % (self.http_request_host, self.http_request_uri)
+            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
+
          response += "\x0d\x0a"
+         response = str(response)
+         if self.factory.dodgy_version:
+            response += dodgy_response
          self.http_response_data = response
 
          self.sendData(self.http_response_data)
