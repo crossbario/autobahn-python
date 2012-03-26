@@ -49,7 +49,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WebSocketServerFactory("ws://localhost:9000", debug = True)
+   factory = WebSocketServerFactory("ws://localhost:9000", debug = True, debugCodePaths = True)
    factory.protocol = EchoServerProtocol
    listenWS(factory)
    reactor.run()
