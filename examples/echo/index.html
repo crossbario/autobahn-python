@@ -1,7 +1,7 @@
 <html>
    <head>
       <script type="text/javascript">
-         var sock;
+         var sock = null;
 
          window.onload = function() {
 
@@ -13,14 +13,22 @@
                wsuri = "ws://" + window.location.hostname + ":9000";
             }
 
-            sock = new WebSocket(wsuri);
-
-            sock.onopen = function() {
-               console.log("Connected to " + wsuri);
+            if ("WebSocket" in window) {
+               sock = new WebSocket(wsuri);
+            } else if ("MozWebSocket" in window) {
+               sock = new MozWebSocket(wsuri);
+            } else {
+               alert("Browser does not support WebSocket!");
             }
 
-            sock.onmessage = function(e) {
-               console.log("Got echo: " + e.data);
+            if (sock) {
+               sock.onopen = function() {
+                  console.log("Connected to " + wsuri);
+               }
+
+               sock.onmessage = function(e) {
+                  console.log("Got echo: " + e.data);
+               }
             }
          }
 
@@ -31,6 +39,7 @@
    </head>
    <body>
       <h1>Autobahn WebSockets Echo Test</h1>
+      <noscript>You must enable JavaScript</noscript>
       <form>
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
       </form>

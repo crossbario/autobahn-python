@@ -479,6 +479,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Callback when initial WebSockets handshake was completed. Now you may send messages.
       Default implementation does nothing. Override in derived class.
+
+      Modes: Hybi, Hixie
       """
       if self.debugCodePaths:
          log.msg("WebSocketProtocol.onOpen")
@@ -488,6 +490,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Callback when receiving a new message has begun. Default implementation will
       prepare to buffer message frames. Override in derived class.
+
+      Modes: Hybi, Hixie
 
       :param opcode: Opcode of message.
       :type opcode: int
@@ -506,6 +510,8 @@ class WebSocketProtocol(protocol.Protocol):
       :type length: int
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
+
+      Modes: Hybi
       """
       if not self.failedByMe:
          self.message_data_total_length += length
@@ -526,11 +532,20 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when receiving data witin message frame. Default implementation will
       buffer data for frame. Override in derived class.
 
+      Modes: Hybi, Hixie
+
       :param payload: Partial payload for message frame.
       :type payload: str
       """
       if not self.failedByMe:
-         self.frame_data.append(payload)
+         if self.websocket_version == 0:
+            self.message_data_total_length += len(payload)
+            if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
+               self.wasMaxMessagePayloadSizeExceeded = True
+               self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+            self.message_data.append(payload)
+         else:
+            self.frame_data.append(payload)
 
 
    def onMessageFrameEnd(self):
@@ -538,6 +553,8 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when a message frame has been completely received. Default implementation
       will flatten the buffered frame data and callback onMessageFrame. Override
       in derived class.
+
+      Modes: Hybi
       """
       if not self.failedByMe:
          self.onMessageFrame(self.frame_data, self.frame_reserved)
@@ -549,6 +566,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Callback fired when complete message frame has been received. Default implementation
       will buffer frame for message. Override in derived class.
+
+      Modes: Hybi
 
       :param payload: Message frame payload.
       :type payload: list of str
@@ -564,6 +583,8 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when a message has been completely received. Default implementation
       will flatten the buffered frames and callback onMessage. Override
       in derived class.
+
+      Modes: Hybi
       """
       if not self.failedByMe:
          payload = ''.join(self.message_data)
@@ -576,6 +597,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Callback when a complete message was received. Default implementation does nothing.
       Override in derived class.
+
+      Modes: Hybi, Hixie
 
       :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be an empty string, when message contained no payload.
       :type payload: str
@@ -591,6 +614,8 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when Ping was received. Default implementation responds
       with a Pong. Override in derived class.
 
+      Modes: Hybi
+
       :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
       :type payload: str
       """
@@ -605,6 +630,8 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when Pong was received. Default implementation does nothing.
       Override in derived class.
 
+      Modes: Hybi
+
       :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
       """
       if self.debug:
@@ -614,6 +641,8 @@ class WebSocketProtocol(protocol.Protocol):
    def onClose(self, wasClean, code, reason):
       """
       Callback when the connection has been closed. Override in derived class.
+
+      Modes: Hybi, Hixie
 
       :param wasClean: True, iff the connection was closed cleanly.
       :type wasClean: bool
@@ -645,6 +674,8 @@ class WebSocketProtocol(protocol.Protocol):
       sending a Close when no Close was sent before. Otherwise it drops
       the TCP connection either immediately (when we are a server) or after a timeout
       (when we are a client and expect the server to drop the TCP).
+
+      Modes: Hybi
 
       :param code: None or close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -737,6 +768,8 @@ class WebSocketProtocol(protocol.Protocol):
       We expected the peer to complete the opening handshake with to us.
       It didn't do so (in time self.openHandshakeTimeout).
       So we drop the connection, but set self.wasClean = False.
+
+      Modes: Hybi, Hixie
       """
       if self.state == WebSocketProtocol.STATE_CONNECTING:
          if self.debugCodePaths:
@@ -764,6 +797,8 @@ class WebSocketProtocol(protocol.Protocol):
       We expected the peer to respond to us initiating a close handshake. It didn't
       respond (in time self.closeHandshakeTimeout) with a close response frame though.
       So we drop the connection, but set self.wasClean = False.
+
+      Modes: Hybi
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
@@ -783,6 +818,8 @@ class WebSocketProtocol(protocol.Protocol):
 
         * http://twistedmatrix.com/documents/current/core/howto/servers.html#auto2
         * https://github.com/tavendo/AutobahnPython/issues/96
+
+      Modes: Hybi, Hixie
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
@@ -993,6 +1030,8 @@ class WebSocketProtocol(protocol.Protocol):
    def logRxOctets(self, data):
       """
       Hook fired right after raw octets have been received, but only when self.logOctets == True.
+
+      Modes: Hybi, Hixie
       """
       log.msg("RX Octets from %s : octets = %s" % (self.peerstr, binascii.b2a_hex(data)))
 
@@ -1000,6 +1039,8 @@ class WebSocketProtocol(protocol.Protocol):
    def logTxOctets(self, data, sync):
       """
       Hook fired right after raw octets have been sent, but only when self.logOctets == True.
+
+      Modes: Hybi, Hixie
       """
       log.msg("TX Octets to %s : sync = %s, octets = %s" % (self.peerstr, sync, binascii.b2a_hex(data)))
 
@@ -1007,6 +1048,8 @@ class WebSocketProtocol(protocol.Protocol):
    def logRxFrame(self, frameHeader, payload):
       """
       Hook fired right after WebSocket frame has been received and decoded, but only when self.logFrames == True.
+
+      Modes: Hybi
       """
       data = ''.join(payload)
       info = (self.peerstr,
@@ -1023,6 +1066,8 @@ class WebSocketProtocol(protocol.Protocol):
    def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
       """
       Hook fired right after WebSocket frame has been encoded and sent, but only when self.logFrames == True.
+
+      Modes: Hybi
       """
       info = (self.peerstr,
               frameHeader.fin,
@@ -1041,6 +1086,8 @@ class WebSocketProtocol(protocol.Protocol):
    def dataReceived(self, data):
       """
       This is called by Twisted framework upon receiving data on TCP connection.
+
+      Modes: Hybi, Hixie
       """
       if self.logOctets:
          self.logRxOctets(data)
@@ -1049,6 +1096,11 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def consumeData(self):
+      """
+      Consume buffered (incoming) data.
+
+      Modes: Hybi, Hixie
+      """
 
       ## WebSocket is open (handshake was completed) or close was sent
       ##
@@ -1087,6 +1139,8 @@ class WebSocketProtocol(protocol.Protocol):
    def processHandshake(self):
       """
       Process WebSockets handshake.
+
+      Modes: Hybi, Hixie
       """
       raise Exception("must implement handshake (client or server) in derived class")
 
@@ -1094,6 +1148,8 @@ class WebSocketProtocol(protocol.Protocol):
    def registerProducer(self, producer, streaming):
       """
       Register a Twisted producer with this protocol.
+
+      Modes: Hybi, Hixie
 
       :param producer: A Twisted push or pull producer.
       :type producer: object
@@ -1106,6 +1162,8 @@ class WebSocketProtocol(protocol.Protocol):
    def _trigger(self):
       """
       Trigger sending stuff from send queue (which is only used for chopped/synched writes).
+
+      Modes: Hybi, Hixie
       """
       if not self.triggered:
          self.triggered = True
@@ -1116,6 +1174,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Send out stuff from send queue. For details how this works, see test/trickling
       in the repo.
+
+      Modes: Hybi, Hixie
       """
       if len(self.send_queue) > 0:
          e = self.send_queue.popleft()
@@ -1144,6 +1204,8 @@ class WebSocketProtocol(protocol.Protocol):
       get onto wire immediately. Note that this is different from and unrelated
       to WebSockets data message fragmentation. Note that this is also different
       from the TcpNoDelay option which can be set on the socket.
+
+      Modes: Hybi, Hixie
       """
       if chopsize and chopsize > 0:
          i = 0
@@ -1171,6 +1233,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Send a message that was previously prepared with
       WebSocketFactory.prepareMessage().
+
+      Modes: Hybi
       """
       self.sendData(preparedMsg)
 
@@ -1179,6 +1243,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       After WebSockets handshake has been completed, this procedure will do all
       subsequent processing of incoming bytes.
+
+      Modes: Hybi, Hixie
       """
       if self.websocket_version == 0:
          return self.processDataHixie76()
@@ -1189,6 +1255,8 @@ class WebSocketProtocol(protocol.Protocol):
    def processDataHixie76(self):
       """
       Hixie-76 incoming data processing.
+
+      Modes: Hixie
       """
       buffered_len = len(self.data)
 
@@ -1198,16 +1266,16 @@ class WebSocketProtocol(protocol.Protocol):
          if buffered_len >= 1:
             if self.data[0] == '\x00':
                self.inside_message = True
+               self.onMessageBegin(1)
                end_index = self.data.find('\xff')
                if end_index > 0:
-                  self.current_message.append(self.data[1:end_index])
+                  self.onMessageFrameData(self.data[1:end_index])
+                  self.onMessageEnd()
                   self.data = self.data[end_index + 1:]
-                  self.onMessage(''.join(self.current_message), False)
-                  self.current_message = []
                   self.inside_message = False
                   return len(self.data) > 0
                else:
-                  self.current_message.append(self.data[1:])
+                  self.onMessageFrameData(self.data[1:])
                   self.data = ''
                   return False
             else:
@@ -1219,14 +1287,13 @@ class WebSocketProtocol(protocol.Protocol):
       else:
          end_index = self.data.find('\xff')
          if end_index > 0:
-            self.current_message.append(self.data[:end_index])
+            self.onMessageFrameData(self.data[:end_index])
+            self.onMessageEnd()
             self.data = self.data[end_index + 1:]
-            self.onMessage(''.join(self.current_message), False)
-            self.current_message = []
             self.inside_message = False
             return len(self.data) > 0
          else:
-            self.current_message.append(self.data)
+            self.onMessageFrameData(self.data)
             self.data = ''
             return False
 
@@ -1234,6 +1301,8 @@ class WebSocketProtocol(protocol.Protocol):
    def processDataHybi(self):
       """
       RFC6455/Hybi-Drafts incoming data processing.
+
+      Modes: Hybi
       """
       buffered_len = len(self.data)
 
@@ -1452,6 +1521,11 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def onFrameBegin(self):
+      """
+      Begin of receive new frame.
+
+      Modes: Hybi
+      """
       if self.current_frame.opcode > 7:
          self.control_frame_data = []
       else:
@@ -1474,6 +1548,11 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def onFrameData(self, payload):
+      """
+      New data received within frame.
+
+      Modes: Hybi
+      """
       if self.current_frame.opcode > 7:
          self.control_frame_data.append(payload)
       else:
@@ -1489,6 +1568,11 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def onFrameEnd(self):
+      """
+      End of frame received.
+
+      Modes: Hybi
+      """
       if self.current_frame.opcode > 7:
          if self.logFrames:
             self.logRxFrame(self.current_frame, self.control_frame_data)
@@ -1508,6 +1592,11 @@ class WebSocketProtocol(protocol.Protocol):
 
 
    def processControlFrame(self):
+      """
+      Process a completely received control frame.
+
+      Modes: Hybi
+      """
 
       payload = ''.join(self.control_frame_data)
       self.control_frame_data = None
@@ -1559,7 +1648,12 @@ class WebSocketProtocol(protocol.Protocol):
       The use case is again for fuzzing server which want to sent increasing amounts
       of payload data to peers without having to construct potentially large messges
       themselfes.
+
+      Modes: Hybi
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
+
       if payload_len is not None:
          if len(payload) < 1:
             raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
@@ -1632,9 +1726,13 @@ class WebSocketProtocol(protocol.Protocol):
       as "practical". When more than 1 Ping is outstanding at a peer, the peer may
       elect to respond only to the last Ping.
 
+      Modes: Hybi
+
       :param payload: An optional, arbitrary payload of length < 126 octets.
       :type payload: str
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       if payload:
@@ -1651,9 +1749,13 @@ class WebSocketProtocol(protocol.Protocol):
       Send out Pong to peer. A Pong frame MAY be sent unsolicited.
       This serves as a unidirectional heartbeat. A response to an unsolicited pong is "not expected".
 
+      Modes: Hybi
+
       :param payload: An optional, arbitrary payload of length < 126 octets.
       :type payload: str
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       if payload:
@@ -1670,7 +1772,11 @@ class WebSocketProtocol(protocol.Protocol):
       Send a close frame and update protocol state. Note, that this is
       an internal method which deliberately allows not send close
       frame with invalid payload.
+
+      Modes: Hybi
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
          if self.debugCodePaths:
@@ -1718,6 +1824,8 @@ class WebSocketProtocol(protocol.Protocol):
       :param reason: An optional close reason (a string that when present, a status code MUST also be present).
       :type reason: str
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       if code is not None:
          if type(code) != int:
             raise Exception("invalid type %s for close code" % type(code))
@@ -1742,6 +1850,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -1762,6 +1872,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Begin sending new message frame.
 
+      Modes: Hybi
+
       :param length: Length of frame which is started. Must be >= 0 and <= 2^63.
       :type length: int
       :param reserved: Reserved bits for frame (an integer from 0 to 7). Note that reserved != 0 is only legal when an extension has been negoiated which defines semantics.
@@ -1769,6 +1881,9 @@ class WebSocketProtocol(protocol.Protocol):
       :param mask: Optional frame mask. When given, this is used. When None and the peer is a client, a mask will be internally generated. For servers None is default.
       :type mask: str
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -1867,6 +1982,9 @@ class WebSocketProtocol(protocol.Protocol):
 
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -1909,6 +2027,8 @@ class WebSocketProtocol(protocol.Protocol):
       End a previously begun message. No more frames may be sent (for that message). You have to
       begin a new message before sending again.
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -1922,9 +2042,13 @@ class WebSocketProtocol(protocol.Protocol):
    def sendMessageFrame(self, payload, reserved = 0, mask = None, sync = False):
       """
       When a message has begun, send a complete message frame in one go.
+
+      Modes: Hybi
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
       self.beginMessageFrame(len(payload), reserved, mask)
       self.sendMessageFrameData(payload, sync)
 
@@ -1937,8 +2061,7 @@ class WebSocketProtocol(protocol.Protocol):
       When the latter is given, the payload will be split up into frames with
       payload <= the payload_frag_size given.
 
-      Note: When Hixie76 is spoken, setting any of the parameters: binary, payload_frag_size
-      or sync is disallowed!
+      Modes: Hybi, Hixie
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -1947,23 +2070,25 @@ class WebSocketProtocol(protocol.Protocol):
             raise Exception("cannot send binary message in Hixie76 mode")
          if payload_frag_size:
             raise Exception("cannot fragment messages in Hixie76 mode")
-         if sync:
-            raise Exception("sync is illegal in Hixie76 mode")
-         self.sendMessageHixie76(payload)
+         self.sendMessageHixie76(payload, sync)
       else:
          self.sendMessageHybi(payload, binary, payload_frag_size, sync)
 
 
-   def sendMessageHixie76(self, payload):
+   def sendMessageHixie76(self, payload, sync = False):
       """
       Hixie76-Variant of sendMessage().
+
+      Modes: Hixie
       """
-      self.sendData('\x00' + payload + '\xff')
+      self.sendData('\x00' + payload + '\xff', sync = sync)
 
 
    def sendMessageHybi(self, payload, binary = False, payload_frag_size = None, sync = False):
       """
       Hybi-Variant of sendMessage().
+
+      Modes: Hybi
       """
       ## (initial) frame opcode
       ##
@@ -2022,6 +2147,8 @@ class WebSocketFactory:
       By doing so, you can avoid the (small) overhead of framing the
       _same_ payload into WS messages when that payload is to be sent
       out on multiple connections.
+
+      Modes: Hybi
 
       Caveats:
 
@@ -2463,9 +2590,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          self.state = WebSocketProtocol.STATE_OPEN
          self.inside_message = False
-         if self.websocket_version == 0:
-            self.current_message = []
-         else:
+         if self.websocket_version != 0:
             self.current_frame = None
 
          ## fire handler on derived class
