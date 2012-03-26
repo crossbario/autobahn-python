@@ -7,7 +7,7 @@ Features
 Autobahn WebSockets for Python provides an implementation of the WebSockets
 protocol which can be used to build WebSockets clients and servers.
 
-   * supports RFC 6455 and Hybi-10+ protocol versions
+   * supports RFC 6455, Hybi-10+ and Hixie-76 protocol versions
    * supports RPC/PubSub over WebSockets (WAMP - see below)
    * usable for clients and servers
    * easy to use basic API
@@ -26,14 +26,13 @@ Native support:
    * Google Chrome 14+
    * Mozilla Firefox 7+
    * Microsoft Internet Explorer 10+
-   * Safari/WebKit Nightly (as of March 2012)
+   * Safari 5+
 
 Support via Adobe Flash 10+:
 
    * Microsoft Internet Explorer 8, 9
    * Google Chrome 4 - 13
    * Mozilla Firefox 3 - 6
-   * Safari 5+
 
 Support via Google Chrome Frame:
 

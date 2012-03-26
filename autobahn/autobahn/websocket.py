@@ -2333,6 +2333,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
             if port != self.factory.port:
                return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.port))
+            self.http_request_host = h
          else:
             if not ((self.factory.isSecure and self.factory.port == 443) or (not self.factory.isSecure and self.factory.port == 80)):
                return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.port, self.factory.isSecure))
@@ -2415,21 +2416,17 @@ class WebSocketServerProtocol(WebSocketProtocol):
          else:
             self.websocket_protocols = []
 
-         ## Sec-WebSocket-Origin
+         ## Origin / Sec-WebSocket-Origin
          ## http://tools.ietf.org/html/draft-ietf-websec-origin-02
          ##
-         self.websocket_origin = None
-
-         if self.websocket_version < 13:
-            # broken apple (and possibly others) poo
-            if self.http_headers.has_key('sec-websocket-origin'):
-               websocket_origin_header_key = 'sec-websocket-origin'
-            else:
-               websocket_origin_header_key = 'origin'
+         if self.websocket_version < 13 and self.websocket_version != 0:
+            # Hybi, but only < Hybi-13
+            websocket_origin_header_key = 'sec-websocket-origin'
          else:
-            # >= Hybi-13 : must be 'origin' !! otherwise, go feck off!
+            # RFC6455, >= Hybi-13 and Hixie
             websocket_origin_header_key = "origin"
 
+         self.websocket_origin = None
          if self.http_headers.has_key(websocket_origin_header_key):
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
@@ -2553,9 +2550,25 @@ class WebSocketServerProtocol(WebSocketProtocol):
                ## browser client provide the header, and expect it to be echo'ed
                response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
 
-            ## FIXME: check this!
-            location = "%s://%s%s" % ('wss' if self.factory.isSecure else 'ws', self.http_request_host, self.http_request_uri)
-            response += "Sec-WebSocket-Location: %s\x0d\x0a" % str(location)
+            if self.factory.isSecure and self.factory.port != 443:
+               response_port = ':' + str(self.factory.port)
+            elif not self.factory.isSecure and self.factory != 80:
+               response_port = ':' + str(self.factory.port)
+            else:
+               response_port = ''
+
+            ## FIXME: check this! But see below ..
+            if False:
+               response_host = str(self.factory.host)
+               response_path = str(self.factory.path)
+            else:
+               response_host = str(self.http_request_host)
+               response_path = str(self.http_request_uri)
+
+            location = "%s://%s%s%s" % ('wss' if self.factory.isSecure else 'ws', response_host, response_port, response_path)
+
+            # Safari is very picky about this one
+            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
 
             ## end of HTTP response headers
             response += "\x0d\x0a"
