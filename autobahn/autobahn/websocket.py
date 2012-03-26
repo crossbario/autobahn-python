@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -346,38 +346,54 @@ class WebSocketProtocol(protocol.Protocol):
    for clients and servers.
    """
 
-   SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17, 18]
+   SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
    """
    WebSockets protocol spec (draft) versions supported by this implementation.
    Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
-   draft spec versions.
+   draft spec versions (Hybi-Drafts). Use of version 0 indicates Hixie-76.
    """
 
-   SUPPORTED_PROTOCOL_VERSIONS = [8, 13]
+   SUPPORTED_PROTOCOL_VERSIONS = [0, 8, 13]
    """
-   WebSockets protocol versions supported by this implementation.
-   """
-
-   SPEC_TO_PROTOCOL_VERSION = {10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
-   """
-   Mapping from protocol spec (draft) version to protocol version.
+   WebSocket protocol versions supported by this implementation. For Hixie-76,
+   there is no protocol version announced in HTTP header, and we just use the
+   draft version (0) in this case.
    """
 
-   PROTOCOL_TO_SPEC_VERSION = {8: 12, 13: 18}
+   SPEC_TO_PROTOCOL_VERSION = {0: 0, 10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
+   """
+   Mapping from protocol spec (draft) version to protocol version.  For Hixie-76,
+   there is no protocol version announced in HTTP header, and we just use the
+   pseudo protocol version 0 in this case.
+   """
+
+   PROTOCOL_TO_SPEC_VERSION = {0: 0, 8: 12, 13: 18}
    """
    Mapping from protocol version to the latest protocol spec (draft) version
-   using that protocol version.
+   using that protocol version.  For Hixie-76, there is no protocol version
+   announced in HTTP header, and we just use the draft version (0) in this case.
    """
 
    DEFAULT_SPEC_VERSION = 10
    """
-   Default WebSockets protocol spec (draft) version this implementation speaks.
+   Default WebSockets protocol spec version this implementation speaks.
    We use Hybi-10, since this is what is currently targeted by widely distributed
    browsers (namely Firefox 8 and the like).
    """
 
+   DEFAULT_ALLOW_HIXIE76 = False
+   """
+   By default, this implementation will not allow to speak the obsoleted
+   Hixie-76 protocol version. That protocol version has security issues, but
+   is still spoken by some clients. Enable at your own risk! Enabling can be
+   done by using setProtocolOptions() on the factories for clients and servers.
+   """
+
    WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-   """Protocol defined magic used during WebSocket handshake."""
+   """
+   Protocol defined magic used during WebSocket handshake (used in Hybi-drafts
+   and final RFC6455.
+   """
 
    QUEUED_WRITE_DELAY = 0.00001
    """For synched/chopped writes, this is the reactor reentry delay in seconds."""
@@ -856,6 +872,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.logOctets = self.factory.logOctets
       self.logFrames = self.factory.logFrames
 
+      self.allowHixie76 = self.factory.allowHixie76
       self.utf8validateIncoming = self.factory.utf8validateIncoming
       self.applyMask = self.factory.applyMask
       self.maxFramePayloadSize = self.factory.maxFramePayloadSize
@@ -868,12 +885,12 @@ class WebSocketProtocol(protocol.Protocol):
       self.tcpNoDelay = self.factory.tcpNoDelay
 
       if self.isServer:
-         #self.versions = self.factory.versions
+         self.versions = self.factory.versions
          self.webStatus = self.factory.webStatus
          self.requireMaskedClientFrames = self.factory.requireMaskedClientFrames
          self.maskServerFrames = self.factory.maskServerFrames
       else:
-         #self.version = self.factory.version
+         self.version = self.factory.version
          self.acceptMaskedServerFrames = self.factory.acceptMaskedServerFrames
          self.maskClientFrames = self.factory.maskClientFrames
          self.serverConnectionDropTimeout = self.factory.serverConnectionDropTimeout
@@ -1783,7 +1800,7 @@ class WebSocketProtocol(protocol.Protocol):
       of frames.
 
       :param payload: Data to send.
-      
+
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
@@ -2145,11 +2162,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             version = int(self.http_headers["sec-websocket-version"])
 
-            if version not in self.factory.versions:
+            if version not in self.versions:
 
                ## respond with list of supported versions (descending order)
                ##
-               sv = sorted(self.factory.versions)
+               sv = sorted(self.versions)
                sv.reverse()
                svs = ','.join([str(x) for x in sv])
                return self.failHandshake("Sec-WebSocket-Version %d not supported (supported versions: %s)" % (version, svs),
@@ -2458,6 +2475,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       Reset all WebSocket protocol options to defaults.
       """
       self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
+      self.allowHixie76 = WebSocketProtocol.DEFAULT_ALLOW_HIXIE76
       self.webStatus = True
       self.utf8validateIncoming = True
       self.requireMaskedClientFrames = True
@@ -2475,6 +2493,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
    def setProtocolOptions(self,
                           versions = None,
+                          allowHixie76 = None,
                           webStatus = None,
                           utf8validateIncoming = None,
                           maskServerFrames = None,
@@ -2493,6 +2512,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       :param versions: The WebSockets protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
       :type versions: list of ints
+      :param allowHixie76: Allow to speak Hixie76 protocol version.
+      :type allowHixie76: bool
       :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: True).
       :type webStatus: bool
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
@@ -2520,10 +2541,15 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
       """
+      if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
+         self.allowHixie76 = allowHixie76
+
       if versions is not None:
          for v in versions:
             if v not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
                raise Exception("invalid WebSockets protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
+            if v == 0 and not self.allowHixie76:
+               raise Exception("use of Hixie-76 requires allowHixie76 == True")
          if set(versions) != set(self.versions):
             self.versions = versions
 
@@ -2658,7 +2684,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ## optional origin announced
       ##
       if self.factory.origin:
-         if self.factory.version > 10:
+         if self.version > 10:
             request += "Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
          else:
             request += "Sec-WebSocket-Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
@@ -2670,7 +2696,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       ## set WS protocol version depending on WS spec version
       ##
-      request += "Sec-WebSocket-Version: %d\x0d\x0a" % WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.factory.version]
+      request += "Sec-WebSocket-Version: %d\x0d\x0a" % WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.version]
 
       request += "\x0d\x0a"
       self.http_request_data = request
@@ -2946,6 +2972,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       Reset all WebSocket protocol options to defaults.
       """
       self.version = WebSocketProtocol.DEFAULT_SPEC_VERSION
+      self.allowHixie76 = WebSocketProtocol.DEFAULT_ALLOW_HIXIE76
       self.utf8validateIncoming = True
       self.acceptMaskedServerFrames = False
       self.maskClientFrames = True
@@ -2963,6 +2990,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
    def setProtocolOptions(self,
                           version = None,
+                          allowHixie76 = None,
                           utf8validateIncoming = None,
                           acceptMaskedServerFrames = None,
                           maskClientFrames = None,
@@ -2981,6 +3009,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
+      :param allowHixie76: Allow to speak Hixie76 protocol version.
+      :type allowHixie76: bool
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
       :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: False).
@@ -3008,10 +3038,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
       """
+      if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
+         self.allowHixie76 = allowHixie76
 
       if version is not None:
          if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
             raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
+         if version == 0 and not self.allowHixie76:
+            raise Exception("use of Hixie-76 requires allowHixie76 == True")
          if version != self.version:
             self.version = version
 
