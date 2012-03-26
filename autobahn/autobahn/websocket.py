@@ -887,6 +887,8 @@ class WebSocketProtocol(protocol.Protocol):
       for text message when payload is invalid UTF-8 or close frames with
       close reason that is invalid UTF-8.
 
+      Modes: Hybi, Hixie
+
       :param reason: What was invalid for the payload (human readable).
       :type reason: str
 
@@ -1266,39 +1268,56 @@ class WebSocketProtocol(protocol.Protocol):
       ## outside a message, that is we are awaiting data which starts a new message
       ##
       if not self.inside_message:
-         if buffered_len >= 1:
+         if buffered_len >= 2:
             if self.data[0] == '\x00':
+
                self.inside_message = True
-               self.onMessageBegin(1)
-               end_index = self.data.find('\xff')
-               if end_index > 0:
-                  self.onMessageFrameData(self.data[1:end_index])
-                  self.onMessageEnd()
-                  self.data = self.data[end_index + 1:]
-                  self.inside_message = False
-                  return len(self.data) > 0
+
+               if self.utf8validateIncoming:
+                  self.utf8validator.reset()
+                  self.utf8validateIncomingCurrentMessage = True
+                  self.utf8validateLast = (True, True, 0, 0)
                else:
-                  self.onMessageFrameData(self.data[1:])
-                  self.data = ''
-                  return False
-            else:
-               ## FAIL!
+                  self.utf8validateIncomingCurrentMessage = False
+
+               self.data = self.data[1:]
+               self.onMessageBegin(1)
+
+            elif self.data[0] == '\xff' and self.data[1] == '\x00':
+               ## Close HS
                pass
+            else:
+               self.failByDrop = True
+               if self.protocolViolation("invalid data received"):
+                  return False
          else:
             ## need more data
             return False
+
+      end_index = self.data.find('\xff')
+      if end_index > 0:
+         payload = self.data[:end_index]
+         self.data = self.data[end_index + 1:]
       else:
-         end_index = self.data.find('\xff')
-         if end_index > 0:
-            self.onMessageFrameData(self.data[:end_index])
-            self.onMessageEnd()
-            self.data = self.data[end_index + 1:]
-            self.inside_message = False
-            return len(self.data) > 0
-         else:
-            self.onMessageFrameData(self.data)
-            self.data = ''
-            return False
+         payload = self.data
+         self.data = ''
+
+      ## incrementally validate UTF-8 payload
+      ##
+      if self.utf8validateIncomingCurrentMessage:
+         self.utf8validateLast = self.utf8validator.validate(payload)
+         if not self.utf8validateLast[0]:
+            self.failByDrop = True
+            if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
+               return False
+
+      self.onMessageFrameData(payload)
+
+      if end_index > 0:
+         self.inside_message = False
+         self.onMessageEnd()
+
+      return len(self.data) > 0
 
 
    def processDataHybi(self):
