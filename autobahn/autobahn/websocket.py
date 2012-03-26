@@ -1171,6 +1171,61 @@ class WebSocketProtocol(protocol.Protocol):
       After WebSockets handshake has been completed, this procedure will do all
       subsequent processing of incoming bytes.
       """
+      if self.websocket_version == 0:
+         self.processDataHixie76()
+      else:
+         self.processDataHybi()
+
+
+   def processDataHixie76(self):
+      """
+      Hixie-76 incoming data processing.
+      """
+      buffered_len = len(self.data)
+
+      ## outside a message, that is we are awaiting data which starts a new message
+      ##
+      if not self.inside_message:
+         if buffered_len >= 1:
+            if self.data[0] == '\x00':
+               self.inside_message = True
+               end_index = self.data.find('\xff')
+               if end_index > 0:
+                  self.current_message.append(self.data[1:end_index])
+                  self.data = self.data[end_index + 1:]
+                  self.onMessage(''.join(self.current_message), False)
+                  self.current_message = []
+                  self.inside_message = False
+                  return len(self.data) > 0
+               else:
+                  self.current_message.append(self.data[1:])
+                  self.data = ''
+                  return False
+            else:
+               ## FAIL!
+               pass
+         else:
+            ## need more data
+            return False
+      else:
+         end_index = self.data.find('\xff')
+         if end_index > 0:
+            self.current_message.append(self.data[:end_index])
+            self.data = self.data[end_index + 1:]
+            self.onMessage(''.join(self.current_message), False)
+            self.current_message = []
+            self.inside_message = False
+            return len(self.data) > 0
+         else:
+            self.current_message.append(self.data)
+            self.data = ''
+            return False
+
+
+   def processDataHybi(self):
+      """
+      RFC6455/Hybi-Drafts incoming data processing.
+      """
       buffered_len = len(self.data)
 
       ## outside a frame, that is we are awaiting data which starts a new frame
@@ -1869,12 +1924,40 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Send out a message in one go.
 
-      You can send text or binary message, and optionally
-      specifiy a payload fragment size. When the latter is given, the payload will
-      be split up into frames with payload <= the payload_frag_size given.
+      You can send text or binary message, and optionally specifiy a payload fragment size.
+      When the latter is given, the payload will be split up into frames with
+      payload <= the payload_frag_size given.
+
+      Note: When Hixie76 is spoken, setting any of the parameters: binary, payload_frag_size
+      or sync is disallowed!
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+      if self.websocket_version == 0:
+         if binary:
+            raise Exception("cannot send binary message in Hixie76 mode")
+         if payload_frag_size:
+            raise Exception("cannot fragment messages in Hixie76 mode")
+         if sync:
+            raise Exception("sync is illegal in Hixie76 mode")
+         self.sendMessageHixie76(payload)
+      else:
+         self.sendMessageHybi(payload, binary, payload_frag_size, sync)
+
+
+   def sendMessageHixie76(self, payload):
+      """
+      Hixie76-Variant of sendMessage().
+      """
+      self.sendData('\x00')
+      self.sendData(payload)
+      self.sendData('\xff')
+
+
+   def sendMessageHybi(self, payload, binary = False, payload_frag_size = None, sync = False):
+      """
+      Hybi-Variant of sendMessage().
+      """
       ## (initial) frame opcode
       ##
       if binary:
@@ -2364,8 +2447,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## opening handshake completed, move WebSockets connection into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
-         self.current_frame = None
          self.inside_message = False
+         if self.websocket_version == 0:
+            self.current_message = []
+         else:
+            self.current_frame = None
 
          ## fire handler on derived class
          ##
@@ -2545,7 +2631,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.autoFragmentSize = 0
       self.failByDrop = True
       self.echoCloseCodeReason = False
-      self.openHandshakeTimeout = 0
+      self.openHandshakeTimeout = 5
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
@@ -3042,7 +3128,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.failByDrop = True
       self.echoCloseCodeReason = False
       self.serverConnectionDropTimeout = 1
-      self.openHandshakeTimeout = 0
+      self.openHandshakeTimeout = 5
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
