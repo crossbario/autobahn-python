@@ -8,11 +8,18 @@
       <script>
          // WAMP session object
          var sess;
+         var wsuri;
 
          window.onload = function() {
 
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
             // connect to WAMP server
-            ab.connect("ws://localhost:9000",
+            ab.connect(wsuri,
 
                // WAMP session was established
                function (session) {

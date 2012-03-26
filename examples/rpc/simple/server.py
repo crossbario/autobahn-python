@@ -19,6 +19,8 @@
 import sys, math
 from twisted.python import log
 from twisted.internet import reactor, defer
+from twisted.web.server import Site
+from twisted.web.static import File
 from autobahn.websocket import listenWS
 from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
 
@@ -98,7 +100,14 @@ class SimpleServerProtocol(WampServerProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampServerFactory("ws://localhost:9000")
+
+   factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = SimpleServerProtocol
+   factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
+
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(8080, web)
+
    reactor.run()
