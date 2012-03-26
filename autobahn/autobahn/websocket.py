@@ -2040,6 +2040,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          log.msg("connection from %s lost" % self.peerstr)
 
 
+   def parseHixie76Key(key):
+      return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
+
+
    def processHandshake(self):
       """
       Process WebSockets opening handshake request from client.
@@ -2056,10 +2060,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## extract HTTP status line and headers
          ##
          (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.http_request_data)
-
-         ## remember rest (after HTTP headers, if any)
-         ##
-         self.data = self.data[end_of_header + 4:]
 
          ## validate WebSocket opening handshake client request
          ##
@@ -2153,29 +2153,33 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Sec-WebSocket-Version
          ##
+         if http_headers_cnt["sec-websocket-version"] > 1:
+            return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
+
          if not self.http_headers.has_key("sec-websocket-version"):
-            return self.failHandshake("HTTP Sec-WebSocket-Version header missing in opening handshake request")
-         try:
-
-            if http_headers_cnt["sec-websocket-version"] > 1:
-               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
-
-            version = int(self.http_headers["sec-websocket-version"])
-
-            if version not in self.versions:
-
-               ## respond with list of supported versions (descending order)
-               ##
-               sv = sorted(self.versions)
-               sv.reverse()
-               svs = ','.join([str(x) for x in sv])
-               return self.failHandshake("Sec-WebSocket-Version %d not supported (supported versions: %s)" % (version, svs),
-                                         HTTP_STATUS_CODE_BAD_REQUEST[0],
-                                         [("Sec-WebSocket-Version", svs)])
+            if self.allowHixie76:
+               version = 0
             else:
-               self.websocket_version = version
-         except:
-            return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
+               return self.failHandshake("HTTP Sec-WebSocket-Version header missing in opening handshake request (and Hixie76 disabled)")
+         else:
+            try:
+               version = int(self.http_headers["sec-websocket-version"])
+            except:
+               return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
+
+         if version not in self.versions:
+
+            ## respond with list of supported versions (descending order)
+            ##
+            sv = sorted(self.versions)
+            sv.reverse()
+            svs = ','.join([str(x) for x in sv])
+            return self.failHandshake("WebSocket version %d not supported (supported versions: %s)" % (version, svs),
+                                      HTTP_STATUS_CODE_BAD_REQUEST[0],
+                                      [("Sec-WebSocket-Version", svs)])
+         else:
+            ## store the protocol version we are supposed to talk
+            self.websocket_version = version
 
          ## Sec-WebSocket-Protocol
          ##
@@ -2205,37 +2209,68 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
             self.websocket_origin = self.http_headers[websocket_origin_header_key].strip()
+         else:
+            # non-browser clients are allowed to omit this header
+            pass
 
          ## Sec-WebSocket-Extensions
          ##
-
          ## extensions requested by client
          self.websocket_extensions = []
          ## extensions selected by server
          self.websocket_extensions_in_use = []
 
          if self.http_headers.has_key("sec-websocket-extensions"):
+            if self.websocket_version == 0:
+               return self.failHandshake("Sec-WebSocket-Extensions header specified for Hixie-76")
             extensions = [x.strip() for x in self.http_headers["sec-websocket-extensions"].split(',')]
             if len(extensions) > 0:
                self.websocket_extensions = extensions
                if self.debug:
                   log.msg("client requested extensions we don't support (%s)" % str(extensions))
 
-         ## Sec-WebSocket-Key
-         ## http://tools.ietf.org/html/rfc4648#section-4
+         ## Sec-WebSocket-Key (Hybi) or Sec-WebSocket-Key1/Sec-WebSocket-Key2 (Hixie-76)
          ##
-         if not self.http_headers.has_key("sec-websocket-key"):
-            return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
-         if http_headers_cnt["sec-websocket-key"] > 1:
-            return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
-         key = self.http_headers["sec-websocket-key"].strip()
-         if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
-            return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
-         if key[-2:] != "==": # 24 - ceil(128/6) == 2
-            return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
-         for c in key[:-2]:
-            if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
-               return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
+         if self.websocket_version == 0:
+            for kk in ['Sec-WebSocket-Key1', 'Sec-WebSocket-Key2']:
+               k = kk.lower()
+               if not self.http_headers.has_key(k):
+                  return self.failHandshake("HTTP %s header missing" % kk)
+               if http_headers_cnt[k] > 1:
+                  return self.failHandshake("HTTP %s header appears more than once in opening handshake request" % kk)
+               try:
+                  key1 = self.parseHixie76Key(self.http_headers["sec-websocket-key1"].strip())
+                  key2 = self.parseHixie76Key(self.http_headers["sec-websocket-key2"].strip())
+               except:
+                  return self.failHandshake("could not parse Sec-WebSocket-Key1/2")
+         else:
+            if not self.http_headers.has_key("sec-websocket-key"):
+               return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
+            if http_headers_cnt["sec-websocket-key"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
+            key = self.http_headers["sec-websocket-key"].strip()
+            if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
+               return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
+            if key[-2:] != "==": # 24 - ceil(128/6) == 2
+               return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
+            for c in key[:-2]:
+               if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
+                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
+
+         ## For Hixie-76, we need 8 octets of HTTP request body to complete HS!
+         ##
+         if self.websocket_version == 0:
+            if len(self.data) < end_of_header + 4 + 8:
+               return
+            else:
+               key3 =  self.data[end_of_header + 4:end_of_header + 4 + 8]
+
+         ## Ok, got complete HS input, remember rest (if any)
+         ##
+         if self.websocket_version == 0:
+            self.data = self.data[end_of_header + 4 + 8:]
+         else:
+            self.data = self.data[end_of_header + 4:]
 
          ## WebSocket handshake validated => produce opening handshake response
 
@@ -2274,32 +2309,56 @@ class WebSocketServerProtocol(WebSocketProtocol):
             return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
 
 
-         ## compute Sec-WebSocket-Accept
-         ##
-         sha1 = hashlib.sha1()
-         sha1.update(key + WebSocketProtocol.WS_MAGIC)
-         sec_websocket_accept = base64.b64encode(sha1.digest())
-
-         ## send response to complete WebSocket handshake
+         ## build response to complete WebSocket handshake
          ##
          response  = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
 
          if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
 
-         response += "Upgrade: websocket\x0d\x0a"
+         response += "Upgrade: WebSocket\x0d\x0a"
          response += "Connection: Upgrade\x0d\x0a"
-         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
-
-         if len(self.websocket_extensions_in_use) > 0:
-            response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
 
          if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
 
-         response += "\x0d\x0a"
-         self.http_response_data = response
+         if self.websocket_version == 0:
 
+            if self.websocket_origin:
+               ## browser client provide the header, and expect it to be echo'ed
+               response += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.websocket_origin
+
+            ## FIXME: check this!
+            location = "%s://%s%s" % ('wss' if self.factory.isSecure else 'ws', self.http_request_host, self.http_request_uri)
+            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
+
+            ## end of HTTP response headers
+            response += "\x0d\x0a"
+
+            ## compute accept body
+            ##
+            accept_val = struct.pack(">II", key1, key2) + key3
+            accept = hashlib.md5(accept_val).digest()
+            response += accept
+         else:
+            ## compute Sec-WebSocket-Accept
+            ##
+            sha1 = hashlib.sha1()
+            sha1.update(key + WebSocketProtocol.WS_MAGIC)
+            sec_websocket_accept = base64.b64encode(sha1.digest())
+
+            response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
+
+            if len(self.websocket_extensions_in_use) > 0:
+               response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
+
+            ## end of HTTP response headers
+            response += "\x0d\x0a"
+
+
+         ## save and send out opening HS data
+         ##
+         self.http_response_data = response
          self.sendData(self.http_response_data)
 
          ## opening handshake completed, move WebSockets connection into OPEN state
