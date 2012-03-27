@@ -1914,27 +1914,34 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Begin sending new message.
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
 
-      :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
+      :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or
+                     WebSocketProtocol.MESSAGE_TYPE_BINARY (only Hybi mode).
       """
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
-
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
          raise Exception("WebSocketProtocol.beginMessage invalid in current sending state")
 
-      if opcode not in [1, 2]:
-         raise Exception("use of reserved opcode %d" % opcode)
+      if self.websocket_version == 0:
+         if opcode != 1:
+            raise Exception("cannot send non-text message in Hixie mode")
 
-      ## move into "begin message" state and remember opcode for later (when sending first frame)
-      ##
-      self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
-      self.send_message_opcode = opcode
+         self.sendData('\x00')
+         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+      else:
+         if opcode not in [1, 2]:
+            raise Exception("use of reserved opcode %d" % opcode)
+
+         ## remember opcode for later (when sending first frame)
+         ##
+         self.send_message_opcode = opcode
+         self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
+
 
 
    def beginMessageFrame(self, length, reserved = 0, mask = None):
@@ -2047,50 +2054,60 @@ class WebSocketProtocol(protocol.Protocol):
       messages, which you begin and end, since a message can contain an unlimited number
       of frames.
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, this method is slightly misnamed for historic reasons.
 
       :param payload: Data to send.
 
-      :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
+      :returns: int -- Hybi mode: when frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument. Hixie mode: returns None.
       """
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
-
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
-      ## check if sending state is valid for this method
-      ##
-      if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
-         raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
 
-      rl = len(payload)
-      if self.send_message_frame_masker.pointer() + rl > self.send_message_frame_length:
-         l = self.send_message_frame_length - self.send_message_frame_masker.pointer()
-         rest = -(rl - l)
-         pl = payload[:l]
+      if self.websocket_version == 0:
+         ## Hixie Mode
+         ##
+         if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
+            raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
+         self.sendData(payload, sync = sync)
+         return None
+
       else:
-         l = rl
-         rest = self.send_message_frame_length - self.send_message_frame_masker.pointer() - l
-         pl = payload
+         ## Hybi Mode
+         ##
+         if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
+            raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
 
-      ## mask frame payload
-      ##
-      plm = self.send_message_frame_masker.process(pl)
+         rl = len(payload)
+         if self.send_message_frame_masker.pointer() + rl > self.send_message_frame_length:
+            l = self.send_message_frame_length - self.send_message_frame_masker.pointer()
+            rest = -(rl - l)
+            pl = payload[:l]
+         else:
+            l = rl
+            rest = self.send_message_frame_length - self.send_message_frame_masker.pointer() - l
+            pl = payload
 
-      ## send frame payload
-      ##
-      self.sendData(plm, sync = sync)
+         ## mask frame payload
+         ##
+         plm = self.send_message_frame_masker.process(pl)
 
-      ## if we are done with frame, move back into "inside message" state
-      ##
-      if self.send_message_frame_masker.pointer() >= self.send_message_frame_length:
-         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+         ## send frame payload
+         ##
+         self.sendData(plm, sync = sync)
 
-      ## when =0 : frame was completed exactly
-      ## when >0 : frame is still uncomplete and that much amount is still left to complete the frame
-      ## when <0 : frame was completed and there was this much unconsumed data in payload argument
-      ##
-      return rest
+         ## if we are done with frame, move back into "inside message" state
+         ##
+         if self.send_message_frame_masker.pointer() >= self.send_message_frame_length:
+            self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+
+         ## when =0 : frame was completed exactly
+         ## when >0 : frame is still uncomplete and that much amount is still left to complete the frame
+         ## when <0 : frame was completed and there was this much unconsumed data in payload argument
+         ##
+         return rest
 
 
    def endMessage(self):
@@ -2098,18 +2115,20 @@ class WebSocketProtocol(protocol.Protocol):
       End a previously begun message. No more frames may be sent (for that message). You have to
       begin a new message before sending again.
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
       """
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
-
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
          raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
-      self.sendFrame(opcode = 0, fin = True)
+
+      if self.websocket_version == 0:
+         self.sendData('\x00')
+      else:
+         self.sendFrame(opcode = 0, fin = True)
+
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
 
