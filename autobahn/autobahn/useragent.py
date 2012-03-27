@@ -21,20 +21,26 @@ UA_FIREFOX = re.compile(".*Firefox/(\d*).*")
 UA_CHROME = re.compile(".*Chrome/(\d*).*")
 UA_CHROMEFRAME = re.compile(".*chromeframe/(\d*).*")
 UA_WEBKIT = re.compile(".*AppleWebKit/([0-9+\.]*)\w*.*")
+UA_WEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
 
-# FIXME:
 
-# HP Touchpad: has Qt-WebKit browser with old WS, but has Flash
+# HP Touchpad
 # Mozilla/5.0 (hp-tablet; Linux; hpwOS/3.0.5; U; en-US) AppleWebKit/534.6 (KHTML, like Gecko) wOSBrowser/234.83 Safari/534.6 TouchPad/1.0
-# current mapping => True True True SUPPORTED
-# This is correct, but mapped from the "wrong" code ("Safari")
+# => Qt-WebKit, Hixie-76, Flash
+
+# iPod Touch, iOS 4.2.1
+# Mozilla/5.0 (iPod; U; CPU iPhone OS 4_2_1 like Mac OS X; de-de) AppleWebKit/533.17.9 (KHTML, like Gecko) Version/5.0.2 Mobile/8C148 Safari/6533.18.5
+# => Hixie-76
+
+# MacBook Pro, OSX 10.5.8, Safari 5.0.6
+# Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/534.50.2 (KHTML, like Gecko) Version/5.0.6 Safari/533.22.3
+# => Hixie-76
 
 
 def _lookupWsSupport(ua):
    """
-   Lookup if browser supports WebSocket Hybi-10 or higher natively,
-   and if not, whether the web-socket-js Flash bridge works to
-   polyfill that.
+   Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
+   and if not, whether the web-socket-js Flash bridge works to polyfill that.
 
    Returns a tuple of booleans
 
@@ -56,6 +62,7 @@ def _lookupWsSupport(ua):
    if ua.find("MSIE") >= 0:
       # IE10 has native support
       if ua.find("MSIE 10") >= 0:
+         # native Hybi-10+
          return (True, False, True)
 
       # first, check for Google Chrome Frame
@@ -66,14 +73,17 @@ def _lookupWsSupport(ua):
          try:
             v = int(r.groups()[0])
             if v >= 14:
+               # native Hybi-10+
                return (True, False, True)
          except:
+            # detection problem
             return (False, False, False)
 
       # Flash fallback
       if ua.find("MSIE 8") >= 0 or ua.find("MSIE 9") >= 0:
          return (True, True, True)
 
+      # unsupported
       return (False, False, True)
 
 
@@ -85,12 +95,40 @@ def _lookupWsSupport(ua):
       try:
          v = int(r.groups()[0])
          if v >= 7:
+            # native Hybi-10+
             return (True, False, True)
          elif v >= 3:
+            # works with Flash bridge
             return (True, True, True)
          else:
+            # unsupported
             return (False, False, True)
       except:
+         # detection problem
+         return (False, False, False)
+
+
+   ## iOS
+   ##
+   if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
+      # https://developer.apple.com/library/ios/DOCUMENTATION/AppleApplications/Reference/SafariWebContent/OptimizingforSafarioniPhone/OptimizingforSafarioniPhone.html#//apple_ref/doc/uid/TP40006517-SW3
+
+      ## native Hixie76 (as of March 2012), no Flash, no alternative browsers
+      return (True, False, True)
+
+
+   ## webOS
+   ##
+   if ua.find("hpwOS") >= 0:
+      try:
+         vv = [int(x) for x in UA_WEBOS.match(ua).groups()[0].split('.')]
+         if vv[0] >= 3:
+            return (True, False, True)
+      except:
+         # detection problem
+         return (False, False, False)
+      else:
+         # unsupported
          return (False, False, True)
 
 
@@ -110,19 +148,20 @@ def _lookupWsSupport(ua):
       # Hixie-76?
       # # Mozilla/5.0 (Macintosh; Intel Mac OS X 10_5_8) AppleWebKit/534.50.2 (KHTML, like Gecko) Version/5.0.6 Safari/533.22.3
 
-      r = UA_WEBKIT.match(ua)
-      try:
-         v = r.groups()[0]
-         if ua.find("Windows") >= 0 and v in ["534+"]:
-            return (True, False, True)
-         if ua.find("Macintosh") >= 0:
-            vv = v.replace('+', '').split('.')
-            if (int(vv[0]) == 535 and int(vv[1]) >= 24) or int(vv[0]) > 535:
-               return (True, False, True)
-      except:
-         return (False, False, False)
+      # rely on at least Hixie76
+      return (True, False, True)
 
-      return (True, True, True)
+      #r = UA_WEBKIT.match(ua)
+      #try:
+      #   v = r.groups()[0]
+      #   if ua.find("Windows") >= 0 and v in ["534+"]:
+      #      return (True, False, True)
+      #   if ua.find("Macintosh") >= 0:
+      #      vv = v.replace('+', '').split('.')
+      #      if (int(vv[0]) == 535 and int(vv[1]) >= 24) or int(vv[0]) > 535:
+      #         return (True, False, True)
+      #except:
+      #   return (False, False, False)
 
 
    ## Chrome
@@ -190,15 +229,6 @@ def _lookupWsSupport(ua):
       ## unidentified browser
       ##
       return (False, False, False)
-
-
-   ## iOS
-   ##
-   if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
-      # https://developer.apple.com/library/ios/DOCUMENTATION/AppleApplications/Reference/SafariWebContent/OptimizingforSafarioniPhone/OptimizingforSafarioniPhone.html#//apple_ref/doc/uid/TP40006517-SW3
-
-      ## no native support, no flash, no alternative browsers => no support
-      return (False, False, True)
 
 
    ## Unidentified / No support
