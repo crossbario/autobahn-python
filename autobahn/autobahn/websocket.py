@@ -506,12 +506,12 @@ class WebSocketProtocol(protocol.Protocol):
       Callback when receiving a new message frame has begun. Default implementation will
       prepare to buffer message frame data. Override in derived class.
 
+      Modes: Hybi
+
       :param length: Payload length of message frame which is to be received.
       :type length: int
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
-
-      Modes: Hybi
       """
       if not self.failedByMe:
          self.message_data_total_length += length
@@ -533,6 +533,9 @@ class WebSocketProtocol(protocol.Protocol):
       buffer data for frame. Override in derived class.
 
       Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, this method is slightly misnamed for historic reasons.
 
       :param payload: Partial payload for message frame.
       :type payload: str
@@ -584,7 +587,7 @@ class WebSocketProtocol(protocol.Protocol):
       will flatten the buffered frames and callback onMessage. Override
       in derived class.
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
       """
       if not self.failedByMe:
          payload = ''.join(self.message_data)
@@ -675,7 +678,11 @@ class WebSocketProtocol(protocol.Protocol):
       the TCP connection either immediately (when we are a server) or after a timeout
       (when we are a client and expect the server to drop the TCP).
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, this method is slightly misnamed for historic reasons.
+        - For Hixie mode, code and reasonRaw are silently ignored.
 
       :param code: None or close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
       :type code: int
@@ -725,11 +732,14 @@ class WebSocketProtocol(protocol.Protocol):
 
          self.wasClean = True
 
-         ## Either reply with same code/reason, or code == NORMAL/reason=None
-         if self.echoCloseCodeReason:
-            self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = True)
+         if self.websocket_version == 0:
+            self.sendCloseFrame(isReply = True)
          else:
-            self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
+            ## Either reply with same code/reason, or code == NORMAL/reason=None
+            if self.echoCloseCodeReason:
+               self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = True)
+            else:
+               self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
 
          if self.isServer:
             ## When we are a server, we immediately drop the TCP.
@@ -750,6 +760,8 @@ class WebSocketProtocol(protocol.Protocol):
       We (a client) expected the peer (a server) to drop the connection,
       but it didn't (in time self.serverConnectionDropTimeout).
       So we drop the connection, but set self.wasClean = False.
+
+      Modes: Hybi, Hixie
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
@@ -798,7 +810,7 @@ class WebSocketProtocol(protocol.Protocol):
       respond (in time self.closeHandshakeTimeout) with a close response frame though.
       So we drop the connection, but set self.wasClean = False.
 
-      Modes: Hybi
+      Modes: Hybi, Hixie
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
@@ -839,6 +851,11 @@ class WebSocketProtocol(protocol.Protocol):
    def failConnection(self, code = CLOSE_STATUS_CODE_GOING_AWAY, reason = "Going Away"):
       """
       Fails the WebSockets connection.
+
+      Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, the code and reason are silently ignored.
       """
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
@@ -865,6 +882,11 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Fired when a WebSockets protocol violation/error occurs.
 
+      Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, reason is silently ignored.
+
       :param reason: Protocol violation that was encountered (human readable).
       :type reason: str
 
@@ -889,6 +911,9 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
 
+      Notes:
+        - For Hixie mode, reason is silently ignored.
+
       :param reason: What was invalid for the payload (human readable).
       :type reason: str
 
@@ -909,6 +934,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       This is called by Twisted framework when a new TCP connection has been established
       and handed over to a Protocol instance (an instance of this class).
+
+      Modes: Hybi, Hixie
       """
 
       ## copy default options from factory (so we are not affected by changed on those)
@@ -1019,6 +1046,8 @@ class WebSocketProtocol(protocol.Protocol):
    def connectionLost(self, reason):
       """
       This is called by Twisted framework when a TCP connection was lost.
+
+      Modes: Hybi, Hixie
       """
       self.state = WebSocketProtocol.STATE_CLOSED
       if not self.wasClean:
@@ -1269,6 +1298,9 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       if not self.inside_message:
          if buffered_len >= 2:
+
+            ## new message
+            ##
             if self.data[0] == '\x00':
 
                self.inside_message = True
@@ -1283,12 +1315,18 @@ class WebSocketProtocol(protocol.Protocol):
                self.data = self.data[1:]
                self.onMessageBegin(1)
 
+            ## Hixie close from peer received
+            ##
             elif self.data[0] == '\xff' and self.data[1] == '\x00':
-               ## Close HS
-               pass
+               self.onCloseFrame()
+               self.data = self.data[2:]
+               # stop receiving/processing after having received close!
+               return False
+
+            ## malformed data
+            ##
             else:
-               self.failByDrop = True
-               if self.protocolViolation("invalid data received"):
+               if self.protocolViolation("malformed data received"):
                   return False
          else:
             ## need more data
@@ -1307,7 +1345,6 @@ class WebSocketProtocol(protocol.Protocol):
       if self.utf8validateIncomingCurrentMessage:
          self.utf8validateLast = self.utf8validator.validate(payload)
          if not self.utf8validateLast[0]:
-            self.failByDrop = True
             if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                return False
 
@@ -1795,11 +1832,12 @@ class WebSocketProtocol(protocol.Protocol):
       an internal method which deliberately allows not send close
       frame with invalid payload.
 
-      Modes: Hybi
-      """
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
+      Modes: Hybi, Hixie
 
+      Notes:
+        - For Hixie mode, this method is slightly misnamed for historic reasons.
+        - For Hixie mode, code and reasonUtf8 will be silently ignored.
+      """
       if self.state == WebSocketProtocol.STATE_CLOSING:
          if self.debugCodePaths:
             log.msg("ignoring sendCloseFrame since connection is closing")
@@ -1813,13 +1851,16 @@ class WebSocketProtocol(protocol.Protocol):
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
 
-         ## construct close frame payload and send frame
-         payload = ""
-         if code is not None:
-            payload += struct.pack("!H", code)
-         if reasonUtf8 is not None:
-            payload += reasonUtf8
-         self.sendFrame(opcode = 8, payload = payload)
+         if self.websocket_version == 0:
+            self.sendData("\xff\x00")
+         else:
+            ## construct Hybi close frame payload and send frame
+            payload = ""
+            if code is not None:
+               payload += struct.pack("!H", code)
+            if reasonUtf8 is not None:
+               payload += reasonUtf8
+            self.sendFrame(opcode = 8, payload = payload)
 
          ## update state
          self.state = WebSocketProtocol.STATE_CLOSING
@@ -1841,13 +1882,16 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Starts a closing handshake.
 
+      Modes: Hybi, Hixie
+
+      Notes:
+        - For Hixie mode, code and reason will be silently ignored.
+
       :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_NORMAL or 3000-4999).
       :type code: int
       :param reason: An optional close reason (a string that when present, a status code MUST also be present).
       :type reason: str
       """
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
       if code is not None:
          if type(code) != int:
             raise Exception("invalid type %s for close code" % type(code))
@@ -1870,10 +1914,13 @@ class WebSocketProtocol(protocol.Protocol):
       """
       Begin sending new message.
 
+      Modes: Hybi
+
       :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or WebSocketProtocol.MESSAGE_TYPE_BINARY.
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -2000,6 +2047,8 @@ class WebSocketProtocol(protocol.Protocol):
       messages, which you begin and end, since a message can contain an unlimited number
       of frames.
 
+      Modes: Hybi
+
       :param payload: Data to send.
 
       :returns: int -- When frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument.
@@ -2048,9 +2097,12 @@ class WebSocketProtocol(protocol.Protocol):
       """
       End a previously begun message. No more frames may be sent (for that message). You have to
       begin a new message before sending again.
+
+      Modes: Hybi
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       ## check if sending state is valid for this method
@@ -2067,6 +2119,9 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi
       """
+      if self.websocket_version == 0:
+         raise Exception("function not supported in Hixie-76 mode")
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       if self.websocket_version == 0:
