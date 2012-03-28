@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
    <head>
       <script type="text/javascript">
@@ -18,23 +19,30 @@
             } else if ("MozWebSocket" in window) {
                sock = new MozWebSocket(wsuri);
             } else {
-               alert("Browser does not support WebSocket!");
+               log("Browser does not support WebSocket!");
+               window.location = "http://autobahn.ws/unsupportedbrowser";
             }
 
             if (sock) {
                sock.onopen = function() {
-                  console.log("Connected to " + wsuri);
+                  log("Connected to " + wsuri);
                }
 
                sock.onmessage = function(e) {
-                  console.log("Got echo: " + e.data);
+                  log("Got echo: " + e.data);
                }
             }
-         }
+         };
 
          function send() {
-            sock.send(document.getElementById('message').value);
-         }
+            var msg = document.getElementById('message').value;
+            sock.send(msg);
+            log("Sent: " + msg);
+         };
+
+         function log(m) {
+            document.getElementById('log').innerHTML += m + '\n';
+         };
       </script>
    </head>
    <body>
@@ -44,5 +52,6 @@
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
       </form>
       <button onclick='send();'>Send Message</button>
+      <pre id="log"></pre>
    </body>
 </html>
