@@ -2501,18 +2501,20 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if not connectionUpgrade:
             return self.failHandshake("HTTP Connection headers do not include 'upgrade' value (case-insensitive) : %s" % self.http_headers["connection"])
 
-         ## Sec-WebSocket-Version
+         ## Sec-WebSocket-Version PLUS determine mode: Hybi or Hixie
          ##
-         if self.http_headers.has_key("sec-websocket-version"):
-            if http_headers_cnt["sec-websocket-version"] > 1:
-               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
-
          if not self.http_headers.has_key("sec-websocket-version"):
+            if self.debugCodePaths:
+               log.msg("Hixie76 protocol detected")
             if self.allowHixie76:
                version = 0
             else:
-               return self.failHandshake("HTTP Sec-WebSocket-Version header missing in opening handshake request (and Hixie76 disabled)")
+               return self.failHandshake("WebSocket connection denied - Hixie76 protocol mode disabled.")
          else:
+            if self.debugCodePaths:
+               log.msg("Hybi protocol detected")
+            if http_headers_cnt["sec-websocket-version"] > 1:
+               return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
             try:
                version = int(self.http_headers["sec-websocket-version"])
             except:
@@ -2732,10 +2734,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             response_body = ''
 
          if self.debug:
-            log.msg("sending WS opening handshake reply headers")
-            log.msg(response)
-            log.msg("sending WS opening handshake reply body")
-            log.msg(binascii.b2a_hex(response_body))
+            log.msg("sending HTTP response:\n\n%s%s\n\n" % (response, binascii.b2a_hex(response_body)))
 
          ## save and send out opening HS data
          ##
