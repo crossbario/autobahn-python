@@ -2682,11 +2682,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
                ## browser client provide the header, and expect it to be echo'ed
                response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
 
-            if self.factory.isSecure and self.factory.port != 443:
-               response_port = ':' + str(self.factory.port)
-            elif not self.factory.isSecure and self.factory != 80:
+            if self.debugCodePaths:
+               log.msg('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.port))
+
+            if (self.factory.isSecure and self.factory.port != 443) or ((not self.factory.isSecure) and self.factory.port != 80):
+               if self.debugCodePaths:
+                  log.msg('factory running on non-default port')
                response_port = ':' + str(self.factory.port)
             else:
+               if self.debugCodePaths:
+                  log.msg('factory running on default port')
                response_port = ''
 
             ## FIXME: check this! But see below ..
@@ -2709,7 +2714,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ##
             accept_val = struct.pack(">II", key1, key2) + key3
             accept = hashlib.md5(accept_val).digest()
-            response += str(accept)
+            response_body = str(accept)
          else:
             ## compute Sec-WebSocket-Accept
             ##
@@ -2724,11 +2729,17 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             ## end of HTTP response headers
             response += "\x0d\x0a"
+            response_body = ''
 
+         if self.debug:
+            log.msg("sending WS opening handshake reply headers")
+            log.msg(response)
+            log.msg("sending WS opening handshake reply body")
+            log.msg(binascii.b2a_hex(response_body))
 
          ## save and send out opening HS data
          ##
-         self.http_response_data = response
+         self.http_response_data = response + response_body
          self.sendData(self.http_response_data)
 
          ## opening handshake completed, move WebSockets connection into OPEN state
