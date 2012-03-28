@@ -3,10 +3,12 @@
    <head>
       <script type="text/javascript">
          var sock = null;
+         var ellog = null;
 
          window.onload = function() {
 
             var wsuri;
+            ellog = document.getElementById('log');
 
             if (window.location.protocol === "file:") {
                wsuri = "wss://localhost:9000";
@@ -40,8 +42,12 @@
 
          function send() {
             var msg = document.getElementById('message').value;
-            sock.send(msg);
-            log("Sent: " + msg);
+            if (sock) {
+               sock.send(msg);
+               log("Sent: " + msg);
+            } else {
+               log("Not connected.");
+            }
          };
 
          function log(m) {
@@ -56,6 +62,6 @@
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
       </form>
       <button onclick='send();'>Send Message</button>
-      <pre id="log"></pre>
+      <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
    </body>
 </html>

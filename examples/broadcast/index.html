@@ -3,10 +3,12 @@
    <head>
       <script type="text/javascript">
          var sock = null;
+         var ellog = null;
 
          window.onload = function() {
 
-            var wsuri = "ws://localhost:9000";
+            var wsuri;
+            ellog = document.getElementById('log');
 
             if (window.location.protocol === "file:") {
                wsuri = "ws://localhost:9000";
@@ -30,6 +32,7 @@
 
                sock.onclose = function(e) {
                   log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+                  sock = null;
                }
 
                sock.onmessage = function(e) {
@@ -40,12 +43,17 @@
 
          function broadcast() {
             var msg = document.getElementById('message').value;
-            sock.send(msg);
-            log("Sent: " + msg);
+            if (sock) {
+               sock.send(msg);
+               log("Sent: " + msg);
+            } else {
+               log("Not connected.");
+            }
          };
 
          function log(m) {
-            document.getElementById('log').innerHTML += m + '\n';
+            ellog.innerHTML += m + '\n';
+            ellog.scrollTop = ellog.scrollHeight;
          };
       </script>
    </head>
@@ -56,6 +64,6 @@
          <p>Broadcast Message: <input id="message" type="text" size="50" maxlength="50" value="Hello from Browser!"></p>
       </form>
       <button onclick='broadcast();'>Broadcast Message</button>
-      <pre id="log"></pre>
+      <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
    </body>
 </html>
