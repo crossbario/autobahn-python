@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         var sock = null;
+
+         window.onload = function() {
+
+            var wsuri;
+
+            if (window.location.protocol === "file:") {
+               wsuri = "wss://localhost:9000";
+            } else {
+               wsuri = "wss://" + window.location.hostname + ":9000";
+            }
+
+            if ("WebSocket" in window) {
+               sock = new WebSocket(wsuri);
+            } else if ("MozWebSocket" in window) {
+               sock = new MozWebSocket(wsuri);
+            } else {
+               log("Browser does not support WebSocket!");
+               window.location = "http://autobahn.ws/unsupportedbrowser";
+            }
+
+            if (sock) {
+               sock.onopen = function() {
+                  log("Connected to " + wsuri);
+               }
+
+               sock.onclose = function(e) {
+                  log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+               }
+
+               sock.onmessage = function(e) {
+                  log("Got echo: " + e.data);
+               }
+            }
+         };
+
+         function send() {
+            var msg = document.getElementById('message').value;
+            sock.send(msg);
+            log("Sent: " + msg);
+         };
+
+         function log(m) {
+            document.getElementById('log').innerHTML += m + '\n';
+         };
+      </script>
+   </head>
+   <body>
+      <h1>Autobahn Secure WebSocket Echo Test</h1>
+      <noscript>You must enable JavaScript</noscript>
+      <form>
+         <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
+      </form>
+      <button onclick='send();'>Send Message</button>
+      <pre id="log"></pre>
+   </body>
+</html>

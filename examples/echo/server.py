@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 ##
 ###############################################################################
 
+import sys
+
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.web.static import File
+
+from autobahn.websocket import WebSocketServerFactory, \
+                               WebSocketServerProtocol, \
+                               listenWS
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
@@ -28,7 +36,22 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketServerFactory("ws://localhost:9000")
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
+
+   factory = WebSocketServerFactory("ws://localhost:9000",
+                                    debug = debug,
+                                    debugCodePaths = debug)
+
    factory.protocol = EchoServerProtocol
+   factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
+
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(8080, web)
+
    reactor.run()

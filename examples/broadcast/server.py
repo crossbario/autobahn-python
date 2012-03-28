@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,8 +16,16 @@
 ##
 ###############################################################################
 
+import sys
+
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
+from twisted.python import log
+from twisted.web.server import Site
+from twisted.web.static import File
+
+from autobahn.websocket import WebSocketServerFactory, \
+                               WebSocketServerProtocol, \
+                               listenWS
 
 
 class BroadcastServerProtocol(WebSocketServerProtocol):
@@ -35,11 +43,13 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
 
 class BroadcastServerFactory(WebSocketServerFactory):
+   """
+   Simple broadcast server broadcasting any message it receives to all
+   currently connected clients.
+   """
 
-   protocol = BroadcastServerProtocol
-
-   def __init__(self, url):
-      WebSocketServerFactory.__init__(self, url)
+   def __init__(self, url, debug = False, debugCodePaths = False):
+      WebSocketServerFactory.__init__(self, url, debug = debug, debugCodePaths = debugCodePaths)
       self.clients = []
       self.tickcount = 0
       self.tick()
@@ -62,12 +72,45 @@ class BroadcastServerFactory(WebSocketServerFactory):
    def broadcast(self, msg):
       print "broadcasting message '%s' .." % msg
       for c in self.clients:
-         print "send to " + c.peerstr
          c.sendMessage(msg)
+         print "message sent to " + c.peerstr
+
+
+class BroadcastPreparedServerFactory(BroadcastServerFactory):
+   """
+   Functionally same as above, but optimized broadcast using
+   prepareMessage and sendPreparedMessage.
+   """
+
+   def broadcast(self, msg):
+      print "broadcasting prepared message '%s' .." % msg
+      preparedMsg = self.prepareMessage(msg)
+      for c in self.clients:
+         c.sendPreparedMessage(preparedMsg)
+         print "prepared message sent to " + c.peerstr
 
 
 if __name__ == '__main__':
 
-   factory = BroadcastServerFactory("ws://localhost:9000")
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
+
+   ServerFactory = BroadcastServerFactory
+   #ServerFactory = BroadcastPreparedServerFactory
+
+   factory = ServerFactory("ws://localhost:9000",
+                           debug = debug,
+                           debugCodePaths = debug)
+
+   factory.protocol = BroadcastServerProtocol
+   factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
+
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(8080, web)
+
    reactor.run()

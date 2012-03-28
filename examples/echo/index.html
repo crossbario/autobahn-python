@@ -28,6 +28,10 @@
                   log("Connected to " + wsuri);
                }
 
+               sock.onclose = function(e) {
+                  log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+               }
+
                sock.onmessage = function(e) {
                   log("Got echo: " + e.data);
                }
@@ -46,7 +50,7 @@
       </script>
    </head>
    <body>
-      <h1>Autobahn WebSockets Echo Test</h1>
+      <h1>Autobahn WebSocket Echo Test</h1>
       <noscript>You must enable JavaScript</noscript>
       <form>
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>

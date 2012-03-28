@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,16 +16,22 @@
 ##
 ###############################################################################
 
-import random
+import sys
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
 
 class BroadcastClientProtocol(WebSocketClientProtocol):
+   """
+   Simple client that connects to a WebSocket server, send a HELLO
+   message every 2 seconds and print everything it receives.
+   """
 
    def sendHello(self):
       self.sendMessage("Hello from Python!")
-      reactor.callLater(random.random()*5, self.sendHello)
+      reactor.callLater(2, self.sendHello)
 
    def onOpen(self):
       self.sendHello()
@@ -36,7 +42,12 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   factory = WebSocketClientFactory("ws://localhost:9000")
+   if len(sys.argv) < 2:
+      print "Need the WebSocket server address, i.e. ws://localhost:9000"
+      sys.exit(1)
+
+   factory = WebSocketClientFactory(sys.argv[1])
    factory.protocol = BroadcastClientProtocol
    connectWS(factory)
+
    reactor.run()

@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@
 
 import sys
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
@@ -47,7 +49,12 @@ class EchoClientFactory(WebSocketClientFactory):
 
 if __name__ == '__main__':
 
-   factory = EchoClientFactory("ws://localhost:9000")
-   factory.helloMsg = sys.argv[1] if len(sys.argv) > 1 else "My configurable message"
+   if len(sys.argv) < 2:
+      print "Need the WebSocket server address, i.e. ws://localhost:9000"
+      sys.exit(1)
+
+   factory = EchoClientFactory(sys.argv[1])
+   factory.helloMsg = sys.argv[2] if len(sys.argv) > 2 else "My configurable message"
    connectWS(factory)
+
    reactor.run()
