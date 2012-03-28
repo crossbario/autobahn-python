@@ -7,11 +7,11 @@
 
       <script>
          // WAMP session object
-         var sess;
-         var wsuri;
+         var sess = null;
 
          window.onload = function() {
 
+            var wsuri;
             if (window.location.protocol === "file:") {
                wsuri = "ws://localhost:9000";
             } else {
@@ -25,7 +25,7 @@
                function (session) {
 
                   sess = session;
-                  console.log("Connected!");
+                  console.log("Connected to " + wsuri);
 
                   // establish a prefix, so we can abbreviate procedure URIs ..
                   session.prefix("calc", "http://example.com/simple/calc#");
@@ -35,7 +35,12 @@
                function (code, reason) {
 
                   sess = null;
-                  alert(reason);
+
+                  if (code == ab.CONNECTION_UNSUPPORTED) {
+                     window.location = "http://autobahn.ws/unsupportedbrowser";
+                  } else {
+                     alert(reason);
+                  }
                }
             );
          };

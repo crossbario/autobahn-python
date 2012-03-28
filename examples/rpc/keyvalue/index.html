@@ -13,19 +13,29 @@
       <!-- include AutobahnJS .. that's all you need -->
       <script src="http://autobahn.ws/public/autobahn.min.js"></script>
 
-      <script>
+      <script type="text/javascript">
          var sess = null;
+         var ellog = null;
 
          window.onload = function() {
 
+            ellog = document.getElementById('log');
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
             // connect to WAMP server
-            ab.connect("ws://localhost:9000",
+            ab.connect(wsuri,
 
                // WAMP session was established
                function (session) {
 
                   sess = session;
-                  console.log("Connected!");
+                  log("Connected to " + wsuri);
 
                   // establish a prefix, so we can abbreviate procedure URIs ..
                   sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
@@ -35,7 +45,12 @@
                function (code, reason) {
 
                   sess = null;
-                  alert(reason);
+
+                  if (code == ab.CONNECTION_UNSUPPORTED) {
+                     window.location = "http://autobahn.ws/unsupportedbrowser";
+                  } else {
+                     alert(reason);
+                  }
                }
             );
          };
@@ -53,7 +68,7 @@
                        value2: v2,
                        value3: v3,
                        modified: new Date()}).then(function () {
-               console.log("ok, value set");
+               log("ok, value set");
             });
          }
 
@@ -62,7 +77,7 @@
             var k = document.getElementById('form_key').value;
 
             sess.call("keyvalue:get", k).then(function (val) {
-               console.log("ok, got value");
+               log(val);
                document.getElementById('form_value1').value = val.value1;
                document.getElementById('form_value2').value = val.value2;
                document.getElementById('form_value3').checked = val.value3;
@@ -74,23 +89,31 @@
             var k = document.getElementById('form_key').value;
 
             sess.call("keyvalue:set", k).then(function () {
-               console.log("ok, key gone");
+               log("ok, key gone");
             });
          }
 
          function getAll() {
-            sess.call("keyvalue:get").then(console.log);
+            sess.call("keyvalue:get").then(log);
          }
 
          function deleteAll() {
-            sess.call("keyvalue:set").then(console.log);
+            sess.call("keyvalue:set").then(log);
          }
+
+         function log(m) {
+            ellog.innerHTML += JSON.stringify(m) + '\n';
+            ellog.scrollTop = ellog.scrollHeight;
+         };
      </script>
    </head>
    <body>
-
       <h1>Autobahn: Remote Key-Value Store with WAMP RPCs</h1>
-
+      <noscript>
+         <span style="color: #f00; font-weight: bold;">
+            You need to turn on JavaScript.
+         </span>
+      </noscript>
       <div class="block"><button onclick="getAll()">Get all</button> Retrieve all key-value pairs from store and log to console.</div>
       <div class="block"><button onclick="deleteAll()">Delete all</button> Delete all data from store.</div>
       <div class="block">
@@ -104,6 +127,6 @@
          <p><button onclick="deleteKey()">Delete Key</button> Delete key-value by key.</p>
          <p><button onclick="getValue()">Get Key</button> Get key-value by key.</p>
       </div>
-
+      <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
    </body>
  </html>

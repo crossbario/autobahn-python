@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -17,10 +17,16 @@
 ###############################################################################
 
 import sys, shelve
+
 from twisted.python import log
 from twisted.internet import reactor
+from twisted.web.server import Site
+from twisted.web.static import File
+
 from autobahn.websocket import listenWS
-from autobahn.wamp import exportRpc, WampServerFactory, WampServerProtocol
+from autobahn.wamp import exportRpc, \
+                          WampServerFactory, \
+                          WampServerProtocol
 
 
 class KeyValue:
@@ -69,10 +75,8 @@ class KeyValueServerProtocol(WampServerProtocol):
 
 class KeyValueServerFactory(WampServerFactory):
 
-   protocol = KeyValueServerProtocol
-
-   def __init__(self, url):
-      WampServerFactory.__init__(self, url)
+   def __init__(self, url, debugWamp = False):
+      WampServerFactory.__init__(self, url, debugWamp = debugWamp)
 
       ## the key-value store resides on the factory object, since it is to
       ## be shared among all client connections
@@ -81,7 +85,19 @@ class KeyValueServerFactory(WampServerFactory):
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
-   factory = KeyValueServerFactory("ws://localhost:9000")
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
+
+   factory = KeyValueServerFactory("ws://localhost:9000", debugWamp = debug)
+   factory.protocol = KeyValueServerProtocol
+   factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
+
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(8080, web)
+
    reactor.run()

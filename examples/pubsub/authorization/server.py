@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -17,10 +17,17 @@
 ###############################################################################
 
 import sys, math
+
 from twisted.python import log
 from twisted.internet import reactor, defer
+from twisted.web.server import Site
+from twisted.web.static import File
+
 from autobahn.websocket import listenWS
-from autobahn.wamp import exportSub, exportPub, WampServerFactory, WampServerProtocol
+from autobahn.wamp import exportSub, \
+                          exportPub, \
+                          WampServerFactory, \
+                          WampServerProtocol
 
 
 class MyTopicService:
@@ -94,8 +101,19 @@ class MyServerProtocol(WampServerProtocol):
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
+
    factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = MyServerProtocol
+   factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
+
+   webdir = File(".")
+   web = Site(webdir)
+   reactor.listenTCP(8080, web)
+
    reactor.run()

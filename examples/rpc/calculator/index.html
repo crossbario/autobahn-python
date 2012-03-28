@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
    <head>
       <title>Autobahn: Decimal Calculator Demo</title>
@@ -33,23 +34,30 @@
          }
       </style>
 
+      <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
       <script src="http://autobahn.ws/public/autobahn.min.js"></script>
-      <script src="http://code.jquery.com/jquery.min.js"></script>
 
-      <script>
+      <script type="text/javascript">
          var sess = null;
          var clearFirst = false;
 
          $(document).ready(function()
          {
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
             // connect to WAMP server
-            ab.connect("ws://localhost:9000",
+            ab.connect(wsuri,
 
                // WAMP session was established
                function (session) {
 
                   sess = session;
-                  console.log("Connected!");
+                  console.log("Connected to " + wsuri);
 
                   sess.prefix("calculator", "http://example.com/simple/calculator#");
                },
@@ -58,7 +66,12 @@
                function (code, reason) {
 
                   sess = null;
-                  alert(reason);
+
+                  if (code == ab.CONNECTION_UNSUPPORTED) {
+                     window.location = "http://autobahn.ws/unsupportedbrowser";
+                  } else {
+                     alert(reason);
+                  }
                }
             );
          });
@@ -108,6 +121,11 @@
    </head>
    <body>
       <h1>Autobahn: Decimal Calculator Demo</h1>
+      <noscript>
+         <span style="color: #f00; font-weight: bold;">
+            You need to turn on JavaScript.
+         </span>
+      </noscript>
       <table id="calc">
          <tr>
             <td id="calcdisplay" colspan="5">0</td>

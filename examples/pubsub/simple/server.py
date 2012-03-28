@@ -17,12 +17,16 @@
 ###############################################################################
 
 import sys
+
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.web.server import Site
 from twisted.web.static import File
+
 from autobahn.websocket import listenWS
-from autobahn.wamp import WampServerFactory, WampServerProtocol
+from autobahn.wamp import exportRpc, \
+                          WampServerFactory, \
+                          WampServerProtocol
 
 
 class MyServerProtocol(WampServerProtocol):
@@ -41,7 +45,11 @@ class MyServerProtocol(WampServerProtocol):
 
 if __name__ == '__main__':
 
-   log.startLogging(sys.stdout)
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
 
    factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
    factory.protocol = MyServerProtocol
