@@ -52,10 +52,12 @@ class Calc:
 
    @exportRpc
    def square(self, x):
-      if x > 1000:
+      MAX = 1000
+      if x > MAX:
          ## raise a custom exception
          raise Exception("http://example.com/error#number_too_big",
-                         "number %d too big to square" % x)
+                         "%d too big for me, max is %d" % (x, MAX),
+                         MAX)
       return x * x
 
    @exportRpc
@@ -70,7 +72,8 @@ class Calc:
             errs.append(i)
       if len(errs) > 0:
          raise Exception("http://example.com/error#invalid_numbers",
-                         "one or more numbers are multiples of 3", errs)
+                         "one or more numbers are multiples of 3",
+                         errs)
       return reduce(lambda x, y: x + y, list)
 
    @exportRpc
