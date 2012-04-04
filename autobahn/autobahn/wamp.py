@@ -140,6 +140,7 @@ class WampProtocol:
 
    def connectionMade(self):
       self.debugWamp = self.factory.debugWamp
+      self.debugApp = self.factory.debugApp
       self.prefixes = PrefixMap()
 
 
@@ -506,15 +507,12 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
          eargs = error.value.args
          leargs = len(eargs)
+         traceb = error.getTraceback()
 
          if leargs == 0:
             erroruri = WampProtocol.ERROR_URI_GENERIC
             errordesc = WampProtocol.ERROR_DESC_GENERIC
             errordetails = None
-
-            if self.debugWamp:
-               log.msg("WampProtocol.ERROR_URI_GENERIC")
-               log.msg(error.getTraceback())
 
          elif leargs == 1:
             if type(eargs[0]) not in [str, unicode]:
@@ -522,10 +520,6 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             erroruri = WampProtocol.ERROR_URI_GENERIC
             errordesc = eargs[0]
             errordetails = None
-
-            if self.debugWamp:
-               log.msg("WampProtocol.ERROR_URI_GENERIC")
-               log.msg(error.getTraceback())
 
          elif leargs in [2, 3]:
             if type(eargs[0]) not in [str, unicode]:
@@ -551,6 +545,11 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             rmsg = json.dumps(msg)
          except Exception, e:
             raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
+
+         if self.debugApp:
+            log.msg("application error")
+            log.msg(traceb)
+            log.msg(msg)
 
       except Exception, e:
 
@@ -726,9 +725,10 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
    Twisted protocol used by default for WAMP servers.
    """
 
-   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
+   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False):
       WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
       self.debugWamp = debugWamp
+      self.debugApp = debugApp
 
 
    def _subscribeClient(self, proto, topicUri):
