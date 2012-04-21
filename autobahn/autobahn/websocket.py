@@ -839,7 +839,7 @@ class WebSocketProtocol(protocol.Protocol):
          self.droppedByMe = True
          self.state = WebSocketProtocol.STATE_CLOSED
 
-         if False or abort:
+         if abort:
             self.transport.abortConnection()
          else:
             self.transport.loseConnection()
