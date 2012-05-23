@@ -1319,9 +1319,10 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
 
    protocol = WampClientProtocol
 
-   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False):
+   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False):
       WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
       self.debugWamp = debugWamp
+      self.debugApp = debugApp
 
 
    def startFactory(self):
