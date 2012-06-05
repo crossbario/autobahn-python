@@ -513,18 +513,17 @@ class WebSocketProtocol(protocol.Protocol):
       :param reserved: Reserved bits set in frame (an integer from 0 to 7).
       :type reserved: int
       """
+      self.frame_length = length
+      self.frame_reserved = reserved
+      self.frame_data = []
+      self.message_data_total_length += length
       if not self.failedByMe:
-         self.message_data_total_length += length
          if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
             self.wasMaxMessagePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
          elif self.maxFramePayloadSize > 0 and length > self.maxFramePayloadSize:
             self.wasMaxFramePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
-         else:
-            self.frame_length = length
-            self.frame_reserved = reserved
-            self.frame_data = []
 
 
    def onMessageFrameData(self, payload):
