@@ -715,6 +715,14 @@ class WebSocketProtocol(protocol.Protocol):
          ## We already initiated the closing handshake, so this
          ## is the peer's reply to our close frame.
 
+         ## cancel any closing HS timer if present
+         ##
+         if self.closeHandshakeTimeoutCall is not None:
+            if self.debugCodePaths:
+               log.msg("closeHandshakeTimeoutCall.cancel")
+            self.closeHandshakeTimeoutCall.cancel()
+            self.closeHandshakeTimeoutCall = None
+
          self.wasClean = True
 
          if self.isServer:
@@ -724,7 +732,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## When we are a client, the server should drop the TCP
             ## If that doesn't happen, we do. And that will set wasClean = False.
             if self.serverConnectionDropTimeout > 0:
-               reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
+               self.serverConnectionDropTimeoutCall = reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
          ## The peer initiates a closing handshake, so we reply
@@ -763,6 +771,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      self.serverConnectionDropTimeoutCall = None
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
             log.msg("onServerConnectionDropTimeout")
@@ -783,6 +792,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      self.openHandshakeTimeoutCall = None
       if self.state == WebSocketProtocol.STATE_CONNECTING:
          if self.debugCodePaths:
             log.msg("onOpenHandshakeTimeout fired")
@@ -812,6 +822,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      self.closeHandshakeTimeoutCall = None
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
             log.msg("onCloseHandshakeTimeout fired")
@@ -1038,9 +1049,16 @@ class WebSocketProtocol(protocol.Protocol):
       # The close reason the peer sent me in close frame (if any)
       self.remoteCloseReason = None
 
+      # timers, which might get set up later, and remembered here to get canceled
+      # when appropriate
+      if not self.isServer:
+         self.serverConnectionDropTimeoutCall = None
+      self.openHandshakeTimeoutCall = None
+      self.closeHandshakeTimeoutCall = None
+
       # set opening handshake timeout handler
       if self.openHandshakeTimeout > 0:
-         reactor.callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
+         self.openHandshakeTimeoutCall = reactor.callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
 
    def connectionLost(self, reason):
@@ -1049,6 +1067,14 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      ## cancel any server connection drop timer if present
+      ##
+      if not self.isServer and self.serverConnectionDropTimeoutCall is not None:
+         if self.debugCodePaths:
+            log.msg("serverConnectionDropTimeoutCall.cancel")
+         self.serverConnectionDropTimeoutCall.cancel()
+         self.serverConnectionDropTimeoutCall = None
+
       self.state = WebSocketProtocol.STATE_CLOSED
       if not self.wasClean:
          if not self.droppedByMe and self.wasNotCleanReason is None:
@@ -1872,7 +1898,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## drop connection when timeout on receiving close handshake reply
          if self.closedByMe and self.closeHandshakeTimeout > 0:
-            reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
+            self.closeHandshakeTimeoutCall = reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
 
       else:
          raise Exception("logic error")
@@ -2744,6 +2770,17 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## opening handshake completed, move WebSockets connection into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
+
+         ## cancel any opening HS timer if present
+         ##
+         if self.openHandshakeTimeoutCall is not None:
+            if self.debugCodePaths:
+               log.msg("openHandshakeTimeoutCall.cancel")
+            self.openHandshakeTimeoutCall.cancel()
+            self.openHandshakeTimeoutCall = None
+
+         ## init state
+         ##
          self.inside_message = False
          if self.websocket_version != 0:
             self.current_frame = None
