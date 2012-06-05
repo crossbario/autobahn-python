@@ -723,7 +723,8 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             ## When we are a client, the server should drop the TCP
             ## If that doesn't happen, we do. And that will set wasClean = False.
-            reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
+            if self.serverConnectionDropTimeout > 0:
+               reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
          ## The peer initiates a closing handshake, so we reply
@@ -1870,7 +1871,7 @@ class WebSocketProtocol(protocol.Protocol):
          self.localCloseReason = reasonUtf8
 
          ## drop connection when timeout on receiving close handshake reply
-         if self.closedByMe:
+         if self.closedByMe and self.closeHandshakeTimeout > 0:
             reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
 
       else:
