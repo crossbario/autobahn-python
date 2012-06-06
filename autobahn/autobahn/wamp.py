@@ -1365,6 +1365,11 @@ class WampCraProtocol:
    """
    Base class for WAMP Challenge-Response Authentication protocols (client and server).
 
+   WAMP-CRA is a cryptographically strong challenge response authentication
+   protocol based on HMAC-SHA256.
+
+   The protocol performs in-band authentication of WAMP clients to WAMP servers.
+
    WAMP-CRA does not introduce any new WAMP protocol level message types, but
    implements the authentication handshake via standard WAMP RPCs with well-known
    procedure URIs and signatures.
@@ -1639,7 +1644,10 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       info['extra'] = extra
 
       try:
-         info['permissions'] = self.getAuthPermissions(appkey, extra)
+         pp = self.getAuthPermissions(appkey, extra)
+         if pp is None:
+            pp = {'pubsub': [], 'rpc': []}
+         info['permissions'] = pp
       except Exception, e:
          raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
 
@@ -1703,7 +1711,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       ## fire authentication callback
       ##
-      self.onAuthenticated(perms)
+      self.onAuthenticated(self.clientAppkey, perms)
 
       ## return permissions to client
       ##

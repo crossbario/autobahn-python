@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -31,14 +31,9 @@ class MyClientProtocol(WampCraClientProtocol):
    """
 
    def onSessionOpen(self):
-      reactor.callLater(2, self.doAuthenticate)
-
-
-   def doAuthenticate(self):
       ## "authenticate" as anonymous
       ##
       #self.authenticate(self.onAuthSuccess, self.onAuthError)
-      #return
 
       ## authenticate as "foobar" with password "secret"
       ##

@@ -43,7 +43,12 @@ class MyServerProtocol(WampCraServerProtocol):
                                          'pub': True,
                                          'sub': True}],
                              'rpc': [{'uri': 'http://example.com/procedures/hello',
-                                      'call': True}]}}
+                                      'call': True}]},
+                  None: {'pubsub': [{'uri': 'http://example.com/topics/mytopic1',
+                                     'prefix': False,
+                                     'pub': False,
+                                     'sub': True}],
+                         'rpc': []}}
 
    def onSessionOpen(self):
 
@@ -58,7 +63,7 @@ class MyServerProtocol(WampCraServerProtocol):
    def getAuthPermissions(self, authKey, authExtra):
       ## return permissions which will be granted for the auth key
       ## when the authentication succeeds
-      return self.PERMISSIONS.get(authKey, [])
+      return self.PERMISSIONS.get(authKey, None)
 
 
    def getAuthSecret(self, authKey):
@@ -67,15 +72,16 @@ class MyServerProtocol(WampCraServerProtocol):
       return self.SECRETS.get(authKey, None)
 
 
-   def onAuthenticated(self, permissions):
+   def onAuthenticated(self, authKey, permissions):
       ## fired when authentication succeeds
 
       ## register PubSub topics from the auth permissions
       self.registerForPubSubFromPermissions(permissions)
 
       ## register RPC endpoints (for now do that manually, keep in sync with perms)
-      self.registerForRpc(self, 'http://example.com/procedures/',
-                          [MyServerProtocol.hello])
+      if authKey is not None:
+         self.registerForRpc(self, 'http://example.com/procedures/',
+                             [MyServerProtocol.hello])
 
 
    @exportRpc("hello")
