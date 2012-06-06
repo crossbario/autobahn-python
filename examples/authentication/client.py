@@ -63,11 +63,14 @@ class MyClientProtocol(WampCraClientProtocol):
 
 if __name__ == '__main__':
 
-   wsuri = "ws://localhost:9000"
-   #wsuri = "ws://localhost:80"
+   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory(wsuri)
+   factory = WampClientFactory("ws://localhost:9000", debugWamp = debug)
    factory.protocol = MyClientProtocol
    connectWS(factory)
    reactor.run()

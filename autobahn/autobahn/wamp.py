@@ -276,6 +276,12 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       WebSocketServerProtocol.connectionLost(self, reason)
 
 
+   def sendMessage(self, payload):
+      if self.debugWamp:
+         log.msg("TX WAMP: %s" % str(payload))
+      WebSocketServerProtocol.sendMessage(self, payload)
+
+
    def _getPubHandler(self, topicUri):
       ## Longest matching prefix based resolution of (full) topic URI to
       ## publication handler.
@@ -573,7 +579,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
 
       if self.debugWamp:
-         log.msg("WampServerProtocol message received : %s" % str(msg))
+         log.msg("RX WAMP: %s" % str(msg))
 
       if not binary:
          try:
@@ -971,6 +977,12 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       WebSocketClientProtocol.connectionLost(self, reason)
 
 
+   def sendMessage(self, payload):
+      if self.debugWamp:
+         log.msg("TX WAMP: %s" % str(payload))
+      WebSocketClientProtocol.sendMessage(self, payload)
+
+
    def onMessage(self, msg, binary):
       """Internal method to handle WAMP messages received from WAMP server."""
 
@@ -979,6 +991,9 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       if binary:
          self._protocolError("binary WebSocket message received")
          return
+
+      if self.debugWamp:
+         log.msg("RX WAMP: %s" % str(msg))
 
       ## WAMP is proper JSON payload
       ##
