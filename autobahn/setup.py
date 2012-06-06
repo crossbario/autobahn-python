@@ -36,7 +36,7 @@ More information:
 
 setup (
    name = 'autobahn',
-   version = '0.5.1',
+   version = '0.5.2',
    description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',

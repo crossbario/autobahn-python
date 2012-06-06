@@ -21,6 +21,8 @@ import random
 import inspect, types
 import traceback
 
+import hashlib, hmac, binascii
+
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, maybeDeferred
@@ -33,7 +35,7 @@ from websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from prefixmap import PrefixMap
-from util import newid
+from util import utcstr, utcnow, parseutc, newid
 
 
 def exportRpc(arg = None):
@@ -1341,3 +1343,354 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
       """
       if self.debugWamp:
          log.msg("WebSocketClientFactory stopped")
+
+
+
+class WampCraProtocol:
+   """
+   Base class for WAMP Challenge-Response Authentication protocols (client and server).
+
+   WAMP-CRA does not introduce any new WAMP protocol level message types, but
+   implements the authentication handshake via standard WAMP RPCs with well-known
+   procedure URIs and signatures.
+   """
+
+   URI_WAMP_BASE = "http://api.wamp.ws/"
+   """
+   WAMP base URI for WAMP predefined things.
+   """
+
+   URI_WAMP_ERROR = URI_WAMP_BASE + "error#"
+   """
+   Prefix for WAMP errors.
+   """
+
+   URI_WAMP_RPC = URI_WAMP_BASE + "procedure#"
+   """
+   Prefix for WAMP predefined RPCs.
+   """
+
+   URI_WAMP_EVENT = URI_WAMP_BASE + "event#"
+   """
+   Prefix for WAMP predefined PubSub events.
+   """
+
+
+class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
+   """
+   Simple, authenticated WAMP client protocol.
+
+   The client can perform WAMP-Challenge-Response-Authentication ("WAMP-CRA") to authenticate
+   itself to a WAMP server. The server needs to implement WAMP-CRA also of course.
+   """
+
+   def authSignature(self, authChallenge, authSecret = None):
+      """
+      Compute the authentication signature from an authentication challenge and a secret.
+
+      :param authChallenge: The authentication challenge.
+      :type authChallenge: str
+      :param authSecret: The authentication secret.
+      :type authSecret: str
+      :returns str -- The authentication signature.
+      """
+      if authSecret is None:
+         authSecret = ""
+      h = hmac.new(authSecret, authChallenge, hashlib.sha256)
+      sig = binascii.b2a_base64(h.digest()).strip()
+      return sig
+
+   def authenticate(self, onAuthSuccess, onAuthError = None, authKey = None, authExtra = None, authSecret = None):
+      """
+      Authenticate the WAMP session to server. Upon authentication success or failure, the appropriate callback will fire.
+
+      :param onAuthSuccess: Callback for authentication success.
+      :type onAuthSuccess: A callable.
+      :param onAuthError: Callback for authentication failure.
+      :type onAuthError: A callable.
+      :param authKey: The key of the authentication credentials, something like a user or application name.
+      :type authKey: str
+      :param authExtra: Any extra authentication information.
+      :type authExtra: dict
+      :param authSecret: The secret of the authentication credentials, something like the user password or application secret key.
+      """
+
+      def _onAuthError(e):
+         erroruri, errodesc, errordetails = e.value.args
+         if onAuthError is not None:
+            onAuthError(erroruri, errodesc, errordetails)
+
+      def _onAuthChallenge(challenge):
+         if authKey is not None:
+            sig = self.authSignature(challenge, authSecret)
+         else:
+            sig = None
+         d = self.call(WampCraProtocol.URI_WAMP_RPC + "auth", sig)
+         d.addCallbacks(onAuthSuccess, _onAuthError)
+
+      d = self.call(WampCraProtocol.URI_WAMP_RPC + "authreq", authKey, authExtra)
+      d.addCallbacks(_onAuthChallenge, _onAuthError)
+
+
+
+class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
+   """
+   Simple, authenticating WAMP server protocol.
+
+   The server lets clients perform WAMP-Challenge-Response-Authentication ("WAMP-CRA")
+   to authenticate. The clients need to implement WAMP-CRA also of course.
+
+   To implement an authenticating server, override:
+
+      * getAuthSecret
+      * getAuthPermissions
+      * onAuthenticated
+
+   in your class deriving from this class.
+   """
+
+   ## global client auth options
+   ##
+   clientAuthTimeout = 0
+   clientAuthAllowAnonymous = True
+
+
+   def getAuthPermissions(self, authKey, authExtra):
+      """
+      Get the permissions the session is granted when the authentication succeeds
+      for the given key / extra information.
+
+      Override in derived class to implement your authentication.
+
+      :param authKey: The authentication key.
+      :type authKey: str
+      :param authExtra: Authentication extra information.
+      :type authExtra: dict
+      :returns str -- The authentication secret for the key or None when the key does not exist.
+      """
+      return []
+
+
+   def getAuthSecret(self, authKey):
+      """
+      Get the authentication secret for an authentication key, i.e. the
+      user password for the user name. Return None when the authentication
+      key does not exist.
+
+      Override in derived class to implement your authentication.
+
+      :param authKey: The authentication key.
+      :type authKey: str
+      :returns str -- The authentication secret for the key or None when the key does not exist.
+      """
+      return None
+
+
+   def onAuthTimeout(self):
+      """
+      Fired when the client does not authenticate itself in time. The default implementation
+      will simply fail the connection.
+
+      May be overridden in derived class.
+      """
+      if not self.clientAuthenticated:
+         log.msg("failing connection upon client authentication timeout [%s secs]" % self.clientAuthTimeout)
+         self.failConnection()
+
+
+   def onAuthenticated(self, permissions):
+      """
+      Fired when client authentication was successful.
+
+      Override in derived class and register PubSub topics and/or RPC endpoints.
+
+      :param permissions: The permissions granted to the now authenticated client.
+      :type permissions: list
+      """
+      pass
+
+
+   def registerForPubSubFromPermissions(self, permissions):
+      """
+      Register topics for PubSub from auth permissions.
+
+      :param permissions: The permissions granted to the now authenticated client.
+      :type permissions: list
+      """
+      for p in permissions['pubsub']:
+         ## register topics for the clients
+         ##
+         pubsub = (WampServerProtocol.PUBLISH if p['pub'] else 0) | \
+                  (WampServerProtocol.SUBSCRIBE if p['sub'] else 0)
+         topic = p['uri']
+         if self.pubHandlers.has_key(topic) or self.subHandlers.has_key(topic):
+            ## FIXME: handle dups!
+            log.msg("DUPLICATE TOPIC PERMISSION !!! " + topic)
+         self.registerForPubSub(topic, p['prefix'], pubsub)
+
+
+   def onSessionOpen(self):
+      """
+      Called when WAMP session has been established, but not yet authenticated. The default
+      implementation will prepare the session allowing the client to authenticate itself.
+      """
+
+      self.registerForRpc(self, WampCraProtocol.URI_WAMP_RPC, [WampCraServerProtocol.authRequest,
+                                                               WampCraServerProtocol.auth])
+
+      ## reset authentication state
+      ##
+      self.clientAuthenticated = False
+      self.clientPendingAuth = None
+
+      ## client authentication timeout
+      ##
+      if self.clientAuthTimeout > 0:
+         self.clientAuthTimeoutCall = reactor.callLater(self.clientAuthTimeout, self.onAuthTimeout)
+      else:
+         self.clientAuthTimeoutCall = None
+
+
+   def authSignature(self, authChallenge, authKey = None):
+      """
+      Compute the authentication signature from an authentication challenge and for an authentication key.
+
+      :param authChallenge: The authentication challenge.
+      :type authChallenge: str
+      :param authKey: The authentication key for which to compute the signature.
+      :type authKey: str
+      :returns str -- The authentication signature.
+      """
+      if authKey is None:
+         secret = ""
+      else:
+         secret = self.getAuthSecret(authKey)
+      h = hmac.new(secret, authChallenge, hashlib.sha256)
+      sig = binascii.b2a_base64(h.digest()).strip()
+      return sig
+
+
+   @exportRpc("authreq")
+   def authRequest(self, appkey = None, extra = None):
+      """
+      RPC for clients to initiate the authentication handshake.
+
+      :param appkey: Authentication key, such as user name or application name.
+      :type appkey: str
+      :param extra: Authentication extra information.
+      :type extra: dict
+      :returns str -- Authentication challenge. The client will need to create an authentication signature from this.
+      """
+
+      ## check authentication state
+      ##
+      if self.clientAuthenticated:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
+      if self.clientPendingAuth is not None:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "authentication-already-requested"), "authentication request already issues - authentication pending")
+
+      ## check appkey
+      ##
+      if appkey is None and not self.clientAuthAllowAnonymous:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "anyonymous-auth-forbidden"), "authentication as anonymous forbidden")
+
+      if type(appkey) not in [str, unicode, types.NoneType]:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "application key must be a string (was %s)" % str(type(appkey)))
+      if appkey is not None and self.getAuthSecret(appkey) is None:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "no-such-appkey"), "application key '%s' does not exist." % appkey)
+
+      ## check extra
+      ##
+      if extra:
+         if type(extra) != dict:
+            raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "extra not a dictionary (was %s)." % str(type(extra)))
+      else:
+         extra = {}
+      for k in extra:
+         if type(extra[k]) not in [str, unicode, int, long, float, bool, types.NoneType]:
+            raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "attribute '%s' in extra not a primitive type (was %s)" % (k, str(type(extra[k]))))
+
+      ## each authentication request gets a unique authid, which can only be used (later) once!
+      ##
+      authid = newid()
+
+      ## create authentication challenge
+      ##
+      info = {}
+      info['authid'] = authid
+      info['appkey'] = appkey
+      info['timestamp'] = utcnow()
+      info['sessionid'] = self.session_id
+      info['extra'] = extra
+
+      try:
+         info['permissions'] = self.getAuthPermissions(appkey, extra)
+      except Exception, e:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
+
+      if appkey:
+         ## authenticated
+         ##
+         infoser = json.dumps(info)
+         sig = self.authSignature(infoser, appkey)
+
+         self.clientPendingAuth = (info, sig)
+         return infoser
+      else:
+         ## anonymous
+         ##
+         self.clientPendingAuth = (info, None)
+         return None
+
+
+   @exportRpc("auth")
+   def auth(self, signature = None):
+      """
+      RPC for clients to actually authenticate after requesting authentication and computing
+      a signature from the authentication challenge.
+
+      :param signature: Authenticatin signature computed by the client.
+      :type signature: str
+      :returns list -- A list of permissions the client is granted when authentication was successful.
+      """
+
+      ## check authentication state
+      ##
+      if self.clientAuthenticated:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
+      if self.clientPendingAuth is None:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "no-authentication-requested"), "no authentication previously requested")
+
+      ## check signature
+      ##
+      if type(signature) not in [str, unicode, types.NoneType]:
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "signature must be a string or None (was %s)" % str(type(signature)))
+      if self.clientPendingAuth[1] != signature:
+         ## delete pending authentication, so that no retries are possible. authid is only valid for 1 try!!
+         ## FIXME: drop the connection?
+         self.clientPendingAuth = None
+         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid")
+
+      ## at this point, the client has successfully authenticated!
+
+      ## get the permissions we determined earlier
+      ##
+      perms = self.clientPendingAuth[0]['permissions']
+
+      ## delete auth request and mark client as authenticated
+      ##
+      self.clientAppkey = self.clientPendingAuth[0]['appkey']
+      self.clientAuthenticated = True
+      self.clientPendingAuth = None
+      if self.clientAuthTimeoutCall is not None:
+         self.clientAuthTimeoutCall.cancel()
+         self.clientAuthTimeoutCall = None
+
+      ## fire authentication callback
+      ##
+      self.onAuthenticated(perms)
+
+      ## return permissions to client
+      ##
+      return perms
+
