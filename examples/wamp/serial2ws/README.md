@@ -1,8 +1,8 @@
-Serial2WebSocket Bridge using Autobahn and Arduino
-==================================================
+Bridging Arduino to AutobahnPython via Serial
+=============================================
 
-This demo shows how to shuffle data between WebSocket clients and
-a device connected via a serial port.
+This demo shows how to shuffle data between WAMP clients and a device connected
+via a serial port like Arduino to a machine hosting the WAMP server.
 
 We use an *Arduino* device connected to a notebook, and a browser
 running somewhere.
@@ -87,31 +87,6 @@ WebSocket brings, and not use JSON, but Bencode for payload format, since that
 is much more resource efficient, which matters on restricted devices (like
 Arduino). Therefor, we will first define a *Bencode payload format* binding
 for *WAMP*.
-
-
-
-How to do it yourself
----------------------
-
-You will need AutobahnPython as server + PySerial for serial support in
-Python/Twisted.
-
-Then, connect your serial device, run
-
-    python serial2ws.py
-
-and open
-
-    http://localhost:8080/
-
-in your browser.
-
-Note: The serial2ws.py has a number of command line options for setting
-COM port, baudrate etc. Simply do a
-
-    python serial2ws.py --help
-
-to get information on those.
 
 
 
