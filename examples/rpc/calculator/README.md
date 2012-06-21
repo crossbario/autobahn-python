@@ -7,7 +7,10 @@ endpoints providing a decimal calculator service.
 A browser based UI is included which uses AutobahnJS to access
 the decimal calculator service.
 
-Further, since it's a standard WAMP service, any WAMP client can use the decimal calculator.
+Further, since it's a standard WAMP service, any WAMP client can use
+the service. You could access it i.e. from a native
+Android app via AutobahnAndroid or from a remote AutobahnPython based
+client.
 
 
 Running
