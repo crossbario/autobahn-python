@@ -49,6 +49,7 @@ class MyClientProtocol(WampCraClientProtocol):
 
    def onAuthSuccess(self, permissions):
       print "Authentication Success!", permissions
+      self.publish("http://example.com/topics/mytopic1", "Hello, world!")
       self.sendClose()
 
    def onAuthError(self, uri, desc, details):
