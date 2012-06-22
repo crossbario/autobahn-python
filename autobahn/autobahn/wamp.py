@@ -1412,6 +1412,7 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       :type authChallenge: str
       :param authSecret: The authentication secret.
       :type authSecret: str
+
       :returns str -- The authentication signature.
       """
       if authSecret is None:
@@ -1486,6 +1487,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       :type authKey: str
       :param authExtra: Authentication extra information.
       :type authExtra: dict
+
       :returns str -- The authentication secret for the key or None when the key does not exist.
       """
       return []
@@ -1501,6 +1503,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       :param authKey: The authentication key.
       :type authKey: str
+
       :returns str -- The authentication secret for the key or None when the key does not exist.
       """
       return None
@@ -1579,6 +1582,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       :type authChallenge: str
       :param authKey: The authentication key for which to compute the signature.
       :type authKey: str
+
       :returns str -- The authentication signature.
       """
       if authKey is None:
@@ -1599,6 +1603,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       :type appkey: str
       :param extra: Authentication extra information.
       :type extra: dict
+
       :returns str -- Authentication challenge. The client will need to create an authentication signature from this.
       """
 
@@ -1674,6 +1679,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       :param signature: Authenticatin signature computed by the client.
       :type signature: str
+
       :returns list -- A list of permissions the client is granted when authentication was successful.
       """
 

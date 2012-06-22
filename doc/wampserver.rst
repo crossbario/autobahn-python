@@ -31,3 +31,11 @@ Protocol
              registerHandlerForPubSub,
              registerHandlerForSub,
              registerHandlerForPub
+
+
+.. autoclass:: autobahn.wamp.WampCraServerProtocol
+   :members: getAuthSecret,
+             getAuthPermissions,
+             onAuthenticated,
+             onAuthTimeout,
+             registerForPubSubFromPermissions

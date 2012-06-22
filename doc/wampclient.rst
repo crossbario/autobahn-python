@@ -26,3 +26,8 @@ Protocol
              publish,
              subscribe,
              unsubscribe
+
+
+.. autoclass:: autobahn.wamp.WampCraClientProtocol
+   :members: authenticate,
+             authSignature
