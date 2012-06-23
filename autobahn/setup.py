@@ -30,8 +30,12 @@ asynchronous RPC/PubSub over JSON/WebSocket protocol.
 
 More information:
 
-   * http://autobahn.ws/developers
+   * http://autobahn.ws/python
    * http://wamp.ws
+
+Source Code:
+
+   * https://github.com/tavendo/AutobahnPython
 """
 
 setup (
@@ -42,7 +46,7 @@ setup (
    license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
-   url = 'http://autobahn.ws/developers',
+   url = 'http://autobahn.ws/python',
    platforms = ('Any'),
    install_requires = ['setuptools', 'Twisted>=11.1'],
    packages = ['autobahn'],
