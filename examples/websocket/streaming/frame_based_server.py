@@ -18,15 +18,17 @@
 
 import hashlib
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol, listenWS
+from autobahn.websocket import WebSocketServerFactory, \
+                               WebSocketServerProtocol, \
+                               listenWS
 
 
 class FrameBasedHashServerProtocol(WebSocketServerProtocol):
    """
-   Frame-based WebSockets server that computes a running SHA-256 for message data
-   received. It will respond after every frame received with the digest computed
-   up to that point. It can receive messages of unlimited number of frames.
-   Digest is reset upon new message.
+   Frame-based WebSockets server that computes a running SHA-256 for message
+   data received. It will respond after every frame received with the digest
+   computed up to that point. It can receive messages of unlimited number
+   of frames. Digest is reset upon new message.
    """
 
    def onMessageBegin(self, opcode):

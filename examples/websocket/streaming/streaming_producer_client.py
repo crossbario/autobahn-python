@@ -19,9 +19,13 @@
 from ranstring import randomByteString
 from zope.interface import implements
 from twisted.internet import reactor, interfaces
-from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketProtocol, \
+                               WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
-FRAME_SIZE = 0x7FFFFFFFFFFFFFFF # 2^63 - This is the maximum imposed by the WS protocol
+# 2^63 - This is the maximum imposed by the WS protocol
+FRAME_SIZE = 0x7FFFFFFFFFFFFFFF
 
 
 class RandomByteStreamProducer:

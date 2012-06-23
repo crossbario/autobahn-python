@@ -18,7 +18,9 @@
 
 from ranstring import randomByteString
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
 MESSAGE_SIZE = 1 * 2**20
 
@@ -40,7 +42,8 @@ class MessageBasedHashClientProtocol(WebSocketClientProtocol):
       self.sendOneMessage()
 
    def onMessage(self, message, binary):
-      print "Digest for message %d computed by server: %s" % (self.count, message)
+      print "Digest for message %d computed by server: %s" \
+            % (self.count, message)
       self.count += 1
       self.sendOneMessage()
 

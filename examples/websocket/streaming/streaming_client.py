@@ -19,7 +19,10 @@
 from ranstring import randomByteString
 from zope.interface import implements
 from twisted.internet import reactor, interfaces
-from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketProtocol, \
+                               WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
 BATCH_SIZE = 1 * 2**20
 
@@ -27,27 +30,30 @@ BATCH_SIZE = 1 * 2**20
 class StreamingHashClientProtocol(WebSocketClientProtocol):
    """
    Streaming WebSockets client that generates stream of random octets
-   sent to WebSockets server as a sequence of batches in one frame, in one message.
-   The server computes a running SHA-256, which it will send every BATCH_SIZE octets
-   back to us. When we receive a response, we repeat by sending another batch of data.
+   sent to WebSockets server as a sequence of batches in one frame, in
+   one message. The server computes a running SHA-256, which it will send
+   every BATCH_SIZE octets back to us. When we receive a response, we
+   repeat by sending another batch of data.
    """
 
    def sendOneBatch(self):
       data = randomByteString(BATCH_SIZE)
 
-      # Note, that this could complete the frame, when the frame length is reached.
-      # Since the frame length here is 2^63, we don't bother, since it'll take
-      # _very_ long to reach that.
+      # Note, that this could complete the frame, when the frame length is
+      # reached. Since the frame length here is 2^63, we don't bother, since
+      # it'll take _very_ long to reach that.
       self.sendMessageFrameData(data)
 
    def onOpen(self):
       self.count = 0
       self.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
-      self.beginMessageFrame(0x7FFFFFFFFFFFFFFF) # 2^63 - This is the maximum imposed by the WS protocol
+      # 2^63 - This is the maximum imposed by the WS protocol
+      self.beginMessageFrame(0x7FFFFFFFFFFFFFFF)
       self.sendOneBatch()
 
    def onMessage(self, message, binary):
-      print "Digest for batch %d computed by server: %s" % (self.count, message)
+      print "Digest for batch %d computed by server: %s" \
+            % (self.count, message)
       self.count += 1
       self.sendOneBatch()
 

@@ -18,7 +18,10 @@
 
 from ranstring import randomByteString
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketProtocol, WebSocketClientFactory, WebSocketClientProtocol, connectWS
+from autobahn.websocket import WebSocketProtocol, \
+                               WebSocketClientFactory, \
+                               WebSocketClientProtocol, \
+                               connectWS
 
 FRAME_SIZE = 1 * 2**20
 
@@ -41,7 +44,8 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
       self.sendOneFrame()
 
    def onMessage(self, message, binary):
-      print "Digest for frame %d computed by server: %s" % (self.count, message)
+      print "Digest for frame %d computed by server: %s" \
+            % (self.count, message)
       self.count += 1
       self.sendOneFrame()
 
