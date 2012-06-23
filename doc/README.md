@@ -27,20 +27,3 @@ for
 
 	version = '0.5'
 	release = '0.5.2'
-
-
-
-Deployment to Tavendo Web site
-..............................
-
-The generated contents of above folder then needs to
-be checked into the
-
-   wwwtavendo
-
-repository in this directory
-
-   tavendo/tavendo/static/autobahn/doc/python
-
-The repository change has to be pulled on the
-Web site production host www.tavendo.de

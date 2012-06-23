@@ -1,7 +1,7 @@
 AutobahnPython
 ==============
 
-AutobahnPython implements **[The WebSockets Protocol](http://tools.ietf.org/html/rfc6455)** and the **[The WebSocket Application Messaging Protocol (WAMP)](http://wamp.ws/)**:
+AutobahnPython implements **[The WebSocket Protocol](http://tools.ietf.org/html/rfc6455)** and the **[The WebSocket Application Messaging Protocol (WAMP)](http://wamp.ws/)**:
 
 * framework for WebSocket and WAMP clients and servers
 * implements WebSocket RFC6455, Draft Hybi-10+, Hixie-76 and WAMP v1
