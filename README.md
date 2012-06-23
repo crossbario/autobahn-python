@@ -7,7 +7,7 @@ AutobahnPython implements **[The WebSockets Protocol](http://tools.ietf.org/html
 * implements WebSocket RFC6455, Draft Hybi-10+, Hixie-76 and WAMP v1
 * Twisted-based, runs on CPython and PyPy
 * high-performance, fully asynchronous implementation
-* very good standards conformance
+* best-in-class standards conformance (100% strict passes with *[Autobahn WebSocket Testsuite](http://autobahn.ws/testsuite)*)
 * message-, frame- and streaming-APIs
 * Deferred-based API for asynchronous RPC and PubSub (WAMP)
 * supports TLS (secure WebSocket)
