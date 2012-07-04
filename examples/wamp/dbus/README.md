@@ -3,6 +3,10 @@ Trigger DBus Desktop Notifications via WebSocket/WAMP
 
 This example shows how to bridge WebSocket/WAMP and DBus.
 
+The example allows to trigger Linux desktop notifications on one or multiple machines
+from a browser based UI running anywhere via a WebSocket/WAMP PubSub
+message broker in between.
+
 For DBus support, we will use [txdbus](https://github.com/cocagne/txdbus),
 a new native Python DBus binding for Twisted which does not depend on the glib
 reactor or libdbus Python bindings.
