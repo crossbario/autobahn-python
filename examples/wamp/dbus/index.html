@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="UTF-8">
+      <title>Trigger DBus Desktop Notifications via WebSocket/WAMP</title>
+
+      <!-- include AutobahnJS .. that's all you need -->
+      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+
+      <script>
+
+         var session = null;
+
+         var domReceiver;
+         var domTitle;
+         var domBody;
+
+
+         window.onload = function() {
+
+            domReceiver = document.getElementById('receiver');
+            domTitle = document.getElementById('notification_title');
+            domBody = document.getElementById('notification_body');
+
+            connect();
+         };
+
+
+         function connect() {
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
+            ab.connect(wsuri,
+
+               function (sess) {
+                  session = sess;
+                  ab.log("connected to " + wsuri);
+
+                  onConnect();
+               },
+
+               function (code, reason, detail) {
+
+                  session = null;
+                  switch (code) {
+                     case ab.CONNECTION_UNSUPPORTED:
+                        window.location = "http://autobahn.ws/unsupportedbrowser";
+                        break;
+                     case ab.CONNECTION_CLOSED:
+                        window.location.reload();
+                        break;
+                     default:
+                        ab.log(code, reason, detail);
+                        break;
+                  }
+               },
+
+               {'maxRetries': 60, 'retryDelay': 2000}
+            );
+         }
+
+         // authenticate as "anonymous"
+         //
+         function onConnect() {
+            session.authreq().then(function () {
+               session.auth().then(onAuth, ab.log);
+            }, ab.log);
+         }
+
+         function onAuth(permissions) {
+            ab.log("authenticated!", JSON.stringify(permissions));
+
+            session.call("http://example.com/procedures/getusers").then(
+               function (res) {
+                  for (var i = 0; i < res.length; ++i) {
+                     var opt = document.createElement('option');
+                     opt.text = res[i];
+                     opt.value = res[i];
+                     domReceiver.add(opt);
+                  }
+               },
+               ab.log
+            );
+         };
+
+         var myTopic = "http://example.com/topics/all";
+
+         function sendNotification() {
+
+            var topic = "http://example.com/topics/" + domReceiver.value;
+
+            session.publish(topic, {app: "Autobahn WebSocket",
+                                    title: domTitle.value,
+                                    body: domBody.value,
+                                    duration: 2});
+         };
+      </script>
+   </head>
+   <body>
+      <h1>Trigger DBus Desktop Notifications via WebSocket/WAMP</h1>
+
+      <form>
+         <p>
+            Title: <input id="notification_title" type="text" size="50" maxlength="50" value="Awesome notification!!">
+         </p>
+         <p>
+            Body: <input id="notification_body" type="text" size="50" maxlength="50" value="Some notification text. Bla bla bla.">
+         </p>
+         <p>
+            Receiver:
+            <select id="receiver" size="1">
+               <option>all</option>
+            </select>
+         </p>
+      </form>
+      <button onclick="sendNotification();">Send Notification!</button>
+   </body>
+</html>
