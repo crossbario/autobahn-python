@@ -1,34 +1,54 @@
-Authentication of WAMP Sessions
-===============================
+Trigger DBus Desktop Notifications via WebSocket/WAMP
+=====================================================
 
-WAMP Challenge-Response-Authentication ("WAMP-CRA") is a WAMP v1 protocol feature
-that provides in-band authentication of WAMP clients to servers.
+This example shows how to bridge WebSocket/WAMP and DBus.
 
-It is based on HMAC-SHA256 and built into AutobahnPython, AutobahnJS and AutobahnAndroid.
+For DBus support, we will use [txdbus](https://github.com/cocagne/txdbus),
+a new native Python DBus binding for Twisted which does not depend on the glib
+reactor or libdbus Python bindings.
 
-This example shows how a AutobahnJS client can authenticate to a AutobahnPython based
-server. The server grants RPC and PubSub permissions based on authentication.
+The example consists of 3 parts:
+
+  * client.py
+  * server.py
+  * index.html
+
+The **client.py** runs on a Linux desktop  and subscribes to 2 PubSub topics:
+
+ * user specific topic
+ * the "all" topic (for notifications to all)
+
+Upon receiving an event over WAMP for one of above topics, a desktop notification is triggered via *txdbus*.
+
+The **server.py** runs on an arbitrary machine and provides the PubSub message brokering. It also provides an embedded web server for the Web UI.
+
+The **index.html** is the Web UI used to trigger desktop notifications. It is a WAMP client using AutobahnJS and publishes notification events to topics for the **server.py** to forward to connected Linux desktops.
+
 
 Running
 -------
 
 Run the server by doing
 
-    python server.py
+    python server.py debug
 
 and open
 
-    http://localhost:8080/
+    http://<Server IP>:8080/
 
-in **2 tabs/windows** of your browser.
+in your browser.
 
+Open a terminal on a Linux desktop and
 
-To activate debug output on the server, start it
+	python client.py ws://<Server IP>:9000 user1 secret
 
-    python server.py debug
+Optionally, open a second terminal on another Linux desktop and
 
-This will show up all WAMP messages exchanged between clients and server.
+	python client.py ws://<Server IP>:9000 user2 geheim
 
-To use the Python client, do
+Now, from the Web UI, send desktop notifications to
 
-    python client.py
+ * all
+ * user1
+ * user2
+
