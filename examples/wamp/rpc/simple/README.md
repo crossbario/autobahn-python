@@ -1,13 +1,13 @@
 RPCs with AutobahnPython
 ========================
 
-This example show how to do Remote Procedure Calls ("RPCs") with AutobahnPython.
+The examples introduce Remote Procedure Calls ("RPCs") programming with AutobahnPython.
 
-It includes a server which provides some methods exported for RPC ("remoted methods"),
-a JavaScript client using AutobahnJS and a Python client using AutobahnPython.
+Included are servers which provide methods exported for RPC ("remoted methods"),
+JavaScript clients using AutobahnJS and a Python clients using AutobahnPython.
 
-Further, since it's a standard WAMP service, any WAMP client can use
-the service. You can access it i.e. from a native Android app via AutobahnAndroid.
+Further, since AutobahnPython provides standard WAMP RPC services, any WAMP client
+can use the service. You can access it i.e. from a native Android app via AutobahnAndroid.
 
 Also see the companion [AutobahnAndroid example](https://github.com/tavendo/AutobahnAndroid/tree/master/Demo/SimpleRpc).	
 
