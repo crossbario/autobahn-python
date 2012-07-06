@@ -2502,7 +2502,36 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ## When no WS upgrade, render HTML server status page
             ##
             if self.webStatus:
-               self.sendServerStatus()
+               if self.http_request_params.has_key('redirect') and len(self.http_request_params['redirect']) > 0:
+                  ## To specifiy an URL for redirection, encode the URL, i.e. from JavaScript:
+                  ##
+                  ##    var url = encodeURIComponent("http://autobahn.ws/python");
+                  ##
+                  ## and append the encoded string as a query parameter 'redirect'
+                  ##
+                  ##    http://localhost:9000?redirect=http%3A%2F%2Fautobahn.ws%2Fpython
+                  ##    https://localhost:9000?redirect=https%3A%2F%2Ftwitter.com%2F
+                  ##
+                  ## This will perform an immediate HTTP-303 redirection. If you provide
+                  ## an additional parameter 'after' (int >= 0), the redirection happens
+                  ## via Meta-Refresh in the rendered HTML status page, i.e.
+                  ##
+                  ##    https://localhost:9000/?redirect=https%3A%2F%2Ftwitter.com%2F&after=3
+                  ##
+                  url = self.http_request_params['redirect'][0]
+                  if self.http_request_params.has_key('after') and len(self.http_request_params['after']) > 0:
+                     after = int(self.http_request_params['after'][0])
+                     if self.debugCodePaths:
+                        log.msg("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
+                     self.sendServerStatus(url, after)
+                  else:
+                     if self.debugCodePaths:
+                        log.msg("HTTP Upgrade header missing : 303-redirecting to %s" % url)
+                     self.sendRedirect(url)
+               else:
+                  if self.debugCodePaths:
+                     log.msg("HTTP Upgrade header missing : render server status page")
+                  self.sendServerStatus()
                self.dropConnection(abort = False)
                return
             else:
@@ -2818,6 +2847,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 
    def sendHtml(self, html):
+      """
+      Send HTML page HTTP response.
+      """
       raw = html.encode("utf-8")
       response  = "HTTP/1.1 %d %s\x0d\x0a" % (HTTP_STATUS_CODE_OK[0], HTTP_STATUS_CODE_OK[1])
       if self.factory.server is not None and self.factory.server != "":
@@ -2829,26 +2861,57 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.sendData(response)
 
 
-   def sendServerStatus(self):
+   def sendRedirect(self, url):
+      """
+      Send HTTP Redirect (303) response.
+      """
+      response  = "HTTP/1.1 %d\x0d\x0a" % HTTP_STATUS_CODE_SEE_OTHER[0]
+      #if self.factory.server is not None and self.factory.server != "":
+      #   response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+      response += "Location: %s\x0d\x0a" % url.encode("utf-8")
+      response += "\x0d\x0a"
+      self.sendData(response)
+
+
+   def sendServerStatus(self, redirectUrl = None, redirectAfter = 0):
       """
       Used to send out server status/version upon receiving a HTTP/GET without
       upgrade to WebSocket header (and option serverStatus is True).
       """
+      if redirectUrl:
+         redirect = """<meta http-equiv="refresh" content="%d;URL='%s'">""" % (redirectAfter, redirectUrl)
+      else:
+         redirect = ""
       html = """
 <!DOCTYPE html>
 <html>
+   <head>
+      %s
+      <style>
+         body {
+            color: #fff;
+            background-color: #027eae;
+            font-family: "Segoe UI", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+         }
+
+         a, a:visited, a:hover {
+            color: #fff;
+         }
+      </style>
+   </head>
    <body>
-      <h1>Autobahn WebSockets %s</h1>
+      <h1>AutobahnPython %s</h1>
       <p>
          I am not Web server, but a WebSocket endpoint.
          You can talk to me using the WebSocket <a href="http://tools.ietf.org/html/rfc6455">protocol</a>.
       </p>
       <p>
-         For more information, please visit <a href="http://autobahn.ws">my homepage</a>.
+         For more information, please visit <a href="http://autobahn.ws/python">my homepage</a>.
       </p>
    </body>
 </html>
-""" % str(autobahn.version)
+""" % (redirect, autobahn.version)
       self.sendHtml(html)
 
 
