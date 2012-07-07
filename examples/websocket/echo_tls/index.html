@@ -3,18 +3,22 @@
    <head>
       <script type="text/javascript">
          window.onload = function() {
-            document.getElementById('wslink').href = "https://" + window.location.hostname + ":" + 9000;
+            var url = encodeURIComponent(window.location.href);
+            document.getElementById('wslink').href = "https://" + window.location.hostname + ":" + 9000 + "?after=2&redirect=" + url;
          }
       </script>
    </head>
    <body>
       <h1>Autobahn Secure WebSocket Echo Test</h1>
       <p>
-         <a href="#" id="wslink">Click me the first time</a>, to install the
-         TLS certificate for the WebSocket endpoint.
+         To install the WebSocket server certificate:
       </p>
+      <ul>
+         <li>Go to the <a href="#" id="wslink">server status page</a> and accept the certificate</li>
+         <li>Manually install the <a href="keys/server.crt">certificate</a></li>
+      </ul>
       <p>
-         Then <a href="client.html">start the TLS echo client</a>, which
+         Then <a href="client.html">start the echo client</a>, which
          connects to the WebSocket endpoint via secure WS.
       </p>
    </body>

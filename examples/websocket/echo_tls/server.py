@@ -57,7 +57,9 @@ if __name__ == '__main__':
    listenWS(factory, contextFactory)
 
    webdir = File(".")
+   webdir.contentTypes['.crt'] = 'application/x-x509-ca-cert'
    web = Site(webdir)
-   reactor.listenSSL(8080, web, contextFactory)
+   #reactor.listenSSL(8080, web, contextFactory)
+   reactor.listenTCP(8080, web)
 
    reactor.run()

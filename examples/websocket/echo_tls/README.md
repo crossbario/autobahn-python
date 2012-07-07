@@ -13,13 +13,11 @@ Run the server by doing
 
 and open
 
-    https://localhost:8080/
+    http://localhost:8080/
 
 in your browser.
 
-Click the first link to import the TLS certificate into your browser.
-
-Then click the second link to start the Echo example client.
+Click to install the server certificate and start the echo client example.
 
 To activate debug output on the server, start it
 
