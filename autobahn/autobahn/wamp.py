@@ -425,9 +425,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :param proc: Unbound object method to register RPC for.
       :type proc: unbound method
       """
-      self.procs[uri] = (obj, proc)
+      self.procs[uri] = (obj, proc, False)
       if self.debugWamp:
-         log.msg("registered remote procedure on %s" % uri)
+         log.msg("registered remote method on %s" % uri)
 
 
    def registerProcedureForRpc(self, uri, proc):
@@ -437,11 +437,41 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :param uri: URI to register RPC function/procedure under.
       :type uri: str
       :param proc: Free-standing function/procedure.
-      :type proc: function/procedure
+      :type proc: callable
       """
-      self.procs[uri] = (None, proc)
+      self.procs[uri] = (None, proc, False)
       if self.debugWamp:
          log.msg("registered remote procedure on %s" % uri)
+
+
+   def registerHandlerMethodForRpc(self, uri, obj, handler):
+      """
+      Register a handler on an object for RPC.
+
+      :param uri: URI to register RPC method under.
+      :type uri: str
+      :param obj: The object on which to register the RPC handler
+      :type obj: object
+      :param proc: Unbound object method to register RPC for.
+      :type proc: unbound method
+      """
+      self.procs[uri] = (obj, handler, True)
+      if self.debugWamp:
+         log.msg("registered remote handler method on %s" % uri)
+
+
+   def registerHandlerProcedureForRpc(self, uri, handler):
+      """
+      Register a (free standing) handler for RPC.
+
+      :param uri: URI to register RPC handler under.
+      :type uri: str
+      :param proc: Free-standing handler
+      :type proc: callable
+      """
+      self.procs[uri] = (None, handler, True)
+      if self.debugWamp:
+         log.msg("registered remote handler procedure on %s" % uri)
 
 
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
@@ -467,29 +497,41 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       self.factory.dispatch(topicUri, event, exclude, eligible)
 
 
-   def _callProcedure(self, uri, arg = None):
+   def _callProcedure(self, uri, args = None):
       """
       INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
       """
       if self.procs.has_key(uri):
          m = self.procs[uri]
-         if arg:
-            ## method/function called with args
-            args = tuple(arg)
-            if m[0]:
-               ## call object method
-               return m[1](m[0], *args)
+         if not m[2]:
+            ## RPC method/procedure
+            ##
+            if args:
+               ## method/function called with args
+               cargs = tuple(args)
+               if m[0]:
+                  ## call object method
+                  return m[1](m[0], *cargs)
+               else:
+                  ## call free-standing function/procedure
+                  return m[1](*cargs)
             else:
-               ## call free-standing function/procedure
-               return m[1](*args)
+               ## method/function called without args
+               if m[0]:
+                  ## call object method
+                  return m[1](m[0])
+               else:
+                  ## call free-standing function/procedure
+                  return m[1]()
          else:
-            ## method/function called without args
+            ## RPC handler
+            ##
             if m[0]:
-               ## call object method
-               return m[1](m[0])
+               ## call RPC handler on object
+               return m[1](m[0], uri, args)
             else:
-               ## call free-standing function/procedure
-               return m[1]()
+               ## call free-standing RPC handler
+               return m[1](uri, args)
       else:
          raise Exception("no procedure %s" % uri)
 
@@ -591,8 +633,8 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                if obj[0] == WampProtocol.MESSAGE_TYPEID_CALL:
                   callid = obj[1]
                   procuri = self.prefixes.resolveOrPass(obj[2])
-                  arg = obj[3:]
-                  d = maybeDeferred(self._callProcedure, procuri, arg)
+                  args = obj[3:]
+                  d = maybeDeferred(self._callProcedure, procuri, args)
                   d.addCallback(self._sendCallResult, callid)
                   d.addErrback(self._sendCallError, callid)
 
@@ -1722,4 +1764,3 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       ## return permissions to client
       ##
       return perms
-
