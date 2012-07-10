@@ -12,8 +12,9 @@ clean:
 build:
 	python setup.py bdist_egg
 
-upload:
-	scp dist/*.egg www.tavendo.de:/usr/local/www/pypi
+deploy: clean
+	/opt/python/bin/python setup.py bdist_egg
+	sudo cp dist/*.egg /usr/local/www/static/autobahnws/eggs/
 
 publish:
 	python setup.py register
