@@ -444,7 +444,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered remote procedure on %s" % uri)
 
 
-   def registerHandlerMethodForRpc(self, uri, obj, handler):
+   def registerHandlerMethodForRpc(self, uri, obj, handler, extra = None):
       """
       Register a handler on an object for RPC.
 
@@ -454,13 +454,15 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type obj: object
       :param proc: Unbound object method to register RPC for.
       :type proc: unbound method
+      :param extra: Optional extra data that will be given to the handler at call time.
+      :type extra: object
       """
-      self.procs[uri] = (obj, handler, True)
+      self.procs[uri] = (obj, handler, True, extra)
       if self.debugWamp:
          log.msg("registered remote handler method on %s" % uri)
 
 
-   def registerHandlerProcedureForRpc(self, uri, handler):
+   def registerHandlerProcedureForRpc(self, uri, handler, extra = None):
       """
       Register a (free standing) handler for RPC.
 
@@ -468,8 +470,10 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type uri: str
       :param proc: Free-standing handler
       :type proc: callable
+      :param extra: Optional extra data that will be given to the handler at call time.
+      :type extra: object
       """
-      self.procs[uri] = (None, handler, True)
+      self.procs[uri] = (None, handler, True, extra)
       if self.debugWamp:
          log.msg("registered remote handler procedure on %s" % uri)
 
@@ -528,10 +532,10 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             ##
             if m[0]:
                ## call RPC handler on object
-               return m[1](m[0], uri, args)
+               return m[1](m[0], uri, args, m[3])
             else:
                ## call free-standing RPC handler
-               return m[1](uri, args)
+               return m[1](uri, args, m[3])
       else:
          raise Exception("no procedure %s" % uri)
 
