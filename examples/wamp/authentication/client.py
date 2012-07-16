@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+from pprint import pprint
 
 from twisted.python import log
 from twisted.internet import reactor
@@ -33,28 +34,33 @@ class MyClientProtocol(WampCraClientProtocol):
    def onSessionOpen(self):
       ## "authenticate" as anonymous
       ##
-      #self.authenticate(self.onAuthSuccess, self.onAuthError)
+      #d = self.authenticate()
 
       ## authenticate as "foobar" with password "secret"
       ##
-      self.authenticate(self.onAuthSuccess,
-                        self.onAuthError,
-                        authKey = "foobar",
-                        authExtra = None,
-                        authSecret = "secret")
+      d = self.authenticate(authKey = "foobar",
+                            authExtra = None,
+                            authSecret = "secret")
+
+      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
 
 
    def onClose(self, wasClean, code, reason):
       reactor.stop()
 
+
    def onAuthSuccess(self, permissions):
       print "Authentication Success!", permissions
       self.publish("http://example.com/topics/mytopic1", "Hello, world!")
-      self.sendClose()
+      d = self.call("http://example.com/procedures/hello", "Foobar")
+      d.addBoth(pprint)
+      d.addBoth(self.sendClose)
 
-   def onAuthError(self, uri, desc, details):
+
+   def onAuthError(self, e):
+      uri, desc, details = e.value.args
       print "Authentication Error!", uri, desc, details
-      self.sendClose()
+
 
 
 if __name__ == '__main__':

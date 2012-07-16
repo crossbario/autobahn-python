@@ -1441,15 +1441,6 @@ class WampCraProtocol:
    Prefix for WAMP predefined PubSub events.
    """
 
-
-class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
-   """
-   Simple, authenticated WAMP client protocol.
-
-   The client can perform WAMP-Challenge-Response-Authentication ("WAMP-CRA") to authenticate
-   itself to a WAMP server. The server needs to implement WAMP-CRA also of course.
-   """
-
    def authSignature(self, authChallenge, authSecret = None):
       """
       Compute the authentication signature from an authentication challenge and a secret.
@@ -1467,25 +1458,27 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       sig = binascii.b2a_base64(h.digest()).strip()
       return sig
 
-   def authenticate(self, onAuthSuccess, onAuthError = None, authKey = None, authExtra = None, authSecret = None):
-      """
-      Authenticate the WAMP session to server. Upon authentication success or failure, the appropriate callback will fire.
 
-      :param onAuthSuccess: Callback for authentication success.
-      :type onAuthSuccess: A callable.
-      :param onAuthError: Callback for authentication failure.
-      :type onAuthError: A callable.
+
+class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
+   """
+   Simple, authenticated WAMP client protocol.
+
+   The client can perform WAMP-Challenge-Response-Authentication ("WAMP-CRA") to authenticate
+   itself to a WAMP server. The server needs to implement WAMP-CRA also of course.
+   """
+
+   def authenticate(self, authKey = None, authExtra = None, authSecret = None):
+      """
+      Authenticate the WAMP session to server.
+
       :param authKey: The key of the authentication credentials, something like a user or application name.
       :type authKey: str
       :param authExtra: Any extra authentication information.
       :type authExtra: dict
       :param authSecret: The secret of the authentication credentials, something like the user password or application secret key.
+      :type authsecret: str
       """
-
-      def _onAuthError(e):
-         erroruri, errodesc, errordetails = e.value.args
-         if onAuthError is not None:
-            onAuthError(erroruri, errodesc, errordetails)
 
       def _onAuthChallenge(challenge):
          if authKey is not None:
@@ -1493,10 +1486,11 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
          else:
             sig = None
          d = self.call(WampCraProtocol.URI_WAMP_RPC + "auth", sig)
-         d.addCallbacks(onAuthSuccess, _onAuthError)
+         return d
 
       d = self.call(WampCraProtocol.URI_WAMP_RPC + "authreq", authKey, authExtra)
-      d.addCallbacks(_onAuthChallenge, _onAuthError)
+      d.addCallback(_onAuthChallenge)
+      return d
 
 
 
@@ -1534,9 +1528,9 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       :param authExtra: Authentication extra information.
       :type authExtra: dict
 
-      :returns str -- The authentication secret for the key or None when the key does not exist.
+      :returns obj or Deferred -- The permissions object or None when no permissions granted.
       """
-      return []
+      return None
 
 
    def getAuthSecret(self, authKey):
@@ -1550,7 +1544,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       :param authKey: The authentication key.
       :type authKey: str
 
-      :returns str -- The authentication secret for the key or None when the key does not exist.
+      :returns str or Deferred -- The authentication secret for the key or None when the key does not exist.
       """
       return None
 
@@ -1620,26 +1614,6 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
          self.clientAuthTimeoutCall = None
 
 
-   def authSignature(self, authChallenge, authKey = None):
-      """
-      Compute the authentication signature from an authentication challenge and for an authentication key.
-
-      :param authChallenge: The authentication challenge.
-      :type authChallenge: str
-      :param authKey: The authentication key for which to compute the signature.
-      :type authKey: str
-
-      :returns str -- The authentication signature.
-      """
-      if authKey is None:
-         secret = ""
-      else:
-         secret = self.getAuthSecret(authKey)
-      h = hmac.new(secret, authChallenge, hashlib.sha256)
-      sig = binascii.b2a_base64(h.digest()).strip()
-      return sig
-
-
    @exportRpc("authreq")
    def authRequest(self, appkey = None, extra = None):
       """
@@ -1694,27 +1668,33 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       info['sessionid'] = self.session_id
       info['extra'] = extra
 
-      try:
-         pp = self.getAuthPermissions(appkey, extra)
-         if pp is None:
-            pp = {'pubsub': [], 'rpc': []}
-         info['permissions'] = pp
-      except Exception, e:
+      pp = maybeDeferred(self.getAuthPermissions, appkey, extra)
+
+      def onAuthPermissionsOk(res):
+         if res is None:
+            res = {'pubsub': [], 'rpc': []}
+         info['permissions'] = res['permissions']
+
+         if appkey:
+            ## authenticated
+            ##
+            infoser = json.dumps(info)
+            sig = self.authSignature(infoser, self.getAuthSecret(appkey))
+
+            self.clientPendingAuth = (info, sig, res)
+            return infoser
+         else:
+            ## anonymous
+            ##
+            self.clientPendingAuth = (info, None, res)
+            return None
+
+      def onAuthPermissionsError(e):
          raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
 
-      if appkey:
-         ## authenticated
-         ##
-         infoser = json.dumps(info)
-         sig = self.authSignature(infoser, appkey)
+      pp.addCallbacks(onAuthPermissionsOk, onAuthPermissionsError)
 
-         self.clientPendingAuth = (info, sig)
-         return infoser
-      else:
-         ## anonymous
-         ##
-         self.clientPendingAuth = (info, None)
-         return None
+      return pp
 
 
    @exportRpc("auth")
@@ -1750,7 +1730,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       ## get the permissions we determined earlier
       ##
-      perms = self.clientPendingAuth[0]['permissions']
+      perms = self.clientPendingAuth[2]
 
       ## delete auth request and mark client as authenticated
       ##
@@ -1767,4 +1747,4 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       ## return permissions to client
       ##
-      return perms
+      return perms['permissions']
