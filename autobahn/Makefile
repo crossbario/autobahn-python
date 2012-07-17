@@ -14,7 +14,7 @@ build:
 
 deploy: clean
 	/opt/python/bin/python setup.py bdist_egg
-	sudo cp dist/*.egg /usr/local/www/static/autobahnws/eggs/
+	sudo cp dist/*.egg /usr/local/www/static/webmq/eggs/
 
 publish:
 	python setup.py register
