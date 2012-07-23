@@ -99,6 +99,7 @@ class WebSocketResource(object):
       for h in request.requestHeaders.getAllRawHeaders():
          data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
       data += "\x0d\x0a"
+      data += request.content.read() # we need this for Hixie-76
       protocol.dataReceived(data)
 
       return NOT_DONE_YET

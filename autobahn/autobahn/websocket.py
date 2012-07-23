@@ -2675,6 +2675,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
                return
             else:
                key3 =  self.data[end_of_header + 4:end_of_header + 4 + 8]
+               if self.debug:
+                  log.msg("received HTTP request body containing key3 for Hixie-76: %s" % key3)
 
          ## Ok, got complete HS input, remember rest (if any)
          ##
