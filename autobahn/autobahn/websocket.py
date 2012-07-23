@@ -3248,6 +3248,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
          accept_val = struct.pack(">II", number1, number2) + self.websocket_key3
          self.websocket_expected_challenge_response = hashlib.md5(accept_val).digest()
 
+         ## Safari does NOT set Content-Length, even though the body is
+         ## non-empty, and the request unchunked. We do it.
+         ## See also: http://www.ietf.org/mail-archive/web/hybi/current/msg02149.html
+         request += "Content-Length: %s\x0d\x0a" % len(self.websocket_key3)
+
+         ## First two keys.
          request += "Sec-WebSocket-Key1: %s\x0d\x0a" % self.websocket_key1
          request += "Sec-WebSocket-Key2: %s\x0d\x0a" % self.websocket_key2
       else:
@@ -3275,6 +3281,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       request += "\x0d\x0a"
 
       if self.version == 0:
+         ## Write HTTP request body for Hixie-76
          request += self.websocket_key3
 
       self.http_request_data = request

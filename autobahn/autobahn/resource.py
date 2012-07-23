@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-__all__ = ("WebSocketResource",)
+__all__ = ("WebSocketResource","HTTPChannelHixie76Aware",)
 
 from zope.interface import implements
 
@@ -24,8 +24,25 @@ from twisted.python import log
 from twisted.web.error import NoResource, UnsupportedMethod
 from twisted.web.resource import IResource
 from twisted.web.server import NOT_DONE_YET
+from twisted.web.http import HTTPChannel
 
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
+
+
+class HTTPChannelHixie76Aware(HTTPChannel):
+   """
+   Hixie-76 is deadly broken. It includes 8 bytes of body, but then does not
+   set content-length header. This hacked HTTPChannel injects the missing
+   HTTP header upon detecting Hixie-76. We need this since otherwise
+   Twisted Web will silently ignore the body.
+   """
+
+   def headerReceived(self, line):
+      header = line.split(':')[0].lower()
+      if header == "sec-websocket-key1" and not self._transferDecoder:
+         HTTPChannel.headerReceived(self, "Content-Length: 8")
+      HTTPChannel.headerReceived(self, line)
+
 
 
 class WebSocketResource(object):

@@ -43,6 +43,8 @@ if __name__ == '__main__':
       sys.exit(1)
 
    factory = WebSocketClientFactory(sys.argv[1])
+   # uncomment to use Hixie-76 protocol
+   factory.setProtocolOptions(allowHixie76 = True, version = 0)
    factory.protocol = EchoClientProtocol
    connectWS(factory)
 
