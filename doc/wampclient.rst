@@ -29,5 +29,4 @@ Protocol
 
 
 .. autoclass:: autobahn.wamp.WampCraClientProtocol
-   :members: authenticate,
-             authSignature
+   :members: authenticate

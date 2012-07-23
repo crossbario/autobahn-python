@@ -27,6 +27,8 @@ Protocol
              registerForRpc,
              registerMethodForRpc,
              registerProcedureForRpc,
+             registerHandlerMethodForRpc,
+             registerHandlerProcedureForRpc,
              registerForPubSub,
              registerHandlerForPubSub,
              registerHandlerForSub,

@@ -25,4 +25,5 @@ Protocol
    :members: URI_WAMP_BASE,
              URI_WAMP_ERROR,
              URI_WAMP_RPC,
-             URI_WAMP_EVENT
+             URI_WAMP_EVENT,
+             authSignature

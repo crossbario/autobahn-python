@@ -35,6 +35,8 @@ class HTTPChannelHixie76Aware(HTTPChannel):
    set content-length header. This hacked HTTPChannel injects the missing
    HTTP header upon detecting Hixie-76. We need this since otherwise
    Twisted Web will silently ignore the body.
+
+   To use this, set twisted.web.server.Site.protocol = HTTPChannelHixie76Aware
    """
 
    def headerReceived(self, line):

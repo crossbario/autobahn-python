@@ -32,3 +32,15 @@ Opening Handshake
 
 .. autoclass:: autobahn.websocket.HttpException
    :members: __init__
+
+
+Web Resource
+------------
+
+.. autoclass:: autobahn.resource.WebSocketResource
+   :members: __init__,
+             getChildWithDefault,
+             putChild,
+             render
+
+.. autoclass:: autobahn.resource.HTTPChannelHixie76Aware

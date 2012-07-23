@@ -1478,6 +1478,7 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       :type authExtra: dict
       :param authSecret: The secret of the authentication credentials, something like the user password or application secret key.
       :type authsecret: str
+      :returns Deferred -- Deferred that fires upon authentication success (with permissions) or failure.
       """
 
       def _onAuthChallenge(challenge):
@@ -1617,7 +1618,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
    @exportRpc("authreq")
    def authRequest(self, appkey = None, extra = None):
       """
-      RPC for clients to initiate the authentication handshake.
+      RPC endpoint for clients to initiate the authentication handshake.
 
       :param appkey: Authentication key, such as user name or application name.
       :type appkey: str
@@ -1700,7 +1701,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
    @exportRpc("auth")
    def auth(self, signature = None):
       """
-      RPC for clients to actually authenticate after requesting authentication and computing
+      RPC endpoint for clients to actually authenticate after requesting authentication and computing
       a signature from the authentication challenge.
 
       :param signature: Authenticatin signature computed by the client.
