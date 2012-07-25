@@ -18,12 +18,14 @@ Protocol
 --------
 
 .. autoclass:: autobahn.wamp.WampProtocol
-   :members: shrink,
+   :members: URI_WAMP_BASE,
+             URI_WAMP_PROCEDURE,
+             URI_WAMP_TOPIC,
+             URI_WAMP_ERROR,
+             URI_WAMP_ERROR_GENERIC,
+             URI_WAMP_ERROR_INTERNAL,
+             shrink,
              resolve
 
 .. autoclass:: autobahn.wamp.WampCraProtocol
-   :members: URI_WAMP_BASE,
-             URI_WAMP_ERROR,
-             URI_WAMP_RPC,
-             URI_WAMP_EVENT,
-             authSignature
+   :members: authSignature

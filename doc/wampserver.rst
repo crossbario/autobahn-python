@@ -36,7 +36,9 @@ Protocol
 
 
 .. autoclass:: autobahn.wamp.WampCraServerProtocol
-   :members: getAuthSecret,
+   :members: clientAuthTimeout,
+             clientAuthAllowAnonymous,
+             getAuthSecret,
              getAuthPermissions,
              onAuthenticated,
              onAuthTimeout,

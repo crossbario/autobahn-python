@@ -40,7 +40,7 @@ Source Code:
 
 setup (
    name = 'autobahn',
-   version = '0.5.5',
+   version = '0.5.6',
    description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',

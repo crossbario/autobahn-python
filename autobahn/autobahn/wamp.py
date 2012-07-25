@@ -79,6 +79,46 @@ class WampProtocol:
    WAMP protocol base class. Mixin for WampServerProtocol and WampClientProtocol.
    """
 
+   URI_WAMP_BASE = "http://api.wamp.ws/"
+   """
+   WAMP base URI for WAMP predefined things.
+   """
+
+   URI_WAMP_ERROR = URI_WAMP_BASE + "error#"
+   """
+   Prefix for WAMP errors.
+   """
+
+   URI_WAMP_PROCEDURE = URI_WAMP_BASE + "procedure#"
+   """
+   Prefix for WAMP predefined RPC endpoints.
+   """
+
+   URI_WAMP_TOPIC = URI_WAMP_BASE + "topic#"
+   """
+   Prefix for WAMP predefined PubSub topics.
+   """
+
+   URI_WAMP_ERROR_GENERIC = URI_WAMP_ERROR + "generic"
+   """
+   WAMP error URI for generic errors.
+   """
+
+   DESC_WAMP_ERROR_GENERIC = "generic error"
+   """
+   Description for WAMP generic errors.
+   """
+
+   URI_WAMP_ERROR_INTERNAL = URI_WAMP_ERROR + "internal"
+   """
+   WAMP error URI for internal errors.
+   """
+
+   DESC_WAMP_ERROR_INTERNAL = "internal error"
+   """
+   Description for WAMP internal errors."
+   """
+
    WAMP_PROTOCOL_VERSION         = 1
    """
    WAMP version this server speaks. Versions are numbered consecutively
@@ -129,15 +169,6 @@ class WampProtocol:
    """
    Server-to-client message providing the event of a (subscribed) topic.
    """
-
-
-   ERROR_URI_BASE = "http://autobahn.tavendo.de/error#"
-
-   ERROR_URI_GENERIC = ERROR_URI_BASE + "generic"
-   ERROR_DESC_GENERIC = "generic error"
-
-   ERROR_URI_INTERNAL = ERROR_URI_BASE + "internal"
-   ERROR_DESC_INTERNAL = "internal error"
 
 
    def connectionMade(self):
@@ -564,14 +595,14 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          traceb = error.getTraceback()
 
          if leargs == 0:
-            erroruri = WampProtocol.ERROR_URI_GENERIC
-            errordesc = WampProtocol.ERROR_DESC_GENERIC
+            erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
+            errordesc = WampProtocol.DESC_WAMP_ERROR_GENERIC
             errordetails = None
 
          elif leargs == 1:
             if type(eargs[0]) not in [str, unicode]:
                raise Exception("invalid type %s for errorDesc" % type(eargs[0]))
-            erroruri = WampProtocol.ERROR_URI_GENERIC
+            erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
             errordesc = eargs[0]
             errordetails = None
 
@@ -611,7 +642,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             log.err(str(e))
             log.err(error.getTraceback())
 
-         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.ERROR_URI_INTERNAL), WampProtocol.ERROR_DESC_INTERNAL]
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL), WampProtocol.DESC_WAMP_ERROR_INTERNAL]
          rmsg = json.dumps(msg)
 
       finally:
@@ -1407,7 +1438,7 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
 
 
 
-class WampCraProtocol:
+class WampCraProtocol(WampProtocol):
    """
    Base class for WAMP Challenge-Response Authentication protocols (client and server).
 
@@ -1419,26 +1450,6 @@ class WampCraProtocol:
    WAMP-CRA does not introduce any new WAMP protocol level message types, but
    implements the authentication handshake via standard WAMP RPCs with well-known
    procedure URIs and signatures.
-   """
-
-   URI_WAMP_BASE = "http://api.wamp.ws/"
-   """
-   WAMP base URI for WAMP predefined things.
-   """
-
-   URI_WAMP_ERROR = URI_WAMP_BASE + "error#"
-   """
-   Prefix for WAMP errors.
-   """
-
-   URI_WAMP_RPC = URI_WAMP_BASE + "procedure#"
-   """
-   Prefix for WAMP predefined RPCs.
-   """
-
-   URI_WAMP_EVENT = URI_WAMP_BASE + "event#"
-   """
-   Prefix for WAMP predefined PubSub events.
    """
 
    def authSignature(self, authChallenge, authSecret = None):
@@ -1478,6 +1489,7 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       :type authExtra: dict
       :param authSecret: The secret of the authentication credentials, something like the user password or application secret key.
       :type authsecret: str
+
       :returns Deferred -- Deferred that fires upon authentication success (with permissions) or failure.
       """
 
@@ -1486,10 +1498,10 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
             sig = self.authSignature(challenge, authSecret)
          else:
             sig = None
-         d = self.call(WampCraProtocol.URI_WAMP_RPC + "auth", sig)
+         d = self.call(WampProtocol.URI_WAMP_PROCEDURE + "auth", sig)
          return d
 
-      d = self.call(WampCraProtocol.URI_WAMP_RPC + "authreq", authKey, authExtra)
+      d = self.call(WampProtocol.URI_WAMP_PROCEDURE + "authreq", authKey, authExtra)
       d.addCallback(_onAuthChallenge)
       return d
 
@@ -1511,10 +1523,18 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
    in your class deriving from this class.
    """
 
-   ## global client auth options
-   ##
    clientAuthTimeout = 0
+   """
+   Client authentication timeout in seconds or 0 for infinite. A client
+   must perform authentication after the initial WebSocket handshake within
+   this timeout or the connection is failed.
+   """
+
    clientAuthAllowAnonymous = True
+   """
+   Allow anonymous client authentication. When this is set to True, a client
+   may "authenticate" as anonymous.
+   """
 
 
    def getAuthPermissions(self, authKey, authExtra):
@@ -1524,12 +1544,30 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       Override in derived class to implement your authentication.
 
+      A permissions object is structured like this::
+
+         {'permissions': {'rpc': [
+                                    {'uri':  / RPC Endpoint URI - String /,
+                                     'call': / Allow to call? - Boolean /}
+                                 ],
+                          'pubsub': [
+                                       {'uri':    / PubSub Topic URI / URI prefix - String /,
+                                        'prefix': / URI matched by prefix? - Boolean /,
+                                        'pub':    / Allow to publish? - Boolean /,
+                                        'sub':    / Allow to subscribe? - Boolean /}
+                                    ]
+                          }
+         }
+
+      You can add custom information to this object. The object will be provided again
+      when the client authentication succeeded in :meth:`onAuthenticated`.
+
       :param authKey: The authentication key.
       :type authKey: str
       :param authExtra: Authentication extra information.
       :type authExtra: dict
 
-      :returns obj or Deferred -- The permissions object or None when no permissions granted.
+      :returns obj or Deferred -- Return a permissions object or None when no permissions granted.
       """
       return None
 
@@ -1557,7 +1595,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       May be overridden in derived class.
       """
-      if not self.clientAuthenticated:
+      if not self._clientAuthenticated:
          log.msg("failing connection upon client authentication timeout [%s secs]" % self.clientAuthTimeout)
          self.failConnection()
 
@@ -1568,8 +1606,8 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       Override in derived class and register PubSub topics and/or RPC endpoints.
 
-      :param permissions: The permissions granted to the now authenticated client.
-      :type permissions: list
+      :param permissions: The permissions object returned from :meth:`getAuthPermissions`.
+      :type permissions: obj
       """
       pass
 
@@ -1599,29 +1637,30 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       implementation will prepare the session allowing the client to authenticate itself.
       """
 
-      self.registerForRpc(self, WampCraProtocol.URI_WAMP_RPC, [WampCraServerProtocol.authRequest,
-                                                               WampCraServerProtocol.auth])
+      ## register RPC endpoints for WAMP-CRA authentication
+      ##
+      self.registerForRpc(self, WampProtocol.URI_WAMP_PROCEDURE, [WampCraServerProtocol.authRequest,
+                                                                  WampCraServerProtocol.auth])
 
       ## reset authentication state
       ##
-      self.clientAuthenticated = False
-      self.clientPendingAuth = None
+      self._clientAuthenticated = False
+      self._clientPendingAuth = None
+      self._clientAuthTimeoutCall = None
 
       ## client authentication timeout
       ##
       if self.clientAuthTimeout > 0:
-         self.clientAuthTimeoutCall = reactor.callLater(self.clientAuthTimeout, self.onAuthTimeout)
-      else:
-         self.clientAuthTimeoutCall = None
+         self._clientAuthTimeoutCall = reactor.callLater(self.clientAuthTimeout, self.onAuthTimeout)
 
 
    @exportRpc("authreq")
-   def authRequest(self, appkey = None, extra = None):
+   def authRequest(self, authKey = None, extra = None):
       """
       RPC endpoint for clients to initiate the authentication handshake.
 
-      :param appkey: Authentication key, such as user name or application name.
-      :type appkey: str
+      :param authKey: Authentication key, such as user name or application name.
+      :type authKey: str
       :param extra: Authentication extra information.
       :type extra: dict
 
@@ -1630,31 +1669,31 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       ## check authentication state
       ##
-      if self.clientAuthenticated:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
-      if self.clientPendingAuth is not None:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "authentication-already-requested"), "authentication request already issues - authentication pending")
+      if self._clientAuthenticated:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
+      if self._clientPendingAuth is not None:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "authentication-already-requested"), "authentication request already issues - authentication pending")
 
-      ## check appkey
+      ## check authKey
       ##
-      if appkey is None and not self.clientAuthAllowAnonymous:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "anyonymous-auth-forbidden"), "authentication as anonymous forbidden")
+      if authKey is None and not self.clientAuthAllowAnonymous:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "anyonymous-auth-forbidden"), "authentication as anonymous forbidden")
 
-      if type(appkey) not in [str, unicode, types.NoneType]:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "application key must be a string (was %s)" % str(type(appkey)))
-      if appkey is not None and self.getAuthSecret(appkey) is None:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "no-such-appkey"), "application key '%s' does not exist." % appkey)
+      if type(authKey) not in [str, unicode, types.NoneType]:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "authentication key must be a string (was %s)" % str(type(authKey)))
+      if authKey is not None and self.getAuthSecret(authKey) is None:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "no-such-authkey"), "authentication key '%s' does not exist." % authKey)
 
       ## check extra
       ##
       if extra:
          if type(extra) != dict:
-            raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "extra not a dictionary (was %s)." % str(type(extra)))
+            raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "extra not a dictionary (was %s)." % str(type(extra)))
       else:
          extra = {}
-      for k in extra:
-         if type(extra[k]) not in [str, unicode, int, long, float, bool, types.NoneType]:
-            raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "attribute '%s' in extra not a primitive type (was %s)" % (k, str(type(extra[k]))))
+      #for k in extra:
+      #   if type(extra[k]) not in [str, unicode, int, long, float, bool, types.NoneType]:
+      #      raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "attribute '%s' in extra not a primitive type (was %s)" % (k, str(type(extra[k]))))
 
       ## each authentication request gets a unique authid, which can only be used (later) once!
       ##
@@ -1664,34 +1703,35 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       ##
       info = {}
       info['authid'] = authid
-      info['appkey'] = appkey
+      info['authkey'] = authKey
       info['timestamp'] = utcnow()
       info['sessionid'] = self.session_id
       info['extra'] = extra
 
-      pp = maybeDeferred(self.getAuthPermissions, appkey, extra)
+      pp = maybeDeferred(self.getAuthPermissions, authKey, extra)
 
       def onAuthPermissionsOk(res):
          if res is None:
-            res = {'pubsub': [], 'rpc': []}
+            res = {'permissions': {}}
+            res['permissions'] = {'pubsub': [], 'rpc': []}
          info['permissions'] = res['permissions']
 
-         if appkey:
+         if authKey:
             ## authenticated
             ##
             infoser = json.dumps(info)
-            sig = self.authSignature(infoser, self.getAuthSecret(appkey))
+            sig = self.authSignature(infoser, self.getAuthSecret(authKey))
 
-            self.clientPendingAuth = (info, sig, res)
+            self._clientPendingAuth = (info, sig, res)
             return infoser
          else:
             ## anonymous
             ##
-            self.clientPendingAuth = (info, None, res)
+            self._clientPendingAuth = (info, None, res)
             return None
 
       def onAuthPermissionsError(e):
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
 
       pp.addCallbacks(onAuthPermissionsOk, onAuthPermissionsError)
 
@@ -1712,39 +1752,39 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
       ## check authentication state
       ##
-      if self.clientAuthenticated:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
-      if self.clientPendingAuth is None:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "no-authentication-requested"), "no authentication previously requested")
+      if self._clientAuthenticated:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "already-authenticated"), "already authenticated")
+      if self._clientPendingAuth is None:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "no-authentication-requested"), "no authentication previously requested")
 
       ## check signature
       ##
       if type(signature) not in [str, unicode, types.NoneType]:
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-argument"), "signature must be a string or None (was %s)" % str(type(signature)))
-      if self.clientPendingAuth[1] != signature:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "signature must be a string or None (was %s)" % str(type(signature)))
+      if self._clientPendingAuth[1] != signature:
          ## delete pending authentication, so that no retries are possible. authid is only valid for 1 try!!
          ## FIXME: drop the connection?
-         self.clientPendingAuth = None
-         raise Exception(self.shrink(WampCraProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid")
+         self._clientPendingAuth = None
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid")
 
       ## at this point, the client has successfully authenticated!
 
       ## get the permissions we determined earlier
       ##
-      perms = self.clientPendingAuth[2]
+      perms = self._clientPendingAuth[2]
 
       ## delete auth request and mark client as authenticated
       ##
-      self.clientAppkey = self.clientPendingAuth[0]['appkey']
-      self.clientAuthenticated = True
-      self.clientPendingAuth = None
-      if self.clientAuthTimeoutCall is not None:
-         self.clientAuthTimeoutCall.cancel()
-         self.clientAuthTimeoutCall = None
+      authKey = self._clientPendingAuth[0]['authkey']
+      self._clientAuthenticated = True
+      self._clientPendingAuth = None
+      if self._clientAuthTimeoutCall is not None:
+         self._clientAuthTimeoutCall.cancel()
+         self._clientAuthTimeoutCall = None
 
       ## fire authentication callback
       ##
-      self.onAuthenticated(self.clientAppkey, perms)
+      self.onAuthenticated(authKey, perms)
 
       ## return permissions to client
       ##
