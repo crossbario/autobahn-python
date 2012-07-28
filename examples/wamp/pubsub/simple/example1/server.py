@@ -41,13 +41,10 @@ class PubSubServer1(WampServerProtocol):
 
 if __name__ == '__main__':
 
-   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
+   log.startLogging(sys.stdout)
+   debug = len(sys.argv) > 1 and sys.argv[1] == 'debug'
 
-   factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
+   factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
    factory.protocol = PubSubServer1
    factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
