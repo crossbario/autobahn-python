@@ -1344,7 +1344,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## Hixie close from peer received
             ##
             elif self.data[0] == '\xff' and self.data[1] == '\x00':
-               self.onCloseFrame()
+               self.onCloseFrame(None, None)
                self.data = self.data[2:]
                # stop receiving/processing after having received close!
                return False
