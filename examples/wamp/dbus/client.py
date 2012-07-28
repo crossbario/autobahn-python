@@ -33,7 +33,7 @@ def delay(t):
    return d
 
 
-class MyClientProtocol(WampCraClientProtocol):
+class DbusClientProtocol(WampCraClientProtocol):
 
    def onSessionOpen(self):
       self.authenticate(self.onAuthSuccess,
@@ -81,7 +81,9 @@ class MyClientProtocol(WampCraClientProtocol):
       yield notifier.callRemote('CloseNotification', nid)
 
 
-class MyServerFactory(WampClientFactory):
+class DbusClientFactory(WampClientFactory):
+
+   protocol = DbusClientProtocol
 
    def __init__(self, wsuri, user, password):
       self.user = user
@@ -89,10 +91,10 @@ class MyServerFactory(WampClientFactory):
       WampClientFactory.__init__(self, wsuri)
 
 
+
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = MyServerFactory(sys.argv[1], sys.argv[2], sys.argv[3])
-   factory.protocol = MyClientProtocol
+   factory = DbusClientFactory(sys.argv[1], sys.argv[2], sys.argv[3])
    connectWS(factory)
    reactor.run()

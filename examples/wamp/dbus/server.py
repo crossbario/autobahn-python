@@ -31,10 +31,7 @@ from autobahn.wamp import exportRpc, \
 
 
 
-class MyServerProtocol(WampCraServerProtocol):
-   """
-   Authenticating WAMP server using WAMP-Challenge-Response-Authentication ("WAMP-CRA").
-   """
+class DbusServerProtocol(WampCraServerProtocol):
 
    ## our pseudo user/permissions database
    USERS = {'user1': 'secret',
@@ -54,18 +51,19 @@ class MyServerProtocol(WampCraServerProtocol):
       if authKey is None:
          ## notification issuer is only allowed to publish to topics
          ## and retrieve list of users
-         return {'pubsub': [{'uri': 'http://example.com/topics/',
+         pms = {'pubsub': [{'uri': 'http://example.com/topics/',
                                     'prefix': True,
                                     'pub': True,
                                     'sub': False}],
                  'rpc': [{'uri': 'http://example.com/procedures/getusers',
                           'call': True}]}
+         return {'permissions': pms}
       else:
          ## desktop notification client is only allowed to subscribe to topics
          ##  http://example.com/topics/all
          ##  http://example.com/topics/<user>
          ##
-         return {'pubsub': [{'uri': 'http://example.com/topics/all',
+         pms = {'pubsub': [{'uri': 'http://example.com/topics/all',
                                     'prefix': False,
                                     'pub': False,
                                     'sub': True},
@@ -74,6 +72,7 @@ class MyServerProtocol(WampCraServerProtocol):
                                     'pub': False,
                                     'sub': True}],
                  'rpc': []}
+         return {'permissions': pms}
 
 
    def getAuthSecret(self, authKey):
@@ -86,7 +85,7 @@ class MyServerProtocol(WampCraServerProtocol):
       ## fired when authentication succeeds
 
       ## register PubSub topics from the auth permissions
-      self.registerForPubSubFromPermissions(permissions)
+      self.registerForPubSubFromPermissions(perms['permissions'])
 
       ## register RPC endpoints (for now do that manually, keep in sync with perms)
       if authKey is None:
@@ -109,7 +108,7 @@ if __name__ == '__main__':
       debug = False
 
    factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
-   factory.protocol = MyServerProtocol
+   factory.protocol = DbusServerProtocol
    listenWS(factory)
 
    webdir = File(".")

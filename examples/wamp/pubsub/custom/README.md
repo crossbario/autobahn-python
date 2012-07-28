@@ -1,8 +1,11 @@
-Writing custom PubSub handlers for Authorization
-================================================
+Using custom PubSub Handlers
+============================
 
 This example show how to write custom PubSub handlers and use that for
-implementing fine-grained authorization.
+implementing fine-grained authorization. This is just an example: custom
+PubSub handlers can be used in general situation when you need more
+control over publish and subscribe message brokering, without writing
+a complete message broker from scratch.
 
 It includes a server which register a custom PubSub handler for topics,
 a JavaScript client using AutobahnJS and a Python client using AutobahnPython

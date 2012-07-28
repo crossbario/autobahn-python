@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011,2012 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -24,12 +24,11 @@ from twisted.web.server import Site
 from twisted.web.static import File
 
 from autobahn.websocket import listenWS
-from autobahn.wamp import exportRpc, \
-                          WampServerFactory, \
+from autobahn.wamp import WampServerFactory, \
                           WampServerProtocol
 
 
-class MyServerProtocol(WampServerProtocol):
+class PubSubServer1(WampServerProtocol):
 
    def onSessionOpen(self):
 
@@ -38,9 +37,6 @@ class MyServerProtocol(WampServerProtocol):
 
       ## register a URI and all URIs having the string as prefix as PubSub topic
       self.registerForPubSub("http://example.com/event#", True)
-
-      ## register any URI (string) as topic
-      #self.registerForPubSub("", True)
 
 
 if __name__ == '__main__':
@@ -52,7 +48,7 @@ if __name__ == '__main__':
       debug = False
 
    factory = WampServerFactory("ws://localhost:9000", debugWamp = True)
-   factory.protocol = MyServerProtocol
+   factory.protocol = PubSubServer1
    factory.setProtocolOptions(allowHixie76 = True)
    listenWS(factory)
 
