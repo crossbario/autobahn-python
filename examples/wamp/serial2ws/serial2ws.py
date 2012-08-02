@@ -87,7 +87,7 @@ class McuProtocol(LineReceiver):
 
          ## publish event to all clients subscribed to topic
          ##
-         self.wsMcuFactory._dispatchEvent("http://example.com/mcu#analog-value", evt)
+         self.wsMcuFactory.dispatch("http://example.com/mcu#analog-value", evt)
 
          log.msg("Analog value: %s" % str(evt));
       except ValueError:
