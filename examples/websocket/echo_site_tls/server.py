@@ -31,15 +31,8 @@ from autobahn.resource import WebSocketResource, HTTPChannelHixie76Aware
 
 class EchoServerProtocol(WebSocketServerProtocol):
    
-   def sendSomething(self):
-      self.sendMessage("ping")
-      reactor.callLater(1, self.sendSomething)
-   
-   def onOpen(self):
-      self.sendSomething()
-
    def onMessage(self, msg, binary):
-      self.sendMessage("ECHO - " + msg)
+      self.sendMessage(msg, binary)
 
 
 if __name__ == '__main__':
@@ -50,18 +43,15 @@ if __name__ == '__main__':
    else:
       debug = False
       
-   useTls = True
+   contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
+                                                     'keys/server.crt')
 
-   if useTls:
-      contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
-                                                        'keys/server.crt')
-
-   factory = WebSocketServerFactory(("wss" if useTls else "ws") + "://localhost:8080",
+   factory = WebSocketServerFactory("wss://localhost:8080",
                                     debug = debug,
                                     debugCodePaths = debug)
 
    factory.protocol = EchoServerProtocol
-   #factory.setProtocolOptions(allowHixie76 = True) # needed if Hixie76 is to be supported
+   factory.setProtocolOptions(allowHixie76 = True) # needed if Hixie76 is to be supported
 
    resource = WebSocketResource(factory)
 
@@ -73,11 +63,8 @@ if __name__ == '__main__':
 
    ## both under one Twisted Web Site
    site = Site(root)
-   #site.protocol = HTTPChannelHixie76Aware # needed if Hixie76 is to be supported
+   site.protocol = HTTPChannelHixie76Aware # needed if Hixie76 is to be supported
    
-   if useTls:
-      reactor.listenSSL(8080, site, contextFactory)
-   else:
-      reactor.listenTCP(8080, site)
+   reactor.listenSSL(8080, site, contextFactory)
 
    reactor.run()
