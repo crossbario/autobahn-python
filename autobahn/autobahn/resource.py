@@ -21,6 +21,7 @@ __all__ = ("WebSocketResource","HTTPChannelHixie76Aware",)
 from zope.interface import implements
 
 from twisted.python import log
+from twisted.protocols.policies import ProtocolWrapper
 from twisted.web.error import NoResource, UnsupportedMethod
 from twisted.web.resource import IResource
 from twisted.web.server import NOT_DONE_YET
@@ -100,13 +101,15 @@ class WebSocketResource(object):
       ##
       transport, request.transport = request.transport, None
 
-      # Connect the transport to our factory, and make things go. We need to
-      # do some stupid stuff here; see #3204, which could fix it.
       ## Connect the transport to our protocol. Once #3204 is fixed, there
       ## may be a cleaner way of doing this.
       ## http://twistedmatrix.com/trac/ticket/3204
       ##
-      transport.protocol = protocol
+      if isinstance(transport, ProtocolWrapper):
+         ## i.e. TLS is a wrapping protocol
+         transport.wrappedProtocol = protocol
+      else:
+         transport.protocol = protocol
       protocol.makeConnection(transport)
 
       ## We recreate the request and forward the raw data. This is somewhat
