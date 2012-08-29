@@ -30,9 +30,16 @@ from autobahn.resource import WebSocketResource, HTTPChannelHixie76Aware
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
+   
+   def sendSomething(self):
+      self.sendMessage("ping")
+      reactor.callLater(1, self.sendSomething)
+   
+   def onOpen(self):
+      self.sendSomething()
 
    def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+      self.sendMessage("ECHO - " + msg)
 
 
 if __name__ == '__main__':
