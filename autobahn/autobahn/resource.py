@@ -22,7 +22,12 @@ from zope.interface import implements
 
 from twisted.python import log
 from twisted.protocols.policies import ProtocolWrapper
-from twisted.web.error import NoResource, UnsupportedMethod
+try:
+   from twisted.web.error import NoResource
+except:
+   ## starting from Twisted 12.2, NoResource has moved
+   from twisted.web.resource import NoResource  
+from twisted.web.error import UnsupportedMethod
 from twisted.web.resource import IResource
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.http import HTTPChannel
