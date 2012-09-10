@@ -2489,12 +2489,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
                port = int(str(p.strip()))
             except:
                return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
-            if port != self.factory.port:
-               return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.port))
+            if port != self.factory.externalPort:
+               return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
             self.http_request_host = h
          else:
-            if not ((self.factory.isSecure and self.factory.port == 443) or (not self.factory.isSecure and self.factory.port == 80)):
-               return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.port, self.factory.isSecure))
+            if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
+               return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
 
          ## Upgrade
          ##
@@ -2742,12 +2742,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
                response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
 
             if self.debugCodePaths:
-               log.msg('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.port))
+               log.msg('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
 
-            if (self.factory.isSecure and self.factory.port != 443) or ((not self.factory.isSecure) and self.factory.port != 80):
+            if (self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80):
                if self.debugCodePaths:
                   log.msg('factory running on non-default port')
-               response_port = ':' + str(self.factory.port)
+               response_port = ':' + str(self.factory.externalPort)
             else:
                if self.debugCodePaths:
                   log.msg('factory running on default port')
@@ -2937,7 +2937,9 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
                 ## debugging
                 debug = False,
-                debugCodePaths = False):
+                debugCodePaths = False,
+                
+                externalPort = None):
       """
       Create instance of WebSocket server factory.
 
@@ -2953,6 +2955,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type debug: bool
       :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
+      :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+      :type externalPort: int
       """
       self.debug = debug
       self.debugCodePaths = debugCodePaths
@@ -2967,7 +2971,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       ## default WS session parameters
       ##
-      self.setSessionParameters(url, protocols, server)
+      self.setSessionParameters(url, protocols, server, externalPort)
 
       ## default WebSocket protocol options
       ##
@@ -2978,7 +2982,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.countConnections = 0
 
 
-   def setSessionParameters(self, url = None, protocols = [], server = None):
+   def setSessionParameters(self, url = None, protocols = [], server = None, externalPort = None):
       """
       Set WebSocket session parameters.
 
@@ -2988,6 +2992,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type protocols: list of strings
       :param server: Server as announced in HTTP response header during opening handshake.
       :type server: str
+      :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+      :type externalPort: int
       """
       if url is not None:
          ## parse WebSocket URI into components
@@ -3006,6 +3012,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
          self.host = None
          self.port = None
 
+      self.externalPort = externalPort if externalPort is not None else self.port
       self.protocols = protocols
       self.server = server
 
