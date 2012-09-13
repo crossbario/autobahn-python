@@ -890,6 +890,9 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
          l = len(recvs)
          if l > 0:
 
+            ## ok, at least 1 subscriber not excluded and eligible
+            ## => prepare message for mass sending
+            ##
             o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicUri, event]
             try:
                msg = json.dumps(o)
@@ -899,8 +902,18 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
                raise Exception("invalid type for event (not JSON serializable)")
 
             preparedMsg = self.prepareMessage(msg)
+
+            ## chunked sending of prepared message
+            ##
             self._sendEvents(preparedMsg, recvs.copy(), 0, l, d)
+
+         else:
+            ## receivers list empty after considering exlude and eligible sessions
+            ##
+            d.callback((0, 0))
       else:
+         ## no one subscribed on topic
+         ##
          d.callback((0, 0))
 
       return d
