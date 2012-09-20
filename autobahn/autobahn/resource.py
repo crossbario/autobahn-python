@@ -28,7 +28,7 @@ except:
    ## starting from Twisted 12.2, NoResource has moved
    from twisted.web.resource import NoResource  
 from twisted.web.error import UnsupportedMethod
-from twisted.web.resource import IResource
+from twisted.web.resource import IResource, Resource
 from twisted.web.server import NOT_DONE_YET
 from twisted.web.http import HTTPChannel
 
@@ -51,6 +51,27 @@ class HTTPChannelHixie76Aware(HTTPChannel):
          HTTPChannel.headerReceived(self, "Content-Length: 8")
       HTTPChannel.headerReceived(self, line)
 
+
+class WSGIRootResource(Resource):
+   """
+   Root resource when you want a WSGI resource be the default serving
+   resource for a Site, but have subpaths served by different resources.
+   
+   This is a hack needed since WSGIResource does not provide putChild().
+   
+   See also:
+   http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html
+   """
+
+   def __init__(self, wsgiResource, children):
+      Resource.__init__(self)
+      self._wsgiResource = wsgiResource
+      self.children = children
+
+   def getChild(self, path, request):
+      request.prepath.pop()
+      request.postpath.insert(0, path)
+      return self._wsgiResource
 
 
 class WebSocketResource(object):
