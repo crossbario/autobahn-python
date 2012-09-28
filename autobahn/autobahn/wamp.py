@@ -532,10 +532,13 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       self.factory.dispatch(topicUri, event, exclude, eligible)
 
 
-   def _callProcedure(self, uri, args = None):
+   def _callProcedure(self, callid, uri, args = None):
       """
       INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
       """
+      
+      uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
+      
       if self.procs.has_key(uri):
          m = self.procs[uri]
          if not m[2]:
@@ -569,6 +572,54 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                return m[1](uri, args, m[3])
       else:
          raise Exception("no procedure %s" % uri)
+
+
+   def onBeforeCall(self, callid, uri, args, isRegistered):
+      """
+      Callback fired before executing incoming RPC. This can be used for
+      logging, statistics tracking or redirecting RPCs or argument mangling i.e.
+      
+      The default implementation just returns the incoming URI/args.
+      
+      :param uri: RPC endpoint URI (fully-qualified).
+      :type uri: str
+      :param args: RPC arguments array.
+      :type args: list
+      :param isRegistered: True, iff RPC endpoint URI is registered in this session.
+      :type isRegistered: bool
+      :returns pair -- Must return URI/Args pair.
+      """
+      return uri, args
+   
+
+   def onAfterCallSuccess(self, result, callid):
+      """
+      Callback fired after executing incoming RPC with success.
+
+      The default implementation will just return `result` to the client.
+      
+      :param result: Result returned for executing the incoming RPC.
+      :type result: Anything returned by the user code for the endpoint.
+      :param callid: WAMP call ID for incoming RPC.
+      :type callid: str
+      :returns obj -- Result send back to client.
+      """
+      return result
+
+
+   def onAfterCallError(self, error, callid):
+      """
+      Callback fired after executing incoming RPC with failure.
+      
+      The default implementation will just return `error` to the client.
+      
+      :param error: Error that occurred during incomnig RPC call execution.
+      :type error: Instance of twisted.python.failure.Failure
+      :param callid: WAMP call ID for incoming RPC.
+      :type callid: str
+      :returns twisted.python.failure.Failure -- Error send back to client.
+      """
+      return error
 
 
    def _sendCallResult(self, result, callid):
@@ -666,10 +717,20 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                ## Call Message
                ##
                if obj[0] == WampProtocol.MESSAGE_TYPEID_CALL:
+                  
+                  ## incoming RPC parameters
                   callid = obj[1]
                   procuri = self.prefixes.resolveOrPass(obj[2])
                   args = obj[3:]
-                  d = maybeDeferred(self._callProcedure, procuri, args)
+                  
+                  ## execute incoming RPC
+                  d = maybeDeferred(self._callProcedure, callid, procuri, args)
+                  
+                  ## wire up after call user callbacks
+                  d.addCallback(self.onAfterCallSuccess, callid)
+                  d.addErrback(self.onAfterCallError, callid)
+                  
+                  ## wire up pack & send WAMP message
                   d.addCallback(self._sendCallResult, callid)
                   d.addErrback(self._sendCallError, callid)
 
