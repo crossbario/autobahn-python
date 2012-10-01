@@ -3246,6 +3246,15 @@ class WebSocketClientProtocol(WebSocketProtocol):
       request += "Upgrade: WebSocket\x0d\x0a"
       request += "Connection: Upgrade\x0d\x0a"
 
+      ## this seems to prohibit some non-compliant proxies from removing the
+      ## connection "Upgrade" header
+      ## See also:
+      ##   http://www.ietf.org/mail-archive/web/hybi/current/msg09841.html
+      ##   http://code.google.com/p/chromium/issues/detail?id=148908
+      ##
+      request += "Pragma: no-cache\x0d\x0a"
+      request += "Cache-Control: no-cache\x0d\x0a"
+
       ## handshake random key
       ##
       if self.version == 0:
