@@ -536,9 +536,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
       """
-      
+
       uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
-      
+
       if self.procs.has_key(uri):
          m = self.procs[uri]
          if not m[2]:
@@ -578,9 +578,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       Callback fired before executing incoming RPC. This can be used for
       logging, statistics tracking or redirecting RPCs or argument mangling i.e.
-      
+
       The default implementation just returns the incoming URI/args.
-      
+
       :param uri: RPC endpoint URI (fully-qualified).
       :type uri: str
       :param args: RPC arguments array.
@@ -590,14 +590,14 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :returns pair -- Must return URI/Args pair.
       """
       return uri, args
-   
+
 
    def onAfterCallSuccess(self, result, callid):
       """
       Callback fired after executing incoming RPC with success.
 
       The default implementation will just return `result` to the client.
-      
+
       :param result: Result returned for executing the incoming RPC.
       :type result: Anything returned by the user code for the endpoint.
       :param callid: WAMP call ID for incoming RPC.
@@ -610,9 +610,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
    def onAfterCallError(self, error, callid):
       """
       Callback fired after executing incoming RPC with failure.
-      
+
       The default implementation will just return `error` to the client.
-      
+
       :param error: Error that occurred during incomnig RPC call execution.
       :type error: Instance of twisted.python.failure.Failure
       :param callid: WAMP call ID for incoming RPC.
@@ -717,19 +717,19 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                ## Call Message
                ##
                if obj[0] == WampProtocol.MESSAGE_TYPEID_CALL:
-                  
+
                   ## incoming RPC parameters
                   callid = obj[1]
                   procuri = self.prefixes.resolveOrPass(obj[2])
                   args = obj[3:]
-                  
+
                   ## execute incoming RPC
                   d = maybeDeferred(self._callProcedure, callid, procuri, args)
-                  
+
                   ## wire up after call user callbacks
                   d.addCallback(self.onAfterCallSuccess, callid)
                   d.addErrback(self.onAfterCallError, callid)
-                  
+
                   ## wire up pack & send WAMP message
                   d.addCallback(self._sendCallResult, callid)
                   d.addErrback(self._sendCallError, callid)
@@ -877,32 +877,76 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       self.debugApp = debugApp
 
 
+   def onClientSubscribed(self, proto, topicUri):
+      """
+      Callback fired when peer was (successfully) subscribed on some topic.
+
+      :param proto: Peer protocol instance subscribed.
+      :type proto: Instance of WampServerProtocol.
+      :param topicUri: Fully qualified, resolved URI of topic subscribed.
+      :type topicUri: str
+      """
+      pass
+
+
    def _subscribeClient(self, proto, topicUri):
       """
       INTERNAL METHOD! Called from proto to subscribe client for topic.
       """
-
-      if self.debugWamp:
-         log.msg("subscribed peer %s for topic %s" % (proto.peerstr, topicUri))
-
       if not self.subscriptions.has_key(topicUri):
          self.subscriptions[topicUri] = set()
-      self.subscriptions[topicUri].add(proto)
+         if self.debugWamp:
+            log.msg("subscriptions map created for topic %s" % topicUri)
+      if not proto in self.subscriptions[topicUri]:
+         self.subscriptions[topicUri].add(proto)
+         if self.debugWamp:
+            log.msg("subscribed peer %s on topic %s" % (proto.peerstr, topicUri))
+         self.onClientSubscribed(proto, topicUri)
+      else:
+         if self.debugWamp:
+            log.msg("peer %s already subscribed on topic %s" % (proto.peerstr, topicUri))
+
+
+   def onClientUnsubscribed(self, proto, topicUri):
+      """
+      Callback fired when peer was (successfully) unsubscribed from some topic.
+
+      :param proto: Peer protocol instance unsubscribed.
+      :type proto: Instance of WampServerProtocol.
+      :param topicUri: Fully qualified, resolved URI of topic unsubscribed.
+      :type topicUri: str
+      """
+      pass
 
 
    def _unsubscribeClient(self, proto, topicUri = None):
       """
       INTERNAL METHOD! Called from proto to unsubscribe client from topic.
       """
-
       if topicUri:
-         if self.subscriptions.has_key(topicUri):
+         if self.subscriptions.has_key(topicUri) and proto in self.subscriptions[topicUri]:
             self.subscriptions[topicUri].discard(proto)
-         if self.debugWamp:
-            log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicUri))
+            if self.debugWamp:
+               log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicUri))
+            if len(self.subscriptions[topicUri]) == 0:
+               del self.subscriptions[topicUri]
+               if self.debugWamp:
+                  log.msg("topic %s removed from subscriptions map - no one subscribed anymore" % topicUri)
+            self.onClientUnsubscribed(proto, topicUri)
+         else:
+            if self.debugWamp:
+               log.msg("peer %s not subscribed on topic %s" % (proto.peerstr, topicUri))
       else:
-         for t in self.subscriptions:
-            self.subscriptions[t].discard(proto)
+         for topicUri, subscribers in self.subscriptions.items():
+            if proto in subscribers:
+               subscribers.discard(proto)
+               if self.debugWamp:
+                  log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicUri))
+               if len(subscribers) == 0:
+                  del self.subscriptions[topicUri]
+                  if self.debugWamp:
+                     log.msg("topic %s removed from subscriptions map - no one subscribed anymore" % topicUri)
+               self.onClientUnsubscribed(proto, topicUri)
          if self.debugWamp:
             log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
 
