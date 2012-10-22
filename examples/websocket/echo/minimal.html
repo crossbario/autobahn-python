@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         var sock = null;
+
+         window.onload = function() {
+
+            sock = new WebSocket("ws://127.0.0.1:9000");
+
+            sock.onopen = function() {
+               console.log("Connected!");
+            }
+
+            sock.onmessage = function(e) {
+               console.log("Message received: " + e.data);
+            }
+
+            sock.onclose = function(e) {
+               console.log("Connection closed.");
+            }
+         };
+
+         function send() {
+            sock.send("Hello, world!");
+            console.log("Message sent ..");
+         };
+      </script>
+   </head>
+   <body>
+      <button onclick='send();'>Send Message</button>
+   </body>
+</html>
