@@ -170,15 +170,18 @@ class WampProtocol:
    Server-to-client message providing the event of a (subscribed) topic.
    """
    
-   serialize = json.dumps
-   """
-   Default object serializer.
-   """
+   def _serialize(self, obj):
+      """
+      Default object serializer.
+      """
+      return json.dumps(obj)
    
-   unserialize = json.loads
-   """
-   Default object deserializer.
-   """
+
+   def _unserialize(self, bytes):
+      """
+      Default object deserializer.
+      """
+      return json.loads(bytes)
 
 
    def connectionMade(self):
@@ -274,7 +277,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
              self.session_id,
              WampProtocol.WAMP_PROTOCOL_VERSION,
              "Autobahn/%s" % autobahn.version]
-      o = self.serialize(msg)
+      o = self._serialize(msg)
       self.sendMessage(o)
       self.factory._addSession(self, self.session_id)
       self.onSessionOpen()
@@ -638,7 +641,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       msg = [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
       try:
-         rmsg = self.serialize(msg)
+         rmsg = self._serialize(msg)
       except:
          raise Exception("call result not JSON serializable")
       else:
@@ -688,7 +691,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
 
          try:
-            rmsg = self.serialize(msg)
+            rmsg = self._serialize(msg)
          except Exception, e:
             raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
 
@@ -704,7 +707,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             log.err(error.getTraceback())
 
          msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL), WampProtocol.DESC_WAMP_ERROR_INTERNAL]
-         rmsg = self.serialize(msg)
+         rmsg = self._serialize(msg)
 
       finally:
 
@@ -721,7 +724,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
       if not binary:
          try:
-            obj = self.unserialize(msg)
+            obj = self._unserialize(msg)
             if type(obj) == list:
 
                ## Call Message
@@ -1010,7 +1013,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
             ##
             o = [WampProtocol.MESSAGE_TYPEID_EVENT, topicUri, event]
             try:
-               msg = self.serialize(o)
+               msg = self._serialize(o)
                if self.debugWamp:
                   log.msg("serialized event msg: " + str(msg))
             except:
@@ -1203,7 +1206,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       ## WAMP is proper JSON payload
       ##
       try:
-         obj = self.unserialize(msg)
+         obj = self._unserialize(msg)
       except:
          self._protocolError("WAMP message payload not valid JSON")
          return
@@ -1397,7 +1400,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       msg.extend(args[1:])
 
       try:
-         o = self.serialize(msg)
+         o = self._serialize(msg)
       except:
          raise Exception("call argument(s) not JSON serializable")
 
@@ -1429,7 +1432,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
       msg = [WampProtocol.MESSAGE_TYPEID_PREFIX, prefix, uri]
 
-      self.sendMessage(self.serialize(msg))
+      self.sendMessage(self._serialize(msg))
 
 
    def publish(self, topicUri, event, excludeMe = None, exclude = None, eligible = None):
@@ -1485,7 +1488,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
             msg = [WampProtocol.MESSAGE_TYPEID_PUBLISH, topicUri, event, excludeMe]
 
       try:
-         o = self.serialize(msg)
+         o = self._serialize(msg)
       except:
          raise Exception("invalid type for parameter 'event' - not JSON serializable")
 
@@ -1510,7 +1513,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       turi = self.prefixes.resolveOrPass(topicUri)
       if not self.subscriptions.has_key(turi):
          msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
-         o = self.serialize(msg)
+         o = self._serialize(msg)
          self.sendMessage(o)
       self.subscriptions[turi] = handler
 
@@ -1528,7 +1531,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       turi = self.prefixes.resolveOrPass(topicUri)
       if self.subscriptions.has_key(turi):
          msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicUri]
-         o = self.serialize(msg)
+         o = self._serialize(msg)
          self.sendMessage(o)
          del self.subscriptions[turi]
 
@@ -1847,7 +1850,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
          if authKey:
             ## authenticated
             ##
-            infoser = self.serialize(info)
+            infoser = self._serialize(info)
             sig = self.authSignature(infoser, self.getAuthSecret(authKey))
 
             self._clientPendingAuth = (info, sig, res)
