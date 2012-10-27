@@ -25,7 +25,10 @@ import hashlib, hmac, binascii
 
 from twisted.python import log
 from twisted.internet import reactor
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import Deferred, \
+                                   maybeDeferred, \
+                                   returnValue, \
+                                   inlineCallbacks
 
 import autobahn
 
@@ -169,7 +172,7 @@ class WampProtocol:
    """
    Server-to-client message providing the event of a (subscribed) topic.
    """
-   
+
    def connectionMade(self):
       self.debugWamp = self.factory.debugWamp
       self.debugApp = self.factory.debugApp
@@ -239,7 +242,7 @@ class WampFactory:
       Default object serializer.
       """
       return json.dumps(obj)
-   
+
 
    def _unserialize(self, bytes):
       """
@@ -1802,16 +1805,6 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       if self._clientPendingAuth is not None:
          raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "authentication-already-requested"), "authentication request already issues - authentication pending")
 
-      ## check authKey
-      ##
-      if authKey is None and not self.clientAuthAllowAnonymous:
-         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "anyonymous-auth-forbidden"), "authentication as anonymous forbidden")
-
-      if type(authKey) not in [str, unicode, types.NoneType]:
-         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "authentication key must be a string (was %s)" % str(type(authKey)))
-      if authKey is not None and self.getAuthSecret(authKey) is None:
-         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "no-such-authkey"), "authentication key '%s' does not exist." % authKey)
-
       ## check extra
       ##
       if extra:
@@ -1823,47 +1816,64 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       #   if type(extra[k]) not in [str, unicode, int, long, float, bool, types.NoneType]:
       #      raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "attribute '%s' in extra not a primitive type (was %s)" % (k, str(type(extra[k]))))
 
-      ## each authentication request gets a unique authid, which can only be used (later) once!
+      ## check authKey
       ##
-      authid = newid()
+      if authKey is None and not self.clientAuthAllowAnonymous:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "anonymous-auth-forbidden"), "authentication as anonymous forbidden")
 
-      ## create authentication challenge
-      ##
-      info = {}
-      info['authid'] = authid
-      info['authkey'] = authKey
-      info['timestamp'] = utcnow()
-      info['sessionid'] = self.session_id
-      info['extra'] = extra
+      if type(authKey) not in [str, unicode, types.NoneType]:
+         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "authentication key must be a string (was %s)" % str(type(authKey)))
 
-      pp = maybeDeferred(self.getAuthPermissions, authKey, extra)
+      d = maybeDeferred(self.getAuthSecret, authKey)
 
-      def onAuthPermissionsOk(res):
-         if res is None:
-            res = {'permissions': {}}
-            res['permissions'] = {'pubsub': [], 'rpc': []}
-         info['permissions'] = res['permissions']
+      def onGetAuthSecretOk(authSecret, authKey, extra):
+         if authKey is not None and authSecret is None:
+            raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "no-such-authkey"), "authentication key '%s' does not exist." % authKey)
 
-         if authKey:
-            ## authenticated
-            ##
-            infoser = self.factory._serialize(info)
-            sig = self.authSignature(infoser, self.getAuthSecret(authKey))
+         ## each authentication request gets a unique authid, which can only be used (later) once!
+         ##
+         authid = newid()
 
-            self._clientPendingAuth = (info, sig, res)
-            return infoser
-         else:
-            ## anonymous
-            ##
-            self._clientPendingAuth = (info, None, res)
-            return None
+         ## create authentication challenge
+         ##
+         info = {}
+         info['authid'] = authid
+         info['authkey'] = authKey
+         info['timestamp'] = utcnow()
+         info['sessionid'] = self.session_id
+         info['extra'] = extra
 
-      def onAuthPermissionsError(e):
-         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
+         pp = maybeDeferred(self.getAuthPermissions, authKey, extra)
 
-      pp.addCallbacks(onAuthPermissionsOk, onAuthPermissionsError)
+         def onAuthPermissionsOk(res):
+            if res is None:
+               res = {'permissions': {}}
+               res['permissions'] = {'pubsub': [], 'rpc': []}
+            info['permissions'] = res['permissions']
 
-      return pp
+            if authKey:
+               ## authenticated session
+               ##
+               infoser = self.factory._serialize(info)
+               sig = self.authSignature(infoser, authSecret)
+
+               self._clientPendingAuth = (info, sig, res)
+               return infoser
+            else:
+               ## anonymous session
+               ##
+               self._clientPendingAuth = (info, None, res)
+               return None
+
+         def onAuthPermissionsError(e):
+            raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "auth-permissions-error"), str(e))
+
+         pp.addCallbacks(onAuthPermissionsOk, onAuthPermissionsError)
+
+         return pp
+
+      d.addCallback(onGetAuthSecretOk, authKey, extra)
+      return d
 
 
    @exportRpc("auth")
@@ -1872,7 +1882,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       RPC endpoint for clients to actually authenticate after requesting authentication and computing
       a signature from the authentication challenge.
 
-      :param signature: Authenticatin signature computed by the client.
+      :param signature: Authentication signature computed by the client.
       :type signature: str
 
       :returns list -- A list of permissions the client is granted when authentication was successful.
