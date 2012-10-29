@@ -19,6 +19,7 @@
 import datetime
 import time
 import random
+import sys
 
 UTC_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
@@ -58,3 +59,89 @@ def newid():
    Generate a new random object ID.
    """
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in xrange(16)])
+
+
+
+## Select the most precise walltime measurement function available
+## on the platform
+##
+if sys.platform.startswith('win'):
+   ## On Windows, this function returns wall-clock seconds elapsed since the
+   ## first call to this function, as a floating point number, based on the
+   ## Win32 function QueryPerformanceCounter(). The resolution is typically
+   ## better than one microsecond
+   rtime = time.clock
+   _ = rtime()
+else:
+   ## On Unix-like platforms, this used the first available from this list:
+   ## (1) gettimeofday() -- resolution in microseconds
+   ## (2) ftime() -- resolution in milliseconds
+   ## (3) time() -- resolution in seconds
+   rtime = time.time
+
+
+class Stopwatch:
+   """
+   Stopwatch based on walltime. Can be used to do code timing and uses the
+   most precise walltime measurement available on the platform. This is
+   a very light-weight object, so create/dispose is very cheap.
+   """
+
+   def __init__(self, start = True):
+      """
+      Creates a new stopwatch and by default immediately starts (= resumes) it.
+      """
+      self._elapsed = 0
+      if start:
+         self._started = rtime()
+         self._running = True
+      else:
+         self._started = None
+         self._running = False
+
+   def elapsed(self):
+      """
+      Return total time elapsed in seconds during which the stopwatch was running.
+      """
+      if self._running:
+         now = rtime()
+         return self._elapsed + (now - self._started)
+      else:
+         return self._elapsed
+
+   def pause(self):
+      """
+      Pauses the stopwatch and returns total time elapsed in seconds during which
+      the stopwatch was running.
+      """
+      if self._running:
+         now = rtime()
+         self._elapsed += now - self._started
+         self._running = False
+         return self._elapsed
+      else:
+         return self._elapsed
+
+   def resume(self):
+      """
+      Resumes a paused stopwatch and returns total elapsed time in seconds
+      during which the stopwatch was running.
+      """
+      if not self._running:
+         self._started = rtime()
+         self._running = True
+         return self._elapsed
+      else:
+         now = rtime()
+         return self._elapsed + (now - self._started)
+
+   def stop(self):
+      """
+      Stops the stopwatch and returns total time elapsed in seconds during which
+      the stopwatch was (previously) running.
+      """
+      elapsed = self.pause()
+      self._elapsed = 0
+      self._started = None
+      self._running = False
+      return elapsed
