@@ -77,6 +77,29 @@ def exportPub(arg, prefixMatch = False):
    return inner
 
 
+class Call:
+   """
+   Thin-wrapper for incoming RPCs provided to call handlers registered via
+
+     - registerHandlerMethodForRpc
+     - registerHandlerProcedureForRpc
+   """
+
+   def __init__(self,
+                proto,
+                callid,
+                uri,
+                args,
+                extra = None):
+      self.proto = proto
+      self.callid = callid
+      self.uri = uri
+      self.args = args
+      self.extra = extra
+      self.timings = None
+
+
+
 class WampProtocol:
    """
    WAMP protocol base class. Mixin for WampServerProtocol and WampClientProtocol.
@@ -273,18 +296,15 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       Welcome message containing session ID.
       """
       self.session_id = newid()
+
       msg = [WampProtocol.MESSAGE_TYPEID_WELCOME,
              self.session_id,
              WampProtocol.WAMP_PROTOCOL_VERSION,
              "Autobahn/%s" % autobahn.version]
       o = self.factory._serialize(msg)
       self.sendMessage(o)
+
       self.factory._addSession(self, self.session_id)
-
-      ## tracking data for RPCs
-      if self.trackTimings:
-         self.trackedRpcs = {}
-
       self.onSessionOpen()
 
 
@@ -550,18 +570,60 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       self.factory.dispatch(topicUri, event, exclude, eligible)
 
 
-   def _callProcedure(self, callid, uri, args = None):
+   def _onBeforeCall(self, callid, uri, args):
+      ## fire user callback
+      uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
+
+      ## create call object to move around call data
+      call = Call(self, callid, uri, args)
+
+      ## track timings
+      if self.trackTimings:
+         self.trackedTimings.track("onBeforeCall")
+         call.timings = self.trackedTimings
+         self.trackedTimings = Timings()
+
+      return call
+
+
+   def _onAfterCallSuccess(self, result, call):
+      ## track timings
+      if self.trackTimings:
+         self.trackedTimings = call.timings
+         self.trackedTimings.track("onAfterCallSuccess")
+
+      ## fire user callback
+      call.result = self.onAfterCallSuccess(result, call)
+
+      ## send out WAMP message
+      self._sendCallResult(call)
+
+
+   def _onAfterCallError(self, error, call):
+      ## track timings
+      if self.trackTimings:
+         self.trackedTimings = call.timings
+         self.trackedTimings.track("onAfterCallError")
+
+      ## fire user callback
+      call.error = self.onAfterCallError(error, call)
+
+      ## send out WAMP message
+      self._sendCallError(call)
+
+
+   def _callProcedure(self, call):
       """
       INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
       """
-      if self.procs.has_key(uri):
-         m = self.procs[uri]
+      if self.procs.has_key(call.uri):
+         m = self.procs[call.uri]
          if not m[2]:
             ## RPC method/procedure
             ##
-            if args:
+            if call.args:
                ## method/function called with args
-               cargs = tuple(args)
+               cargs = tuple(call.args)
                if m[0]:
                   ## call object method
                   return m[1](m[0], *cargs)
@@ -579,14 +641,15 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          else:
             ## RPC handler
             ##
+            call.extra = m[3]
             if m[0]:
                ## call RPC handler on object
-               return m[1](m[0], uri, args, m[3])
+               return m[1](m[0], call)
             else:
                ## call free-standing RPC handler
-               return m[1](uri, args, m[3])
+               return m[1](call)
       else:
-         raise Exception("no procedure %s" % uri)
+         raise Exception("no procedure %s" % call.uri)
 
 
    def onBeforeCall(self, callid, uri, args, isRegistered):
@@ -607,7 +670,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       return uri, args
 
 
-   def onAfterCallSuccess(self, result, callid):
+   def onAfterCallSuccess(self, result, call):
       """
       Callback fired after executing incoming RPC with success, but before
       sending the RPC success message.
@@ -616,14 +679,14 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
       :param result: Result returned for executing the incoming RPC.
       :type result: Anything returned by the user code for the endpoint.
-      :param callid: WAMP call ID for incoming RPC.
-      :type callid: str
+      :param call: WAMP call object for incoming RPC.
+      :type call: instance of Call
       :returns obj -- Result send back to client.
       """
       return result
 
 
-   def onAfterCallError(self, error, callid):
+   def onAfterCallError(self, error, call):
       """
       Callback fired after executing incoming RPC with failure, but before
       sending the RPC error message.
@@ -632,42 +695,42 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
       :param error: Error that occurred during incomnig RPC call execution.
       :type error: Instance of twisted.python.failure.Failure
-      :param callid: WAMP call ID for incoming RPC.
-      :type callid: str
+      :param call: WAMP call object for incoming RPC.
+      :type call: instance of Call
       :returns twisted.python.failure.Failure -- Error sent back to client.
       """
       return error
 
 
-   def onAfterSendCallSuccess(self, msg, callid):
+   def onAfterSendCallSuccess(self, msg, call):
       """
       Callback fired after sending RPC success message.
 
       :param msg: Serialized WAMP message.
       :type msg: str
-      :param callid: WAMP call ID for incoming RPC.
-      :type callid: str
+      :param call: WAMP call object for incoming RPC.
+      :type call: instance of Call
       """
       pass
 
 
-   def onAfterSendCallError(self, msg, callid):
+   def onAfterSendCallError(self, msg, call):
       """
       Callback fired after sending RPC error message.
 
       :param msg: Serialized WAMP message.
       :type msg: str
-      :param callid: WAMP call ID for incoming RPC.
-      :type callid: str
+      :param call: WAMP call object for incoming RPC.
+      :type call: instance of Call
       """
       pass
 
 
-   def _sendCallResult(self, result, callid):
+   def _sendCallResult(self, call):
       """
       INTERNAL METHOD! Marshal and send a RPC success result.
       """
-      msg = [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, callid, result]
+      msg = [WampProtocol.MESSAGE_TYPEID_CALL_RESULT, call.callid, call.result]
       try:
          rmsg = self.factory._serialize(msg)
       except:
@@ -676,16 +739,16 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          self.sendMessage(rmsg)
          if self.trackTimings:
             self.trackedTimings.track("onAfterSendCallSuccess")
-         self.onAfterSendCallSuccess(rmsg, callid)
+         self.onAfterSendCallSuccess(rmsg, call)
 
 
-   def _sendCallError(self, error, callid):
+   def _sendCallError(self, call):
       """
       INTERNAL METHOD! Marshal and send a RPC error result.
       """
       try:
 
-         eargs = error.value.args
+         eargs = call.error.value.args
          leargs = len(eargs)
          traceb = error.getTraceback()
 
@@ -717,9 +780,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             raise Exception("invalid args length %d for exception" % leargs)
 
          if errordetails is not None:
-            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
          else:
-            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(erroruri), errordesc]
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(erroruri), errordesc]
 
          try:
             rmsg = self.factory._serialize(msg)
@@ -737,7 +800,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             log.err(str(e))
             log.err(error.getTraceback())
 
-         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, callid, self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL), WampProtocol.DESC_WAMP_ERROR_INTERNAL]
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL), WampProtocol.DESC_WAMP_ERROR_INTERNAL]
          rmsg = self.factory._serialize(msg)
 
       finally:
@@ -745,7 +808,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          self.sendMessage(rmsg)
          if self.trackTimings:
             self.trackedTimings.track("onAfterSendCallError")
-         self.onAfterSendCallError(rmsg, callid)
+         self.onAfterSendCallError(rmsg, call)
 
 
    def onMessage(self, msg, binary):
@@ -765,44 +828,20 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                ##
                if obj[0] == WampProtocol.MESSAGE_TYPEID_CALL:
 
-                  ## incoming RPC parameters
+                  ## parse message and create call object
                   callid = obj[1]
                   uri = self.prefixes.resolveOrPass(obj[2])
                   args = obj[3:]
-
-                  if self.trackTimings:
-                     self.trackedTimings.track("onBeforeCall")
-                     self.trackedRpcs[callid] = (uri, args, self.trackedTimings)
-                     self.trackedTimings = Timings()
-
-                  uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
+                  call = self._onBeforeCall(callid, uri, args)
 
                   ## execute incoming RPC
-                  d = maybeDeferred(self._callProcedure, callid, uri, args)
+                  d = maybeDeferred(self._callProcedure, call)
 
-                  if self.trackTimings:
-
-                     def _onAfterCallSuccess(result):
-                        self.trackedTimings = self.trackedRpcs[callid][2]
-                        self.trackedTimings.track("onAfterCallSuccess")
-                        return result
-
-                     def _onAfterCallError(error):
-                        self.trackedTimings = self.trackedRpcs[callid][2]
-                        self.trackedTimings.track("onAfterCallError")
-                        return error
-
-                     d.addCallbacks(_onAfterCallSuccess, _onAfterCallError)
-
-                  ## FIXME: use addCallbacks ?
-
-                  ## wire up after call user callbacks
-                  d.addCallback(self.onAfterCallSuccess, callid)
-                  d.addErrback(self.onAfterCallError, callid)
-
-                  ## wire up pack & send WAMP message
-                  d.addCallback(self._sendCallResult, callid)
-                  d.addErrback(self._sendCallError, callid)
+                  ## process and send result/error
+                  d.addCallbacks(self._onAfterCallSuccess,
+                                 self._onAfterCallError,
+                                 callbackArgs = (call,),
+                                 errbackArgs = (call,))
 
                ## Subscribe Message
                ##

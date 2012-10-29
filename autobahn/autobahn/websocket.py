@@ -361,19 +361,25 @@ class Timings:
       """
       Get elapsed difference between two previously tracked keys.
       """
-      d = self._timings[endKey] - self._timings[startKey]
-      if format:
-         if d < 0.00001: # 10us
-            s = "%d ns" % round(d * 1000000000.)
-         elif d < 0.01: # 10ms
-            s = "%d us" % round(d * 1000000.)
-         elif d < 10: # 10s
-            s = "%d ms" % round(d * 1000.)
+      if self._timings.has_key(endKey) and self._timings.has_key(startKey):
+         d = self._timings[endKey] - self._timings[startKey]
+         if format:
+            if d < 0.00001: # 10us
+               s = "%d ns" % round(d * 1000000000.)
+            elif d < 0.01: # 10ms
+               s = "%d us" % round(d * 1000000.)
+            elif d < 10: # 10s
+               s = "%d ms" % round(d * 1000.)
+            else:
+               s = "%d s" % round(d)
+            return s.rjust(8)
          else:
-            s = "%d s" % round(d)
-         return s.rjust(8)
+            return d
       else:
-         return d
+         if format:
+            return "n.a.".rjust(8)
+         else:
+            return None
 
    def __getitem__(self, key):
       return self._timings.get(key, None)
@@ -383,6 +389,7 @@ class Timings:
 
    def __str__(self):
       return pformat(self._timings)
+
 
 
 class WebSocketProtocol(protocol.Protocol):
