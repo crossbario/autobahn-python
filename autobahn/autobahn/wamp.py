@@ -32,7 +32,7 @@ from twisted.internet.defer import Deferred, \
 
 import autobahn
 
-from websocket import WebSocketProtocol, HttpException
+from websocket import WebSocketProtocol, HttpException, Timings
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
 
@@ -280,6 +280,11 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       o = self.factory._serialize(msg)
       self.sendMessage(o)
       self.factory._addSession(self, self.session_id)
+
+      ## tracking data for RPCs
+      if self.trackTimings:
+         self.trackedRpcs = {}
+
       self.onSessionOpen()
 
 
@@ -549,9 +554,6 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       INTERNAL METHOD! Actually performs the call of a procedure invoked via RPC.
       """
-
-      uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
-
       if self.procs.has_key(uri):
          m = self.procs[uri]
          if not m[2]:
@@ -607,7 +609,8 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
    def onAfterCallSuccess(self, result, callid):
       """
-      Callback fired after executing incoming RPC with success.
+      Callback fired after executing incoming RPC with success, but before
+      sending the RPC success message.
 
       The default implementation will just return `result` to the client.
 
@@ -622,7 +625,8 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
    def onAfterCallError(self, error, callid):
       """
-      Callback fired after executing incoming RPC with failure.
+      Callback fired after executing incoming RPC with failure, but before
+      sending the RPC error message.
 
       The default implementation will just return `error` to the client.
 
@@ -630,9 +634,33 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type error: Instance of twisted.python.failure.Failure
       :param callid: WAMP call ID for incoming RPC.
       :type callid: str
-      :returns twisted.python.failure.Failure -- Error send back to client.
+      :returns twisted.python.failure.Failure -- Error sent back to client.
       """
       return error
+
+
+   def onAfterSendCallSuccess(self, msg, callid):
+      """
+      Callback fired after sending RPC success message.
+
+      :param msg: Serialized WAMP message.
+      :type msg: str
+      :param callid: WAMP call ID for incoming RPC.
+      :type callid: str
+      """
+      pass
+
+
+   def onAfterSendCallError(self, msg, callid):
+      """
+      Callback fired after sending RPC error message.
+
+      :param msg: Serialized WAMP message.
+      :type msg: str
+      :param callid: WAMP call ID for incoming RPC.
+      :type callid: str
+      """
+      pass
 
 
    def _sendCallResult(self, result, callid):
@@ -646,6 +674,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          raise Exception("call result not JSON serializable")
       else:
          self.sendMessage(rmsg)
+         if self.trackTimings:
+            self.trackedTimings.track("onAfterSendCallSuccess")
+         self.onAfterSendCallSuccess(rmsg, callid)
 
 
    def _sendCallError(self, error, callid):
@@ -712,6 +743,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       finally:
 
          self.sendMessage(rmsg)
+         if self.trackTimings:
+            self.trackedTimings.track("onAfterSendCallError")
+         self.onAfterSendCallError(rmsg, callid)
 
 
    def onMessage(self, msg, binary):
@@ -733,11 +767,34 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                   ## incoming RPC parameters
                   callid = obj[1]
-                  procuri = self.prefixes.resolveOrPass(obj[2])
+                  uri = self.prefixes.resolveOrPass(obj[2])
                   args = obj[3:]
 
+                  if self.trackTimings:
+                     self.trackedTimings.track("onBeforeCall")
+                     self.trackedRpcs[callid] = (uri, args, self.trackedTimings)
+                     self.trackedTimings = Timings()
+
+                  uri, args = self.onBeforeCall(callid, uri, args, self.procs.has_key(uri))
+
                   ## execute incoming RPC
-                  d = maybeDeferred(self._callProcedure, callid, procuri, args)
+                  d = maybeDeferred(self._callProcedure, callid, uri, args)
+
+                  if self.trackTimings:
+
+                     def _onAfterCallSuccess(result):
+                        self.trackedTimings = self.trackedRpcs[callid][2]
+                        self.trackedTimings.track("onAfterCallSuccess")
+                        return result
+
+                     def _onAfterCallError(error):
+                        self.trackedTimings = self.trackedRpcs[callid][2]
+                        self.trackedTimings.track("onAfterCallError")
+                        return error
+
+                     d.addCallbacks(_onAfterCallSuccess, _onAfterCallError)
+
+                  ## FIXME: use addCallbacks ?
 
                   ## wire up after call user callbacks
                   d.addCallback(self.onAfterCallSuccess, callid)

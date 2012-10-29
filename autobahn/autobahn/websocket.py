@@ -27,8 +27,6 @@ urlparse.uses_params.extend(wsschemes)
 urlparse.uses_query.extend(wsschemes)
 urlparse.uses_fragment.extend(wsschemes)
 
-from twisted.internet import reactor, protocol
-from twisted.python import log
 import urllib
 import binascii
 import hashlib
@@ -36,12 +34,18 @@ import base64
 import struct
 import random
 import os
+from pprint import pformat
 from array import array
 from collections import deque
+
+from twisted.internet import reactor, protocol
+from twisted.python import log
+
+import autobahn # need autobahn.version
 from utf8validator import Utf8Validator
 from xormasker import XorMaskerNull, XorMaskerSimple, XorMaskerShifted1
 from httpstatus import *
-import autobahn # need autobahn.version
+from util import Stopwatch
 
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
@@ -338,6 +342,49 @@ def parseHttpHeader(data):
    return (http_status_line, http_headers, http_headers_cnt)
 
 
+class Timings:
+   """
+   Track timings by key.
+   """
+
+   def __init__(self):
+      self._stopwatch = Stopwatch()
+      self._timings = {}
+
+   def track(self, key):
+      """
+      Track elapsed for key.
+      """
+      self._timings[key] = self._stopwatch.elapsed()
+
+   def diff(self, startKey, endKey, format = True):
+      """
+      Get elapsed difference between two previously tracked keys.
+      """
+      d = self._timings[endKey] - self._timings[startKey]
+      if format:
+         if d < 0.00001: # 10us
+            s = "%d ns" % round(d * 1000000000.)
+         elif d < 0.01: # 10ms
+            s = "%d us" % round(d * 1000000.)
+         elif d < 10: # 10s
+            s = "%d ms" % round(d * 1000.)
+         else:
+            s = "%d s" % round(d)
+         return s.rjust(8)
+      else:
+         return d
+
+   def __getitem__(self, key):
+      return self._timings.get(key, None)
+
+   def __iter__(self):
+      return self._timings.__iter__(self)
+
+   def __str__(self):
+      return pformat(self._timings)
+
+
 class WebSocketProtocol(protocol.Protocol):
    """
    A Twisted Protocol class for WebSockets. This class is used by both WebSocket
@@ -590,6 +637,8 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if not self.failedByMe:
          payload = ''.join(self.message_data)
+         if self.trackedTimings:
+            self.trackedTimings.track("onMessage")
          self.onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
 
       self.message_data = None
@@ -957,6 +1006,12 @@ class WebSocketProtocol(protocol.Protocol):
 
       self.logOctets = self.factory.logOctets
       self.logFrames = self.factory.logFrames
+
+      self.trackTimings = self.factory.trackTimings
+      if self.trackTimings:
+         self.trackedTimings = Timings()
+      else:
+         self.trackedTimings = None
 
       self.allowHixie76 = self.factory.allowHixie76
       self.utf8validateIncoming = self.factory.utf8validateIncoming
@@ -1339,6 +1394,8 @@ class WebSocketProtocol(protocol.Protocol):
                   self.utf8validateIncomingCurrentMessage = False
 
                self.data = self.data[1:]
+               if self.trackedTimings:
+                  self.trackedTimings.track("onMessageBegin")
                self.onMessageBegin(1)
 
             ## Hixie close from peer received
@@ -1627,6 +1684,8 @@ class WebSocketProtocol(protocol.Protocol):
             else:
                self.utf8validateIncomingCurrentMessage = False
 
+            if self.trackedTimings:
+               self.trackedTimings.track("onMessageBegin")
             self.onMessageBegin(self.current_frame.opcode)
 
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
@@ -2185,6 +2244,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      if self.trackedTimings:
+         self.trackedTimings.track("sendMessage")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
       if self.websocket_version == 0:
@@ -2818,6 +2879,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## fire handler on derived class
          ##
+         if self.trackedTimings:
+            self.trackedTimings.track("onOpen")
          self.onOpen()
 
          ## process rest, if any
@@ -2938,7 +3001,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                 ## debugging
                 debug = False,
                 debugCodePaths = False,
-                
+
                 externalPort = None):
       """
       Create instance of WebSocket server factory.
@@ -2963,6 +3026,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       self.logOctets = debug
       self.logFrames = debug
+
+      self.trackTimings = False
 
       self.isServer = True
 
@@ -3471,6 +3536,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
          else:
             ## fire handler on derived class
             ##
+            if self.trackedTimings:
+               self.trackedTimings.track("onOpen")
             self.onOpen()
 
          ## process rest, if any
@@ -3534,6 +3601,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       self.logOctets = debug
       self.logFrames = debug
+
+      self.trackTimings = False
 
       self.isServer = False
 
