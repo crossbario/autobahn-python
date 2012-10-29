@@ -84,17 +84,18 @@ class SimpleServerProtocol(WampServerProtocol):
       return threads.deferToThread(self.sum, list)
 
    @exportRpc("asum")
-   def asyncSum(self, list):
+   def asyncSum(self, list, delay):
       ## Simulate a slow function.
       d = defer.Deferred()
-      reactor.callLater(1.123, d.callback, self.sum(list))
+      reactor.callLater(delay, d.callback, self.sum(list))
       return d
 
    @exportRpc("wsum")
-   def workerSum(self, list):
+   def workerSum(self, list, delay):
       ## Execute a slow function on thread from background thread pool.
       def wsum(list):
-         time.sleep(1.123)
+         if delay > 0:
+            time.sleep(delay)
          return self.sum(list)
       return threads.deferToThread(wsum, list)
 
@@ -113,7 +114,7 @@ if __name__ == '__main__':
    factory.trackTimings = True
    listenWS(factory)
 
-   poolSize = 3
+   poolSize = 5
    print "Thread pool size:", poolSize
 
    reactor.suggestThreadPoolSize(poolSize)

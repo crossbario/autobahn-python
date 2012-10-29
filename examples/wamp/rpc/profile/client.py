@@ -40,8 +40,14 @@ class MyClientProtocol(WampClientProtocol):
       self.prefix("calc", "http://example.com/simple/calc#")
 
       yield self.test1()
-      yield self.test2()
-      yield self.test3()
+
+      yield self.test2(1.123)
+      yield self.test3(1.123)
+
+      yield self.test2(0)
+      yield self.test3(0)
+
+      yield self.test4(0)
 
       self.sendClose()
       reactor.stop()
@@ -55,21 +61,29 @@ class MyClientProtocol(WampClientProtocol):
       print s
 
    @inlineCallbacks
-   def test2(self):
-      r = yield self.call("calc:println", "\nStarting test 2 ..\n")
+   def test2(self, delay):
+      r = yield self.call("calc:println", "\nStarting test 2 with delay = %s..\n" % delay)
       s = 0
       for i in xrange(10):
-         s += yield self.call("calc:asum", range(10))
+         s += yield self.call("calc:asum", range(10), delay)
       print s
 
    @inlineCallbacks
-   def test3(self):
-      r = yield self.call("calc:println", "\nStarting test 3 ..\n")
+   def test3(self, delay, n = 10):
+      r = yield self.call("calc:println", "\nStarting test 3 with delay = %s ..\n" % delay)
       d = []
-      for i in xrange(10):
-         d.append(self.call("calc:wsum", range(10)))
+      for i in xrange(n):
+         d.append(self.call("calc:wsum", range(10), delay))
       r = yield gatherResults(d).addCallback(lambda l: self.println(sum(l)))
 
+   @inlineCallbacks
+   def test4(self, delay, n = 10):
+      r = yield self.call("calc:println", "\nStarting test 4 with delay = %s ..\n" % delay)
+      d = []
+      for i in xrange(n):
+         d.append(self.call("calc:sum", range(10)))
+         d.append(self.call("calc:wsum", range(10), delay))
+      r = yield gatherResults(d).addCallback(lambda l: self.println(sum(l)))
 
 if __name__ == '__main__':
    log.startLogging(sys.stdout)
