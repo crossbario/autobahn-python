@@ -997,6 +997,21 @@ class WebSocketProtocol(protocol.Protocol):
          return False
 
 
+   def setTrackTimings(self, enable):
+      """
+      Enable/disable tracking of detailed timings.
+
+      :param enable: Turn time tracking on/off.
+      :type enable: bool
+      """
+      if not hasattr(self, 'trackTimings') or self.trackTimings != enable:
+         self.trackTimings = enable
+         if self.trackTimings:
+            self.trackedTimings = Timings()
+         else:
+            self.trackedTimings = None
+
+
    def connectionMade(self):
       """
       This is called by Twisted framework when a new TCP connection has been established
@@ -1014,11 +1029,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.logOctets = self.factory.logOctets
       self.logFrames = self.factory.logFrames
 
-      self.trackTimings = self.factory.trackTimings
-      if self.trackTimings:
-         self.trackedTimings = Timings()
-      else:
-         self.trackedTimings = None
+      self.setTrackTimings(self.factory.trackTimings)
 
       self.allowHixie76 = self.factory.allowHixie76
       self.utf8validateIncoming = self.factory.utf8validateIncoming

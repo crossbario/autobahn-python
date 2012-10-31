@@ -297,6 +297,10 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       self.session_id = newid()
 
+      ## include traceback as error detail for RPC errors with
+      ## no error URI - that is errors returned with URI_WAMP_ERROR_GENERIC
+      self.includeTraceback = True
+
       msg = [WampProtocol.MESSAGE_TYPEID_WELCOME,
              self.session_id,
              WampProtocol.WAMP_PROTOCOL_VERSION,
@@ -747,23 +751,35 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       INTERNAL METHOD! Marshal and send a RPC error result.
       """
       try:
-
+         ## get error args and len
+         ##
          eargs = call.error.value.args
          leargs = len(eargs)
-         traceb = error.getTraceback()
 
+         ## error provides no args at all
+         ##
          if leargs == 0:
             erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
             errordesc = WampProtocol.DESC_WAMP_ERROR_GENERIC
-            errordetails = None
+            if self.includeTraceback:
+               errordetails = call.error.getTraceback().splitlines()
+            else:
+               errordetails = None
 
+         ## error only provides description
+         ##
          elif leargs == 1:
             if type(eargs[0]) not in [str, unicode]:
                raise Exception("invalid type %s for errorDesc" % type(eargs[0]))
             erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
             errordesc = eargs[0]
-            errordetails = None
+            if self.includeTraceback:
+               errordetails = call.error.getTraceback().splitlines()
+            else:
+               errordetails = None
 
+         ## error provides URI, description and optional details
+         ##
          elif leargs in [2, 3]:
             if type(eargs[0]) not in [str, unicode]:
                raise Exception("invalid type %s for errorUri" % type(eargs[0]))
@@ -776,31 +792,43 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             else:
                errordetails = None
 
+         ## error provides illegal number of args
+         ##
          else:
             raise Exception("invalid args length %d for exception" % leargs)
 
+         ## assemble WAMP RPC error message
+         ##
          if errordetails is not None:
-            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(erroruri), errordesc, errordetails]
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR,
+                   call.callid,
+                   self.prefixes.shrink(erroruri),
+                   errordesc,
+                   errordetails]
          else:
-            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(erroruri), errordesc]
+            msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR,
+                   call.callid,
+                   self.prefixes.shrink(erroruri),
+                   errordesc]
 
+         ## serialize message. this can fail if errorDetails is not serializable
+         ##
          try:
             rmsg = self.factory._serialize(msg)
          except Exception, e:
-            raise Exception("invalid object for errorDetails - not JSON serializable (%s)" % str(e))
-
-         if self.debugApp:
-            log.msg("application error")
-            log.msg(traceb)
-            log.msg(msg)
+            raise Exception("invalid object for errorDetails - not serializable (%s)" % str(e))
 
       except Exception, e:
+         ## something bad happened during error processing itself
 
-         if self.debugWamp:
-            log.err(str(e))
-            log.err(error.getTraceback())
+         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR,
+                call.callid,
+                self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL),
+                str(e)]
 
-         msg = [WampProtocol.MESSAGE_TYPEID_CALL_ERROR, call.callid, self.prefixes.shrink(WampProtocol.URI_WAMP_ERROR_INTERNAL), WampProtocol.DESC_WAMP_ERROR_INTERNAL]
+         if self.includeTraceback:
+            msg.append(call.error.getTraceback().splitlines())
+
          rmsg = self.factory._serialize(msg)
 
       finally:
@@ -1190,14 +1218,26 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
             del self.sessionsToProto[session_id]
 
 
+   def sessionIdToProto(self, sessionId):
+      """
+      Map WAMP session ID to connected protocol instance (object of type WampServerProtocol).
+
+      :param sessionId: WAMP session ID to be mapped.
+      :type sessionId: str
+
+      :returns obj -- WampServerProtocol instance or None.
+      """
+      return self.sessionsToProto.get(sessionId, None)
+
+
    def sessionIdsToProtos(self, sessionIds):
       """
-      Map session IDs to connected client protocol instances.
+      Map WAMP session IDs to connected protocol instances (objects of type WampServerProtocol).
 
       :param sessionIds: List of session IDs to be mapped.
       :type sessionIds: list of str
 
-      :returns list of WampServerProtocol instances -- List of protocol instances corresponding to the session IDs.
+      :returns list -- List of WampServerProtocol instances corresponding to the WAMP session IDs.
       """
       protos = []
       for s in sessionIds:
@@ -1206,14 +1246,26 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       return protos
 
 
+   def protoToSessionId(self, proto):
+      """
+      Map connected protocol instance (object of type WampServerProtocol) to WAMP session ID.
+
+      :param proto: Instance of WampServerProtocol to be mapped.
+      :type proto: obj of WampServerProtocol
+
+      :returns str -- WAMP session ID or None.
+      """
+      return self.protoToSessions.get(proto, None)
+
+
    def protosToSessionIds(self, protos):
       """
-      Map connected client protocol instances to session IDs.
+      Map connected protocol instances (objects of type WampServerProtocol) to WAMP session IDs.
 
       :param protos: List of instances of WampServerProtocol to be mapped.
       :type protos: list of WampServerProtocol
 
-      :returns list of str -- List of session IDs corresponding to the protos.
+      :returns list -- List of WAMP session IDs corresponding to the protos.
       """
       sessionIds = []
       for p in protos:
