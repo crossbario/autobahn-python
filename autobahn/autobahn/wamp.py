@@ -750,6 +750,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       INTERNAL METHOD! Marshal and send a RPC error result.
       """
+      killsession = False
       try:
          ## get error args and len
          ##
@@ -778,9 +779,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
             else:
                errordetails = None
 
-         ## error provides URI, description and optional details
+         ## error provides URI, description, optional details and optional kill-session flag
          ##
-         elif leargs in [2, 3]:
+         elif leargs in [2, 3, 4]:
             if type(eargs[0]) not in [str, unicode]:
                raise Exception("invalid type %s for errorUri" % type(eargs[0]))
             erroruri = eargs[0]
@@ -791,6 +792,13 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                errordetails = eargs[2] # this must be JSON serializable .. if not, we get exception later in sendMessage
             else:
                errordetails = None
+            if leargs > 3:
+               if type(eargs[3]) not in [bool, types.NoneType]:
+                  raise Exception("invalid type %s for killSession" % type(eargs[3]))
+               else:
+                  killsession = eargs[3]
+            else:
+               killsession = False
 
          ## error provides illegal number of args
          ##
@@ -837,6 +845,9 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          if self.trackTimings:
             self.trackedTimings.track("onAfterSendCallError")
          self.onAfterSendCallError(rmsg, call)
+
+         if killsession:
+            self.sendClose(3000, "killing WAMP session upon request by application exception")
 
 
    def onMessage(self, msg, binary):
