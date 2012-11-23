@@ -18,7 +18,7 @@
 
 import sys
 
-from twisted.internet import reactor
+from twisted.internet import reactor, ssl
 from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
@@ -27,14 +27,17 @@ from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
                                listenWS
 
+from autobahn.resource import WebSocketResource
+
 
 class PingServerProtocol(WebSocketServerProtocol):
 
    def doPing(self):
-      self.sendPing()
-      self.factory.pingsSent[self.peerstr] += 1
-      print self.peerstr, "PING Sent", self.factory.pingsSent[self.peerstr]
-      reactor.callLater(1, self.doPing)
+      if self.run:
+         self.sendPing()
+         self.factory.pingsSent[self.peerstr] += 1
+         print self.peerstr, "PING Sent", self.factory.pingsSent[self.peerstr]
+         reactor.callLater(1, self.doPing)
 
    def onPong(self, payload):
       self.factory.pongsReceived[self.peerstr] += 1
@@ -43,7 +46,11 @@ class PingServerProtocol(WebSocketServerProtocol):
    def onOpen(self):
       self.factory.pingsSent[self.peerstr] = 0
       self.factory.pongsReceived[self.peerstr] = 0
+      self.run = True
       self.doPing()
+
+   def onClose(self, wasClean, code, reason):
+      self.run = False
 
 
 class PingServerFactory(WebSocketServerFactory):
@@ -58,13 +65,22 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   factory = PingServerFactory("ws://localhost:9000", debug = 'debug' in sys.argv)
+   contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
+                                                     'keys/server.crt')
+
+   factory = PingServerFactory("wss://localhost:9000",
+                               debug = 'debug' in sys.argv)
 
    factory.protocol = PingServerProtocol
-   listenWS(factory)
+   listenWS(factory, contextFactory)
 
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
+   resource = WebSocketResource(factory)
+
+   root = File(".")
+   root.putChild("ws", resource)
+   site = Site(root)
+
+   reactor.listenSSL(8080, site, contextFactory)
+   #reactor.listenTCP(8080, site)
 
    reactor.run()

@@ -10,9 +10,9 @@
 
             var wsuri;
             if (window.location.protocol === "file:") {
-               wsuri = "ws://127.0.0.1:9000";
+               wsuri = "wss://127.0.0.1:9000/ws";
             } else {
-               wsuri = "ws://" + window.location.hostname + ":9000";
+               wsuri = "wss://" + window.location.hostname + ":9000/ws";
             }
 
             if ("WebSocket" in window) {
