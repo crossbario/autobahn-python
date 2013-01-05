@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -38,9 +38,23 @@ Source Code:
    * https://github.com/tavendo/AutobahnPython
 """
 
+## get version string from "autobahn/_version.py"
+## See: http://stackoverflow.com/a/7071358/884770
+##
+import re
+VERSIONFILE="autobahn/_version.py"
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+   verstr = mo.group(1)
+else:
+   raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+
+
 setup (
    name = 'autobahn',
-   version = '0.5.13',
+   version = verstr,
    description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',
