@@ -41,7 +41,7 @@ from collections import deque
 from twisted.internet import reactor, protocol
 from twisted.python import log
 
-import autobahn # need autobahn.version
+from _version import __version__
 from utf8validator import Utf8Validator
 from xormasker import XorMaskerNull, XorMaskerSimple, XorMaskerShifted1
 from httpstatus import *
@@ -2994,7 +2994,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       </p>
    </body>
 </html>
-""" % (redirect, autobahn.version)
+""" % (redirect, __version__)
       self.sendHtml(html)
 
 
@@ -3014,7 +3014,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                 ## WebSockect session parameters
                 url = None,
                 protocols = [],
-                server = "AutobahnPython/%s" % autobahn.version,
+                server = "AutobahnPython/%s" % __version__,
 
                 ## debugging
                 debug = False,
@@ -3591,7 +3591,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                 url = None,
                 origin = None,
                 protocols = [],
-                useragent = "AutobahnPython/%s" % autobahn.version,
+                useragent = "AutobahnPython/%s" % __version__,
 
                 ## debugging
                 debug = False,

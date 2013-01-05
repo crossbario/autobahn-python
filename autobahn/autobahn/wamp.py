@@ -30,8 +30,7 @@ from twisted.internet.defer import Deferred, \
                                    returnValue, \
                                    inlineCallbacks
 
-import autobahn
-
+from _version import __version__
 from websocket import WebSocketProtocol, HttpException, Timings
 from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
@@ -304,7 +303,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       msg = [WampProtocol.MESSAGE_TYPEID_WELCOME,
              self.session_id,
              WampProtocol.WAMP_PROTOCOL_VERSION,
-             "Autobahn/%s" % autobahn.version]
+             "Autobahn/%s" % __version__]
       o = self.factory._serialize(msg)
       self.sendMessage(o)
 
