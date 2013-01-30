@@ -1011,6 +1011,11 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             self.trackedTimings = None
 
+   def doTrack(self, msg):
+      if not hasattr(self, 'trackTimings') or not self.trackTimings:
+         return
+      self.trackedTimings.track(msg)
+            
 
    def connectionMade(self):
       """
