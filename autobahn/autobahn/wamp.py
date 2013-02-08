@@ -1741,7 +1741,7 @@ class WampCraProtocol(WampProtocol):
    procedure URIs and signatures.
    """
 
-   def authSignature(self, authChallenge, authSecret = None):
+   def authSignature(self, authChallenge, authSecret = None, authSalt=None):
       """
       Compute the authentication signature from an authentication challenge and a secret.
 
@@ -1754,10 +1754,12 @@ class WampCraProtocol(WampProtocol):
       """
       if authSecret is None:
          authSecret = ""
+      if authSalt is not None:
+          h = hmac.new(authSecret, authSalt, hashlib.sha256)
+          authSecret = binascii.b2a_base64(h.digest()).strip()
       h = hmac.new(authSecret, authChallenge, hashlib.sha256)
       sig = binascii.b2a_base64(h.digest()).strip()
       return sig
-
 
 
 class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
@@ -1784,7 +1786,12 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
 
       def _onAuthChallenge(challenge):
          if authKey is not None:
-            sig = self.authSignature(challenge, authSecret)
+            challengeObj =  self.factory._unserialize(challenge)
+            if 'serverExtra' in challengeObj:
+                authSalt = challengeObj['serverExtra']
+                sig = self.authSignature(challenge, authSecret, authSalt)
+            else:
+                sig = self.authSignature(challenge, authSecret)
          else:
             sig = None
          d = self.call(WampProtocol.URI_WAMP_PROCEDURE + "auth", sig)
@@ -2008,6 +2015,8 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
                res = {'permissions': {}}
                res['permissions'] = {'pubsub': [], 'rpc': []}
             info['permissions'] = res['permissions']
+            if 'serverExtra' in res:
+                info['serverExtra'] = res['serverExtra']
 
             if authKey:
                ## authenticated session
