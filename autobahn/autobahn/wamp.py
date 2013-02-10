@@ -1018,8 +1018,8 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
    Twisted protocol used by default for WAMP servers.
    """
 
-   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False):
-      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
+   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False, externalPort = None):
+      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths, externalPort = externalPort)
       self.debugWamp = debugWamp
       self.debugApp = debugApp
 
