@@ -64,7 +64,7 @@ class MyServerProtocol(WampCraServerProtocol):
       ## return permissions which will be granted for the auth key
       ## when the authentication succeeds
       return {'permissions': self.PERMISSIONS.get(authKey, None),
-              'serverExtra': "RANDOM SALT" }
+              'authsalt': "RANDOM SALT" }
 
 
    def getAuthSecret(self, authKey):

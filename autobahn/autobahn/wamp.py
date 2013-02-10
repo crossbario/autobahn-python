@@ -1787,8 +1787,8 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       def _onAuthChallenge(challenge):
          if authKey is not None:
             challengeObj =  self.factory._unserialize(challenge)
-            if 'serverExtra' in challengeObj:
-                authSalt = challengeObj['serverExtra']
+            if 'authsalt' in challengeObj:
+                authSalt = challengeObj['authsalt']
                 sig = self.authSignature(challenge, authSecret, authSalt)
             else:
                 sig = self.authSignature(challenge, authSecret)
@@ -2015,8 +2015,8 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
                res = {'permissions': {}}
                res['permissions'] = {'pubsub': [], 'rpc': []}
             info['permissions'] = res['permissions']
-            if 'serverExtra' in res:
-                info['serverExtra'] = res['serverExtra']
+            if 'authsalt' in res:
+                info['authsalt'] = res['authsalt']
 
             if authKey:
                ## authenticated session
