@@ -3438,7 +3438,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ## FIXME: handle authentication required
 
             if len(sl) > 2:
-               reason = " - %s" % sl[2].strip()
+               reason = " - %s" % ''.join(sl[2:])
             else:
                reason = ""
             return self.failHandshake("WebSockets connection upgrade failed (%d%s)" % (status_code, reason))
