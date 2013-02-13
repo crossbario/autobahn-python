@@ -36,6 +36,7 @@ from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
+from pbkdf2 import pbkdf2_bin
 from prefixmap import PrefixMap
 from util import utcstr, utcnow, parseutc, newid
 
@@ -1741,7 +1742,7 @@ class WampCraProtocol(WampProtocol):
    procedure URIs and signatures.
    """
 
-   def authSignature(self, authChallenge, authSecret = None, authSalt=None):
+   def authSignature(self, authChallenge, authSecret = None, authExtra=None):
       """
       Compute the authentication signature from an authentication challenge and a secret.
 
@@ -1749,14 +1750,20 @@ class WampCraProtocol(WampProtocol):
       :type authChallenge: str
       :param authSecret: The authentication secret.
       :type authSecret: str
+      :authExtra: Extra authentication information for salting the secret. (salt, keylen,
+              iterations)
+      :type authExtra: dict
 
       :returns str -- The authentication signature.
       """
       if authSecret is None:
          authSecret = ""
-      if authSalt is not None:
-          h = hmac.new(authSecret, authSalt, hashlib.sha256)
-          authSecret = binascii.b2a_base64(h.digest()).strip()
+      if authExtra is not None:
+          authSalt = authExtra.get('salt')
+          keylen = authExtra.get('keylen', 32)
+          iterations = authExtra.get('iterations', 10000)
+          b = pbkdf2_bin(authSecret, authSalt, iterations, keylen, hashlib.sha256)
+          authSecret = binascii.b2a_base64(b).strip()
       h = hmac.new(authSecret, authChallenge, hashlib.sha256)
       sig = binascii.b2a_base64(h.digest()).strip()
       return sig
@@ -1787,9 +1794,9 @@ class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
       def _onAuthChallenge(challenge):
          if authKey is not None:
             challengeObj =  self.factory._unserialize(challenge)
-            if 'authsalt' in challengeObj:
-                authSalt = challengeObj['authsalt']
-                sig = self.authSignature(challenge, authSecret, authSalt)
+            if 'authextra' in challengeObj:
+                authExtra = challengeObj['authextra']
+                sig = self.authSignature(challenge, authSecret, authExtra)
             else:
                 sig = self.authSignature(challenge, authSecret)
          else:
@@ -2015,8 +2022,8 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
                res = {'permissions': {}}
                res['permissions'] = {'pubsub': [], 'rpc': []}
             info['permissions'] = res['permissions']
-            if 'authsalt' in res:
-                info['authsalt'] = res['authsalt']
+            if 'authextra' in res:
+                info['authextra'] = res['authextra']
 
             if authKey:
                ## authenticated session
