@@ -37,7 +37,7 @@ class MyServerProtocol(WampCraServerProtocol):
    """
 
    ## our pseudo user/permissions database
-   SECRETS = {'foobar': 'secret'}
+   SECRETS = {'foobar': 'tx5xMrgXtMuatZmkJZ0CuesYLSE6qCxmXDgv6q7rDIo='}
    PERMISSIONS = {'foobar': {'pubsub': [{'uri': 'http://example.com/topics/',
                                          'prefix': True,
                                          'pub': True,
@@ -63,7 +63,10 @@ class MyServerProtocol(WampCraServerProtocol):
    def getAuthPermissions(self, authKey, authExtra):
       ## return permissions which will be granted for the auth key
       ## when the authentication succeeds
-      return {'permissions': self.PERMISSIONS.get(authKey, None)}
+      return {'permissions': self.PERMISSIONS.get(authKey, None),
+              'authextra': {'salt': "RANDOM SALT",
+                            'keylen': 32,
+                            'iterations': 10000}}
 
 
    def getAuthSecret(self, authKey):

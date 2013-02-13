@@ -44,12 +44,13 @@ class MyClientProtocol(WampClientProtocol):
 
    def onSessionOpen(self):
 
-      self.prefix("event", "http://resource.example.com/schema/event#")
+      self.prefix("event", "http://example.com/event/")
 
-      self.subscribe("event:foobar", self.onFoobar)
+      self.subscribe("event:foobar1", self.onFoobar)
+      self.subscribe("event:foobar2", self.onFoobar)
 
-      self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
-      self.publish("event:foobar", {"name": "foo", "value": "bar", "num": 666})
+      self.publish("event:foobar1", {"count": 666})
+      self.publish("event:foobar2", {"count": 67})
       self.publish("event:foobar-extended", {"name": "foo", "value": "bar", "num": 42})
       self.publish("event:foobar-limited", {"name": "foo", "value": "bar", "num": 23})
 
