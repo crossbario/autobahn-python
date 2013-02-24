@@ -18,11 +18,24 @@ You can use AutobahnPython to create clients and servers speaking either plain W
 
 Using WAMP you can build applications around **asynchronous RPC** and **PubSub** messaging patterns.
 
+
 Dependencies
 ------------
 
 AutobahnPython is designed to work with [Python](http://www.python.org/) (latest versions of 2.6 or 2.7) and [PyPy](http://pypy.org/) (1.9 or later).
 The only dependency is [Twisted](http://twistedmatrix.com) (11.1 or later).
+
+
+Performance
+-----------
+
+AutobahnPython is portable, well tuned code. You can further accelerate performance by
+
+* Run your whole application under [PyPy](http://pypy.org/)
+* Accelerate hotspots via [`wsaccel`](https://github.com/methane/wsaccel)
+
+AutobahnPython will *automatically* run [Cython](http://cython.org/) versions of UTF8 validation and WebSocket frame masking/demasking when `wsaccel` is available.
+
 
 Where to go
 -----------
