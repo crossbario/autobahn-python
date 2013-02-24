@@ -43,7 +43,7 @@ from twisted.python import log
 
 from _version import __version__
 from utf8validator import Utf8Validator
-from xormasker import XorMaskerNull, XorMaskerSimple, XorMaskerShifted1
+from xormasker import XorMaskerNull, createXorMasker
 from httpstatus import *
 from util import Stopwatch
 
@@ -451,10 +451,6 @@ class WebSocketProtocol(protocol.Protocol):
 
    QUEUED_WRITE_DELAY = 0.00001
    """For synched/chopped writes, this is the reactor reentry delay in seconds."""
-
-   PAYLOAD_LEN_XOR_BREAKEVEN = 128
-   """Tuning parameter which chooses XORer used for masking/unmasking based on
-   payload length."""
 
    MESSAGE_TYPE_TEXT = 1
    """WebSockets text message type (UTF-8 payload)."""
@@ -1015,7 +1011,7 @@ class WebSocketProtocol(protocol.Protocol):
       if not hasattr(self, 'trackTimings') or not self.trackTimings:
          return
       self.trackedTimings.track(msg)
-            
+
 
    def connectionMade(self):
       """
@@ -1613,10 +1609,7 @@ class WebSocketProtocol(protocol.Protocol):
                   i += 4
 
                if frame_masked and frame_payload_len > 0 and self.applyMask:
-                  if frame_payload_len < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
-                     self.current_frame_masker = XorMaskerSimple(frame_mask)
-                  else:
-                     self.current_frame_masker = XorMaskerShifted1(frame_mask)
+                  self.current_frame_masker = createXorMasker(frame_mask, frame_payload_len)
                else:
                   self.current_frame_masker = XorMaskerNull()
 
@@ -1852,10 +1845,7 @@ class WebSocketProtocol(protocol.Protocol):
          ## mask frame payload
          ##
          if l > 0 and self.applyMask:
-            if l < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
-               masker = XorMaskerSimple(mask)
-            else:
-               masker = XorMaskerShifted1(mask)
+            masker = createXorMasker(mask, l)
             plm = masker.process(pl)
          else:
             plm = pl
@@ -2105,10 +2095,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## payload masker
       ##
       if self.send_message_frame_mask and length > 0 and self.applyMask:
-         if length < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
-            self.send_message_frame_masker = XorMaskerSimple(self.send_message_frame_mask)
-         else:
-            self.send_message_frame_masker = XorMaskerShifted1(self.send_message_frame_mask)
+         self.send_message_frame_masker = createXorMasker(self.send_message_frame_mask, length)
       else:
          self.send_message_frame_masker = XorMaskerNull()
 
@@ -2387,10 +2374,8 @@ class PreparedMessage:
          mask = struct.pack("!I", random.getrandbits(32))
          if l == 0:
             plm = payload
-         elif l < WebSocketProtocol.PAYLOAD_LEN_XOR_BREAKEVEN:
-            plm = XorMaskerSimple(mask).process(payload)
          else:
-            plm = XorMaskerShifted1(mask).process(payload)
+            plm = createXorMasker(mask, l).process(payload)
       else:
          b1 = 0
          mask = ""
