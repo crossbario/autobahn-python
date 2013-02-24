@@ -72,7 +72,16 @@ class MyServerProtocol(WampCraServerProtocol):
    def getAuthSecret(self, authKey):
       ## return the auth secret for the given auth key or None when the auth key
       ## does not exist
-      return self.SECRETS.get(authKey, None)
+      secret = self.SECRETS.get(authKey, None)
+      if False:
+         # we may return the secret as a string ..
+         return secret
+      else:
+         # .. or return a Deferred that when fires provides the secret as a string.
+         # This can be used i.e. when you retrieve the secret from a (real) database.
+         d = defer.Deferred()
+         d.callback(secret)
+         return d
 
 
    def onAuthenticated(self, authKey, perms):
