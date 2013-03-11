@@ -1479,7 +1479,34 @@ class WampCraProtocol(WampProtocol):
    procedure URIs and signatures.
    """
 
-   def authSignature(self, authChallenge, authSecret = None, authExtra=None):
+   def deriveKey(secret, extra = None):
+      """
+      Computes a derived cryptographic key from a password according to PBKDF2
+      http://en.wikipedia.org/wiki/PBKDF2.
+
+      The function will only return a derived key if at least 'salt' is
+      present in the 'extra' dictionary. The complete set of attribtues
+      that can be set in 'extra':
+
+         salt: The salt value to be used.
+         iterations: Number of iterations of derivation algorithm to run.
+         keylen: Key length to derive.
+
+      :returns str -- The derived key or the original secret.
+      """
+      if type(extra) == dict and extra.has_key('salt'):
+         salt = str(extra['salt'])
+         iterations = int(extra.get('iterations', 10000))
+         keylen = int(extra.get('keylen', 32))
+         b = pbkdf2_bin(secret, salt, iterations, keylen, hashlib.sha256)
+         return binascii.b2a_base64(b).strip()
+      else:
+         return secret
+
+   deriveKey = staticmethod(deriveKey)
+
+
+   def authSignature(self, authChallenge, authSecret = None, authExtra = None):
       """
       Compute the authentication signature from an authentication challenge and a secret.
 
@@ -1495,12 +1522,7 @@ class WampCraProtocol(WampProtocol):
       """
       if authSecret is None:
          authSecret = ""
-      if authExtra is not None:
-          authSalt = authExtra.get('salt')
-          keylen = authExtra.get('keylen', 32)
-          iterations = authExtra.get('iterations', 10000)
-          b = pbkdf2_bin(authSecret, authSalt, iterations, keylen, hashlib.sha256)
-          authSecret = binascii.b2a_base64(b).strip()
+      authSecret = WampCraProtocol.deriveKey(authSecret, authExtra)
       h = hmac.new(authSecret, authChallenge, hashlib.sha256)
       sig = binascii.b2a_base64(h.digest()).strip()
       return sig
@@ -2300,5 +2322,3 @@ class CallErrorHandler(Handler):
       else:
          if self.proto.debugWamp:
             log.msg("callid not found for received call error message")
-
-
