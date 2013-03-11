@@ -26,6 +26,7 @@ from twisted.web.static import File
 from autobahn.websocket import listenWS
 
 from autobahn.wamp import exportRpc, \
+                          WampCraProtocol, \
                           WampServerFactory, \
                           WampCraServerProtocol
 
@@ -35,9 +36,22 @@ class MyServerProtocol(WampCraServerProtocol):
    """
    Authenticating WAMP server using WAMP-Challenge-Response-Authentication ("WAMP-CRA").
    """
-
    ## our pseudo user/permissions database
-   SECRETS = {'foobar': 'tx5xMrgXtMuatZmkJZ0CuesYLSE6qCxmXDgv6q7rDIo='}
+
+   ## auth extra sent by server
+   ##
+   if False:
+      ## when using salted WAMP-CRA, we send salt info ..
+      AUTHEXTRA = {'salt': "RANDOM SALT", 'keylen': 32, 'iterations': 10000}
+   else:
+      AUTHEXTRA = None
+
+   ## secrets by authkey
+   ##
+   SECRETS = {'foobar': WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
+
+   ## permissions by authkey
+   ##
    PERMISSIONS = {'foobar': {'pubsub': [{'uri': 'http://example.com/topics/',
                                          'prefix': True,
                                          'pub': True,
@@ -64,9 +78,7 @@ class MyServerProtocol(WampCraServerProtocol):
       ## return permissions which will be granted for the auth key
       ## when the authentication succeeds
       return {'permissions': self.PERMISSIONS.get(authKey, None),
-              'authextra': {'salt': "RANDOM SALT",
-                            'keylen': 32,
-                            'iterations': 10000}}
+              'authextra': self.AUTHEXTRA}
 
 
    def getAuthSecret(self, authKey):
