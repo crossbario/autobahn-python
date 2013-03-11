@@ -2137,12 +2137,12 @@ class CallHandler(Handler):
       # errordetails must be JSON serializable .. if not, we get exception
       # later in sendMessage
       errordetails = (eargs[2]
-                      if num_args >= 2
+                      if num_args >= 3
                       else (call.error.getTraceback().splitlines()
                             if self.proto.includeTraceback
                             else None))
       killsession = (eargs[3]
-                     if num_args == 4
+                     if num_args >= 4
                      else False)
 
       if type(erroruri) not in [str, unicode]:
