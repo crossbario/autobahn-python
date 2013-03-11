@@ -21,11 +21,9 @@
 ##
 try:
    from wsaccel.xormask import XorMaskerNull, createXorMasker
-   print "Using XOR masker from wsaccel"
 
 except:
    ## fallback to pure Python implementation
-   print "Using builtin XOR masker"
 
    from array import array
 

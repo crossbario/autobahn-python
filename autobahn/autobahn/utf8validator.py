@@ -32,11 +32,9 @@
 ##
 try:
    from wsaccel.utf8validator import Utf8Validator
-   print "Using UTF8 validator from wsaccel"
 
 except:
    ## fallback to pure Python implementation
-   print "Using builtin UTF8 validator"
 
    class Utf8Validator:
       """
