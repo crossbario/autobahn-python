@@ -5,7 +5,8 @@
       <title>WAMP Challenge Response Authentication</title>
 
       <!-- include AutobahnJS .. that's all you need -->
-      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+      <!--<script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>-->
+      <script src="autobahn.js"></script>
 
       <!-- optionally, you can use AutobahnJS with jQuery Deferreds ..
       <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
@@ -72,8 +73,11 @@
          function onConnect1() {
             session.authreq("foobar").then(function (challenge) {
 
+               // derive secret if salted WAMP-CRA
+               var secret = ab.deriveKey("secret", JSON.parse(challenge).authextra);
+
                // direct sign or AJAX to 3rd party
-               var signature = session.authsign(challenge, "secret");
+               var signature = session.authsign(challenge, secret);
 
                session.auth(signature).then(onAuth, ab.log);
             }, ab.log);

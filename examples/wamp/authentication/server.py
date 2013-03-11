@@ -40,15 +40,19 @@ class MyServerProtocol(WampCraServerProtocol):
 
    ## auth extra sent by server
    ##
-   if False:
+   if True:
       ## when using salted WAMP-CRA, we send salt info ..
-      AUTHEXTRA = {'salt': "RANDOM SALT", 'keylen': 32, 'iterations': 10000}
+      AUTHEXTRA = {'salt': "RANDOM SALT", 'keylen': 32, 'iterations': 1000}
    else:
       AUTHEXTRA = None
 
    ## secrets by authkey
    ##
    SECRETS = {'foobar': WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
+
+   print "Auth Extra/Secrets"
+   print AUTHEXTRA
+   print SECRETS
 
    ## permissions by authkey
    ##
