@@ -17,7 +17,10 @@
 ###############################################################################
 
 import sys
+
 from twisted.internet import reactor
+from twisted.python import log
+
 from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
                                connectWS
@@ -42,9 +45,18 @@ if __name__ == '__main__':
       print "Need the WebSocket server address, i.e. ws://localhost:9000"
       sys.exit(1)
 
-   factory = WebSocketClientFactory(sys.argv[1])
+   if len(sys.argv) > 2 and sys.argv[2] == 'debug':
+      log.startLogging(sys.stdout)
+      debug = True
+   else:
+      debug = False
+
+   factory = WebSocketClientFactory(sys.argv[1],
+                                    debug = debug,
+                                    debugCodePaths = debug)
+
    # uncomment to use Hixie-76 protocol
-   factory.setProtocolOptions(allowHixie76 = True, version = 0)
+   #factory.setProtocolOptions(allowHixie76 = True, version = 0)
    factory.protocol = EchoClientProtocol
    connectWS(factory)
 

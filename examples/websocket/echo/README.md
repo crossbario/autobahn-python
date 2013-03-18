@@ -22,5 +22,10 @@ This will show up all WAMP messages exchanged between clients and server.
 
 To run the Python client, do
 
-    python client.py
+    python client.py ws://127.0.0.1:9000
+
+To activate debug output on the client, start it
+
+    python client.py ws://127.0.0.1:9000 debug
+
 
