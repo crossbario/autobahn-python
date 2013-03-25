@@ -27,4 +27,5 @@ import xormasker
 import websocket
 import resource
 import prefixmap
+import subscriptionmap
 import wamp

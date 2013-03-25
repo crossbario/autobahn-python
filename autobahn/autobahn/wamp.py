@@ -38,6 +38,7 @@ from websocket import WebSocketServerFactory, WebSocketServerProtocol
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from pbkdf2 import pbkdf2_bin
 from prefixmap import PrefixMap
+from subscriptionmap import SubscriptionMap
 from util import utcstr, utcnow, parseutc, newid
 
 
@@ -874,22 +875,11 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       pass
 
 
-   def _subscribeClient(self, proto, topicUri, options):
+   def _subscribeClient(self, proto, topicUri, options = None):
       """
       Called from proto to subscribe client for topic.
       """
-      if not self.subscriptions.has_key(topicUri):
-         self.subscriptions[topicUri] = set()
-         if self.debugWamp:
-            log.msg("subscriptions map created for topic %s" % topicUri)
-      if not proto in self.subscriptions[topicUri]:
-         self.subscriptions[topicUri].add(proto)
-         if self.debugWamp:
-            log.msg("subscribed peer %s on topic %s" % (proto.peerstr, topicUri))
-         self.onClientSubscribed(proto, topicUri, options)
-      else:
-         if self.debugWamp:
-            log.msg("peer %s already subscribed on topic %s" % (proto.peerstr, topicUri))
+      self.subscriptions.subscribe(proto, topicUri, options)
 
 
    def onClientUnsubscribed(self, proto, topicUri):
@@ -908,32 +898,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       """
       Called from proto to unsubscribe client from topic.
       """
-      if topicUri:
-         if self.subscriptions.has_key(topicUri) and proto in self.subscriptions[topicUri]:
-            self.subscriptions[topicUri].discard(proto)
-            if self.debugWamp:
-               log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicUri))
-            if len(self.subscriptions[topicUri]) == 0:
-               del self.subscriptions[topicUri]
-               if self.debugWamp:
-                  log.msg("topic %s removed from subscriptions map - no one subscribed anymore" % topicUri)
-            self.onClientUnsubscribed(proto, topicUri)
-         else:
-            if self.debugWamp:
-               log.msg("peer %s not subscribed on topic %s" % (proto.peerstr, topicUri))
-      else:
-         for topicUri, subscribers in self.subscriptions.items():
-            if proto in subscribers:
-               subscribers.discard(proto)
-               if self.debugWamp:
-                  log.msg("unsubscribed peer %s from topic %s" % (proto.peerstr, topicUri))
-               if len(subscribers) == 0:
-                  del self.subscriptions[topicUri]
-                  if self.debugWamp:
-                     log.msg("topic %s removed from subscriptions map - no one subscribed anymore" % topicUri)
-               self.onClientUnsubscribed(proto, topicUri)
-         if self.debugWamp:
-            log.msg("unsubscribed peer %s from all topics" % (proto.peerstr))
+      self.subscriptions.unsubscribe(proto, topicUri)
 
 
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
@@ -959,7 +924,9 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
       d = Deferred()
 
-      if self.subscriptions.has_key(topicUri) and len(self.subscriptions[topicUri]) > 0:
+      subscribers = self.subscriptions.getSubscribers(topicUri)
+
+      if len(subscribers) > 0:
 
          ## FIXME: this might break ordering of event delivery from a
          ## receiver perspective. We might need to have send queues
@@ -968,9 +935,9 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
          ## However, see http://twistedmatrix.com/trac/ticket/1396
 
          if eligible is not None:
-            subscrbs = set(eligible) & self.subscriptions[topicUri]
+            subscrbs = set(eligible) & subscribers
          else:
-            subscrbs = self.subscriptions[topicUri]
+            subscrbs = subscribers
 
          if len(exclude) > 0:
             recvs = subscrbs - set(exclude)
@@ -1129,7 +1096,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       """
       if self.debugWamp:
          log.msg("WampServerFactory starting")
-      self.subscriptions = {}
+      self.subscriptions = SubscriptionMap(self.onClientSubscribed, self.onClientUnsubscribed, self.debugWamp)
       self.protoToSessions = {}
       self.sessionsToProto = {}
 
