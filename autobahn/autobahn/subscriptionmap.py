@@ -17,11 +17,12 @@
 ###############################################################################
 
 from twisted.python import log
+from trie import StringTrie as Trie
 
 
 class SubscriptionMap:
    """
-   Maintains topic subscriptions.
+   Maintains topic subscriptions on broker-side.
 
    For prefix subscriptions, use this stuff:
      - https://bitbucket.org/gsakkis/pytrie
@@ -29,9 +30,17 @@ class SubscriptionMap:
    """
 
    def __init__(self, onClientSubscribed = None, onClientUnsubscribed = None, debugWamp = False):
+      ## non-prefix subscriptions
       self.subscriptions = {}
+
+      ## prefix subscriptions
+      self.prefixSubscriptions = Trie()
+
+      ## subscribe/unsubscribe hooks
       self.onClientSubscribed = onClientSubscribed
       self.onClientUnsubscribed = onClientUnsubscribed
+
+      ## debug WAMP flag
       self.debugWamp = debugWamp
 
 
@@ -39,12 +48,21 @@ class SubscriptionMap:
       """
       Add a subscriber to the subscription map.
       """
-      if not self.subscriptions.has_key(topicUri):
-         self.subscriptions[topicUri] = set()
+      if options is not None and options.has_key('matchByPrefix') and options['matchByPrefix']:
+         ## prefix subscription
+         ##
+         subscriptions = self.prefixSubscriptions
+      else:
+         ## plain (non-prefix) subscriptions
+         ##
+         subscriptions = self.subscriptions
+
+      if not subscriptions.has_key(topicUri):
+         subscriptions[topicUri] = set()
          if self.debugWamp:
             log.msg("subscriptions map created for topic %s" % topicUri)
-      if not proto in self.subscriptions[topicUri]:
-         self.subscriptions[topicUri].add(proto)
+      if not proto in subscriptions[topicUri]:
+         subscriptions[topicUri].add(proto)
          if self.debugWamp:
             log.msg("subscribed peer %s on topic %s" % (proto.peerstr, topicUri))
          if self.onClientSubscribed:
@@ -57,6 +75,8 @@ class SubscriptionMap:
    def unsubscribe(self, proto, topicUri = None):
       """
       Remove a subscriber from the subscription map.
+
+      FIXME: unsubscribe also from self.prefixSubscriptions
       """
       if topicUri:
          if self.subscriptions.has_key(topicUri) and proto in self.subscriptions[topicUri]:
@@ -92,4 +112,11 @@ class SubscriptionMap:
       """
       Get all current subscribers for topic.
       """
-      return self.subscriptions.get(topicUri, [])
+      ## get non-prefix subscribers
+      ds = self.subscriptions.get(topicUri, set())
+
+      ## add prefix subscribers
+      for d in self.prefixSubscriptions.iter_prefix_values(topicUri):
+         ds.update(d)
+
+      return ds

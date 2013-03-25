@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -37,8 +37,11 @@ from websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from pbkdf2 import pbkdf2_bin
+
+from trie import StringTrie as Trie
 from prefixmap import PrefixMap
 from subscriptionmap import SubscriptionMap
+
 from util import utcstr, utcnow, parseutc, newid
 
 
@@ -1139,7 +1142,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       WebSocketClientProtocol.connectionMade(self)
       WampProtocol.connectionMade(self)
 
-      self.subscriptions = {}
+      self.subscriptions = Trie()
 
       self.handlerMapping = {
          self.MESSAGE_TYPEID_CALL: CallHandler(self, self.prefixes),
@@ -1228,14 +1231,19 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
          ## Fire PubSub Handler
          ##
+         event = obj[2]
          if self.subscriptions.has_key(topicUri):
-            event = obj[2]
-            self.subscriptions[topicUri](topicUri, event)
+            ## event URI matches completely => optimize
+            (eventHandler, _) = self.subscriptions[topicUri]
+            eventHandler(topicUri, event)
          else:
-            ## event received for non-subscribed topic (could be because we
-            ## just unsubscribed, and server already sent out event for
-            ## previous subscription)
-            pass
+            ## check if event URI has a prefix that matches ..
+            l = [x for x in self.subscriptions.iter_prefix_items(topicUri)]
+            l.reverse()
+            for (subscribedUri, (eventHandler, matchByPrefix)) in l:
+               if subscribedUri == topicUri or matchByPrefix:
+                  eventHandler(topicUri, event)
+                  break
 
       ## WAMP WELCOME
       ##
@@ -1367,7 +1375,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
    def subscribe(self, topicUri, handler, matchByPrefix = False):
       """
-      Subscribe to topic. When already subscribed, will overwrite the handler.
+      Subscribe to topic. When already subscribed, will do nothing.
 
       :param topicUri: URI or CURIE of topic to subscribe to.
       :type topicUri: str
@@ -1380,6 +1388,9 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       if type(handler) not in [types.FunctionType, types.MethodType, types.BuiltinFunctionType, types.BuiltinMethodType]:
          raise Exception("invalid type for parameter 'handler' - must be a callable (was %s)" % type(handler))
 
+      if type(matchByPrefix) != bool:
+         raise Exception("invalid type for parameter 'matchByPrefix' - must be boolean (was %s)" % type(matchByPrefix))
+
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
       if not self.subscriptions.has_key(turi):
          if matchByPrefix:
@@ -1389,7 +1400,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
             msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
          o = self.factory._serialize(msg)
          self.sendMessage(o)
-      self.subscriptions[turi] = handler
+         self.subscriptions[turi] = (handler, matchByPrefix)
 
 
    def unsubscribe(self, topicUri):
