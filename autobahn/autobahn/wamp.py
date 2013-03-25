@@ -566,7 +566,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       return None
 
 
-   def _getSubHandler(self, topicUri):
+   def _getSubHandler(self, topicUri, options = None):
       ## Longest matching prefix based resolution of (full) topic URI to
       ## subscription handler.
       ## Returns a 5-tuple (consumedUriPart, unconsumedUriPart, handlerObj, handlerProc, prefixMatch)
@@ -716,14 +716,21 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                ##
                elif msgtype == WampProtocol.MESSAGE_TYPEID_SUBSCRIBE:
                   topicUri = self.prefixes.resolveOrPass(obj[1]) ### PFX - remove
-                  h = self._getSubHandler(topicUri)
+                  options = None
+                  if len(obj) > 2:
+                     if type(obj[2]) == dict:
+                        options = obj[2]
+                     else:
+                        ## FIXME: invalid type for options
+                        pass
+                  h = self._getSubHandler(topicUri, options)
                   if h:
                      ## either exact match or prefix match allowed
                      if h[1] == "" or h[4]:
 
                         ## direct topic
                         if h[2] is None and h[3] is None:
-                           self.factory._subscribeClient(self, topicUri)
+                           self.factory._subscribeClient(self, topicUri, options)
 
                         ## topic handled by subscription handler
                         else:
@@ -738,7 +745,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                               ## only subscribe client if handler did return True
                               if a:
-                                 self.factory._subscribeClient(self, topicUri)
+                                 self.factory._subscribeClient(self, topicUri, options)
                            except:
                               if self.debugWamp:
                                  log.msg("execption during topic subscription handler")
@@ -855,7 +862,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       self.debugApp = debugApp
 
 
-   def onClientSubscribed(self, proto, topicUri):
+   def onClientSubscribed(self, proto, topicUri, options):
       """
       Callback fired when peer was (successfully) subscribed on some topic.
 
@@ -867,7 +874,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       pass
 
 
-   def _subscribeClient(self, proto, topicUri):
+   def _subscribeClient(self, proto, topicUri, options):
       """
       Called from proto to subscribe client for topic.
       """
@@ -879,7 +886,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
          self.subscriptions[topicUri].add(proto)
          if self.debugWamp:
             log.msg("subscribed peer %s on topic %s" % (proto.peerstr, topicUri))
-         self.onClientSubscribed(proto, topicUri)
+         self.onClientSubscribed(proto, topicUri, options)
       else:
          if self.debugWamp:
             log.msg("peer %s already subscribed on topic %s" % (proto.peerstr, topicUri))
@@ -1391,7 +1398,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       self.sendMessage(o)
 
 
-   def subscribe(self, topicUri, handler):
+   def subscribe(self, topicUri, handler, matchByPrefix = False):
       """
       Subscribe to topic. When already subscribed, will overwrite the handler.
 
@@ -1408,7 +1415,11 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
       if not self.subscriptions.has_key(turi):
-         msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
+         if matchByPrefix:
+            options = {'matchByPrefix': matchByPrefix}
+            msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri, options]
+         else:
+            msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
          o = self.factory._serialize(msg)
          self.sendMessage(o)
       self.subscriptions[turi] = handler
