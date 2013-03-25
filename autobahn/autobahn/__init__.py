@@ -26,6 +26,7 @@ import utf8validator
 import xormasker
 import websocket
 import resource
+import trie
 import prefixmap
 import subscriptionmap
 import wamp
