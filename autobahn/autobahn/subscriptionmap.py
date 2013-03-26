@@ -48,7 +48,7 @@ class SubscriptionMap:
       """
       Add a subscriber to the subscription map.
       """
-      if options is not None and options.has_key('matchByPrefix') and options['matchByPrefix']:
+      if options is not None and options.has_key('match') and options['match'] == 'prefix':
          ## prefix subscription
          ##
          subscriptions = self.prefixSubscriptions

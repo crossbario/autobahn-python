@@ -1394,7 +1394,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
       if not self.subscriptions.has_key(turi):
          if matchByPrefix:
-            options = {'matchByPrefix': matchByPrefix}
+            options = {'match': 'prefix'}
             msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri, options]
          else:
             msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
