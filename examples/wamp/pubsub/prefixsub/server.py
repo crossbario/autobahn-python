@@ -32,7 +32,8 @@ class PubSubServer1(WampServerProtocol):
 
    def onSessionOpen(self):
       ## register a URI and all URIs having the string as prefix as PubSub topic
-      self.registerForPubSub("http://example.com/event#", True)
+      #self.registerForPubSub("http://example.com", True)
+      self.registerForPubSub("", True)
 
 
 if __name__ == '__main__':

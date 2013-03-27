@@ -31,14 +31,18 @@ class PubSubClient1(WampClientProtocol):
 
    def onSessionOpen(self):
       ## subscribe to all topics with URIs having the given prefix
-      self.subscribe("http://example.com/event#", self.onMyEvent, matchByPrefix = True)
+      #self.subscribe("http://example.com/event#", self.onMyEvent)
+      #self.subscribe("http://example.com/event#", self.onMyEvent, match = 'prefix')
+      self.subscribe("^http://.*/foobar$", self.onMyEvent, match = 'regex')
       self.sendMyEvent()
 
    def onMyEvent(self, topicUri, event):
       print "Event", topicUri, event
 
    def sendMyEvent(self):
-      self.publish("http://example.com/event#%s" % newid(), "Hello!")
+      self.publish("http://example.com/event#%s" % newid(), "Hello 1")
+      self.publish("http://example.com/foobar", "Hello 2")
+      self.publish("http://example.com/foobar/baz", "Hello 3")
       reactor.callLater(2, self.sendMyEvent)
 
 

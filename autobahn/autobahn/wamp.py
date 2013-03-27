@@ -40,7 +40,7 @@ from pbkdf2 import pbkdf2_bin
 
 from trie import StringTrie as Trie
 from prefixmap import PrefixMap
-from subscriptionmap import SubscriptionMap
+from subscriptionmap import SubscriptionMapCached as SubscriptionMap
 
 from util import utcstr, utcnow, parseutc, newid
 
@@ -720,7 +720,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                ##
                elif msgtype == WampProtocol.MESSAGE_TYPEID_SUBSCRIBE:
                   topicUri = self.prefixes.resolveOrPass(obj[1]) ### PFX - remove
-                  options = None
+                  options = {}
                   if len(obj) > 2:
                      if type(obj[2]) == dict:
                         options = obj[2]
@@ -866,7 +866,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       self.debugApp = debugApp
 
 
-   def onClientSubscribed(self, proto, topicUri, options):
+   def onClientSubscribed(self, proto, patternType, topic):
       """
       Callback fired when peer was (successfully) subscribed on some topic.
 
@@ -878,14 +878,17 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       pass
 
 
-   def _subscribeClient(self, proto, topicUri, options = None):
+   def _subscribeClient(self, proto, topic, options = {}):
       """
       Called from proto to subscribe client for topic.
       """
-      self.subscriptions.subscribe(proto, topicUri, options)
+      patternType = options.get('match', 'exact')
+      (_, objAdded) = self.subscriptions.add(proto, patternType, topic)
+      if objAdded:
+         self.onClientSubscribed(proto, patternType, topic)
 
 
-   def onClientUnsubscribed(self, proto, topicUri):
+   def onClientUnsubscribed(self, proto, patternType, topic):
       """
       Callback fired when peer was (successfully) unsubscribed from some topic.
 
@@ -897,11 +900,18 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       pass
 
 
-   def _unsubscribeClient(self, proto, topicUri = None):
+   def _unsubscribeClient(self, proto, topic = None, options = {}):
       """
       Called from proto to unsubscribe client from topic.
       """
-      self.subscriptions.unsubscribe(proto, topicUri)
+      if topic is None:
+         for ((patternType, topicPattern), patternRemoved) in self.subscriptions.removeObj(proto):
+            self.onClientUnsubscribed(proto, patternType, topicPattern)
+      else:
+         ((patternType, topicPattern), _) = self.subscriptions.remove(proto, options.get('match', 'exact'), topic)
+         if patternType:
+            self.onClientUnsubscribed(proto, patternType, topicPattern)
+
 
 
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
@@ -927,7 +937,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
       d = Deferred()
 
-      subscribers = self.subscriptions.getSubscribers(topicUri)
+      subscribers = self.subscriptions.get(topicUri)
 
       if len(subscribers) > 0:
 
@@ -1099,7 +1109,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
       """
       if self.debugWamp:
          log.msg("WampServerFactory starting")
-      self.subscriptions = SubscriptionMap(self.onClientSubscribed, self.onClientUnsubscribed, self.debugWamp)
+      self.subscriptions = SubscriptionMap()
       self.protoToSessions = {}
       self.sessionsToProto = {}
 
@@ -1142,7 +1152,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       WebSocketClientProtocol.connectionMade(self)
       WampProtocol.connectionMade(self)
 
-      self.subscriptions = Trie()
+      self.subscriptions = SubscriptionMap()
 
       self.handlerMapping = {
          self.MESSAGE_TYPEID_CALL: CallHandler(self, self.prefixes),
@@ -1218,32 +1228,26 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       ## WAMP EVENT
       ##
       elif msgtype == WampProtocol.MESSAGE_TYPEID_EVENT:
-         ## Topic
-         ##
          if len(obj) != 3:
             self._protocolError("WAMP EVENT message invalid length %d" % len(obj))
             return
+
+         ## Topic
+         ##
          if type(obj[1]) not in [unicode, str]:
             self._protocolError("invalid type for <topic> in WAMP EVENT message")
             return
          unresolvedTopicUri = str(obj[1])
          topicUri = self.prefixes.resolveOrPass(unresolvedTopicUri) ### PFX - remove
 
-         ## Fire PubSub Handler
+         ## Event
          ##
          event = obj[2]
-         if self.subscriptions.has_key(topicUri):
-            ## event URI matches completely => optimize
-            (eventHandler, _) = self.subscriptions[topicUri]
+
+         ## Fire PubSub Handlers
+         ##
+         for eventHandler in self.subscriptions.get(topicUri):
             eventHandler(topicUri, event)
-         else:
-            ## check if event URI has a prefix that matches ..
-            l = [x for x in self.subscriptions.iter_prefix_items(topicUri)]
-            l.reverse()
-            for (subscribedUri, (eventHandler, matchByPrefix)) in l:
-               if subscribedUri == topicUri or matchByPrefix:
-                  eventHandler(topicUri, event)
-                  break
 
       ## WAMP WELCOME
       ##
@@ -1373,7 +1377,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       self.sendMessage(o)
 
 
-   def subscribe(self, topicUri, handler, matchByPrefix = False):
+   def subscribe(self, topicUri, handler, match = None):
       """
       Subscribe to topic. When already subscribed, will do nothing.
 
@@ -1388,22 +1392,26 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       if type(handler) not in [types.FunctionType, types.MethodType, types.BuiltinFunctionType, types.BuiltinMethodType]:
          raise Exception("invalid type for parameter 'handler' - must be a callable (was %s)" % type(handler))
 
-      if type(matchByPrefix) != bool:
-         raise Exception("invalid type for parameter 'matchByPrefix' - must be boolean (was %s)" % type(matchByPrefix))
+      if match is not None:
+         if type(match) != str:
+            raise Exception("invalid type for parameter 'match' - must be string (was %s)" % type(match))
+         if match not in ['exact', 'prefix', 'regex']:
+            raise Exception("invalid value for parameter 'match' - must be one of 'exact', 'prefix', 'regex' (was '%s')" % match)
 
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
-      if not self.subscriptions.has_key(turi):
-         if matchByPrefix:
-            options = {'match': 'prefix'}
+
+      (patternAdded, _) = self.subscriptions.add(handler, match if match is not None else 'exact', topicUri)
+      if patternAdded:
+         if match is not None:
+            options = {'match': match}
             msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri, options]
          else:
             msg = [WampProtocol.MESSAGE_TYPEID_SUBSCRIBE, topicUri]
          o = self.factory._serialize(msg)
          self.sendMessage(o)
-         self.subscriptions[turi] = (handler, matchByPrefix)
 
 
-   def unsubscribe(self, topicUri):
+   def unsubscribe(self, topicUri, handler = None, match = None):
       """
       Unsubscribe from topic. Will do nothing when currently not subscribed to the topic.
 
@@ -1414,11 +1422,22 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % type(topicUri))
 
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
-      if self.subscriptions.has_key(turi):
-         msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicUri]
+
+      if handler:
+         (_, patternRemoved) = self.subscriptions.remove(handler, match if match is not None else 'exact', topicUri)
+      else:
+         objsRemoved = self.subscriptions.removePattern(match if match is not None else 'exact', topicUri)
+         patternRemoved = len(objsRemoved) > 0
+
+      if patternRemoved:
+         if match is not None:
+            options = {'match': match}
+            msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicUri, options]
+         else:
+            msg = [WampProtocol.MESSAGE_TYPEID_UNSUBSCRIBE, topicUri]
          o = self.factory._serialize(msg)
          self.sendMessage(o)
-         del self.subscriptions[turi]
+
 
 
 
