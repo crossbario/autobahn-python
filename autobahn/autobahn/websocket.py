@@ -3016,7 +3016,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       Note that you MUST set URL either here or using setSessionParameters() _before_ the factory is started.
 
-      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ].
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
