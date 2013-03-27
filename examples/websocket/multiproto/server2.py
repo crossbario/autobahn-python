@@ -21,7 +21,7 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 from twisted.web.server import Site
-from twisted.web.static import File
+from twisted.web.static import Data
 
 from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol
@@ -61,8 +61,8 @@ if __name__ == '__main__':
    factory2.protocol = Echo2ServerProtocol
    resource2 = WebSocketResource(factory2)
 
-   ## we server static files under "/" ..
-   root = File(".")
+   ## Establish a dummy root resource
+   root = Data("", "text/plain")
 
    ## and our WebSocket servers under different paths ..
    root.putChild("echo1", resource1)
