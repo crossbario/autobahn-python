@@ -741,7 +741,8 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                                  self.factory._subscribeClient(self, topicUri)
                            except:
                               if self.debugWamp:
-                                 log.msg("exception during topic subscription handler")
+                                 log.msg("exception during topic subscription handler:")
+                              traceback.print_exc()
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
@@ -813,7 +814,8 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                                  self.factory.dispatch(topicUri, e, exclude, eligible)
                            except:
                               if self.debugWamp:
-                                 log.msg("exception during topic publication handler")
+                                 log.msg("exception during topic publication handler:")
+                              traceback.print_exc()
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
