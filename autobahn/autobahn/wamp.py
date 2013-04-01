@@ -741,7 +741,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                                  self.factory._subscribeClient(self, topicUri)
                            except:
                               if self.debugWamp:
-                                 log.msg("execption during topic subscription handler")
+                                 log.msg("exception during topic subscription handler")
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
@@ -813,7 +813,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                                  self.factory.dispatch(topicUri, e, exclude, eligible)
                            except:
                               if self.debugWamp:
-                                 log.msg("execption during topic publication handler")
+                                 log.msg("exception during topic publication handler")
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
@@ -1485,7 +1485,7 @@ class WampCraProtocol(WampProtocol):
       http://en.wikipedia.org/wiki/PBKDF2.
 
       The function will only return a derived key if at least 'salt' is
-      present in the 'extra' dictionary. The complete set of attribtues
+      present in the 'extra' dictionary. The complete set of attributes
       that can be set in 'extra':
 
          salt: The salt value to be used.
