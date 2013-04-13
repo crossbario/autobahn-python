@@ -682,8 +682,13 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       :type exclude: list of obj
       :param eligible: Optional list of clients (WampServerProtocol instances) eligible at all (or None for all).
       :type eligible: list of obj
+
+      :returns twisted.internet.defer.Deferred -- Will be fired when event was
+      dispatched to all subscribers. The return value provided to the deferred
+      is a pair (delivered, requested), where delivered = number of actual
+      receivers, and requested = number of (subscribers - excluded) & eligible.
       """
-      self.factory.dispatch(topicUri, event, exclude, eligible)
+      return self.factory.dispatch(topicUri, event, exclude, eligible)
 
 
    def onMessage(self, msg, binary):
