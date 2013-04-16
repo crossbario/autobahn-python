@@ -21,6 +21,7 @@ version = __version__ # backward compat.
 
 import util
 import useragent
+import flashpolicy
 import httpstatus
 import utf8validator
 import xormasker
