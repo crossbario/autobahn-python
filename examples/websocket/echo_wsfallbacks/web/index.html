@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <!-- We use IE conditional comments:
+           http://msdn.microsoft.com/en-us/library/ms537512%28v=vs.85%29.aspx
+        -->
+
+      <!-- Activate Google Chrome Frame for IE if available -->
+      <!--[if lte IE 9]>
+         <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+      <![endif]-->
+
+      <!-- Include Flash WebSocket -->
+      <!--[if lte IE 9]>
+         <script type="text/javascript">
+            // This needs to point to the actual  Flash WS implementation
+            WEB_SOCKET_SWF_LOCATION = "WebSocketMain.swf";
+
+            // Show some debugging output from the Flash WS.
+            WEB_SOCKET_DEBUG = true;
+
+            // Unless the following is true, the Flash WS won't activate itself
+            // if there already is a WebSocket object in window. In our
+            // example, that could only happen if Google Chrome Frame
+            // stepped in. However, the files are fetched over network
+            // even in this case - which we could only prevent by doing
+            // even more magic
+            WEB_SOCKET_FORCE_FLASH = false;
+         </script>
+         <script type="text/javascript" src="swfobject.js"></script>
+         <script type="text/javascript" src="web_socket.js"></script>
+      <![endif]-->
+
+      <script type="text/javascript">
+         var sock = null;
+
+         window.onload = function() {
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
+            if ("WebSocket" in window) {
+               sock = new WebSocket(wsuri);
+            } else if ("MozWebSocket" in window) {
+               sock = new MozWebSocket(wsuri);
+            } else {
+               alert("Browser does not support WebSocket!");
+            }
+
+            sock.onopen = function() {
+               console.log("Connected!");
+            }
+
+            sock.onmessage = function(e) {
+               console.log("Message received: " + e.data);
+            }
+
+            sock.onclose = function(e) {
+               console.log("Connection closed.");
+            }
+         };
+
+         function send() {
+            sock.send("Hello, world!");
+            console.log("Message sent ..");
+         };
+      </script>
+   </head>
+   <body>
+      <button onclick='send();'>Send Message</button>
+   </body>
+</html>
