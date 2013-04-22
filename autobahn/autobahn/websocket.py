@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -428,11 +428,9 @@ class WebSocketProtocol(protocol.Protocol):
    announced in HTTP header, and we just use the draft version (0) in this case.
    """
 
-   DEFAULT_SPEC_VERSION = 10
+   DEFAULT_SPEC_VERSION = 18
    """
-   Default WebSockets protocol spec version this implementation speaks.
-   We use Hybi-10, since this is what is currently targeted by widely distributed
-   browsers (namely Firefox 8 and the like).
+   Default WebSockets protocol spec version this implementation speaks: final RFC6455.
    """
 
    DEFAULT_ALLOW_HIXIE76 = False
