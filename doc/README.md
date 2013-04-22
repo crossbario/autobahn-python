@@ -1,7 +1,7 @@
 AutobahnPython API Reference
 ============================
 
-The AutobahnPython API reference is available [online](http://autobahn.ws/python/reference/index.html).
+The AutobahnPython API reference is available [online](http://autobahn.ws/python/reference).
 
 
 The documentation is generated automatically from the Python source file via [Sphinx](http://sphinx.pocoo.org/).
