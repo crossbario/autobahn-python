@@ -52,6 +52,7 @@ WebSocket implementation. It implements a Twisted protocol which speaks WebSocke
              SPEC_TO_PROTOCOL_VERSION,
              PROTOCOL_TO_SPEC_VERSION,
              DEFAULT_SPEC_VERSION,
+             DEFAULT_ALLOW_HIXIE76,
              MESSAGE_TYPE_TEXT,
              MESSAGE_TYPE_BINARY,
              CLOSE_STATUS_CODE_NORMAL,

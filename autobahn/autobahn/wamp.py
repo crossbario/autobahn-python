@@ -16,6 +16,17 @@
 ##
 ###############################################################################
 
+__all__ = ("WampProtocol",
+           "WampFactory",
+           "WampServerProtocol",
+           "WampServerFactory",
+           "WampClientProtocol",
+           "WampClientFactory",
+           "WampCraProtocol",
+           "WampCraClientProtocol",
+           "WampCraServerProtocol",)
+
+
 import json
 import random
 import inspect, types
@@ -1543,6 +1554,7 @@ class WampCraProtocol(WampProtocol):
       return sig
 
 
+
 class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
    """
    Simple, authenticated WAMP client protocol.
@@ -1875,6 +1887,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       ## return permissions to client
       ##
       return perms['permissions']
+
 
 
 class Call:
@@ -2275,6 +2288,7 @@ class CallResultHandler(Handler):
       else:
          if self.proto.debugWamp:
             log.msg("callid not found for received call result message")
+
 
 
 class CallErrorHandler(Handler):

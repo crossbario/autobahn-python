@@ -34,20 +34,8 @@ Opening Handshake
    :members: __init__
 
 
-Misc
-----
-
-.. autoclass:: autobahn.websocket.PreparedMessage
-   :members: __init__
-
-.. autoclass:: autobahn.websocket.Timings
-   :members: __init__,
-             track,
-             diff
-
-
-Web Resource
-------------
+Twisted Web Integration
+-----------------------
 
 .. autoclass:: autobahn.resource.WebSocketResource
    :members: __init__,
@@ -55,4 +43,28 @@ Web Resource
              putChild,
              render
 
+.. autoclass:: autobahn.resource.WSGIRootResource
+   :members: __init__
+
 .. autoclass:: autobahn.resource.HTTPChannelHixie76Aware
+
+
+Flash Policy File Server
+------------------------
+
+.. autoclass:: autobahn.flashpolicy.FlashPolicyProtocol
+   :members: __init__
+
+.. autoclass:: autobahn.flashpolicy.FlashPolicyFactory
+   :members: __init__
+
+
+Misc
+----
+
+.. autofunction:: autobahn.useragent.lookupWsSupport
+
+.. autoclass:: autobahn.websocket.Timings
+   :members: __init__,
+             track,
+             diff

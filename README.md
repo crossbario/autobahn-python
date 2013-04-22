@@ -18,6 +18,18 @@ You can use AutobahnPython to create clients and servers speaking either plain W
 
 Using WAMP you can build applications around **asynchronous RPC** and **PubSub** messaging patterns.
 
+Documentation
+-------------
+
+To get started quickly, check out the [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples).
+ For complete API documentation, please consult the [reference documentation](http://autobahn.ws/python/reference).
+
+
+API Stability
+-------------
+
+> Please note that the only API that is promised to be stable is the one documented in the [reference documentation](http://autobahn.ws/python/reference). If you use anything not documented in the reference documentation, your code might break at a later AutobahnPython version.
+> 
 
 Where it runs
 -------------
