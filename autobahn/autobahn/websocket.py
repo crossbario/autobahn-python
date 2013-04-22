@@ -16,6 +16,24 @@
 ##
 ###############################################################################
 
+__all__ = ["createWsUrl",
+           "parseWsUrl",
+           "connectWS",
+           "listenWS",
+
+           "HttpException",
+           "ConnectionRequest",
+           "ConnectionResponse",
+           "Timings",
+           "PreparedMessage",
+           
+           "WebSocketProtocol",
+           "WebSocketFactory",
+           "WebSocketServerProtocol",
+           "WebSocketServerFactory",
+           "WebSocketClientProtocol",
+           "WebSocketClientFactory"]
+
 ## The Python urlparse module currently does not contain the ws/wss
 ## schemes, so we add those dynamically (which is a hack of course).
 ##
@@ -50,13 +68,13 @@ from util import Stopwatch
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
    """
-   Create a WbeSocket URL from components.
+   Create a WebSocket URL from components.
 
    :param hostname: WebSocket server hostname.
    :type hostname: str
    :param port: WebSocket service port or None (to select default ports 80/443 depending on isSecure).
    :type port: int
-   :param isSecure: Set True for secure WebSockets ("wss" scheme).
+   :param isSecure: Set True for secure WebSocket ("wss" scheme).
    :type isSecure: bool
    :param path: Path component of addressed resource (will be properly URL escaped).
    :type path: str
@@ -98,7 +116,7 @@ def parseWsUrl(url):
    path is the /path/ component properly unescaped.
    params is the /query) component properly unescaped and returned as dictionary.
 
-   :param url: A valid WebSocket URL, i.e. ws://localhost:9000/myresource?param1=23&param2=666
+   :param url: A valid WebSocket URL, i.e. `ws://localhost:9000/myresource?param1=23&param2=666`
    :type url: str
 
    :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
@@ -132,19 +150,19 @@ def parseWsUrl(url):
 
 def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
    """
-   Establish WebSockets connection to a server. The connection parameters like target
+   Establish WebSocket connection to a server. The connection parameters like target
    host, port, resource and others are provided via the factory.
 
-   :param factory: The WebSockets protocol factory to be used for creating client protocol instances.
+   :param factory: The WebSocket protocol factory to be used for creating client protocol instances.
    :type factory: An :class:`autobahn.websocket.WebSocketClientFactory` instance.
-   :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
-   :type contextFactory: A twisted.internet.ssl.ClientContextFactory instance.
+   :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
+   :type contextFactory: A `twisted.internet.ssl.ClientContextFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.ssl.ClientContextFactory.html>`_ instance.
    :param timeout: Number of seconds to wait before assuming the connection has failed.
    :type timeout: int
    :param bindAddress: A (host, port) tuple of local address to bind to, or None.
    :type bindAddress: tuple
 
-   :returns: obj -- An object which provides twisted.interface.IConnector.
+   :returns: obj -- An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
    """
    if factory.isSecure:
       if contextFactory is None:
@@ -162,16 +180,16 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    Listen for incoming WebSocket connections from clients. The connection parameters like
    listening port and others are provided via the factory.
 
-   :param factory: The WebSockets protocol factory to be used for creating server protocol instances.
+   :param factory: The WebSocket protocol factory to be used for creating server protocol instances.
    :type factory: An :class:`autobahn.websocket.WebSocketServerFactory` instance.
-   :param contextFactory: SSL context factory, required for secure WebSockets connections ("wss").
+   :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
    :type contextFactory: A twisted.internet.ssl.ContextFactory.
    :param backlog: Size of the listen queue.
    :type backlog: int
    :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
    :type interface: str
 
-   :returns: obj -- An object that provides twisted.interface.IListeningPort.
+   :returns: obj -- An object that implements `twisted.interface.IListeningPort <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IListeningPort.html>`_.
    """
    if factory.isSecure:
       if contextFactory is None:
@@ -184,7 +202,7 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 class FrameHeader:
    """
-   Thin-wrapper for storing WebSockets frame metadata.
+   Thin-wrapper for storing WebSocket frame metadata.
 
    FOR INTERNAL USE ONLY!
    """
@@ -211,9 +229,9 @@ class FrameHeader:
       self.mask = mask
 
 
-class HttpException():
+class HttpException:
    """
-   Throw an instance of this class to deny a WebSockets connection
+   Throw an instance of this class to deny a WebSocket connection
    during handshake in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
    You can find definitions of HTTP status codes in module :mod:`autobahn.httpstatus`.
    """
@@ -231,11 +249,11 @@ class HttpException():
       self.reason = reason
 
 
-class ConnectionRequest():
+class ConnectionRequest:
    """
-   Thin-wrapper for WebSockets connection request information
-   provided in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect` when a WebSockets
-   client establishes a connection to a WebSockets server.
+   Thin-wrapper for WebSocket connection request information
+   provided in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect` when a WebSocket
+   client establishes a connection to a WebSocket server.
    """
    def __init__(self, peer, peerstr, headers, host, path, params, version, origin, protocols, extensions):
       """
@@ -249,17 +267,17 @@ class ConnectionRequest():
       :type headers: dict
       :param host: Host from opening handshake HTTP header.
       :type host: str
-      :param path: Path from requested HTTP resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to "/myservice".
+      :param path: Path from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `/myservice`.
       :type path: str
-      :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of "/myservice?foo=23&foo=66&bar=2" will be parsed to {'foo': ['23', '66'], 'bar': ['2']}.
+      :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `{'foo': ['23', '66'], 'bar': ['2']}`.
       :type params: dict of arrays of strings
-      :param version: The WebSockets protocol version the client announced (and will be spoken, when connection is accepted).
+      :param version: The WebSocket protocol version the client announced (and will be spoken, when connection is accepted).
       :type version: int
-      :param origin: The WebSockets origin header or None. Note that this only a reliable source of information for browser clients!
+      :param origin: The WebSocket origin header or None. Note that this only a reliable source of information for browser clients!
       :type origin: str
-      :param protocols: The WebSockets (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
+      :param protocols: The WebSocket (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
       :type protocols: array of strings
-      :param extensions: The WebSockets extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
+      :param extensions: The WebSocket extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
       :type extensions: array of strings
       """
       self.peer = peer
@@ -276,9 +294,9 @@ class ConnectionRequest():
 
 class ConnectionResponse():
    """
-   Thin-wrapper for WebSockets connection response information
-   provided in :meth:`autobahn.websocket.WebSocketClientProtocol.onConnect` when a WebSockets
-   client has established a connection to a WebSockets server.
+   Thin-wrapper for WebSocket connection response information
+   provided in :meth:`autobahn.websocket.WebSocketClientProtocol.onConnect` when a WebSocket
+   client has established a connection to a WebSocket server.
    """
    def __init__(self, peer, peerstr, headers, version, protocol, extensions):
       """
@@ -290,11 +308,11 @@ class ConnectionResponse():
       :type peerstr: str
       :param headers: HTTP headers from opening handshake response.
       :type headers: dict
-      :param version: The WebSockets protocol version that is spoken.
+      :param version: The WebSocket protocol version that is spoken.
       :type version: int
-      :param protocol: The WebSockets (sub)protocol in use.
+      :param protocol: The WebSocket (sub)protocol in use.
       :type protocol: str
-      :param extensions: The WebSockets extensions in use.
+      :param extensions: The WebSocket extensions in use.
       :type extensions: array of strings
       """
       self.peer = peer
@@ -315,6 +333,8 @@ def parseHttpHeader(data):
 
    :param data: The HTTP header data up to the \n\n line.
    :type data: str
+
+   :returns: tuple -- Tuple of HTTP status line, headers and headers count.
    """
    raw = data.splitlines()
    http_status_line = raw[0].strip()
@@ -344,7 +364,8 @@ def parseHttpHeader(data):
 
 class Timings:
    """
-   Track timings by key.
+   Helper class to track timings by key. This class also supports item access,
+   iteration and conversion to string.
    """
 
    def __init__(self):
@@ -354,12 +375,24 @@ class Timings:
    def track(self, key):
       """
       Track elapsed for key.
+
+      :param key: Key under which to track the timing.
+      :type key: str
       """
       self._timings[key] = self._stopwatch.elapsed()
 
    def diff(self, startKey, endKey, format = True):
       """
       Get elapsed difference between two previously tracked keys.
+
+      :param startKey: First key for interval (older timestamp).
+      :type startKey: str
+      :param endKey: Second key for interval (younger timestamp).
+      :type endKey: str
+      :param format: If `True`, format computed time period and return string.
+      :type format: bool
+
+      :returns: float or str -- Computed time period in seconds (or formatted string).
       """
       if self._timings.has_key(endKey) and self._timings.has_key(startKey):
          d = self._timings[endKey] - self._timings[startKey]
@@ -394,15 +427,15 @@ class Timings:
 
 class WebSocketProtocol(protocol.Protocol):
    """
-   A Twisted Protocol class for WebSockets. This class is used by both WebSocket
+   A Twisted Protocol class for WebSocket. This class is used by both WebSocket
    client and server protocol version. It is unusable standalone, for example
-   the WebSockets initial handshake is implemented in derived class differently
+   the WebSocket initial handshake is implemented in derived class differently
    for clients and servers.
    """
 
    SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
    """
-   WebSockets protocol spec (draft) versions supported by this implementation.
+   WebSocket protocol spec (draft) versions supported by this implementation.
    Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
    draft spec versions (Hybi-Drafts). Use of version 0 indicates Hixie-76.
    """
@@ -430,7 +463,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    DEFAULT_SPEC_VERSION = 18
    """
-   Default WebSockets protocol spec version this implementation speaks: final RFC6455.
+   Default WebSocket protocol spec version this implementation speaks: final RFC6455.
    """
 
    DEFAULT_ALLOW_HIXIE76 = False
@@ -451,12 +484,12 @@ class WebSocketProtocol(protocol.Protocol):
    """For synched/chopped writes, this is the reactor reentry delay in seconds."""
 
    MESSAGE_TYPE_TEXT = 1
-   """WebSockets text message type (UTF-8 payload)."""
+   """WebSocket text message type (UTF-8 payload)."""
 
    MESSAGE_TYPE_BINARY = 2
-   """WebSockets binary message type (arbitrary binary payload)."""
+   """WebSocket binary message type (arbitrary binary payload)."""
 
-   ## WebSockets protocol state:
+   ## WebSocket protocol state:
    ## STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
    ##
    STATE_CLOSED = 0
@@ -470,7 +503,7 @@ class WebSocketProtocol(protocol.Protocol):
    SEND_STATE_INSIDE_MESSAGE = 2
    SEND_STATE_INSIDE_MESSAGE_FRAME = 3
 
-   ## WebSockets protocol close codes
+   ## WebSocket protocol close codes
    ##
    CLOSE_STATUS_CODE_NORMAL = 1000
    """Normal close of connection."""
@@ -525,7 +558,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def onOpen(self):
       """
-      Callback when initial WebSockets handshake was completed. Now you may send messages.
+      Callback when initial WebSocket handshake was completed. Now you may send messages.
       Default implementation does nothing. Override in derived class.
 
       Modes: Hybi, Hixie
@@ -911,7 +944,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def failConnection(self, code = CLOSE_STATUS_CODE_GOING_AWAY, reason = "Going Away"):
       """
-      Fails the WebSockets connection.
+      Fails the WebSocket connection.
 
       Modes: Hybi, Hixie
 
@@ -928,7 +961,7 @@ class WebSocketProtocol(protocol.Protocol):
             self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
             self.dropConnection(abort = True)
          else:
-            ## perform WebSockets closing handshake
+            ## perform WebSocket closing handshake
             if self.state != WebSocketProtocol.STATE_CLOSING:
                self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = False)
             else:
@@ -941,7 +974,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def protocolViolation(self, reason):
       """
-      Fired when a WebSockets protocol violation/error occurs.
+      Fired when a WebSocket protocol violation/error occurs.
 
       Modes: Hybi, Hixie
 
@@ -1091,7 +1124,7 @@ class WebSocketProtocol(protocol.Protocol):
       # True, iff I dropped the TCP connection (called transport.loseConnection())
       self.droppedByMe = False
 
-      # True, iff full WebSockets closing handshake was performed (close frame sent
+      # True, iff full WebSocket closing handshake was performed (close frame sent
       # and received) _and_ the server dropped the TCP (which is its responsibility)
       self.wasClean = False
 
@@ -1267,7 +1300,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def processHandshake(self):
       """
-      Process WebSockets handshake.
+      Process WebSocket handshake.
 
       Modes: Hybi, Hixie
       """
@@ -1331,7 +1364,7 @@ class WebSocketProtocol(protocol.Protocol):
       When asked to chop up writing to TCP stream, we write only chopsize octets
       and then give up control to select() in underlying reactor so that bytes
       get onto wire immediately. Note that this is different from and unrelated
-      to WebSockets data message fragmentation. Note that this is also different
+      to WebSocket data message fragmentation. Note that this is also different
       from the TcpNoDelay option which can be set on the socket.
 
       Modes: Hybi, Hixie
@@ -1373,7 +1406,7 @@ class WebSocketProtocol(protocol.Protocol):
 
    def processData(self):
       """
-      After WebSockets handshake has been completed, this procedure will do all
+      After WebSocket handshake has been completed, this procedure will do all
       subsequent processing of incoming bytes.
 
       Modes: Hybi, Hixie
@@ -2344,11 +2377,21 @@ class PreparedMessage:
    """
 
    def __init__(self, payload, binary, masked):
-      self.initHixie(payload, binary)
-      self.initHybi(payload, binary, masked)
+      """
+      Ctor for a prepared message.
+
+      :param payload: The message payload.
+      :type payload: str
+      :param binary: Provide `True` for binary payload.
+      :type binary: bool
+      :param masked: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
+      :type masked: bool
+      """
+      self._initHixie(payload, binary)
+      self._initHybi(payload, binary, masked)
 
 
-   def initHixie(self, payload, binary):
+   def _initHixie(self, payload, binary):
       if binary:
          # silently filter out .. probably do something else:
          # base64?
@@ -2358,7 +2401,7 @@ class PreparedMessage:
          self.payloadHixie = '\x00' + payload + '\xff'
 
 
-   def initHybi(self, payload, binary, masked):
+   def _initHybi(self, payload, binary, masked):
       l = len(payload)
 
       ## first byte
@@ -2433,7 +2476,7 @@ class WebSocketFactory:
 
 class WebSocketServerProtocol(WebSocketProtocol):
    """
-   A Twisted protocol for WebSockets servers.
+   A Twisted protocol for WebSocket servers.
    """
 
    def onConnect(self, connectionRequest):
@@ -2446,7 +2489,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       HttpException(httpstatus.HTTP_STATUS_CODE_UNAUTHORIZED[0], "You are not authorized for this!").
 
       When you want to accept the connection, return the accepted protocol
-      from list of WebSockets (sub)protocols provided by client or None to
+      from list of WebSocket (sub)protocols provided by client or None to
       speak no specific one or when the client list was empty.
 
       :param connectionRequest: WebSocket connection request information.
@@ -2488,7 +2531,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
    def processHandshake(self):
       """
-      Process WebSockets opening handshake request from client.
+      Process WebSocket opening handshake request from client.
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
@@ -2865,7 +2908,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          self.http_response_data = response + response_body
          self.sendData(self.http_response_data)
 
-         ## opening handshake completed, move WebSockets connection into OPEN state
+         ## opening handshake completed, move WebSocket connection into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
 
@@ -2901,7 +2944,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       error response and then drop the connection.
       """
       if self.debug:
-         log.msg("failing WebSockets opening handshake ('%s')" % reason)
+         log.msg("failing WebSocket opening handshake ('%s')" % reason)
       self.sendHttpErrorResponse(code, reason, responseHeaders)
       self.dropConnection(abort = False)
 
@@ -2988,7 +3031,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
-   A Twisted factory for WebSockets server protocols.
+   A Twisted factory for WebSocket server protocols.
    """
 
    protocol = WebSocketServerProtocol
@@ -3018,7 +3061,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
-      :param server: Server as announced in HTTP response header during opening handshake or None (default: "AutobahnWebSockets/x.x.x").
+      :param server: Server as announced in HTTP response header during opening handshake or None (default: "AutobahnWebSocket/x.x.x").
       :type server: str
       :param debug: Debug mode (default: False).
       :type debug: bool
@@ -3128,7 +3171,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
-      :param versions: The WebSockets protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
+      :param versions: The WebSocket protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
       :type versions: list of ints
       :param allowHixie76: Allow to speak Hixie76 protocol version.
       :type allowHixie76: bool
@@ -3165,7 +3208,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       if versions is not None:
          for v in versions:
             if v not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
-               raise Exception("invalid WebSockets protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
+               raise Exception("invalid WebSocket protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
             if v == 0 and not self.allowHixie76:
                raise Exception("use of Hixie-76 requires allowHixie76 == True")
          if set(versions) != set(self.versions):
@@ -3238,7 +3281,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
 class WebSocketClientProtocol(WebSocketProtocol):
    """
-   Client protocol for WebSockets.
+   Client protocol for WebSocket.
    """
 
    def onConnect(self, connectionResponse):
@@ -3303,7 +3346,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
    def startHandshake(self):
       """
-      Start WebSockets opening handshake.
+      Start WebSocket opening handshake.
       """
 
       ## construct WS opening handshake HTTP header
@@ -3381,7 +3424,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
    def processHandshake(self):
       """
-      Process WebSockets opening handshake response from server.
+      Process WebSocket opening handshake response from server.
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
@@ -3429,7 +3472,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                reason = " - %s" % ''.join(sl[2:])
             else:
                reason = ""
-            return self.failHandshake("WebSockets connection upgrade failed (%d%s)" % (status_code, reason))
+            return self.failHandshake("WebSocket connection upgrade failed (%d%s)" % (status_code, reason))
 
          ## Upgrade
          ##
@@ -3514,7 +3557,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          else:
             self.data = self.data[end_of_header + 4:]
 
-         ## opening handshake completed, move WebSockets connection into OPEN state
+         ## opening handshake completed, move WebSocket connection into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
          self.inside_message = False
@@ -3558,13 +3601,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
       connection.
       """
       if self.debug:
-         log.msg("failing WebSockets opening handshake ('%s')" % reason)
+         log.msg("failing WebSocket opening handshake ('%s')" % reason)
       self.dropConnection(abort = True)
 
 
 class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
-   A Twisted factory for WebSockets client protocols.
+   A Twisted factory for WebSocket client protocols.
    """
 
    protocol = WebSocketClientProtocol
@@ -3591,11 +3634,11 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str
-      :param origin: The origin to be sent in WebSockets opening handshake or None (default: None).
+      :param origin: The origin to be sent in WebSocket opening handshake or None (default: None).
       :type origin: str
-      :param protocols: List of subprotocols the client should announce in WebSockets opening handshake (default: []).
+      :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: []).
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header or None (default: "AutobahnWebSockets/x.x.x").
+      :param useragent: User agent as announced in HTTP request header or None (default: "AutobahnWebSocket/x.x.x").
       :type useragent: str
       :param debug: Debug mode (default: False).
       :type debug: bool
@@ -3701,7 +3744,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       """
       Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
-      :param version: The WebSockets protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
+      :param version: The WebSocket protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
       :type version: int
       :param allowHixie76: Allow to speak Hixie76 protocol version.
       :type allowHixie76: bool
@@ -3737,7 +3780,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       if version is not None:
          if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
-            raise Exception("invalid WebSockets draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
+            raise Exception("invalid WebSocket draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
          if version == 0 and not self.allowHixie76:
             raise Exception("use of Hixie-76 requires allowHixie76 == True")
          if version != self.version:
