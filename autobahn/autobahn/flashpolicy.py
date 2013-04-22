@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+__all__ = ("FlashPolicyProtocol", "FlashPolicyFactory",)
+
+
 import re
 
 from twisted.python import log
@@ -31,10 +34,12 @@ class FlashPolicyProtocol(Protocol):
    a remote host. It now requires the presence of a socket policy file
    on the server.
 
-   http://www.lightsphere.com/dev/articles/flash_socket_policy.html
-
    We want this to support the Flash WebSockets bridge which is needed for
    older browser, in particular MSIE9/8.
+
+   See:
+      * `Autobahn WebSocket fallbacks example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_wsfallbacks>`_
+      * `Flash policy files background <http://www.lightsphere.com/dev/articles/flash_socket_policy.html>`_
    """
 
    REQUESTPAT = re.compile("^\s*<policy-file-request\s*/>")
@@ -43,6 +48,12 @@ class FlashPolicyProtocol(Protocol):
    POLICYFILE = """<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" to-ports="%d" /></cross-domain-policy>"""
 
    def __init__(self, allowedPort):
+      """
+      Ctor.
+
+      :param allowedPort: The port to which Flash player should be allowed to connect.
+      :type allowedPort: int
+      """
       self.allowedPort = allowedPort
       self.received = ""
       self.dropConnection = None
@@ -83,6 +94,12 @@ class FlashPolicyProtocol(Protocol):
 class FlashPolicyFactory(Factory):
 
    def __init__(self, allowedPort):
+      """
+      Ctor.
+
+      :param allowedPort: The port to which Flash player should be allowed to connect.
+      :type allowedPort: int
+      """
       self.allowedPort = allowedPort
 
    def buildProtocol(self, addr):

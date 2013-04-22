@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,7 +16,11 @@
 ##
 ###############################################################################
 
+__all__ = ("lookupWsSupport",)
+
+
 import re
+
 UA_FIREFOX = re.compile(".*Firefox/(\d*).*")
 UA_CHROME = re.compile(".*Chrome/(\d*).*")
 UA_CHROMEFRAME = re.compile(".*chromeframe/(\d*).*")
@@ -116,23 +120,6 @@ UA_HPWEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
 
 
 def _lookupWsSupport(ua):
-   """
-   Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
-   and if not, whether the web-socket-js Flash bridge works to polyfill that.
-
-   Returns a tuple of booleans
-
-      (ws_supported, needs_flash, detected)
-
-      ws_supported = WebSocket is supported
-      needs_flash = Flash Bridge is needed for support
-      detected = the code has explicitly mapped the support/nosupport
-
-   Params:
-
-      ua = user agent string, i.e. flask.request.user_agent.string
-   """
-
    ## Internet Explorer
    ##
    ## FIXME: handle Windows Phone
@@ -290,6 +277,22 @@ def _lookupWsSupport(ua):
 UA_DETECT_WS_SUPPORT_DB = {}
 
 def lookupWsSupport(ua, debug = True):
+   """
+   Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
+   and if not, whether the `web-socket-js <https://github.com/gimite/web-socket-js>`_
+   Flash bridge works to polyfill that.
+
+   Returns a tuple of booleans `(ws_supported, needs_flash, detected)` where
+
+      * `ws_supported`: WebSocket is supported
+      * `needs_flash`: Flash Bridge is needed for support
+      * `detected` the code has explicitly mapped the support/nosupport
+
+   :param ua: The browser user agent string as sent in the HTTP header, e.g. provided as `flask.request.user_agent.string` in Flask.
+   :type ua: str
+
+   :returns: tuple -- A tuple `(ws_supported, needs_flash, detected)`.
+   """
    ws = _lookupWsSupport(ua)
    if debug:
       if not UA_DETECT_WS_SUPPORT_DB.has_key(ua):

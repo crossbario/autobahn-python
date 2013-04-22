@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -15,6 +15,17 @@
 ##  limitations under the License.
 ##
 ###############################################################################
+
+__all__ = ("WampProtocol",
+           "WampFactory",
+           "WampServerProtocol",
+           "WampServerFactory",
+           "WampClientProtocol",
+           "WampClientFactory",
+           "WampCraProtocol",
+           "WampCraClientProtocol",
+           "WampCraServerProtocol",)
+
 
 import json
 import random
@@ -1535,6 +1546,7 @@ class WampCraProtocol(WampProtocol):
       return sig
 
 
+
 class WampCraClientProtocol(WampClientProtocol, WampCraProtocol):
    """
    Simple, authenticated WAMP client protocol.
@@ -1867,6 +1879,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       ## return permissions to client
       ##
       return perms['permissions']
+
 
 
 class Call:
@@ -2267,6 +2280,7 @@ class CallResultHandler(Handler):
       else:
          if self.proto.debugWamp:
             log.msg("callid not found for received call result message")
+
 
 
 class CallErrorHandler(Handler):

@@ -27,6 +27,8 @@
 ##
 ###############################################################################
 
+__all__ = ("Utf8Validator",)
+
 
 ## use Cython implementation of UTF8 validator if available
 ##

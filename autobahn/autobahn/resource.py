@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012 Tavendo GmbH
+##  Copyright 2012-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 ##
 ###############################################################################
 
-__all__ = ("WebSocketResource","HTTPChannelHixie76Aware",)
+__all__ = ("WebSocketResource",
+           "HTTPChannelHixie76Aware",
+           "WSGIRootResource",)
+
 
 from zope.interface import implements
 
@@ -42,7 +45,11 @@ class HTTPChannelHixie76Aware(HTTPChannel):
    HTTP header upon detecting Hixie-76. We need this since otherwise
    Twisted Web will silently ignore the body.
 
-   To use this, set twisted.web.server.Site.protocol = HTTPChannelHixie76Aware
+   To use this, set `protocol = HTTPChannelHixie76Aware` on your
+   `twisted.web.server.Site <http://twistedmatrix.com/documents/current/api/twisted.web.server.Site.html>`_ instance.
+
+   See:
+      * `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_site>`_
    """
 
    def headerReceived(self, line):
@@ -55,15 +62,27 @@ class HTTPChannelHixie76Aware(HTTPChannel):
 class WSGIRootResource(Resource):
    """
    Root resource when you want a WSGI resource be the default serving
-   resource for a Site, but have subpaths served by different resources.
+   resource for a Twisted Web site, but have subpaths served by
+   different resources.
    
-   This is a hack needed since WSGIResource does not provide putChild().
+   This is a hack needed since
+   `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
+   does not provide a `putChild()` method.
    
    See also:
-   http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html
+      * `Autobahn Twisted Web WSGI example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_wsgi>`_
+      * `Original hack <http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html>`_
    """
 
    def __init__(self, wsgiResource, children):
+      """
+      Creates a Twisted Web root resource.
+
+      :param wsgiResource: 
+      :type wsgiResource: Instance of `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
+      :param children: A dictionary with string keys constituting URL subpaths, and Twisted Web resources as values.
+      :type children: dict
+      """
       Resource.__init__(self)
       self._wsgiResource = wsgiResource
       self.children = children

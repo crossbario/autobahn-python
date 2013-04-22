@@ -40,6 +40,11 @@
     :copyright: (c) Copyright 2011 by Armin Ronacher.
     :license: BSD, see LICENSE for more details.
 """
+
+__all__ = ("pbkdf2_hex",
+           "pbkdf2_bin",)
+
+
 import hmac
 import hashlib
 from struct import Struct
