@@ -25,7 +25,6 @@ __all__ = ["createWsUrl",
            "ConnectionRequest",
            "ConnectionResponse",
            "Timings",
-           "PreparedMessage",
            
            "WebSocketProtocol",
            "WebSocketFactory",
@@ -81,7 +80,7 @@ def createWsUrl(hostname, port = None, isSecure = False, path = None, params = N
    :param params: A dictionary of key-values to construct the query component of the addressed resource (will be properly URL escaped).
    :type params: dict
 
-   :returns str -- Constructed WebSocket URL.
+   :returns: str -- Constructed WebSocket URL.
    """
    if port is not None:
       netloc = "%s:%d" % (hostname, port)
@@ -474,20 +473,26 @@ class WebSocketProtocol(protocol.Protocol):
    done by using setProtocolOptions() on the factories for clients and servers.
    """
 
-   WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+   _WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
    """
    Protocol defined magic used during WebSocket handshake (used in Hybi-drafts
    and final RFC6455.
    """
 
-   QUEUED_WRITE_DELAY = 0.00001
-   """For synched/chopped writes, this is the reactor reentry delay in seconds."""
+   _QUEUED_WRITE_DELAY = 0.00001
+   """
+   For synched/chopped writes, this is the reactor reentry delay in seconds.
+   """
 
    MESSAGE_TYPE_TEXT = 1
-   """WebSocket text message type (UTF-8 payload)."""
+   """
+   WebSocket text message type (UTF-8 payload).
+   """
 
    MESSAGE_TYPE_BINARY = 2
-   """WebSocket binary message type (arbitrary binary payload)."""
+   """
+   WebSocket binary message type (arbitrary binary payload).
+   """
 
    ## WebSocket protocol state:
    ## STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
@@ -1038,6 +1043,7 @@ class WebSocketProtocol(protocol.Protocol):
          else:
             self.trackedTimings = None
 
+
    def doTrack(self, msg):
       if not hasattr(self, 'trackTimings') or not self.trackTimings:
          return
@@ -1353,7 +1359,7 @@ class WebSocketProtocol(protocol.Protocol):
          # can get on the wire. Note: this is a "heuristic",
          # since there is no (easy) way to really force out
          # octets from the OS network stack to wire.
-         reactor.callLater(WebSocketProtocol.QUEUED_WRITE_DELAY, self._send)
+         reactor.callLater(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
       else:
          self.triggered = False
 
@@ -2072,7 +2078,6 @@ class WebSocketProtocol(protocol.Protocol):
          self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
 
 
-
    def beginMessageFrame(self, length, reserved = 0, mask = None):
       """
       Begin sending new message frame.
@@ -2444,28 +2449,42 @@ class PreparedMessage:
 
 class WebSocketFactory:
    """
-   Mixin for WebSocketClientFactory and WebSocketServerFactory.
+   Mixin for
+   :class:`autobahn.websocket.WebSocketClientFactory` and
+   :class:`autobahn.websocket.WebSocketServerFactory`.
    """
 
    def prepareMessage(self, payload, binary = False, masked = None):
       """
       Prepare a WebSocket message. This can be later used on multiple
-      instances of WebSocketProtocol using sendPreparedMessage().
+      instances of :class:`autobahn.websocket.WebSocketProtocol` using
+      :meth:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`.
 
       By doing so, you can avoid the (small) overhead of framing the
-      _same_ payload into WS messages when that payload is to be sent
+      *same* payload into WS messages when that payload is to be sent
       out on multiple connections.
-
-      Modes: Hybi, Hixie
 
       Caveats:
 
-      1) Only use when you know what you are doing. I.e. calling
-      sendPreparedMessage() on the _same_ protocol instance multiples
-      times with the same prepared message might break the spec.
-      Since i.e. the frame mask will be the same!
+         1. Only use when you know what you are doing. I.e. calling
+            :meth:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`
+            on the *same* protocol instance multiples times with the *same*
+            prepared message might break the spec, since i.e. the frame mask
+            will be the same!
 
-      2) Treat the object returned as opaque. It may change!
+         2. Treat the object returned as opaque. It may change!
+
+      Modes: Hybi, Hixie
+
+      :param payload: The message payload.
+      :type payload: str
+      :param binary: Provide `True` for binary payload.
+      :type binary: bool
+      :param masked: Provide `True` if WebSocket message is to be
+                     masked (required for client-to-server WebSocket messages).
+      :type masked: bool
+
+      :returns: obj -- The prepared message.
       """
       if masked is None:
          masked = not self.isServer
@@ -2486,7 +2505,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       Throw HttpException when you don't want to accept the WebSocket
       connection request. For example, throw a
-      HttpException(httpstatus.HTTP_STATUS_CODE_UNAUTHORIZED[0], "You are not authorized for this!").
+      `HttpException(httpstatus.HTTP_STATUS_CODE_UNAUTHORIZED[0], "You are not authorized for this!")`.
 
       When you want to accept the connection, return the accepted protocol
       from list of WebSocket (sub)protocols provided by client or None to
@@ -2503,7 +2522,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       Called by Twisted when new TCP connection from client was accepted. Default
       implementation will prepare for initial WebSocket opening handshake.
       When overriding in derived class, make sure to call this base class
-      implementation _before_ your code.
+      implementation *before* your code.
       """
       self.isServer = True
       WebSocketProtocol.connectionMade(self)
@@ -2517,7 +2536,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       Called by Twisted when established TCP connection from client was lost. Default
       implementation will tear down all state properly.
       When overriding in derived class, make sure to call this base class
-      implementation _after_ your code.
+      implementation *after* your code.
       """
       WebSocketProtocol.connectionLost(self, reason)
       self.factory.countConnections -= 1
@@ -2526,6 +2545,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 
    def parseHixie76Key(self, key):
+      """
+      Parse Hixie76 opening handshake key provided by client.
+      """
       return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
 
 
@@ -2888,7 +2910,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ## compute Sec-WebSocket-Accept
             ##
             sha1 = hashlib.sha1()
-            sha1.update(key + WebSocketProtocol.WS_MAGIC)
+            sha1.update(key + WebSocketProtocol._WS_MAGIC)
             sec_websocket_accept = base64.b64encode(sha1.digest())
 
             response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
@@ -3040,22 +3062,13 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
 
 
-   def __init__(self,
-
-                ## WebSockect session parameters
-                url = None,
-                protocols = [],
-                server = "AutobahnPython/%s" % __version__,
-
-                ## debugging
-                debug = False,
-                debugCodePaths = False,
-
-                externalPort = None):
+   def __init__(self, url = None, protocols = [], server = "AutobahnPython/%s" % __version__, debug = False, debugCodePaths = False, externalPort = None):
       """
       Create instance of WebSocket server factory.
 
-      Note that you MUST set URL either here or using setSessionParameters() _before_ the factory is started.
+      Note that you MUST provide URL either here or using
+      :meth:`autobahn.websocket.WebSocketServerFactory.setSessionParameters`
+      *before* the factory is started.
 
       :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ].
       :type url: str
@@ -3504,7 +3517,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                sec_websocket_accept_got = self.http_headers["sec-websocket-accept"].strip()
 
                sha1 = hashlib.sha1()
-               sha1.update(self.websocket_key + WebSocketProtocol.WS_MAGIC)
+               sha1.update(self.websocket_key + WebSocketProtocol._WS_MAGIC)
                sec_websocket_accept = base64.b64encode(sha1.digest())
 
                if sec_websocket_accept_got != sec_websocket_accept:
@@ -3616,21 +3629,13 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
 
 
-   def __init__(self,
-
-                ## WebSockect session parameters
-                url = None,
-                origin = None,
-                protocols = [],
-                useragent = "AutobahnPython/%s" % __version__,
-
-                ## debugging
-                debug = False,
-                debugCodePaths = False):
+   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, debug = False, debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
-      Note that you MUST set URL either here or using setSessionParameters() _before_ the factory is started.
+      Note that you MUST provide URL either here or set using
+      :meth:`autobahn.websocket.WebSocketClientFactory.setSessionParameters`
+      *before* the factory is started.
 
       :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
       :type url: str

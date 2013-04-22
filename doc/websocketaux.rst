@@ -37,9 +37,6 @@ Opening Handshake
 Misc
 ----
 
-.. autoclass:: autobahn.websocket.PreparedMessage
-   :members: __init__
-
 .. autoclass:: autobahn.websocket.Timings
    :members: __init__,
              track,
