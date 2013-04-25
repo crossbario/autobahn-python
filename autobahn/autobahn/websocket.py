@@ -2879,10 +2879,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          ## headers from factory
          for uh in self.factory.headers.items():
-            response += "%s: %s\x0d\x0a" % uh
+            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
          ## headers from onConnect
-         for uh in headers:
-            response += "%s: %s\x0d\x0a" % uh
+         for uh in headers.items():
+            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
 
          if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
@@ -3410,7 +3410,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ## optional, user supplied additional HTTP headers
       ##
       for uh in self.factory.headers.items():
-         request += "%s: %s\x0d\x0a" % uh
+         request += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
 
       ## handshake random key
       ##
@@ -3741,7 +3741,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.origin = origin
       self.protocols = protocols
       self.useragent = useragent
-      self.headers = {}
+      self.headers = headers
 
 
    def resetProtocolOptions(self):
