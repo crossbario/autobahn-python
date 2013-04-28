@@ -2511,6 +2511,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
       from list of WebSocket (sub)protocols provided by client or None to
       speak no specific one or when the client list was empty.
 
+      You may also return a pair of `(protocol, headers)` to send additional HTTP `headers`.
+
       :param connectionRequest: WebSocket connection request information.
       :type connectionRequest: instance of :class:`autobahn.websocket.ConnectionRequest`
       """
@@ -2836,9 +2838,18 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                   self.websocket_extensions)
 
             ## onConnect() will return the selected subprotocol or None
-            ## or raise an HttpException
+            ## or a pair (protocol, headers) or raise an HttpException
             ##
-            protocol = self.onConnect(connectionRequest)
+            protocol = None
+            headers = {}
+            res = self.onConnect(connectionRequest)
+            if type(res) == tuple:
+               if len(res) > 0:
+                  protocol = res[0]
+               if len(res) > 1:
+                  headers = res[1]
+            else:
+               protocol = res
 
             if protocol is not None and not (protocol in self.websocket_protocols):
                raise Exception("protocol accepted must be from the list client sent or None")
@@ -2863,6 +2874,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          response += "Upgrade: WebSocket\x0d\x0a"
          response += "Connection: Upgrade\x0d\x0a"
+
+         ## optional, user supplied additional HTTP headers
+         ##
+         ## headers from factory
+         for uh in self.factory.headers.items():
+            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+         ## headers from onConnect
+         for uh in headers.items():
+            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
 
          if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
@@ -3062,7 +3082,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, protocols = [], server = "AutobahnPython/%s" % __version__, debug = False, debugCodePaths = False, externalPort = None):
+   def __init__(self, url = None, protocols = [], server = "AutobahnPython/%s" % __version__, headers = {}, externalPort = None, debug = False, debugCodePaths = False):
       """
       Create instance of WebSocket server factory.
 
@@ -3076,12 +3096,14 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type protocols: list of strings
       :param server: Server as announced in HTTP response header during opening handshake or None (default: "AutobahnWebSocket/x.x.x").
       :type server: str
+      :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+      :type headers: dict
+      :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+      :type externalPort: int
       :param debug: Debug mode (default: False).
       :type debug: bool
       :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
-      :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
-      :type externalPort: int
       """
       self.debug = debug
       self.debugCodePaths = debugCodePaths
@@ -3098,7 +3120,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       ## default WS session parameters
       ##
-      self.setSessionParameters(url, protocols, server, externalPort)
+      self.setSessionParameters(url, protocols, server, headers, externalPort)
 
       ## default WebSocket protocol options
       ##
@@ -3109,7 +3131,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.countConnections = 0
 
 
-   def setSessionParameters(self, url = None, protocols = [], server = None, externalPort = None):
+   def setSessionParameters(self, url = None, protocols = [], server = None, headers = {}, externalPort = None):
       """
       Set WebSocket session parameters.
 
@@ -3119,6 +3141,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type protocols: list of strings
       :param server: Server as announced in HTTP response header during opening handshake.
       :type server: str
+      :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+      :type headers: dict
       :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
       :type externalPort: int
       """
@@ -3139,9 +3163,10 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
          self.host = None
          self.port = None
 
-      self.externalPort = externalPort if externalPort is not None else self.port
       self.protocols = protocols
       self.server = server
+      self.headers = headers
+      self.externalPort = externalPort if externalPort is not None else self.port
 
 
    def resetProtocolOptions(self):
@@ -3382,6 +3407,11 @@ class WebSocketClientProtocol(WebSocketProtocol):
       request += "Pragma: no-cache\x0d\x0a"
       request += "Cache-Control: no-cache\x0d\x0a"
 
+      ## optional, user supplied additional HTTP headers
+      ##
+      for uh in self.factory.headers.items():
+         request += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+
       ## handshake random key
       ##
       if self.version == 0:
@@ -3407,9 +3437,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ##
       if self.factory.origin:
          if self.version > 10 or self.version == 0:
-            request += "Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
          else:
-            request += "Sec-WebSocket-Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
 
       ## optional list of WS subprotocols announced
       ##
@@ -3629,7 +3659,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, debug = False, debugCodePaths = False):
+   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, debug = False, debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
@@ -3645,6 +3675,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type protocols: list of strings
       :param useragent: User agent as announced in HTTP request header or None (default: "AutobahnWebSocket/x.x.x").
       :type useragent: str
+      :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+      :type headers: dict
       :param debug: Debug mode (default: False).
       :type debug: bool
       :param debugCodePaths: Debug code paths mode (default: False).
@@ -3665,14 +3697,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       ## default WS session parameters
       ##
-      self.setSessionParameters(url, origin, protocols, useragent)
+      self.setSessionParameters(url, origin, protocols, useragent, headers)
 
       ## default WebSocket protocol options
       ##
       self.resetProtocolOptions()
 
 
-   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None):
+   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}):
       """
       Set WebSocket session parameters.
 
@@ -3684,6 +3716,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type protocols: list of strings
       :param useragent: User agent as announced in HTTP request header during opening handshake.
       :type useragent: str
+      :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+      :type headers: dict
       """
       if url is not None:
          ## parse WebSocket URI into components
@@ -3707,6 +3741,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.origin = origin
       self.protocols = protocols
       self.useragent = useragent
+      self.headers = headers
 
 
    def resetProtocolOptions(self):
