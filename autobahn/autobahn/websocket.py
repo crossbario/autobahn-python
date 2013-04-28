@@ -3437,9 +3437,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ##
       if self.factory.origin:
          if self.version > 10 or self.version == 0:
-            request += "Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
          else:
-            request += "Sec-WebSocket-Origin: %d\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
 
       ## optional list of WS subprotocols announced
       ##
