@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class KeyValueClientProtocol(WampClientProtocol):
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   factory = WampClientFactory("ws://localhost:9000")
+   factory = WampClientFactory("ws://localhost:8080/ws")
    factory.protocol = KeyValueClientProtocol
    connectWS(factory)
    reactor.run()
