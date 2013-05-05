@@ -1758,6 +1758,8 @@ class WampCraProtocol(WampProtocol):
       """
       if authSecret is None:
          authSecret = ""
+      if isinstance(authSecret, unicode):
+          authSecret = authSecret.encode("utf-8")
       if authExtra is not None:
           authSalt = authExtra.get('salt')
           keylen = authExtra.get('keylen', 32)
