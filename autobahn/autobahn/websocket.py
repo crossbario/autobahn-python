@@ -163,14 +163,20 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
 
    :returns: obj -- An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
    """
-   if factory.isSecure:
-      if contextFactory is None:
-         # create default client SSL context factory when none given
-         from twisted.internet import ssl
-         contextFactory = ssl.ClientContextFactory()
-      conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
+   if factory.proxy is not None:
+      if factory.isSecure:
+         raise Exception("WSS over explicit proxies not implemented")
+      else:
+         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)         
    else:
-      conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
+      if factory.isSecure:
+         if contextFactory is None:
+            # create default client SSL context factory when none given
+            from twisted.internet import ssl
+            contextFactory = ssl.ClientContextFactory()
+         conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
+      else:
+         conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
    return conn
 
 
@@ -495,12 +501,13 @@ class WebSocketProtocol(protocol.Protocol):
    """
 
    ## WebSocket protocol state:
-   ## STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
+   ## (STATE_PROXY_CONNECTING) => STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
    ##
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
    STATE_CLOSING = 2
    STATE_OPEN = 3
+   STATE_PROXY_CONNECTING = 4
 
    ## Streaming Send State
    SEND_STATE_GROUND = 0
@@ -847,7 +854,7 @@ class WebSocketProtocol(protocol.Protocol):
             pass
 
       else:
-         ## STATE_CONNECTING, STATE_CLOSED
+         ## STATE_PROXY_CONNECTING, STATE_CONNECTING, STATE_CLOSED
          raise Exception("logic error")
 
 
@@ -881,7 +888,7 @@ class WebSocketProtocol(protocol.Protocol):
       Modes: Hybi, Hixie
       """
       self.openHandshakeTimeoutCall = None
-      if self.state == WebSocketProtocol.STATE_CONNECTING:
+      if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
          if self.debugCodePaths:
             log.msg("onOpenHandshakeTimeout fired")
          self.wasClean = False
@@ -1100,7 +1107,10 @@ class WebSocketProtocol(protocol.Protocol):
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
 
       ## initial state
-      self.state = WebSocketProtocol.STATE_CONNECTING
+      if not self.isServer and self.factory.proxy is not None:
+         self.state = WebSocketProtocol.STATE_PROXY_CONNECTING
+      else:
+         self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
 
@@ -1279,6 +1289,12 @@ class WebSocketProtocol(protocol.Protocol):
          while self.processData() and self.state != WebSocketProtocol.STATE_CLOSED:
             pass
 
+      ## need to establish proxy connection
+      ##
+      elif self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
+
+         self.processProxyConnect()
+
       ## WebSocket needs handshake
       ##
       elif self.state == WebSocketProtocol.STATE_CONNECTING:
@@ -1302,6 +1318,15 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       else:
          raise Exception("invalid state")
+
+
+   def processProxyConnect(self):
+      """
+      Process proxy connect.
+
+      Modes: Hybi, Hixie
+      """
+      raise Exception("must implement proxy connect (client or server) in derived class")
 
 
    def processHandshake(self):
@@ -1981,7 +2006,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.debugCodePaths:
             log.msg("ignoring sendCloseFrame since connection already closed")
 
-      elif self.state == WebSocketProtocol.STATE_CONNECTING:
+      elif self.state in [WebSocketProtocol.STATE_PROXY_CONNECTING, WebSocketProtocol.STATE_CONNECTING]:
          raise Exception("cannot close a connection not yet connected")
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
@@ -2544,6 +2569,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.factory.countConnections -= 1
       if self.debug:
          log.msg("connection from %s lost" % self.peerstr)
+
+
+   def processProxyConnect(self):
+      raise Exception("Autobahn isn't a proxy server")
 
 
    def parseHixie76Key(self, key):
@@ -3336,7 +3365,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
    def connectionMade(self):
       """
       Called by Twisted when new TCP connection to server was established. Default
-      implementation will start the initial WebSocket opening handshake.
+      implementation will start the initial WebSocket opening handshake (or proxy connect).
       When overriding in derived class, make sure to call this base class
       implementation _before_ your code.
       """
@@ -3344,7 +3373,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
       WebSocketProtocol.connectionMade(self)
       if self.debug:
          log.msg("connection to %s established" % self.peerstr)
-      self.startHandshake()
+
+      if not self.isServer and self.factory.proxy is not None:
+         ## start by doing a HTTP/CONNECT for explicit proxies
+         self.startProxyConnect()
+      else:
+         ## immediately start with the WebSocket opening handshake
+         self.startHandshake()
 
 
    def connectionLost(self, reason):
@@ -3357,6 +3392,106 @@ class WebSocketClientProtocol(WebSocketProtocol):
       WebSocketProtocol.connectionLost(self, reason)
       if self.debug:
          log.msg("connection to %s lost" % self.peerstr)
+
+
+   def startProxyConnect(self):
+      """
+      Connect to explicit proxy.
+      """
+
+      ## construct proxy connect HTTP request
+      ##
+      request  = "CONNECT %s:%s HTTP/1.1\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+      request += "Host: %s\x0d\x0a" % self.factory.host.encode("utf-8")
+#      request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+      request += "\x0d\x0a"
+
+      if self.debug:
+         log.msg(request)
+
+      self.sendData(request)
+
+
+   def processProxyConnect(self):
+      """
+      Process HTTP/CONNECT response from server.
+      """
+      ## only proceed when we have fully received the HTTP request line and all headers
+      ##
+      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      if end_of_header >= 0:
+
+         http_response_data = self.data[:end_of_header + 4]
+         if self.debug:
+            log.msg("received HTTP response:\n\n%s\n\n" % http_response_data)
+
+         ## extract HTTP status line and headers
+         ##
+         (http_status_line, http_headers, http_headers_cnt) = parseHttpHeader(http_response_data)
+
+         ## validate proxy connect response
+         ##
+         if self.debug:
+            log.msg("received HTTP status line for proxy connect request : %s" % str(http_status_line))
+            log.msg("received HTTP headers for proxy connect request : %s" % str(http_headers))
+
+         ## Response Line
+         ##
+         sl = http_status_line.split()
+         if len(sl) < 2:
+            return self.failProxyConnect("Bad HTTP response status line '%s'" % http_status_line)
+
+         ## HTTP version
+         ##
+         http_version = sl[0].strip()
+         if http_version != "HTTP/1.1":
+            return self.failProxyConnect("Unsupported HTTP version ('%s')" % http_version)
+
+         ## HTTP status code
+         ##
+         try:
+            status_code = int(sl[1].strip())
+         except:
+            return self.failProxyConnect("Bad HTTP status code ('%s')" % sl[1].strip())
+
+         if not (status_code >= 200 and status_code < 300):
+
+            ## FIXME: handle redirects
+            ## FIXME: handle authentication required
+
+            if len(sl) > 2:
+               reason = " - %s" % ''.join(sl[2:])
+            else:
+               reason = ""
+            return self.failProxyConnect("HTTP proxy connect failed (%d%s)" % (status_code, reason))
+
+
+         ## Ok, got complete response for HTTP/CONNECT, remember rest (if any)
+         ##
+         self.data = self.data[end_of_header + 4:]
+
+         ## opening handshake completed, move WebSocket connection into OPEN state
+         ##
+         self.state = WebSocketProtocol.STATE_CONNECTING
+
+         ## process rest of buffered data, if any
+         ##
+         if len(self.data) > 0:
+            self.consumeData()
+
+         ## now start WebSocket opening handshake
+         ##
+         self.startHandshake()
+
+
+   def failProxyConnect(self, reason):
+      """
+      During initial explicit proxy connect, the server response indicates some failure and we drop the
+      connection.
+      """
+      if self.debug:
+         log.msg("failing proxy connect ('%s')" % reason)
+      self.dropConnection(abort = True)
 
 
    def createHixieKey(self):
@@ -3659,7 +3794,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, debug = False, debugCodePaths = False):
+   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, proxy = None, debug = False, debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
@@ -3677,6 +3812,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type useragent: str
       :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
       :type headers: dict
+      :param proxy: Explicit proxy server to use (hostname:port or IP:port), e.g. "192.168.1.100:8080".
+      :type proxy: str
       :param debug: Debug mode (default: False).
       :type debug: bool
       :param debugCodePaths: Debug code paths mode (default: False).
@@ -3697,14 +3834,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       ## default WS session parameters
       ##
-      self.setSessionParameters(url, origin, protocols, useragent, headers)
+      self.setSessionParameters(url, origin, protocols, useragent, headers, proxy)
 
       ## default WebSocket protocol options
       ##
       self.resetProtocolOptions()
 
 
-   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}):
+   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}, proxy = None):
       """
       Set WebSocket session parameters.
 
@@ -3742,6 +3879,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.protocols = protocols
       self.useragent = useragent
       self.headers = headers
+
+      self.proxy = proxy
 
 
    def resetProtocolOptions(self):
