@@ -5,9 +5,8 @@
 .project
 .pydevproject
 */.cproject
-rce-*/build/
-rce-*/dist/
-rce-*/*.egg-info/
+*/build/
+*/dist/
+*/*.egg-info/
 .metadata/
-.svn/
-container/
+
