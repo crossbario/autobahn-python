@@ -56,6 +56,7 @@ from array import array
 from collections import deque
 
 from twisted.internet import reactor, protocol
+from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
 from _version import __version__
@@ -2854,49 +2855,56 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## the connection. onConnect() may throw, in which case the connection is denied, or it
          ## may return a protocol from the protocols provided by client or None.
          ##
-         try:
-            connectionRequest = ConnectionRequest(self.peer,
-                                                  self.peerstr,
-                                                  self.http_headers,
-                                                  self.http_request_host,
-                                                  self.http_request_path,
-                                                  self.http_request_params,
-                                                  self.websocket_version,
-                                                  self.websocket_origin,
-                                                  self.websocket_protocols,
-                                                  self.websocket_extensions)
+         connectionRequest = ConnectionRequest(self.peer,
+                                               self.peerstr,
+                                               self.http_headers,
+                                               self.http_request_host,
+                                               self.http_request_path,
+                                               self.http_request_params,
+                                               self.websocket_version,
+                                               self.websocket_origin,
+                                               self.websocket_protocols,
+                                               self.websocket_extensions)
 
-            ## onConnect() will return the selected subprotocol or None
-            ## or a pair (protocol, headers) or raise an HttpException
-            ##
-            protocol = None
-            headers = {}
-            res = self.onConnect(connectionRequest)
-            if type(res) == tuple:
-               if len(res) > 0:
-                  protocol = res[0]
-               if len(res) > 1:
-                  headers = res[1]
-            else:
-               protocol = res
+         ## onConnect() will return the selected subprotocol or None
+         ## or a pair (protocol, headers) or raise an HttpException
+         ##
+         protocol = maybeDeferred(self.onConnect, connectionRequest)
+         if self.websocket_version == 0:
+             key = key1, key2, key3
+         protocol.addCallback(self._processHandshake_buildResponse, key)
+         protocol.addErrback(self._processHandshake_failed)
 
-            if protocol is not None and not (protocol in self.websocket_protocols):
-               raise Exception("protocol accepted must be from the list client sent or None")
+   def _processHandshake_buildResponse(self, res, key):
+         """
+         Callback for Deferred returned by self.onConnect.
+         Generates the response for the handshake.
+         """
 
-            self.websocket_protocol_in_use = protocol
+         protocol = None
+         headers = {}
+         if type(res) == tuple:
+            if len(res) > 0:
+               protocol = res[0]
+            if len(res) > 1:
+               headers = res[1]
+         else:
+            protocol = res
 
-         except HttpException, e:
-            return self.failHandshake(e.reason, e.code)
-            #return self.sendHttpRequestFailure(e.code, e.reason)
+         if protocol is not None and not (protocol in self.websocket_protocols):
+            raise Exception("protocol accepted must be from the list client sent or None")
 
-         except Exception, e:
-            log.msg("Exception raised in onConnect() - %s" % str(e))
-            return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
+         self.websocket_protocol_in_use = protocol
+
+         if self.websocket_version == 0:
+            key1, key2, key3 = key
+
+         self.websocket_protocol_in_use = protocol
 
 
          ## build response to complete WebSocket handshake
          ##
-         response  = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
+         response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
 
          if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
@@ -3007,6 +3015,19 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          if len(self.data) > 0:
             self.consumeData()
+
+   def _processHandshake_failed(self, failure):
+      """
+      Errback for Deferred returned by self.onConnect.
+      Generates a HTTP error response for the handshake.
+      """
+      e = failure.value
+
+      if failure.check(HttpException):
+         return self.failHandshake(e.reason, e.code)
+      else:
+         log.msg("Exception raised in onConnect() - %s" % str(e))
+         return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
 
 
    def failHandshake(self, reason, code = HTTP_STATUS_CODE_BAD_REQUEST[0], responseHeaders = []):
