@@ -56,6 +56,7 @@ from array import array
 from collections import deque
 
 from twisted.internet import reactor, protocol
+from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
 from _version import __version__
@@ -163,14 +164,20 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
 
    :returns: obj -- An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
    """
-   if factory.isSecure:
-      if contextFactory is None:
-         # create default client SSL context factory when none given
-         from twisted.internet import ssl
-         contextFactory = ssl.ClientContextFactory()
-      conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
+   if factory.proxy is not None:
+      if factory.isSecure:
+         raise Exception("WSS over explicit proxies not implemented")
+      else:
+         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)         
    else:
-      conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
+      if factory.isSecure:
+         if contextFactory is None:
+            # create default client SSL context factory when none given
+            from twisted.internet import ssl
+            contextFactory = ssl.ClientContextFactory()
+         conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
+      else:
+         conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
    return conn
 
 
@@ -495,12 +502,13 @@ class WebSocketProtocol(protocol.Protocol):
    """
 
    ## WebSocket protocol state:
-   ## STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
+   ## (STATE_PROXY_CONNECTING) => STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
    ##
    STATE_CLOSED = 0
    STATE_CONNECTING = 1
    STATE_CLOSING = 2
    STATE_OPEN = 3
+   STATE_PROXY_CONNECTING = 4
 
    ## Streaming Send State
    SEND_STATE_GROUND = 0
@@ -847,7 +855,7 @@ class WebSocketProtocol(protocol.Protocol):
             pass
 
       else:
-         ## STATE_CONNECTING, STATE_CLOSED
+         ## STATE_PROXY_CONNECTING, STATE_CONNECTING, STATE_CLOSED
          raise Exception("logic error")
 
 
@@ -881,7 +889,7 @@ class WebSocketProtocol(protocol.Protocol):
       Modes: Hybi, Hixie
       """
       self.openHandshakeTimeoutCall = None
-      if self.state == WebSocketProtocol.STATE_CONNECTING:
+      if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
          if self.debugCodePaths:
             log.msg("onOpenHandshakeTimeout fired")
          self.wasClean = False
@@ -1100,7 +1108,10 @@ class WebSocketProtocol(protocol.Protocol):
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
 
       ## initial state
-      self.state = WebSocketProtocol.STATE_CONNECTING
+      if not self.isServer and self.factory.proxy is not None:
+         self.state = WebSocketProtocol.STATE_PROXY_CONNECTING
+      else:
+         self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
       self.data = ""
 
@@ -1279,6 +1290,12 @@ class WebSocketProtocol(protocol.Protocol):
          while self.processData() and self.state != WebSocketProtocol.STATE_CLOSED:
             pass
 
+      ## need to establish proxy connection
+      ##
+      elif self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
+
+         self.processProxyConnect()
+
       ## WebSocket needs handshake
       ##
       elif self.state == WebSocketProtocol.STATE_CONNECTING:
@@ -1302,6 +1319,15 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       else:
          raise Exception("invalid state")
+
+
+   def processProxyConnect(self):
+      """
+      Process proxy connect.
+
+      Modes: Hybi, Hixie
+      """
+      raise Exception("must implement proxy connect (client or server) in derived class")
 
 
    def processHandshake(self):
@@ -1981,7 +2007,7 @@ class WebSocketProtocol(protocol.Protocol):
          if self.debugCodePaths:
             log.msg("ignoring sendCloseFrame since connection already closed")
 
-      elif self.state == WebSocketProtocol.STATE_CONNECTING:
+      elif self.state in [WebSocketProtocol.STATE_PROXY_CONNECTING, WebSocketProtocol.STATE_CONNECTING]:
          raise Exception("cannot close a connection not yet connected")
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
@@ -2546,6 +2572,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          log.msg("connection from %s lost" % self.peerstr)
 
 
+   def processProxyConnect(self):
+      raise Exception("Autobahn isn't a proxy server")
+
+
    def parseHixie76Key(self, key):
       """
       Parse Hixie76 opening handshake key provided by client.
@@ -2825,159 +2855,175 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## the connection. onConnect() may throw, in which case the connection is denied, or it
          ## may return a protocol from the protocols provided by client or None.
          ##
-         try:
-            connectionRequest = ConnectionRequest(self.peer,
-                                                  self.peerstr,
-                                                  self.http_headers,
-                                                  self.http_request_host,
-                                                  self.http_request_path,
-                                                  self.http_request_params,
-                                                  self.websocket_version,
-                                                  self.websocket_origin,
-                                                  self.websocket_protocols,
-                                                  self.websocket_extensions)
+         connectionRequest = ConnectionRequest(self.peer,
+                                               self.peerstr,
+                                               self.http_headers,
+                                               self.http_request_host,
+                                               self.http_request_path,
+                                               self.http_request_params,
+                                               self.websocket_version,
+                                               self.websocket_origin,
+                                               self.websocket_protocols,
+                                               self.websocket_extensions)
 
-            ## onConnect() will return the selected subprotocol or None
-            ## or a pair (protocol, headers) or raise an HttpException
-            ##
-            protocol = None
-            headers = {}
-            res = self.onConnect(connectionRequest)
-            if type(res) == tuple:
-               if len(res) > 0:
-                  protocol = res[0]
-               if len(res) > 1:
-                  headers = res[1]
-            else:
-               protocol = res
-
-            if protocol is not None and not (protocol in self.websocket_protocols):
-               raise Exception("protocol accepted must be from the list client sent or None")
-
-            self.websocket_protocol_in_use = protocol
-
-         except HttpException, e:
-            return self.failHandshake(e.reason, e.code)
-            #return self.sendHttpRequestFailure(e.code, e.reason)
-
-         except Exception, e:
-            log.msg("Exception raised in onConnect() - %s" % str(e))
-            return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
-
-
-         ## build response to complete WebSocket handshake
+         ## onConnect() will return the selected subprotocol or None
+         ## or a pair (protocol, headers) or raise an HttpException
          ##
-         response  = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
-
-         if self.factory.server is not None and self.factory.server != "":
-            response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
-
-         response += "Upgrade: WebSocket\x0d\x0a"
-         response += "Connection: Upgrade\x0d\x0a"
-
-         ## optional, user supplied additional HTTP headers
-         ##
-         ## headers from factory
-         for uh in self.factory.headers.items():
-            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
-         ## headers from onConnect
-         for uh in headers.items():
-            response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
-
-         if self.websocket_protocol_in_use is not None:
-            response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
-
+         protocol = maybeDeferred(self.onConnect, connectionRequest)
          if self.websocket_version == 0:
+             key = key1, key2, key3
+         protocol.addCallback(self._processHandshake_buildResponse, key)
+         protocol.addErrback(self._processHandshake_failed)
 
-            if self.websocket_origin:
-               ## browser client provide the header, and expect it to be echo'ed
-               response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
 
+   def _processHandshake_buildResponse(self, res, key):
+      """
+      Callback for Deferred returned by self.onConnect. Generates the response for the handshake.
+      """
+      protocol = None
+      headers = {}
+      if type(res) == tuple:
+         if len(res) > 0:
+            protocol = res[0]
+         if len(res) > 1:
+            headers = res[1]
+      else:
+         protocol = res
+
+      if protocol is not None and not (protocol in self.websocket_protocols):
+         raise Exception("protocol accepted must be from the list client sent or None")
+
+      self.websocket_protocol_in_use = protocol
+
+      if self.websocket_version == 0:
+         key1, key2, key3 = key
+
+      ## build response to complete WebSocket handshake
+      ##
+      response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
+
+      if self.factory.server is not None and self.factory.server != "":
+         response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+
+      response += "Upgrade: WebSocket\x0d\x0a"
+      response += "Connection: Upgrade\x0d\x0a"
+
+      ## optional, user supplied additional HTTP headers
+      ##
+      ## headers from factory
+      for uh in self.factory.headers.items():
+         response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+      ## headers from onConnect
+      for uh in headers.items():
+         response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+
+      if self.websocket_protocol_in_use is not None:
+         response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
+
+      if self.websocket_version == 0:
+
+         if self.websocket_origin:
+            ## browser client provide the header, and expect it to be echo'ed
+            response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
+
+         if self.debugCodePaths:
+            log.msg('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
+
+         if (self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80):
             if self.debugCodePaths:
-               log.msg('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
-
-            if (self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80):
-               if self.debugCodePaths:
-                  log.msg('factory running on non-default port')
-               response_port = ':' + str(self.factory.externalPort)
-            else:
-               if self.debugCodePaths:
-                  log.msg('factory running on default port')
-               response_port = ''
-
-            ## FIXME: check this! But see below ..
-            if False:
-               response_host = str(self.factory.host)
-               response_path = str(self.factory.path)
-            else:
-               response_host = str(self.http_request_host)
-               response_path = str(self.http_request_uri)
-
-            location = "%s://%s%s%s" % ('wss' if self.factory.isSecure else 'ws', response_host, response_port, response_path)
-
-            # Safari is very picky about this one
-            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
-
-            ## end of HTTP response headers
-            response += "\x0d\x0a"
-
-            ## compute accept body
-            ##
-            accept_val = struct.pack(">II", key1, key2) + key3
-            accept = hashlib.md5(accept_val).digest()
-            response_body = str(accept)
+               log.msg('factory running on non-default port')
+            response_port = ':' + str(self.factory.externalPort)
          else:
-            ## compute Sec-WebSocket-Accept
-            ##
-            sha1 = hashlib.sha1()
-            sha1.update(key + WebSocketProtocol._WS_MAGIC)
-            sec_websocket_accept = base64.b64encode(sha1.digest())
-
-            response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
-
-            if len(self.websocket_extensions_in_use) > 0:
-               response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
-
-            ## end of HTTP response headers
-            response += "\x0d\x0a"
-            response_body = ''
-
-         if self.debug:
-            log.msg("sending HTTP response:\n\n%s%s\n\n" % (response, binascii.b2a_hex(response_body)))
-
-         ## save and send out opening HS data
-         ##
-         self.http_response_data = response + response_body
-         self.sendData(self.http_response_data)
-
-         ## opening handshake completed, move WebSocket connection into OPEN state
-         ##
-         self.state = WebSocketProtocol.STATE_OPEN
-
-         ## cancel any opening HS timer if present
-         ##
-         if self.openHandshakeTimeoutCall is not None:
             if self.debugCodePaths:
-               log.msg("openHandshakeTimeoutCall.cancel")
-            self.openHandshakeTimeoutCall.cancel()
-            self.openHandshakeTimeoutCall = None
+               log.msg('factory running on default port')
+            response_port = ''
 
-         ## init state
-         ##
-         self.inside_message = False
-         if self.websocket_version != 0:
-            self.current_frame = None
+         ## FIXME: check this! But see below ..
+         if False:
+            response_host = str(self.factory.host)
+            response_path = str(self.factory.path)
+         else:
+            response_host = str(self.http_request_host)
+            response_path = str(self.http_request_uri)
 
-         ## fire handler on derived class
-         ##
-         if self.trackedTimings:
-            self.trackedTimings.track("onOpen")
-         self.onOpen()
+         location = "%s://%s%s%s" % ('wss' if self.factory.isSecure else 'ws', response_host, response_port, response_path)
 
-         ## process rest, if any
+         # Safari is very picky about this one
+         response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
+
+         ## end of HTTP response headers
+         response += "\x0d\x0a"
+
+         ## compute accept body
          ##
-         if len(self.data) > 0:
-            self.consumeData()
+         accept_val = struct.pack(">II", key1, key2) + key3
+         accept = hashlib.md5(accept_val).digest()
+         response_body = str(accept)
+      else:
+         ## compute Sec-WebSocket-Accept
+         ##
+         sha1 = hashlib.sha1()
+         sha1.update(key + WebSocketProtocol._WS_MAGIC)
+         sec_websocket_accept = base64.b64encode(sha1.digest())
+
+         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
+
+         if len(self.websocket_extensions_in_use) > 0:
+            response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
+
+         ## end of HTTP response headers
+         response += "\x0d\x0a"
+         response_body = ''
+
+      if self.debug:
+         log.msg("sending HTTP response:\n\n%s%s\n\n" % (response, binascii.b2a_hex(response_body)))
+
+      ## save and send out opening HS data
+      ##
+      self.http_response_data = response + response_body
+      self.sendData(self.http_response_data)
+
+      ## opening handshake completed, move WebSocket connection into OPEN state
+      ##
+      self.state = WebSocketProtocol.STATE_OPEN
+
+      ## cancel any opening HS timer if present
+      ##
+      if self.openHandshakeTimeoutCall is not None:
+         if self.debugCodePaths:
+            log.msg("openHandshakeTimeoutCall.cancel")
+         self.openHandshakeTimeoutCall.cancel()
+         self.openHandshakeTimeoutCall = None
+
+      ## init state
+      ##
+      self.inside_message = False
+      if self.websocket_version != 0:
+         self.current_frame = None
+
+      ## fire handler on derived class
+      ##
+      if self.trackedTimings:
+         self.trackedTimings.track("onOpen")
+      self.onOpen()
+
+      ## process rest, if any
+      ##
+      if len(self.data) > 0:
+         self.consumeData()
+
+
+   def _processHandshake_failed(self, failure):
+      """
+      Errback for Deferred returned by self.onConnect. Generates a HTTP error response for the handshake.
+      """
+      e = failure.value
+
+      if failure.check(HttpException):
+         return self.failHandshake(e.reason, e.code)
+      else:
+         log.msg("Exception raised in onConnect() - %s" % str(e))
+         return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
 
 
    def failHandshake(self, reason, code = HTTP_STATUS_CODE_BAD_REQUEST[0], responseHeaders = []):
@@ -3336,7 +3382,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
    def connectionMade(self):
       """
       Called by Twisted when new TCP connection to server was established. Default
-      implementation will start the initial WebSocket opening handshake.
+      implementation will start the initial WebSocket opening handshake (or proxy connect).
       When overriding in derived class, make sure to call this base class
       implementation _before_ your code.
       """
@@ -3344,7 +3390,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
       WebSocketProtocol.connectionMade(self)
       if self.debug:
          log.msg("connection to %s established" % self.peerstr)
-      self.startHandshake()
+
+      if not self.isServer and self.factory.proxy is not None:
+         ## start by doing a HTTP/CONNECT for explicit proxies
+         self.startProxyConnect()
+      else:
+         ## immediately start with the WebSocket opening handshake
+         self.startHandshake()
 
 
    def connectionLost(self, reason):
@@ -3357,6 +3409,105 @@ class WebSocketClientProtocol(WebSocketProtocol):
       WebSocketProtocol.connectionLost(self, reason)
       if self.debug:
          log.msg("connection to %s lost" % self.peerstr)
+
+
+   def startProxyConnect(self):
+      """
+      Connect to explicit proxy.
+      """
+
+      ## construct proxy connect HTTP request
+      ##
+      request  = "CONNECT %s:%d HTTP/1.1\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+      request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+      request += "\x0d\x0a"
+
+      if self.debug:
+         log.msg(request)
+
+      self.sendData(request)
+
+
+   def processProxyConnect(self):
+      """
+      Process HTTP/CONNECT response from server.
+      """
+      ## only proceed when we have fully received the HTTP request line and all headers
+      ##
+      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      if end_of_header >= 0:
+
+         http_response_data = self.data[:end_of_header + 4]
+         if self.debug:
+            log.msg("received HTTP response:\n\n%s\n\n" % http_response_data)
+
+         ## extract HTTP status line and headers
+         ##
+         (http_status_line, http_headers, http_headers_cnt) = parseHttpHeader(http_response_data)
+
+         ## validate proxy connect response
+         ##
+         if self.debug:
+            log.msg("received HTTP status line for proxy connect request : %s" % str(http_status_line))
+            log.msg("received HTTP headers for proxy connect request : %s" % str(http_headers))
+
+         ## Response Line
+         ##
+         sl = http_status_line.split()
+         if len(sl) < 2:
+            return self.failProxyConnect("Bad HTTP response status line '%s'" % http_status_line)
+
+         ## HTTP version
+         ##
+         http_version = sl[0].strip()
+         if http_version != "HTTP/1.1":
+            return self.failProxyConnect("Unsupported HTTP version ('%s')" % http_version)
+
+         ## HTTP status code
+         ##
+         try:
+            status_code = int(sl[1].strip())
+         except:
+            return self.failProxyConnect("Bad HTTP status code ('%s')" % sl[1].strip())
+
+         if not (status_code >= 200 and status_code < 300):
+
+            ## FIXME: handle redirects
+            ## FIXME: handle authentication required
+
+            if len(sl) > 2:
+               reason = " - %s" % ''.join(sl[2:])
+            else:
+               reason = ""
+            return self.failProxyConnect("HTTP proxy connect failed (%d%s)" % (status_code, reason))
+
+
+         ## Ok, got complete response for HTTP/CONNECT, remember rest (if any)
+         ##
+         self.data = self.data[end_of_header + 4:]
+
+         ## opening handshake completed, move WebSocket connection into OPEN state
+         ##
+         self.state = WebSocketProtocol.STATE_CONNECTING
+
+         ## process rest of buffered data, if any
+         ##
+         if len(self.data) > 0:
+            self.consumeData()
+
+         ## now start WebSocket opening handshake
+         ##
+         self.startHandshake()
+
+
+   def failProxyConnect(self, reason):
+      """
+      During initial explicit proxy connect, the server response indicates some failure and we drop the
+      connection.
+      """
+      if self.debug:
+         log.msg("failing proxy connect ('%s')" % reason)
+      self.dropConnection(abort = True)
 
 
    def createHixieKey(self):
@@ -3659,7 +3810,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, debug = False, debugCodePaths = False):
+   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, proxy = None, debug = False, debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
@@ -3677,6 +3828,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type useragent: str
       :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
       :type headers: dict
+      :param proxy: Explicit proxy server to use (hostname:port or IP:port), e.g. "192.168.1.100:8080".
+      :type proxy: str
       :param debug: Debug mode (default: False).
       :type debug: bool
       :param debugCodePaths: Debug code paths mode (default: False).
@@ -3697,14 +3850,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
 
       ## default WS session parameters
       ##
-      self.setSessionParameters(url, origin, protocols, useragent, headers)
+      self.setSessionParameters(url, origin, protocols, useragent, headers, proxy)
 
       ## default WebSocket protocol options
       ##
       self.resetProtocolOptions()
 
 
-   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}):
+   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}, proxy = None):
       """
       Set WebSocket session parameters.
 
@@ -3742,6 +3895,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.protocols = protocols
       self.useragent = useragent
       self.headers = headers
+
+      self.proxy = proxy
 
 
    def resetProtocolOptions(self):

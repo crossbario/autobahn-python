@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ from twisted.web.server import Site
 from twisted.web.static import File
 
 from autobahn.websocket import listenWS
+
+from autobahn.resource import WebSocketResource, \
+                              HTTPChannelHixie76Aware
+
 from autobahn.wamp import exportRpc, \
                           WampServerFactory, \
                           WampServerProtocol
@@ -35,7 +39,7 @@ class KeyValue:
    """
 
    def __init__(self, filename):
-      self.store = shelve.open(filename)
+      self.store = shelve.open(filename, flag = 'c', writeback = False)
 
    @exportRpc
    def set(self, key = None, value = None):
@@ -48,6 +52,7 @@ class KeyValue:
                del self.store[k]
       else:
          self.store.clear()
+      self.store.sync()
 
    @exportRpc
    def get(self, key = None):
@@ -75,6 +80,8 @@ class KeyValueServerProtocol(WampServerProtocol):
 
 class KeyValueServerFactory(WampServerFactory):
 
+   protocol = KeyValueServerProtocol
+
    def __init__(self, url, debugWamp = False):
       WampServerFactory.__init__(self, url, debugWamp = debugWamp)
 
@@ -91,13 +98,25 @@ if __name__ == '__main__':
    else:
       debug = False
 
-   factory = KeyValueServerFactory("ws://localhost:9000", debugWamp = debug)
-   factory.protocol = KeyValueServerProtocol
-   factory.setProtocolOptions(allowHixie76 = True)
-   listenWS(factory)
+   port = 8080
 
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
+   factory = KeyValueServerFactory("ws://localhost:%d" % port, debugWamp = debug)
+   factory.setProtocolOptions(allowHixie76 = True)
+   ## need to start manually, see https://github.com/tavendo/AutobahnPython/issues/133
+   factory.startFactory()
+
+   ## Twisted Web resource for our WAMP factory
+   resource = WebSocketResource(factory)
+
+   ## we server static files under "/" ..
+   root = File(".")
+
+   ## and our WebSocket server under "/ws"
+   root.putChild("ws", resource)
+
+   ## both under one Twisted Web Site
+   site = Site(root)
+   site.protocol = HTTPChannelHixie76Aware # needed if Hixie76 is to be supported
+   reactor.listenTCP(port, site)
 
    reactor.run()

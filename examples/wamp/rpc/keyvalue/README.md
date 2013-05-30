@@ -4,6 +4,9 @@ Key-Value Store Service
 This example implements a AutobahnPython based WAMP server with RPC
 endpoints providing a persistent key-value store.
 
+The example also demonstrates how to run the WAMP server and a
+Twisted Web based web server under one port/service.
+
 A browser based UI is included which uses AutobahnJS to access
 the decimal calculator service.
 

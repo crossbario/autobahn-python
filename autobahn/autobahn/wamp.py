@@ -1548,6 +1548,8 @@ class WampCraProtocol(WampProtocol):
       """
       if authSecret is None:
          authSecret = ""
+      if isinstance(authSecret, unicode):
+         authSecret = authSecret.encode('utf8')
       authSecret = WampCraProtocol.deriveKey(authSecret, authExtra)
       h = hmac.new(authSecret, authChallenge, hashlib.sha256)
       sig = binascii.b2a_base64(h.digest()).strip()
