@@ -51,6 +51,8 @@ import base64
 import struct
 import random
 import os
+import zlib
+
 from pprint import pformat
 from array import array
 from collections import deque
@@ -204,6 +206,86 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    else:
       listener = reactor.listenTCP(factory.port, factory, backlog, interface)
    return listener
+
+
+class PerMessageDeflateParams:
+   def __init__(self,
+                s2c_no_context_takeover,
+                c2s_no_context_takeover,
+                s2c_max_window_bits,
+                c2s_max_window_bits):
+      self.s2c_no_context_takeover = s2c_no_context_takeover
+      self.c2s_no_context_takeover = c2s_no_context_takeover
+      self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else zlib.MAX_WBITS
+      self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else zlib.MAX_WBITS
+
+
+
+class TrafficStats:
+
+   def __init__(self):
+      self.reset()
+
+
+   def reset(self):
+      ## all of the following only tracks data messages, not control frames, not handshaking
+      ##
+      self.outgoingOctetsWireLevel = 0
+      self.outgoingOctetsWebSocketLevel = 0
+      self.outgoingOctetsAppLevel = 0
+      self.outgoingWebSocketFrames = 0
+      self.outgoingWebSocketMessages = 0
+
+      self.incomingOctetsWireLevel = 0
+      self.incomingOctetsWebSocketLevel = 0
+      self.incomingOctetsAppLevel = 0
+      self.incomingWebSocketFrames = 0
+      self.incomingWebSocketMessages = 0
+
+
+   def __repr__(self):
+
+      ## compression ratio = compressed size / uncompressed size
+      ##
+      if self.outgoingOctetsAppLevel > 0:
+         outgoingCompressionRatio = float(self.outgoingOctetsWebSocketLevel) / float(self.outgoingOctetsAppLevel)
+      else:
+         outgoingCompressionRatio = None
+      if self.incomingOctetsAppLevel > 0:
+         incomingCompressionRatio = float(self.incomingOctetsWebSocketLevel) / float(self.incomingOctetsAppLevel)
+      else:
+         incomingCompressionRatio = None
+
+      ## protocol overhead = non-payload size / payload size
+      ##
+      if self.outgoingOctetsWebSocketLevel > 0:
+         outgoingWebSocketOverhead = float(self.outgoingOctetsWireLevel - self.outgoingOctetsWebSocketLevel) / float(self.outgoingOctetsWebSocketLevel)
+      else:
+         outgoingWebSocketOverhead = None
+      if self.incomingOctetsWebSocketLevel > 0:
+         incomingWebSocketOverhead = float(self.incomingOctetsWireLevel - self.incomingOctetsWebSocketLevel) / float(self.incomingOctetsWebSocketLevel)
+      else:
+         incomingWebSocketOverhead = None
+
+      return {'outgoingOctetsWireLevel': self.outgoingOctetsWireLevel,
+              'outgoingOctetsWebSocketLevel': self.outgoingOctetsWebSocketLevel,
+              'outgoingOctetsAppLevel': self.outgoingOctetsAppLevel,
+              'outgoingCompressionRatio': outgoingCompressionRatio,
+              'outgoingWebSocketOverhead': outgoingWebSocketOverhead,
+              'outgoingWebSocketFrames': self.outgoingWebSocketFrames,
+              'outgoingWebSocketMessages': self.outgoingWebSocketMessages,
+
+              'incomingOctetsWireLevel': self.incomingOctetsWireLevel,
+              'incomingOctetsWebSocketLevel': self.incomingOctetsWebSocketLevel,
+              'incomingOctetsAppLevel': self.incomingOctetsAppLevel,
+              'incomingCompressionRatio': incomingCompressionRatio,
+              'incomingWebSocketOverhead': incomingWebSocketOverhead,
+              'incomingWebSocketFrames': self.incomingWebSocketFrames,
+              'incomingWebSocketMessages': self.incomingWebSocketMessages}
+
+   def __str__(self):
+      return pformat(self.__repr__())
+
 
 
 class FrameHeader:
@@ -1076,6 +1158,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.logFrames = self.factory.logFrames
 
       self.setTrackTimings(self.factory.trackTimings)
+      self.trafficStats = TrafficStats()
 
       self.allowHixie76 = self.factory.allowHixie76
       self.utf8validateIncoming = self.factory.utf8validateIncoming
@@ -1088,6 +1171,17 @@ class WebSocketProtocol(protocol.Protocol):
       self.openHandshakeTimeout = self.factory.openHandshakeTimeout
       self.closeHandshakeTimeout = self.factory.closeHandshakeTimeout
       self.tcpNoDelay = self.factory.tcpNoDelay
+
+      ## permessage-deflate
+      ##
+      self.perMessageDeflate = self.factory.perMessageDeflate
+      if self.isServer:
+         self.perMessageDeflateAccept = self.factory.perMessageDeflateAccept
+      else:
+         self.perMessageDeflateOffers = self.factory.perMessageDeflateOffers
+      self._deflateParams = None
+      self._deflateCompressor = None
+      self._deflateDecompressor = None
 
       if self.isServer:
          self.versions = self.factory.versions
@@ -1268,6 +1362,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
+      if self.state == WebSocketProtocol.STATE_OPEN:
+         self.trafficStats.incomingOctetsWireLevel += len(data)
       if self.logOctets:
          self.logRxOctets(data)
       self.data += data
@@ -1375,6 +1471,8 @@ class WebSocketProtocol(protocol.Protocol):
          e = self.send_queue.popleft()
          if self.state != WebSocketProtocol.STATE_CLOSED:
             self.transport.write(e[0])
+            if self.state == WebSocketProtocol.STATE_OPEN:
+               self.trafficStats.outgoingOctetsWireLevel += len(e[0])
             if self.logOctets:
                self.logTxOctets(e[0], e[1])
          else:
@@ -1419,6 +1517,8 @@ class WebSocketProtocol(protocol.Protocol):
             self._trigger()
          else:
             self.transport.write(data)
+            if self.state == WebSocketProtocol.STATE_OPEN:
+               self.trafficStats.outgoingOctetsWireLevel += len(data)
             if self.logOctets:
                self.logTxOctets(data, False)
 
@@ -1555,8 +1655,11 @@ class WebSocketProtocol(protocol.Protocol):
             ## the semantics of RSV has been negotiated
             ##
             if frame_rsv != 0:
-               if self.protocolViolation("RSV != 0 and no extension negotiated"):
-                  return False
+               if self._deflateParams is not None and frame_rsv == 4:
+                  pass
+               else:
+                  if self.protocolViolation("RSV = %d and no extension negotiated" % frame_rsv):
+                     return False
 
             ## all client-to-server frames MUST be masked
             ##
@@ -1599,6 +1702,12 @@ class WebSocketProtocol(protocol.Protocol):
                   if self.protocolViolation("received close control frame with payload len 1"):
                      return False
 
+               ## control frames MUST NOT be compressed
+               ##
+               if self._deflateParams is not None and frame_rsv == 4:
+                  if self.protocolViolation("received compressed control frame [permessage-deflate]"):
+                     return False
+
             else: # data frame
 
                ## check for reserved data frame opcodes
@@ -1618,6 +1727,12 @@ class WebSocketProtocol(protocol.Protocol):
                if self.inside_message and frame_opcode != 0:
                   if self.protocolViolation("received non-continuation data frame while inside fragmented message"):
                      return False
+
+               ## continuation data frames MUST NOT have the compressed bit set
+               ##
+               if self._deflateParams is not None and frame_rsv == 4 and self.inside_message:
+                  if self.protocolViolation("received continution data frame with compress bit set [permessage-deflate]"):
+                     return False                  
 
             ## compute complete header length
             ##
@@ -1756,6 +1871,21 @@ class WebSocketProtocol(protocol.Protocol):
 
             self.inside_message = True
 
+            ## setup decompressor
+            ##
+            if self._deflateParams is not None and self.current_frame.rsv == 4:
+               self._deflateIsMessageCompressed = True
+               if self.isServer:
+                  if self._deflateDecompressor is None or self._deflateParams.c2s_no_context_takeover:
+                     self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.c2s_max_window_bits)
+               else:
+                  if self._deflateDecompressor is None or self._deflateParams.s2c_no_context_takeover:
+                     self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.s2c_max_window_bits)
+            else:
+               self._deflateIsMessageCompressed = False
+
+            ## setup UTF8 validator
+            ##
             if self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_TEXT and self.utf8validateIncoming:
                self.utf8validator.reset()
                self.utf8validateIncomingCurrentMessage = True
@@ -1763,8 +1893,13 @@ class WebSocketProtocol(protocol.Protocol):
             else:
                self.utf8validateIncomingCurrentMessage = False
 
+            ## track timings
+            ##
             if self.trackedTimings:
                self.trackedTimings.track("onMessageBegin")
+
+            ## fire onMessageBegin
+            ##
             self.onMessageBegin(self.current_frame.opcode)
 
          self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
@@ -1779,6 +1914,23 @@ class WebSocketProtocol(protocol.Protocol):
       if self.current_frame.opcode > 7:
          self.control_frame_data.append(payload)
       else:
+         ## decompress frame payload
+         ##
+         if self._deflateIsMessageCompressed:
+            compressedLen = len(payload)
+            if self.debug:
+               log.msg("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
+            payload = self._deflateDecompressor.decompress(payload)
+            uncompressedLen = len(payload)
+         else:
+            l = len(payload)
+            compressedLen = l
+            uncompressedLen = l
+
+         if self.state == WebSocketProtocol.STATE_OPEN:
+            self.trafficStats.incomingOctetsWebSocketLevel += compressedLen
+            self.trafficStats.incomingOctetsAppLevel += uncompressedLen
+
          ## incrementally validate UTF-8 payload
          ##
          if self.utf8validateIncomingCurrentMessage:
@@ -1801,16 +1953,36 @@ class WebSocketProtocol(protocol.Protocol):
             self.logRxFrame(self.current_frame, self.control_frame_data)
          self.processControlFrame()
       else:
+         if self.state == WebSocketProtocol.STATE_OPEN:
+            self.trafficStats.incomingWebSocketFrames += 1
          if self.logFrames:
             self.logRxFrame(self.current_frame, self.frame_data)
+
          self.onMessageFrameEnd()
+
          if self.current_frame.fin:
+            ## Eat stripped LEN and NLEN field of a non-compressed block added
+            ## for Z_SYNC_FLUSH.
+            ##
+            if self._deflateIsMessageCompressed:
+               self._deflateDecompressor.decompress('\x00\x00\xff\xff')
+
+            ## verify UTF8 has actually ended
+            ##
             if self.utf8validateIncomingCurrentMessage:
                if not self.utf8validateLast[1]:
                   if self.invalidPayload("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
                      return False
+
+            if self.debug:
+               log.msg("Traffic statistics:\n" + str(self.trafficStats))
+
+            if self.state == WebSocketProtocol.STATE_OPEN:
+               self.trafficStats.incomingWebSocketMessages += 1
+
             self.onMessageEnd()
             self.inside_message = False
+
       self.current_frame = None
 
 
@@ -1857,7 +2029,15 @@ class WebSocketProtocol(protocol.Protocol):
       return True
 
 
-   def sendFrame(self, opcode, payload = "", fin = True, rsv = 0, mask = None, payload_len = None, chopsize = None, sync = False):
+   def sendFrame(self,
+                 opcode,
+                 payload = "",
+                 fin = True,
+                 rsv = 0,
+                 mask = None,
+                 payload_len = None,
+                 chopsize = None,
+                 sync = False):
       """
       Send out frame. Normally only used internally via sendMessage(), sendPing(), sendPong() and sendClose().
 
@@ -1930,6 +2110,9 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("invalid payload length")
 
       raw = ''.join([chr(b0), chr(b1), el, mv, plm])
+
+      if opcode in [0, 1, 2]:
+         self.trafficStats.outgoingWebSocketFrames += 1
 
       if self.logFrames:
          frameHeader = FrameHeader(opcode, fin, rsv, l, mask)
@@ -2306,7 +2489,12 @@ class WebSocketProtocol(protocol.Protocol):
       self.sendMessageFrameData(payload, sync)
 
 
-   def sendMessage(self, payload, binary = False, payload_frag_size = None, sync = False):
+   def sendMessage(self,
+                   payload,
+                   binary = False,
+                   payload_frag_size = None,
+                   sync = False,
+                   doNotCompress = False):
       """
       Send out a message in one go.
 
@@ -2327,7 +2515,7 @@ class WebSocketProtocol(protocol.Protocol):
             raise Exception("cannot fragment messages in Hixie76 mode")
          self.sendMessageHixie76(payload, sync)
       else:
-         self.sendMessageHybi(payload, binary, payload_frag_size, sync)
+         self.sendMessageHybi(payload, binary, payload_frag_size, sync, doNotCompress)
 
 
    def sendMessageHixie76(self, payload, sync = False):
@@ -2339,7 +2527,12 @@ class WebSocketProtocol(protocol.Protocol):
       self.sendData('\x00' + payload + '\xff', sync = sync)
 
 
-   def sendMessageHybi(self, payload, binary = False, payload_frag_size = None, sync = False):
+   def sendMessageHybi(self,
+                       payload,
+                       binary = False,
+                       payload_frag_size = None,
+                       sync = False,
+                       doNotCompress = False):
       """
       Hybi-Variant of sendMessage().
 
@@ -2351,6 +2544,33 @@ class WebSocketProtocol(protocol.Protocol):
          opcode = 2
       else:
          opcode = 1
+
+      self.trafficStats.outgoingWebSocketMessages += 1
+
+      ## setup compressor
+      ##
+      if self._deflateParams is not None and not doNotCompress:
+         sendCompressed = True
+         if self.isServer:
+            if self._deflateCompressor is None or self._deflateParams.s2c_no_context_takeover:
+               self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.s2c_max_window_bits)
+         else:
+            if self._deflateCompressor is None or self._deflateParams.c2s_no_context_takeover:
+               self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.c2s_max_window_bits)
+
+         self.trafficStats.outgoingOctetsAppLevel += len(payload)
+
+         payload  = self._deflateCompressor.compress(payload)
+         payload += self._deflateCompressor.flush(zlib.Z_SYNC_FLUSH)
+         payload  = payload[:-4]
+
+         self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
+
+      else:
+         sendCompressed = False
+         l = len(payload)
+         self.trafficStats.outgoingOctetsAppLevel += l
+         self.trafficStats.outgoingOctetsWebSocketLevel += l
 
       ## explicit payload_frag_size arguments overrides autoFragmentSize setting
       ##
@@ -2365,7 +2585,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## send unfragmented
       ##
       if pfs is None or len(payload) <= pfs:
-         self.sendFrame(opcode = opcode, payload = payload, sync = sync)
+         self.sendFrame(opcode = opcode, payload = payload, sync = sync, rsv = 4 if sendCompressed else 0)
 
       ## send data message in fragments
       ##
@@ -2382,11 +2602,36 @@ class WebSocketProtocol(protocol.Protocol):
                done = True
                j = n
             if first:
-               self.sendFrame(opcode = opcode, payload = payload[i:j], fin = done, sync = sync)
+               self.sendFrame(opcode = opcode, payload = payload[i:j], fin = done, sync = sync, rsv = 4 if sendCompressed else 0)
                first = False
             else:
                self.sendFrame(opcode = 0, payload = payload[i:j], fin = done, sync = sync)
             i += pfs
+
+      if self.debug:
+         log.msg("Traffic statistics:\n" + str(self.trafficStats))
+
+
+   def _parseExtensionsHeader(self, header):
+      extensions = []
+      exts = [str(x.strip()) for x in header.split(',')]
+      for e in exts:
+         ext = [x.strip() for x in e.split(";")]
+         if len(ext) > 0:
+            extension = ext[0]
+            params = {}
+            for p in ext[1:]:
+               p = [x.strip() for x in p.split("=")]
+               if len(p) == 1:
+                  params[p[0]] = True
+               elif len(p) == 2:
+                  params[p[0]] = p[1]
+               else:
+                  pass # raise
+            extensions.append((extension, params))
+         else:
+            pass # should not arrive here
+      return extensions
 
 
 
@@ -2796,13 +3041,74 @@ class WebSocketServerProtocol(WebSocketProtocol):
          self.websocket_extensions_in_use = []
 
          if self.http_headers.has_key("sec-websocket-extensions"):
+
             if self.websocket_version == 0:
-               return self.failHandshake("Sec-WebSocket-Extensions header specified for Hixie-76")
-            extensions = [x.strip() for x in self.http_headers["sec-websocket-extensions"].split(',')]
-            if len(extensions) > 0:
-               self.websocket_extensions = extensions
+               return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
+            else:
+               self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
+
+            for (extension, params) in self.websocket_extensions:
+
                if self.debug:
-                  log.msg("client requested extensions we don't support (%s)" % str(extensions))
+                  log.msg("parsed extension '%s' with params '%s'" % (extension, params))
+
+               ## permessage-deflate
+               ##
+               if self.perMessageDeflate and extension == 'permessage-deflate':
+                  ##
+                  ## verify/parse c2s parameters of permessage-deflate extension
+                  ##
+                  for p in params:
+
+                     acceptMaxWindowBits = False
+                     acceptNoContextTakeover = False
+                     requestMaxWindowBits = 0
+                     requestNoContextTakeover = False
+
+                     if p == 'c2s_max_window_bits':
+                        if params[p] != True:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           acceptMaxWindowBits = True
+                     elif p == 'c2s_no_context_takeover':
+                        if params[p] != True:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           acceptNoContextTakeover = True
+                     elif p == 's2c_max_window_bits':
+                        if params[p] not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           requestMaxWindowBits = int(params[p])
+                     elif p == 's2c_no_context_takeover':
+                        if params[p] != True:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           requestNoContextTakeover = True
+                     else:
+                        return self.failHandshake("illegal parameter '%s' for extension '%s'" % (p, extension))
+
+                     deflateAccept = self.perMessageDeflateAccept(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits)
+                     if deflateAccept is not None:
+                        self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
+                                                                      c2s_no_context_takeover = deflateAccept[0],
+                                                                      s2c_max_window_bits = requestMaxWindowBits,
+                                                                      c2s_max_window_bits = deflateAccept[1])
+                        s = "permessage-deflate"
+                        if requestNoContextTakeover:
+                           s += "; s2c_no_context_takeover"
+                        if requestMaxWindowBits != 0:
+                           s += "; s2c_max_window_bits=%d" % requestMaxWindowBits
+                        if deflateAccept[0]:
+                           s += "; c2s_no_context_takeover"
+                        if deflateAccept[1] != 0:
+                           s += "; c2s_max_window_bits=%d" % deflateAccept[1]
+
+                        self.websocket_extensions_in_use.append(s)
+                        break # stop on first accepted extension configuration
+               else:
+                  if self.debug:
+                     log.msg("client requested '%s' extension we don't support" % extension)
 
          ## Sec-WebSocket-Key (Hybi) or Sec-WebSocket-Key1/Sec-WebSocket-Key2 (Hixie-76)
          ##
@@ -2968,8 +3274,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
 
+         ## agreed extensions
+         ##
          if len(self.websocket_extensions_in_use) > 0:
-            response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ','.join(self.websocket_extensions_in_use)
+            response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(self.websocket_extensions_in_use)
 
          ## end of HTTP response headers
          response += "\x0d\x0a"
@@ -3117,6 +3425,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.sendHtml(html)
 
 
+
 class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
    A Twisted factory for WebSocket server protocols.
@@ -3128,7 +3437,14 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, protocols = [], server = "AutobahnPython/%s" % __version__, headers = {}, externalPort = None, debug = False, debugCodePaths = False):
+   def __init__(self,
+                url = None,
+                protocols = [],
+                server = "AutobahnPython/%s" % __version__,
+                headers = {},
+                externalPort = None,
+                debug = False,
+                debugCodePaths = False):
       """
       Create instance of WebSocket server factory.
 
@@ -3177,7 +3493,12 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.countConnections = 0
 
 
-   def setSessionParameters(self, url = None, protocols = [], server = None, headers = {}, externalPort = None):
+   def setSessionParameters(self,
+                            url = None,
+                            protocols = [],
+                            server = None,
+                            headers = {},
+                            externalPort = None):
       """
       Set WebSocket session parameters.
 
@@ -3235,6 +3556,11 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
+      ## permessage-deflate extension
+      ##
+      self.perMessageDeflate = False
+      self.perMessageDeflateAccept = lambda acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits: (False, 0)
+
 
    def setProtocolOptions(self,
                           versions = None,
@@ -3251,7 +3577,9 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                           echoCloseCodeReason = None,
                           openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
-                          tcpNoDelay = None):
+                          tcpNoDelay = None,
+                          perMessageDeflate = None,
+                          perMessageDeflateAccept = None):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -3285,6 +3613,10 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
+      :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False)
+      :type perMessageDeflate: bool
+      :param perMessageDeflateAccept: Acceptor function for offers.
+      :type perMessageDeflateAccept: callable
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -3337,6 +3669,12 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
          self.tcpNoDelay = tcpNoDelay
 
+      if perMessageDeflate is not None and perMessageDeflate != self.perMessageDeflate:
+         self.perMessageDeflate = perMessageDeflate
+
+      if perMessageDeflateAccept is not None:
+         self.perMessageDeflateAccept = perMessageDeflateAccept
+
 
    def getConnectionCount(self):
       """
@@ -3361,6 +3699,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       Default implementation does nothing. Override in derived class when appropriate.
       """
       pass
+
 
 
 class WebSocketClientProtocol(WebSocketProtocol):
@@ -3597,6 +3936,26 @@ class WebSocketClientProtocol(WebSocketProtocol):
       if len(self.factory.protocols) > 0:
          request += "Sec-WebSocket-Protocol: %s\x0d\x0a" % ','.join(self.factory.protocols)
 
+      ## extensions
+      ##
+      if self.version != 0:
+         extensions = []
+         if self.perMessageDeflate:
+            for offer in self.perMessageDeflateOffers:
+               e = 'permessage-deflate'
+               if offer['acceptNoContextTakeover']:
+                  e += "; c2s_no_context_takeover"
+               if offer['acceptMaxWindowBits']:
+                  e += "; c2s_max_window_bits"
+               if offer['requestNoContextTakeover']:
+                  e += "; s2c_no_context_takeover"
+               if offer['requestMaxWindowBits'] != 0:
+                  e += "; s2c_max_window_bits=%d" % offer['requestMaxWindowBits']
+               extensions.append(e)
+
+         if len(extensions) > 0:
+            request += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensions)
+
       ## set WS protocol version depending on WS spec version
       ##
       if self.version != 0:
@@ -3707,16 +4066,65 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## handle "extensions in use" - if any
          ##
          self.websocket_extensions_in_use = []
-         if self.version != 0:
-            if self.http_headers.has_key("sec-websocket-extensions"):
+         if self.http_headers.has_key("sec-websocket-extensions"):
+            if self.version == 0:
+               return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")         
+            else:
                if http_headers_cnt["sec-websocket-extensions"] > 1:
                   return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
-               exts = self.http_headers["sec-websocket-extensions"].strip()
+               else:
+                  websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
+
+            for (extension, params) in websocket_extensions:
+
+               if self.debug:
+                  log.msg("parsed extension '%s' with params '%s'" % (extension, params))
+
+               ## permessage-deflate
                ##
-               ## we don't support any extension, but if we did, we needed
-               ## to set self.websocket_extensions_in_use here, and don't fail the handshake
-               ##
-               return self.failHandshake("server wants to use extensions (%s), but no extensions implemented" % exts)
+               if self.perMessageDeflate and extension == 'permessage-deflate':
+                  ##
+                  ## verify/parse s2c parameters of permessage-deflate extension
+                  ##
+                  c2s_max_window_bits = 0
+                  c2s_no_context_takeover = False
+                  s2c_max_window_bits = 0
+                  s2c_no_context_takeover = False
+
+                  for p in params:
+
+                     if p == 'c2s_max_window_bits':
+                        if params[p] not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           c2s_max_window_bits = int(params[p])
+                     elif p == 'c2s_no_context_takeover':
+                        if params[p] != True:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           c2s_no_context_takeover = True
+                     elif p == 's2c_max_window_bits':
+                        if params[p] not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           s2c_max_window_bits = int(params[p])
+                     elif p == 's2c_no_context_takeover':
+                        if params[p] != True:
+                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        else:
+                           s2c_no_context_takeover = True
+                     else:
+                        return self.failHandshake("illegal parameter '%s' for extension '%s'" % (p, extension))
+
+                  ## FIXME: check if returned configuration actually is one we offered
+                  ## FIXME: check that server only responded with 1 configuration
+
+                  self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = s2c_no_context_takeover,
+                                                                c2s_no_context_takeover = c2s_no_context_takeover,
+                                                                s2c_max_window_bits = s2c_max_window_bits,
+                                                                c2s_max_window_bits = c2s_max_window_bits)
+               else:
+                  return self.failHandshake("Server wants to use extension '%s' we did not request / haven't implemented" % extension)
 
          ## handle "subprotocol in use" - if any
          ##
@@ -3799,6 +4207,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       self.dropConnection(abort = True)
 
 
+
 class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
    A Twisted factory for WebSocket client protocols.
@@ -3810,7 +4219,15 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    """
 
 
-   def __init__(self, url = None, origin = None, protocols = [], useragent = "AutobahnPython/%s" % __version__, headers = {}, proxy = None, debug = False, debugCodePaths = False):
+   def __init__(self,
+                url = None,
+                origin = None,
+                protocols = [],
+                useragent = "AutobahnPython/%s" % __version__,
+                headers = {},
+                proxy = None,
+                debug = False,
+                debugCodePaths = False):
       """
       Create instance of WebSocket client factory.
 
@@ -3857,7 +4274,13 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.resetProtocolOptions()
 
 
-   def setSessionParameters(self, url = None, origin = None, protocols = [], useragent = None, headers = {}, proxy = None):
+   def setSessionParameters(self,
+                            url = None,
+                            origin = None,
+                            protocols = [],
+                            useragent = None,
+                            headers = {},
+                            proxy = None):
       """
       Set WebSocket session parameters.
 
@@ -3919,6 +4342,13 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
+      ## permessage-deflate extension
+      ##
+      self.perMessageDeflate = False
+      self.perMessageDeflateOffers = [{'acceptNoContextTakeover': True,
+                                       'acceptMaxWindowBits': True,
+                                       'requestNoContextTakeover': False,
+                                       'requestMaxWindowBits': 0}]
 
    def setProtocolOptions(self,
                           version = None,
@@ -3935,14 +4365,13 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                           serverConnectionDropTimeout = None,
                           openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
-                          tcpNoDelay = None):
+                          tcpNoDelay = None,
+                          perMessageDeflate = None,
+                          perMessageDeflateOffers = None):
       """
       Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
-      :param version: The WebSocket protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).
-      :type version: int
-      :param allowHixie76: Allow to speak Hixie76 protocol version.
-      :type allowHixie76: bool
+      :param version: The WebSocket protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).l
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
       :type utf8validateIncoming: bool
       :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: False).
@@ -3967,8 +4396,12 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type openHandshakeTimeout: float
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
       :type closeHandshakeTimeout: float
-      :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
+      :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: True).
       :type tcpNoDelay: bool
+      :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False).
+      :type perMessageDeflate: bool
+      :param perMessageDeflateOffers: A list of offers we provide to the server.
+      :type perMessageDeflateOffers: list
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -4020,6 +4453,21 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
          self.tcpNoDelay = tcpNoDelay
 
+      if perMessageDeflate is not None and perMessageDeflate != self.perMessageDeflate:
+         if type(perMessageDeflate) == bool:
+            self.perMessageDeflate = perMessageDeflate
+         else:
+            raise Exception("invalid type %s for perMessageDeflate - expected bool" % type(perMessageDeflate))
+
+      if perMessageDeflateOffers is not None and pickle.dumps(perMessageDeflateOffers) != pickle.dumps(self.perMessageDeflateOffers):
+         if type(perMessageDeflateOffers) == list:
+            ##
+            ## FIXME: more rigorous verification of passed argument
+            ##
+            self.perMessageDeflateOffers = copy.deepcopy(perMessageDeflateOffers)
+         else:
+            raise Exception("invalid type %s for perMessageDeflateOffers - expected bool" % type(perMessageDeflateOffers))
+
 
    def clientConnectionFailed(self, connector, reason):
       """
@@ -4035,3 +4483,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       does nothing. Override in derived class when appropriate.
       """
       pass
+
+
+
+if __name__ == '__main__':
+   TESTS = ["permessage-deflate",
+            "permessage-deflate; c2s_max_window_bits; s2c_max_window_bits=10",
+            'permessage-deflate; c2s_max_window_bits; s2c_max_window_bits="10"',
+            "permessage-deflate; c2s_max_window_bits; s2c_max_window_bits=10, permessage-deflate; c2s_max_window_bits"]
+   p = WebSocketProtocol()
+   for t in TESTS:
+      print p._parseExtensionsHeader(t)
