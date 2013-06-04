@@ -3095,7 +3095,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   ## extension parameter defaults
                   ##
                   acceptMaxWindowBits = False
-                  acceptNoContextTakeover = False
+                  acceptNoContextTakeover = True
+                  #acceptNoContextTakeover = False # FIXME: this may change in draft
                   requestMaxWindowBits = 0
                   requestNoContextTakeover = False
 

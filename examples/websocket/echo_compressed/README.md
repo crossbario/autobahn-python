@@ -3,6 +3,12 @@ WebSocket Echo Server and Client
 
 This example demonstrates how to activate and use the WebSocket compression extension ([`permessage-deflate`](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-09)).
 
+For almost all users, the following is all you need to do to enable the extension:
+
+    factory.setProtocolOptions(perMessageDeflate = True)
+
+This applies to WebSocket and WAMP, both clients and servers.
+
 Running
 -------
 

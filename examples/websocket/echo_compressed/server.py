@@ -61,21 +61,29 @@ if __name__ == '__main__':
    ##
    factory.setProtocolOptions(perMessageDeflate = True)
 
+   ## accept any configuration, request no specific features: this is the default!
    def accept1(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
       return (False, 0)
 
+   ## accept if client offer signals support for "no context takeover" and "max window size". if so, 
+   ## request "no context takeover" and "max window size" of 2^8. else decline offer.
    def accept2(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
+      if acceptNoContextTakeover and acceptMaxWindowBits:
+         return (True, 8)
+      else:
+         return None
+
+   ## deny offer if client requested to limit sliding window size, else accept,
+   ## requesting no specific features.
+   def accept3(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
       if requestMaxWindowBits != 0:
-         ## deny offer if client requested to limit sliding window size
          return None
       else:
-         ## otherwise accept offer
          return (False, 0)
 
 #   factory.setProtocolOptions(perMessageDeflateAccept = accept1)
    factory.setProtocolOptions(perMessageDeflateAccept = accept2)
 #   factory.setProtocolOptions(perMessageDeflateAccept = accept3)
-#   factory.setProtocolOptions(perMessageDeflateAccept = accept4)
 
    listenWS(factory)
 

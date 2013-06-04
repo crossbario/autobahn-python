@@ -28,10 +28,7 @@
             if (sock) {
                sock.onopen = function() {
                   log("Connected to " + wsuri);
-                  //log(sock.protocol);
-                  //log(sock.extensions);
-                  console.log(sock.protocol);
-                  console.log(sock.extensions);
+                  log("Using WebSocket extensions: " + sock.extensions);
                }
 
                sock.onclose = function(e) {
