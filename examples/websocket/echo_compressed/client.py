@@ -28,8 +28,11 @@ from autobahn.websocket import WebSocketClientFactory, \
 
 class EchoClientProtocol(WebSocketClientProtocol):
 
+   def onConnect(self, connectionResponse):
+      print "WebSocket extensions in use: %s" % connectionResponse.extensions
+
    def sendHello(self):
-      self.sendMessage("Hello, world!")
+      self.sendMessage("Hello, world!" * 100)
 
    def onOpen(self):
       self.sendHello()
@@ -55,9 +58,52 @@ if __name__ == '__main__':
                                     debug = debug,
                                     debugCodePaths = debug)
 
+   factory.protocol = EchoClientProtocol
+
+#   factory.setProtocolOptions(autoFragmentSize = 4)   
+
+   ## Enable WebSocket extension "permessage-deflate". This is all you
+   ## need to do (unless you know what you are doing .. see below)!
+   ##
    factory.setProtocolOptions(perMessageDeflate = True)
 
-   factory.protocol = EchoClientProtocol
-   connectWS(factory)
+   ## Optionally, specify exact list of offers ("PMCE") we announce to server.
+   ## Examples:
 
+   ## The default is just this anyway:
+   offers1 = [{'acceptNoContextTakeover': True,
+               'acceptMaxWindowBits': True,
+               'requestNoContextTakeover': False,
+               'requestMaxWindowBits': 0}]
+
+   ## request the server use a sliding window of 2^8 bytes
+   offers2 = [{'acceptNoContextTakeover': True,
+               'acceptMaxWindowBits': True,
+               'requestNoContextTakeover': False,
+               'requestMaxWindowBits': 8}]
+
+   ## request the server use a sliding window of 2^8 bytes, but let the
+   ## server fall back to "standard" if server does not support the setting
+   offers3 = [{'acceptNoContextTakeover': True,
+               'acceptMaxWindowBits': True,
+               'requestNoContextTakeover': False,
+               'requestMaxWindowBits': 8},
+              {'acceptNoContextTakeover': True,
+               'acceptMaxWindowBits': True,
+               'requestNoContextTakeover': False,
+               'requestMaxWindowBits': 0}]
+
+   ## request "no context takeover", accept the same, but deny setting
+   ## a sliding window. no fallback!
+   offers4 = [{'acceptNoContextTakeover': True,
+               'acceptMaxWindowBits': False,
+               'requestNoContextTakeover': True,
+               'requestMaxWindowBits': 0}]
+
+   #factory.setProtocolOptions(perMessageDeflateOffers = offers1)
+   #factory.setProtocolOptions(perMessageDeflateOffers = offers2)
+   factory.setProtocolOptions(perMessageDeflateOffers = offers3)
+   #factory.setProtocolOptions(perMessageDeflateOffers = offers4)
+
+   connectWS(factory)
    reactor.run()

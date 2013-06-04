@@ -30,15 +30,14 @@ from autobahn.websocket import WebSocketServerFactory, \
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
+   def onConnect(self, connectionRequest):
+      print "WebSocket extensions in use: %s" % connectionRequest.extensions
+
    def onOpen(self):
-      if False:
-         for i in xrange(3):
-            self.sendMessage("Hello")
-            #self.sendMessage("")
+      pass
 
    def onMessage(self, msg, binary):
-      if True:
-         self.sendMessage(msg, binary)
+      self.sendMessage(msg, binary)
 
 
 if __name__ == '__main__':
@@ -54,14 +53,29 @@ if __name__ == '__main__':
                                     debugCodePaths = debug)
 
    factory.protocol = EchoServerProtocol
+
 #   factory.setProtocolOptions(autoFragmentSize = 4)
+
+   ## Enable WebSocket extension "permessage-deflate". This is all you
+   ## need to do (unless you know what you are doing .. see below)!
+   ##
    factory.setProtocolOptions(perMessageDeflate = True)
 
-   def deflateAccept(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
+   def accept1(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
       return (False, 0)
-#      return (True, 8)
 
-   factory.setProtocolOptions(perMessageDeflateAccept = deflateAccept)
+   def accept2(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
+      if requestMaxWindowBits != 0:
+         ## deny offer if client requested to limit sliding window size
+         return None
+      else:
+         ## otherwise accept offer
+         return (False, 0)
+
+#   factory.setProtocolOptions(perMessageDeflateAccept = accept1)
+   factory.setProtocolOptions(perMessageDeflateAccept = accept2)
+#   factory.setProtocolOptions(perMessageDeflateAccept = accept3)
+#   factory.setProtocolOptions(perMessageDeflateAccept = accept4)
 
    listenWS(factory)
 

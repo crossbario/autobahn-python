@@ -52,6 +52,9 @@ import struct
 import random
 import os
 import zlib
+import pickle
+import marshal
+import copy
 
 from pprint import pformat
 from array import array
@@ -3088,6 +3091,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
                ## permessage-deflate
                ##
                if self.perMessageDeflate and extension == 'permessage-deflate':
+
+                  ## extension parameter defaults
+                  ##
+                  acceptMaxWindowBits = False
+                  acceptNoContextTakeover = False
+                  requestMaxWindowBits = 0
+                  requestNoContextTakeover = False
+
                   ##
                   ## verify/parse c2s parameters of permessage-deflate extension
                   ##
@@ -3097,11 +3108,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
 
                      val = params[p][0]
-
-                     acceptMaxWindowBits = False
-                     acceptNoContextTakeover = False
-                     requestMaxWindowBits = 0
-                     requestNoContextTakeover = False
 
                      if p == 'c2s_max_window_bits':
                         if val != True:
@@ -3130,35 +3136,35 @@ class WebSocketServerProtocol(WebSocketProtocol):
                      else:
                         return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
 
-                     ## call permessage-deflate application defined acceptor function
-                     ##
-                     deflateAccept = self.perMessageDeflateAccept(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits)
+                  ## call permessage-deflate application defined acceptor function
+                  ##
+                  deflateAccept = self.perMessageDeflateAccept(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits)
 
-                     if deflateAccept is not None:
-                        c2s_no_context_takeover, c2s_max_window_bits = deflateAccept
+                  if deflateAccept is not None:
+                     c2s_no_context_takeover, c2s_max_window_bits = deflateAccept
 
-                        if type(c2s_no_context_takeover) != bool:
-                           raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_no_context_takeover (expected bool)" % type(c2s_no_context_takeover))
+                     if type(c2s_no_context_takeover) != bool:
+                        raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_no_context_takeover (expected bool)" % type(c2s_no_context_takeover))
 
-                        if c2s_no_context_takeover and not acceptNoContextTakeover:
-                           raise Exception("perMessageDeflateAccept requests c2s_no_context_takeover, but client does not support that feature")
+                     if c2s_no_context_takeover and not acceptNoContextTakeover:
+                        raise Exception("perMessageDeflateAccept requests c2s_no_context_takeover, but client does not support that feature")
 
-                        if type(c2s_max_window_bits) != int:
-                           raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_max_window_bits (expected int)" % type(c2s_max_window_bits))
+                     if type(c2s_max_window_bits) != int:
+                        raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_max_window_bits (expected int)" % type(c2s_max_window_bits))
 
-                        if c2s_max_window_bits not in [0, 8, 9, 10, 11, 12, 13, 14, 15]:
-                           raise Exception("perMessageDeflateAccept: invalid value '%s' for c2s_max_window_bits (expected 0 or 8-15)" % c2s_max_window_bits)
+                     if c2s_max_window_bits not in [0, 8, 9, 10, 11, 12, 13, 14, 15]:
+                        raise Exception("perMessageDeflateAccept: invalid value '%s' for c2s_max_window_bits (expected 0 or 8-15)" % c2s_max_window_bits)
 
-                        if c2s_max_window_bits != 0 and not acceptMaxWindowBits:
-                           raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
+                     if c2s_max_window_bits != 0 and not acceptMaxWindowBits:
+                        raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
 
-                        self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
-                                                                      c2s_no_context_takeover = c2s_no_context_takeover,
-                                                                      s2c_max_window_bits = requestMaxWindowBits,
-                                                                      c2s_max_window_bits = c2s_max_window_bits)
+                     self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
+                                                                   c2s_no_context_takeover = c2s_no_context_takeover,
+                                                                   s2c_max_window_bits = requestMaxWindowBits,
+                                                                   c2s_max_window_bits = c2s_max_window_bits)
 
-                        self.websocket_extensions_in_use.append(str(self._deflateParams))
-                        break # stop on first accepted extension configuration
+                     self.websocket_extensions_in_use.append(str(self._deflateParams))
+                     break # stop on first accepted extension configuration
                else:
                   if self.debug:
                      log.msg("client requested '%s' extension we don't support or which is not activated" % extension)
@@ -3232,7 +3238,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          if self.websocket_version == 0:
              key = key1, key2, key3
-             
+
          protocol.addCallback(self._processHandshake_buildResponse, key)
          protocol.addErrback(self._processHandshake_failed)
 
@@ -3670,7 +3676,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type tcpNoDelay: bool
       :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False)
       :type perMessageDeflate: bool
-      :param perMessageDeflateAccept: Acceptor function for offers.
+      :param perMessageDeflateAccept: Acceptor function for offers. Return `None` to decline offer, return `(requestNoContextTakeover, requestMaxWindowBits)` to accept.
       :type perMessageDeflateAccept: callable
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
@@ -4478,7 +4484,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type tcpNoDelay: bool
       :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False).
       :type perMessageDeflate: bool
-      :param perMessageDeflateOffers: A list of offers we provide to the server.
+      :param perMessageDeflateOffers: A list of offers we provide to the server. Provide a list of dicts with possible attributes `acceptNoContextTakeover`, `acceptMaxWindowBits`, `requestNoContextTakeover` and `requestMaxWindowBits`.
       :type perMessageDeflateOffers: list
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
@@ -4561,16 +4567,3 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       does nothing. Override in derived class when appropriate.
       """
       pass
-
-
-
-if __name__ == '__main__':
-   TESTS = ["",
-            "permessage-deflate",
-            "permessage-deflate; c2s_max_window_bits; s2c_max_window_bits=10",
-            'permessage-deflate; c2s_max_window_bits; s2c_max_window_bits="10"',
-            'permessage-deflate; c2s_max_window_bits; s2c_max_window_bits="10"; s2c_max_window_bits="12"',
-            "permessage-deflate; c2s_max_window_bits; s2c_max_window_bits=10, permessage-deflate; c2s_max_window_bits"]
-   p = WebSocketProtocol()
-   for t in TESTS:
-      print p._parseExtensionsHeader(t)
