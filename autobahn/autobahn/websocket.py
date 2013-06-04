@@ -209,15 +209,32 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 
 class PerMessageDeflateParams:
+
    def __init__(self,
                 s2c_no_context_takeover,
                 c2s_no_context_takeover,
                 s2c_max_window_bits,
                 c2s_max_window_bits):
+
       self.s2c_no_context_takeover = s2c_no_context_takeover
       self.c2s_no_context_takeover = c2s_no_context_takeover
       self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else zlib.MAX_WBITS
       self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else zlib.MAX_WBITS
+
+      s = "permessage-deflate"
+      if s2c_no_context_takeover:
+         s += "; s2c_no_context_takeover"
+      if s2c_max_window_bits != 0:
+         s += "; s2c_max_window_bits=%d" % s2c_max_window_bits
+      if c2s_no_context_takeover:
+         s += "; c2s_no_context_takeover"
+      if c2s_max_window_bits != 0:
+         s += "; c2s_max_window_bits=%d" % c2s_max_window_bits
+      self.pmceString = s
+
+
+   def __str__(self):
+      return self.pmceString
 
 
 
@@ -3047,11 +3064,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Extensions
          ##
 
-         ## extensions requested by client
-         ##
-         self.websocket_extensions = []
-
-         ## extensions selected by server
+         ## extensions effectively in use for this connection
          ##
          self.websocket_extensions_in_use = []
 
@@ -3060,9 +3073,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if self.websocket_version == 0:
                return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
             else:
-               self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
+               if http_headers_cnt["sec-websocket-extensions"] > 1:
+                  return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake request")
+               else:
+                  ## extensions requested/offered by client
+                  ##
+                  websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
-            for (extension, params) in self.websocket_extensions:
+            for (extension, params) in websocket_extensions:
 
                if self.debug:
                   log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
@@ -3139,17 +3157,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                                       s2c_max_window_bits = requestMaxWindowBits,
                                                                       c2s_max_window_bits = c2s_max_window_bits)
 
-                        s = "permessage-deflate"
-                        if requestNoContextTakeover:
-                           s += "; s2c_no_context_takeover"
-                        if requestMaxWindowBits != 0:
-                           s += "; s2c_max_window_bits=%d" % requestMaxWindowBits
-                        if deflateAccept[0]:
-                           s += "; c2s_no_context_takeover"
-                        if deflateAccept[1] != 0:
-                           s += "; c2s_max_window_bits=%d" % deflateAccept[1]
-
-                        self.websocket_extensions_in_use.append(s)
+                        self.websocket_extensions_in_use.append(str(self._deflateParams))
                         break # stop on first accepted extension configuration
                else:
                   if self.debug:
@@ -3215,14 +3223,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                self.websocket_version,
                                                self.websocket_origin,
                                                self.websocket_protocols,
-                                               self.websocket_extensions)
+                                               self.websocket_extensions_in_use)
 
          ## onConnect() will return the selected subprotocol or None
          ## or a pair (protocol, headers) or raise an HttpException
          ##
          protocol = maybeDeferred(self.onConnect, connectionRequest)
+
          if self.websocket_version == 0:
              key = key1, key2, key3
+             
          protocol.addCallback(self._processHandshake_buildResponse, key)
          protocol.addErrback(self._processHandshake_failed)
 
@@ -4108,26 +4118,39 @@ class WebSocketClientProtocol(WebSocketProtocol):
                if sec_websocket_accept_got != sec_websocket_accept:
                   return self.failHandshake("HTTP Sec-WebSocket-Accept bogus value : expected %s / got %s" % (sec_websocket_accept, sec_websocket_accept_got))
 
-         ## handle "extensions in use" - if any
+         ## Sec-WebSocket-Extensions
+         ##
+
+         ## extensions effectively in use for this connection
          ##
          self.websocket_extensions_in_use = []
+
          if self.http_headers.has_key("sec-websocket-extensions"):
+
             if self.version == 0:
                return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")         
             else:
                if http_headers_cnt["sec-websocket-extensions"] > 1:
                   return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
                else:
+                  ## extensions select by server
+                  ##
                   websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
             for (extension, params) in websocket_extensions:
 
                if self.debug:
-                  log.msg("parsed extension '%s' with params '%s'" % (extension, params))
+                  log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
                ## permessage-deflate
                ##
                if self.perMessageDeflate and extension == 'permessage-deflate':
+
+                  ## check that server only responded with 1 configuration ("PMCE")
+                  ##
+                  if self._deflateParams is not None:
+                     return self.failHandshake("multiple occurence of extension '%s'" % extension)
+
                   ##
                   ## verify/parse s2c parameters of permessage-deflate extension
                   ##
@@ -4138,38 +4161,49 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                   for p in params:
 
+                     if len(params[p]) > 1:
+                        return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
+
+                     val = params[p][0]
+
                      if p == 'c2s_max_window_bits':
-                        if params[p] not in ['8', '9', '10', '11', '12', '13', '14', '15']:
-                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
                         else:
-                           c2s_max_window_bits = int(params[p])
+                           c2s_max_window_bits = int(val)
+
                      elif p == 'c2s_no_context_takeover':
-                        if params[p] != True:
-                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        if val != True:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
                         else:
                            c2s_no_context_takeover = True
+
                      elif p == 's2c_max_window_bits':
-                        if params[p] not in ['8', '9', '10', '11', '12', '13', '14', '15']:
-                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
                         else:
-                           s2c_max_window_bits = int(params[p])
+                           s2c_max_window_bits = int(val)
+
                      elif p == 's2c_no_context_takeover':
-                        if params[p] != True:
-                           return self.failHandshake("illegal parameter value '%s' for parameter '%s' of extension '%s'" % (params[p], p, extension))
+                        if val != True:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
                         else:
                            s2c_no_context_takeover = True
+
                      else:
-                        return self.failHandshake("illegal parameter '%s' for extension '%s'" % (p, extension))
+                        return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
 
                   ## FIXME: check if returned configuration actually is one we offered
-                  ## FIXME: check that server only responded with 1 configuration
 
                   self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = s2c_no_context_takeover,
                                                                 c2s_no_context_takeover = c2s_no_context_takeover,
                                                                 s2c_max_window_bits = s2c_max_window_bits,
                                                                 c2s_max_window_bits = c2s_max_window_bits)
+
+                  self.websocket_extensions_in_use.append(str(self._deflateParams))
+
                else:
-                  return self.failHandshake("Server wants to use extension '%s' we did not request / haven't implemented" % extension)
+                  return self.failHandshake("server wants to use extension '%s' we did not request, haven't implemented or did not enable" % extension)
 
          ## handle "subprotocol in use" - if any
          ##
@@ -4185,7 +4219,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   ## ok, subprotocol in use
                   ##
                   self.websocket_protocol_in_use = sp
-
 
          ## For Hixie-76, we need 16 octets of HTTP request body to complete HS!
          ##
