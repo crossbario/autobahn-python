@@ -53,11 +53,9 @@ import random
 import os
 import zlib
 import pickle
-import marshal
 import copy
 
 from pprint import pformat
-from array import array
 from collections import deque
 
 from twisted.internet import reactor, protocol
@@ -2800,6 +2798,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
    A Twisted protocol for WebSocket servers.
    """
 
+   isServer = True
+
+
    def onConnect(self, connectionRequest):
       """
       Callback fired during WebSocket opening handshake when new WebSocket client
@@ -2828,7 +2829,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
       When overriding in derived class, make sure to call this base class
       implementation *before* your code.
       """
-      self.isServer = True
       WebSocketProtocol.connectionMade(self)
       self.factory.countConnections += 1
       if self.debug:
@@ -3537,8 +3537,6 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       self.trackTimings = False
 
-      self.isServer = True
-
       ## seed RNG which is used for WS frame masks generation
       random.seed()
 
@@ -3769,6 +3767,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
    Client protocol for WebSocket.
    """
 
+   isServer = False
+
+
    def onConnect(self, connectionResponse):
       """
       Callback fired directly after WebSocket opening handshake when new WebSocket server
@@ -3787,7 +3788,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
       When overriding in derived class, make sure to call this base class
       implementation _before_ your code.
       """
-      self.isServer = False
       WebSocketProtocol.connectionMade(self)
       if self.debug:
          log.msg("connection to %s established" % self.peerstr)
@@ -4344,8 +4344,6 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.logFrames = debug
 
       self.trackTimings = False
-
-      self.isServer = False
 
       ## seed RNG which is used for WS opening handshake key and WS frame masks generation
       random.seed()
