@@ -669,6 +669,46 @@ class WebSocketProtocol(protocol.Protocol):
    """Status codes allowed to send in close."""
 
 
+   CONFIG_ATTRS_COMMON = ['debug',
+                          'debugCodePaths',
+                          'logOctets',
+                          'logFrames',
+                          'trackTimings',
+                          'allowHixie76',
+                          'utf8validateIncoming',
+                          'applyMask',
+                          'maxFramePayloadSize',
+                          'maxMessagePayloadSize',
+                          'autoFragmentSize',
+                          'failByDrop',
+                          'echoCloseCodeReason',
+                          'openHandshakeTimeout',
+                          'closeHandshakeTimeout',
+                          'tcpNoDelay',
+                          'perMessageDeflate']
+   """
+   Configuration attributes common to servers and clients.
+   """
+
+   CONFIG_ATTRS_SERVER = ['versions',
+                          'webStatus',
+                          'requireMaskedClientFrames',
+                          'maskServerFrames',
+                          'perMessageDeflateAccept']
+   """
+   Configuration attributes specific to servers.
+   """
+
+   CONFIG_ATTRS_CLIENT = ['version',
+                          'acceptMaskedServerFrames',
+                          'maskClientFrames',
+                          'serverConnectionDropTimeout',
+                          'perMessageDeflateOffers']
+   """
+   Configuration attributes specific to clients.
+   """
+
+
    def onOpen(self):
       """
       Callback when initial WebSocket handshake was completed. Now you may send messages.
@@ -1166,51 +1206,33 @@ class WebSocketProtocol(protocol.Protocol):
       Modes: Hybi, Hixie
       """
 
-      ## copy default options from factory (so we are not affected by changed on those)
+      ## copy default options from factory (so we are not affected by changed on
+      ## those), but only copy if not already set on protocol instance (allow
+      ## to set configuration individually)
       ##
+      configAttrLog = []
+      for configAttr in self.CONFIG_ATTRS:
+         if not hasattr(self, configAttr):
+            setattr(self, configAttr, getattr(self.factory, configAttr))
+            configAttrSource = self.factory.__class__.__name__
+         else:
+            configAttrSource = self.__class__.__name__
+         configAttrLog.append((configAttr, getattr(self, configAttr), configAttrSource))
 
-      self.debug = self.factory.debug
-      self.debugCodePaths = self.factory.debugCodePaths
+      if self.debug:
+         log.msg("\n" + pformat(configAttrLog))
 
-      self.logOctets = self.factory.logOctets
-      self.logFrames = self.factory.logFrames
-
-      self.setTrackTimings(self.factory.trackTimings)
-      self.trafficStats = TrafficStats()
-
-      self.allowHixie76 = self.factory.allowHixie76
-      self.utf8validateIncoming = self.factory.utf8validateIncoming
-      self.applyMask = self.factory.applyMask
-      self.maxFramePayloadSize = self.factory.maxFramePayloadSize
-      self.maxMessagePayloadSize = self.factory.maxMessagePayloadSize
-      self.autoFragmentSize = self.factory.autoFragmentSize
-      self.failByDrop = self.factory.failByDrop
-      self.echoCloseCodeReason = self.factory.echoCloseCodeReason
-      self.openHandshakeTimeout = self.factory.openHandshakeTimeout
-      self.closeHandshakeTimeout = self.factory.closeHandshakeTimeout
-      self.tcpNoDelay = self.factory.tcpNoDelay
-
-      ## permessage-deflate
-      ##
-      self.perMessageDeflate = self.factory.perMessageDeflate
-      if self.isServer:
-         self.perMessageDeflateAccept = self.factory.perMessageDeflateAccept
-      else:
-         self.perMessageDeflateOffers = self.factory.perMessageDeflateOffers
+      ## permessage-deflate extension
       self._deflateParams = None
       self._deflateCompressor = None
       self._deflateDecompressor = None
 
-      if self.isServer:
-         self.versions = self.factory.versions
-         self.webStatus = self.factory.webStatus
-         self.requireMaskedClientFrames = self.factory.requireMaskedClientFrames
-         self.maskServerFrames = self.factory.maskServerFrames
-      else:
-         self.version = self.factory.version
-         self.acceptMaskedServerFrames = self.factory.acceptMaskedServerFrames
-         self.maskClientFrames = self.factory.maskClientFrames
-         self.serverConnectionDropTimeout = self.factory.serverConnectionDropTimeout
+      ## Time tracking
+      self.trackedTimings = None
+      self.setTrackTimings(self.trackTimings)
+
+      ## Traffic stats
+      self.trafficStats = TrafficStats()
 
       ## Set "Nagle"
       self.transport.setTcpNoDelay(self.tcpNoDelay)
@@ -2800,6 +2822,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
    isServer = True
 
+   CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
+
 
    def onConnect(self, connectionRequest):
       """
@@ -3768,6 +3792,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
    """
 
    isServer = False
+
+   CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
 
    def onConnect(self, connectionResponse):
