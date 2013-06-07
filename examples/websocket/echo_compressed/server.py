@@ -25,7 +25,9 @@ from twisted.web.static import File
 
 from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
-                               listenWS
+                               listenWS, \
+                               PerMessageDeflateOffer, \
+                               PerMessageDeflateAccept
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
@@ -62,28 +64,37 @@ if __name__ == '__main__':
    factory.setProtocolOptions(perMessageDeflate = True)
 
    ## accept any configuration, request no specific features: this is the default!
-   def accept1(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
-      return (False, 0)
+   def accept1(protocol, connectionRequest, perMessageDeflateOffer):
+      return PerMessageDeflateAccept()
 
    ## accept if client offer signals support for "no context takeover" and "max window size". if so, 
    ## request "no context takeover" and "max window size" of 2^8. else decline offer.
-   def accept2(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
-      if acceptNoContextTakeover and acceptMaxWindowBits:
-         return (True, 8)
+   def accept2(protocol, connectionRequest, perMessageDeflateOffer):
+      if perMessageDeflateOffer.acceptNoContextTakeover and perMessageDeflateOffer.acceptMaxWindowBits:
+         return PerMessageDeflateAccept(True, 8)
       else:
          return None
 
    ## deny offer if client requested to limit sliding window size, else accept,
    ## requesting no specific features.
-   def accept3(acceptNoContextTakeover, acceptMaxWindowBits, requestNoContextTakeover, requestMaxWindowBits):
-      if requestMaxWindowBits != 0:
+   def accept3(protocol, connectionRequest, perMessageDeflateOffer):
+      if perMessageDeflateOffer.requestMaxWindowBits != 0:
          return None
       else:
-         return (False, 0)
+         return PerMessageDeflateAccept()
+
+   ## activate compression, but only if WS URL contains parameter "compressed=true", e.g.
+   ## ws://localhost:9001?compressed=true
+   def accept4(protocol, connectionRequest, perMessageDeflateOffer):
+      if connectionRequest.params.has_key('compressed') and connectionRequest.params['compressed'][-1] == 'true':
+         return PerMessageDeflateAccept()
+      else:
+         return None
 
 #   factory.setProtocolOptions(perMessageDeflateAccept = accept1)
    factory.setProtocolOptions(perMessageDeflateAccept = accept2)
 #   factory.setProtocolOptions(perMessageDeflateAccept = accept3)
+#   factory.setProtocolOptions(perMessageDeflateAccept = accept4)
 
    listenWS(factory)
 

@@ -15,6 +15,7 @@
             } else {
                wsuri = "ws://" + window.location.hostname + ":9000";
             }
+            //wsuri += "?compressed=true"; // AutobahnPython allows activation of permessage-deflate based on HTTP request parameters
 
             if ("WebSocket" in window) {
                sock = new WebSocket(wsuri);

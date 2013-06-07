@@ -23,7 +23,8 @@ from twisted.python import log
 
 from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
-                               connectWS
+                               connectWS, \
+                               PerMessageDeflateOffer
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
@@ -71,34 +72,22 @@ if __name__ == '__main__':
    ## Examples:
 
    ## The default is just this anyway:
-   offers1 = [{'acceptNoContextTakeover': True,
-               'acceptMaxWindowBits': True,
-               'requestNoContextTakeover': False,
-               'requestMaxWindowBits': 0}]
+   offers1 = [PerMessageDeflateOffer(acceptNoContextTakeover = True,
+                                     acceptMaxWindowBits = True,
+                                     requestNoContextTakeover = False,
+                                     requestMaxWindowBits = 0)]
 
    ## request the server use a sliding window of 2^8 bytes
-   offers2 = [{'acceptNoContextTakeover': True,
-               'acceptMaxWindowBits': True,
-               'requestNoContextTakeover': False,
-               'requestMaxWindowBits': 8}]
+   offers2 = [PerMessageDeflateOffer(True, True, False, 8)]
 
    ## request the server use a sliding window of 2^8 bytes, but let the
    ## server fall back to "standard" if server does not support the setting
-   offers3 = [{'acceptNoContextTakeover': True,
-               'acceptMaxWindowBits': True,
-               'requestNoContextTakeover': False,
-               'requestMaxWindowBits': 8},
-              {'acceptNoContextTakeover': True,
-               'acceptMaxWindowBits': True,
-               'requestNoContextTakeover': False,
-               'requestMaxWindowBits': 0}]
+   offers3 = [PerMessageDeflateOffer(True, True, False, 8),
+              PerMessageDeflateOffer(True, True, False, 0)]
 
    ## request "no context takeover", accept the same, but deny setting
    ## a sliding window. no fallback!
-   offers4 = [{'acceptNoContextTakeover': True,
-               'acceptMaxWindowBits': False,
-               'requestNoContextTakeover': True,
-               'requestMaxWindowBits': 0}]
+   offers4 = [PerMessageDeflateOffer(True, False, True, 0)]
 
    #factory.setProtocolOptions(perMessageDeflateOffers = offers1)
    #factory.setProtocolOptions(perMessageDeflateOffers = offers2)
