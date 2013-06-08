@@ -25,9 +25,10 @@ from twisted.web.static import File
 
 from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
-                               listenWS, \
-                               PerMessageDeflateOffer, \
-                               PerMessageDeflateAccept
+                               listenWS
+
+from autobahn.compress import PerMessageDeflateAccept
+
 
 
 class EchoServerProtocol(WebSocketServerProtocol):

@@ -25,6 +25,7 @@ import flashpolicy
 import httpstatus
 import utf8validator
 import xormasker
+import compress
 import websocket
 import resource
 import prefixmap

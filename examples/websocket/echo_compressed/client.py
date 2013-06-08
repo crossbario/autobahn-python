@@ -23,8 +23,10 @@ from twisted.python import log
 
 from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
-                               connectWS, \
-                               PerMessageDeflateOffer
+                               connectWS
+
+from autobahn.compress import PerMessageDeflateOffer
+
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
