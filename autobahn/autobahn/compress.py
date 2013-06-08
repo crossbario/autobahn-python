@@ -21,10 +21,15 @@ __all__ = ["PerMessageCompressOffer",
            "PerMessageCompressParams",
            "PerMessageDeflateOffer",
            "PerMessageDeflateAccept",
-           "PerMessageDeflateParams"]
+           "PerMessageDeflateParams",
+           "PerMessageBzip2Offer",
+           "PerMessageBzip2Accept",
+           "PerMessageBzip2Params",
+           ]
 
 
 import zlib
+import bz2
 
 
 
@@ -158,6 +163,91 @@ class PerMessageDeflateParams(PerMessageCompressParams):
          s += "; c2s_no_context_takeover"
       if c2s_max_window_bits != 0:
          s += "; c2s_max_window_bits=%d" % c2s_max_window_bits
+      self._pmceString = s
+
+
+   def getExtensionString(self):
+      return self._pmceString
+
+
+
+class PerMessageBzip2Offer(PerMessageCompressOffer):
+   """
+   Set of parameters for permessage-bzip2 offered by client.
+   """
+
+   def __init__(self,
+                acceptCompressLevel = True,
+                requestCompressLevel = 0):
+      """
+      Constructor.
+
+      :param acceptCompressLevel: Iff true, client accepts "compression level" feature.
+      :type acceptCompressLevel: bool
+      :param requestCompressLevel: Iff non-zero, client requests given "compression level" - must be 1-9.
+      :type requestCompressLevel: int
+      """
+      self.acceptCompressLevel = acceptCompressLevel
+      self.requestCompressLevel = requestCompressLevel
+
+      e = 'permessage-bzip2'
+      if self.acceptCompressLevel:
+         e += "; c2s_compress_level"
+      if self.requestCompressLevel != 0:
+         e += "; s2c_compress_level=%d" % self.requestCompressLevel
+      self._pmceString = e
+
+
+   def getExtensionString(self):
+      """
+      Returns the WebSocket extension configuration string.
+      """
+      return self._pmceString
+
+
+   def __json__(self):
+      return {'acceptCompressLevel': self.acceptCompressLevel,
+              'requestCompressLevel': self.requestCompressLevel}
+
+
+
+class PerMessageBzip2Accept(PerMessageCompressAccept):
+   """
+   Set of parameters with which to accept an permessage-bzip2 offer
+   from a client by a server.
+   """
+
+   def __init__(self,
+                requestCompressLevel = 0):
+      self.requestCompressLevel = requestCompressLevel
+
+
+   def __json__(self):
+      return {'requestCompressLevel': self.requestCompressLevel}
+
+
+   def __repr__(self):
+      return "PerMessageBzip2Accept(requestCompressLevel = %s)" % (self.requestCompressLevel,)
+
+
+
+class PerMessageBzip2Params(PerMessageCompressParams):
+   """
+   Negotiated parameters for permessage-bzip2.
+   """
+
+   def __init__(self,
+                s2c_compress_level,
+                c2s_compress_level):
+
+      self.s2c_compress_level = s2c_compress_level if s2c_compress_level != 0 else 9
+      self.c2s_compress_level = c2s_compress_level if c2s_compress_level != 0 else 9
+
+      s = "permessage-bzip2"
+      if s2c_compress_level != 0:
+         s += "; s2c_compress_level=%d" % s2c_compress_level
+      if c2s_compress_level != 0:
+         s += "; c2s_compress_level=%d" % c2s_compress_level
       self._pmceString = s
 
 

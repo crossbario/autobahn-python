@@ -25,7 +25,8 @@ from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
                                connectWS
 
-from autobahn.compress import PerMessageDeflateOffer
+from autobahn.compress import PerMessageDeflateOffer, \
+                              PerMessageBzip2Offer
 
 
 
@@ -68,7 +69,7 @@ if __name__ == '__main__':
    ## Enable WebSocket extension "permessage-deflate". This is all you
    ## need to do (unless you know what you are doing .. see below)!
    ##
-   factory.setProtocolOptions(perMessageDeflate = True)
+   #factory.setProtocolOptions(perMessageCompressionOffers = [PerMessageDeflateOffer()])
 
    ## Optionally, specify exact list of offers ("PMCE") we announce to server.
    ## Examples:
@@ -91,10 +92,13 @@ if __name__ == '__main__':
    ## a sliding window. no fallback!
    offers4 = [PerMessageDeflateOffer(True, False, True, 0)]
 
-   #factory.setProtocolOptions(perMessageDeflateOffers = offers1)
-   #factory.setProtocolOptions(perMessageDeflateOffers = offers2)
-   factory.setProtocolOptions(perMessageDeflateOffers = offers3)
-   #factory.setProtocolOptions(perMessageDeflateOffers = offers4)
+   offers5 = [PerMessageBzip2Offer(), PerMessageDeflateOffer()]
+
+   #factory.setProtocolOptions(perMessageCompressionOffers = offers1)
+   #factory.setProtocolOptions(perMessageCompressionOffers = offers2)
+   #factory.setProtocolOptions(perMessageCompressionOffers = offers3)
+   #factory.setProtocolOptions(perMessageCompressionOffers = offers4)
+   factory.setProtocolOptions(perMessageCompressionOffers = offers5)
 
    connectWS(factory)
    reactor.run()

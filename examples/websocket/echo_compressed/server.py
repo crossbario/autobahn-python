@@ -27,7 +27,10 @@ from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
                                listenWS
 
-from autobahn.compress import PerMessageDeflateAccept
+from autobahn.compress import PerMessageDeflateOffer, \
+                              PerMessageDeflateAccept, \
+                              PerMessageBzip2Offer, \
+                              PerMessageBzip2Accept
 
 
 
@@ -62,40 +65,45 @@ if __name__ == '__main__':
    ## Enable WebSocket extension "permessage-deflate". This is all you
    ## need to do (unless you know what you are doing .. see below)!
    ##
-   factory.setProtocolOptions(perMessageDeflate = True)
+   #factory.setProtocolOptions(perMessageDeflate = True)
 
    ## accept any configuration, request no specific features: this is the default!
-   def accept1(protocol, connectionRequest, perMessageDeflateOffer):
-      return PerMessageDeflateAccept()
+   def accept1(protocol, connectionRequest, perMessageCompressionOffer):
+      if isinstance(perMessageCompressionOffer, PerMessageDeflateOffer):
+         return PerMessageDeflateAccept()
+      elif isinstance(perMessageCompressionOffer, PerMessageBzip2Offer):
+         return PerMessageBzip2Accept()
+      else:
+         return None
 
    ## accept if client offer signals support for "no context takeover" and "max window size". if so, 
    ## request "no context takeover" and "max window size" of 2^8. else decline offer.
-   def accept2(protocol, connectionRequest, perMessageDeflateOffer):
-      if perMessageDeflateOffer.acceptNoContextTakeover and perMessageDeflateOffer.acceptMaxWindowBits:
+   def accept2(protocol, connectionRequest, perMessageCompressionOffer):
+      if perMessageCompressionOffer.acceptNoContextTakeover and perMessageCompressionOffer.acceptMaxWindowBits:
          return PerMessageDeflateAccept(True, 8)
       else:
          return None
 
    ## deny offer if client requested to limit sliding window size, else accept,
    ## requesting no specific features.
-   def accept3(protocol, connectionRequest, perMessageDeflateOffer):
-      if perMessageDeflateOffer.requestMaxWindowBits != 0:
+   def accept3(protocol, connectionRequest, perMessageCompressionOffer):
+      if perMessageCompressionOffer.requestMaxWindowBits != 0:
          return None
       else:
          return PerMessageDeflateAccept()
 
    ## activate compression, but only if WS URL contains parameter "compressed=true", e.g.
    ## ws://localhost:9001?compressed=true
-   def accept4(protocol, connectionRequest, perMessageDeflateOffer):
+   def accept4(protocol, connectionRequest, perMessageCompressionOffer):
       if connectionRequest.params.has_key('compressed') and connectionRequest.params['compressed'][-1] == 'true':
          return PerMessageDeflateAccept()
       else:
          return None
 
-#   factory.setProtocolOptions(perMessageDeflateAccept = accept1)
-   factory.setProtocolOptions(perMessageDeflateAccept = accept2)
-#   factory.setProtocolOptions(perMessageDeflateAccept = accept3)
-#   factory.setProtocolOptions(perMessageDeflateAccept = accept4)
+   factory.setProtocolOptions(perMessageCompressionAccept = accept1)
+#   factory.setProtocolOptions(perMessageCompressionAccept = accept2)
+#   factory.setProtocolOptions(perMessageCompressionAccept = accept3)
+#   factory.setProtocolOptions(perMessageCompressionAccept = accept4)
 
    listenWS(factory)
 

@@ -52,6 +52,7 @@ import struct
 import random
 import os
 import zlib
+import bz2
 import pickle
 import copy
 import json
@@ -696,8 +697,7 @@ class WebSocketProtocol(protocol.Protocol):
                           'echoCloseCodeReason',
                           'openHandshakeTimeout',
                           'closeHandshakeTimeout',
-                          'tcpNoDelay',
-                          'perMessageDeflate']
+                          'tcpNoDelay']
    """
    Configuration attributes common to servers and clients.
    """
@@ -706,7 +706,7 @@ class WebSocketProtocol(protocol.Protocol):
                           'webStatus',
                           'requireMaskedClientFrames',
                           'maskServerFrames',
-                          'perMessageDeflateAccept']
+                          'perMessageCompressionAccept']
    """
    Configuration attributes specific to servers.
    """
@@ -715,7 +715,7 @@ class WebSocketProtocol(protocol.Protocol):
                           'acceptMaskedServerFrames',
                           'maskClientFrames',
                           'serverConnectionDropTimeout',
-                          'perMessageDeflateOffers']
+                          'perMessageCompressionOffers']
    """
    Configuration attributes specific to clients.
    """
@@ -1928,12 +1928,21 @@ class WebSocketProtocol(protocol.Protocol):
             ##
             if self._deflateParams is not None and self.current_frame.rsv == 4:
                self._deflateIsMessageCompressed = True
-               if self.isServer:
-                  if self._deflateDecompressor is None or self._deflateParams.c2s_no_context_takeover:
-                     self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.c2s_max_window_bits)
+
+               if isinstance(self._deflateParams, PerMessageDeflateParams):
+                  if self.isServer:
+                     if self._deflateDecompressor is None or self._deflateParams.c2s_no_context_takeover:
+                        self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.c2s_max_window_bits)
+                  else:
+                     if self._deflateDecompressor is None or self._deflateParams.s2c_no_context_takeover:
+                        self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.s2c_max_window_bits)
+
+               elif isinstance(self._deflateParams, PerMessageBzip2Params):
+                  if self._deflateDecompressor is None:
+                     self._deflateDecompressor = bz2.BZ2Decompressor()
+
                else:
-                  if self._deflateDecompressor is None or self._deflateParams.s2c_no_context_takeover:
-                     self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.s2c_max_window_bits)
+                  raise Exception("logic error")
             else:
                self._deflateIsMessageCompressed = False
 
@@ -1973,7 +1982,13 @@ class WebSocketProtocol(protocol.Protocol):
             compressedLen = len(payload)
             if self.debug:
                log.msg("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
-            payload = self._deflateDecompressor.decompress(payload)
+
+            if isinstance(self._deflateParams, PerMessageDeflateParams) or \
+               isinstance(self._deflateParams, PerMessageBzip2Params):
+               payload = self._deflateDecompressor.decompress(payload)
+            else:
+               raise Exception("logic error")
+
             uncompressedLen = len(payload)
          else:
             l = len(payload)
@@ -2014,11 +2029,19 @@ class WebSocketProtocol(protocol.Protocol):
          self.onMessageFrameEnd()
 
          if self.current_frame.fin:
-            ## Eat stripped LEN and NLEN field of a non-compressed block added
-            ## for Z_SYNC_FLUSH.
+
+            ## handle end of compressed message
             ##
             if self._deflateIsMessageCompressed:
-               self._deflateDecompressor.decompress('\x00\x00\xff\xff')
+               if isinstance(self._deflateParams, PerMessageDeflateParams):
+                  ## Eat stripped LEN and NLEN field of a non-compressed block added
+                  ## for Z_SYNC_FLUSH.
+                  ##
+                  self._deflateDecompressor.decompress('\x00\x00\xff\xff')
+               elif isinstance(self._deflateParams, PerMessageBzip2Params):
+                  self._deflateDecompressor = None
+               else:
+                  raise Exception("logic error")
 
             ## verify UTF8 has actually ended
             ##
@@ -2604,18 +2627,40 @@ class WebSocketProtocol(protocol.Protocol):
       ##
       if self._deflateParams is not None and not doNotCompress:
          sendCompressed = True
-         if self.isServer:
-            if self._deflateCompressor is None or self._deflateParams.s2c_no_context_takeover:
-               self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.s2c_max_window_bits)
+
+         if isinstance(self._deflateParams, PerMessageDeflateParams):
+            if self.isServer:
+               if self._deflateCompressor is None or self._deflateParams.s2c_no_context_takeover:
+                  self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.s2c_max_window_bits)
+            else:
+               if self._deflateCompressor is None or self._deflateParams.c2s_no_context_takeover:
+                  self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.c2s_max_window_bits)
+
+         elif isinstance(self._deflateParams, PerMessageBzip2Params):
+            if self.isServer:
+               if self._deflateCompressor is None:
+                  self._deflateCompressor = bz2.BZ2Compressor(self._deflateParams.s2c_compress_level)
+            else:
+               if self._deflateCompressor is None:
+                  self._deflateCompressor = bz2.BZ2Compressor(self._deflateParams.c2s_compress_level)
+
          else:
-            if self._deflateCompressor is None or self._deflateParams.c2s_no_context_takeover:
-               self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.c2s_max_window_bits)
+            raise Exception("logic error")
 
          self.trafficStats.outgoingOctetsAppLevel += len(payload)
 
-         payload  = self._deflateCompressor.compress(payload)
-         payload += self._deflateCompressor.flush(zlib.Z_SYNC_FLUSH)
-         payload  = payload[:-4]
+         if isinstance(self._deflateParams, PerMessageDeflateParams):
+            payload  = self._deflateCompressor.compress(payload)
+            payload += self._deflateCompressor.flush(zlib.Z_SYNC_FLUSH)
+            payload  = payload[:-4]
+
+         elif isinstance(self._deflateParams, PerMessageBzip2Params):
+            payload  = self._deflateCompressor.compress(payload)
+            payload += self._deflateCompressor.flush()
+            self._deflateCompressor = None
+            
+         else:
+            raise Exception("logic error")
 
          self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
 
@@ -3144,11 +3189,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   ##
                   self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
-
          ## extensions effectively in use for this connection
          ##
          self.websocket_extensions_in_use = []
-
 
          ## For Hixie-76, we need 8 octets of HTTP request body to complete HS!
          ##
@@ -3229,7 +3272,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## permessage-deflate
          ##
-         if self.perMessageDeflate and extension == 'permessage-deflate':
+         if extension == 'permessage-deflate':
 
             ## extension parameter defaults
             ##
@@ -3278,13 +3321,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             ## call permessage-deflate application defined acceptor function
             ##
-            perMessageDeflateOffer = PerMessageDeflateOffer(acceptNoContextTakeover,
-                                                            acceptMaxWindowBits,
-                                                            requestNoContextTakeover,
-                                                            requestMaxWindowBits)
-            deflateAccept = self.perMessageDeflateAccept(self,
-                                                         self.connectionRequest,
-                                                         perMessageDeflateOffer)
+            perMessageCompressionOffer = PerMessageDeflateOffer(acceptNoContextTakeover,
+                                                                acceptMaxWindowBits,
+                                                                requestNoContextTakeover,
+                                                                requestMaxWindowBits)
+            deflateAccept = self.perMessageCompressionAccept(self,
+                                                             self.connectionRequest,
+                                                             perMessageCompressionOffer)
 
             if deflateAccept is not None:
                c2s_no_context_takeover, c2s_max_window_bits = deflateAccept.requestNoContextTakeover, deflateAccept.requestMaxWindowBits
@@ -3311,6 +3354,67 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
                self.websocket_extensions_in_use.append(self._deflateParams.getExtensionString())
                break # stop on first accepted extension configuration
+
+         ## permessage-bzip2
+         ##
+         elif extension == 'permessage-bzip2':
+
+            ## extension parameter defaults
+            ##
+            acceptCompressLevel = False
+            requestCompressLevel = 0
+
+            ##
+            ## verify/parse c2s parameters of permessage-bzip2 extension
+            ##
+            for p in params:
+
+               if len(params[p]) > 1:
+                  return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
+
+               val = params[p][0]
+
+               if p == 'c2s_compress_level':
+                  if val != True:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     acceptCompressLevel = True
+
+               elif p == 's2c_compress_level':
+                  if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     requestCompressLevel = int(val)
+
+               else:
+                  return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
+
+            ## call permessage-deflate application defined acceptor function
+            ##
+            perMessageCompressionOffer = PerMessageBzip2Offer(acceptCompressLevel,
+                                                              requestCompressLevel)
+            bzip2Accept = self.perMessageCompressionAccept(self,
+                                                           self.connectionRequest,
+                                                           perMessageCompressionOffer)
+
+            if bzip2Accept is not None:
+               c2s_compress_level = bzip2Accept.requestCompressLevel
+
+               if type(c2s_compress_level) != int:
+                  raise Exception("perMessageCompressionAccept (bzip2): invalid type '%s' for c2s_compress_level (expected int)" % type(c2s_compress_level))
+
+               if c2s_compress_level not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                  raise Exception("perMessageCompressionAccept (bzip2): invalid value '%s' for c2s_compress_level (expected 0 or 1-9)" % c2s_compress_level)
+
+               if c2s_compress_level != 0 and not acceptCompressLevel:
+                  raise Exception("perMessageCompressionAccept (bzip2): requests c2s_compress_level, but client does not support that feature")
+
+               self._deflateParams = PerMessageBzip2Params(s2c_compress_level = requestCompressLevel,
+                                                           c2s_compress_level = c2s_compress_level)
+
+               self.websocket_extensions_in_use.append(self._deflateParams.getExtensionString())
+               break # stop on first accepted extension configuration
+
          else:
             if self.debug:
                log.msg("client requested '%s' extension we don't support or which is not activated" % extension)
@@ -3666,10 +3770,9 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
-      ## permessage-deflate extension
+      ## permessage-XXX extension
       ##
-      self.perMessageDeflate = False
-      self.perMessageDeflateAccept = lambda protocol, connectionRequest, perMessageDeflateOffer: PerMessageDeflateAccept()
+      self.perMessageCompressionAccept = lambda protocol, connectionRequest, perMessageCompressionOffer: None
 
 
    def setProtocolOptions(self,
@@ -3688,8 +3791,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                           openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None,
-                          perMessageDeflate = None,
-                          perMessageDeflateAccept = None):
+                          perMessageCompressionAccept = None):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -3723,10 +3825,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
       :type tcpNoDelay: bool
-      :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False)
-      :type perMessageDeflate: bool
-      :param perMessageDeflateAccept: Acceptor function for offers. Return `None` to decline offer, return `(requestNoContextTakeover, requestMaxWindowBits)` to accept.
-      :type perMessageDeflateAccept: callable
+      :param perMessageCompressionAccept: Acceptor function for offers.
+      :type perMessageCompressionAccept: callable
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -3779,11 +3879,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
          self.tcpNoDelay = tcpNoDelay
 
-      if perMessageDeflate is not None and perMessageDeflate != self.perMessageDeflate:
-         self.perMessageDeflate = perMessageDeflate
-
-      if perMessageDeflateAccept is not None:
-         self.perMessageDeflateAccept = perMessageDeflateAccept
+      if perMessageCompressionAccept is not None and perMessageCompressionAccept != self.perMessageCompressionAccept:
+         self.perMessageCompressionAccept = perMessageCompressionAccept
 
 
    def getConnectionCount(self):
@@ -4054,9 +4151,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ##
       if self.version != 0:
          extensions = []
-         if self.perMessageDeflate:
-            for offer in self.perMessageDeflateOffers:
-               extensions.append(offer.getExtensionString())
+         for offer in self.perMessageCompressionOffers:
+            extensions.append(offer.getExtensionString())
 
          if len(extensions) > 0:
             request += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensions)
@@ -4194,7 +4290,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                ## permessage-deflate
                ##
-               if self.perMessageDeflate and extension == 'permessage-deflate':
+               if extension == 'permessage-deflate':
 
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
@@ -4249,6 +4345,50 @@ class WebSocketClientProtocol(WebSocketProtocol):
                                                                 c2s_no_context_takeover = c2s_no_context_takeover,
                                                                 s2c_max_window_bits = s2c_max_window_bits,
                                                                 c2s_max_window_bits = c2s_max_window_bits)
+
+                  self.websocket_extensions_in_use.append(str(self._deflateParams))
+
+               ## permessage-bzip2
+               ##
+               elif extension == 'permessage-bzip2':
+
+                  ## check that server only responded with 1 configuration ("PMCE")
+                  ##
+                  if self._deflateParams is not None:
+                     return self.failHandshake("multiple occurence of extension '%s'" % extension)
+
+                  ##
+                  ## verify/parse s2c parameters of permessage-bzip2 extension
+                  ##
+                  c2s_compress_level = 0
+                  s2c_compress_level = 0
+
+                  for p in params:
+
+                     if len(params[p]) > 1:
+                        return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
+
+                     val = params[p][0]
+
+                     if p == 'c2s_compress_level':
+                        if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                        else:
+                           c2s_compress_level = int(val)
+
+                     elif p == 's2c_compress_level':
+                        if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                        else:
+                           s2c_compress_level = int(val)
+
+                     else:
+                        return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
+
+                  ## FIXME: check if returned configuration actually is one we offered
+
+                  self._deflateParams = PerMessageBzip2Params(s2c_compress_level = s2c_compress_level,
+                                                              c2s_compress_level = c2s_compress_level)
 
                   self.websocket_extensions_in_use.append(str(self._deflateParams))
 
@@ -4468,10 +4608,10 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
 
-      ## permessage-deflate extension
+      ## permessage-XXX extensions
       ##
-      self.perMessageDeflate = False
-      self.perMessageDeflateOffers = [PerMessageDeflateOffer()]
+      self.perMessageCompressionOffers = []
+
 
    def setProtocolOptions(self,
                           version = None,
@@ -4489,8 +4629,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                           openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None,
-                          perMessageDeflate = None,
-                          perMessageDeflateOffers = None):
+                          perMessageCompressionOffers = None):
       """
       Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
@@ -4521,10 +4660,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: True).
       :type tcpNoDelay: bool
-      :param perMessageDeflate: Enable WebSocket permessage-deflate extension (default: False).
-      :type perMessageDeflate: bool
-      :param perMessageDeflateOffers: A list of offers we provide to the server. Provide a list of dicts with possible attributes `acceptNoContextTakeover`, `acceptMaxWindowBits`, `requestNoContextTakeover` and `requestMaxWindowBits`.
-      :type perMessageDeflateOffers: list
+      :param perMessageCompressionOffers: A list of offers we provide to the server.
+      :type perMessageCompressionOffers: list
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -4576,20 +4713,14 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       if tcpNoDelay is not None and tcpNoDelay != self.tcpNoDelay:
          self.tcpNoDelay = tcpNoDelay
 
-      if perMessageDeflate is not None and perMessageDeflate != self.perMessageDeflate:
-         if type(perMessageDeflate) == bool:
-            self.perMessageDeflate = perMessageDeflate
-         else:
-            raise Exception("invalid type %s for perMessageDeflate - expected bool" % type(perMessageDeflate))
-
-      if perMessageDeflateOffers is not None and pickle.dumps(perMessageDeflateOffers) != pickle.dumps(self.perMessageDeflateOffers):
-         if type(perMessageDeflateOffers) == list:
+      if perMessageCompressionOffers is not None and pickle.dumps(perMessageCompressionOffers) != pickle.dumps(self.perMessageCompressionOffers):
+         if type(perMessageCompressionOffers) == list:
             ##
             ## FIXME: more rigorous verification of passed argument
             ##
-            self.perMessageDeflateOffers = copy.deepcopy(perMessageDeflateOffers)
+            self.perMessageCompressionOffers = copy.deepcopy(perMessageCompressionOffers)
          else:
-            raise Exception("invalid type %s for perMessageDeflateOffers - expected bool" % type(perMessageDeflateOffers))
+            raise Exception("invalid type %s for perMessageCompressionOffers - expected list" % type(perMessageCompressionOffers))
 
 
    def clientConnectionFailed(self, connector, reason):
