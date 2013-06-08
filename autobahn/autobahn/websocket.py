@@ -3246,23 +3246,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
                   return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
 
-         ## extensions effectively in use for this connection
-         ##
-         self.websocket_extensions_in_use = []
-
-         connectionRequest = ConnectionRequest(self.peer,
-                                               self.peerstr,
-                                               self.http_headers,
-                                               self.http_request_host,
-                                               self.http_request_path,
-                                               self.http_request_params,
-                                               self.websocket_version,
-                                               self.websocket_origin,
-                                               self.websocket_protocols,
-                                               self.websocket_extensions_in_use)
-
          ## Sec-WebSocket-Extensions
          ##
+         self.websocket_extensions = []
          if self.http_headers.has_key("sec-websocket-extensions"):
 
             if self.websocket_version == 0:
@@ -3273,100 +3259,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
                else:
                   ## extensions requested/offered by client
                   ##
-                  websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
+                  self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
-            for (extension, params) in websocket_extensions:
 
-               if self.debug:
-                  log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
-
-               ## permessage-deflate
-               ##
-               if self.perMessageDeflate and extension == 'permessage-deflate':
-
-                  ## extension parameter defaults
-                  ##
-                  acceptMaxWindowBits = False
-                  acceptNoContextTakeover = True
-                  #acceptNoContextTakeover = False # FIXME: this may change in draft
-                  requestMaxWindowBits = 0
-                  requestNoContextTakeover = False
-
-                  ##
-                  ## verify/parse c2s parameters of permessage-deflate extension
-                  ##
-                  for p in params:
-
-                     if len(params[p]) > 1:
-                        return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
-
-                     val = params[p][0]
-
-                     if p == 'c2s_max_window_bits':
-                        if val != True:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           acceptMaxWindowBits = True
-
-                     elif p == 'c2s_no_context_takeover':
-                        if val != True:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           acceptNoContextTakeover = True
-
-                     elif p == 's2c_max_window_bits':
-                        if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           requestMaxWindowBits = int(val)
-
-                     elif p == 's2c_no_context_takeover':
-                        if val != True:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           requestNoContextTakeover = True
-
-                     else:
-                        return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
-
-                  ## call permessage-deflate application defined acceptor function
-                  ##
-                  perMessageDeflateOffer = PerMessageDeflateOffer(acceptNoContextTakeover,
-                                                                  acceptMaxWindowBits,
-                                                                  requestNoContextTakeover,
-                                                                  requestMaxWindowBits)
-                  deflateAccept = self.perMessageDeflateAccept(self,
-                                                               connectionRequest,
-                                                               perMessageDeflateOffer)
-
-                  if deflateAccept is not None:
-                     c2s_no_context_takeover, c2s_max_window_bits = deflateAccept.requestNoContextTakeover, deflateAccept.requestMaxWindowBits
-
-                     if type(c2s_no_context_takeover) != bool:
-                        raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_no_context_takeover (expected bool)" % type(c2s_no_context_takeover))
-
-                     if c2s_no_context_takeover and not acceptNoContextTakeover:
-                        raise Exception("perMessageDeflateAccept requests c2s_no_context_takeover, but client does not support that feature")
-
-                     if type(c2s_max_window_bits) != int:
-                        raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_max_window_bits (expected int)" % type(c2s_max_window_bits))
-
-                     if c2s_max_window_bits not in [0, 8, 9, 10, 11, 12, 13, 14, 15]:
-                        raise Exception("perMessageDeflateAccept: invalid value '%s' for c2s_max_window_bits (expected 0 or 8-15)" % c2s_max_window_bits)
-
-                     if c2s_max_window_bits != 0 and not acceptMaxWindowBits:
-                        raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
-
-                     self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
-                                                                   c2s_no_context_takeover = c2s_no_context_takeover,
-                                                                   s2c_max_window_bits = requestMaxWindowBits,
-                                                                   c2s_max_window_bits = c2s_max_window_bits)
-
-                     self.websocket_extensions_in_use.append(self._deflateParams.getExtensionString())
-                     break # stop on first accepted extension configuration
-               else:
-                  if self.debug:
-                     log.msg("client requested '%s' extension we don't support or which is not activated" % extension)
+         ## extensions effectively in use for this connection
+         ##
+         self.websocket_extensions_in_use = []
 
 
          ## For Hixie-76, we need 8 octets of HTTP request body to complete HS!
@@ -3393,10 +3291,21 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## the connection. onConnect() may throw, in which case the connection is denied, or it
          ## may return a protocol from the protocols provided by client or None.
          ##
+         self.connectionRequest = ConnectionRequest(self.peer,
+                                                    self.peerstr,
+                                                    self.http_headers,
+                                                    self.http_request_host,
+                                                    self.http_request_path,
+                                                    self.http_request_params,
+                                                    self.websocket_version,
+                                                    self.websocket_origin,
+                                                    self.websocket_protocols,
+                                                    self.websocket_extensions)
+
          ## onConnect() will return the selected subprotocol or None
          ## or a pair (protocol, headers) or raise an HttpException
          ##
-         protocol = maybeDeferred(self.onConnect, connectionRequest)
+         protocol = maybeDeferred(self.onConnect, self.connectionRequest)
 
          if self.websocket_version == 0:
              key = key1, key2, key3
@@ -3426,6 +3335,103 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       if self.websocket_version == 0:
          key1, key2, key3 = key
+
+
+      ## handle extensions
+      ##
+      for (extension, params) in self.websocket_extensions:
+
+         if self.debug:
+            log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
+
+         ## permessage-deflate
+         ##
+         if self.perMessageDeflate and extension == 'permessage-deflate':
+
+            ## extension parameter defaults
+            ##
+            acceptMaxWindowBits = False
+            acceptNoContextTakeover = True
+            #acceptNoContextTakeover = False # FIXME: this may change in draft
+            requestMaxWindowBits = 0
+            requestNoContextTakeover = False
+
+            ##
+            ## verify/parse c2s parameters of permessage-deflate extension
+            ##
+            for p in params:
+
+               if len(params[p]) > 1:
+                  return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
+
+               val = params[p][0]
+
+               if p == 'c2s_max_window_bits':
+                  if val != True:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     acceptMaxWindowBits = True
+
+               elif p == 'c2s_no_context_takeover':
+                  if val != True:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     acceptNoContextTakeover = True
+
+               elif p == 's2c_max_window_bits':
+                  if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     requestMaxWindowBits = int(val)
+
+               elif p == 's2c_no_context_takeover':
+                  if val != True:
+                     return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
+                  else:
+                     requestNoContextTakeover = True
+
+               else:
+                  return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
+
+            ## call permessage-deflate application defined acceptor function
+            ##
+            perMessageDeflateOffer = PerMessageDeflateOffer(acceptNoContextTakeover,
+                                                            acceptMaxWindowBits,
+                                                            requestNoContextTakeover,
+                                                            requestMaxWindowBits)
+            deflateAccept = self.perMessageDeflateAccept(self,
+                                                         self.connectionRequest,
+                                                         perMessageDeflateOffer)
+
+            if deflateAccept is not None:
+               c2s_no_context_takeover, c2s_max_window_bits = deflateAccept.requestNoContextTakeover, deflateAccept.requestMaxWindowBits
+
+               if type(c2s_no_context_takeover) != bool:
+                  raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_no_context_takeover (expected bool)" % type(c2s_no_context_takeover))
+
+               if c2s_no_context_takeover and not acceptNoContextTakeover:
+                  raise Exception("perMessageDeflateAccept requests c2s_no_context_takeover, but client does not support that feature")
+
+               if type(c2s_max_window_bits) != int:
+                  raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_max_window_bits (expected int)" % type(c2s_max_window_bits))
+
+               if c2s_max_window_bits not in [0, 8, 9, 10, 11, 12, 13, 14, 15]:
+                  raise Exception("perMessageDeflateAccept: invalid value '%s' for c2s_max_window_bits (expected 0 or 8-15)" % c2s_max_window_bits)
+
+               if c2s_max_window_bits != 0 and not acceptMaxWindowBits:
+                  raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
+
+               self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
+                                                             c2s_no_context_takeover = c2s_no_context_takeover,
+                                                             s2c_max_window_bits = requestMaxWindowBits,
+                                                             c2s_max_window_bits = c2s_max_window_bits)
+
+               self.websocket_extensions_in_use.append(self._deflateParams.getExtensionString())
+               break # stop on first accepted extension configuration
+         else:
+            if self.debug:
+               log.msg("client requested '%s' extension we don't support or which is not activated" % extension)
+
 
       ## build response to complete WebSocket handshake
       ##
