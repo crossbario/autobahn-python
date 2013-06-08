@@ -29,7 +29,6 @@ __all__ = ["PerMessageCompressOffer",
 
 
 import zlib
-import bz2
 
 
 
