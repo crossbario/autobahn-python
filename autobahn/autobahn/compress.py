@@ -267,8 +267,10 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
    """
 
    def __init__(self,
+                offer,
                 requestNoContextTakeover = False,
                 requestMaxWindowBits = 0):
+      self.offer = offer
       self.requestNoContextTakeover = requestNoContextTakeover
       self.requestMaxWindowBits = requestMaxWindowBits
 
@@ -295,6 +297,16 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                    response.c2s_no_context_takeover,
                    response.s2c_max_window_bits,
                    response.c2s_max_window_bits)
+      return pmce
+
+
+   @classmethod
+   def createFromAccept(Klass, isServer, accept):
+      pmce = Klass(isServer,
+                   accept.offer.requestNoContextTakeover,
+                   accept.requestNoContextTakeover,
+                   accept.offer.requestMaxWindowBits,
+                   accept.requestMaxWindowBits)
       return pmce
 
 
@@ -509,7 +521,9 @@ class PerMessageBzip2Accept(PerMessageCompressAccept, PerMessageBzip2Mixin):
    """
 
    def __init__(self,
+                offer,
                 requestCompressLevel = 0):
+      self.offer = offer
       self.requestCompressLevel = requestCompressLevel
 
 
@@ -532,6 +546,14 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
       pmce = Klass(isServer,
                    response.s2c_compress_level,
                    response.c2s_compress_level)
+      return pmce
+
+
+   @classmethod
+   def createFromAccept(Klass, isServer, accept):
+      pmce = Klass(isServer,
+                   accept.offer.requestCompressLevel,
+                   accept.requestCompressLevel)
       return pmce
 
 
@@ -600,10 +622,14 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 PERMESSAGE_COMPRESSION_EXTENSION = {
 
    PerMessageDeflateMixin.EXTENSION_NAME: {
+      'Offer': PerMessageDeflateOffer,
       'Response': PerMessageDeflateResponse,
+      'Accept': PerMessageDeflateAccept,
       'PMCE': PerMessageDeflate},
 
    PerMessageBzip2Mixin.EXTENSION_NAME: {
+      'Offer': PerMessageBzip2Offer,
       'Response': PerMessageBzip2Response,
+      'Accept': PerMessageBzip2Accept,
       'PMCE': PerMessageBzip2}
 }

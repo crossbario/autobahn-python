@@ -3206,82 +3206,44 @@ class WebSocketServerProtocol(WebSocketProtocol):
          key1, key2, key3 = key
 
 
-      ## handle extensions
+      ## gets filled with permessage-compress offers from the client
+      ##
+      pmceOffers = []
+
+      ## handle WebSocket extensions
       ##
       for (extension, params) in self.websocket_extensions:
 
          if self.debug:
             log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
-         ## permessage-deflate
+         ## process permessage-compress extension
          ##
-         if extension == 'permessage-deflate':
+         if PERMESSAGE_COMPRESSION_EXTENSION.has_key(extension):
 
-            offer = PerMessageDeflateOffer.parse(params)
+            PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
-            deflateAccept = self.perMessageCompressionAccept(self,
-                                                             self.connectionRequest,
-                                                             offer)
-
-            if deflateAccept is not None:
-               c2s_no_context_takeover, c2s_max_window_bits = deflateAccept.requestNoContextTakeover, deflateAccept.requestMaxWindowBits
-
-               if type(c2s_no_context_takeover) != bool:
-                  raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_no_context_takeover (expected bool)" % type(c2s_no_context_takeover))
-
-               if c2s_no_context_takeover and not offer.acceptNoContextTakeover:
-                  raise Exception("perMessageDeflateAccept requests c2s_no_context_takeover, but client does not support that feature")
-
-               if type(c2s_max_window_bits) != int:
-                  raise Exception("perMessageDeflateAccept: invalid type '%s' for c2s_max_window_bits (expected int)" % type(c2s_max_window_bits))
-
-               if c2s_max_window_bits not in [0, 8, 9, 10, 11, 12, 13, 14, 15]:
-                  raise Exception("perMessageDeflateAccept: invalid value '%s' for c2s_max_window_bits (expected 0 or 8-15)" % c2s_max_window_bits)
-
-               if c2s_max_window_bits != 0 and not offer.acceptMaxWindowBits:
-                  raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
-
-               self._perMessageCompress = PerMessageDeflate(isServer = self.isServer,
-                                                            s2c_no_context_takeover = offer.requestNoContextTakeover,
-                                                            c2s_no_context_takeover = c2s_no_context_takeover,
-                                                            s2c_max_window_bits = offer.requestMaxWindowBits,
-                                                            c2s_max_window_bits = c2s_max_window_bits)
-
-               self.websocket_extensions_in_use.append(self._perMessageCompress.getExtensionString())
-               break # stop on first accepted extension configuration
-
-         ## permessage-bzip2
-         ##
-         elif extension == 'permessage-bzip2':
-
-            offer = PerMessageBzip2Offer.parse(params)
-
-            bzip2Accept = self.perMessageCompressionAccept(self,
-                                                           self.connectionRequest,
-                                                           offer)
-
-            if bzip2Accept is not None:
-               c2s_compress_level = bzip2Accept.requestCompressLevel
-
-               if type(c2s_compress_level) != int:
-                  raise Exception("perMessageCompressionAccept (bzip2): invalid type '%s' for c2s_compress_level (expected int)" % type(c2s_compress_level))
-
-               if c2s_compress_level not in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
-                  raise Exception("perMessageCompressionAccept (bzip2): invalid value '%s' for c2s_compress_level (expected 0 or 1-9)" % c2s_compress_level)
-
-               if c2s_compress_level != 0 and not offer.acceptCompressLevel:
-                  raise Exception("perMessageCompressionAccept (bzip2): requests c2s_compress_level, but client does not support that feature")
-
-               self._perMessageCompress = PerMessageBzip2(isServer = self.isServer,
-                                                          s2c_compress_level = offer.requestCompressLevel,
-                                                          c2s_compress_level = c2s_compress_level)
-
-               self.websocket_extensions_in_use.append(self._perMessageCompress.getExtensionString())
-               break # stop on first accepted extension configuration
+            try:
+               offer = PMCE['Offer'].parse(params)
+               pmceOffers.append(offer)
+            except Exception, e:
+               return self.failHandshake(str(e))
 
          else:
             if self.debug:
                log.msg("client requested '%s' extension we don't support or which is not activated" % extension)
+
+      ## handle permessage-compress offers by the client
+      ##
+      if len(pmceOffers) > 0:
+         accept = self.perMessageCompressionAccept(pmceOffers)
+         if accept is not None:
+            PMCE = PERMESSAGE_COMPRESSION_EXTENSION[accept.EXTENSION_NAME]
+            self._perMessageCompress = PMCE['PMCE'].createFromAccept(self.isServer, accept)
+            self.websocket_extensions_in_use.append(self._perMessageCompress.getExtensionString())
+         else:
+            if self.debug:
+               log.msg("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
 
 
       ## build response to complete WebSocket handshake
@@ -3636,7 +3598,7 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
 
       ## permessage-XXX extension
       ##
-      self.perMessageCompressionAccept = lambda protocol, connectionRequest, perMessageCompressionOffer: None
+      self.perMessageCompressionAccept = lambda _: None
 
 
    def setProtocolOptions(self,
@@ -4150,17 +4112,21 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   ##
                   websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
+            ## process extensions selected by server
+            ##
             for (extension, params) in websocket_extensions:
 
                if self.debug:
                   log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
+               ## process permessage-compress extension
+               ##
                if PERMESSAGE_COMPRESSION_EXTENSION.has_key(extension):
 
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
                   if self._perMessageCompress is not None:
-                     return self.failHandshake("multiple occurence of permessage-compress extension")
+                     return self.failHandshake("multiple occurence of a permessage-compress extension")
 
                   PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
@@ -4443,8 +4409,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type closeHandshakeTimeout: float
       :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: True).
       :type tcpNoDelay: bool
-      :param perMessageCompressionOffers: A list of offers we provide to the server.
-      :type perMessageCompressionOffers: list
+      :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
+      :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
