@@ -4015,6 +4015,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ##
       if self.version != 0:
          extensions = []
+
+         ## permessage-compress offers
+         ##
          for offer in self.perMessageCompressionOffers:
             extensions.append(offer.getExtensionString())
 
@@ -4152,109 +4155,23 @@ class WebSocketClientProtocol(WebSocketProtocol):
                if self.debug:
                   log.msg("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
-               ## permessage-deflate
-               ##
-               if extension == 'permessage-deflate':
+               if PERMESSAGE_COMPRESSION_EXTENSION.has_key(extension):
 
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
                   if self._perMessageCompress is not None:
-                     return self.failHandshake("multiple occurence of extension '%s'" % extension)
+                     return self.failHandshake("multiple occurence of permessage-compress extension")
 
-                  ##
-                  ## verify/parse s2c parameters of permessage-deflate extension
-                  ##
-                  c2s_max_window_bits = 0
-                  c2s_no_context_takeover = False
-                  s2c_max_window_bits = 0
-                  s2c_no_context_takeover = False
+                  PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
-                  for p in params:
-
-                     if len(params[p]) > 1:
-                        return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
-
-                     val = params[p][0]
-
-                     if p == 'c2s_max_window_bits':
-                        if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           c2s_max_window_bits = int(val)
-
-                     elif p == 'c2s_no_context_takeover':
-                        if val != True:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           c2s_no_context_takeover = True
-
-                     elif p == 's2c_max_window_bits':
-                        if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           s2c_max_window_bits = int(val)
-
-                     elif p == 's2c_no_context_takeover':
-                        if val != True:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           s2c_no_context_takeover = True
-
-                     else:
-                        return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
+                  try:
+                     r = PMCE['Response'].parse(params)
+                  except Exception, e:
+                     return self.failHandshake(str(e))
 
                   ## FIXME: check if returned configuration actually is one we offered
 
-                  self._perMessageCompress = PerMessageDeflate(isServer = self.isServer,
-                                                                s2c_no_context_takeover = s2c_no_context_takeover,
-                                                                c2s_no_context_takeover = c2s_no_context_takeover,
-                                                                s2c_max_window_bits = s2c_max_window_bits,
-                                                                c2s_max_window_bits = c2s_max_window_bits)
-
-                  self.websocket_extensions_in_use.append(str(self._perMessageCompress))
-
-               ## permessage-bzip2
-               ##
-               elif extension == 'permessage-bzip2':
-
-                  ## check that server only responded with 1 configuration ("PMCE")
-                  ##
-                  if self._perMessageCompress is not None:
-                     return self.failHandshake("multiple occurence of extension '%s'" % extension)
-
-                  ##
-                  ## verify/parse s2c parameters of permessage-bzip2 extension
-                  ##
-                  c2s_compress_level = 0
-                  s2c_compress_level = 0
-
-                  for p in params:
-
-                     if len(params[p]) > 1:
-                        return self.failHandshake("multiple occurence of extension parameter '%s' for extension '%s'" % (p, extension))
-
-                     val = params[p][0]
-
-                     if p == 'c2s_compress_level':
-                        if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           c2s_compress_level = int(val)
-
-                     elif p == 's2c_compress_level':
-                        if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
-                           return self.failHandshake("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, extension))
-                        else:
-                           s2c_compress_level = int(val)
-
-                     else:
-                        return self.failHandshake("illegal extension parameter '%s' for extension '%s'" % (p, extension))
-
-                  ## FIXME: check if returned configuration actually is one we offered
-
-                  self._perMessageCompress = PerMessageBzip2(isServer = self.isServer,
-                                                              s2c_compress_level = s2c_compress_level,
-                                                              c2s_compress_level = c2s_compress_level)
+                  self._perMessageCompress = PMCE['PMCE'].createFromResponse(self.isServer, r)
 
                   self.websocket_extensions_in_use.append(str(self._perMessageCompress))
 
