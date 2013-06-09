@@ -25,8 +25,7 @@ from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
                                connectWS
 
-from autobahn.compress import PerMessageDeflateOffer, \
-                              PerMessageBzip2Offer
+from autobahn.compress import PerMessageDeflateOffer
 
 
 
@@ -64,41 +63,9 @@ if __name__ == '__main__':
 
    factory.protocol = EchoClientProtocol
 
-#   factory.setProtocolOptions(autoFragmentSize = 4)   
-
-   ## Enable WebSocket extension "permessage-deflate". This is all you
-   ## need to do (unless you know what you are doing .. see below)!
+   ## Enable WebSocket extension "permessage-deflate"
    ##
-   #factory.setProtocolOptions(perMessageCompressionOffers = [PerMessageDeflateOffer()])
-
-   ## Optionally, specify exact list of offers ("PMCE") we announce to server.
-   ## Examples:
-
-   ## The default is just this anyway:
-   offers1 = [PerMessageDeflateOffer(acceptNoContextTakeover = True,
-                                     acceptMaxWindowBits = True,
-                                     requestNoContextTakeover = False,
-                                     requestMaxWindowBits = 0)]
-
-   ## request the server use a sliding window of 2^8 bytes
-   offers2 = [PerMessageDeflateOffer(True, True, False, 8)]
-
-   ## request the server use a sliding window of 2^8 bytes, but let the
-   ## server fall back to "standard" if server does not support the setting
-   offers3 = [PerMessageDeflateOffer(True, True, False, 8),
-              PerMessageDeflateOffer(True, True, False, 0)]
-
-   ## request "no context takeover", accept the same, but deny setting
-   ## a sliding window. no fallback!
-   offers4 = [PerMessageDeflateOffer(True, False, True, 0)]
-
-   offers5 = [PerMessageBzip2Offer(), PerMessageDeflateOffer()]
-
-   #factory.setProtocolOptions(perMessageCompressionOffers = offers1)
-   #factory.setProtocolOptions(perMessageCompressionOffers = offers2)
-   #factory.setProtocolOptions(perMessageCompressionOffers = offers3)
-   #factory.setProtocolOptions(perMessageCompressionOffers = offers4)
-   factory.setProtocolOptions(perMessageCompressionOffers = offers5)
+   factory.setProtocolOptions(perMessageCompressionOffers = [PerMessageDeflateOffer()])
 
    connectWS(factory)
    reactor.run()
