@@ -1237,8 +1237,6 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## permessage-deflate extension
       self._deflateParams = None
-      self._deflateCompressor = None
-      self._deflateDecompressor = None
 
       ## Time tracking
       self.trackedTimings = None
@@ -1928,21 +1926,7 @@ class WebSocketProtocol(protocol.Protocol):
             ##
             if self._deflateParams is not None and self.current_frame.rsv == 4:
                self._deflateIsMessageCompressed = True
-
-               if isinstance(self._deflateParams, PerMessageDeflateParams):
-                  if self.isServer:
-                     if self._deflateDecompressor is None or self._deflateParams.c2s_no_context_takeover:
-                        self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.c2s_max_window_bits)
-                  else:
-                     if self._deflateDecompressor is None or self._deflateParams.s2c_no_context_takeover:
-                        self._deflateDecompressor = zlib.decompressobj(-self._deflateParams.s2c_max_window_bits)
-
-               elif isinstance(self._deflateParams, PerMessageBzip2Params):
-                  if self._deflateDecompressor is None:
-                     self._deflateDecompressor = bz2.BZ2Decompressor()
-
-               else:
-                  raise Exception("logic error")
+               self._deflateParams.startDecompressMessage()
             else:
                self._deflateIsMessageCompressed = False
 
@@ -1983,12 +1967,7 @@ class WebSocketProtocol(protocol.Protocol):
             if self.debug:
                log.msg("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
 
-            if isinstance(self._deflateParams, PerMessageDeflateParams) or \
-               isinstance(self._deflateParams, PerMessageBzip2Params):
-               payload = self._deflateDecompressor.decompress(payload)
-            else:
-               raise Exception("logic error")
-
+            payload = self._deflateParams.decompressMessageData(payload)
             uncompressedLen = len(payload)
          else:
             l = len(payload)
@@ -2033,15 +2012,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## handle end of compressed message
             ##
             if self._deflateIsMessageCompressed:
-               if isinstance(self._deflateParams, PerMessageDeflateParams):
-                  ## Eat stripped LEN and NLEN field of a non-compressed block added
-                  ## for Z_SYNC_FLUSH.
-                  ##
-                  self._deflateDecompressor.decompress('\x00\x00\xff\xff')
-               elif isinstance(self._deflateParams, PerMessageBzip2Params):
-                  self._deflateDecompressor = None
-               else:
-                  raise Exception("logic error")
+               self._deflateParams.endDecompressMessage()
 
             ## verify UTF8 has actually ended
             ##
@@ -2628,39 +2599,13 @@ class WebSocketProtocol(protocol.Protocol):
       if self._deflateParams is not None and not doNotCompress:
          sendCompressed = True
 
-         if isinstance(self._deflateParams, PerMessageDeflateParams):
-            if self.isServer:
-               if self._deflateCompressor is None or self._deflateParams.s2c_no_context_takeover:
-                  self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.s2c_max_window_bits)
-            else:
-               if self._deflateCompressor is None or self._deflateParams.c2s_no_context_takeover:
-                  self._deflateCompressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self._deflateParams.c2s_max_window_bits)
-
-         elif isinstance(self._deflateParams, PerMessageBzip2Params):
-            if self.isServer:
-               if self._deflateCompressor is None:
-                  self._deflateCompressor = bz2.BZ2Compressor(self._deflateParams.s2c_compress_level)
-            else:
-               if self._deflateCompressor is None:
-                  self._deflateCompressor = bz2.BZ2Compressor(self._deflateParams.c2s_compress_level)
-
-         else:
-            raise Exception("logic error")
+         self._deflateParams.startCompressMessage()
 
          self.trafficStats.outgoingOctetsAppLevel += len(payload)
 
-         if isinstance(self._deflateParams, PerMessageDeflateParams):
-            payload  = self._deflateCompressor.compress(payload)
-            payload += self._deflateCompressor.flush(zlib.Z_SYNC_FLUSH)
-            payload  = payload[:-4]
-
-         elif isinstance(self._deflateParams, PerMessageBzip2Params):
-            payload  = self._deflateCompressor.compress(payload)
-            payload += self._deflateCompressor.flush()
-            self._deflateCompressor = None
-            
-         else:
-            raise Exception("logic error")
+         payload1 = self._deflateParams.compressMessageData(payload)
+         payload2 = self._deflateParams.endCompressMessage()
+         payload = ''.join([payload1, payload2])
 
          self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
 
@@ -3347,7 +3292,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
                if c2s_max_window_bits != 0 and not acceptMaxWindowBits:
                   raise Exception("perMessageDeflateAccept requests c2s_max_window_bits, but client does not support that feature")
 
-               self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = requestNoContextTakeover,
+               self._deflateParams = PerMessageDeflateParams(isServer = self.isServer,
+                                                             s2c_no_context_takeover = requestNoContextTakeover,
                                                              c2s_no_context_takeover = c2s_no_context_takeover,
                                                              s2c_max_window_bits = requestMaxWindowBits,
                                                              c2s_max_window_bits = c2s_max_window_bits)
@@ -3409,7 +3355,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
                if c2s_compress_level != 0 and not acceptCompressLevel:
                   raise Exception("perMessageCompressionAccept (bzip2): requests c2s_compress_level, but client does not support that feature")
 
-               self._deflateParams = PerMessageBzip2Params(s2c_compress_level = requestCompressLevel,
+               self._deflateParams = PerMessageBzip2Params(isServer = self.isServer,
+                                                           s2c_compress_level = requestCompressLevel,
                                                            c2s_compress_level = c2s_compress_level)
 
                self.websocket_extensions_in_use.append(self._deflateParams.getExtensionString())
@@ -4341,7 +4288,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                   ## FIXME: check if returned configuration actually is one we offered
 
-                  self._deflateParams = PerMessageDeflateParams(s2c_no_context_takeover = s2c_no_context_takeover,
+                  self._deflateParams = PerMessageDeflateParams(isServer = self.isServer,
+                                                                s2c_no_context_takeover = s2c_no_context_takeover,
                                                                 c2s_no_context_takeover = c2s_no_context_takeover,
                                                                 s2c_max_window_bits = s2c_max_window_bits,
                                                                 c2s_max_window_bits = c2s_max_window_bits)
@@ -4387,7 +4335,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                   ## FIXME: check if returned configuration actually is one we offered
 
-                  self._deflateParams = PerMessageBzip2Params(s2c_compress_level = s2c_compress_level,
+                  self._deflateParams = PerMessageBzip2Params(isServer = self.isServer,
+                                                              s2c_compress_level = s2c_compress_level,
                                                               c2s_compress_level = c2s_compress_level)
 
                   self.websocket_extensions_in_use.append(str(self._deflateParams))

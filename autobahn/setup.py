@@ -63,6 +63,10 @@ setup (
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
    install_requires = ['setuptools', 'Twisted>=11.1'],
+   extras_require = {
+      'accelerate': ["wsaccel>=0.6.2"],
+      'compress': ["python-snappy>=0.5", "lz4>=0.2.1"]
+   },
    packages = ['autobahn'],
    zip_safe = False,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
