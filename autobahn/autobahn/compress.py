@@ -18,19 +18,24 @@
 
 __all__ = ["PerMessageCompressOffer",
            "PerMessageCompressAccept",
-           "PerMessageCompressParams",
+           "PerMessageCompress",
            "PerMessageDeflateOffer",
            "PerMessageDeflateAccept",
-           "PerMessageDeflateParams",
+           "PerMessageDeflate",
            "PerMessageBzip2Offer",
            "PerMessageBzip2Accept",
-           "PerMessageBzip2Params",
+           "PerMessageBzip2",
            ]
 
 
 import zlib
 import bz2
 
+
+try:
+   import snappy
+except ImportError:
+   pass
 
 
 class PerMessageCompressOffer:
@@ -49,7 +54,7 @@ class PerMessageCompressAccept:
 
 
 
-class PerMessageCompressParams:
+class PerMessageCompress:
    """
    Base class for WebSocket compression negotiated parameters.
    """
@@ -61,6 +66,64 @@ class PerMessageDeflateOffer(PerMessageCompressOffer):
    """
    Set of parameters for permessage-deflate offered by client.
    """
+
+   EXTENSION_NAME = "permessage-deflate"
+
+
+   @classmethod
+   def parse(Klass, params):
+      """
+      Parses a WebSocket extension offer for permessage-deflate provided by a client to a server.
+      """
+
+      ## extension parameter defaults
+      ##
+      acceptMaxWindowBits = False
+      acceptNoContextTakeover = True
+      #acceptNoContextTakeover = False # FIXME: this may change in draft
+      requestMaxWindowBits = 0
+      requestNoContextTakeover = False
+
+      for p in params:
+
+         if len(params[p]) > 1:
+            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+
+         val = params[p][0]
+
+         if p == 'c2s_max_window_bits':
+            if val != True:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               acceptMaxWindowBits = True
+
+         elif p == 'c2s_no_context_takeover':
+            if val != True:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               acceptNoContextTakeover = True
+
+         elif p == 's2c_max_window_bits':
+            if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               requestMaxWindowBits = int(val)
+
+         elif p == 's2c_no_context_takeover':
+            if val != True:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               requestNoContextTakeover = True
+
+         else:
+            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+
+      offer = Klass(acceptNoContextTakeover,
+                    acceptMaxWindowBits,
+                    requestNoContextTakeover,
+                    requestMaxWindowBits)
+      return offer
+
 
    def __init__(self,
                 acceptNoContextTakeover = True,
@@ -138,10 +201,12 @@ class PerMessageDeflateAccept(PerMessageCompressAccept):
 
 
 
-class PerMessageDeflateParams(PerMessageCompressParams):
+class PerMessageDeflate(PerMessageCompress):
    """
    Negotiated parameters for permessage-deflate.
    """
+
+   EXTENSION_NAME = "permessage-deflate"
 
    def __init__(self,
                 isServer,
@@ -219,6 +284,48 @@ class PerMessageBzip2Offer(PerMessageCompressOffer):
    Set of parameters for permessage-bzip2 offered by client.
    """
 
+   EXTENSION_NAME = "permessage-bzip2"
+
+
+   @classmethod
+   def parse(Klass, params):
+      """
+      Parses a WebSocket extension offer for permessage-deflate provided by a client to a server.
+      """
+      ## extension parameter defaults
+      ##
+      acceptCompressLevel = False
+      requestCompressLevel = 0
+
+      ##
+      ## verify/parse c2s parameters of permessage-bzip2 extension
+      ##
+      for p in params:
+
+         if len(params[p]) > 1:
+            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+
+         val = params[p][0]
+
+         if p == 'c2s_compress_level':
+            if val != True:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               acceptCompressLevel = True
+
+         elif p == 's2c_compress_level':
+            if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            else:
+               requestCompressLevel = int(val)
+
+         else:
+            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+
+      offer = Klass(acceptCompressLevel, requestCompressLevel)
+      return offer
+
+
    def __init__(self,
                 acceptCompressLevel = True,
                 requestCompressLevel = 0):
@@ -274,10 +381,12 @@ class PerMessageBzip2Accept(PerMessageCompressAccept):
 
 
 
-class PerMessageBzip2Params(PerMessageCompressParams):
+class PerMessageBzip2(PerMessageCompress):
    """
    Negotiated parameters for permessage-bzip2.
    """
+
+   EXTENSION_NAME = "permessage-bzip2"
 
    def __init__(self,
                 isServer,
