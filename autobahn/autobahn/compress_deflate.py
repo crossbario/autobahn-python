@@ -296,6 +296,18 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
       self._pmceString = s
 
 
+   def __json__(self):
+      return {'extension': self.EXTENSION_NAME,
+              's2c_no_context_takeover': self.s2c_no_context_takeover,
+              'c2s_no_context_takeover': self.c2s_no_context_takeover,
+              's2c_max_window_bits': self.s2c_max_window_bits,
+              'c2s_max_window_bits': self.c2s_max_window_bits}
+
+
+   def __repr__(self):
+      return "PerMessageDeflate(isServer = %s, s2c_no_context_takeover = %s, c2s_no_context_takeover = %s, s2c_max_window_bits = %s, c2s_max_window_bits = %s)" % (self._isServer, self.s2c_no_context_takeover, self.c2s_no_context_takeover, self.s2c_max_window_bits, self.c2s_max_window_bits)
+
+
    def getExtensionString(self):
       return self._pmceString
 
