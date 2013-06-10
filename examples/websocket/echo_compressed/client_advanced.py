@@ -97,11 +97,11 @@ if __name__ == '__main__':
    offers5.append(PerMessageBzip2Offer())
    offers5.append(PerMessageDeflateOffer())
 
-   factory.setProtocolOptions(perMessageCompressionOffers = offers1)
+   #factory.setProtocolOptions(perMessageCompressionOffers = offers1)
    #factory.setProtocolOptions(perMessageCompressionOffers = offers2)
    #factory.setProtocolOptions(perMessageCompressionOffers = offers3)
    #factory.setProtocolOptions(perMessageCompressionOffers = offers4)
-   #factory.setProtocolOptions(perMessageCompressionOffers = offers5)
+   factory.setProtocolOptions(perMessageCompressionOffers = offers5)
 
    #factory.setProtocolOptions(autoFragmentSize = 4)
 

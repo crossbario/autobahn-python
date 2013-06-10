@@ -9,3 +9,4 @@ WebSocket
    websocketclient
    websocketserver
    websocketaux
+   websocketcompress
