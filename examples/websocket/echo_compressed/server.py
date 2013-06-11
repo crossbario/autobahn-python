@@ -33,10 +33,10 @@ from autobahn.compress import PerMessageDeflateOffer, PerMessageDeflateAccept
 class EchoServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
-      print "WebSocket extensions in use: %s" % connectionRequest.extensions
+      pass
 
    def onOpen(self):
-      pass
+      print "WebSocket extensions in use: %s" % self.websocket_extensions_in_use
 
    def onMessage(self, msg, binary):
       self.sendMessage(msg, binary)

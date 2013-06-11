@@ -90,11 +90,11 @@ if __name__ == '__main__':
    ## offer "permessage-snappy", "permessage-bzip2" and "permessage-deflate"
    ## note that the first 2 are currently not even in an RFC draft
    ##
-   offers5 = [PerMessageSnappyOffer(), PerMessageBzip2Offer(), PerMessageDeflateOffer()]
-   if PERMESSAGE_COMPRESSION_EXTENSION.has_key('permessage-snappy'):
-      ## this require snappy to be installed
-      offers5.append(PerMessageSnappyOffer())
-   offers5.append(PerMessageBzip2Offer())
+   offers5 = []
+#   if PERMESSAGE_COMPRESSION_EXTENSION.has_key('permessage-snappy'):
+#      ## this require snappy to be installed
+#      offers5.append(PerMessageSnappyOffer())
+   offers5.append(PerMessageBzip2Offer(True, 1))
    offers5.append(PerMessageDeflateOffer())
 
    #factory.setProtocolOptions(perMessageCompressionOffers = offers1)

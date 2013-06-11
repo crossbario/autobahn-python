@@ -18,20 +18,23 @@
 
 __all__ = ["PerMessageSnappyMixin",
            "PerMessageSnappyOffer",
-           "PerMessageSnappyResponse",
            "PerMessageSnappyAccept",
+           "PerMessageSnappyResponse",
            "PerMessageSnappy"]
 
 
 import snappy
 
 from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressResponse, \
                           PerMessageCompressAccept, \
+                          PerMessageCompressResponse, \
                           PerMessageCompress
 
 
 class PerMessageSnappyMixin:
+   """
+   Mixin class for this extension.
+   """
 
    EXTENSION_NAME = "permessage-snappy"
    """
@@ -42,13 +45,17 @@ class PerMessageSnappyMixin:
 
 class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
    """
-   Set of parameters for permessage-snappy offered by client.
+   Set of extension parameters for `permessage-snappy` WebSocket extension
+   offered by a client to a server.
    """
 
    @classmethod
    def parse(Klass, params):
       """
-      Parses a WebSocket extension offer for permessage-snappy provided by a client to a server.
+      Parses a WebSocket extension offer for `permessage-snappy` provided by a client to a server.
+
+      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
       """
@@ -58,7 +65,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       requestNoContextTakeover = False
 
       ##
-      ## verify/parse c2s parameters of permessage-snappy extension
+      ## verify/parse c2s parameters of permessage-snappy offer
       ##
       for p in params:
 
@@ -82,7 +89,8 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
 
-      offer = Klass(acceptNoContextTakeover, requestNoContextTakeover)
+      offer = Klass(acceptNoContextTakeover,
+                    requestNoContextTakeover)
       return offer
 
 
@@ -110,14 +118,16 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
    def getExtensionString(self):
       """
-      Returns the WebSocket extension configuration string.
+      Returns the WebSocket extension configuration string as sent to the server.
+
+      :returns: str -- PMCE configuration string.
       """
       return self._pmceString
 
 
    def __json__(self):
       """
-      Returns a JSON serializable representation.
+      Returns a JSON serializable object representation.
 
       :returns: object -- JSON serializable represention.
       """
@@ -128,23 +138,96 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
    def __repr__(self):
       """
-      Returns Python object representation that can be eval'ed.
+      Returns Python object representation that can be eval'ed to reconstruct the object.
 
-      :returns: str -- String that can be Python eval'ed to reconstruct the object.
+      :returns: str -- Python string representation.
       """
       return "PerMessageSnappyOffer(acceptNoContextTakeover = %s, requestNoContextTakeover = %s)" % (self.acceptNoContextTakeover, self.requestNoContextTakeover)
 
 
 
+class PerMessageSnappyAccept(PerMessageCompressAccept, PerMessageSnappyMixin):
+   """
+   Set of parameters with which to accept an `permessage-snappy` offer
+   from a client by a server.
+   """
+
+   def __init__(self,
+                offer,
+                requestNoContextTakeover = False):
+      """
+      Constructor.
+
+      :param offer: The offer being accepted.
+      :type offer: Instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
+      :param requestNoContextTakeover: Iff true, server request "no context takeover" feature.
+      :type requestNoContextTakeover: bool
+      """
+      if not isinstance(offer, PerMessageSnappyOffer):
+         raise Exception("invalid type %s for offer" % type(offer))
+
+      self.offer = offer
+
+      if type(requestNoContextTakeover) != bool:
+         raise Exception("invalid type %s for requestNoContextTakeover" % type(requestNoContextTakeover))
+
+      if requestNoContextTakeover and not offer.acceptNoContextTakeover:
+         raise Exception("invalid value %s for requestNoContextTakeover - feature unsupported by client" % requestNoContextTakeover)
+
+      self.requestNoContextTakeover = requestNoContextTakeover
+
+      s = self.EXTENSION_NAME
+      if offer.requestNoContextTakeover:
+         s += "; s2c_no_context_takeover"
+      if requestNoContextTakeover:
+         s += "; c2s_no_context_takeover"
+      self._pmceString = s
+
+
+   def getExtensionString(self):
+      """
+      Returns the WebSocket extension configuration string as sent to the server.
+
+      :returns: str -- PMCE configuration string.
+      """
+      return self._pmceString
+
+
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'offer': self.offer.__json__(),
+              'requestNoContextTakeover': self.requestNoContextTakeover}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageSnappyAccept(offer = %s, requestNoContextTakeover = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover,)
+
+
+
 class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin):
    """
-   Set of parameters for permessage-snappy responded by server.
+   Set of parameters for `permessage-snappy` responded by server.
    """
 
    @classmethod
    def parse(Klass, params):
       """
-      Parses a WebSocket extension response for permessage-snappy provided by a server to a client.
+      Parses a WebSocket extension response for `permessage-snappy` provided by a server to a client.
+
+      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :type params: list
+
+      :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
       """
       c2s_no_context_takeover = False
       s2c_no_context_takeover = False
@@ -184,33 +267,9 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
 
 
-class PerMessageSnappyAccept(PerMessageCompressAccept, PerMessageSnappyMixin):
-   """
-   Set of parameters with which to accept an permessage-snappy offer
-   from a client by a server.
-   """
-
-   def __init__(self,
-                offer,
-                requestNoContextTakeover = False):
-      self.offer = offer
-      self.requestNoContextTakeover = requestNoContextTakeover
-
-
-   def __json__(self):
-      return {'extension': self.EXTENSION_NAME,
-              'offer': self.offer.__json__(),
-              'requestNoContextTakeover': self.requestNoContextTakeover}
-
-
-   def __repr__(self):
-      return "PerMessageSnappyAccept(offer = %s, requestNoContextTakeover = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover,)
-
-
-
 class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
    """
-   Negotiated parameters for permessage-snappy.
+   `permessage-snappy` WebSocket extension processor.
    """
 
    @classmethod
@@ -241,13 +300,6 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
       self.s2c_no_context_takeover = s2c_no_context_takeover
       self.c2s_no_context_takeover = c2s_no_context_takeover
 
-      s = self.EXTENSION_NAME
-      if s2c_no_context_takeover:
-         s += "; s2c_no_context_takeover"
-      if c2s_no_context_takeover:
-         s += "; c2s_no_context_takeover"
-      self._pmceString = s
-
 
    def __json__(self):
       return {'extension': self.EXTENSION_NAME,
@@ -257,10 +309,6 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
    def __repr__(self):
       return "PerMessageSnappy(isServer = %s, s2c_no_context_takeover = %s, c2s_no_context_takeover = %s)" % (self._isServer, self.s2c_no_context_takeover, self.c2s_no_context_takeover)
-
-
-   def getExtensionString(self):
-      return self._pmceString
 
 
    def startCompressMessage(self):

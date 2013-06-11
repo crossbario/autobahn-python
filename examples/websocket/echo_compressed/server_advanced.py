@@ -69,7 +69,7 @@ if __name__ == '__main__':
          if isinstance(offer, PerMessageDeflateOffer):
             return PerMessageDeflateAccept(offer)
          elif isinstance(offer, PerMessageBzip2Offer):
-            return PerMessageBzip2Accept(offer)
+            return PerMessageBzip2Accept(offer, 2)
          elif isinstance(offer, PerMessageSnappyOffer):
             return PerMessageSnappyAccept(offer)
 

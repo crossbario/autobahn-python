@@ -18,34 +18,51 @@
 
 __all__ = ["PerMessageDeflateMixin",
            "PerMessageDeflateOffer",
-           "PerMessageDeflateResponse",
            "PerMessageDeflateAccept",
+           "PerMessageDeflateResponse",
            "PerMessageDeflate"]
 
 
 import zlib
 
 from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressResponse, \
                           PerMessageCompressAccept, \
+                          PerMessageCompressResponse, \
                           PerMessageCompress
 
 
 class PerMessageDeflateMixin:
+   """
+   Mixin class for this extension.
+   """
 
    EXTENSION_NAME = "permessage-deflate"
+   """
+   Name of this WebSocket extension.
+   """
+
+   WINDOW_SIZE_PERMISSIBLE_VALUES = [8, 9, 10, 11, 12, 13, 14, 15]
+   """
+   Permissible value for window size parameter.
+   """
 
 
 
 class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
    """
-   Set of parameters for permessage-deflate offered by client.
+   Set of extension parameters for `permessage-deflate` WebSocket extension
+   offered by a client to a server.
    """
 
    @classmethod
    def parse(Klass, params):
       """
-      Parses a WebSocket extension offer for permessage-deflate provided by a client to a server.
+      Parses a WebSocket extension offer for `permessage-bzip2` provided by a client to a server.
+
+      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :type params: list
+
+      :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
       """
 
       ## extension parameter defaults
@@ -56,6 +73,9 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       requestMaxWindowBits = 0
       requestNoContextTakeover = False
 
+      ##
+      ## verify/parse c2s parameters of permessage-deflate offer
+      ##
       for p in params:
 
          if len(params[p]) > 1:
@@ -114,9 +134,24 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       :param requestMaxWindowBits: Iff non-zero, client requests given "max window size" - must be 8-15.
       :type requestMaxWindowBits: int
       """
+      if type(acceptNoContextTakeover) != bool:
+         raise Exception("invalid type %s for acceptNoContextTakeover" % type(acceptNoContextTakeover))
+
       self.acceptNoContextTakeover = acceptNoContextTakeover
+
+      if type(acceptMaxWindowBits) != bool:
+         raise Exception("invalid type %s for acceptMaxWindowBits" % type(acceptMaxWindowBits))
+
       self.acceptMaxWindowBits = acceptMaxWindowBits
+
+      if type(requestNoContextTakeover) != bool:
+         raise Exception("invalid type %s for requestNoContextTakeover" % type(requestNoContextTakeover))
+
       self.requestNoContextTakeover = requestNoContextTakeover
+
+      if requestMaxWindowBits != 0 and requestMaxWindowBits not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+         raise Exception("invalid value %s for requestMaxWindowBits - permissible values %s" % (requestMaxWindowBits, self.WINDOW_SIZE_PERMISSIBLE_VALUES))
+
       self.requestMaxWindowBits = requestMaxWindowBits
 
       e = self.EXTENSION_NAME
@@ -133,32 +168,133 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
    def getExtensionString(self):
       """
-      Returns the WebSocket extension configuration string.
+      Returns the WebSocket extension configuration string as sent to the server.
+
+      :returns: str -- PMCE configuration string.
       """
       return self._pmceString
 
 
    def __json__(self):
-      return {'acceptNoContextTakeover': self.acceptNoContextTakeover,
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'acceptNoContextTakeover': self.acceptNoContextTakeover,
               'acceptMaxWindowBits': self.acceptMaxWindowBits,
               'requestNoContextTakeover': self.requestNoContextTakeover,
               'requestMaxWindowBits': self.requestMaxWindowBits}
 
 
    def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
       return "PerMessageDeflateOffer(acceptNoContextTakeover = %s, acceptMaxWindowBits = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.acceptNoContextTakeover, self.acceptMaxWindowBits, self.requestNoContextTakeover, self.requestMaxWindowBits)
+
+
+
+class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
+   """
+   Set of parameters with which to accept an `permessage-deflate` offer
+   from a client by a server.
+   """
+
+   def __init__(self,
+                offer,
+                requestNoContextTakeover = False,
+                requestMaxWindowBits = 0):
+      """
+      Constructor.
+
+      :param offer: The offer being accepted.
+      :type offer: Instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
+      :param requestNoContextTakeover: Iff true, server request "no context takeover" feature.
+      :type requestNoContextTakeover: bool
+      :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
+      :type requestMaxCompressLevel: int
+      """
+      if not isinstance(offer, PerMessageDeflateOffer):
+         raise Exception("invalid type %s for offer" % type(offer))
+
+      self.offer = offer
+
+      if type(requestNoContextTakeover) != bool:
+         raise Exception("invalid type %s for requestNoContextTakeover" % type(requestNoContextTakeover))
+
+      if requestNoContextTakeover and not offer.acceptNoContextTakeover:
+         raise Exception("invalid value %s for requestNoContextTakeover - feature unsupported by client" % requestNoContextTakeover)
+
+      self.requestNoContextTakeover = requestNoContextTakeover
+
+      if requestMaxWindowBits != 0 and requestMaxWindowBits not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+         raise Exception("invalid value %s for requestMaxWindowBits - permissible values %s" % (requestMaxWindowBits, self.WINDOW_SIZE_PERMISSIBLE_VALUES))
+
+      if requestMaxWindowBits != 0 and not offer.acceptMaxWindowBits:
+         raise Exception("invalid value %s for requestMaxWindowBits - feature unsupported by client" % requestMaxWindowBits)
+
+      self.requestMaxWindowBits = requestMaxWindowBits
+
+      s = self.EXTENSION_NAME
+      if offer.requestNoContextTakeover:
+         s += "; s2c_no_context_takeover"
+      if offer.requestMaxWindowBits != 0:
+         s += "; s2c_max_window_bits=%d" % offer.requestMaxWindowBits
+      if requestNoContextTakeover:
+         s += "; c2s_no_context_takeover"
+      if requestMaxWindowBits != 0:
+         s += "; c2s_max_window_bits=%d" % requestMaxWindowBits
+      self._pmceString = s
+
+
+   def getExtensionString(self):
+      """
+      Returns the WebSocket extension configuration string as sent to the server.
+
+      :returns: str -- PMCE configuration string.
+      """
+      return self._pmceString
+
+
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'requestNoContextTakeover': self.requestNoContextTakeover,
+              'requestMaxWindowBits': self.requestMaxWindowBits}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageDeflateAccept(requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.requestNoContextTakeover, self.requestMaxWindowBits)
 
 
 
 class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMixin):
    """
-   Set of parameters for permessage-deflate responded by server.
+   Set of parameters for `permessage-deflate` responded by server.
    """
 
    @classmethod
    def parse(Klass, params):
       """
-      Parses a WebSocket extension response for permessage-deflate provided by a server to a client.
+      Parses a WebSocket extension response for `permessage-deflate` provided by a server to a client.
+
+      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :type params: list
+
+      :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateResponse`.
       """
       c2s_max_window_bits = 0
       c2s_no_context_takeover = False
@@ -218,35 +354,11 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
 
 
-class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
-   """
-   Set of parameters with which to accept an permessage-deflate offer
-   from a client by a server.
-   """
-
-   def __init__(self,
-                offer,
-                requestNoContextTakeover = False,
-                requestMaxWindowBits = 0):
-      self.offer = offer
-      self.requestNoContextTakeover = requestNoContextTakeover
-      self.requestMaxWindowBits = requestMaxWindowBits
-
-
-   def __json__(self):
-      return {'requestNoContextTakeover': self.requestNoContextTakeover,
-              'requestMaxWindowBits': self.requestMaxWindowBits}
-
-
-   def __repr__(self):
-      return "PerMessageDeflateAccept(requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.requestNoContextTakeover, self.requestMaxWindowBits)
-
-
-
 class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    """
-   Negotiated parameters for permessage-deflate.
+   `permessage-deflate` WebSocket extension processor.
    """
+   DEFAULT_WINDOW_BITS = zlib.MAX_WBITS
 
    @classmethod
    def createFromResponse(Klass, isServer, response):
@@ -281,19 +393,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
       self.s2c_no_context_takeover = s2c_no_context_takeover
       self.c2s_no_context_takeover = c2s_no_context_takeover
-      self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else zlib.MAX_WBITS
-      self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else zlib.MAX_WBITS
-
-      s = self.EXTENSION_NAME
-      if s2c_no_context_takeover:
-         s += "; s2c_no_context_takeover"
-      if s2c_max_window_bits != 0:
-         s += "; s2c_max_window_bits=%d" % s2c_max_window_bits
-      if c2s_no_context_takeover:
-         s += "; c2s_no_context_takeover"
-      if c2s_max_window_bits != 0:
-         s += "; c2s_max_window_bits=%d" % c2s_max_window_bits
-      self._pmceString = s
+      self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
+      self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
 
 
    def __json__(self):
@@ -306,10 +407,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
    def __repr__(self):
       return "PerMessageDeflate(isServer = %s, s2c_no_context_takeover = %s, c2s_no_context_takeover = %s, s2c_max_window_bits = %s, c2s_max_window_bits = %s)" % (self._isServer, self.s2c_no_context_takeover, self.c2s_no_context_takeover, self.s2c_max_window_bits, self.c2s_max_window_bits)
-
-
-   def getExtensionString(self):
-      return self._pmceString
 
 
    def startCompressMessage(self):
