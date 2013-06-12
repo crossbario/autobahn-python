@@ -108,13 +108,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       self.acceptNoContextTakeover = acceptNoContextTakeover
       self.requestNoContextTakeover = requestNoContextTakeover
 
-      e = self.EXTENSION_NAME
-      if self.acceptNoContextTakeover:
-         e += "; c2s_no_context_takeover"
-      if self.requestNoContextTakeover:
-         e += "; s2c_no_context_takeover"
-      self._pmceString = e
-
 
    def getExtensionString(self):
       """
@@ -122,7 +115,12 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.acceptNoContextTakeover:
+         pmceString += "; c2s_no_context_takeover"
+      if self.requestNoContextTakeover:
+         pmceString += "; s2c_no_context_takeover"
+      return pmceString
 
 
    def __json__(self):
@@ -176,13 +174,6 @@ class PerMessageSnappyAccept(PerMessageCompressAccept, PerMessageSnappyMixin):
 
       self.requestNoContextTakeover = requestNoContextTakeover
 
-      s = self.EXTENSION_NAME
-      if offer.requestNoContextTakeover:
-         s += "; s2c_no_context_takeover"
-      if requestNoContextTakeover:
-         s += "; c2s_no_context_takeover"
-      self._pmceString = s
-
 
    def getExtensionString(self):
       """
@@ -190,7 +181,12 @@ class PerMessageSnappyAccept(PerMessageCompressAccept, PerMessageSnappyMixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.offer.requestNoContextTakeover:
+         pmceString += "; s2c_no_context_takeover"
+      if self.requestNoContextTakeover:
+         pmceString += "; c2s_no_context_takeover"
+      return pmceString
 
 
    def __json__(self):

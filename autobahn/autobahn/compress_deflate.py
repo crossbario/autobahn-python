@@ -154,17 +154,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
       self.requestMaxWindowBits = requestMaxWindowBits
 
-      e = self.EXTENSION_NAME
-      if self.acceptNoContextTakeover:
-         e += "; c2s_no_context_takeover"
-      if self.acceptMaxWindowBits:
-         e += "; c2s_max_window_bits"
-      if self.requestNoContextTakeover:
-         e += "; s2c_no_context_takeover"
-      if self.requestMaxWindowBits != 0:
-         e += "; s2c_max_window_bits=%d" % self.requestMaxWindowBits
-      self._pmceString = e
-
 
    def getExtensionString(self):
       """
@@ -172,7 +161,16 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.acceptNoContextTakeover:
+         pmceString += "; c2s_no_context_takeover"
+      if self.acceptMaxWindowBits:
+         pmceString += "; c2s_max_window_bits"
+      if self.requestNoContextTakeover:
+         pmceString += "; s2c_no_context_takeover"
+      if self.requestMaxWindowBits != 0:
+         pmceString += "; s2c_max_window_bits=%d" % self.requestMaxWindowBits
+      return pmceString
 
 
    def __json__(self):
@@ -239,17 +237,6 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
 
       self.requestMaxWindowBits = requestMaxWindowBits
 
-      s = self.EXTENSION_NAME
-      if offer.requestNoContextTakeover:
-         s += "; s2c_no_context_takeover"
-      if offer.requestMaxWindowBits != 0:
-         s += "; s2c_max_window_bits=%d" % offer.requestMaxWindowBits
-      if requestNoContextTakeover:
-         s += "; c2s_no_context_takeover"
-      if requestMaxWindowBits != 0:
-         s += "; c2s_max_window_bits=%d" % requestMaxWindowBits
-      self._pmceString = s
-
 
    def getExtensionString(self):
       """
@@ -257,7 +244,16 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.offer.requestNoContextTakeover:
+         pmceString += "; s2c_no_context_takeover"
+      if self.offer.requestMaxWindowBits != 0:
+         pmceString += "; s2c_max_window_bits=%d" % self.offer.requestMaxWindowBits
+      if self.requestNoContextTakeover:
+         pmceString += "; c2s_no_context_takeover"
+      if self.requestMaxWindowBits != 0:
+         pmceString += "; c2s_max_window_bits=%d" % self.requestMaxWindowBits
+      return pmceString
 
 
    def __json__(self):

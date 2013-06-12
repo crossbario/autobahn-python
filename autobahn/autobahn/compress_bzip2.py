@@ -120,13 +120,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
       self.requestMaxCompressLevel = requestMaxCompressLevel
 
-      e = self.EXTENSION_NAME
-      if self.acceptMaxCompressLevel:
-         e += "; c2s_max_compress_level"
-      if self.requestMaxCompressLevel != 0:
-         e += "; s2c_max_compress_level=%d" % self.requestMaxCompressLevel
-      self._pmceString = e
-
 
    def getExtensionString(self):
       """
@@ -134,7 +127,12 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.acceptMaxCompressLevel:
+         pmceString += "; c2s_max_compress_level"
+      if self.requestMaxCompressLevel != 0:
+         pmceString += "; s2c_max_compress_level=%d" % self.requestMaxCompressLevel
+      return pmceString
 
 
    def __json__(self):
@@ -188,13 +186,6 @@ class PerMessageBzip2Accept(PerMessageCompressAccept, PerMessageBzip2Mixin):
 
       self.requestMaxCompressLevel = requestMaxCompressLevel
 
-      s = self.EXTENSION_NAME
-      if offer.requestMaxCompressLevel != 0:
-         s += "; s2c_max_compress_level=%d" % offer.requestMaxCompressLevel
-      if requestMaxCompressLevel != 0:
-         s += "; c2s_max_compress_level=%d" % requestMaxCompressLevel
-      self._pmceString = s
-
 
    def getExtensionString(self):
       """
@@ -202,7 +193,12 @@ class PerMessageBzip2Accept(PerMessageCompressAccept, PerMessageBzip2Mixin):
 
       :returns: str -- PMCE configuration string.
       """
-      return self._pmceString
+      pmceString = self.EXTENSION_NAME
+      if self.offer.requestMaxCompressLevel != 0:
+         pmceString += "; s2c_max_compress_level=%d" % self.offer.requestMaxCompressLevel
+      if self.requestMaxCompressLevel != 0:
+         pmceString += "; c2s_max_compress_level=%d" % self.requestMaxCompressLevel
+      return pmceString
 
 
    def __json__(self):
