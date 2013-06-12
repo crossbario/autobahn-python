@@ -713,7 +713,8 @@ class WebSocketProtocol(protocol.Protocol):
                           'acceptMaskedServerFrames',
                           'maskClientFrames',
                           'serverConnectionDropTimeout',
-                          'perMessageCompressionOffers']
+                          'perMessageCompressionOffers',
+                          'perMessageCompressionAccept']
    """
    Configuration attributes specific to clients.
    """
@@ -3241,7 +3242,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          accept = self.perMessageCompressionAccept(pmceOffers)
          if accept is not None:
             PMCE = PERMESSAGE_COMPRESSION_EXTENSION[accept.EXTENSION_NAME]
-            self._perMessageCompress = PMCE['PMCE'].createFromAccept(self.isServer, accept)
+            self._perMessageCompress = PMCE['PMCE'].createFromOfferAccept(self.isServer, accept)
             self.websocket_extensions_in_use.append(self._perMessageCompress)
             extensionResponse.append(accept.getExtensionString())            
          else:
@@ -4134,13 +4135,16 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
                   try:
-                     r = PMCE['Response'].parse(params)
+                     pmceResponse = PMCE['Response'].parse(params)
                   except Exception, e:
                      return self.failHandshake(str(e))
 
-                  ## FIXME: check if returned configuration actually is one we offered
+                  accept = self.perMessageCompressionAccept(pmceResponse)
 
-                  self._perMessageCompress = PMCE['PMCE'].createFromResponse(self.isServer, r)
+                  if accept is None:
+                     return self.failHandshake("WebSocket permessage-compress extension response from server denied by client")
+
+                  self._perMessageCompress = PMCE['PMCE'].createFromResponseAccept(self.isServer, accept)
 
                   self.websocket_extensions_in_use.append(self._perMessageCompress)
 
@@ -4363,6 +4367,7 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       ## permessage-XXX extensions
       ##
       self.perMessageCompressionOffers = []
+      self.perMessageCompressionAccept = lambda _: None
 
 
    def setProtocolOptions(self,
@@ -4381,7 +4386,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                           openHandshakeTimeout = None,
                           closeHandshakeTimeout = None,
                           tcpNoDelay = None,
-                          perMessageCompressionOffers = None):
+                          perMessageCompressionOffers = None,
+                          perMessageCompressionAccept = None):
       """
       Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
@@ -4414,6 +4420,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :type tcpNoDelay: bool
       :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
       :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
+      :param perMessageCompressionAccept: Acceptor function for responses.
+      :type perMessageCompressionAccept: callable
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -4473,6 +4481,9 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
             self.perMessageCompressionOffers = copy.deepcopy(perMessageCompressionOffers)
          else:
             raise Exception("invalid type %s for perMessageCompressionOffers - expected list" % type(perMessageCompressionOffers))
+
+      if perMessageCompressionAccept is not None and perMessageCompressionAccept != self.perMessageCompressionAccept:
+         self.perMessageCompressionAccept = perMessageCompressionAccept
 
 
    def clientConnectionFailed(self, connector, reason):

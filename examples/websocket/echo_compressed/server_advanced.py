@@ -33,10 +33,10 @@ from autobahn.compress import *
 class EchoServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
-      print "WebSocket extensions in use: %s" % connectionRequest.extensions
+      pass
 
    def onOpen(self):
-      pass
+      print "WebSocket extensions in use: %s" % self.websocket_extensions_in_use
 
    def onMessage(self, msg, binary):
       self.sendMessage(msg, binary)
@@ -67,16 +67,22 @@ if __name__ == '__main__':
    def accept0(offers):
       for offer in offers:
          if isinstance(offer, PerMessageDeflateOffer):
-            return PerMessageDeflateAccept(offer)
+            #offer.requestMaxWindowBits = 10
+            #offer.requestNoContextTakeover = True
+            #return PerMessageDeflateOfferAccept(offer, True, 10)
+            return PerMessageDeflateOfferAccept(offer)
+
          elif isinstance(offer, PerMessageBzip2Offer):
-            return PerMessageBzip2Accept(offer)
+            return PerMessageBzip2OfferAccept(offer)
+
          elif isinstance(offer, PerMessageSnappyOffer):
-            return PerMessageSnappyAccept(offer)
+            return PerMessageSnappyOfferAccept(offer)
 
    ## accept any configuration, request no specific features: this is the default!
    def accept1(protocol, connectionRequest, perMessageCompressionOffer):
       if isinstance(perMessageCompressionOffer, PerMessageDeflateOffer):
          return PerMessageDeflateAccept()
+
       elif isinstance(perMessageCompressionOffer, PerMessageBzip2Offer):
          return PerMessageBzip2Accept()
       else:

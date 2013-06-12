@@ -18,16 +18,18 @@
 
 __all__ = ["PerMessageSnappyMixin",
            "PerMessageSnappyOffer",
-           "PerMessageSnappyAccept",
+           "PerMessageSnappyOfferAccept",
            "PerMessageSnappyResponse",
+           "PerMessageSnappyResponseAccept",
            "PerMessageSnappy"]
 
 
 import snappy
 
 from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressAccept, \
+                          PerMessageCompressOfferAccept, \
                           PerMessageCompressResponse, \
+                          PerMessageCompressResponseAccept, \
                           PerMessageCompress
 
 
@@ -144,7 +146,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
 
 
-class PerMessageSnappyAccept(PerMessageCompressAccept, PerMessageSnappyMixin):
+class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnappyMixin):
    """
    Set of parameters with which to accept an `permessage-snappy` offer
    from a client by a server.
@@ -263,21 +265,61 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
 
 
+class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessageSnappyMixin):
+   """
+   Set of parameters with which to accept an `permessage-snappy` response
+   from a server by a client.
+   """
+
+   def __init__(self,
+                response):
+      """
+      Constructor.
+
+      :param response: The response being accepted.
+      :type response: Instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
+      """
+      if not isinstance(response, PerMessageSnappyResponse):
+         raise Exception("invalid type %s for response" % type(response))
+
+      self.response = response
+
+
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'response': self.response.__json__()}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageSnappyResponseAccept(response = %s)" % self.response.__repr__()
+
+
+
 class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
    """
    `permessage-snappy` WebSocket extension processor.
    """
 
    @classmethod
-   def createFromResponse(Klass, isServer, response):
+   def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   response.s2c_no_context_takeover,
-                   response.c2s_no_context_takeover)
+                   accept.response.s2c_no_context_takeover,
+                   accept.response.c2s_no_context_takeover)
       return pmce
 
 
    @classmethod
-   def createFromAccept(Klass, isServer, accept):
+   def createFromOfferAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
                    accept.offer.requestNoContextTakeover,
                    accept.requestNoContextTakeover)

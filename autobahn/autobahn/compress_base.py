@@ -17,14 +17,23 @@
 ###############################################################################
 
 __all__ = ["PerMessageCompressOffer",
+           "PerMessageCompressOfferAccept",
            "PerMessageCompressResponse",
-           "PerMessageCompressAccept",
+           "PerMessageCompressResponseAccept",
            "PerMessageCompress"]
 
 
 class PerMessageCompressOffer:
    """
-   Base class for WebSocket compression parameter offers by the client.
+   Base class for WebSocket compression parameter client offers.
+   """
+   pass
+
+
+
+class PerMessageCompressOfferAccept:
+   """
+   Base class for WebSocket compression parameter client offer accepts by the server.
    """
    pass
 
@@ -32,15 +41,15 @@ class PerMessageCompressOffer:
 
 class PerMessageCompressResponse:
    """
-   Base class for WebSocket compression parameter response by server.
+   Base class for WebSocket compression parameter server responses.
    """
    pass
 
 
 
-class PerMessageCompressAccept:
+class PerMessageCompressResponseAccept:
    """
-   Base class for WebSocket compression parameter accepts by the server.
+   Base class for WebSocket compression parameter server response accepts by client.
    """
    pass
 

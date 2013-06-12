@@ -22,7 +22,17 @@ The following classes provide the API to the `permessage-deflate` WebSocket exte
 
 |
 
-.. autoclass:: autobahn.compress.PerMessageDeflateAccept
+.. autoclass:: autobahn.compress.PerMessageDeflateOfferAccept
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageDeflateResponse
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageDeflateResponseAccept
    :members: __init__, __json__, __repr__
 
 |
@@ -40,7 +50,17 @@ The following classes provide the API to the `permessage-bzip2` WebSocket extens
 
 |
 
-.. autoclass:: autobahn.compress.PerMessageBzip2Accept
+.. autoclass:: autobahn.compress.PerMessageBzip2OfferAccept
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageBzip2Response
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageBzip2ResponseAccept
    :members: __init__, __json__, __repr__
 
 |
@@ -58,7 +78,17 @@ The following classes provide the API to the `permessage-snappy` WebSocket exten
 
 |
 
-.. autoclass:: autobahn.compress.PerMessageSnappyAccept
+.. autoclass:: autobahn.compress.PerMessageSnappyOfferAccept
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageSnappyResponse
+   :members: __init__, __json__, __repr__
+
+|
+
+.. autoclass:: autobahn.compress.PerMessageSnappyResponseAccept
    :members: __init__, __json__, __repr__
 
 |

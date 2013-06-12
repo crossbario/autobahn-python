@@ -27,7 +27,8 @@ from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
                                listenWS
 
-from autobahn.compress import PerMessageDeflateOffer, PerMessageDeflateAccept
+from autobahn.compress import PerMessageDeflateOffer, \
+                              PerMessageDeflateOfferAccept
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
@@ -61,7 +62,7 @@ if __name__ == '__main__':
    def accept(offers):
       for offer in offers:         
          if isinstance(offer, PerMessageDeflateOffer):
-            return PerMessageDeflateAccept(offer)
+            return PerMessageDeflateOfferAccept(offer)
 
    factory.setProtocolOptions(perMessageCompressionAccept = accept)
 

@@ -25,7 +25,9 @@ from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
                                connectWS
 
-from autobahn.compress import PerMessageDeflateOffer
+from autobahn.compress import PerMessageDeflateOffer, \
+                              PerMessageDeflateResponse, \
+                              PerMessageDeflateResponseAccept
 
 
 
@@ -63,9 +65,23 @@ if __name__ == '__main__':
 
    factory.protocol = EchoClientProtocol
 
-   ## Enable WebSocket extension "permessage-deflate"
-   ##
-   factory.setProtocolOptions(perMessageCompressionOffers = [PerMessageDeflateOffer()])
 
+   ## Enable WebSocket extension "permessage-deflate".
+   ##
+
+   ## The extensions offered to the server ..
+   offers = [PerMessageDeflateOffer()]
+   factory.setProtocolOptions(perMessageCompressionOffers = offers)
+
+   ## Function to accept responses from the server ..
+   def accept(response):
+      if isinstance(response, PerMessageDeflateResponse):
+         return PerMessageDeflateResponseAccept(response)
+
+   factory.setProtocolOptions(perMessageCompressionAccept = accept)
+
+
+   ## run client
+   ##
    connectWS(factory)
    reactor.run()

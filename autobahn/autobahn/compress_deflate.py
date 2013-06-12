@@ -18,16 +18,18 @@
 
 __all__ = ["PerMessageDeflateMixin",
            "PerMessageDeflateOffer",
-           "PerMessageDeflateAccept",
+           "PerMessageDeflateOfferAccept",
            "PerMessageDeflateResponse",
+           "PerMessageDeflateResponseAccept",
            "PerMessageDeflate"]
 
 
 import zlib
 
 from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressAccept, \
+                          PerMessageCompressOfferAccept, \
                           PerMessageCompressResponse, \
+                          PerMessageCompressResponseAccept, \
                           PerMessageCompress
 
 
@@ -196,7 +198,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
 
 
-class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
+class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDeflateMixin):
    """
    Set of parameters with which to accept an `permessage-deflate` offer
    from a client by a server.
@@ -205,7 +207,9 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
    def __init__(self,
                 offer,
                 requestNoContextTakeover = False,
-                requestMaxWindowBits = 0):
+                requestMaxWindowBits = 0,
+                noContextTakeover = None,
+                windowBits = None):
       """
       Constructor.
 
@@ -215,6 +219,10 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
       :type requestNoContextTakeover: bool
       :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
       :type requestMaxCompressLevel: int
+      :param noContextTakeover: Override s2c context takeover (this must be compatible with offer).
+      :type noContextTakeover: bool
+      :param windowBits: Override s2c window size (this must be compatible with offer).
+      :type windowBits: int
       """
       if not isinstance(offer, PerMessageDeflateOffer):
          raise Exception("invalid type %s for offer" % type(offer))
@@ -236,6 +244,24 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
          raise Exception("invalid value %s for requestMaxWindowBits - feature unsupported by client" % requestMaxWindowBits)
 
       self.requestMaxWindowBits = requestMaxWindowBits
+
+      if noContextTakeover is not None:
+         if type(noContextTakeover) != bool:
+            raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
+
+         if offer.requestNoContextTakeover and not noContextTakeover:
+            raise Exception("invalid value %s for noContextTakeover - client requested feature" % noContextTakeover)
+
+      self.noContextTakeover = noContextTakeover
+
+      if windowBits is not None:
+         if windowBits not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for windowBits - permissible values %s" % (windowBits, self.WINDOW_SIZE_PERMISSIBLE_VALUES))
+
+         if offer.requestMaxWindowBits != 0 and windowBits > offer.requestMaxWindowBits:
+            raise Exception("invalid value %s for windowBits - client requested lower maximum value" % windowBits)
+
+      self.windowBits = windowBits
 
 
    def getExtensionString(self):
@@ -263,8 +289,11 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
       :returns: object -- JSON serializable represention.
       """
       return {'extension': self.EXTENSION_NAME,
+              'offer': self.offer.__json__(),
               'requestNoContextTakeover': self.requestNoContextTakeover,
-              'requestMaxWindowBits': self.requestMaxWindowBits}
+              'requestMaxWindowBits': self.requestMaxWindowBits,
+              'noContextTakeover': self.noContextTakeover,
+              'windowBits': self.windowBits}
 
 
    def __repr__(self):
@@ -273,7 +302,7 @@ class PerMessageDeflateAccept(PerMessageCompressAccept, PerMessageDeflateMixin):
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageDeflateAccept(requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.requestNoContextTakeover, self.requestMaxWindowBits)
+      return "PerMessageDeflateOfferAccept(offer = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s, noContextTakeover = %s, windowBits = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.requestMaxWindowBits, self.noContextTakeover, self.windowBits)
 
 
 
@@ -350,6 +379,72 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
 
 
+class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessageDeflateMixin):
+   """
+   Set of parameters with which to accept an `permessage-deflate` response
+   from a server by a client.
+   """
+
+   def __init__(self,
+                response,
+                noContextTakeover = None,
+                windowBits = None):
+      """
+      Constructor.
+
+      :param response: The response being accepted.
+      :type response: Instance of :class:`autobahn.compress.PerMessageDeflateResponse`.
+      :param noContextTakeover: Override c2s context takeover (this must be compatible with response).
+      :type noContextTakeover: bool
+      :param windowBits: Override c2s window size (this must be compatible with response).
+      :type windowBits: int
+      """
+      if not isinstance(response, PerMessageDeflateResponse):
+         raise Exception("invalid type %s for response" % type(response))
+
+      self.response = response
+
+      if noContextTakeover is not None:
+         if type(noContextTakeover) != bool:
+            raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
+
+         if response.c2s_no_context_takeover and not noContextTakeover:
+            raise Exception("invalid value %s for noContextTakeover - server requested feature" % noContextTakeover)
+
+      self.noContextTakeover = noContextTakeover
+
+      if windowBits is not None:
+         if windowBits not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for windowBits - permissible values %s" % (windowBits, self.WINDOW_SIZE_PERMISSIBLE_VALUES))
+
+         if response.c2s_max_window_bits != 0 and windowBits > response.c2s_max_window_bits:
+            raise Exception("invalid value %s for windowBits - server requested lower maximum value" % windowBits)
+
+      self.windowBits = windowBits
+
+
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'response': self.response.__json__(),
+              'noContextTakeover': self.noContextTakeover,
+              'windowBits': self.windowBits}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageDeflateResponseAccept(response = %s, noContextTakeover = %s, windowBits = %s)" % (self.response.__repr__(), self.noContextTakeover, self.windowBits)
+
+
+
 class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    """
    `permessage-deflate` WebSocket extension processor.
@@ -357,21 +452,21 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    DEFAULT_WINDOW_BITS = zlib.MAX_WBITS
 
    @classmethod
-   def createFromResponse(Klass, isServer, response):
+   def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   response.s2c_no_context_takeover,
-                   response.c2s_no_context_takeover,
-                   response.s2c_max_window_bits,
-                   response.c2s_max_window_bits)
+                   accept.response.s2c_no_context_takeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.c2s_no_context_takeover,
+                   accept.response.s2c_max_window_bits,
+                   accept.windowBits if accept.windowBits is not None else accept.response.c2s_max_window_bits)
       return pmce
 
 
    @classmethod
-   def createFromAccept(Klass, isServer, accept):
+   def createFromOfferAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   accept.offer.requestNoContextTakeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
                    accept.requestNoContextTakeover,
-                   accept.offer.requestMaxWindowBits,
+                   accept.windowBits if accept.windowBits is not None else accept.offer.requestMaxWindowBits,
                    accept.requestMaxWindowBits)
       return pmce
 

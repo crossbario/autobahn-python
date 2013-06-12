@@ -18,16 +18,18 @@
 
 __all__ = ["PerMessageBzip2Mixin",
            "PerMessageBzip2Offer",
-           "PerMessageBzip2Accept",
+           "PerMessageBzip2OfferAccept",
            "PerMessageBzip2Response",
+           "PerMessageBzip2ResponseAccept",
            "PerMessageBzip2"]
 
 
 import bz2
 
 from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressAccept, \
+                          PerMessageCompressOfferAccept, \
                           PerMessageCompressResponse, \
+                          PerMessageCompressResponseAccept, \
                           PerMessageCompress
 
 
@@ -156,7 +158,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
 
 
-class PerMessageBzip2Accept(PerMessageCompressAccept, PerMessageBzip2Mixin):
+class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2Mixin):
    """
    Set of parameters with which to accept an `permessage-bzip2` offer
    from a client by a server.
@@ -274,6 +276,46 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
 
 
 
+class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessageBzip2Mixin):
+   """
+   Set of parameters with which to accept an `permessage-bzip2` response
+   from a server by a client.
+   """
+
+   def __init__(self,
+                response):
+      """
+      Constructor.
+
+      :param response: The response being accepted.
+      :type response: Instance of :class:`autobahn.compress.PerMessageBzip2Response`.
+      """
+      if not isinstance(response, PerMessageBzip2Response):
+         raise Exception("invalid type %s for response" % type(response))
+
+      self.response = response
+
+
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'response': self.response.__json__()}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageBzip2ResponseAccept(response = %s)" % self.response.__repr__()
+
+
+
 class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
    """
    `permessage-bzip2` WebSocket extension processor.
@@ -281,15 +323,15 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
    DEFAULT_COMPRESS_LEVEL = 9
 
    @classmethod
-   def createFromResponse(Klass, isServer, response):
+   def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   response.s2c_max_compress_level,
-                   response.c2s_max_compress_level)
+                   accept.response.s2c_max_compress_level,
+                   accept.response.c2s_max_compress_level)
       return pmce
 
 
    @classmethod
-   def createFromAccept(Klass, isServer, accept):
+   def createFromOfferAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
                    accept.offer.requestMaxCompressLevel,
                    accept.requestMaxCompressLevel)

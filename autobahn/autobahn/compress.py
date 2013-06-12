@@ -17,18 +17,21 @@
 ###############################################################################
 
 __all__ = ["PerMessageCompressOffer",
+           "PerMessageCompressOfferAccept",
            "PerMessageCompressResponse",
-           "PerMessageCompressAccept",
+           "PerMessageCompressResponseAccept",
            "PerMessageCompress",
 
            "PerMessageDeflateOffer",
+           "PerMessageDeflateOfferAccept",
            "PerMessageDeflateResponse",
-           "PerMessageDeflateAccept",
+           "PerMessageDeflateResponseAccept",
            "PerMessageDeflate",
 
            "PerMessageBzip2Offer",
+           "PerMessageBzip2OfferAccept",
            "PerMessageBzip2Response",
-           "PerMessageBzip2Accept",
+           "PerMessageBzip2ResponseAccept",
            "PerMessageBzip2",
 
            "PERMESSAGE_COMPRESSION_EXTENSION"
@@ -45,14 +48,16 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 
    PerMessageDeflateMixin.EXTENSION_NAME: {
       'Offer': PerMessageDeflateOffer,
+      'OfferAccept': PerMessageDeflateOfferAccept,
       'Response': PerMessageDeflateResponse,
-      'Accept': PerMessageDeflateAccept,
+      'ResponseAccept': PerMessageDeflateResponseAccept,
       'PMCE': PerMessageDeflate},
 
    PerMessageBzip2Mixin.EXTENSION_NAME: {
       'Offer': PerMessageBzip2Offer,
+      'OfferAccept': PerMessageBzip2OfferAccept,
       'Response': PerMessageBzip2Response,
-      'Accept': PerMessageBzip2Accept,
+      'ResponseAccept': PerMessageBzip2ResponseAccept,
       'PMCE': PerMessageBzip2}
 }
 
@@ -64,15 +69,17 @@ try:
    from compress_snappy import *
    PMCE = {
       'Offer': PerMessageSnappyOffer,
+      'OfferAccept': PerMessageSnappyOfferAccept,
       'Response': PerMessageSnappyResponse,
-      'Accept': PerMessageSnappyAccept,
+      'ResponseAccept': PerMessageSnappyResponseAccept,
       'PMCE': PerMessageSnappy
    }
    PERMESSAGE_COMPRESSION_EXTENSION[PerMessageSnappyMixin.EXTENSION_NAME] = PMCE
 
    __all__.extend(["PerMessageSnappyOffer",
+                   "PerMessageSnappyOfferAccept",
                    "PerMessageSnappyResponse",
-                   "PerMessageSnappyAccept",
+                   "PerMessageSnappyResponseAccept",
                    "PerMessageSnappy"])
 
 except ImportError:

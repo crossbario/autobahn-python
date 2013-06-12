@@ -91,11 +91,11 @@ if __name__ == '__main__':
    ## note that the first 2 are currently not even in an RFC draft
    ##
    offers5 = []
-#   if PERMESSAGE_COMPRESSION_EXTENSION.has_key('permessage-snappy'):
-#      ## this require snappy to be installed
-#      offers5.append(PerMessageSnappyOffer())
+   if PERMESSAGE_COMPRESSION_EXTENSION.has_key('permessage-snappy'):
+      ## this require snappy to be installed
+      offers5.append(PerMessageSnappyOffer())
    offers5.append(PerMessageBzip2Offer(True, 1))
-   offers5.append(PerMessageDeflateOffer())
+   offers5.append(PerMessageDeflateOffer(True, True, False, 12))
 
    #factory.setProtocolOptions(perMessageCompressionOffers = offers1)
    #factory.setProtocolOptions(perMessageCompressionOffers = offers2)
@@ -104,6 +104,18 @@ if __name__ == '__main__':
    factory.setProtocolOptions(perMessageCompressionOffers = offers5)
 
    #factory.setProtocolOptions(autoFragmentSize = 4)
+
+   def accept(response):
+      if isinstance(response, PerMessageDeflateResponse):
+         return PerMessageDeflateResponseAccept(response)
+
+      elif isinstance(response, PerMessageBzip2Response):
+         return PerMessageBzip2ResponseAccept(response)
+
+      elif isinstance(response, PerMessageSnappyResponse):
+         return PerMessageSnappyResponseAccept(response)
+
+   factory.setProtocolOptions(perMessageCompressionAccept = accept)
 
    connectWS(factory)
    reactor.run()
