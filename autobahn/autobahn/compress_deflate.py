@@ -378,6 +378,27 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
       self.s2c_no_context_takeover = s2c_no_context_takeover
 
 
+   def __json__(self):
+      """
+      Returns a JSON serializable object representation.
+
+      :returns: object -- JSON serializable represention.
+      """
+      return {'extension': self.EXTENSION_NAME,
+              'c2s_max_window_bits': self.c2s_max_window_bits,
+              'c2s_no_context_takeover': self.c2s_no_context_takeover,
+              's2c_max_window_bits': self.s2c_max_window_bits,
+              's2c_no_context_takeover': self.s2c_no_context_takeover}
+
+
+   def __repr__(self):
+      """
+      Returns Python object representation that can be eval'ed to reconstruct the object.
+
+      :returns: str -- Python string representation.
+      """
+      return "PerMessageDeflateResponse(c2s_max_window_bits = %s, c2s_no_context_takeover = %s, s2c_max_window_bits = %s, s2c_no_context_takeover = %s)" % (self.c2s_max_window_bits, self.c2s_no_context_takeover, self.s2c_max_window_bits, self.s2c_no_context_takeover)
+
 
 class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessageDeflateMixin):
    """
@@ -477,19 +498,19 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 c2s_no_context_takeover,
                 s2c_max_window_bits,
                 c2s_max_window_bits):
-
       self._isServer = isServer
-      self._compressor = None
-      self._decompressor = None
-
       self.s2c_no_context_takeover = s2c_no_context_takeover
       self.c2s_no_context_takeover = c2s_no_context_takeover
       self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
       self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
 
+      self._compressor = None
+      self._decompressor = None
+
 
    def __json__(self):
       return {'extension': self.EXTENSION_NAME,
+              'isServer': self._isServer,
               's2c_no_context_takeover': self.s2c_no_context_takeover,
               'c2s_no_context_takeover': self.c2s_no_context_takeover,
               's2c_max_window_bits': self.s2c_max_window_bits,
