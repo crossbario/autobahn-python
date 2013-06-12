@@ -65,11 +65,11 @@ if __name__ == '__main__':
 
 #   def accept0(protocol, connectionRequest, perMessageCompressionOffers):
    def accept0(offers):
-      for offer in offers:         
+      for offer in offers:
          if isinstance(offer, PerMessageDeflateOffer):
             return PerMessageDeflateAccept(offer)
          elif isinstance(offer, PerMessageBzip2Offer):
-            return PerMessageBzip2Accept(offer, 2)
+            return PerMessageBzip2Accept(offer)
          elif isinstance(offer, PerMessageSnappyOffer):
             return PerMessageSnappyAccept(offer)
 

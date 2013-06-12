@@ -34,7 +34,6 @@ __all__ = ["PerMessageCompressOffer",
            "PERMESSAGE_COMPRESSION_EXTENSION"
            ]
 
-
 from compress_base import *
 from compress_deflate import *
 from compress_bzip2 import *
