@@ -972,7 +972,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          self.wasClean = True
 
-         if self.isServer:
+         if self.factory.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection(abort = True)
          else:
@@ -996,7 +996,7 @@ class WebSocketProtocol(protocol.Protocol):
             else:
                self.sendCloseFrame(code = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply = True)
 
-         if self.isServer:
+         if self.factory.isServer:
             ## When we are a server, we immediately drop the TCP.
             self.dropConnection(abort = False)
          else:
@@ -1252,7 +1252,7 @@ class WebSocketProtocol(protocol.Protocol):
       self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
 
       ## initial state
-      if not self.isServer and self.factory.proxy is not None:
+      if not self.factory.isServer and self.factory.proxy is not None:
          self.state = WebSocketProtocol.STATE_PROXY_CONNECTING
       else:
          self.state = WebSocketProtocol.STATE_CONNECTING
@@ -1317,7 +1317,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       # timers, which might get set up later, and remembered here to get canceled
       # when appropriate
-      if not self.isServer:
+      if not self.factory.isServer:
          self.serverConnectionDropTimeoutCall = None
       self.openHandshakeTimeoutCall = None
       self.closeHandshakeTimeoutCall = None
@@ -1335,7 +1335,7 @@ class WebSocketProtocol(protocol.Protocol):
       """
       ## cancel any server connection drop timer if present
       ##
-      if not self.isServer and self.serverConnectionDropTimeoutCall is not None:
+      if not self.factory.isServer and self.serverConnectionDropTimeoutCall is not None:
          if self.debugCodePaths:
             log.msg("serverConnectionDropTimeoutCall.cancel")
          self.serverConnectionDropTimeoutCall.cancel()
@@ -1713,13 +1713,13 @@ class WebSocketProtocol(protocol.Protocol):
 
             ## all client-to-server frames MUST be masked
             ##
-            if self.isServer and self.requireMaskedClientFrames and not frame_masked:
+            if self.factory.isServer and self.requireMaskedClientFrames and not frame_masked:
                if self.protocolViolation("unmasked client-to-server frame"):
                   return False
 
             ## all server-to-client frames MUST NOT be masked
             ##
-            if not self.isServer and not self.acceptMaskedServerFrames and frame_masked:
+            if not self.factory.isServer and not self.acceptMaskedServerFrames and frame_masked:
                if self.protocolViolation("masked server-to-client frame"):
                   return False
 
@@ -2123,7 +2123,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## second byte, payload len bytes and mask
       ##
       b1 = 0
-      if mask or (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
+      if mask or (not self.factory.isServer and self.maskClientFrames) or (self.factory.isServer and self.maskServerFrames):
          b1 |= 1 << 7
          if not mask:
             mask = struct.pack("!I", random.getrandbits(32))
@@ -2371,7 +2371,7 @@ class WebSocketProtocol(protocol.Protocol):
          assert len(mask) == 4
          self.send_message_frame_mask = mask
 
-      elif (not self.isServer and self.maskClientFrames) or (self.isServer and self.maskServerFrames):
+      elif (not self.factory.isServer and self.maskClientFrames) or (self.factory.isServer and self.maskServerFrames):
          ## automatic mask:
          ##  - client-to-server masking (if not deactivated)
          ##  - server-to-client masking (if activated)
@@ -2822,8 +2822,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
    A Twisted protocol for WebSocket servers.
    """
 
-   isServer = True
-
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
 
 
@@ -3242,7 +3240,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          accept = self.perMessageCompressionAccept(pmceOffers)
          if accept is not None:
             PMCE = PERMESSAGE_COMPRESSION_EXTENSION[accept.EXTENSION_NAME]
-            self._perMessageCompress = PMCE['PMCE'].createFromOfferAccept(self.isServer, accept)
+            self._perMessageCompress = PMCE['PMCE'].createFromOfferAccept(self.factory.isServer, accept)
             self.websocket_extensions_in_use.append(self._perMessageCompress)
             extensionResponse.append(accept.getExtensionString())            
          else:
@@ -3480,6 +3478,11 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
    protocol = WebSocketServerProtocol
    """
    The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketServerProtocol`.
+   """
+
+   isServer = True
+   """
+   Flag indicating if this factory is client- or server-side.
    """
 
 
@@ -3744,8 +3747,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
    Client protocol for WebSocket.
    """
 
-   isServer = False
-
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
 
@@ -3771,7 +3772,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       if self.debug:
          log.msg("connection to %s established" % self.peerstr)
 
-      if not self.isServer and self.factory.proxy is not None:
+      if not self.factory.isServer and self.factory.proxy is not None:
          ## start by doing a HTTP/CONNECT for explicit proxies
          self.startProxyConnect()
       else:
@@ -4144,7 +4145,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   if accept is None:
                      return self.failHandshake("WebSocket permessage-compress extension response from server denied by client")
 
-                  self._perMessageCompress = PMCE['PMCE'].createFromResponseAccept(self.isServer, accept)
+                  self._perMessageCompress = PMCE['PMCE'].createFromResponseAccept(self.factory.isServer, accept)
 
                   self.websocket_extensions_in_use.append(self._perMessageCompress)
 
@@ -4240,6 +4241,11 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
    protocol = WebSocketClientProtocol
    """
    The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketClientProtocol`.
+   """
+
+   isServer = False
+   """
+   Flag indicating if this factory is client- or server-side.
    """
 
 
