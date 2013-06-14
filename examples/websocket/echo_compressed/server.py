@@ -57,8 +57,11 @@ if __name__ == '__main__':
 
    factory.protocol = EchoServerProtocol
 
+
    ## Enable WebSocket extension "permessage-deflate".
    ##
+
+   ## Function to accept offers from the client ..
    def accept(offers):
       for offer in offers:         
          if isinstance(offer, PerMessageDeflateOffer):
@@ -66,6 +69,9 @@ if __name__ == '__main__':
 
    factory.setProtocolOptions(perMessageCompressionAccept = accept)
 
+
+   ## run server
+   ##
    listenWS(factory)
 
    webdir = File(".")

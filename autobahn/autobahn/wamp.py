@@ -558,10 +558,20 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       WebSocketServerProtocol.connectionLost(self, reason)
 
 
-   def sendMessage(self, payload):
+   def sendMessage(self,
+                   payload,
+                   binary = False,
+                   payload_frag_size = None,
+                   sync = False,
+                   doNotCompress = False):
       if self.debugWamp:
          log.msg("TX WAMP: %s" % str(payload))
-      WebSocketServerProtocol.sendMessage(self, payload)
+      WebSocketServerProtocol.sendMessage(self,
+                                          payload,
+                                          binary,
+                                          payload_frag_size,
+                                          sync,
+                                          doNotCompress)
 
 
    def _getPubHandler(self, topicUri):

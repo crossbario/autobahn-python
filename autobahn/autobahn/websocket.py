@@ -1580,10 +1580,13 @@ class WebSocketProtocol(protocol.Protocol):
 
       Modes: Hybi, Hixie
       """
-      if self.websocket_version == 0:
-         self.sendData(preparedMsg.payloadHixie)
+      if self.websocket_version != 0:
+         if self._perMessageCompress is None or preparedMsg.doNotCompress:
+            self.sendData(preparedMsg.payloadHybi)
+         else:
+            self.sendMessage(preparedMsg.payload, preparedMsg.binary)
       else:
-         self.sendData(preparedMsg.payloadHybi)
+         self.sendData(preparedMsg.payloadHixie)
 
 
    def processData(self):
@@ -2705,7 +2708,7 @@ class PreparedMessage:
    between Hybi-Deflate-Unsupported, Hybi-Deflate-Supported and Hixie.
    """
 
-   def __init__(self, payload, binary, masked):
+   def __init__(self, payload, binary, masked, doNotCompress):
       """
       Ctor for a prepared message.
 
@@ -2716,7 +2719,17 @@ class PreparedMessage:
       :param masked: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
       :type masked: bool
       """
+      if not doNotCompress:
+         ## we need to store original payload for compressed WS
+         ## connections (cannot compress/frame in advanced)
+         self.payload = payload
+         self.binary = binary
+      self.doNotCompress = doNotCompress
+
+      ## store pre-framed octets to be sent to Hixie-76 clients
       self._initHixie(payload, binary)
+
+      ## store pre-framed octets to be sent to Hybi clients
       self._initHybi(payload, binary, masked)
 
 
@@ -2778,7 +2791,7 @@ class WebSocketFactory:
    :class:`autobahn.websocket.WebSocketServerFactory`.
    """
 
-   def prepareMessage(self, payload, binary = False, masked = None):
+   def prepareMessage(self, payload, binary = False, masked = None, doNotCompress = False):
       """
       Prepare a WebSocket message. This can be later used on multiple
       instances of :class:`autobahn.websocket.WebSocketProtocol` using
@@ -2813,7 +2826,7 @@ class WebSocketFactory:
       if masked is None:
          masked = not self.isServer
 
-      return PreparedMessage(payload, binary, masked)
+      return PreparedMessage(payload, binary, masked, doNotCompress)
 
 
 
