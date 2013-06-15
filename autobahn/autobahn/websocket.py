@@ -25,7 +25,7 @@ __all__ = ["createWsUrl",
            "ConnectionRequest",
            "ConnectionResponse",
            "Timings",
-           
+
            "WebSocketProtocol",
            "WebSocketFactory",
            "WebSocketServerProtocol",
@@ -168,7 +168,7 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
       if factory.isSecure:
          raise Exception("WSS over explicit proxies not implemented")
       else:
-         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)         
+         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)
    else:
       if factory.isSecure:
          if contextFactory is None:
@@ -3546,7 +3546,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          request += "User-Agent: %s\x0d\x0a" % self.factory.useragent.encode("utf-8")
 
       request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
-      request += "Upgrade: WebSocket\x0d\x0a"
+      request += "Upgrade: websocket\x0d\x0a"
       request += "Connection: Upgrade\x0d\x0a"
 
       ## this seems to prohibit some non-compliant proxies from removing the
