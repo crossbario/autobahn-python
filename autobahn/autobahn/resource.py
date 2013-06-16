@@ -111,6 +111,7 @@ class WebSocketResource(object):
       :type factory: obj
       """
       self._factory = factory
+      self._factory.startFactory()
 
 
    def getChildWithDefault(self, name, request):
