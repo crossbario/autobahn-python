@@ -2303,14 +2303,16 @@ class WebSocketProtocol(protocol.Protocol):
       self.sendCloseFrame(code = code, reasonUtf8 = reasonUtf8, isReply = False)
 
 
-   def beginMessage(self, opcode = MESSAGE_TYPE_TEXT):
+   def beginMessage(self, binary = False, doNotCompress = False):
       """
       Begin sending new message.
 
       Modes: Hybi, Hixie
 
-      :param opcode: Message type, normally either WebSocketProtocol.MESSAGE_TYPE_TEXT (default) or
-                     WebSocketProtocol.MESSAGE_TYPE_BINARY (only Hybi mode).
+      :param binary: Flag to indicate payload type (`True == binary`).
+      :type bool
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
+      :type doNotCompress: bool
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2321,22 +2323,27 @@ class WebSocketProtocol(protocol.Protocol):
          raise Exception("WebSocketProtocol.beginMessage invalid in current sending state")
 
       if self.websocket_version == 0:
-         if opcode != 1:
-            raise Exception("cannot send non-text message in Hixie mode")
+         if binary:
+            raise Exception("cannot send binary message in Hixie76 mode")
 
          self.sendData('\x00')
          self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
       else:
-         if opcode not in [1, 2]:
-            raise Exception("use of reserved opcode %d" % opcode)
-
-         ## remember opcode for later (when sending first frame)
-         ##
-         self.send_message_opcode = opcode
+         self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if binary else WebSocketProtocol.MESSAGE_TYPE_TEXT
          self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
 
+         ## setup compressor
+         ##
+         if self._perMessageCompress is not None and not doNotCompress:
+            self.send_compressed = True
+            self._perMessageCompress.startCompressMessage()
+         else:
+            self.send_compressed = False
 
-   def beginMessageFrame(self, length, reserved = 0, mask = None):
+      self.trafficStats.outgoingWebSocketMessages += 1
+
+
+   def beginMessageFrame(self, length):
       """
       Begin sending new message frame.
 
@@ -2354,6 +2361,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+
       ## check if sending state is valid for this method
       ##
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
@@ -2362,19 +2370,11 @@ class WebSocketProtocol(protocol.Protocol):
       if (not type(length) in [int, long]) or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
          raise Exception("invalid value for message frame length")
 
-      if type(reserved) is not int or reserved < 0 or reserved > 7:
-         raise Exception("invalid value for reserved bits")
-
       self.send_message_frame_length = length
 
-      if mask:
-         ## explicit mask given
-         ##
-         assert type(mask) == str
-         assert len(mask) == 4
-         self.send_message_frame_mask = mask
+      self.trafficStats.outgoingWebSocketFrames += 1
 
-      elif (not self.factory.isServer and self.maskClientFrames) or (self.factory.isServer and self.maskServerFrames):
+      if (not self.factory.isServer and self.maskClientFrames) or (self.factory.isServer and self.maskServerFrames):
          ## automatic mask:
          ##  - client-to-server masking (if not deactivated)
          ##  - server-to-client masking (if activated)
@@ -2395,11 +2395,16 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## first byte
       ##
-      b0 = (reserved % 8) << 4 # FIN = false .. since with streaming, we don't know when message ends
-
+      # FIN = false .. since with streaming, we don't know when message ends
+      b0 = 0
       if self.send_state == WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN:
-         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+
          b0 |= self.send_message_opcode % 128
+
+         if self.send_compressed:
+            b0 |= (4 % 8) << 4
+
+         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
       else:
          pass # message continuation frame
 
@@ -2455,6 +2460,10 @@ class WebSocketProtocol(protocol.Protocol):
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
 
+      if not self.send_compressed:
+         self.trafficStats.outgoingOctetsAppLevel += len(payload)
+      self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
+
       if self.websocket_version == 0:
          ## Hixie Mode
          ##
@@ -2501,13 +2510,14 @@ class WebSocketProtocol(protocol.Protocol):
 
    def endMessage(self):
       """
-      End a previously begun message. No more frames may be sent (for that message). You have to
-      begin a new message before sending again.
+      End a message previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`.
+      No more frames may be sent (for that message). You have to begin a new message before sending again.
 
       Modes: Hybi, Hixie
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+
       ## check if sending state is valid for this method
       ##
       if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
@@ -2516,25 +2526,40 @@ class WebSocketProtocol(protocol.Protocol):
       if self.websocket_version == 0:
          self.sendData('\x00')
       else:
-         self.sendFrame(opcode = 0, fin = True)
+         if self.send_compressed:
+            payload = self._perMessageCompress.endCompressMessage()
+            self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
+         else:
+            ## send continuation frame with empty payload and FIN set to end message
+            payload = ""   
+         self.sendFrame(opcode = 0, payload = payload, fin = True)
 
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
 
-   def sendMessageFrame(self, payload, reserved = 0, mask = None, sync = False):
+   def sendMessageFrame(self, payload, sync = False):
       """
-      When a message has begun, send a complete message frame in one go.
+      When a message has been previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`,
+      send a complete message frame in one go.
 
       Modes: Hybi
+
+      :param payload: The message payload. When sending a text message, the payload must be UTF-8 encoded already.
+      :type payload: binary or UTF-8 string
+      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
+      :type sync: bool
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
 
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
-      if self.websocket_version == 0:
-         raise Exception("function not supported in Hixie-76 mode")
-      self.beginMessageFrame(len(payload), reserved, mask)
+
+      if self.send_compressed:
+         self.trafficStats.outgoingOctetsAppLevel += len(payload)
+         payload = self._perMessageCompress.compressMessageData(payload)
+
+      self.beginMessageFrame(len(payload))
       self.sendMessageFrameData(payload, sync)
 
 
@@ -2552,11 +2577,24 @@ class WebSocketProtocol(protocol.Protocol):
       payload <= the payload_frag_size given.
 
       Modes: Hybi, Hixie
+
+      :param payload: The message payload. When sending a text message (`binary == False`), the payload must be UTF-8 encoded already.
+      :type payload: binary or UTF-8 string
+      :param binary: Flag to indicate payload type (`True == binary`).
+      :type bool
+      :param payload_frag_size: Fragment message into fragments of this size. This overrrides `autoFragmentSize` if set.
+      :type payload_frag_size: int
+      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
+      :type sync: bool
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
+      :type doNotCompress: bool
       """
-      if self.trackedTimings:
-         self.trackedTimings.track("sendMessage")
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
+
+      if self.trackedTimings:
+         self.trackedTimings.track("sendMessage")
+
       if self.websocket_version == 0:
          if binary:
             raise Exception("cannot send binary message in Hixie76 mode")

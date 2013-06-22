@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -36,18 +36,34 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
       self.sha256 = hashlib.sha256()
 
    def onMessageFrame(self, payload, reserved):
-      data = ''.join(payload)
-      self.sha256.update(data)
+      l = 0
+      for data in payload:
+         l += len(data)
+         self.sha256.update(data)
       digest = self.sha256.hexdigest()
+      print "Received frame with payload length %7d, compute digest: %s" % (l, digest)
       self.sendMessage(digest)
-      print "Sent digest for frame: %s" % digest
 
    def onMessageEnd(self):
-      pass
+      self.sha256 = None
 
 
 if __name__ == '__main__':
+
    factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = FrameBasedHashServerProtocol
+
+   enableCompression = True
+   if enableCompression:
+      from autobahn.compress import PerMessageDeflateOffer, \
+                                    PerMessageDeflateOfferAccept
+      ## Function to accept offers from the client ..
+      def accept(offers):
+         for offer in offers:         
+            if isinstance(offer, PerMessageDeflateOffer):
+               return PerMessageDeflateOfferAccept(offer)
+
+      factory.setProtocolOptions(perMessageCompressionAccept = accept)
+
    listenWS(factory)
    reactor.run()

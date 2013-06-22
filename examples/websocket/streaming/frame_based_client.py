@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,14 +16,19 @@
 ##
 ###############################################################################
 
+import hashlib
+from pprint import pprint
 from ranstring import randomByteString
+
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketProtocol, \
-                               WebSocketClientFactory, \
+
+from autobahn.websocket import WebSocketClientFactory, \
                                WebSocketClientProtocol, \
                                connectWS
 
+
 FRAME_SIZE = 1 * 2**20
+FRAME_COUNT = 10
 
 
 class FrameBasedHashClientProtocol(WebSocketClientProtocol):
@@ -36,23 +41,59 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
 
    def sendOneFrame(self):
       data = randomByteString(FRAME_SIZE)
+
+      self.sha256.update(data)
+      digest = self.sha256.hexdigest()
+      print "Digest for frame %d computed by client: %s" % (self.count, digest)
+
       self.sendMessageFrame(data)
 
    def onOpen(self):
       self.count = 0
-      self.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
+      self.finished = False
+      self.beginMessage(binary = True)
+      self.sha256 = hashlib.sha256()
       self.sendOneFrame()
 
    def onMessage(self, message, binary):
-      print "Digest for frame %d computed by server: %s" \
-            % (self.count, message)
+      print "Digest for frame %d computed by server: %s" % (self.count, message)
+      pprint(self.trafficStats.__json__())
       self.count += 1
-      self.sendOneFrame()
+
+      if self.count < FRAME_COUNT:
+         self.sendOneFrame()
+      elif not self.finished:
+         self.endMessage()
+         self.finished = True
+
+      if self.count >= FRAME_COUNT:
+         self.sendClose()
+
+   def onClose(self, wasClean, code, reason):
+      reactor.stop()
 
 
 if __name__ == '__main__':
 
    factory = WebSocketClientFactory("ws://localhost:9000")
    factory.protocol = FrameBasedHashClientProtocol
+
+   enableCompression = True
+   if enableCompression:
+      from autobahn.compress import PerMessageDeflateOffer, \
+                                    PerMessageDeflateResponse, \
+                                    PerMessageDeflateResponseAccept
+
+      ## The extensions offered to the server ..
+      offers = [PerMessageDeflateOffer()]
+      factory.setProtocolOptions(perMessageCompressionOffers = offers)
+
+      ## Function to accept responses from the server ..
+      def accept(response):
+         if isinstance(response, PerMessageDeflateResponse):
+            return PerMessageDeflateResponseAccept(response)
+
+      factory.setProtocolOptions(perMessageCompressionAccept = accept)
+
    connectWS(factory)
    reactor.run()

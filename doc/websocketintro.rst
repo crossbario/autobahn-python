@@ -77,6 +77,10 @@ The advanced API provides you all the necessary methods and callbacks to
 do WebSockets using frame-based processing or even completely streaming
 processing - both sending and receiving.
 
+API for prepared message processing:
+  * :func:`autobahn.websocket.WebSocketFactory.prepareMessage`
+  * :func:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`
+
 API for frame-based processing:
 
   * :func:`autobahn.websocket.WebSocketProtocol.onMessageBegin`

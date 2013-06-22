@@ -68,3 +68,8 @@ Misc
    :members: __init__,
              track,
              diff
+
+.. autoclass:: autobahn.websocket.TrafficStats
+   :members: __init__,
+             reset,
+             __json__
