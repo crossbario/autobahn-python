@@ -1421,7 +1421,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       if type(topicUri) not in [unicode, str]:
          raise Exception("invalid type for parameter 'topicUri' - must be string (was %s)" % type(topicUri))
 
-      if type(handler) not in [types.FunctionType, types.MethodType, types.BuiltinFunctionType, types.BuiltinMethodType]:
+      if not hasattr(handler, '__call__'):
          raise Exception("invalid type for parameter 'handler' - must be a callable (was %s)" % type(handler))
 
       turi = self.prefixes.resolveOrPass(topicUri) ### PFX - keep
