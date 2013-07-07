@@ -133,6 +133,11 @@ class WampProtocol:
    Description for WAMP internal errors.
    """
 
+   URI_WAMP_ERROR_NO_SUCH_RPC_ENDPOINT = URI_WAMP_ERROR + "NoSuchRPCEndpoint"
+   """
+   WAMP error URI for RPC endpoint not found.
+   """
+
    WAMP_PROTOCOL_VERSION         = 1
    """
    WAMP version this server speaks. Versions are numbered consecutively
@@ -2059,7 +2064,7 @@ class CallHandler(Handler):
       """
       m = self.proto.procForUri(call.uri)
       if m is None:
-         raise Exception("no procedure registered for %s" % call.uri)
+         raise Exception(WampProtocol.URI_WAMP_ERROR_NO_SUCH_RPC_ENDPOINT, "No RPC endpoint registered for %s." % call.uri)
 
       obj, method_or_proc, is_handler = m[:3]
       if not is_handler:
@@ -2166,13 +2171,22 @@ class CallHandler(Handler):
       errordesc = (WampProtocol.DESC_WAMP_ERROR_GENERIC
                    if num_args < 2
                    else eargs[1])
+
       # errordetails must be JSON serializable .. if not, we get exception
       # later in sendMessage
-      errordetails = (eargs[2]
-                      if num_args >= 3
-                      else (call.error.getTraceback().splitlines()
-                            if self.proto.includeTraceback
-                            else None))
+      errordetails = None
+      if num_args >= 3:
+         errordetails = eargs[2]
+      elif self.proto.includeTraceback:
+         try:
+            tb = call.error.getTraceback()
+         except Exception, ie:
+            ## FIXME: find out why this can fail with
+            ## "'unicode' does not have the buffer interface"
+            print "INTERNAL ERROR (getTraceback)", ie
+         else:
+            errordetails = tb.splitlines()
+
       killsession = (eargs[3]
                      if num_args >= 4
                      else False)
@@ -2228,7 +2242,15 @@ class CallHandler(Handler):
              str(e)]
 
       if self.proto.includeTraceback:
-         msg.append(call.error.getTraceback().splitlines())
+         try:
+            tb = call.error.getTraceback()
+         except Exception, ie:
+            ## FIXME: find out why this can fail with
+            ## "'unicode' does not have the buffer interface"
+            print "INTERNAL ERROR (getTraceback)", ie
+         else:
+            msg.append(tb.splitlines())
+            
       result = self.proto.serializeMessage(msg)
       return result
 
