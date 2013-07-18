@@ -3726,7 +3726,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
                return self.failHandshake("HTTP Sec-WebSocket-Protocol header appears more than once in opening handshake reply")
             sp = str(self.http_headers["sec-websocket-protocol"].strip())
             if sp != "":
-               if sp not in self.factory.protocols:
+               ## if the client specified a subprotocol list, make sure the
+               ## server's subprotocol is on it
+               ##
+               if self.factory.protocols and sp not in self.factory.protocols:
                   return self.failHandshake("subprotocol selected by server (%s) not in subprotocol list requested by client (%s)" % (sp, str(self.factory.protocols)))
                else:
                   ## ok, subprotocol in use
