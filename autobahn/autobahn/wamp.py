@@ -24,11 +24,12 @@ __all__ = ("WampProtocol",
            "WampClientFactory",
            "WampCraProtocol",
            "WampCraClientProtocol",
-           "WampCraServerProtocol",)
+           "WampCraServerProtocol",
+           "json_lib",
+           "json_loads",
+           "json_dumps",)
 
 
-import json
-import random
 import inspect, types
 import traceback
 
@@ -37,9 +38,7 @@ import hashlib, hmac, binascii
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, \
-                                   maybeDeferred, \
-                                   returnValue, \
-                                   inlineCallbacks
+                                   maybeDeferred
 
 from _version import __version__
 from websocket import WebSocketProtocol, HttpException, Timings
@@ -49,7 +48,7 @@ from websocket import WebSocketServerFactory, WebSocketServerProtocol
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from pbkdf2 import pbkdf2_bin
 from prefixmap import PrefixMap
-from util import utcstr, utcnow, parseutc, newid
+from util import utcnow, newid
 
 
 def exportRpc(arg = None):
@@ -464,6 +463,21 @@ class WampProtocol:
 
 
 
+## use Ultrajson (https://github.com/esnme/ultrajson) if available
+##
+try:
+   import ujson
+   json_lib = ujson
+   json_loads = ujson.loads
+   json_dumps = lambda x: ujson.dumps(x, ensure_ascii = False)
+except:
+   import json
+   json_lib = json
+   json_loads = json.loads
+   json_dumps = json.dumps
+
+
+
 class WampFactory:
    """
    WAMP factory base class. Mixin for WampServerFactory and WampClientFactory.
@@ -473,14 +487,14 @@ class WampFactory:
       """
       Default object serializer.
       """
-      return json.dumps(obj)
+      return json_dumps(obj)
 
 
    def _unserialize(self, bytes):
       """
       Default object deserializer.
       """
-      return json.loads(bytes)
+      return json_loads(bytes)
 
 
 
