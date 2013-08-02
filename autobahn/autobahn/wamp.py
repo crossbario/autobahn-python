@@ -483,6 +483,11 @@ class WampFactory:
    WAMP factory base class. Mixin for WampServerFactory and WampClientFactory.
    """
 
+   def __init__(self):
+      if self.debugWamp:
+         log.msg("Using JSON processor '%s'" % json_lib.__name__)
+
+
    def _serialize(self, obj):
       """
       Default object serializer.
@@ -897,9 +902,10 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
    """
 
    def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False, externalPort = None):
-      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths, externalPort = externalPort)
       self.debugWamp = debugWamp
       self.debugApp = debugApp
+      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths, externalPort = externalPort)
+      WampFactory.__init__(self)
 
 
    def onClientSubscribed(self, proto, topicUri):
@@ -1488,9 +1494,10 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
    protocol = WampClientProtocol
 
    def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False):
-      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
       self.debugWamp = debugWamp
       self.debugApp = debugApp
+      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
+      WampFactory.__init__(self)
 
 
    def startFactory(self):
