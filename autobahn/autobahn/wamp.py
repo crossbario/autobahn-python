@@ -32,6 +32,7 @@ __all__ = ("WampProtocol",
 
 import inspect, types
 import traceback
+import StringIO
 
 import hashlib, hmac, binascii
 
@@ -2181,44 +2182,66 @@ class CallHandler(Handler):
       ## get error args and len
       ##
       eargs = call.error.value.args
-      num_args = len(eargs)
+      nargs = len(eargs)
 
-      if num_args > 4:
-         raise Exception("invalid args length %d for exception" % num_args)
+      if nargs > 4:
+         raise Exception("invalid args length %d for exception" % nargs)
 
-      erroruri = (WampProtocol.URI_WAMP_ERROR_GENERIC
-                  if num_args < 1
-                  else eargs[0])
-      errordesc = (WampProtocol.DESC_WAMP_ERROR_GENERIC
-                   if num_args < 2
-                   else eargs[1])
+      ## erroruri & errordesc
+      ##
+      if nargs == 0:
+         erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
+         errordesc = WampProtocol.DESC_WAMP_ERROR_GENERIC
+      elif nargs == 1:
+         erroruri = WampProtocol.URI_WAMP_ERROR_GENERIC
+         errordesc = eargs[0]
+      else:
+         erroruri = eargs[0]
+         errordesc = eargs[1]        
 
-      # errordetails must be JSON serializable .. if not, we get exception
-      # later in sendMessage
+      ## errordetails
+      ##
       errordetails = None
-      if num_args >= 3:
+      if nargs >= 3:
          errordetails = eargs[2]
       elif self.proto.includeTraceback:
          try:
-            tb = call.error.getTraceback()
+            ## we'd like to do ..
+            #tb = call.error.getTraceback()
+
+            ## .. but the implementation in Twisted
+            ## http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.1.0/twisted/python/failure.py#L529
+            ## uses cStringIO which cannot handle Unicode string in tracebacks. Hence we do our own:
+            io = StringIO.StringIO()
+            call.error.printTraceback(file = io)
+            tb = io.getvalue()
+
          except Exception, ie:
-            ## FIXME: find out why this can fail with
-            ## "'unicode' does not have the buffer interface"
-            print "INTERNAL ERROR (getTraceback)", ie
+            print "INTERNAL ERROR [_extractErrorInfo / getTraceback()]", ie
+            traceback.print_stack()
          else:
             errordetails = tb.splitlines()
 
-      killsession = (eargs[3]
-                     if num_args >= 4
-                     else False)
+      ## killsession
+      ##
+      killsession = False
+      if nargs >= 4:
+         killsession = eargs[3]
 
+      ## recheck all error component types
+      ##
       if type(erroruri) not in [str, unicode]:
          raise Exception("invalid type %s for errorUri" % type(erroruri))
+
       if type(errordesc) not in [str, unicode]:
          raise Exception("invalid type %s for errorDesc" % type(errordesc))
+
+      ## errordetails must be JSON serializable. If not, we get exception later in sendMessage.
+      ## We don't check here, since the only way would be to serialize to JSON and
+      ## then we'd serialize twice (here and in sendMessage)
+
       if type(killsession) not in [bool, types.NoneType]:
-         raise Exception("invalid type %s for killSession" %
-                         type(killsession))
+         raise Exception("invalid type %s for killSession" % type(killsession))
 
       return (erroruri, errordesc, errordetails), killsession
 
