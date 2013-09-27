@@ -1,0 +1,22 @@
+{
+	"folders":
+	[
+		{
+			"follow_symlinks": false,
+         "name": "Autobahn Python",
+			"path": ".",
+         "folder_exclude_patterns": ["build", "dist", "*.egg-info"],
+         "file_exclude_patterns": ["*.pyc"]
+		}
+	],
+   "settings":
+   {
+      "tab_size": 3,
+      "translate_tabs_to_spaces": true,
+      "use_tab_stops": true,
+      "detect_indentation": false,
+      "trim_trailing_white_space_on_save": true,
+      "ensure_newline_at_eof_on_save": true,
+      "default_encoding": "UTF-8"
+   }
+}

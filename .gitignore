@@ -5,3 +5,4 @@
 /autobahn/dist/*
 /autobahn/autobahn.egg-info*/
 doc/_build/*
+*.sublime-workspace
