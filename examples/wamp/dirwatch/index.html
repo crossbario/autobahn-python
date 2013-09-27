@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+ <html>
+   <head>
+
+      <!-- include AutobahnJS .. that's all you need -->
+      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+
+      <script>
+         // WAMP session object
+         var sess = null;
+
+         window.onload = function() {
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://localhost:9000";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000";
+            }
+
+            // connect to WAMP server
+            ab.connect(wsuri,
+
+               // WAMP session was established
+               function (session) {
+
+                  sess = session;
+
+                  console.log("Connected to " + wsuri);
+                  sess.subscribe("http://dirwatch.autobahn.ws#filesystemEvent",
+                     function (topic, event) {
+                        console.log(event);
+                     });
+               },
+
+               // WAMP session is gone
+               function (code, reason) {
+
+                  sess = null;
+
+                  if (code == ab.CONNECTION_UNSUPPORTED) {
+                     window.location = "http://autobahn.ws/unsupportedbrowser";
+                  } else {
+                     console.log(reason);
+                  }
+               }
+            );
+         };
+
+         function test() {
+         }
+
+     </script>
+   </head>
+   <body>
+      <h1>Directory Watcher Demo</h1>
+      <noscript>
+         <span style="color: #f00; font-weight: bold;">
+            You need to turn on JavaScript.
+         </span>
+      </noscript>
+      <p>
+         Open development console (press F12) to watch.
+      </p>
+   </body>
+ </html>
