@@ -778,22 +778,25 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                         ## topic handled by subscription handler
                         else:
-                           try:
-                              ## handler is object method
-                              if h[2]:
-                                 a = h[3](h[2], str(h[0]), str(h[1]))
+                           ## handler is object method
+                           if h[2]:
+                              a = maybeDeferred(h[3], h[2], str(h[0]), str(h[1]))
 
-                              ## handler is free standing procedure
-                              else:
-                                 a = h[3](str(h[0]), str(h[1]))
+                           ## handler is free standing procedure
+                           else:
+                              a = maybeDeferred(h[3], str(h[0]), str(h[1]))
 
-                              ## only subscribe client if handler did return True
-                              if a:
-                                 self.factory._subscribeClient(self, topicUri)
-                           except:
+                           def fail(failure):
                               if self.debugWamp:
                                  log.msg("exception during topic subscription handler:")
-                              traceback.print_exc()
+                              print str(failure)
+
+                           def done(result):
+                              ## only subscribe client if handler did return True
+                              if result:
+                                 self.factory._subscribeClient(self, topicUri)
+
+                           a.addCallback(done).addErrback(fail)
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
@@ -851,22 +854,25 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                         ## topic handled by publication handler
                         else:
-                           try:
-                              ## handler is object method
-                              if h[2]:
-                                 e = h[3](h[2], str(h[0]), str(h[1]), event)
+                           ## handler is object method
+                           if h[2]:
+                              e = maybeDeferred(h[3], h[2], str(h[0]), str(h[1]), event)
 
-                              ## handler is free standing procedure
-                              else:
-                                 e = h[3](str(h[0]), str(h[1]), event)
+                           ## handler is free standing procedure
+                           else:
+                              e = maybeDeferred(h[3], str(h[0]), str(h[1]), event)
 
-                              ## only dispatch event if handler did return event
-                              if e:
-                                 self.factory.dispatch(topicUri, e, exclude, eligible)
-                           except:
+                           def fail(failure):
                               if self.debugWamp:
-                                 log.msg("exception during topic publication handler:")
-                              traceback.print_exc()
+                                 log.msg("exception during topic subscription handler:")
+                              print str(failure)
+
+                           def done(result):
+                              ## only dispatch event if handler did return event
+                              if result:
+                                 self.factory.dispatch(topicUri, e, exclude, eligible)
+
+                           a.addCallback(done).addErrback(fail)
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
