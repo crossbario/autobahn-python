@@ -788,8 +788,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                            def fail(failure):
                               if self.debugWamp:
-                                 log.msg("exception during topic subscription handler:")
-                              print str(failure)
+                                 log.msg("exception during custom subscription handler: %s" % failure)
 
                            def done(result):
                               ## only subscribe client if handler did return True
@@ -864,15 +863,14 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
                            def fail(failure):
                               if self.debugWamp:
-                                 log.msg("exception during topic subscription handler:")
-                              print str(failure)
+                                 log.msg("exception during custom publication handler: %s" % failure)
 
                            def done(result):
                               ## only dispatch event if handler did return event
                               if result:
-                                 self.factory.dispatch(topicUri, e, exclude, eligible)
+                                 self.factory.dispatch(topicUri, result, exclude, eligible)
 
-                           a.addCallback(done).addErrback(fail)
+                           e.addCallback(done).addErrback(fail)
                      else:
                         if self.debugWamp:
                            log.msg("topic %s matches only by prefix and prefix match disallowed" % topicUri)
