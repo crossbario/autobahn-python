@@ -528,7 +528,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
 
       ## include traceback as error detail for RPC errors with
       ## no error URI - that is errors returned with URI_WAMP_ERROR_GENERIC
-      self.includeTraceback = True
+      self.includeTraceback = False
 
       msg = [WampProtocol.MESSAGE_TYPEID_WELCOME,
              self.session_id,
