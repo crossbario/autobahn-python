@@ -47,9 +47,10 @@ from websocket import WebSocketClientProtocol, WebSocketClientFactory
 from websocket import WebSocketServerFactory, WebSocketServerProtocol
 
 from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
-from pbkdf2 import pbkdf2_bin
 from prefixmap import PrefixMap
 from util import utcnow, newid
+
+PBKDF2 = None
 
 
 def exportRpc(arg = None):
@@ -1550,10 +1551,16 @@ class WampCraProtocol(WampProtocol):
       :returns str -- The derived key or the original secret.
       """
       if type(extra) == dict and extra.has_key('salt'):
+         global PBKDF2
+         try:
+             from pbkdf2 import PBKDF2
+         except ImportError:
+            log.err(_why="pbkdf2 module needed for encryption")
+            raise
          salt = str(extra['salt'])
          iterations = int(extra.get('iterations', 10000))
          keylen = int(extra.get('keylen', 32))
-         b = pbkdf2_bin(secret, salt, iterations, keylen, hashlib.sha256)
+         b = PBKDF2(passphrase=secret, salt=salt, iterations=iterations).read(keylen)
          return binascii.b2a_base64(b).strip()
       else:
          return secret
