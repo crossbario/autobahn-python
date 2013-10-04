@@ -1720,12 +1720,14 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
          self.failConnection()
 
 
-   def onAuthenticated(self, permissions):
+   def onAuthenticated(self, authKey, permissions):
       """
       Fired when client authentication was successful.
 
       Override in derived class and register PubSub topics and/or RPC endpoints.
 
+      :param authKey: The authentication key the session was authenticated for.
+      :type authKey: str
       :param permissions: The permissions object returned from :meth:`getAuthPermissions`.
       :type permissions: obj
       """
@@ -2197,7 +2199,7 @@ class CallHandler(Handler):
          errordesc = eargs[0]
       else:
          erroruri = eargs[0]
-         errordesc = eargs[1]        
+         errordesc = eargs[1]
 
       ## errordetails
       ##
@@ -2294,7 +2296,7 @@ class CallHandler(Handler):
             print "INTERNAL ERROR (getTraceback)", ie
          else:
             msg.append(tb.splitlines())
-            
+
       result = self.proto.serializeMessage(msg)
       return result
 
