@@ -2168,13 +2168,17 @@ class CallHandler(Handler):
       Marshal and send a RPC error result.
       """
       killsession = False
+      rmsg = None
       try:
          error_info, killsession = self._extractErrorInfo(call)
          rmsg = self._assembleErrorMessage(call, *error_info)
       except Exception, e:
          rmsg = self._handleProcessingError(call, e)
       finally:
-         self._sendMessageAndCleanUp(rmsg, call, killsession)
+         if rmsg:
+            self._sendMessageAndCleanUp(rmsg, call, killsession)
+         else:
+            raise Exception("fatal: internal error in CallHandler._handleProcessingError")
 
 
    def _extractErrorInfo(self, call):
