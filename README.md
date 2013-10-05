@@ -3,8 +3,9 @@ AutobahnPython
 
 AutobahnPython implements **[The WebSocket Protocol](http://tools.ietf.org/html/rfc6455)** and **[The WebSocket Application Messaging Protocol (WAMP)](http://wamp.ws/)**:
 
-* framework for WebSocket and WAMP clients and servers
-* implements WebSocket RFC6455, Draft Hybi-10+, Hixie-76 and WAMP v1
+* framework for WebSocket and [WAMP](http://wamp.ws/) clients and servers
+* implements WebSocket [RFC6455](http://tools.ietf.org/html/rfc6455), Draft Hybi-10+, Hixie-76 and WAMP v1
+* implements [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression), both client and server
 * Twisted-based, runs on CPython and PyPy
 * high-performance, fully asynchronous implementation
 * best-in-class standards conformance (100% strict passes with *[Autobahn WebSocket Testsuite](http://autobahn.ws/testsuite)*)
@@ -12,7 +13,7 @@ AutobahnPython implements **[The WebSocket Protocol](http://tools.ietf.org/html/
 * Deferred-based API for asynchronous RPC and PubSub (WAMP)
 * supports TLS (secure WebSocket)
 * session authentication (WAMP-CRA)
-* Open-source (Apache 2 license)
+* Open-source (Apache 2 [license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
 You can use AutobahnPython to create clients and servers speaking either plain WebSocket or WAMP.
 
@@ -38,7 +39,7 @@ AutobahnPython runs under **[Python](http://www.python.org/)** (latest versions 
 
 The only dependency is **[Twisted](http://twistedmatrix.com)** (11.1 or later).
 
-AutobahnPython is used on "fat" platforms like **Windows**, **MacOS X**, **Linux**, ***BSD** and embedded platforms like the **[RaspberryPi](http://www.raspberrypi.org/)**.
+AutobahnPython is used on "fat" platforms like **Windows**, **MacOS X**, **Linux**, **BSD** and embedded platforms like the **[RaspberryPi](http://www.raspberrypi.org/)**.
 
 AutobahnPython also runs along [Twisted Web](http://twistedmatrix.com/documents/current/web/howto/index.html) and *any* Web framework like [Flask](http://flask.pocoo.org/) or [Django](https://www.djangoproject.com/) that runs under [WSGI](http://en.wikipedia.org/wiki/Web_Server_Gateway_Interface) containers.
 
