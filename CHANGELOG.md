@@ -1,8 +1,8 @@
 # AutobahnPython: Changelog
 
 ## v0.6.3
- * symmetric RPCs (server-to-client calls)
- * WebSocket compression, client and server, `permessage-deflate`, `permessage-bzip2`and `permessage-snappy`
+ * [symmetric RPCs](https://github.com/tavendo/AutobahnPython/tree/master/examples/wamp/rpc/symmetric) (server-to-client calls)
+ * [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression), client and server, `permessage-deflate`, `permessage-bzip2`and `permessage-snappy`
  * `onConnect` is allowed to return Deferreds now
  * custom publication and subscription handler are allowed to return Deferreds now
  * support for explicit proxies
