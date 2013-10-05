@@ -1,6 +1,6 @@
 # AutobahnPython: Changelog
 
-## v0.6.2
+## v0.6.3
  * symmetric RPCs (server-to-client calls)
  * WebSocket compression, client and server, `permessage-deflate`, `permessage-bzip2`and `permessage-snappy`
  * `onConnect` is allowed to return Deferreds now
