@@ -1901,7 +1901,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
          ##
          self._clientPendingAuth = None
 
-         ## notify the client of failed out, but only after a random,
+         ## notify the client of failed authentication, but only after a random,
          ## exponentially distributed delay. this (further) protects against
          ## timing attacks
          ##
@@ -1912,7 +1912,6 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
             d.errback(Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid"))
          failDelaySecs = random.expovariate(1.0 / 0.8) # mean = 0.8 secs
          reactor.callLater(failDelaySecs, fail)
-         print "fail after %s" % failDelaySecs
          return d
 
       ## at this point, the client has successfully authenticated!
