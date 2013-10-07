@@ -34,7 +34,7 @@ import inspect, types
 import traceback
 import StringIO
 
-import hashlib, hmac, binascii
+import hashlib, hmac, binascii, random
 
 from twisted.python import log
 from twisted.internet import reactor
@@ -1898,9 +1898,22 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
          raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-argument"), "signature must be a string or None (was %s)" % str(type(signature)))
       if self._clientPendingAuth[1] != signature:
          ## delete pending authentication, so that no retries are possible. authid is only valid for 1 try!!
-         ## FIXME: drop the connection?
+         ##
          self._clientPendingAuth = None
-         raise Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid")
+
+         ## notify the client of failed out, but only after a random,
+         ## exponentially distributed delay. this (further) protects against
+         ## timing attacks
+         ##
+         d = Deferred()
+         def fail():
+            ## FIXME: (optionally) drop the connection instead of returning RPC error?
+            ##
+            d.errback(Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid"))
+         failDelaySecs = random.expovariate(1.0 / 0.8) # mean = 0.8 secs
+         reactor.callLater(failDelaySecs, fail)
+         print "fail after %s" % failDelaySecs
+         return d
 
       ## at this point, the client has successfully authenticated!
 
