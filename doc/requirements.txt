@@ -1,4 +1,1 @@
 autobahn
-wsaccel
-python-snappy
-lz4
