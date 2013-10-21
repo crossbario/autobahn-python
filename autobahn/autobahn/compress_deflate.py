@@ -46,8 +46,14 @@ class PerMessageDeflateMixin:
    WINDOW_SIZE_PERMISSIBLE_VALUES = [8, 9, 10, 11, 12, 13, 14, 15]
    """
    Permissible value for window size parameter.
+   Higher values use more memory, but produce smaller output. The default is 15.
    """
 
+   MEM_LEVEL_PERMISSIBLE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+   """
+   Permissible value for memory level parameter.
+   Higher values use more memory, but are faster and produce smaller output. The default is 8.
+   """
 
 
 class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
@@ -98,7 +104,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                acceptNoContextTakeover = True
 
          elif p == 'server_max_window_bits':
-            if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+            if val not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                requestMaxWindowBits = int(val)
@@ -209,7 +215,8 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
                 requestNoContextTakeover = False,
                 requestMaxWindowBits = 0,
                 noContextTakeover = None,
-                windowBits = None):
+                windowBits = None,
+                memLevel = None):
       """
       Constructor.
 
@@ -221,8 +228,10 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
       :type requestMaxCompressLevel: int
       :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
       :type noContextTakeover: bool
-      :param windowBits: Override ("server-to-client direction") window size (this must be compatible with offer).
+      :param windowBits: Override server ("server-to-client direction") window size (this must be compatible with offer).
       :type windowBits: int
+      :param memLevel: Set server ("server-to-client direction") memory level.
+      :type memLevel: int
       """
       if not isinstance(offer, PerMessageDeflateOffer):
          raise Exception("invalid type %s for offer" % type(offer))
@@ -263,6 +272,12 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
 
       self.windowBits = windowBits
 
+      if memLevel is not None:
+         if memLevel not in self.MEM_LEVEL_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for memLevel - permissible values %s" % (memLevel, self.MEM_LEVEL_PERMISSIBLE_VALUES))
+
+      self.memLevel = memLevel
+
 
    def getExtensionString(self):
       """
@@ -293,7 +308,8 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
               'requestNoContextTakeover': self.requestNoContextTakeover,
               'requestMaxWindowBits': self.requestMaxWindowBits,
               'noContextTakeover': self.noContextTakeover,
-              'windowBits': self.windowBits}
+              'windowBits': self.windowBits,
+              'memLevel': memLevel}
 
 
    def __repr__(self):
@@ -302,7 +318,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageDeflateOfferAccept(offer = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s, noContextTakeover = %s, windowBits = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.requestMaxWindowBits, self.noContextTakeover, self.windowBits)
+      return "PerMessageDeflateOfferAccept(offer = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s, noContextTakeover = %s, windowBits = %s, memLevel = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.requestMaxWindowBits, self.noContextTakeover, self.windowBits, self.memLevel)
 
 
 
@@ -409,7 +425,8 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
    def __init__(self,
                 response,
                 noContextTakeover = None,
-                windowBits = None):
+                windowBits = None,
+                memLevel = None):
       """
       Constructor.
 
@@ -419,6 +436,8 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
       :type noContextTakeover: bool
       :param windowBits: Override client ("client-to-server direction") window size (this must be compatible with response).
       :type windowBits: int
+      :param memLevel: Set client ("client-to-server direction") memory level.
+      :type memLevel: int
       """
       if not isinstance(response, PerMessageDeflateResponse):
          raise Exception("invalid type %s for response" % type(response))
@@ -443,6 +462,12 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
 
       self.windowBits = windowBits
 
+      if memLevel is not None:
+         if memLevel not in self.MEM_LEVEL_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for memLevel - permissible values %s" % (memLevel, self.MEM_LEVEL_PERMISSIBLE_VALUES))
+
+      self.memLevel = memLevel
+
 
    def __json__(self):
       """
@@ -453,7 +478,8 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
       return {'extension': self.EXTENSION_NAME,
               'response': self.response.__json__(),
               'noContextTakeover': self.noContextTakeover,
-              'windowBits': self.windowBits}
+              'windowBits': self.windowBits,
+              'memLevel': self.memLevel}
 
 
    def __repr__(self):
@@ -462,7 +488,7 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageDeflateResponseAccept(response = %s, noContextTakeover = %s, windowBits = %s)" % (self.response.__repr__(), self.noContextTakeover, self.windowBits)
+      return "PerMessageDeflateResponseAccept(response = %s, noContextTakeover = %s, windowBits = %s, memLevel = %s)" % (self.response.__repr__(), self.noContextTakeover, self.windowBits, self.memLevel)
 
 
 
@@ -471,24 +497,30 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    `permessage-deflate` WebSocket extension processor.
    """
    DEFAULT_WINDOW_BITS = zlib.MAX_WBITS
+   DEFAULT_MEM_LEVEL = 8
+
 
    @classmethod
    def createFromResponseAccept(Klass, isServer, accept):
+      ## accept: instance of PerMessageDeflateResponseAccept
       pmce = Klass(isServer,
                    accept.response.server_no_context_takeover,
                    accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover,
                    accept.response.server_max_window_bits,
-                   accept.windowBits if accept.windowBits is not None else accept.response.client_max_window_bits)
+                   accept.windowBits if accept.windowBits is not None else accept.response.client_max_window_bits,
+                   accept.memLevel)
       return pmce
 
 
    @classmethod
    def createFromOfferAccept(Klass, isServer, accept):
+      ## accept: instance of PerMessageDeflateOfferAccept
       pmce = Klass(isServer,
                    accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
                    accept.requestNoContextTakeover,
                    accept.windowBits if accept.windowBits is not None else accept.offer.requestMaxWindowBits,
-                   accept.requestMaxWindowBits)
+                   accept.requestMaxWindowBits,
+                   accept.memLevel)
       return pmce
 
 
@@ -497,12 +529,17 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 server_no_context_takeover,
                 client_no_context_takeover,
                 server_max_window_bits,
-                client_max_window_bits):
+                client_max_window_bits,
+                mem_level):
       self._isServer = isServer
+
       self.server_no_context_takeover = server_no_context_takeover
       self.client_no_context_takeover = client_no_context_takeover
+
       self.server_max_window_bits = server_max_window_bits if server_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
       self.client_max_window_bits = client_max_window_bits if client_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
+
+      self.mem_level = mem_level if mem_level else self.DEFAULT_MEM_LEVEL
 
       self._compressor = None
       self._decompressor = None
@@ -514,20 +551,25 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
               'server_no_context_takeover': self.server_no_context_takeover,
               'client_no_context_takeover': self.client_no_context_takeover,
               'server_max_window_bits': self.server_max_window_bits,
-              'client_max_window_bits': self.client_max_window_bits}
+              'client_max_window_bits': self.client_max_window_bits,
+              'mem_level': self.mem_level}
 
 
    def __repr__(self):
-      return "PerMessageDeflate(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s, server_max_window_bits = %s, client_max_window_bits = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover, self.server_max_window_bits, self.client_max_window_bits)
+      return "PerMessageDeflate(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s, server_max_window_bits = %s, client_max_window_bits = %s, mem_level = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover, self.server_max_window_bits, self.client_max_window_bits, self.mem_level)
 
 
    def startCompressMessage(self):
+      # compressobj([level[, method[, wbits[, memlevel[, strategy]]]]])
+      # http://bugs.python.org/issue19278
+      # http://hg.python.org/cpython/rev/c54c8e71b79a
+      #
       if self._isServer:
          if self._compressor is None or self.server_no_context_takeover:
-            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.server_max_window_bits)
+            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.server_max_window_bits, self.mem_level)
       else:
          if self._compressor is None or self.client_no_context_takeover:
-            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.client_max_window_bits)
+            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.client_max_window_bits, self.mem_level)
 
 
    def compressMessageData(self, data):
