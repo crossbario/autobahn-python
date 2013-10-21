@@ -23,14 +23,14 @@ Documentation
 -------------
 
 To get started quickly, check out the [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples).
- For complete API documentation, please consult the [reference documentation](http://autobahn.ws/python/reference).
+ For complete API documentation, please consult the [reference documentation](https://autobahnpython.readthedocs.org/).
 
 
 API Stability
 -------------
 
 > Please note that the only API that is promised to be stable is the one documented in the [reference documentation](http://autobahn.ws/python/reference). If you use anything not documented in the reference documentation, your code might break at a later AutobahnPython version.
-> 
+>
 
 Where it runs
 -------------
@@ -53,7 +53,7 @@ Create a subfolder in the `/sl4a/scripts/` folder, copy the Autobahn module fold
     /sl4a/scripts/myapp/autobahn/__init__.py
                 ...
     /sl4a/scripts/myapp/autobahn/xormasker.py
-    
+
 AutobahnPython runs on **[Jython](http://www.jython.org/)** (2.7 beta1) also .. not yet supported completely, but a start. Please see the tickets [here](http://twistedmatrix.com/trac/ticket/3413#comment:21) and [here](http://bugs.jython.org/issue1521). Also: don't expect any wonders .. AutobahnPython (without `wsaccel` .. see below) running on Jython is slower (20-30%) than on CPython, and significantly slower than on PyPy.
 
 
