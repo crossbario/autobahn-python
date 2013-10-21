@@ -1,5 +1,11 @@
 # AutobahnPython: Changelog
 
+## v0.6.4
+ * support latest `permessage-deflate` [draft](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-15)
+ * allow controlling memory level for zlib / `permessage-deflate`
+ * updated reference, moved to [Readthedocs](https://autobahnpython.readthedocs.org/)
+ * fixes #157 (a WAMP-CRA timing attack - very, very unlikely to be exploitable, but anyway)
+
 ## v0.6.3
  * [symmetric RPCs](https://github.com/tavendo/AutobahnPython/tree/master/examples/wamp/rpc/symmetric) (server-to-client calls)
  * [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression), client and server, `permessage-deflate`, `permessage-bzip2`and `permessage-snappy`
