@@ -59,7 +59,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
    @classmethod
    def parse(Klass, params):
       """
-      Parses a WebSocket extension offer for `permessage-bzip2` provided by a client to a server.
+      Parses a WebSocket extension offer for `permessage-deflate` provided by a client to a server.
 
       :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
@@ -76,7 +76,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       requestNoContextTakeover = False
 
       ##
-      ## verify/parse c2s parameters of permessage-deflate offer
+      ## verify/parse client ("client-to-server direction") parameters of permessage-deflate offer
       ##
       for p in params:
 
@@ -85,25 +85,25 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
          val = params[p][0]
 
-         if p == 'c2s_max_window_bits':
+         if p == 'client_max_window_bits':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                acceptMaxWindowBits = True
 
-         elif p == 'c2s_no_context_takeover':
+         elif p == 'client_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                acceptNoContextTakeover = True
 
-         elif p == 's2c_max_window_bits':
+         elif p == 'server_max_window_bits':
             if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                requestMaxWindowBits = int(val)
 
-         elif p == 's2c_no_context_takeover':
+         elif p == 'server_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
@@ -165,13 +165,13 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       """
       pmceString = self.EXTENSION_NAME
       if self.acceptNoContextTakeover:
-         pmceString += "; c2s_no_context_takeover"
+         pmceString += "; client_no_context_takeover"
       if self.acceptMaxWindowBits:
-         pmceString += "; c2s_max_window_bits"
+         pmceString += "; client_max_window_bits"
       if self.requestNoContextTakeover:
-         pmceString += "; s2c_no_context_takeover"
+         pmceString += "; server_no_context_takeover"
       if self.requestMaxWindowBits != 0:
-         pmceString += "; s2c_max_window_bits=%d" % self.requestMaxWindowBits
+         pmceString += "; server_max_window_bits=%d" % self.requestMaxWindowBits
       return pmceString
 
 
@@ -219,9 +219,9 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
       :type requestNoContextTakeover: bool
       :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
       :type requestMaxCompressLevel: int
-      :param noContextTakeover: Override s2c context takeover (this must be compatible with offer).
+      :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
       :type noContextTakeover: bool
-      :param windowBits: Override s2c window size (this must be compatible with offer).
+      :param windowBits: Override ("server-to-client direction") window size (this must be compatible with offer).
       :type windowBits: int
       """
       if not isinstance(offer, PerMessageDeflateOffer):
@@ -272,13 +272,13 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
       """
       pmceString = self.EXTENSION_NAME
       if self.offer.requestNoContextTakeover:
-         pmceString += "; s2c_no_context_takeover"
+         pmceString += "; server_no_context_takeover"
       if self.offer.requestMaxWindowBits != 0:
-         pmceString += "; s2c_max_window_bits=%d" % self.offer.requestMaxWindowBits
+         pmceString += "; server_max_window_bits=%d" % self.offer.requestMaxWindowBits
       if self.requestNoContextTakeover:
-         pmceString += "; c2s_no_context_takeover"
+         pmceString += "; client_no_context_takeover"
       if self.requestMaxWindowBits != 0:
-         pmceString += "; c2s_max_window_bits=%d" % self.requestMaxWindowBits
+         pmceString += "; client_max_window_bits=%d" % self.requestMaxWindowBits
       return pmceString
 
 
@@ -321,10 +321,10 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateResponse`.
       """
-      c2s_max_window_bits = 0
-      c2s_no_context_takeover = False
-      s2c_max_window_bits = 0
-      s2c_no_context_takeover = False
+      client_max_window_bits = 0
+      client_no_context_takeover = False
+      server_max_window_bits = 0
+      server_no_context_takeover = False
 
       for p in params:
 
@@ -333,49 +333,49 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
          val = params[p][0]
 
-         if p == 'c2s_max_window_bits':
+         if p == 'client_max_window_bits':
             if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               c2s_max_window_bits = int(val)
+               client_max_window_bits = int(val)
 
-         elif p == 'c2s_no_context_takeover':
+         elif p == 'client_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               c2s_no_context_takeover = True
+               client_no_context_takeover = True
 
-         elif p == 's2c_max_window_bits':
+         elif p == 'server_max_window_bits':
             if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               s2c_max_window_bits = int(val)
+               server_max_window_bits = int(val)
 
-         elif p == 's2c_no_context_takeover':
+         elif p == 'server_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               s2c_no_context_takeover = True
+               server_no_context_takeover = True
 
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
 
-      response = Klass(c2s_max_window_bits,
-                       c2s_no_context_takeover,
-                       s2c_max_window_bits,
-                       s2c_no_context_takeover)
+      response = Klass(client_max_window_bits,
+                       client_no_context_takeover,
+                       server_max_window_bits,
+                       server_no_context_takeover)
       return response
 
 
    def __init__(self,
-                c2s_max_window_bits,
-                c2s_no_context_takeover,
-                s2c_max_window_bits,
-                s2c_no_context_takeover):
-      self.c2s_max_window_bits = c2s_max_window_bits
-      self.c2s_no_context_takeover = c2s_no_context_takeover
-      self.s2c_max_window_bits = s2c_max_window_bits
-      self.s2c_no_context_takeover = s2c_no_context_takeover
+                client_max_window_bits,
+                client_no_context_takeover,
+                server_max_window_bits,
+                server_no_context_takeover):
+      self.client_max_window_bits = client_max_window_bits
+      self.client_no_context_takeover = client_no_context_takeover
+      self.server_max_window_bits = server_max_window_bits
+      self.server_no_context_takeover = server_no_context_takeover
 
 
    def __json__(self):
@@ -385,10 +385,10 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
       :returns: object -- JSON serializable represention.
       """
       return {'extension': self.EXTENSION_NAME,
-              'c2s_max_window_bits': self.c2s_max_window_bits,
-              'c2s_no_context_takeover': self.c2s_no_context_takeover,
-              's2c_max_window_bits': self.s2c_max_window_bits,
-              's2c_no_context_takeover': self.s2c_no_context_takeover}
+              'client_max_window_bits': self.client_max_window_bits,
+              'client_no_context_takeover': self.client_no_context_takeover,
+              'server_max_window_bits': self.server_max_window_bits,
+              'server_no_context_takeover': self.server_no_context_takeover}
 
 
    def __repr__(self):
@@ -397,7 +397,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageDeflateResponse(c2s_max_window_bits = %s, c2s_no_context_takeover = %s, s2c_max_window_bits = %s, s2c_no_context_takeover = %s)" % (self.c2s_max_window_bits, self.c2s_no_context_takeover, self.s2c_max_window_bits, self.s2c_no_context_takeover)
+      return "PerMessageDeflateResponse(client_max_window_bits = %s, client_no_context_takeover = %s, server_max_window_bits = %s, server_no_context_takeover = %s)" % (self.client_max_window_bits, self.client_no_context_takeover, self.server_max_window_bits, self.server_no_context_takeover)
 
 
 class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessageDeflateMixin):
@@ -415,9 +415,9 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
 
       :param response: The response being accepted.
       :type response: Instance of :class:`autobahn.compress.PerMessageDeflateResponse`.
-      :param noContextTakeover: Override c2s context takeover (this must be compatible with response).
+      :param noContextTakeover: Override client ("client-to-server direction") context takeover (this must be compatible with response).
       :type noContextTakeover: bool
-      :param windowBits: Override c2s window size (this must be compatible with response).
+      :param windowBits: Override client ("client-to-server direction") window size (this must be compatible with response).
       :type windowBits: int
       """
       if not isinstance(response, PerMessageDeflateResponse):
@@ -429,7 +429,7 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
          if type(noContextTakeover) != bool:
             raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
 
-         if response.c2s_no_context_takeover and not noContextTakeover:
+         if response.client_no_context_takeover and not noContextTakeover:
             raise Exception("invalid value %s for noContextTakeover - server requested feature" % noContextTakeover)
 
       self.noContextTakeover = noContextTakeover
@@ -438,7 +438,7 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
          if windowBits not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
             raise Exception("invalid value %s for windowBits - permissible values %s" % (windowBits, self.WINDOW_SIZE_PERMISSIBLE_VALUES))
 
-         if response.c2s_max_window_bits != 0 and windowBits > response.c2s_max_window_bits:
+         if response.client_max_window_bits != 0 and windowBits > response.client_max_window_bits:
             raise Exception("invalid value %s for windowBits - server requested lower maximum value" % windowBits)
 
       self.windowBits = windowBits
@@ -475,10 +475,10 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    @classmethod
    def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   accept.response.s2c_no_context_takeover,
-                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.c2s_no_context_takeover,
-                   accept.response.s2c_max_window_bits,
-                   accept.windowBits if accept.windowBits is not None else accept.response.c2s_max_window_bits)
+                   accept.response.server_no_context_takeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover,
+                   accept.response.server_max_window_bits,
+                   accept.windowBits if accept.windowBits is not None else accept.response.client_max_window_bits)
       return pmce
 
 
@@ -494,15 +494,15 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
    def __init__(self,
                 isServer,
-                s2c_no_context_takeover,
-                c2s_no_context_takeover,
-                s2c_max_window_bits,
-                c2s_max_window_bits):
+                server_no_context_takeover,
+                client_no_context_takeover,
+                server_max_window_bits,
+                client_max_window_bits):
       self._isServer = isServer
-      self.s2c_no_context_takeover = s2c_no_context_takeover
-      self.c2s_no_context_takeover = c2s_no_context_takeover
-      self.s2c_max_window_bits = s2c_max_window_bits if s2c_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
-      self.c2s_max_window_bits = c2s_max_window_bits if c2s_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
+      self.server_no_context_takeover = server_no_context_takeover
+      self.client_no_context_takeover = client_no_context_takeover
+      self.server_max_window_bits = server_max_window_bits if server_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
+      self.client_max_window_bits = client_max_window_bits if client_max_window_bits != 0 else self.DEFAULT_WINDOW_BITS
 
       self._compressor = None
       self._decompressor = None
@@ -511,23 +511,23 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
    def __json__(self):
       return {'extension': self.EXTENSION_NAME,
               'isServer': self._isServer,
-              's2c_no_context_takeover': self.s2c_no_context_takeover,
-              'c2s_no_context_takeover': self.c2s_no_context_takeover,
-              's2c_max_window_bits': self.s2c_max_window_bits,
-              'c2s_max_window_bits': self.c2s_max_window_bits}
+              'server_no_context_takeover': self.server_no_context_takeover,
+              'client_no_context_takeover': self.client_no_context_takeover,
+              'server_max_window_bits': self.server_max_window_bits,
+              'client_max_window_bits': self.client_max_window_bits}
 
 
    def __repr__(self):
-      return "PerMessageDeflate(isServer = %s, s2c_no_context_takeover = %s, c2s_no_context_takeover = %s, s2c_max_window_bits = %s, c2s_max_window_bits = %s)" % (self._isServer, self.s2c_no_context_takeover, self.c2s_no_context_takeover, self.s2c_max_window_bits, self.c2s_max_window_bits)
+      return "PerMessageDeflate(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s, server_max_window_bits = %s, client_max_window_bits = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover, self.server_max_window_bits, self.client_max_window_bits)
 
 
    def startCompressMessage(self):
       if self._isServer:
-         if self._compressor is None or self.s2c_no_context_takeover:
-            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.s2c_max_window_bits)
+         if self._compressor is None or self.server_no_context_takeover:
+            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.server_max_window_bits)
       else:
-         if self._compressor is None or self.c2s_no_context_takeover:
-            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.c2s_max_window_bits)
+         if self._compressor is None or self.client_no_context_takeover:
+            self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.client_max_window_bits)
 
 
    def compressMessageData(self, data):
@@ -541,11 +541,11 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
    def startDecompressMessage(self):
       if self._isServer:
-         if self._decompressor is None or self.c2s_no_context_takeover:
-            self._decompressor = zlib.decompressobj(-self.c2s_max_window_bits)
+         if self._decompressor is None or self.client_no_context_takeover:
+            self._decompressor = zlib.decompressobj(-self.client_max_window_bits)
       else:
-         if self._decompressor is None or self.s2c_no_context_takeover:
-            self._decompressor = zlib.decompressobj(-self.s2c_max_window_bits)
+         if self._decompressor is None or self.server_no_context_takeover:
+            self._decompressor = zlib.decompressobj(-self.server_max_window_bits)
 
 
    def decompressMessageData(self, data):

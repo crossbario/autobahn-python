@@ -72,7 +72,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
       requestMaxCompressLevel = 0
 
       ##
-      ## verify/parse c2s parameters of permessage-bzip2 offer
+      ## verify/parse client ("client-to-server direction") parameters of permessage-bzip2 offer
       ##
       for p in params:
 
@@ -81,13 +81,13 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
          val = params[p][0]
 
-         if p == 'c2s_max_compress_level':
+         if p == 'client_max_compress_level':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                acceptMaxCompressLevel = True
 
-         elif p == 's2c_max_compress_level':
+         elif p == 'server_max_compress_level':
             if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
@@ -131,9 +131,9 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
       """
       pmceString = self.EXTENSION_NAME
       if self.acceptMaxCompressLevel:
-         pmceString += "; c2s_max_compress_level"
+         pmceString += "; client_max_compress_level"
       if self.requestMaxCompressLevel != 0:
-         pmceString += "; s2c_max_compress_level=%d" % self.requestMaxCompressLevel
+         pmceString += "; server_max_compress_level=%d" % self.requestMaxCompressLevel
       return pmceString
 
 
@@ -175,7 +175,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
       :type offer: Instance of :class:`autobahn.compress.PerMessageBzip2Offer`.
       :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
       :type requestMaxCompressLevel: int
-      :param compressLevel: Override s2c compress level (this must be compatible with offer).
+      :param compressLevel: Override server ("server-to-client direction") compress level (this must be compatible with offer).
       :type compressLevel: int
       """
       if not isinstance(offer, PerMessageBzip2Offer):
@@ -209,9 +209,9 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
       """
       pmceString = self.EXTENSION_NAME
       if self.offer.requestMaxCompressLevel != 0:
-         pmceString += "; s2c_max_compress_level=%d" % self.offer.requestMaxCompressLevel
+         pmceString += "; server_max_compress_level=%d" % self.offer.requestMaxCompressLevel
       if self.requestMaxCompressLevel != 0:
-         pmceString += "; c2s_max_compress_level=%d" % self.requestMaxCompressLevel
+         pmceString += "; client_max_compress_level=%d" % self.requestMaxCompressLevel
       return pmceString
 
 
@@ -252,8 +252,8 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageBzip2Response`.
       """
-      c2s_max_compress_level = 0
-      s2c_max_compress_level = 0
+      client_max_compress_level = 0
+      server_max_compress_level = 0
 
       for p in params:
 
@@ -262,31 +262,31 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
 
          val = params[p][0]
 
-         if p == 'c2s_max_compress_level':
+         if p == 'client_max_compress_level':
             if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               c2s_max_compress_level = int(val)
+               client_max_compress_level = int(val)
 
-         elif p == 's2c_max_compress_level':
+         elif p == 'server_max_compress_level':
             if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               s2c_max_compress_level = int(val)
+               server_max_compress_level = int(val)
 
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
 
-      response = Klass(c2s_max_compress_level,
-                       s2c_max_compress_level)
+      response = Klass(client_max_compress_level,
+                       server_max_compress_level)
       return response
 
 
    def __init__(self,
-                c2s_max_compress_level,
-                s2c_max_compress_level):
-      self.c2s_max_compress_level = c2s_max_compress_level
-      self.s2c_max_compress_level = s2c_max_compress_level
+                client_max_compress_level,
+                server_max_compress_level):
+      self.client_max_compress_level = client_max_compress_level
+      self.server_max_compress_level = server_max_compress_level
 
 
    def __json__(self):
@@ -296,8 +296,8 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
       :returns: object -- JSON serializable represention.
       """
       return {'extension': self.EXTENSION_NAME,
-              'c2s_max_compress_level': self.c2s_max_compress_level,
-              's2c_max_compress_level': self.s2c_max_compress_level}
+              'client_max_compress_level': self.client_max_compress_level,
+              'server_max_compress_level': self.server_max_compress_level}
 
 
    def __repr__(self):
@@ -306,7 +306,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageBzip2Response(c2s_max_compress_level = %s, s2c_max_compress_level = %s)" % (self.c2s_max_compress_level, self.s2c_max_compress_level)
+      return "PerMessageBzip2Response(client_max_compress_level = %s, server_max_compress_level = %s)" % (self.client_max_compress_level, self.server_max_compress_level)
 
 
 
@@ -324,7 +324,7 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
 
       :param response: The response being accepted.
       :type response: Instance of :class:`autobahn.compress.PerMessageBzip2Response`.
-      :param compressLevel: Override c2s compress level (this must be compatible with response).
+      :param compressLevel: Override client ("client-to-server direction") compress level (this must be compatible with response).
       :type compressLevel: int
       """
       if not isinstance(response, PerMessageBzip2Response):
@@ -336,7 +336,7 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
          if compressLevel not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
             raise Exception("invalid value %s for compressLevel - permissible values %s" % (compressLevel, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
-         if response.c2s_max_compress_level != 0 and compressLevel > response.c2s_max_compress_level:
+         if response.client_max_compress_level != 0 and compressLevel > response.client_max_compress_level:
             raise Exception("invalid value %s for compressLevel - server requested lower maximum value" % compressLevel)
 
       self.compressLevel = compressLevel
@@ -372,8 +372,8 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
    @classmethod
    def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   accept.response.s2c_max_compress_level,
-                   accept.compressLevel if accept.compressLevel is not None else accept.response.c2s_max_compress_level)
+                   accept.response.server_max_compress_level,
+                   accept.compressLevel if accept.compressLevel is not None else accept.response.client_max_compress_level)
       return pmce
 
 
@@ -387,34 +387,34 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 
    def __init__(self,
                 isServer,
-                s2c_max_compress_level,
-                c2s_max_compress_level):
+                server_max_compress_level,
+                client_max_compress_level):
       self._isServer = isServer
       self._compressor = None
       self._decompressor = None
 
-      self.s2c_max_compress_level = s2c_max_compress_level if s2c_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
-      self.c2s_max_compress_level = c2s_max_compress_level if c2s_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
+      self.server_max_compress_level = server_max_compress_level if server_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
+      self.client_max_compress_level = client_max_compress_level if client_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
 
 
    def __json__(self):
       return {'extension': self.EXTENSION_NAME,
               'isServer': self._isServer,
-              's2c_max_compress_level': self.s2c_max_compress_level,
-              'c2s_max_compress_level': self.c2s_max_compress_level}
+              'server_max_compress_level': self.server_max_compress_level,
+              'client_max_compress_level': self.client_max_compress_level}
 
 
    def __repr__(self):
-      return "PerMessageBzip2(isServer = %s, s2c_max_compress_level = %s, c2s_max_compress_level = %s)" % (self._isServer, self.s2c_max_compress_level, self.c2s_max_compress_level)
+      return "PerMessageBzip2(isServer = %s, server_max_compress_level = %s, client_max_compress_level = %s)" % (self._isServer, self.server_max_compress_level, self.client_max_compress_level)
 
 
    def startCompressMessage(self):
       if self._isServer:
          if self._compressor is None:
-            self._compressor = bz2.BZ2Compressor(self.s2c_max_compress_level)
+            self._compressor = bz2.BZ2Compressor(self.server_max_compress_level)
       else:
          if self._compressor is None:
-            self._compressor = bz2.BZ2Compressor(self.c2s_max_compress_level)
+            self._compressor = bz2.BZ2Compressor(self.client_max_compress_level)
 
 
    def compressMessageData(self, data):

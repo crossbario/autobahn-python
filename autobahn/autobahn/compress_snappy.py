@@ -67,7 +67,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       requestNoContextTakeover = False
 
       ##
-      ## verify/parse c2s parameters of permessage-snappy offer
+      ## verify/parse client ("client-to-server direction") parameters of permessage-snappy offer
       ##
       for p in params:
 
@@ -76,13 +76,13 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
          val = params[p][0]
 
-         if p == 'c2s_no_context_takeover':
+         if p == 'client_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
                acceptNoContextTakeover = True
 
-         elif p == 's2c_no_context_takeover':
+         elif p == 'server_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
@@ -126,9 +126,9 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       """
       pmceString = self.EXTENSION_NAME
       if self.acceptNoContextTakeover:
-         pmceString += "; c2s_no_context_takeover"
+         pmceString += "; client_no_context_takeover"
       if self.requestNoContextTakeover:
-         pmceString += "; s2c_no_context_takeover"
+         pmceString += "; server_no_context_takeover"
       return pmceString
 
 
@@ -170,7 +170,7 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
       :type offer: Instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
       :param requestNoContextTakeover: Iff true, server request "no context takeover" feature.
       :type requestNoContextTakeover: bool
-      :param noContextTakeover: Override s2c context takeover (this must be compatible with offer).
+      :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
       :type noContextTakeover: bool
       """
       if not isinstance(offer, PerMessageSnappyOffer):
@@ -204,9 +204,9 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
       """
       pmceString = self.EXTENSION_NAME
       if self.offer.requestNoContextTakeover:
-         pmceString += "; s2c_no_context_takeover"
+         pmceString += "; server_no_context_takeover"
       if self.requestNoContextTakeover:
-         pmceString += "; c2s_no_context_takeover"
+         pmceString += "; client_no_context_takeover"
       return pmceString
 
 
@@ -247,8 +247,8 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
       """
-      c2s_no_context_takeover = False
-      s2c_no_context_takeover = False
+      client_no_context_takeover = False
+      server_no_context_takeover = False
 
       for p in params:
 
@@ -257,31 +257,31 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
          val = params[p][0]
 
-         if p == 'c2s_no_context_takeover':
+         if p == 'client_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               c2s_no_context_takeover = True
+               client_no_context_takeover = True
 
-         elif p == 's2c_no_context_takeover':
+         elif p == 'server_no_context_takeover':
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               s2c_no_context_takeover = True
+               server_no_context_takeover = True
 
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
 
-      response = Klass(c2s_no_context_takeover,
-                       s2c_no_context_takeover)
+      response = Klass(client_no_context_takeover,
+                       server_no_context_takeover)
       return response
 
 
    def __init__(self,
-                c2s_no_context_takeover,
-                s2c_no_context_takeover):
-      self.c2s_no_context_takeover = c2s_no_context_takeover
-      self.s2c_no_context_takeover = s2c_no_context_takeover
+                client_no_context_takeover,
+                server_no_context_takeover):
+      self.client_no_context_takeover = client_no_context_takeover
+      self.server_no_context_takeover = server_no_context_takeover
 
 
    def __json__(self):
@@ -291,8 +291,8 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
       :returns: object -- JSON serializable represention.
       """
       return {'extension': self.EXTENSION_NAME,
-              'c2s_no_context_takeover': self.c2s_no_context_takeover,
-              's2c_no_context_takeover': self.s2c_no_context_takeover}
+              'client_no_context_takeover': self.client_no_context_takeover,
+              'server_no_context_takeover': self.server_no_context_takeover}
 
 
    def __repr__(self):
@@ -301,7 +301,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
       :returns: str -- Python string representation.
       """
-      return "PerMessageSnappyResponse(c2s_no_context_takeover = %s, s2c_no_context_takeover = %s)" % (self.c2s_no_context_takeover, self.s2c_no_context_takeover)
+      return "PerMessageSnappyResponse(client_no_context_takeover = %s, server_no_context_takeover = %s)" % (self.client_no_context_takeover, self.server_no_context_takeover)
 
 
 
@@ -319,7 +319,7 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
 
       :param response: The response being accepted.
       :type response: Instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
-      :param noContextTakeover: Override c2s context takeover (this must be compatible with response).
+      :param noContextTakeover: Override client ("client-to-server direction") context takeover (this must be compatible with response).
       :type noContextTakeover: bool
       """
       if not isinstance(response, PerMessageSnappyResponse):
@@ -331,7 +331,7 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
          if type(noContextTakeover) != bool:
             raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
 
-         if response.c2s_no_context_takeover and not noContextTakeover:
+         if response.client_no_context_takeover and not noContextTakeover:
             raise Exception("invalid value %s for noContextTakeover - server requested feature" % noContextTakeover)
 
       self.noContextTakeover = noContextTakeover
@@ -366,8 +366,8 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
    @classmethod
    def createFromResponseAccept(Klass, isServer, accept):
       pmce = Klass(isServer,
-                   accept.response.s2c_no_context_takeover,
-                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.c2s_no_context_takeover)
+                   accept.response.server_no_context_takeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
       return pmce
 
 
@@ -381,11 +381,11 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
    def __init__(self,
                 isServer,
-                s2c_no_context_takeover,
-                c2s_no_context_takeover):
+                server_no_context_takeover,
+                client_no_context_takeover):
       self._isServer = isServer
-      self.s2c_no_context_takeover = s2c_no_context_takeover
-      self.c2s_no_context_takeover = c2s_no_context_takeover
+      self.server_no_context_takeover = server_no_context_takeover
+      self.client_no_context_takeover = client_no_context_takeover
 
       self._compressor = None
       self._decompressor = None
@@ -393,20 +393,20 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
    def __json__(self):
       return {'extension': self.EXTENSION_NAME,
-              's2c_no_context_takeover': self.s2c_no_context_takeover,
-              'c2s_no_context_takeover': self.c2s_no_context_takeover}
+              'server_no_context_takeover': self.server_no_context_takeover,
+              'client_no_context_takeover': self.client_no_context_takeover}
 
 
    def __repr__(self):
-      return "PerMessageSnappy(isServer = %s, s2c_no_context_takeover = %s, c2s_no_context_takeover = %s)" % (self._isServer, self.s2c_no_context_takeover, self.c2s_no_context_takeover)
+      return "PerMessageSnappy(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover)
 
 
    def startCompressMessage(self):
       if self._isServer:
-         if self._compressor is None or self.s2c_no_context_takeover:
+         if self._compressor is None or self.server_no_context_takeover:
             self._compressor = snappy.StreamCompressor()
       else:
-         if self._compressor is None or self.c2s_no_context_takeover:
+         if self._compressor is None or self.client_no_context_takeover:
             self._compressor = snappy.StreamCompressor()
 
 
@@ -420,10 +420,10 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
 
    def startDecompressMessage(self):
       if self._isServer:
-         if self._decompressor is None or self.c2s_no_context_takeover:
+         if self._decompressor is None or self.client_no_context_takeover:
             self._decompressor = snappy.StreamDecompressor()
       else:
-         if self._decompressor is None or self.s2c_no_context_takeover:
+         if self._decompressor is None or self.server_no_context_takeover:
             self._decompressor = snappy.StreamDecompressor()
 
 

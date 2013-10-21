@@ -61,62 +61,59 @@ if __name__ == '__main__':
    ## Enable WebSocket extension "permessage-deflate". This is all you
    ## need to do (unless you know what you are doing .. see below)!
    ##
-   #factory.setProtocolOptions(perMessageDeflate = True)
-
-#   def accept0(protocol, connectionRequest, perMessageCompressionOffers):
    def accept0(offers):
       for offer in offers:
          if isinstance(offer, PerMessageDeflateOffer):
-            #offer.requestMaxWindowBits = 10
-            #offer.requestNoContextTakeover = True
-            #return PerMessageDeflateOfferAccept(offer, True, 10)
             return PerMessageDeflateOfferAccept(offer)
+
+   ## Enable experimental compression extensions "permessage-snappy"
+   ## and "permessage-bzip2"
+   ##
+   def accept1(offers):
+      for offer in offers:
+         if isinstance(offer, PerMessageSnappyOffer):
+            return PerMessageSnappyOfferAccept(offer)
 
          elif isinstance(offer, PerMessageBzip2Offer):
             return PerMessageBzip2OfferAccept(offer)
 
-         elif isinstance(offer, PerMessageSnappyOffer):
-            return PerMessageSnappyOfferAccept(offer)
+         elif isinstance(offer, PerMessageDeflateOffer):
+            return PerMessageDeflateOfferAccept(offer)
 
-   ## accept any configuration, request no specific features: this is the default!
-   def accept1(protocol, connectionRequest, perMessageCompressionOffer):
-      if isinstance(perMessageCompressionOffer, PerMessageDeflateOffer):
-         return PerMessageDeflateAccept()
+   ## permessage-deflate, server requests the client to do no
+   ## context takeover
+   ##
+   def accept2(offers):
+      for offer in offers:
+         if isinstance(offer, PerMessageDeflateOffer):
+            if offer.acceptNoContextTakeover:
+               return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover = True)
 
-      elif isinstance(perMessageCompressionOffer, PerMessageBzip2Offer):
-         return PerMessageBzip2Accept()
-      else:
-         return None
 
-   ## accept if client offer signals support for "no context takeover" and "max window size". if so, 
-   ## request "no context takeover" and "max window size" of 2^8. else decline offer.
-   def accept2(protocol, connectionRequest, perMessageCompressionOffer):
-      if perMessageCompressionOffer.acceptNoContextTakeover and perMessageCompressionOffer.acceptMaxWindowBits:
-         return PerMessageDeflateAccept(True, 8)
-      else:
-         return None
+   ## permessage-deflate, server requests the client to do no
+   ## context takeover, and does not context takeover also
+   ##
+   def accept3(offers):
+      for offer in offers:
+         if isinstance(offer, PerMessageDeflateOffer):
+            if offer.acceptNoContextTakeover:
+               return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover = True, noContextTakeover = True)
 
-   ## deny offer if client requested to limit sliding window size, else accept,
-   ## requesting no specific features.
-   def accept3(protocol, connectionRequest, perMessageCompressionOffer):
-      if perMessageCompressionOffer.requestMaxWindowBits != 0:
-         return None
-      else:
-         return PerMessageDeflateAccept()
+   ## permessage-deflate, server requests the client to do use
+   ## max window bits specified
+   ##
+   def accept4(offers):
+      for offer in offers:
+         if isinstance(offer, PerMessageDeflateOffer):
+            if offer.acceptMaxWindowBits:
+               return PerMessageDeflateOfferAccept(offer, requestMaxWindowBits = 8)
 
-   ## activate compression, but only if WS URL contains parameter "compressed=true", e.g.
-   ## ws://localhost:9001?compressed=true
-   def accept4(protocol, connectionRequest, perMessageCompressionOffer):
-      if connectionRequest.params.has_key('compressed') and connectionRequest.params['compressed'][-1] == 'true':
-         return PerMessageDeflateAccept()
-      else:
-         return None
 
-   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
+#   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept1)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept2)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept3)
-#   factory.setProtocolOptions(perMessageCompressionAccept = accept4)
+   factory.setProtocolOptions(perMessageCompressionAccept = accept4)
 
    listenWS(factory)
 
