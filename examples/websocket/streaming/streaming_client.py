@@ -46,7 +46,7 @@ class StreamingHashClientProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
       self.count = 0
-      self.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
+      self.beginMessage(binary = True)
       # 2^63 - This is the maximum imposed by the WS protocol
       self.beginMessageFrame(0x7FFFFFFFFFFFFFFF)
       self.sendOneBatch()
