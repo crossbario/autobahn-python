@@ -47,7 +47,7 @@ class RandomByteStreamProducer:
       self.paused = False
 
       if not self.started:
-         self.proto.beginMessage(opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY)
+         self.proto.beginMessage(binary = True)
          self.proto.beginMessageFrame(FRAME_SIZE)
          self.started = True
 
