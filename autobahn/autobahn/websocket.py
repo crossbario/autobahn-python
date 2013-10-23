@@ -174,7 +174,7 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
       if factory.isSecure:
          raise Exception("WSS over explicit proxies not implemented")
       else:
-         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)         
+         conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)
    else:
       if factory.isSecure:
          if contextFactory is None:
@@ -1785,7 +1785,7 @@ class WebSocketProtocol(protocol.Protocol):
                ##
                if self._perMessageCompress is not None and frame_rsv == 4 and self.inside_message:
                   if self.protocolViolation("received continution data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
-                     return False                  
+                     return False
 
             ## compute complete header length
             ##
@@ -1890,12 +1890,18 @@ class WebSocketProtocol(protocol.Protocol):
             ## unmask payload
             ##
             payload = self.current_frame_masker.process(data)
-
-            ## process frame data
+         else:
+            ## we also process empty payloads, since we need to fire
+            ## our hooks (at least for streaming processing, this is
+            ## necessary for correct protocol state transitioning)
             ##
-            fr = self.onFrameData(payload)
-            if fr == False:
-               return False
+            payload = ""
+
+         ## process frame data
+         ##
+         fr = self.onFrameData(payload)
+         if fr == False:
+            return False
 
          ## fire frame end handler when frame payload is complete
          ##
@@ -2365,7 +2371,7 @@ class WebSocketProtocol(protocol.Protocol):
       ## check if sending state is valid for this method
       ##
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
-         raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state")
+         raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state [%d]" % self.send_state)
 
       if (not type(length) in [int, long]) or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
          raise Exception("invalid value for message frame length")
@@ -2520,8 +2526,8 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## check if sending state is valid for this method
       ##
-      if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
-         raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
+      #if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
+      #   raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
 
       if self.websocket_version == 0:
          self.sendData('\x00')
@@ -2531,7 +2537,7 @@ class WebSocketProtocol(protocol.Protocol):
             self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
          else:
             ## send continuation frame with empty payload and FIN set to end message
-            payload = ""   
+            payload = ""
          self.sendFrame(opcode = 0, payload = payload, fin = True)
 
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
@@ -3293,7 +3299,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             PMCE = PERMESSAGE_COMPRESSION_EXTENSION[accept.EXTENSION_NAME]
             self._perMessageCompress = PMCE['PMCE'].createFromOfferAccept(self.factory.isServer, accept)
             self.websocket_extensions_in_use.append(self._perMessageCompress)
-            extensionResponse.append(accept.getExtensionString())            
+            extensionResponse.append(accept.getExtensionString())
          else:
             if self.debug:
                log.msg("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
@@ -4159,7 +4165,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          if self.http_headers.has_key("sec-websocket-extensions"):
 
             if self.version == 0:
-               return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")         
+               return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
             else:
                if http_headers_cnt["sec-websocket-extensions"] > 1:
                   return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
