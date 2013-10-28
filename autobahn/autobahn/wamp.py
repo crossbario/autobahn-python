@@ -549,7 +549,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
       """
       for p in connectionRequest.protocols:
          if p in self.factory.protocols:
-            return p
+            return (p, {}) # return (protocol, headers)
       raise HttpException(HTTP_STATUS_CODE_BAD_REQUEST[0], "this server only speaks WAMP")
 
 
