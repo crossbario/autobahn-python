@@ -2,19 +2,17 @@
 
 This example demonstrates how to scale-up an AutobahnPython based WebSocket echo server on a multicore machine.
 
-## Running
+## Usage
 
-For system setup, please see the instructions [here](https://github.com/oberstet/scratchbox/blob/master/python/twisted/sharedsocket/README.md).
-
-Then run the server:
+Run the server with 4 workers:
 
 	pypy server.py --wsuri ws://localhost:9000 --workers 4
 
-Now run your WebSocket echo load client against the server.
+In general, using more workers than CPU cores avaiable will not improve performance, likely to the contrary.
 
-## Usage
+Detailed usage:
 
-	$ python server.py --help
+	$ pypy server.py --help
 	usage: server.py [-h] [--wsuri WSURI] [--port PORT] [--workers WORKERS]
 	                 [--backlog BACKLOG] [--silence] [--debug]
 	                 [--interval INTERVAL] [--fd FD]
@@ -37,3 +35,10 @@ Now run your WebSocket echo load client against the server.
 	  --fd FD              If given, this is a worker which will use provided FD
 	                       and all other options are ignored.
 
+## Load Testing
+
+You will need some serious WebSocket load driver to get this thingy sweating. I recommend [wsperf](https://github.com/zaphoyd/wsperf) for various reasons. `wsperf` is a high-performance, C++/ASIO, multi-threaded based load driver. Caveat: currently, even when using `wsperf`, the bottleneck can still be `wsperf` when running against Autobahn/PyPy. You should give `wsperf` *more* CPU cores than Autobahn for this reason.
+
+You should also test on non-virtualized, real-hardware and you will also need to do OS / system level tuning, please see the instructions [here](https://github.com/oberstet/scratchbox/blob/master/python/twisted/sharedsocket/README.md).
+
+For results, please see [here](https://github.com/oberstet/wsperf_results).
