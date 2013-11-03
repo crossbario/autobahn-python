@@ -128,6 +128,9 @@ def master(options):
    ## .. but immediately stop reading: we only want to accept on workers, not master
    port.stopReading()
 
+   env = os.environ.copy()
+   env['PYPYLOG']="jit-log-opt,jit-backend:pypy.log"
+
    ## fire off background workers
    ##
    for i in range(options.workers):
@@ -140,7 +143,7 @@ def master(options):
       reactor.spawnProcess(
          None, executable, args,
          childFDs = {0: 0, 1: 1, 2: 2, port.fileno(): port.fileno()},
-         env = environ)
+         env = env)
 
    reactor.run()
 
