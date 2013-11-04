@@ -42,3 +42,10 @@ You will need some serious WebSocket load driver to get this thingy sweating. I 
 You should also test on non-virtualized, real-hardware and you will also need to do OS / system level tuning, please see the instructions [here](https://github.com/oberstet/scratchbox/blob/master/python/twisted/sharedsocket/README.md).
 
 For results, please see [here](https://github.com/oberstet/wsperf_results).
+
+## Profiler
+
+sudo apt-get install libpopt-dev
+sudo apt-get install binutils-dev 
+sudo apt-get install qt3-dev-tools
+sudo adduser oprofile

@@ -235,6 +235,13 @@ class TrafficStats:
       self.incomingWebSocketFrames = 0
       self.incomingWebSocketMessages = 0
 
+      ## the following track any traffic before the WebSocket connection
+      ## reaches STATE_OPEN (this includes WebSocket opening handshake
+      ## proxy handling and such)
+      ##
+      self.preopenOutgoingOctetsWireLevel = 0
+      self.preopenIncomingOctetsWireLevel = 0
+
 
    def __json__(self):
 
@@ -267,6 +274,7 @@ class TrafficStats:
               'outgoingWebSocketOverhead': outgoingWebSocketOverhead,
               'outgoingWebSocketFrames': self.outgoingWebSocketFrames,
               'outgoingWebSocketMessages': self.outgoingWebSocketMessages,
+              'preopenOutgoingOctetsWireLevel': self.preopenOutgoingOctetsWireLevel,
 
               'incomingOctetsWireLevel': self.incomingOctetsWireLevel,
               'incomingOctetsWebSocketLevel': self.incomingOctetsWebSocketLevel,
@@ -274,7 +282,8 @@ class TrafficStats:
               'incomingCompressionRatio': incomingCompressionRatio,
               'incomingWebSocketOverhead': incomingWebSocketOverhead,
               'incomingWebSocketFrames': self.incomingWebSocketFrames,
-              'incomingWebSocketMessages': self.incomingWebSocketMessages}
+              'incomingWebSocketMessages': self.incomingWebSocketMessages,
+              'preopenIncomingOctetsWireLevel': self.preopenIncomingOctetsWireLevel}
 
 
    def __str__(self):
@@ -1414,6 +1423,9 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if self.state == WebSocketProtocol.STATE_OPEN:
          self.trafficStats.incomingOctetsWireLevel += len(data)
+      elif self.state == WebSocketProtocol.STATE_CONNECTING or self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
+         self.trafficStats.preopenIncomingOctetsWireLevel += len(data)
+
       if self.logOctets:
          self.logRxOctets(data)
       self.data += data
@@ -1519,10 +1531,16 @@ class WebSocketProtocol(protocol.Protocol):
       """
       if len(self.send_queue) > 0:
          e = self.send_queue.popleft()
+         
          if self.state != WebSocketProtocol.STATE_CLOSED:
+
             self.transport.write(e[0])
+
             if self.state == WebSocketProtocol.STATE_OPEN:
                self.trafficStats.outgoingOctetsWireLevel += len(e[0])
+            elif self.state == WebSocketProtocol.STATE_CONNECTING or self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
+               self.trafficStats.preopenOutgoingOctetsWireLevel += len(e[0])
+
             if self.logOctets:
                self.logTxOctets(e[0], e[1])
          else:
@@ -1567,8 +1585,12 @@ class WebSocketProtocol(protocol.Protocol):
             self._trigger()
          else:
             self.transport.write(data)
+
             if self.state == WebSocketProtocol.STATE_OPEN:
                self.trafficStats.outgoingOctetsWireLevel += len(data)
+            elif self.state == WebSocketProtocol.STATE_CONNECTING or self.state == WebSocketProtocol.STATE_PROXY_CONNECTING:
+               self.trafficStats.preopenOutgoingOctetsWireLevel += len(data)
+
             if self.logOctets:
                self.logTxOctets(data, False)
 

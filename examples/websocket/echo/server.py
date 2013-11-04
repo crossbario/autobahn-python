@@ -36,6 +36,12 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
+   import psutil, os
+   p = psutil.Process(os.getpid())
+   print "affinity [before]", p.get_cpu_affinity()
+   p.set_cpu_affinity([0])
+   print "affinity [after]", p.get_cpu_affinity()
+
    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
       log.startLogging(sys.stdout)
       debug = True
