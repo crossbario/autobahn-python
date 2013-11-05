@@ -30,13 +30,43 @@
 __all__ = ("Utf8Validator",)
 
 
+## DFA transitions
+UTF8VALIDATOR_DFA = (
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 00..1f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 20..3f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 40..5f
+  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 60..7f
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9, # 80..9f
+  7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7, # a0..bf
+  8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, # c0..df
+  0xa,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x4,0x3,0x3, # e0..ef
+  0xb,0x6,0x6,0x6,0x5,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8, # f0..ff
+  0x0,0x1,0x2,0x3,0x5,0x8,0x7,0x1,0x1,0x1,0x4,0x6,0x1,0x1,0x1,0x1, # s0..s0
+  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, # s1..s2
+  1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, # s3..s4
+  1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, # s5..s6
+  1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, # s7..s8
+)
+
+## convert DFA table to string (performance)
+UTF8VALIDATOR_DFA_S = ''.join([chr(c) for c in UTF8VALIDATOR_DFA])
+
+UTF8_ACCEPT = 0
+UTF8_REJECT = 1
+
+
 ## use Cython implementation of UTF8 validator if available
 ##
 try:
    from wsaccel.utf8validator import Utf8Validator
 
 except:
-   ## fallback to pure Python implementation
+   ##
+   ## Fallback to pure Python implementation - also for PyPy.
+   ##
+   ## Do NOT touch this code unless you know what you are doing!
+   ## https://github.com/oberstet/scratchbox/tree/master/python/utf8
+   ##
 
    class Utf8Validator:
       """
@@ -45,27 +75,6 @@ except:
       Implements the algorithm "Flexible and Economical UTF-8 Decoder" by
       Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
       """
-
-      ## DFA transitions
-      UTF8VALIDATOR_DFA = [
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 00..1f
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 20..3f
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 40..5f
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, # 60..7f
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9, # 80..9f
-        7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7, # a0..bf
-        8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2, # c0..df
-        0xa,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x3,0x4,0x3,0x3, # e0..ef
-        0xb,0x6,0x6,0x6,0x5,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8,0x8, # f0..ff
-        0x0,0x1,0x2,0x3,0x5,0x8,0x7,0x1,0x1,0x1,0x4,0x6,0x1,0x1,0x1,0x1, # s0..s0
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,1, # s1..s2
-        1,2,1,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1, # s3..s4
-        1,2,1,1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,3,1,3,1,1,1,1,1,1, # s5..s6
-        1,3,1,1,1,1,1,3,1,3,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1, # s7..s8
-      ]
-
-      UTF8_ACCEPT = 0
-      UTF8_REJECT = 1
 
       def __init__(self):
          self.reset()
@@ -81,19 +90,19 @@ except:
 
          Returns some other positive integer when more octets need to be eaten.
          """
-         type = Utf8Validator.UTF8VALIDATOR_DFA[b]
-         if self.state != Utf8Validator.UTF8_ACCEPT:
+         tt = ord(UTF8VALIDATOR_DFA_S[b])
+         if self.state != UTF8_ACCEPT:
             self.codepoint = (b & 0x3f) | (self.codepoint << 6)
          else:
-            self.codepoint = (0xff >> type) & b
-         self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + self.state * 16 + type]
+            self.codepoint = (0xff >> tt) & b
+         self.state = ord(UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt])
          return self.state
 
       def reset(self):
          """
          Reset validator to start new incremental UTF-8 decode/validation.
          """
-         self.state = Utf8Validator.UTF8_ACCEPT
+         self.state = UTF8_ACCEPT # the empty string is valid UTF8
          self.codepoint = 0
          self.i = 0
 
@@ -110,12 +119,21 @@ except:
          When valid? == True, currentIndex will be len(ba) and totalIndex the
          total amount of consumed bytes.
          """
+         ##
+         ## The code here is written for optimal JITting in PyPy, not for best
+         ## readability by your grandma or particular elegance. Do NOT touch!
+         ##
          l = len(ba)
-         for i in xrange(l):
+         i = 0
+         state = self.state
+         while i < l:
             ## optimized version of decode(), since we are not interested in actual code points
-            self.state = Utf8Validator.UTF8VALIDATOR_DFA[256 + (self.state << 4) + Utf8Validator.UTF8VALIDATOR_DFA[ord(ba[i])]]
-            if self.state == Utf8Validator.UTF8_REJECT:
+            state = ord(UTF8VALIDATOR_DFA_S[256 + (state << 4) + ord(UTF8VALIDATOR_DFA_S[ord(ba[i])])])
+            if state == UTF8_REJECT:
+               self.state = state
                self.i += i
                return False, False, i, self.i
+            i += 1
+         self.state = state
          self.i += l
-         return True, self.state == Utf8Validator.UTF8_ACCEPT, l, self.i
+         return True, state == UTF8_ACCEPT, l, self.i
