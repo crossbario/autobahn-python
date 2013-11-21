@@ -37,7 +37,6 @@ import StringIO
 import hashlib, hmac, binascii, random
 
 from twisted.python import log
-from twisted.internet import reactor
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
@@ -1086,7 +1085,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
       if not done:
          ## if there are receivers left, redo
-         reactor.callLater(0, self._sendEvents, preparedMsg, recvs, delivered, requested, d)
+         self.reactor.callLater(0, self._sendEvents, preparedMsg, recvs, delivered, requested, d)
       else:
          ## else fire final result
          d.callback((delivered, requested))
@@ -1777,7 +1776,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
       ## client authentication timeout
       ##
       if self.clientAuthTimeout > 0:
-         self._clientAuthTimeoutCall = reactor.callLater(self.clientAuthTimeout, self.onAuthTimeout)
+         self._clientAuthTimeoutCall = self.factory.reactor.callLater(self.clientAuthTimeout, self.onAuthTimeout)
 
 
    @exportRpc("authreq")
@@ -1911,7 +1910,7 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
             ##
             d.errback(Exception(self.shrink(WampProtocol.URI_WAMP_ERROR + "invalid-signature"), "signature for authentication request is invalid"))
          failDelaySecs = random.expovariate(1.0 / 0.8) # mean = 0.8 secs
-         reactor.callLater(failDelaySecs, fail)
+         self.factory.reactor.callLater(failDelaySecs, fail)
          return d
 
       ## at this point, the client has successfully authenticated!

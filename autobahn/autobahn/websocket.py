@@ -58,7 +58,7 @@ import json
 from pprint import pformat
 from collections import deque
 
-from twisted.internet import reactor, protocol
+from twisted.internet import protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
@@ -170,6 +170,12 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
 
    :returns: obj -- An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
    """
+   ## lazy import to avoid reactor install upon module import
+   if hasattr(factory, 'reactor'):
+      reactor = factory.reactor
+   else:
+      from twisted.internet import reactor
+
    if factory.proxy is not None:
       if factory.isSecure:
          raise Exception("WSS over explicit proxies not implemented")
@@ -204,6 +210,12 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
    :returns: obj -- An object that implements `twisted.interface.IListeningPort <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IListeningPort.html>`_.
    """
+   ## lazy import to avoid reactor install upon module import
+   if hasattr(factory, 'reactor'):
+      reactor = factory.reactor
+   else:
+      from twisted.internet import reactor
+
    if factory.isSecure:
       if contextFactory is None:
          raise Exception("Secure WebSocket listen requested, but no SSL context factory given")
@@ -988,7 +1000,7 @@ class WebSocketProtocol(protocol.Protocol):
             ## When we are a client, the server should drop the TCP
             ## If that doesn't happen, we do. And that will set wasClean = False.
             if self.serverConnectionDropTimeout > 0:
-               self.serverConnectionDropTimeoutCall = reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
+               self.serverConnectionDropTimeoutCall = self.factory.reactor.callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
 
       elif self.state == WebSocketProtocol.STATE_OPEN:
          ## The peer initiates a closing handshake, so we reply
@@ -1333,7 +1345,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       # set opening handshake timeout handler
       if self.openHandshakeTimeout > 0:
-         self.openHandshakeTimeoutCall = reactor.callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
+         self.openHandshakeTimeoutCall = self.factory.reactor.callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
 
    def connectionLost(self, reason):
@@ -1551,7 +1563,7 @@ class WebSocketProtocol(protocol.Protocol):
          # can get on the wire. Note: this is a "heuristic",
          # since there is no (easy) way to really force out
          # octets from the OS network stack to wire.
-         reactor.callLater(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
+         self.factory.reactor.callLater(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
       else:
          self.triggered = False
 
@@ -2293,7 +2305,7 @@ class WebSocketProtocol(protocol.Protocol):
 
          ## drop connection when timeout on receiving close handshake reply
          if self.closedByMe and self.closeHandshakeTimeout > 0:
-            self.closeHandshakeTimeoutCall = reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
+            self.closeHandshakeTimeoutCall = self.factory.reactor.callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
 
       else:
          raise Exception("logic error")
@@ -3572,7 +3584,8 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
                 headers = {},
                 externalPort = None,
                 debug = False,
-                debugCodePaths = False):
+                debugCodePaths = False,
+                reactor = None):
       """
       Create instance of WebSocket server factory.
 
@@ -3595,6 +3608,11 @@ class WebSocketServerFactory(protocol.ServerFactory, WebSocketFactory):
       :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
       """
+      ## lazy import to avoid reactor install upon module import
+      if reactor is None:
+         from twisted.internet import reactor
+      self.reactor = reactor
+
       self.debug = debug
       self.debugCodePaths = debugCodePaths
 
@@ -4336,7 +4354,8 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
                 headers = {},
                 proxy = None,
                 debug = False,
-                debugCodePaths = False):
+                debugCodePaths = False,
+                reactor = None):
       """
       Create instance of WebSocket client factory.
 
@@ -4361,6 +4380,11 @@ class WebSocketClientFactory(protocol.ClientFactory, WebSocketFactory):
       :param debugCodePaths: Debug code paths mode (default: False).
       :type debugCodePaths: bool
       """
+      ## lazy import to avoid reactor install upon module import
+      if reactor is None:
+         from twisted.internet import reactor
+      self.reactor = reactor
+
       self.debug = debug
       self.debugCodePaths = debugCodePaths
 
