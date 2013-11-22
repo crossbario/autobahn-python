@@ -1,5 +1,13 @@
 # AutobahnPython: Changelog
 
+## v0.6.5
+ * Twisted reactor is no longer imported on module level (but lazy)
+ * optimize pure Python UTF8 validator (10-20% speedup on PyPy)
+ * opening handshake traffic stats (per-open stats)
+ * add multicore echo example
+ * fixes with examples of streaming mode
+ * fix zero payload in streaming mode
+
 ## v0.6.4
  * support latest `permessage-deflate` [draft](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-15)
  * allow controlling memory level for zlib / `permessage-deflate`
