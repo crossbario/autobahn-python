@@ -27,6 +27,10 @@ import utf8validator
 import xormasker
 import compress
 import websocket
-import resource
+
+## disable import, since it leads to reactor import
+## https://twistedmatrix.com/trac/ticket/6849
+#import resource
+
 import prefixmap
 import wamp

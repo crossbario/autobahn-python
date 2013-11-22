@@ -23,19 +23,22 @@ __all__ = ("WebSocketResource",
 
 from zope.interface import implements
 
-from twisted.python import log
 from twisted.protocols.policies import ProtocolWrapper
 try:
    from twisted.web.error import NoResource
 except:
    ## starting from Twisted 12.2, NoResource has moved
    from twisted.web.resource import NoResource  
-from twisted.web.error import UnsupportedMethod
 from twisted.web.resource import IResource, Resource
-from twisted.web.server import NOT_DONE_YET
+
+## The following imports reactor at module level
+## See: https://twistedmatrix.com/trac/ticket/6849
 from twisted.web.http import HTTPChannel
 
-from websocket import WebSocketServerFactory, WebSocketServerProtocol
+## .. and this also, since it imports t.w.http
+##
+from twisted.web.server import NOT_DONE_YET
+
 
 
 class HTTPChannelHixie76Aware(HTTPChannel):
