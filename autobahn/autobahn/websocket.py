@@ -1224,12 +1224,6 @@ class WebSocketProtocol(protocol.Protocol):
             self.trackedTimings = None
 
 
-   def doTrack(self, msg):
-      if not hasattr(self, 'trackTimings') or not self.trackTimings:
-         return
-      self.trackedTimings.track(msg)
-
-
    def connectionMade(self):
       """
       This is called by Twisted framework when a new TCP connection has been established

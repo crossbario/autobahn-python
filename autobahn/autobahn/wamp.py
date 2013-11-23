@@ -2065,7 +2065,6 @@ class CallHandler(Handler):
    A handler for incoming RPC calls.
    """
 
-
    typeid = WampProtocol.MESSAGE_TYPEID_CALL
 
 
@@ -2100,8 +2099,10 @@ class CallHandler(Handler):
       Perform the RPC call and attach callbacks to its deferred object.
       """
       call = self._onBeforeCall()
+
       ## execute incoming RPC
       d = maybeDeferred(self._callProcedure, call)
+
       ## register callback and errback with extra argument call
       d.addCallbacks(self._onAfterCallSuccess,
                      self._onAfterCallError,
@@ -2113,8 +2114,7 @@ class CallHandler(Handler):
       """
       Create call object to move around call data
       """
-      uri, args = self.proto.onBeforeCall(self.callid, self.uri, self.args,
-                                          bool(self.proto.procForUri(self.uri)))
+      uri, args = self.proto.onBeforeCall(self.callid, self.uri, self.args, bool(self.proto.procForUri(self.uri)))
 
       call = Call(self.proto, self.callid, uri, args)
       self.maybeTrackTimings(call, "onBeforeCall")
@@ -2166,6 +2166,7 @@ class CallHandler(Handler):
       """
       Execute custom success handler and send call result.
       """
+      ## track timing and fire user callback
       self.maybeTrackTimings(call, "onAfterCallSuccess")
       call.result = self.proto.onAfterCallSuccess(result, call)
 
@@ -2177,8 +2178,8 @@ class CallHandler(Handler):
       """
       Execute custom error handler and send call error.
       """
+      ## track timing and fire user callback
       self.maybeTrackTimings(call, "onAfterCallError")
-      ## fire user callback
       call.error = self.proto.onAfterCallError(error, call)
 
       ## send out WAMP message
@@ -2195,10 +2196,11 @@ class CallHandler(Handler):
       except:
          raise Exception("call result not JSON serializable")
       else:
+         ## now actually send WAMP message
          self.proto.sendMessage(rmsg)
-         ### XXX self.maybeTrackTimings(call, "onAfterSendCallSuccess")
-         if self.proto.trackTimings:
-            self.proto.trackedTimings.track("onAfterSendCallSuccess")
+
+         ## track timing and fire user callback
+         self.maybeTrackTimings(call, "onAfterSendCallSuccess")
          self.proto.onAfterSendCallSuccess(rmsg, call)
 
 
@@ -2215,9 +2217,17 @@ class CallHandler(Handler):
          rmsg = self._handleProcessingError(call, e)
       finally:
          if rmsg:
-            self._sendMessageAndCleanUp(rmsg, call, killsession)
+            ## now actually send WAMP message
+            self.proto.sendMessage(rmsg)
+
+            ## track timing and fire user callback
+            self.maybeTrackTimings(call, "onAfterSendCallError")
+            self.proto.onAfterSendCallError(rmsg, call)
+
+            if killsession:
+               self.proto.sendClose(3000, "killing WAMP session upon request by application exception")
          else:
-            raise Exception("fatal: internal error in CallHandler._handleProcessingError")
+            raise Exception("fatal: internal error in CallHandler._sendCallError")
 
 
    def _extractErrorInfo(self, call):
@@ -2343,17 +2353,6 @@ class CallHandler(Handler):
       result = self.proto.serializeMessage(msg)
       return result
 
-
-   def _sendMessageAndCleanUp(self, rmsg, call, killsession):
-      self.proto.sendMessage(rmsg)
-      ### XXX maybeTrackTimings("onAfterSendCallError")
-      if self.proto.trackTimings:
-         self.proto.doTrack("onAfterSendCallError")
-      self.proto.onAfterSendCallError(rmsg, call)
-
-      if killsession:
-         self.proto.sendClose(3000,
-            "killing WAMP session upon request by application exception")
 
 
 
