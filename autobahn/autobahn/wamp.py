@@ -905,10 +905,23 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
    Twisted protocol used by default for WAMP servers.
    """
 
-   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False, externalPort = None):
+   def __init__(self,
+                url,
+                debug = False,
+                debugCodePaths = False,
+                debugWamp = False,
+                debugApp = False,
+                externalPort = None,
+                reactor = None):
       self.debugWamp = debugWamp
       self.debugApp = debugApp
-      WebSocketServerFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths, externalPort = externalPort)
+      WebSocketServerFactory.__init__(self,
+                                      url,
+                                      protocols = ["wamp"],
+                                      debug = debug,
+                                      debugCodePaths = debugCodePaths,
+                                      externalPort = externalPort,
+                                      reactor = reactor)
       WampFactory.__init__(self)
 
 
@@ -1497,10 +1510,21 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
 
    protocol = WampClientProtocol
 
-   def __init__(self, url, debug = False, debugCodePaths = False, debugWamp = False, debugApp = False):
+   def __init__(self,
+                url,
+                debug = False,
+                debugCodePaths = False,
+                debugWamp = False,
+                debugApp = False,
+                reactor = None):
       self.debugWamp = debugWamp
       self.debugApp = debugApp
-      WebSocketClientFactory.__init__(self, url, protocols = ["wamp"], debug = debug, debugCodePaths = debugCodePaths)
+      WebSocketClientFactory.__init__(self,
+                                      url,
+                                      protocols = ["wamp"],
+                                      debug = debug,
+                                      debugCodePaths = debugCodePaths,
+                                      reactor = reactor)
       WampFactory.__init__(self)
 
 
