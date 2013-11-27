@@ -1376,8 +1376,9 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
 
    def prefix(self, prefix, uri):
       """
-      Establishes a prefix to be used in CURIEs instead of URIs having that
-      prefix for both client-to-server and server-to-client messages.
+      Establishes a prefix to be used in `CURIEs <http://en.wikipedia.org/wiki/CURIE>`_
+      instead of URIs having that prefix for both client-to-server and
+      server-to-client messages.
 
       :param prefix: Prefix to be used in CURIEs.
       :type prefix: str
