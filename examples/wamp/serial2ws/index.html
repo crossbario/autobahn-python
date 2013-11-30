@@ -2,13 +2,14 @@
    <head>
       <title>Autobahn Serial2Ws</title>
 
-      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+      <script src="autobahn.min.js"></script>
       <script src="smoothie.js"></script>
 
       <script>
 
          var sess = null;
          var wsuri = "ws://" + window.location.hostname + ":9000";
+
          var retryCount = 0;
          var retryDelay = 2;
 
@@ -59,35 +60,6 @@
             eventCnt = 0;
          }
 
-         function connect() {
-
-            statusline = document.getElementById('statusline');
-
-            sess = new ab.Session(wsuri,
-               function() {
-
-                  statusline.innerHTML = "Connected to " + wsuri;
-                  retryCount = 0;
-
-                  sess.prefix("event", "http://example.com/mcu#");
-                  sess.subscribe("event:analog-value", onAnalogValue);
-
-                  sess.prefix("rpc", "http://example.com/mcu-control#");
-
-                  eventCnt = 0;
-
-                  window.setInterval(updateEventCnt, eventCntUpdateInterval * 1000);
-               },
-               function() {
-                  console.log(retryCount);
-                  retryCount = retryCount + 1;
-                  statusline.innerHTML = "Connection lost. Reconnecting (" + retryCount + ") in " + retryDelay + " secs ..";
-                  window.setTimeout(connect, retryDelay * 1000);
-               }
-            );
-         }
-
-
          window.onload = function ()
          {
             analog0 = document.getElementById('analog0');
@@ -109,12 +81,46 @@
 
             smoothie.streamTo(document.getElementById("mycanvas"));
 
-            connect();
+            // turn on WAMP debug output
+            // ab.debug(true, false, false);
+
+            // use jQuery deferreds
+            //ab.Deferred = $.Deferred;
+
+            // connect to WAMP server
+            ab.connect(wsuri,
+
+               // WAMP session was established
+               function (session) {
+
+                  sess = session;
+                  console.log("Connected to " + wsuri);
+
+                  statusline.innerHTML = "Connected to " + wsuri;
+                  retryCount = 0;
+
+                  sess.prefix("event", "http://example.com/mcu#");
+                  sess.subscribe("event:analog-value", onAnalogValue);
+
+                  sess.prefix("rpc", "http://example.com/mcu-control#");
+
+                  eventCnt = 0;
+
+                  window.setInterval(updateEventCnt, eventCntUpdateInterval * 1000);
+               },
+
+               // WAMP session is gone
+               function (code, reason) {
+
+                  sess = null;
+                  console.log(reason);
+               }
+            );
          };
      </script>
    </head>
    <body>
-      <h1>Autobahn WebSockets: MCU to WS Gateway Demo</h1>
+      <h1>Autobahn WebSocket: MCU to WS Gateway Demo</h1>
 
       <h2>Control LED</h2>
       <button onclick="controlLed(false)">LED Off</button>

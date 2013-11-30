@@ -41,9 +41,16 @@ from autobahn.wamp import WampServerFactory, WampServerProtocol, exportRpc
 
 
 class Serial2WsOptions(usage.Options):
+   
+   optFlags = [
+      ['debugserial', 'd', 'Turn on Serial data logging.'],
+      ['debugwamp', 't', 'Turn on WAMP traffic logging.'],
+      ['debugws', 'r', 'Turn on WebSocket traffic logging.']
+   ]
+
    optParameters = [
       ['baudrate', 'b', 9600, 'Serial baudrate'],
-      ['port', 'p', 3, 'Serial port to use'],
+      ['port', 'p', 3, 'Serial port to use (e.g. 3 for a COM port on Windows, /dev/ttyATH0 for Arduino Yun, /dev/ttyACM0 for Serial-over-USB on RaspberryPi'],
       ['webport', 'w', 8080, 'Web port to use for embedded Web server'],
       ['wsurl', 's', "ws://localhost:9000", 'WebSocket port to use for embedded WebSocket server']
    ]
@@ -64,11 +71,12 @@ class McuProtocol(LineReceiver):
    @exportRpc("control-led")
    def controlLed(self, status):
       if status:
-         print "turn on LED"
-         self.transport.write('1')
+         payload = '1'
       else:
-         print "turn off LED"
-         self.transport.write('0')
+         payload = '0'
+      if self.wsMcuFactory.debugSerial:
+         print "Serial TX:", payload
+      self.transport.write(payload)
 
 
    def connectionMade(self):
@@ -76,6 +84,8 @@ class McuProtocol(LineReceiver):
 
 
    def lineReceived(self, line):
+      if self.wsMcuFactory.debugSerial:
+         print "Serial RX:", line
       try:
          ## parse data received from MCU
          ##
@@ -89,7 +99,6 @@ class McuProtocol(LineReceiver):
          ##
          self.wsMcuFactory.dispatch("http://example.com/mcu#analog-value", evt)
 
-         log.msg("Analog value: %s" % str(evt));
       except ValueError:
          log.err('Unable to parse value %s' % line)
 
@@ -114,8 +123,9 @@ class WsMcuFactory(WampServerFactory):
 
    protocol = WsMcuProtocol
 
-   def __init__(self, url):
-      WampServerFactory.__init__(self, url)
+   def __init__(self, url, debugSerial = False, debugWs = False, debugWamp = False):
+      WampServerFactory.__init__(self, url, debug = debugWs, debugWamp = debugWamp)
+      self.debugSerial = debugSerial
       self.mcuProtocol = McuProtocol(self)
 
 
@@ -131,8 +141,11 @@ if __name__ == '__main__':
       print 'Try %s --help for usage details' % sys.argv[0]
       sys.exit(1)
 
+   debugWs = bool(o.opts['debugws'])
+   debugWamp = bool(o.opts['debugwamp'])
+   debugSerial = bool(o.opts['debugserial'])
    baudrate = int(o.opts['baudrate'])
-   port = int(o.opts['port'])
+   port = o.opts['port']
    webport = int(o.opts['webport'])
    wsurl = o.opts['wsurl']
 
@@ -142,12 +155,12 @@ if __name__ == '__main__':
 
    ## create Serial2Ws gateway factory
    ##
-   wsMcuFactory = WsMcuFactory(wsurl)
+   wsMcuFactory = WsMcuFactory(wsurl, debugSerial = debugSerial, debugWs = debugWs, debugWamp = debugWamp)
    listenWS(wsMcuFactory)
 
    ## create serial port and serial port protocol
    ##
-   log.msg('About to open serial port %d [%d baud] ..' % (port, baudrate))
+   log.msg('About to open serial port %s [%d baud] ..' % (port, baudrate))
    serialPort = SerialPort(wsMcuFactory.mcuProtocol, port, reactor, baudrate = baudrate)
 
    ## create embedded web server for static files
