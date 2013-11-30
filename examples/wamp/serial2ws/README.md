@@ -112,3 +112,5 @@ COM port, baudrate etc. Simply do a
     python serial2ws.py --help
 
 to get information on those.
+
+	/opt/python/bin/python serial2ws.py -p /dev/ttyATH0 --debugserial
