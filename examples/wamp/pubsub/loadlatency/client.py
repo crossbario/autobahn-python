@@ -176,7 +176,7 @@ if __name__ == '__main__':
    parser.add_argument("-c",
                        "--clients",
                        type = int,
-                       default = 5,
+                       default = 10,
                        help = "Number of WAMP clients to connect.")
 
    parser.add_argument("-p",
@@ -188,7 +188,7 @@ if __name__ == '__main__':
    parser.add_argument("-b",
                        "--batch",
                        type = int,
-                       default = 10,
+                       default = 1,
                        help = "Number of messages published per batch.")
 
    parser.add_argument("-r",
