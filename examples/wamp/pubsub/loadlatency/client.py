@@ -30,6 +30,8 @@ class LoadLatencySubscriberProtocol(WampClientProtocol):
 
    def onSessionOpen(self):
 
+      print "Load/Latency Subscriber Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
+
       def onEvent(topic, event):
          rtt = time.clock() - event['sent']
          self.factory.receivedRtts.append(rtt)
@@ -38,21 +40,34 @@ class LoadLatencySubscriberProtocol(WampClientProtocol):
       self.subscribe(self.factory.config.topic, onEvent)
 
 
+
 class LoadLatencySubscriberFactory(WampClientFactory):
 
    protocol = LoadLatencySubscriberProtocol
 
    def __init__(self, config):
+
+      WampClientFactory.__init__(self, config.wsuri, debugWamp = config.debug)
+
       self.config = config
       self.receivedCnt = 0
       self.receivedRtts = []
-      WampClientFactory.__init__(self, self.config.wsuri, debugWamp = self.config.debug)
+
+      self.setProtocolOptions(failByDrop = False)
+
+      if config.skiputf8validate:
+         self.setProtocolOptions(utf8validateIncoming = False)
+
+      if config.skipmasking:
+         self.setProtocolOptions(maskClientFrames = False)
 
 
 
 class LoadLatencyPublisherProtocol(WampClientProtocol):
 
    def onSessionOpen(self):
+
+      print "Load/Latency Publisher Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
 
       def sendEvent():
 
@@ -71,16 +86,27 @@ class LoadLatencyPublisherProtocol(WampClientProtocol):
       sendEvent()
 
 
+
 class LoadLatencyPublisherFactory(WampClientFactory):
 
    protocol = LoadLatencyPublisherProtocol
 
    def __init__(self, config):
+
+      WampClientFactory.__init__(self, config.wsuri, debugWamp = config.debug)
+
       self.config = config
       self.id = 0
       self.batchid = 0
       self.publishedCnt = 0
-      WampClientFactory.__init__(self, self.config.wsuri, debugWamp = self.config.debug)
+
+      self.setProtocolOptions(failByDrop = False)
+
+      if config.skiputf8validate:
+         self.setProtocolOptions(utf8validateIncoming = False)
+
+      if config.skipmasking:
+         self.setProtocolOptions(maskClientFrames = False)
 
 
 
@@ -137,6 +163,14 @@ if __name__ == '__main__':
    parser.add_argument("-d",
                        "--debug",
                        help = "Enable debug output.",
+                       action = "store_true")
+
+   parser.add_argument("--skiputf8validate",
+                       help = "Skip UTF8 validation of incoming messages.",
+                       action = "store_true")
+
+   parser.add_argument("--skipmasking",
+                       help = "Skip masking of sent frames.",
                        action = "store_true")
 
    parser.add_argument("-c",

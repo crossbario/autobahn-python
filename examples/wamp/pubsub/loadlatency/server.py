@@ -43,7 +43,16 @@ class LoadLatencyBrokerFactory(WampServerFactory):
    def __init__(self, config):
       self.config = config
       WampServerFactory.__init__(self, config.wsuri, debugWamp = config.debug)
-      print "Load/Latency Broker listening on %s" % config.wsuri
+
+      self.setProtocolOptions(failByDrop = False)
+
+      if config.skiputf8validate:
+         self.setProtocolOptions(utf8validateIncoming = False)
+
+      if config.allowunmasked:
+         self.setProtocolOptions(requireMaskedClientFrames = False)
+
+      print "Load/Latency Broker listening on %s [skiputf8validate = %s, allowunmasked = %s]" % (config.wsuri, config.skiputf8validate, config.allowunmasked)
 
 
 
@@ -57,11 +66,19 @@ if __name__ == '__main__':
                        help = "Enable debug output.",
                        action = "store_true")
 
+   parser.add_argument("--skiputf8validate",
+                       help = "Skip UTF8 validation of incoming messages.",
+                       action = "store_true")
+
+   parser.add_argument("--allowunmasked",
+                       help = "Allow unmasked client frames.",
+                       action = "store_true")
+
    parser.add_argument("-w",
                        "--wsuri",
                        type = str,
                        default = "ws://localhost:9000",
-                       help = "Listening URI of WAMP server, e.g. ws://127.0.0.1:9000.")
+                       help = "Listening URI of WAMP server, e.g. ws://localhost:9000.")
 
    parser.add_argument("-t",
                        "--topic",
