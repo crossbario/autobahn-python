@@ -1,0 +1,80 @@
+###############################################################################
+##
+##  Copyright 2013 Tavendo GmbH
+##
+##  Licensed under the Apache License, Version 2.0 (the "License");
+##  you may not use this file except in compliance with the License.
+##  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+##  Unless required by applicable law or agreed to in writing, software
+##  distributed under the License is distributed on an "AS IS" BASIS,
+##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##  See the License for the specific language governing permissions and
+##  limitations under the License.
+##
+###############################################################################
+
+import sys, argparse
+
+from twisted.python import log
+from twisted.internet import reactor
+
+from autobahn.websocket import listenWS
+from autobahn.wamp import WampServerFactory, WampServerProtocol
+
+
+class LoadLatencyBrokerProtocol(WampServerProtocol):
+
+   def onSessionOpen(self):
+      self.registerForPubSub(self.factory.config.topic)
+      print "Load/Latency Broker client connected and brokering topic %s registered" % self.factory.config.topic
+
+
+   def onClose(self, wasClean, code, reason):
+      print "Load/Latency Broker client lost"
+
+
+class LoadLatencyBrokerFactory(WampServerFactory):
+
+   protocol = LoadLatencyBrokerProtocol
+
+   def __init__(self, config):
+      self.config = config
+      WampServerFactory.__init__(self, config.wsuri, debugWamp = config.debug)
+      print "Load/Latency Broker listening on %s" % config.wsuri
+
+
+
+if __name__ == '__main__':
+
+   parser = argparse.ArgumentParser(prog = "llserver",
+                                    description = "Load/Latency Test Broker")
+
+   parser.add_argument("-d",
+                       "--debug",
+                       help = "Enable debug output.",
+                       action = "store_true")
+
+   parser.add_argument("-w",
+                       "--wsuri",
+                       type = str,
+                       default = "ws://localhost:9000",
+                       help = "Listening URI of WAMP server, e.g. ws://127.0.0.1:9000.")
+
+   parser.add_argument("-t",
+                       "--topic",
+                       type = str,
+                       default = "http://example.com/simple",
+                       help = "Topic URI to use, e.g. http://example.com/simple")
+
+   config = parser.parse_args()
+
+   if config.debug:
+      log.startLogging(sys.stdout)
+
+   factory = LoadLatencyBrokerFactory(config)
+   listenWS(factory)
+
+   reactor.run()
