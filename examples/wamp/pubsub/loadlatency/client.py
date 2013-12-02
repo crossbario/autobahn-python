@@ -22,16 +22,24 @@ from twisted.python import log
 from twisted.internet import reactor
 
 from autobahn.websocket import connectWS
-from autobahn.wamp import WampClientFactory, WampClientProtocol
+from autobahn.wamp import WampClientFactory, WampCraClientProtocol
 
 
 
-class LoadLatencySubscriberProtocol(WampClientProtocol):
+class LoadLatencySubscriberProtocol(WampCraClientProtocol):
 
    def onSessionOpen(self):
 
       if self.factory.config.debug:
          print "Load/Latency Subscriber Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
+
+      ## "authenticate" as anonymous
+      d = self.authenticate()
+      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+
+
+   def onAuthSuccess(self, permissions):
+      print "Authenticated."
 
       def onEvent(topic, event):
          rtt = time.clock() - event['sent']
@@ -39,6 +47,11 @@ class LoadLatencySubscriberProtocol(WampClientProtocol):
          self.factory.receivedCnt += 1
 
       self.subscribe(self.factory.config.topic, onEvent)
+
+
+   def onAuthError(self, e):
+      uri, desc, details = e.value.args
+      print "Authentication Error!", uri, desc, details
 
 
 
@@ -64,12 +77,20 @@ class LoadLatencySubscriberFactory(WampClientFactory):
 
 
 
-class LoadLatencyPublisherProtocol(WampClientProtocol):
+class LoadLatencyPublisherProtocol(WampCraClientProtocol):
 
    def onSessionOpen(self):
 
       if self.factory.config.debug:
          print "Load/Latency Publisher Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
+
+      ## "authenticate" as anonymous
+      d = self.authenticate()
+      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+
+
+   def onAuthSuccess(self, permissions):
+      print "Authenticated."
 
       def sendEvent():
 
@@ -86,6 +107,11 @@ class LoadLatencyPublisherProtocol(WampClientProtocol):
          reactor.callLater(1. / float(self.factory.config.rate), sendEvent)
 
       sendEvent()
+
+
+   def onAuthError(self, e):
+      uri, desc, details = e.value.args
+      print "Authentication Error!", uri, desc, details
 
 
 
