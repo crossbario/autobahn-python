@@ -30,7 +30,8 @@ class LoadLatencySubscriberProtocol(WampClientProtocol):
 
    def onSessionOpen(self):
 
-      print "Load/Latency Subscriber Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
+      if self.factory.config.debug:
+         print "Load/Latency Subscriber Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
 
       def onEvent(topic, event):
          rtt = time.clock() - event['sent']
@@ -67,7 +68,8 @@ class LoadLatencyPublisherProtocol(WampClientProtocol):
 
    def onSessionOpen(self):
 
-      print "Load/Latency Publisher Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
+      if self.factory.config.debug:
+         print "Load/Latency Publisher Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
 
       def sendEvent():
 
@@ -76,8 +78,8 @@ class LoadLatencyPublisherProtocol(WampClientProtocol):
          for i in xrange(self.factory.config.batch):
             self.factory.id += 1
             self.factory.publishedCnt += 1
-            msg['id'] = self.factory.id
-            msg['batchid'] = self.factory.batchid
+            #msg['id'] = self.factory.id
+            #msg['batchid'] = self.factory.batchid
             msg['sent'] = time.clock()
             self.publish(self.factory.config.topic, msg)
 
