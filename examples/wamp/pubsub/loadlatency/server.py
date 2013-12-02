@@ -21,6 +21,7 @@ import sys, argparse
 from twisted.python import log
 from twisted.internet import reactor
 
+import autobahn
 from autobahn.websocket import listenWS
 from autobahn.wamp import WampServerFactory, WampServerProtocol
 
@@ -94,4 +95,8 @@ if __name__ == '__main__':
    factory = LoadLatencyBrokerFactory(config)
    listenWS(factory)
 
+   print reactor.__class__
+   print autobahn.utf8validator.Utf8Validator
+   print autobahn.xormasker.XorMaskerNull
+   print autobahn.wamp.json_lib
    reactor.run()
