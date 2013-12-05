@@ -44,13 +44,16 @@ class FlashPolicyProtocol(Protocol):
    REQUESTTIMEOUT = 5
    POLICYFILE = """<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" to-ports="%d" /></cross-domain-policy>"""
 
-   def __init__(self, allowedPort):
+   def __init__(self, factory, allowedPort):
       """
       Ctor.
 
+      :param factory: The protocol's factory
+      :type factory: FlashPolicyFactory
       :param allowedPort: The port to which Flash player should be allowed to connect.
       :type allowedPort: int
       """
+      self.factory = factory
       self.allowedPort = allowedPort
       self.received = ""
       self.dropConnection = None
@@ -106,4 +109,4 @@ class FlashPolicyFactory(Factory):
 
 
    def buildProtocol(self, addr):
-      return FlashPolicyProtocol(self.allowedPort)
+      return FlashPolicyProtocol(self, self.allowedPort)
