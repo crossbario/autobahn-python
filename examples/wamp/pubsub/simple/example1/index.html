@@ -1,73 +1,90 @@
 <!DOCTYPE html>
  <html>
    <head>
+      <style>
+         body {
+            color: #fff;
+            background-color: #027eae;
+            font-family: sans-serif;
+         }
+      </style>
 
       <!-- include AutobahnJS .. that's all you need -->
-      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+      <script src="autobahn.min.js"></script>
 
       <script>
          // WAMP session object
-         var sess = null;
+         var session = null;
 
          window.onload = function() {
 
+            // the server's URL
             var wsuri;
+
             if (window.location.protocol === "file:") {
                wsuri = "ws://localhost:9000";
             } else {
                wsuri = "ws://" + window.location.hostname + ":9000";
             }
 
+            // turn on WAMP message logging to console
+            ab.debug(true);
+
             // connect to WAMP server
             ab.connect(wsuri,
 
                // WAMP session was established
-               function (session) {
-
-                  sess = session;
+               function (newSession) {
 
                   console.log("Connected to " + wsuri);
-                  test();
+
+                  session = newSession;
+
+                  // subscribe to a topic
+                  session.subscribe("http://example.com/myEvent1",
+
+                     // this is our event handler that will fire whenever
+                     // we receive an event on the topic we subscribed to
+                     function (topic, evt) {
+                        document.getElementById('last_received').innerHTML =
+                           evt.msg + "(" + evt.counter + ")";
+                     }
+                  );
                },
 
                // WAMP session is gone
                function (code, reason) {
-
-                  sess = null;
-
-                  if (code == ab.CONNECTION_UNSUPPORTED) {
-                     window.location = "http://autobahn.ws/unsupportedbrowser";
-                  } else {
-                     console.log(reason);
-                  }
+                  console.log("Connection gone " + reason);
+                  session = null;
                }
             );
          };
 
-         function test() {
-             sess.subscribe("http://example.com/simple", onEvent);
-         }
+         var counter = 0;
 
-         function onEvent(topicUri, event) {
-            console.log(topicUri);
-            console.log(event);
-         }
+         function publish_myEvent1() {
 
-         function publishEvent() {
-            sess.publish("http://example.com/simple", {'foo': 'bar', 'baz': 23});
+            counter += 1;
+
+            // publish to a topic
+            session.publish("http://example.com/myEvent1",
+               // payload of published event can be anything
+               // that can be serialized to JSON
+               {
+                  'msg': document.getElementById('msg').value,
+                  'counter': counter
+               }
+            );
          }
      </script>
    </head>
    <body>
-      <h1>PubSub with AutobahnJS - Example 1</h1>
-      <noscript>
-         <span style="color: #f00; font-weight: bold;">
-            You need to turn on JavaScript.
-         </span>
-      </noscript>
-      <button onclick="publishEvent()">Publish</button>
+      <h1>Publish and Subscribe with Autobahn</h1>
       <p>
-         Open development console (press F12) to watch.
+         <input id="msg" type="text" value="Hello, world!"></input>
+         <button onclick="publish_myEvent1()">Publish</button>&nbsp;&nbsp;&nbsp;
+         Last received: <code style="font-size: 20px; color: #a5d500;" id="last_received">nothing yet</code>
       </p>
+      <p>Open development console (press F12) to watch WAMP messages.</p>
    </body>
  </html>

@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -28,29 +28,36 @@ from autobahn.wamp import WampServerFactory, \
                           WampServerProtocol
 
 
-class PubSubServer1(WampServerProtocol):
+class MyPubSubServerProtocol(WampServerProtocol):
+   """
+   Protocol class for our simple demo WAMP server.
+   """
 
    def onSessionOpen(self):
 
-      ## register a single, fixed URI as PubSub topic
-      self.registerForPubSub("http://example.com/simple")
+      ## When the WAMP session to a client has been established,
+      ## register a single fixed URI as PubSub topic that our
+      ## message broker will handle
+      ##
+      self.registerForPubSub("http://example.com/myEvent1")
 
-      ## register a URI and all URIs having the string as prefix as PubSub topic
-      self.registerForPubSub("http://example.com/event#", True)
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   debug = len(sys.argv) > 1 and sys.argv[1] == 'debug'
 
-   factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
-   factory.protocol = PubSubServer1
-   factory.setProtocolOptions(allowHixie76 = True)
-   listenWS(factory)
+   ## our WAMP/WebSocket server
+   ##
+   wampFactory = WampServerFactory("ws://localhost:9000", debugWamp = True)
+   wampFactory.protocol = MyPubSubServerProtocol
+   listenWS(wampFactory)
 
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
+   ## our Web server (for static Web content)
+   ##
+   webFactory = Site(File("."))
+   reactor.listenTCP(8080, webFactory)
 
+   ## run the Twisted network reactor
+   ##
    reactor.run()

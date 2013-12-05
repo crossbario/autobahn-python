@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -26,28 +26,58 @@ from autobahn.wamp import WampClientFactory, \
                           WampClientProtocol
 
 
-class PubSubClient1(WampClientProtocol):
+class MyPubSubClientProtocol(WampClientProtocol):
+   """
+   Protocol class for our simple demo WAMP client.
+   """
 
    def onSessionOpen(self):
-      self.subscribe("http://example.com/simple", self.onSimpleEvent)
-      self.sendSimpleEvent()
 
-   def onSimpleEvent(self, topicUri, event):
-      print "Event", topicUri, event
+      print "Connected!"
 
-   def sendSimpleEvent(self):
-      self.publish("http://example.com/simple", "Hello!")
-      reactor.callLater(2, self.sendSimpleEvent)
+      def onMyEvent1(topic, event):
+         print "Received event", topic, event
+
+      self.subscribe("http://example.com/myEvent1", onMyEvent1)
+
+      self.counter = 0
+
+      def sendMyEvent1():
+         self.counter += 1
+         self.publish("http://example.com/myEvent1",
+            {
+               "msg": "Hello from Python!",
+               "counter": self.counter
+            }
+         )
+         reactor.callLater(2, sendMyEvent1)
+
+      sendMyEvent1()
+
+
+   def onClose(self, wasClean, code, reason):
+      print "Connection closed", reason
+      reactor.stop()
+
 
 
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
-   debug = len(sys.argv) > 1 and sys.argv[1] == 'debug'
 
-   factory = WampClientFactory("ws://localhost:9000", debugWamp = debug)
-   factory.protocol = PubSubClient1
+   if len(sys.argv) > 1:
+      wsuri = sys.argv[1]
+   else:
+      wsuri = "ws://localhost:9000"
 
+   print "Connecting to", wsuri
+
+   ## our WAMP/WebSocket client
+   ##
+   factory = WampClientFactory(wsuri, debugWamp = False)
+   factory.protocol = MyPubSubClientProtocol
    connectWS(factory)
 
+   ## run the Twisted network reactor
+   ##
    reactor.run()
