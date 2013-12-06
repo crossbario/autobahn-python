@@ -39,7 +39,8 @@ class LoadLatencySubscriberProtocol(WampCraClientProtocol):
 
 
    def onAuthSuccess(self, permissions):
-      print "Authenticated."
+      #print "Authenticated.", permissions
+      #print "Authenticated."
 
       def onEvent(topic, event):
          rtt = time.clock() - event['sent']

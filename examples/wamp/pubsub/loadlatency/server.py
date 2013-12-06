@@ -23,18 +23,41 @@ from twisted.internet import reactor
 
 import autobahn
 from autobahn.websocket import listenWS
-from autobahn.wamp import WampServerFactory, WampServerProtocol
+from autobahn.wamp import WampServerFactory, WampCraServerProtocol
 
 
-class LoadLatencyBrokerProtocol(WampServerProtocol):
+class LoadLatencyBrokerProtocol(WampCraServerProtocol):
 
    def onSessionOpen(self):
-      self.registerForPubSub(self.factory.config.topic)
-      print "Load/Latency Broker client connected and brokering topic %s registered" % self.factory.config.topic
+
+      ## override global client auth options
+      self.clientAuthTimeout = 0
+      self.clientAuthAllowAnonymous = True
+
+      ## call base class method
+      WampCraServerProtocol.onSessionOpen(self)
+
+
+   def getAuthPermissions(self, authKey, authExtra):
+      if authKey is None:
+         return {'permissions': {'pubsub': [{'uri': self.factory.config.topic,
+                                             'prefix': True,
+                                             'pub': True,
+                                             'sub': True}],
+                                 'rpc': []}}
+      else:
+         return {'permissions': None}
+
+
+   def onAuthenticated(self, authKey, perms):
+      self.registerForPubSub(self.factory.config.topic, True)
+      #print "Load/Latency Broker client connected and brokering topic %s registered" % self.factory.config.topic
+      self.factory.connectedClients += 1
 
 
    def onClose(self, wasClean, code, reason):
-      print "Load/Latency Broker client lost"
+      self.factory.connectedClients -= 1
+      #print "Load/Latency Broker client lost"
 
 
 class LoadLatencyBrokerFactory(WampServerFactory):
@@ -53,7 +76,15 @@ class LoadLatencyBrokerFactory(WampServerFactory):
       if config.allowunmasked:
          self.setProtocolOptions(requireMaskedClientFrames = False)
 
+      self.connectedClients = 0
+
       print "Load/Latency Broker listening on %s [skiputf8validate = %s, allowunmasked = %s]" % (config.wsuri, config.skiputf8validate, config.allowunmasked)
+
+      def printstats():
+         print "%d clients connected" % self.connectedClients
+         reactor.callLater(1, printstats)
+
+      printstats()
 
 
 
