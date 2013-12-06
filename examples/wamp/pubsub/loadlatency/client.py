@@ -20,6 +20,7 @@ import time, sys, argparse
 
 from twisted.python import log
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred, DeferredList
 
 from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampCraClientProtocol
@@ -49,6 +50,8 @@ class LoadLatencySubscriberProtocol(WampCraClientProtocol):
 
       self.subscribe(self.factory.config.topic, onEvent)
 
+      self.factory._ready.callback(None)
+
 
    def onAuthError(self, e):
       uri, desc, details = e.value.args
@@ -60,9 +63,11 @@ class LoadLatencySubscriberFactory(WampClientFactory):
 
    protocol = LoadLatencySubscriberProtocol
 
-   def __init__(self, config):
+   def __init__(self, config, d):
 
       WampClientFactory.__init__(self, config.wsuri, debugWamp = config.debug)
+
+      self._ready = d
 
       self.config = config
       self.receivedCnt = 0
@@ -75,6 +80,16 @@ class LoadLatencySubscriberFactory(WampClientFactory):
 
       if config.skipmasking:
          self.setProtocolOptions(maskClientFrames = False)
+
+
+   def clientConnectionFailed(self, connector, reason):
+      pass
+      #print reason
+
+
+   def clientConnectionLost(self, connector, reason):
+      pass
+      #print reason
 
 
 
@@ -148,39 +163,55 @@ class LoadLatencyTest:
 
    def run(self):
       self._factories = []
+      dl = []
+      t0 = 0
       for i in xrange(self.config.clients):
-         factory = LoadLatencySubscriberFactory(self.config)
-         connectWS(factory)
+         d = Deferred()
+         dl.append(d)
+
+         factory = LoadLatencySubscriberFactory(self.config, d)
          self._factories.append(factory)
 
-      publisherFactory = LoadLatencyPublisherFactory(self.config)
-      connectWS(publisherFactory)
+         reactor.callLater(t0, connectWS, factory)
+         t0 += 0.01
 
-      def printstats():
-         publishedCnt = publisherFactory.publishedCnt
-         receivedCnt = sum([x.receivedCnt for x in self._factories])
-         receivedSumRtts = 1000. * sum([sum(x.receivedRtts) for x in self._factories])
+      d2 = DeferredList(dl)
 
-         if receivedCnt:
-            rttAvg = float(receivedSumRtts) / float(receivedCnt)
-         else:
-            rttAvg = 0
+      def start_publishing(res):
 
-         publisherFactory.publishedCnt = 0
-         for f in self._factories:
-            f.receivedCnt = 0
-            f.receivedRtts = []
+         print "ok, %d clients all connected, start publishing .." % len(res)
+         #print res
 
-         self.publishedCntTotal += publishedCnt
-         self.receivedCntTotal += receivedCnt
+         publisherFactory = LoadLatencyPublisherFactory(self.config)
+         connectWS(publisherFactory)
 
-         print "%d, %d, %d, %d, %f" % (publishedCnt, receivedCnt, self.publishedCntTotal, self.receivedCntTotal, rttAvg)
+         def printstats():
+            publishedCnt = publisherFactory.publishedCnt
+            receivedCnt = sum([x.receivedCnt for x in self._factories])
+            receivedSumRtts = 1000. * sum([sum(x.receivedRtts) for x in self._factories])
 
-         reactor.callLater(1, printstats)
+            if receivedCnt:
+               rttAvg = float(receivedSumRtts) / float(receivedCnt)
+            else:
+               rttAvg = 0
 
-      print "Messages:"
-      print "sent_last, recv_last, sent_total, recv_total, rtt"
-      printstats()
+            publisherFactory.publishedCnt = 0
+            for f in self._factories:
+               f.receivedCnt = 0
+               f.receivedRtts = []
+
+            self.publishedCntTotal += publishedCnt
+            self.receivedCntTotal += receivedCnt
+
+            print "%d, %d, %d, %d, %f" % (publishedCnt, receivedCnt, self.publishedCntTotal, self.receivedCntTotal, rttAvg)
+
+            reactor.callLater(1, printstats)
+
+         print "Messages:"
+         print "sent_last, recv_last, sent_total, recv_total, rtt"
+         printstats()
+
+      d2.addCallback(start_publishing)
 
 
 

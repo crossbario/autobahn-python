@@ -124,7 +124,7 @@ if __name__ == '__main__':
       log.startLogging(sys.stdout)
 
    factory = LoadLatencyBrokerFactory(config)
-   listenWS(factory)
+   listenWS(factory, backlog = 4096)
 
    print reactor.__class__
    print autobahn.utf8validator.Utf8Validator
