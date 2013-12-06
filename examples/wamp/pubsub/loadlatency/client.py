@@ -173,7 +173,7 @@ class LoadLatencyTest:
          self._factories.append(factory)
 
          reactor.callLater(t0, connectWS, factory)
-         t0 += 0.1
+         t0 += 1. / float(self.config.uprate)
 
       d2 = DeferredList(dl)
 
@@ -256,6 +256,12 @@ if __name__ == '__main__':
                        type = int,
                        default = 25,
                        help = "Number of batches per second.")
+
+   parser.add_argument("-u",
+                       "--uprate",
+                       type = int,
+                       default = 20,
+                       help = "Connect rate in new connections per seconds.")
 
    parser.add_argument("-w",
                        "--wsuri",
