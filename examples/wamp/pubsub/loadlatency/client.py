@@ -173,7 +173,7 @@ class LoadLatencyTest:
          self._factories.append(factory)
 
          reactor.callLater(t0, connectWS, factory)
-         t0 += 0.01
+         t0 += 0.1
 
       d2 = DeferredList(dl)
 

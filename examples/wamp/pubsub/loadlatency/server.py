@@ -52,11 +52,14 @@ class LoadLatencyBrokerProtocol(WampCraServerProtocol):
    def onAuthenticated(self, authKey, perms):
       self.registerForPubSub(self.factory.config.topic, True)
       #print "Load/Latency Broker client connected and brokering topic %s registered" % self.factory.config.topic
-      self.factory.connectedClients += 1
+      self.factory.connectedClients.add(self)
 
 
    def onClose(self, wasClean, code, reason):
-      self.factory.connectedClients -= 1
+      try:
+         self.factory.connectedClients.remove(self)
+      except:
+         pass
       #print "Load/Latency Broker client lost"
 
 
@@ -76,12 +79,12 @@ class LoadLatencyBrokerFactory(WampServerFactory):
       if config.allowunmasked:
          self.setProtocolOptions(requireMaskedClientFrames = False)
 
-      self.connectedClients = 0
+      self.connectedClients = set()
 
       print "Load/Latency Broker listening on %s [skiputf8validate = %s, allowunmasked = %s]" % (config.wsuri, config.skiputf8validate, config.allowunmasked)
 
       def printstats():
-         print "%d clients connected" % self.connectedClients
+         print "%d clients connected" % len(self.connectedClients)
          reactor.callLater(1, printstats)
 
       printstats()
