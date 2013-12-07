@@ -265,7 +265,7 @@ if __name__ == '__main__':
    parser.add_argument("-p",
                        "--payload",
                        type = int,
-                       default = 10,
+                       default = 32,
                        help = "Length of string field payload in bytes of each published message.")
 
    parser.add_argument("-b",
@@ -283,7 +283,7 @@ if __name__ == '__main__':
    parser.add_argument("-u",
                        "--uprate",
                        type = int,
-                       default = 20,
+                       default = 15,
                        help = "Connect rate in new connections per seconds.")
 
    parser.add_argument("-w",
