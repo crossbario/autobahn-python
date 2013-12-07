@@ -18,10 +18,14 @@
 
 import time, sys, argparse
 
+from autobahn.choosereactor import install_reactor
+install_reactor()
+
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
 
+import autobahn
 from autobahn.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampCraClientProtocol
 
@@ -158,6 +162,7 @@ class LoadLatencyTest:
 
    def __init__(self, config):
       self.config = config
+      self.linesPrinted = 0
       self.publishedCntTotal = 0
       self.receivedCntTotal = 0
 
@@ -186,6 +191,13 @@ class LoadLatencyTest:
          connectWS(publisherFactory)
 
          def printstats():
+            if self.linesPrinted % 20 == 0:
+               print
+               print "Parameters: %d clients, %d uprate, %d payload, %d batchsize, %d rate" % (self.config.clients, self.config.uprate, self.config.payload, self.config.batch, self.config.rate)
+               print "Messages: sent_last, recv_last, sent_total, recv_total, avg. rtt (ms)"
+               print
+            self.linesPrinted += 1
+
             publishedCnt = publisherFactory.publishedCnt
             receivedCnt = sum([x.receivedCnt for x in self._factories])
             receivedSumRtts = 1000. * sum([sum(x.receivedRtts) for x in self._factories])
@@ -207,8 +219,6 @@ class LoadLatencyTest:
 
             reactor.callLater(1, printstats)
 
-         print "Messages:"
-         print "sent_last, recv_last, sent_total, recv_total, rtt"
          printstats()
 
       d2.addCallback(start_publishing)
@@ -283,4 +293,8 @@ if __name__ == '__main__':
    test = LoadLatencyTest(config)
    test.run()
 
+   print reactor.__class__
+   print autobahn.utf8validator.Utf8Validator
+   print autobahn.xormasker.XorMaskerNull
+   print autobahn.wamp.json_lib
    reactor.run()
