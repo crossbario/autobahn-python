@@ -18,24 +18,32 @@
 
 import sys, argparse
 
+from autobahn.choosereactor import install_reactor
+install_reactor()
+
 from twisted.python import log
 from twisted.internet import reactor
 
 import autobahn
 from autobahn.websocket import listenWS
-from autobahn.wamp import WampServerFactory, WampCraServerProtocol
+from autobahn.wamp import WampServerFactory, WampServerProtocol, WampCraServerProtocol
+
 
 
 class LoadLatencyBrokerProtocol(WampCraServerProtocol):
 
    def onSessionOpen(self):
 
-      ## override global client auth options
-      self.clientAuthTimeout = 0
-      self.clientAuthAllowAnonymous = True
+      if self.factory.config.secure:
+         ## require WAMP-CRA authentication
 
-      ## call base class method
-      WampCraServerProtocol.onSessionOpen(self)
+         self.clientAuthTimeout = 0
+         self.clientAuthAllowAnonymous = True
+         WampCraServerProtocol.onSessionOpen(self)
+
+      else:
+         WampServerProtocol.onSessionOpen(self)
+         self.onReady()
 
 
    def getAuthPermissions(self, authKey, authExtra):
@@ -50,6 +58,10 @@ class LoadLatencyBrokerProtocol(WampCraServerProtocol):
 
 
    def onAuthenticated(self, authKey, perms):
+      self.onReady()
+
+
+   def onReady(self):
       self.registerForPubSub(self.factory.config.topic, True)
       #print "Load/Latency Broker client connected and brokering topic %s registered" % self.factory.config.topic
       self.factory.connectedClients.add(self)
@@ -61,6 +73,7 @@ class LoadLatencyBrokerProtocol(WampCraServerProtocol):
       except:
          pass
       #print "Load/Latency Broker client lost"
+
 
 
 class LoadLatencyBrokerFactory(WampServerFactory):
@@ -120,6 +133,11 @@ if __name__ == '__main__':
                        type = str,
                        default = "http://example.com/simple",
                        help = "Topic URI to use, e.g. http://example.com/simple")
+
+   parser.add_argument("-s",
+                       "--secure",
+                       help = "Enable WAMP-CRA authentication (as anonymous) - This is for testing with Crossbar.io",
+                       action = "store_true")
 
    config = parser.parse_args()
 
