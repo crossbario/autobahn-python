@@ -20,6 +20,7 @@ from _version import __version__
 version = __version__ # backward compat.
 
 import util
+import choosereactor
 import useragent
 import flashpolicy
 import httpstatus
