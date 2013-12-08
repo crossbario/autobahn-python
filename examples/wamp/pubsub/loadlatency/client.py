@@ -27,7 +27,7 @@ from twisted.internet.defer import Deferred, DeferredList
 
 import autobahn
 from autobahn.websocket import connectWS
-from autobahn.wamp import WampClientFactory, WampCraClientProtocol
+from autobahn.wamp import WampClientFactory, WampClientProtocol, WampCraClientProtocol
 
 
 
@@ -38,15 +38,26 @@ class LoadLatencySubscriberProtocol(WampCraClientProtocol):
       if self.factory.config.debug:
          print "Load/Latency Subscriber Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
 
-      ## "authenticate" as anonymous
-      d = self.authenticate()
-      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+      if self.factory.config.secure:
+         ## do WAMP-CRA authentication as anonymous
+         d = self.authenticate()
+         d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+      else:
+         self.onReady()
 
 
    def onAuthSuccess(self, permissions):
       #print "Authenticated.", permissions
       #print "Authenticated."
+      self.onReady()
 
+
+   def onAuthError(self, e):
+      uri, desc, details = e.value.args
+      print "Authentication Error!", uri, desc, details
+
+
+   def onReady(self):
       def onEvent(topic, event):
          rtt = time.clock() - event['sent']
          self.factory.receivedRtts.append(rtt)
@@ -55,11 +66,6 @@ class LoadLatencySubscriberProtocol(WampCraClientProtocol):
       self.subscribe(self.factory.config.topic, onEvent)
 
       self.factory._ready.callback(None)
-
-
-   def onAuthError(self, e):
-      uri, desc, details = e.value.args
-      print "Authentication Error!", uri, desc, details
 
 
 
@@ -104,13 +110,25 @@ class LoadLatencyPublisherProtocol(WampCraClientProtocol):
       if self.factory.config.debug:
          print "Load/Latency Publisher Client connected to %s [skiputf8validate = %s, skipmasking = %s]" % (self.factory.config.wsuri, self.factory.config.skiputf8validate, self.factory.config.skipmasking)
 
-      ## "authenticate" as anonymous
-      d = self.authenticate()
-      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+      if self.factory.config.secure:
+         ## do WAMP-CRA authentication as anonymous
+         d = self.authenticate()
+         d.addCallbacks(self.onAuthSuccess, self.onAuthError)
+      else:
+         self.onReady()
 
 
    def onAuthSuccess(self, permissions):
       print "Authenticated."
+      self.onReady()
+
+
+   def onAuthError(self, e):
+      uri, desc, details = e.value.args
+      print "Authentication Error!", uri, desc, details
+
+
+   def onReady(self):
 
       def sendEvent():
 
@@ -127,11 +145,6 @@ class LoadLatencyPublisherProtocol(WampCraClientProtocol):
          reactor.callLater(1. / float(self.factory.config.rate), sendEvent)
 
       sendEvent()
-
-
-   def onAuthError(self, e):
-      uri, desc, details = e.value.args
-      print "Authentication Error!", uri, desc, details
 
 
 
@@ -252,7 +265,7 @@ if __name__ == '__main__':
    parser.add_argument("-p",
                        "--payload",
                        type = int,
-                       default = 10,
+                       default = 32,
                        help = "Length of string field payload in bytes of each published message.")
 
    parser.add_argument("-b",
@@ -263,14 +276,14 @@ if __name__ == '__main__':
 
    parser.add_argument("-r",
                        "--rate",
-                       type = int,
-                       default = 25,
+                       type = float,
+                       default = 25.,
                        help = "Number of batches per second.")
 
    parser.add_argument("-u",
                        "--uprate",
                        type = int,
-                       default = 20,
+                       default = 15,
                        help = "Connect rate in new connections per seconds.")
 
    parser.add_argument("-w",
@@ -284,6 +297,11 @@ if __name__ == '__main__':
                        type = str,
                        default = "http://example.com/simple",
                        help = "Topic URI to use, e.g. http://example.com/simple")
+
+   parser.add_argument("-s",
+                       "--secure",
+                       help = "Enable WAMP-CRA authentication (as anonymous) - This is for testing with Crossbar.io",
+                       action = "store_true")
 
    config = parser.parse_args()
 
