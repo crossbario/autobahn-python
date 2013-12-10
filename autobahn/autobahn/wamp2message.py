@@ -83,6 +83,161 @@ class WampMessage:
 
 
 
+class WampMessageHello(WampMessage):
+   """
+   A WAMP Hello message.
+   """
+
+   MESSAGE_TYPE = 64 + 2
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, sessionid):
+      """
+      Message constructor.
+
+      :param sessionid: The WAMP session ID the other peer is assigned.
+      :type topic: str
+      """
+      self.sessionid = sessionid
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == WampMessageHello.MESSAGE_TYPE)
+
+      if len(wmsg) not in (2):
+         raise WampProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
+
+      ## sessionid
+      ##
+      if type(wmsg[1]) not in (str, unicode):
+         raise WampProtocolError("invalid type %s for 'sessionid' in WAMP Hello message" % type(wmsg[1]))
+
+      sessionid = parse_wamp_sessionid(wmsg[1])
+      if sessionid is None:
+         raise WampProtocolError("invalid value '%s' for 'sessionid' in WAMP Hello message" % wmsg[1])
+
+      obj = Klass(sessionid)
+
+      return obj
+
+   
+   def serialize(self, serializer):
+      """
+      Serialize this object into a wire level bytestring representation.
+
+      :param serializer: The wire level serializer to use.
+      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      """
+      return serializer.serialize([WampMessageHello.MESSAGE_TYPE, self.sessionid])
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP Hello Message (sessionid = '%s')" % (self.sessionid)
+
+
+
+class WampMessageHeartbeat(WampMessage):
+   """
+   A WAMP Hearbeat message.
+   """
+
+   MESSAGE_TYPE = 64 + 2
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, incoming, outgoing):
+      """
+      Message constructor.
+
+      :param incoming: Last incoming heartbeat processed from peer.
+      :type incoming: int
+      :param outgoing: Outgoing heartbeat.
+      :type outgoing: int
+      """
+      self.sessionid = sessionid
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == WampMessageHeartbeat.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise WampProtocolError("invalid message length %d for WAMP Heartbeat message" % len(wmsg))
+
+      ## incoming
+      ##
+      incoming = wmsg[1]
+
+      if type(incoming) != int:
+         raise WampProtocolError("invalid type %s for 'incoming' in WAMP Heartbeat message" % type(incoming))
+
+      if incoming < 0: # must be non-negative
+         raise WampProtocolError("invalid value %d for 'incoming' in WAMP Heartbeat message" % incoming)
+
+      ## outgoing
+      ##
+      outgoing = wmsg[2]
+
+      if type(outgoing) != int:
+         raise WampProtocolError("invalid type %s for 'outgoing' in WAMP Heartbeat message" % type(outgoing))
+
+      if outgoing <= 0: # must be positive
+         raise WampProtocolError("invalid value %d for 'outgoing' in WAMP Heartbeat message" % outgoing)
+
+      obj = Klass(incoming, outgoing)
+
+      return obj
+
+   
+   def serialize(self, serializer):
+      """
+      Serialize this object into a wire level bytestring representation.
+
+      :param serializer: The wire level serializer to use.
+      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      """
+      return serializer.serialize([WampMessageHeartbeat.MESSAGE_TYPE, self.incoming, self.outgoing])
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP Hearbeat Message (incoming %d, outgoing = %d)" % (self.incoming, self.outgoing)
+
+
+
 class WampMessageSubscribe(WampMessage):
    """
    A WAMP Subscribe message.
@@ -1464,6 +1619,10 @@ class WampSerializer:
    """
 
    MESSAGE_TYPE_MAP = {
+      ## Session
+      WampMessageHello.MESSAGE_TYPE          WampMessageHello,
+      WampMessageHeartbeat.MESSAGE_TYPE      WampMessageHeartbeat,
+
       ## PubSub
       WampMessageSubscribe.MESSAGE_TYPE:     WampMessageSubscribe,
       WampMessageUnsubscribe.MESSAGE_TYPE:   WampMessageUnsubscribe,
