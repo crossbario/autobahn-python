@@ -41,9 +41,18 @@ class JsonDefaultSerializer:
 class WampException(Exception):
    pass
 
+
 class WampProtocolError(WampException):
    pass
 
+
+class WampCallException(Exception):
+
+   def __init__(self, error, message, value):
+      self.args = (error, message, value)
+      #self.error = error
+      #self.message = message
+      #self.value = value
 
 
 def parse_wamp_uri(bytes):

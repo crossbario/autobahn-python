@@ -37,41 +37,123 @@ class Wamp2Protocol:
       """
       pass
 
+
    def onOpen(self):
       print "X"*100
       self._sessionid = newid()
+      self._subscriptions = {}
+      self._calls = {}
       self.onSessionOpen()
+
 
    def onClose(self, wasClean, code, reason):
       pass
 
+
    def onMessage(self, bytes, binary):
       #print bytes
-      msg = self.factory._serializer.unserialize(bytes)
-      #print msg.__class__
-      print msg
+      try:
+         msg = self.factory._serializer.unserialize(bytes)
+      except WampProtocolError, e:
+         print "WAMP protocol error", e
+      else:
+         if isinstance(msg, WampMessageEvent):
+            if self._subscriptions.has_key(msg.topic):
+               for handler in self._subscriptions[msg.topic]:
+                  handler(msg.topic, msg.event)
+            else:
+               pass
+
+         elif isinstance(msg, WampMessageCallProgress):
+            pass
+
+         elif isinstance(msg, WampMessageCallResult):
+            d = self._calls.pop(msg.callid, None)
+            if d:
+               d.callback(msg.result)
+            else:
+               pass
+
+         elif isinstance(msg, WampMessageCallError):
+            d = self._calls.pop(msg.callid, None)
+            if d:
+               e = WampCallException(msg.error, msg.message, msg.value)
+               d.errback(e)
+            else:
+               pass
+
+         else:
+            raise Exception("not implemented")
+
+
+   def call(self, *args):
+      """
+      Call an endpoint.
+      """
+      if len(args) < 1:
+         raise Exception("missing RPC endpoint URI")
+
+      endpoint = args[0]
+
+      while True:
+         callid = newid()
+         if not self._calls.has_key(callid):
+            break
+
+      msg = WampMessageCall(callid, endpoint, args = args[1:])
+      try:
+         bytes = self.factory._serializer.serialize(msg)
+      except:
+         raise Exception("call argument(s) not serializable")
+
+      def canceller(_d):
+         msg = WampMessageCancelCall(callid)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
+      d = Deferred(canceller)
+      self._calls[callid] = d
+
+      self.sendMessage(bytes)
+      return d
 
 
    def subscribe(self, topic, handler):
-      #print topic, handler
-      msg = WampMessageSubscribe(topic)
+      """
+      Subscribe to topic.
+      """
+      if not self._subscriptions.has_key(topic):
+         #self._subscriptions = set()
+         self._subscriptions = []
+         msg = WampMessageSubscribe(topic)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
+      if not handler in self._subscriptions[topic]:
+         #self._subscriptions.add(handler)
+         self._subscriptions.append(handler)
+
+
+   def unsubscribe(self, topic, handler = None):
+      """
+      Unsubscribe from topic.
+      """
+      if self._subscriptions.has_key(topic):
+         if handler is not None and handler in self._subscriptions[topic]:
+            self._subscriptions[topic].remove(handler)
+         if handler is None or len(self._subscriptions[topic]) == 0:
+            msg = WampMessageUnsubscribe(topic)
+            bytes = self.factory._serializer.serialize(msg)
+            self.sendMessage(bytes)
+
+
+   def publish(self, topic, event, excludeMe = None, exclude = None, eligible = None, discloseMe = None):
+      """
+      Publish to topic.
+      """
+      msg = WampMessagePublish(topic, event, excludeMe = excludeMe, exclude = exclude, eligible = eligible, discloseMe = discloseMe)
       bytes = self.factory._serializer.serialize(msg)
       self.sendMessage(bytes)
-
-
-   def publish(self, topic, event):
-      print topic, event
-      msg = WampMessagePublish(topic, event)
-      bytes = self.factory._serializer.serialize(msg)
-      self.sendMessage(bytes)
-
-
-   # def connectionMade(self):
-   #    pass
-
-
-   # def connectionLost(self, reason):
-   #    pass
 
 
 
