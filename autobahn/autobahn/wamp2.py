@@ -59,11 +59,13 @@ def test1():
 
 def test_server(wsuri):
 
+   broker = Broker()
+
    class MyPubSubServerProtocol(Wamp2ServerProtocol):
 
       def onSessionOpen(self):
          #self.registerForPubSub("http://example.com/myEvent1")
-         pass
+         self.setBroker(broker)
 
    wampFactory = Wamp2ServerFactory(wsuri)
    wampFactory.protocol = MyPubSubServerProtocol

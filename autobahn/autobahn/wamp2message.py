@@ -97,7 +97,7 @@ class WampMessageHello(WampMessage):
    A WAMP Hello message.
    """
 
-   MESSAGE_TYPE = 64 + 2
+   MESSAGE_TYPE = 1
    """
    The WAMP message code for this type of message.
    """
@@ -126,7 +126,7 @@ class WampMessageHello(WampMessage):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == WampMessageHello.MESSAGE_TYPE)
 
-      if len(wmsg) not in (2):
+      if len(wmsg) != 2:
          raise WampProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
 
       ## sessionid
@@ -168,7 +168,7 @@ class WampMessageHeartbeat(WampMessage):
    A WAMP Hearbeat message.
    """
 
-   MESSAGE_TYPE = 64 + 2
+   MESSAGE_TYPE = 2
    """
    The WAMP message code for this type of message.
    """
@@ -183,7 +183,8 @@ class WampMessageHeartbeat(WampMessage):
       :param outgoing: Outgoing heartbeat.
       :type outgoing: int
       """
-      self.sessionid = sessionid
+      self.incoming = incoming
+      self.outgoing = outgoing
 
 
    @classmethod
@@ -252,7 +253,7 @@ class WampMessageSubscribe(WampMessage):
    A WAMP Subscribe message.
    """
 
-   MESSAGE_TYPE = 64 + 0
+   MESSAGE_TYPE = 3
    """
    The WAMP message code for this type of message.
    """
@@ -365,7 +366,7 @@ class WampMessageUnsubscribe(WampMessage):
    A WAMP Unsubscribe message.
    """
 
-   MESSAGE_TYPE = 64 + 1
+   MESSAGE_TYPE = 4
    """
    The WAMP message code for this type of message.
    """
@@ -472,7 +473,7 @@ class WampMessagePublish(WampMessage):
    A WAMP Publish message.
    """
 
-   MESSAGE_TYPE = 64 + 2
+   MESSAGE_TYPE = 5
    """
    The WAMP message code for this type of message.
    """
@@ -633,7 +634,7 @@ class WampMessageEvent(WampMessage):
    A WAMP Event message.
    """
 
-   MESSAGE_TYPE = 64 + 3
+   MESSAGE_TYPE = 6
    """
    The WAMP message code for this type of message.
    """
@@ -726,12 +727,12 @@ class WampMessageEvent(WampMessage):
          details['publisher'] = self.publisher
 
       if len(details):
-         return serializer.serialize([WampMessagePublish.MESSAGE_TYPE, self.topic, self.event, details])
+         return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.topic, self.event, details])
       else:
          if self.event is not None:
-            return serializer.serialize([WampMessagePublish.MESSAGE_TYPE, self.topic, self.event])
+            return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.topic, self.event])
          else:
-            return serializer.serialize([WampMessagePublish.MESSAGE_TYPE, self.topic])
+            return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.topic])
 
 
    def __str__(self):
@@ -749,7 +750,7 @@ class WampMessageMetaEvent(WampMessage):
    A WAMP Meta-Event message.
    """
 
-   MESSAGE_TYPE = 64 + 3
+   MESSAGE_TYPE = 7
    """
    The WAMP message code for this type of message.
    """
@@ -844,7 +845,7 @@ class WampMessageProvide(WampMessage):
    A WAMP Provide message.
    """
 
-   MESSAGE_TYPE = 64 + 0
+   MESSAGE_TYPE = 8
    """
    The WAMP message code for this type of message.
    """
@@ -952,7 +953,7 @@ class WampMessageUnprovide(WampMessage):
    A WAMP Unprovide message.
    """
 
-   MESSAGE_TYPE = 64 + 0
+   MESSAGE_TYPE = 9
    """
    The WAMP message code for this type of message.
    """
@@ -1060,7 +1061,7 @@ class WampMessageCall(WampMessage):
    A WAMP Call message.
    """
 
-   MESSAGE_TYPE = 64 + 4
+   MESSAGE_TYPE = 10
    """
    The WAMP message code for this type of message.
    """
@@ -1212,7 +1213,7 @@ class WampMessageCancelCall(WampMessage):
    A WAMP Cancel-Call message.
    """
 
-   MESSAGE_TYPE = 64 + 4
+   MESSAGE_TYPE = 11
    """
    The WAMP message code for this type of message.
    """
@@ -1329,7 +1330,7 @@ class WampMessageCallProgress(WampMessage):
    A WAMP Call-Progress message.
    """
 
-   MESSAGE_TYPE = 64 + 4
+   MESSAGE_TYPE = 12
    """
    The WAMP message code for this type of message.
    """
@@ -1413,7 +1414,7 @@ class WampMessageCallResult(WampMessage):
    A WAMP Call-Result message.
    """
 
-   MESSAGE_TYPE = 64 + 4
+   MESSAGE_TYPE = 13
    """
    The WAMP message code for this type of message.
    """
@@ -1497,7 +1498,7 @@ class WampMessageCallError(WampMessage):
    A WAMP Call-Error message.
    """
 
-   MESSAGE_TYPE = 64 + 5
+   MESSAGE_TYPE = 14
    """
    The WAMP message code for this type of message.
    """
@@ -1629,8 +1630,8 @@ class WampSerializer:
 
    MESSAGE_TYPE_MAP = {
       ## Session
-      WampMessageHello.MESSAGE_TYPE          WampMessageHello,
-      WampMessageHeartbeat.MESSAGE_TYPE      WampMessageHeartbeat,
+      WampMessageHello.MESSAGE_TYPE:         WampMessageHello,
+      WampMessageHeartbeat.MESSAGE_TYPE:     WampMessageHeartbeat,
 
       ## PubSub
       WampMessageSubscribe.MESSAGE_TYPE:     WampMessageSubscribe,
@@ -1644,7 +1645,7 @@ class WampSerializer:
       WampMessageUnprovide.MESSAGE_TYPE:     WampMessageUnprovide,
       WampMessageCall.MESSAGE_TYPE:          WampMessageCall,
       WampMessageCancelCall.MESSAGE_TYPE:    WampMessageCancelCall,
-      WampMessageCallProcess.MESSAGE_TYPE:   WampMessageCallProgress,
+      WampMessageCallProgress.MESSAGE_TYPE:  WampMessageCallProgress,
       WampMessageCallResult.MESSAGE_TYPE:    WampMessageCallResult,
       WampMessageCallError.MESSAGE_TYPE:     WampMessageCallError,
    }
