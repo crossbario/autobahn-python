@@ -222,6 +222,43 @@ class Broker:
             broker_proto.sendMessage(bytes)
 
       if self._subscribers.has_key(publish.topic):
+         subscriptionid, receivers = self._subscribers[publish.topic]
+         if len(receivers) > 0:
+            msg = WampMessageEvent(subscriptionid, publish.topic, publish.event)
+            bytes = proto.factory._serializer.serialize(msg)
+            for proto in receivers:
+               proto.sendMessage(bytes)
+
+
+   def onSubscribe(self, proto, subscribe):
+      assert(proto in self._protos)
+
+      if subscribe.topic.startswith("http://example.com/"):
+         proto.sendWampMessage(WampMessageSubscribeError(subscribe.subscribeid, "http://api.wamp.ws/error#forbidden"))
+         return
+
+
+      if not self._subscribers.has_key(subscribe.topic):
+         subscriptionid = newid()
+         self._subscribers[subscribe.topic] = (subscriptionid, set())
+
+      subscriptionid, subscribers = self._subscribers[subscribe.topic]
+
+      if not proto in subscribers:
+         subscribers.add(proto)
+
+      proto.sendWampMessage(WampMessageSubscription(subscribe.subscribeid, subscriptionid))
+
+
+   def onPublish2(self, proto, publish):
+      assert(proto in self._protos)
+
+      for broker_proto in self._brokers:
+         if broker_proto != proto:
+            bytes = broker_proto.factory._serializer.serialize(publish)
+            broker_proto.sendMessage(bytes)
+
+      if self._subscribers.has_key(publish.topic):
          receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(publish.topic, publish.event)
@@ -230,7 +267,7 @@ class Broker:
                proto.sendMessage(bytes)
 
 
-   def onSubscribe(self, proto, subscribe):
+   def onSubscribe2(self, proto, subscribe):
       assert(proto in self._protos)
 
       if not self._subscribers.has_key(subscribe.topic):
@@ -250,6 +287,11 @@ class Broker:
 
 
 class Wamp2Protocol:
+
+   def sendWampMessage(self, msg):
+      bytes = self.factory._serializer.serialize(msg)
+      self.sendMessage(bytes)
+
 
    def onSessionOpen(self):
       pass
@@ -307,6 +349,8 @@ class Wamp2Protocol:
       self._dealer = None
       self._peer_is_dealer = False
 
+      self._subscribes = {}
+
       msg = WampMessageHello(self._this_sessionid)
       bytes = self.factory._serializer.serialize(msg)
       self.sendMessage(bytes)
@@ -337,10 +381,28 @@ class Wamp2Protocol:
                   if self._dealer:
                      self._dealer.addDealer(self)
 
+            elif isinstance(msg, WampMessageSubscription):
+               d, handler = self._subscribes.pop(msg.subscribeid, None)
+               if d:
+                  self._subscriptions[msg.subscriptionid] = handler
+                  d.callback(msg.subscriptionid)
+               else:
+                  pass
+
+            elif isinstance(msg, WampMessageSubscribeError):
+               d, _ = self._subscribes.pop(msg.requestid, None)
+               if d:
+                  e = WampCallException(msg.error, msg.message, msg.value)
+                  d.errback(e)
+               else:
+                  pass
+
             elif isinstance(msg, WampMessageEvent):
-               if self._subscriptions.has_key(msg.topic):
-                  for handler in self._subscriptions[msg.topic]:
-                     handler(msg.topic, msg.event)
+               if self._subscriptions.has_key(msg.subscriptionid):
+                  handler = self._subscriptions[msg.subscriptionid]
+                  handler(msg.topic, msg.event)
+                  # for handler in self._subscriptions[msg.topic]:
+                  #    handler(msg.topic, msg.event)
                else:
                   pass
 
@@ -452,12 +514,27 @@ class Wamp2Protocol:
       """
       Subscribe to topic.
       """
+      while True:
+         subscribeid = newid()
+         if not self._subscribes.has_key(subscribeid):
+            break
+
+      d = Deferred()
+      self._subscribes[subscribeid] = (d, handler)
+
+      self.sendWampMessage(WampMessageSubscribe(subscribeid, topic))
+
+      return d
+
+
+   def subscribe2(self, topic, handler):
+      """
+      Subscribe to topic.
+      """
       if not self._subscriptions.has_key(topic):
          #self._subscriptions[topic] = set()
          self._subscriptions[topic] = []
-         msg = WampMessageSubscribe(topic)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         self.sendWampMessage(WampMessageSubscribe(topic))
 
       if not handler in self._subscriptions[topic]:
          #self._subscriptions[topic].add(handler)
@@ -482,8 +559,7 @@ class Wamp2Protocol:
       Publish to topic.
       """
       msg = WampMessagePublish(topic, event, excludeMe = excludeMe, exclude = exclude, eligible = eligible, discloseMe = discloseMe)
-      bytes = self.factory._serializer.serialize(msg)
-      self.sendMessage(bytes)
+      self.sendWampMessage(msg)
 
 
 

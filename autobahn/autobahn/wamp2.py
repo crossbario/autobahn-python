@@ -74,6 +74,30 @@ class Calculator:
       return self._sum
 
 
+## http://myapp.com/getRevenue
+
+## When multiple endpoints are registered under the same URI
+## with a dealer, it is under the dealer's policy what happens:
+## 
+## - ignore any but first
+## - overwrite
+## - accumulate
+##
+## make subscribe return a (ephemeral) subscription id (on success)
+## make event contain that subscription id
+## make unsubscribe contain that subscription id
+##
+## make provide return a (ephemeral) provisioning id (on success)
+## make call contain that provisioning id
+## make unprovide contain that provisioning id
+##
+
+## call _all_ implementing endpoints and get accumulated result
+## call _all_ implementing endpoints, receive progressive results and final result empty
+## call a random implementing endpoint and receive result
+## call the implementing endpoint with given session ID
+## call any implementing endpoint (let the dealer choose, e.g. nearest)
+
 
 def test_server(wsuri, wsuri2 = None):
 
@@ -110,7 +134,7 @@ def test_server(wsuri, wsuri2 = None):
 
 def test_client(wsuri, dopub):
 
-   dorpc = True
+   dorpc = False
 
    class MyPubSubClientProtocol(Wamp2ClientProtocol):
 
@@ -121,7 +145,15 @@ def test_client(wsuri, dopub):
          def onMyEvent1(topic, event):
             print "Received event", topic, event
 
-         self.subscribe("http://example.com/myEvent1", onMyEvent1)
+         d = self.subscribe("http://example.com/myEvent1", onMyEvent1)
+
+         def subscribeSuccess(subscriptionid):
+            print "Subscribe Success", subscriptionid
+
+         def subscribeError(error):
+            print "Subscribe Error", error
+
+         d.addCallbacks(subscribeSuccess, subscribeError)
 
          self.counter = 0
 
