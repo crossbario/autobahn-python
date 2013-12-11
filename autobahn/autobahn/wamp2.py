@@ -57,22 +57,31 @@ def test1():
 
 
 
-def test_server(wsuri):
+def test_server(wsuri, wsuri2 = None):
 
    broker = Broker()
 
    class MyPubSubServerProtocol(Wamp2ServerProtocol):
 
       def onSessionOpen(self):
-         #self.registerForPubSub("http://example.com/myEvent1")
          self.setBroker(broker)
 
    wampFactory = Wamp2ServerFactory(wsuri)
    wampFactory.protocol = MyPubSubServerProtocol
    listenWS(wampFactory)
 
+   if wsuri2:
+      class MyPubSubClientProtocol(Wamp2ClientProtocol):
 
-def test_client(wsuri):
+         def onSessionOpen(self):
+            self.setBroker(broker)
+
+      factory = Wamp2ClientFactory(wsuri2)
+      factory.protocol = MyPubSubClientProtocol
+      connectWS(factory)
+
+
+def test_client(wsuri, dopub):
 
    class MyPubSubClientProtocol(Wamp2ClientProtocol):
 
@@ -97,7 +106,8 @@ def test_client(wsuri):
             )
             reactor.callLater(2, sendMyEvent1)
 
-         sendMyEvent1()
+         if dopub:
+            sendMyEvent1()
 
 
       def onClose(self, wasClean, code, reason):
@@ -116,10 +126,20 @@ if __name__ == '__main__':
    mode = sys.argv[1]
    wsuri = sys.argv[2]
 
+   if mode == 'server' and len(sys.argv) > 3:
+      wsuri2 = sys.argv[3]
+   else:
+      wsuri2 = None
+
+   if mode == 'client' and len(sys.argv) > 3:
+      dopub = sys.argv[3] == "pub"
+   else:
+      dopub = False
+
    if mode == 'client':
-      test_client(wsuri)
+      test_client(wsuri, dopub)
    elif mode == 'server':
-      test_server(wsuri)
+      test_server(wsuri, wsuri2)
    else:
       raise Exception("illegal mode")
 
