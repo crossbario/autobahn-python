@@ -106,4 +106,6 @@ class FlashPolicyFactory(Factory):
 
 
    def buildProtocol(self, addr):
-      return FlashPolicyProtocol(self.allowedPort)
+      proto = FlashPolicyProtocol(self.allowedPort)
+      proto.factory = self
+      return proto
