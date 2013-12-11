@@ -56,8 +56,32 @@ def test1():
    print wampMsg2
 
 
+class Calculator:
+
+   def __init__(self):
+      self._sum = 0
+
+   @exportRpc
+   def add(self, a, b):
+      return a + b
+
+   @exportRpc
+   def accumulate(self, value):
+      self._sum += value
+
+   @exportRpc
+   def getValue(self):
+      return self._sum
+
+
 
 def test_server(wsuri, wsuri2 = None):
+
+   calculator = Calculator()
+
+   dealer = Dealer()
+   dealer.register("http://myapp.com/", calculator)
+
 
    broker = Broker()
 
@@ -65,6 +89,7 @@ def test_server(wsuri, wsuri2 = None):
 
       def onSessionOpen(self):
          self.setBroker(broker)
+         self.setDealer(dealer)
 
    wampFactory = Wamp2ServerFactory(wsuri)
    wampFactory.protocol = MyPubSubServerProtocol
@@ -82,6 +107,8 @@ def test_server(wsuri, wsuri2 = None):
 
 
 def test_client(wsuri, dopub):
+
+   dorpc = True
 
    class MyPubSubClientProtocol(Wamp2ClientProtocol):
 
@@ -109,6 +136,16 @@ def test_client(wsuri, dopub):
          if dopub:
             sendMyEvent1()
 
+         if dorpc:
+            def writeln(res):
+               print res
+
+            d = self.call("http://myapp.com/add", 23, 7)
+            d.addBoth(writeln)
+
+            d = self.call("http://myapp2.com/add", 40, 2)
+            d.addBoth(writeln)
+
 
       def onClose(self, wasClean, code, reason):
          print "Connection closed", reason
@@ -118,6 +155,32 @@ def test_client(wsuri, dopub):
    factory.protocol = MyPubSubClientProtocol
    connectWS(factory)
 
+
+def test_client2(wsuri):
+
+   class MyPubSubClientProtocol(Wamp2ClientProtocol):
+
+      def onSessionOpen(self):
+
+         print "Connected!"
+         calculator = Calculator()
+
+         dealer = Dealer()
+         dealer.register("http://myapp2.com/", calculator)
+
+         self.setDealer(dealer)
+
+      def onClose(self, wasClean, code, reason):
+         print "Connection closed", reason
+         reactor.stop()
+
+   factory = Wamp2ClientFactory(wsuri)
+   factory.protocol = MyPubSubClientProtocol
+   connectWS(factory)
+
+## python wamp2.py server ws://127.0.0.1:9000
+## python wamp2.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
+## python wamp2.py client ws://127.0.0.1:9000 pub
 
 if __name__ == '__main__':
 
@@ -138,6 +201,8 @@ if __name__ == '__main__':
 
    if mode == 'client':
       test_client(wsuri, dopub)
+   elif mode == 'client2':
+      test_client2(wsuri)
    elif mode == 'server':
       test_server(wsuri, wsuri2)
    else:

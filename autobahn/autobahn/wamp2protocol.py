@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+from twisted.internet.defer import Deferred, \
+                                   maybeDeferred
+
 from websocket import WebSocketProtocol, HttpException, Timings
 from websocket import WebSocketServerProtocol, WebSocketClientProtocol
 
@@ -25,14 +28,67 @@ from util import utcnow, newid
 from wamp2message import *
 
 
+
+import inspect, types
+
+def exportRpc(arg = None):
+   """
+   Decorator for RPC'ed callables.
+   """
+   ## decorator without argument
+   if type(arg) is types.FunctionType:
+      arg._autobahn_rpc_id = arg.__name__
+      return arg
+   ## decorator with argument
+   else:
+      def inner(f):
+         f._autobahn_rpc_id = arg
+         return f
+      return inner
+
+
 ## incoming client connections
 ## incoming broker connections
 ## outgoing broker connections
+
+class Endpoint:
+   pass
+
+
+class LocalMethodEndpoint(Endpoint):
+   def __init__(self, endpoint, obj, method):
+      self.endpoint = endpoint
+      self.obj = obj
+      self.method = method
+
+   def __call__(self, *args):
+      return maybeDeferred(self.method, self.obj, *args)
+
+
+class LocalProcedureEndpoint(Endpoint):
+   def __init__(self, endpoint, proc):
+      self.endpoint = endpoint
+      self.proc = proc
+
+   def __call__(self, *args):
+      return maybeDeferred(self.proc, *args)
+
+
+class RemoteEndpoint(Endpoint):
+   def __init__(self, endpoint, proto):
+      self.endpoint = endpoint
+      self.proto = proto
+
+   def __call__(self, *args):
+      return self.proto.call(self.endpoint, *args)
+
 
 class Dealer:
 
    def __init__(self):
       self._protos = set()
+      self._endpoints = {}
+      self._dealers = set()
 
    def add(self, proto):
       pass
@@ -40,17 +96,77 @@ class Dealer:
    def remove(self, proto):
       pass
 
+   def addDealer(self, proto):
+      print "addDealer"
+      assert(proto not in self._dealers)
+      self._dealers.add(proto)
+
+      for endpoint in self._endpoints:
+         msg = WampMessageProvide(endpoint)
+         bytes = proto.factory._serializer.serialize(msg)
+         proto.sendMessage(bytes)
+
+
+   def removeDealer(self, proto):
+      assert(proto in self._dealers)
+      self._dealers.remove(proto)
+
    def onCall(self, proto, call):
-      pass
+
+      if self._endpoints.has_key(call.endpoint):
+
+         endpoint = self._endpoints[call.endpoint]
+
+         cargs = tuple(call.args)
+
+         def onSuccess(res):
+            msg = WampMessageCallResult(call.callid, res)
+            bytes = proto.factory._serializer.serialize(msg)
+            proto.sendMessage(bytes)
+
+         def onError(err):
+            print err
+
+         d = endpoint(*cargs)
+         d.addCallbacks(onSuccess, onError)
+
+      else:
+         print "FOOOOOOOOOOO"
+
 
    def onCancelCall(self, proto, call):
       pass
 
    def onProvide(self, proto, provide):
-      pass
+      self._endpoints[provide.endpoint] = RemoteEndpoint(provide.endpoint, proto)
 
    def onUnprovide(self, proto, unprovide):
       pass
+
+
+   def _announceEndpoint(self, endpoint):
+      msg = WampMessageProvide(endpoint)
+      for dealer in self._dealers:
+         bytes = dealer.factory._serializer.serialize(msg)
+         dealer.sendMessage(bytes)
+
+
+   def register(self, endpoint, obj):
+      for k in inspect.getmembers(obj.__class__, inspect.ismethod):
+         if k[1].__dict__.has_key("_autobahn_rpc_id"):
+            fq_endpoint = endpoint + k[1].__dict__["_autobahn_rpc_id"]
+            method = k[1]
+            self.registerMethod(fq_endpoint, obj, method)
+
+
+   def registerMethod(self, endpoint, obj, method):
+      self._endpoints[endpoint] = LocalMethodEndpoint(endpoint, obj, method)
+      self._announceEndpoint(endpoint)
+
+
+   def registerProcedure(self, endpoint, procedure):
+      self._endpoints[endpoint] = LocalProcedureEndpoint(endpoint, procedure)
+      self._announceEndpoint(endpoint)
 
 
 
@@ -60,6 +176,25 @@ class Broker:
       ## FIXME: maintain 2 maps: topic => protos (subscribers), proto => topics
       self._protos = set()
       self._subscribers = {}
+      self._brokers = set()
+
+   def addBroker(self, proto):
+      assert(proto not in self._brokers)
+      self._brokers.add(proto)
+
+      # def on_publish(topic, event):
+
+      # for topic in self._subscribers:
+      #    proto.subscribe()
+      #    msg = WampMessageEvent(publish.topic, publish.event)
+      #    bytes = proto.factory._serializer.serialize(msg)
+      #    for proto in receivers:
+      #       proto.sendMessage(bytes)
+
+
+   def removeBroker(self, proto):
+      assert(proto in self._brokers)
+      self._brokers.remove(proto)
 
    def add(self, proto):
       assert(proto not in self._protos)
@@ -71,8 +206,14 @@ class Broker:
       for subscribers in self._subscribers:
          subscribers.discard(proto)
 
+
    def onPublish(self, proto, publish):
       assert(proto in self._protos)
+
+      for broker_proto in self._brokers:
+         if broker_proto != proto:
+            bytes = broker_proto.factory._serializer.serialize(publish)
+            broker_proto.sendMessage(bytes)
 
       if self._subscribers.has_key(publish.topic):
          receivers = self._subscribers[publish.topic]
@@ -82,13 +223,16 @@ class Broker:
             for proto in receivers:
                proto.sendMessage(bytes)
 
+
    def onSubscribe(self, proto, subscribe):
       assert(proto in self._protos)
 
       if not self._subscribers.has_key(subscribe.topic):
          self._subscribers[subscribe.topic] = set()
+
       if not proto in self._subscribers[subscribe.topic]:
          self._subscribers[subscribe.topic].add(proto)
+
 
    def onUnsubscribe(self, proto, unsubscribe):
       assert(proto in self._protos)
@@ -106,6 +250,16 @@ class Wamp2Protocol:
 
 
    def setBroker(self, broker = None):
+      if self._broker and not broker:
+         msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
+      if not self._broker and broker:
+         msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
       if self._broker:
          self._broker.remove(self)
 
@@ -116,6 +270,16 @@ class Wamp2Protocol:
 
 
    def setDealer(self, dealer = None):
+      if self._dealer and not dealer:
+         msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
+      if not self._dealer and dealer:
+         msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
+         bytes = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes)
+
       if self._dealer:
          self._dealer.remove(self)
 
@@ -131,9 +295,11 @@ class Wamp2Protocol:
 
       self._subscriptions = {}
       self._broker = None
+      self._peer_is_broker = False
 
       self._calls = {}
       self._dealer = None
+      self._peer_is_dealer = False
 
       msg = WampMessageHello(self._this_sessionid)
       bytes = self.factory._serializer.serialize(msg)
@@ -156,7 +322,16 @@ class Wamp2Protocol:
             print msg.__class__
             print msg
 
-            if isinstance(msg, WampMessageEvent):
+            if isinstance(msg, WampMessageRoleChange):
+               if msg.op == WampMessageRoleChange.ROLE_CHANGE_OP_ADD and msg.role == WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER:
+                  if self._broker:
+                     self._broker.addBroker(self)
+
+               if msg.op == WampMessageRoleChange.ROLE_CHANGE_OP_ADD and msg.role == WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER:
+                  if self._dealer:
+                     self._dealer.addDealer(self)
+
+            elif isinstance(msg, WampMessageEvent):
                if self._subscriptions.has_key(msg.topic):
                   for handler in self._subscriptions[msg.topic]:
                      handler(msg.topic, msg.event)
@@ -251,7 +426,8 @@ class Wamp2Protocol:
       msg = WampMessageCall(callid, endpoint, args = args[1:])
       try:
          bytes = self.factory._serializer.serialize(msg)
-      except:
+      except Exception, e:
+         print "X"*100, e
          raise Exception("call argument(s) not serializable")
 
       def canceller(_d):

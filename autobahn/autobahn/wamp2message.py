@@ -108,7 +108,7 @@ class WampMessageHello(WampMessage):
       Message constructor.
 
       :param sessionid: The WAMP session ID the other peer is assigned.
-      :type topic: str
+      :type sessionid: str
       """
       self.sessionid = sessionid
 
@@ -160,6 +160,98 @@ class WampMessageHello(WampMessage):
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
       return "WAMP Hello Message (sessionid = '%s')" % (self.sessionid)
+
+
+
+class WampMessageRoleChange(WampMessage):
+   """
+   A WAMP Role-Change message.
+   """
+
+   MESSAGE_TYPE = 23
+   """
+   The WAMP message code for this type of message.
+   """
+
+   ROLE_CHANGE_OP_ADD = 1
+   ROLE_CHANGE_OP_REMOVE = 2
+
+   ROLE_CHANGE_OP_DESC = {
+      ROLE_CHANGE_OP_ADD: 'add',
+      ROLE_CHANGE_OP_REMOVE: 'remove'
+   }
+
+   ROLE_CHANGE_ROLE_BROKER = 'broker'
+   ROLE_CHANGE_ROLE_DEALER = 'dealer'
+
+
+   def __init__(self, op, role):
+      """
+      Message constructor.
+
+      :param op: Role operation (add or remove role).
+      :type op: int
+      :param role: Role to be added or removed.
+      :type role: str
+      """
+      self.op = op
+      self.role = role
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == WampMessageRoleChange.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise WampProtocolError("invalid message length %d for WAMP Role-Change message" % len(wmsg))
+
+      ## op
+      ##
+      op = wmsg[1]
+      if type(op) != int:
+         raise WampProtocolError("invalid type %s for 'op' in WAMP Role-Change message" % type(op))
+      if op not in [WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE]:
+         raise WampProtocolError("invalid value '%s' for 'op' in WAMP Role-Change message" % op)
+
+      ## role
+      ##
+      role = wmsg[2]
+      if type(role) not in (str, unicode):
+         raise WampProtocolError("invalid type %s for 'role' in WAMP Role-Change message" % type(role))
+      if role not in [WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER]:
+         raise WampProtocolError("invalid value '%s' for 'role' in WAMP Role-Change message" % role)
+
+      obj = Klass(op, role)
+
+      return obj
+
+   
+   def serialize(self, serializer):
+      """
+      Serialize this object into a wire level bytestring representation.
+
+      :param serializer: The wire level serializer to use.
+      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      """
+      return serializer.serialize([WampMessageRoleChange.MESSAGE_TYPE, self.op, self.role])
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP Role-Change Message (op = '%s', role = '%s')" % (WampMessageRoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)
 
 
 
@@ -1186,7 +1278,7 @@ class WampMessageCall(WampMessage):
       if self.timeout is not None:
          options['timeout'] = self.timeout
 
-      if self.session is not None:
+      if self.sessionid is not None:
          options['session'] = self.sessionid
 
       if len(options):
@@ -1632,6 +1724,7 @@ class WampSerializer:
       ## Session
       WampMessageHello.MESSAGE_TYPE:         WampMessageHello,
       WampMessageHeartbeat.MESSAGE_TYPE:     WampMessageHeartbeat,
+      WampMessageRoleChange.MESSAGE_TYPE:    WampMessageRoleChange,
 
       ## PubSub
       WampMessageSubscribe.MESSAGE_TYPE:     WampMessageSubscribe,

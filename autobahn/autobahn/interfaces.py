@@ -45,3 +45,41 @@ class ISerializer(Interface):
 
       :returns obj -- Any type that can be unserialized.
       """
+
+
+class IDealer(Interface):
+   """
+   """
+
+   def register(self, endpoint, obj):
+      """
+      """
+
+   def registerMethod(self, endpoint, obj, method):
+      """
+      """
+
+   def registerProcedure(self, endpoint, procedure):
+      """
+      """
+
+
+class IConsumer(Interface):
+   """
+   """
+
+   def call(self, *args):
+      """
+      """
+
+   def subscribe(self, topic, handler):
+      """
+      """
+
+   def unsubscribe(self, topic, handler = None):
+      """
+      """
+
+   def publish(self, topic, event, excludeMe = None, exclude = None, eligible = None, discloseMe = None):
+      """
+      """
