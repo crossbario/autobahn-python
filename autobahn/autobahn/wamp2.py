@@ -77,10 +77,11 @@ class Calculator:
 
 def test_server(wsuri, wsuri2 = None):
 
-   calculator = Calculator()
-
    dealer = Dealer()
-   dealer.register("http://myapp.com/", calculator)
+
+   if wsuri2 is None:
+      calculator = Calculator()
+      dealer.register("http://myapp.com/", calculator)
 
 
    broker = Broker()
@@ -100,6 +101,7 @@ def test_server(wsuri, wsuri2 = None):
 
          def onSessionOpen(self):
             self.setBroker(broker)
+            self.setDealer(dealer)
 
       factory = Wamp2ClientFactory(wsuri2)
       factory.protocol = MyPubSubClientProtocol
@@ -181,6 +183,13 @@ def test_client2(wsuri):
 ## python wamp2.py server ws://127.0.0.1:9000
 ## python wamp2.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
 ## python wamp2.py client ws://127.0.0.1:9000 pub
+
+
+## python wamp2.py server ws://127.0.0.1:9000
+## python wamp2.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
+## python wamp2.py client2 ws://127.0.0.1:9001
+## python wamp2.py client ws://127.0.0.1:9000
+
 
 if __name__ == '__main__':
 

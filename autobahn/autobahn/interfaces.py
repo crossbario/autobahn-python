@@ -47,7 +47,7 @@ class ISerializer(Interface):
       """
 
 
-class IDealer(Interface):
+class IWampDealer(Interface):
    """
    """
 
@@ -63,8 +63,31 @@ class IDealer(Interface):
       """
       """
 
+   def unregister(self, endpoint):
+      """
+      """
 
-class IConsumer(Interface):
+
+class IWampBroker(Interface):
+   """
+   """
+
+   def register(self, topic, prefix = False, publish = True, subscribe = True):
+      """
+      """
+
+   def unregister(self, topic):
+      """
+      """
+
+
+class IWampPublishOptions(Interface):
+
+   excludeMe = Attribute("Exclude me, the publisher, from receiving the event (even though I may be subscribed).")
+
+
+
+class IWampSession(Interface):
    """
    """
 
@@ -80,6 +103,18 @@ class IConsumer(Interface):
       """
       """
 
-   def publish(self, topic, event, excludeMe = None, exclude = None, eligible = None, discloseMe = None):
+   def publish(self, topic, event,
+               excludeMe = None,
+               exclude = None,
+               eligible = None,
+               discloseMe = None):
+      """
+      """
+
+   def setDealer(self, dealer = None):
+      """
+      """
+
+   def setBroker(self, broker = None):
       """
       """

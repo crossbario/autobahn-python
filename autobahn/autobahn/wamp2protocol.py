@@ -140,6 +140,12 @@ class Dealer:
    def onProvide(self, proto, provide):
       self._endpoints[provide.endpoint] = RemoteEndpoint(provide.endpoint, proto)
 
+      for dealer_proto in self._dealers:
+         if dealer_proto != proto:
+            bytes = dealer_proto.factory._serializer.serialize(provide)
+            dealer_proto.sendMessage(bytes)
+
+
    def onUnprovide(self, proto, unprovide):
       pass
 
