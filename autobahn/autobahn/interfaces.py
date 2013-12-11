@@ -36,7 +36,7 @@ class ISerializer(Interface):
       :returns str -- Serialized byte string.
       """
 
-   def unserialize(self, bytes):
+   def unserialize(self, bytes, isbinar):
       """
       Unserialize an object from a byte string.
 

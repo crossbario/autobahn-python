@@ -103,8 +103,8 @@ class Dealer:
 
       for endpoint in self._endpoints:
          msg = WampMessageProvide(endpoint)
-         bytes = proto.factory._serializer.serialize(msg)
-         proto.sendMessage(bytes)
+         bytes, isbinary = proto.factory._serializer.serialize(msg)
+         proto.sendMessage(bytes, isbinary)
 
 
    def removeDealer(self, proto):
@@ -121,8 +121,8 @@ class Dealer:
 
          def onSuccess(res):
             msg = WampMessageCallResult(call.callid, res)
-            bytes = proto.factory._serializer.serialize(msg)
-            proto.sendMessage(bytes)
+            bytes, isbinary = proto.factory._serializer.serialize(msg)
+            proto.sendMessage(bytes, isbinary)
 
          def onError(err):
             print err
@@ -142,8 +142,8 @@ class Dealer:
 
       for dealer_proto in self._dealers:
          if dealer_proto != proto:
-            bytes = dealer_proto.factory._serializer.serialize(provide)
-            dealer_proto.sendMessage(bytes)
+            bytes, isbinary = dealer_proto.factory._serializer.serialize(provide)
+            dealer_proto.sendMessage(bytes, isbinary)
 
 
    def onUnprovide(self, proto, unprovide):
@@ -153,8 +153,8 @@ class Dealer:
    def _announceEndpoint(self, endpoint):
       msg = WampMessageProvide(endpoint)
       for dealer in self._dealers:
-         bytes = dealer.factory._serializer.serialize(msg)
-         dealer.sendMessage(bytes)
+         bytes, isbinary = dealer.factory._serializer.serialize(msg)
+         dealer.sendMessage(bytes, isbinary)
 
 
    def register(self, endpoint, obj):
@@ -193,9 +193,9 @@ class Broker:
       # for topic in self._subscribers:
       #    proto.subscribe()
       #    msg = WampMessageEvent(publish.topic, publish.event)
-      #    bytes = proto.factory._serializer.serialize(msg)
+      #    bytes, isbinary = proto.factory._serializer.serialize(msg)
       #    for proto in receivers:
-      #       proto.sendMessage(bytes)
+      #       proto.sendMessage(bytes, isbinary)
 
 
    def removeBroker(self, proto):
@@ -218,24 +218,24 @@ class Broker:
 
       for broker_proto in self._brokers:
          if broker_proto != proto:
-            bytes = broker_proto.factory._serializer.serialize(publish)
-            broker_proto.sendMessage(bytes)
+            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
+            broker_proto.sendMessage(bytes, isbinary)
 
       if self._subscribers.has_key(publish.topic):
          subscriptionid, receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(subscriptionid, publish.topic, publish.event)
-            bytes = proto.factory._serializer.serialize(msg)
+            bytes, isbinary = proto.factory._serializer.serialize(msg)
             for proto in receivers:
-               proto.sendMessage(bytes)
+               proto.sendMessage(bytes, isbinary)
 
 
    def onSubscribe(self, proto, subscribe):
       assert(proto in self._protos)
 
-      if subscribe.topic.startswith("http://example.com/"):
-         proto.sendWampMessage(WampMessageSubscribeError(subscribe.subscribeid, "http://api.wamp.ws/error#forbidden"))
-         return
+      # if subscribe.topic.startswith("http://example.com/"):
+      #    proto.sendWampMessage(WampMessageSubscribeError(subscribe.subscribeid, "http://api.wamp.ws/error#forbidden"))
+      #    return
 
 
       if not self._subscribers.has_key(subscribe.topic):
@@ -255,16 +255,16 @@ class Broker:
 
       for broker_proto in self._brokers:
          if broker_proto != proto:
-            bytes = broker_proto.factory._serializer.serialize(publish)
-            broker_proto.sendMessage(bytes)
+            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
+            broker_proto.sendMessage(bytes, isbinary)
 
       if self._subscribers.has_key(publish.topic):
          receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(publish.topic, publish.event)
-            bytes = proto.factory._serializer.serialize(msg)
+            bytes, isbinary = proto.factory._serializer.serialize(msg)
             for proto in receivers:
-               proto.sendMessage(bytes)
+               proto.sendMessage(bytes, isbinary)
 
 
    def onSubscribe2(self, proto, subscribe):
@@ -289,8 +289,8 @@ class Broker:
 class Wamp2Protocol:
 
    def sendWampMessage(self, msg):
-      bytes = self.factory._serializer.serialize(msg)
-      self.sendMessage(bytes)
+      bytes, isbinary = self.factory._serializer.serialize(msg)
+      self.sendMessage(bytes, isbinary)
 
 
    def onSessionOpen(self):
@@ -300,13 +300,13 @@ class Wamp2Protocol:
    def setBroker(self, broker = None):
       if self._broker and not broker:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes, isbinary)
 
       if not self._broker and broker:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes, isbinary)
 
       if self._broker:
          self._broker.remove(self)
@@ -320,13 +320,13 @@ class Wamp2Protocol:
    def setDealer(self, dealer = None):
       if self._dealer and not dealer:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes, isbinary)
 
       if not self._dealer and dealer:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes, isbinary)
 
       if self._dealer:
          self._dealer.remove(self)
@@ -352,18 +352,18 @@ class Wamp2Protocol:
       self._subscribes = {}
 
       msg = WampMessageHello(self._this_sessionid)
-      bytes = self.factory._serializer.serialize(msg)
-      self.sendMessage(bytes)
+      bytes, isbinary = self.factory._serializer.serialize(msg)
+      self.sendMessage(bytes, isbinary)
 
 
    def onClose(self, wasClean, code, reason):
       pass
 
 
-   def onMessage(self, bytes, binary):
-      print bytes
+   def onMessage(self, bytes, isbinary):
+      #print bytes
       try:
-         msg = self.factory._serializer.unserialize(bytes)
+         msg = self.factory._serializer.unserialize(bytes, isbinary)
       except WampProtocolError, e:
          print "WAMP protocol error", e
       else:
@@ -493,20 +493,20 @@ class Wamp2Protocol:
 
       msg = WampMessageCall(callid, endpoint, args = args[1:])
       try:
-         bytes = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
       except Exception, e:
          print "X"*100, e
          raise Exception("call argument(s) not serializable")
 
       def canceller(_d):
          msg = WampMessageCancelCall(callid)
-         bytes = self.factory._serializer.serialize(msg)
-         self.sendMessage(bytes)
+         bytes, isbinary = self.factory._serializer.serialize(msg)
+         self.sendMessage(bytes, isbinary)
 
       d = Deferred(canceller)
       self._calls[callid] = d
 
-      self.sendMessage(bytes)
+      self.sendMessage(bytes, isbinary)
       return d
 
 
@@ -550,8 +550,8 @@ class Wamp2Protocol:
             self._subscriptions[topic].remove(handler)
          if handler is None or len(self._subscriptions[topic]) == 0:
             msg = WampMessageUnsubscribe(topic)
-            bytes = self.factory._serializer.serialize(msg)
-            self.sendMessage(bytes)
+            bytes, isbinary = self.factory._serializer.serialize(msg)
+            self.sendMessage(bytes, isbinary)
 
 
    def publish(self, topic, event, excludeMe = None, exclude = None, eligible = None, discloseMe = None):
@@ -585,8 +585,6 @@ class Wamp2ServerProtocol(Wamp2Protocol, WebSocketServerProtocol):
    # def connectionLost(self, reason):
    #    Wamp2Protocol.connectionLost(self, reason)
    #    WebSocketServerProtocol.connectionLost(self, reason)
-
-
 
 
 

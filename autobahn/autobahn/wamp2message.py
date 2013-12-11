@@ -30,10 +30,10 @@ import urlparse, urllib
 class JsonDefaultSerializer:
 
    def serialize(self, obj):
-      return json.dumps(obj)
+      return json.dumps(obj), False
 
 
-   def unserialize(self, bytes):
+   def unserialize(self, bytes, isbinary):
       return json.loads(bytes)
 
 
@@ -1888,7 +1888,7 @@ class WampSerializer:
       return wampMessage.serialize(self._serializer)
 
 
-   def unserialize(self, bytes):
+   def unserialize(self, bytes, isbinary):
       """
       Unserializes bytes from a transport and parses a WAMP message.
 
@@ -1896,7 +1896,7 @@ class WampSerializer:
       :type bytes: str or bytes
       :returns obj -- An instance of a subclass of :class:`autobahn.wamp2message.WampMessage`.
       """
-      raw_msg = self._serializer.unserialize(bytes)
+      raw_msg = self._serializer.unserialize(bytes, isbinary)
 
       if type(raw_msg) != list:
          raise WampProtocolError("invalid type %s for WAMP message" % type(raw_msg))

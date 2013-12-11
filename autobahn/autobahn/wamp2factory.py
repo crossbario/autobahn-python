@@ -21,13 +21,29 @@ from websocket import WebSocketServerFactory, WebSocketClientFactory
 from wamp2protocol import Wamp2ServerProtocol, Wamp2ClientProtocol
 from wamp2message import JsonDefaultSerializer, WampSerializer
 
+from zope.interface import implementer
+from interfaces import ISerializer
+import msgpack
+
+
+@implementer(ISerializer)
+class MsgPackSerializer:
+
+   def serialize(self, obj):
+      return msgpack.packb(obj, use_bin_type = True), True
+
+
+   def unserialize(self, bytes, isbinary):
+      return msgpack.unpackb(bytes, encoding = 'utf-8')
+
 
 
 class Wamp2Factory:
 
    def __init__(self, serializer = None):
       if serializer is None:
-         serializer = JsonDefaultSerializer()
+         #serializer = JsonDefaultSerializer()
+         serializer = MsgPackSerializer()
       self._serializer = WampSerializer(serializer)
 
 
