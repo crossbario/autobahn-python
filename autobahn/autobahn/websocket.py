@@ -1260,7 +1260,11 @@ class WebSocketProtocol(protocol.Protocol):
       self.trafficStats = TrafficStats()
 
       ## Set "Nagle"
-      self.transport.setTcpNoDelay(self.tcpNoDelay)
+      try:
+         self.transport.setTcpNoDelay(self.tcpNoDelay)
+      except:
+         ## eg Unix Domain sockets throw Errno 22 on this
+         pass
 
       ## the peer we are connected to
       self.peer = self.transport.getPeer()
