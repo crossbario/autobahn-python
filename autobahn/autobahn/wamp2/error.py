@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,9 +16,21 @@
 ##
 ###############################################################################
 
-from websocket import WebSocketServerFactory, WebSocketClientFactory
 
-from wamp2protocol import Wamp2ServerProtocol, Wamp2ClientProtocol
-from wamp2message import JsonDefaultSerializer, WampSerializer
+class WampException(Exception):
+   pass
 
 
+
+class WampProtocolError(WampException):
+   pass
+
+
+
+class WampCallException(Exception):
+
+   def __init__(self, error, message, value):
+      self.args = (error, message, value)
+      #self.error = error
+      #self.message = message
+      #self.value = value

@@ -21,6 +21,16 @@
 ## incoming broker connections
 ## outgoing broker connections
 
+from message import \
+   WampMessageSubscribe,
+   WampMessageSubscription,
+   WampMessageSubscribeError,
+   WampMessageUnsubscribe,
+   WampMessagePublish,
+   WampMessageEvent,
+   WampMessageMetaEvent
+
+
 class Broker:
 
    def __init__(self):

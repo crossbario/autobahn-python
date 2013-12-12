@@ -19,6 +19,14 @@
 
 import inspect, types
 
+from message import \
+   WampMessageProvide,
+   WampMessageUnprovide,
+   WampMessageCallProgress,
+   WampMessageCallResult,
+   WampMessageCallError
+
+
 def exportRpc(arg = None):
    """
    Decorator for RPC'ed callables.
@@ -66,6 +74,7 @@ class RemoteEndpoint(Endpoint):
 
    def __call__(self, *args):
       return self.proto.call(self.endpoint, *args)
+
 
 
 class Dealer:

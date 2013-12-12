@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -19,17 +19,34 @@
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from websocket import WebSocketProtocol, HttpException, Timings
-from websocket import WebSocketServerProtocol, WebSocketClientProtocol
+from autobahn.websocket import WebSocketProtocol, HttpException, Timings
+from autobahn.websocket import WebSocketServerProtocol, WebSocketClientProtocol
 
-from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
-from util import utcnow, newid
+from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
+from autobahn.util import newid
 
-from wamp2message import *
+from message import \
+   WampMessageHello,
+   WampMessageHeartbeat,
+   WampMessageRoleChange,
+   WampMessageSubscribe,
+   WampMessageSubscription,
+   WampMessageSubscribeError,
+   WampMessageUnsubscribe,
+   WampMessagePublish,
+   WampMessageEvent,
+   WampMessageMetaEvent,
+   WampMessageProvide,
+   WampMessageUnprovide,
+   WampMessageCall,
+   WampMessageCancelCall,
+   WampMessageCallProgress,
+   WampMessageCallResult,
+   WampMessageCallError
 
 
 
-class Wamp2Protocol:
+class WampProtocol:
 
    def sendWampMessage(self, msg):
       bytes, isbinary = self.factory._serializer.serialize(msg)
@@ -306,7 +323,7 @@ class Wamp2Protocol:
 
 
 
-class Wamp2ServerProtocol(Wamp2Protocol, WebSocketServerProtocol):
+class WampServerProtocol(WampProtocol, WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
       """
@@ -322,16 +339,16 @@ class Wamp2ServerProtocol(Wamp2Protocol, WebSocketServerProtocol):
 
    # def connectionMade(self):
    #    WebSocketServerProtocol.connectionMade(self)
-   #    Wamp2Protocol.connectionMade(self)
+   #    WampProtocol.connectionMade(self)
 
 
    # def connectionLost(self, reason):
-   #    Wamp2Protocol.connectionLost(self, reason)
+   #    WampProtocol.connectionLost(self, reason)
    #    WebSocketServerProtocol.connectionLost(self, reason)
 
 
 
-class Wamp2ClientProtocol(Wamp2Protocol, WebSocketClientProtocol):
+class WampClientProtocol(WampProtocol, WebSocketClientProtocol):
 
    def onConnect(self, connectionResponse):
       if connectionResponse.protocol not in self.factory.protocols:
@@ -340,7 +357,7 @@ class Wamp2ClientProtocol(Wamp2Protocol, WebSocketClientProtocol):
 
    # def connectionMade(self):
    #    WebSocketClientProtocol.connectionMade(self)
-   #    Wamp2Protocol.connectionMade(self)
+   #    WampProtocol.connectionMade(self)
 
 
    # def connectionLost(self, reason):
@@ -348,7 +365,7 @@ class Wamp2ClientProtocol(Wamp2Protocol, WebSocketClientProtocol):
    #    WebSocketClientProtocol.connectionLost(self, reason)
 
 
-class Wamp2Factory:
+class WampFactory:
 
    def __init__(self, serializer = None):
       if serializer is None:
@@ -358,9 +375,9 @@ class Wamp2Factory:
 
 
 
-class Wamp2ServerFactory(WebSocketServerFactory, Wamp2Factory):
+class WampServerFactory(WebSocketServerFactory, WampFactory):
 
-   protocol = Wamp2ServerProtocol
+   protocol = WampServerProtocol
 
    def __init__(self,
                 url,
@@ -372,13 +389,13 @@ class Wamp2ServerFactory(WebSocketServerFactory, Wamp2Factory):
                                       debug = debugWs,
                                       protocols = ["wamp2"],
                                       reactor = reactor)
-      Wamp2Factory.__init__(self, serializer)
+      WampFactory.__init__(self, serializer)
 
 
 
-class Wamp2ClientFactory(WebSocketClientFactory, Wamp2Factory):
+class WampClientFactory(WebSocketClientFactory, WampFactory):
 
-   protocol = Wamp2ClientProtocol
+   protocol = WampClientProtocol
 
    def __init__(self,
                 url,
@@ -390,5 +407,4 @@ class Wamp2ClientFactory(WebSocketClientFactory, Wamp2Factory):
                                       debug = debugWs,
                                       protocols = ["wamp2"],
                                       reactor = reactor)
-      Wamp2Factory.__init__(self, serializer)
-
+      WampFactory.__init__(self, serializer)

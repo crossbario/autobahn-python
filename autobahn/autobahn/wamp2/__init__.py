@@ -18,6 +18,7 @@
 
 import interfaces
 import uri
+import error
 import serializer
 import message
 import broker

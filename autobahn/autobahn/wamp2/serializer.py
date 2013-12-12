@@ -16,29 +16,38 @@
 ##
 ###############################################################################
 
+__all__ = ['WampSerializer', 'JsonSerializer']
+
 
 from zope.interface import implementer
+
 from interfaces import ISerializer
-
-
-import msgpack
-
-@implementer(ISerializer)
-class MsgPackSerializer:
-
-   def serialize(self, obj):
-      return msgpack.packb(obj, use_bin_type = True), True
-
-
-   def unserialize(self, bytes, isbinary):
-      return msgpack.unpackb(bytes, encoding = 'utf-8')
+from error import WampProtocolError
+from message import \
+   WampMessageHello,
+   WampMessageHeartbeat,
+   WampMessageRoleChange,
+   WampMessageSubscribe,
+   WampMessageSubscription,
+   WampMessageSubscribeError,
+   WampMessageUnsubscribe,
+   WampMessagePublish,
+   WampMessageEvent,
+   WampMessageMetaEvent,
+   WampMessageProvide,
+   WampMessageUnprovide,
+   WampMessageCall,
+   WampMessageCancelCall,
+   WampMessageCallProgress,
+   WampMessageCallResult,
+   WampMessageCallError
 
 
 
 import json
 
 @implementer(ISerializer)
-class JsonDefaultSerializer:
+class JsonSerializer:
 
    def serialize(self, obj):
       return json.dumps(obj), False
@@ -46,6 +55,26 @@ class JsonDefaultSerializer:
 
    def unserialize(self, bytes, isbinary):
       return json.loads(bytes)
+
+
+
+try:
+   import msgpack
+except:
+   pass
+else:
+   @implementer(ISerializer)
+   class MsgPackSerializer:
+
+      def serialize(self, obj):
+         return msgpack.packb(obj, use_bin_type = True), True
+
+
+      def unserialize(self, bytes, isbinary):
+         return msgpack.unpackb(bytes, encoding = 'utf-8')
+
+   __all__.append('MsgPackSerializer')
+
 
 
 
@@ -132,25 +161,3 @@ class WampSerializer:
       msg = Klass.parse(raw_msg)
 
       return msg
-
-
-
-if __name__ == '__main__':
-
-   serializer = JsonDefaultSerializer()
-
-   wampSerializer = WampSerializer(serializer)
-
-   wampMsg = WampMessageSubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
-   wampMsg = WampMessageUnsubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
-   wampMsg = WampMessagePublish("http://myapp.com/topic1", "Hello, world!")
-
-   bytes = wampSerializer.serialize(wampMsg)
-
-   print bytes
-
-   wampMsg2 = wampSerializer.unserialize(bytes)
-
-   print wampMsg2.__class__
-   print wampMsg2
-

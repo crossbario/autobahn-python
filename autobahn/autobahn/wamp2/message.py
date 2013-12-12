@@ -26,23 +26,6 @@ from interfaces import ISerializer
 import urlparse, urllib
 
 
-class WampException(Exception):
-   pass
-
-
-class WampProtocolError(WampException):
-   pass
-
-
-class WampCallException(Exception):
-
-   def __init__(self, error, message, value):
-      self.args = (error, message, value)
-      #self.error = error
-      #self.message = message
-      #self.value = value
-
-
 def parse_wamp_uri(bytes):
    try:
       uri = urllib.unquote(bytes).decode('utf8')
@@ -62,9 +45,11 @@ def parse_wamp_uri(bytes):
    return uri
 
 
+
 def parse_wamp_sessionid(string):
    ## FIXME: verify/parse WAMP session ID
    return string
+
 
 
 def parse_wamp_callid(string):
