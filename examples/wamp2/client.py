@@ -63,11 +63,11 @@ if __name__ == '__main__':
    parser.add_argument("-d", "--debug", action = "store_true",
                        help = "Enable debug output.")
 
-   parser.add_argument("--websocket", default = "tcp:host=localhost:9000",
-                       help = 'WebSocket server endpoint descriptor, e.g. "tcp:host=localhost:9000".')
+   parser.add_argument("--websocket", default = "tcp:localhost:9000",
+                       help = 'WebSocket client Twisted endpoint descriptor, e.g. "tcp:localhost:9000" or "unix:/tmp/mywebsocket".')
 
    parser.add_argument("--wsurl", default = "ws://localhost:9000",
-                       help = 'WebSocket server URL (must suit the endpoint), e.g. "ws://localhost:9000".')
+                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
 
    args = parser.parse_args()
 
