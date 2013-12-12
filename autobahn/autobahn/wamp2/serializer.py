@@ -49,7 +49,7 @@ import json
 class JsonSerializer:
 
    def serialize(self, obj):
-      return json.dumps(obj), False
+      return json.dumps(obj, separators = (',',':')), False
 
 
    def unserialize(self, bytes, isbinary):

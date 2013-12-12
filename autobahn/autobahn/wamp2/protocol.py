@@ -60,6 +60,10 @@ class WampProtocol:
       pass
 
 
+   def onSessionClose(self):
+      pass
+
+
    def setBroker(self, broker = None):
       if self._broker and not broker:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
@@ -120,7 +124,7 @@ class WampProtocol:
 
 
    def onClose(self, wasClean, code, reason):
-      pass
+      self.onSessionClose()
 
 
    def onMessage(self, bytes, isbinary):
@@ -132,8 +136,8 @@ class WampProtocol:
       else:
          if self._peer_sessionid is not None:
 
-            print msg.__class__
-            print msg
+            #print msg.__class__
+            #print msg
 
             if isinstance(msg, WampMessageRoleChange):
                if msg.op == WampMessageRoleChange.ROLE_CHANGE_OP_ADD and msg.role == WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER:
@@ -384,12 +388,12 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
 
    def __init__(self,
                 url,
-                debugWs = False,
+                debug = False,
                 serializer = None,
                 reactor = None):
       WebSocketServerFactory.__init__(self,
                                       url,
-                                      debug = debugWs,
+                                      debug = debug,
                                       protocols = ["wamp2"],
                                       reactor = reactor)
       WampFactory.__init__(self, serializer)
@@ -402,12 +406,12 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
 
    def __init__(self,
                 url,
-                debugWs = False,
+                debug = False,
                 serializer = None,
                 reactor = None):
       WebSocketClientFactory.__init__(self,
                                       url,
-                                      debug = debugWs,
+                                      debug = debug,
                                       protocols = ["wamp2"],
                                       reactor = reactor)
       WampFactory.__init__(self, serializer)

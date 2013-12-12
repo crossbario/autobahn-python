@@ -25,6 +25,8 @@ from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from autobahn.util import utcnow, newid
 
+import autobahn.wamp2
+
 from autobahn.wamp2.dealer import Dealer, exportRpc
 from autobahn.wamp2.broker import Broker
 from autobahn.wamp2.protocol import WampServerProtocol, \
