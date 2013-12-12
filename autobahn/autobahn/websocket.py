@@ -1268,7 +1268,11 @@ class WebSocketProtocol(protocol.Protocol):
 
       ## the peer we are connected to
       self.peer = self.transport.getPeer()
-      self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
+      try:
+         self.peerstr = "%s:%d" % (self.peer.host, self.peer.port)
+      except:
+         ## eg Unix Domain sockets don't have host/port
+         self.peerstr = str(self.peer)
 
       ## initial state
       if not self.factory.isServer and self.factory.proxy is not None:
