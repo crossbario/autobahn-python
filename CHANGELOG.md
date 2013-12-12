@@ -1,5 +1,11 @@
 # AutobahnPython: Changelog
 
+## v0.7.0
+ * initial support for WAMPv2
+ * support WebSocket (and WAMP) over Twisted endpoints
+ * various new examples
+ * fix Flash policy factory
+
 ## v0.6.5
  * Twisted reactor is no longer imported on module level (but lazy)
  * optimize pure Python UTF8 validator (10-20% speedup on PyPy)

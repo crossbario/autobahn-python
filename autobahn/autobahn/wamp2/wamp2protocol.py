@@ -29,263 +29,6 @@ from wamp2message import *
 
 
 
-import inspect, types
-
-def exportRpc(arg = None):
-   """
-   Decorator for RPC'ed callables.
-   """
-   ## decorator without argument
-   if type(arg) is types.FunctionType:
-      arg._autobahn_rpc_id = arg.__name__
-      return arg
-   ## decorator with argument
-   else:
-      def inner(f):
-         f._autobahn_rpc_id = arg
-         return f
-      return inner
-
-
-## incoming client connections
-## incoming broker connections
-## outgoing broker connections
-
-class Endpoint:
-   pass
-
-
-class LocalMethodEndpoint(Endpoint):
-   def __init__(self, endpoint, obj, method):
-      self.endpoint = endpoint
-      self.obj = obj
-      self.method = method
-
-   def __call__(self, *args):
-      return maybeDeferred(self.method, self.obj, *args)
-
-
-class LocalProcedureEndpoint(Endpoint):
-   def __init__(self, endpoint, proc):
-      self.endpoint = endpoint
-      self.proc = proc
-
-   def __call__(self, *args):
-      return maybeDeferred(self.proc, *args)
-
-
-class RemoteEndpoint(Endpoint):
-   def __init__(self, endpoint, proto):
-      self.endpoint = endpoint
-      self.proto = proto
-
-   def __call__(self, *args):
-      return self.proto.call(self.endpoint, *args)
-
-
-class Dealer:
-
-   def __init__(self):
-      self._protos = set()
-      self._endpoints = {}
-      self._dealers = set()
-
-   def add(self, proto):
-      pass
-
-   def remove(self, proto):
-      pass
-
-   def addDealer(self, proto):
-      print "addDealer"
-      assert(proto not in self._dealers)
-      self._dealers.add(proto)
-
-      for endpoint in self._endpoints:
-         msg = WampMessageProvide(endpoint)
-         bytes, isbinary = proto.factory._serializer.serialize(msg)
-         proto.sendMessage(bytes, isbinary)
-
-
-   def removeDealer(self, proto):
-      assert(proto in self._dealers)
-      self._dealers.remove(proto)
-
-   def onCall(self, proto, call):
-
-      if self._endpoints.has_key(call.endpoint):
-
-         endpoint = self._endpoints[call.endpoint]
-
-         cargs = tuple(call.args)
-
-         def onSuccess(res):
-            msg = WampMessageCallResult(call.callid, res)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
-            proto.sendMessage(bytes, isbinary)
-
-         def onError(err):
-            print err
-
-         d = endpoint(*cargs)
-         d.addCallbacks(onSuccess, onError)
-
-      else:
-         print "FOOOOOOOOOOO"
-
-
-   def onCancelCall(self, proto, call):
-      pass
-
-   def onProvide(self, proto, provide):
-      self._endpoints[provide.endpoint] = RemoteEndpoint(provide.endpoint, proto)
-
-      for dealer_proto in self._dealers:
-         if dealer_proto != proto:
-            bytes, isbinary = dealer_proto.factory._serializer.serialize(provide)
-            dealer_proto.sendMessage(bytes, isbinary)
-
-
-   def onUnprovide(self, proto, unprovide):
-      pass
-
-
-   def _announceEndpoint(self, endpoint):
-      msg = WampMessageProvide(endpoint)
-      for dealer in self._dealers:
-         bytes, isbinary = dealer.factory._serializer.serialize(msg)
-         dealer.sendMessage(bytes, isbinary)
-
-
-   def register(self, endpoint, obj):
-      for k in inspect.getmembers(obj.__class__, inspect.ismethod):
-         if k[1].__dict__.has_key("_autobahn_rpc_id"):
-            fq_endpoint = endpoint + k[1].__dict__["_autobahn_rpc_id"]
-            method = k[1]
-            self.registerMethod(fq_endpoint, obj, method)
-
-
-   def registerMethod(self, endpoint, obj, method):
-      self._endpoints[endpoint] = LocalMethodEndpoint(endpoint, obj, method)
-      self._announceEndpoint(endpoint)
-
-
-   def registerProcedure(self, endpoint, procedure):
-      self._endpoints[endpoint] = LocalProcedureEndpoint(endpoint, procedure)
-      self._announceEndpoint(endpoint)
-
-
-
-class Broker:
-
-   def __init__(self):
-      ## FIXME: maintain 2 maps: topic => protos (subscribers), proto => topics
-      self._protos = set()
-      self._subscribers = {}
-      self._brokers = set()
-
-   def addBroker(self, proto):
-      assert(proto not in self._brokers)
-      self._brokers.add(proto)
-
-      # def on_publish(topic, event):
-
-      # for topic in self._subscribers:
-      #    proto.subscribe()
-      #    msg = WampMessageEvent(publish.topic, publish.event)
-      #    bytes, isbinary = proto.factory._serializer.serialize(msg)
-      #    for proto in receivers:
-      #       proto.sendMessage(bytes, isbinary)
-
-
-   def removeBroker(self, proto):
-      assert(proto in self._brokers)
-      self._brokers.remove(proto)
-
-   def add(self, proto):
-      assert(proto not in self._protos)
-      self._protos.add(proto)
-
-   def remove(self, proto):
-      assert(proto in self._protos)
-      self._protos.remove(proto)
-      for subscribers in self._subscribers:
-         subscribers.discard(proto)
-
-
-   def onPublish(self, proto, publish):
-      assert(proto in self._protos)
-
-      for broker_proto in self._brokers:
-         if broker_proto != proto:
-            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
-            broker_proto.sendMessage(bytes, isbinary)
-
-      if self._subscribers.has_key(publish.topic):
-         subscriptionid, receivers = self._subscribers[publish.topic]
-         if len(receivers) > 0:
-            msg = WampMessageEvent(subscriptionid, publish.topic, publish.event)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
-            for proto in receivers:
-               proto.sendMessage(bytes, isbinary)
-
-
-   def onSubscribe(self, proto, subscribe):
-      assert(proto in self._protos)
-
-      # if subscribe.topic.startswith("http://example.com/"):
-      #    proto.sendWampMessage(WampMessageSubscribeError(subscribe.subscribeid, "http://api.wamp.ws/error#forbidden"))
-      #    return
-
-
-      if not self._subscribers.has_key(subscribe.topic):
-         subscriptionid = newid()
-         self._subscribers[subscribe.topic] = (subscriptionid, set())
-
-      subscriptionid, subscribers = self._subscribers[subscribe.topic]
-
-      if not proto in subscribers:
-         subscribers.add(proto)
-
-      proto.sendWampMessage(WampMessageSubscription(subscribe.subscribeid, subscriptionid))
-
-
-   def onPublish2(self, proto, publish):
-      assert(proto in self._protos)
-
-      for broker_proto in self._brokers:
-         if broker_proto != proto:
-            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
-            broker_proto.sendMessage(bytes, isbinary)
-
-      if self._subscribers.has_key(publish.topic):
-         receivers = self._subscribers[publish.topic]
-         if len(receivers) > 0:
-            msg = WampMessageEvent(publish.topic, publish.event)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
-            for proto in receivers:
-               proto.sendMessage(bytes, isbinary)
-
-
-   def onSubscribe2(self, proto, subscribe):
-      assert(proto in self._protos)
-
-      if not self._subscribers.has_key(subscribe.topic):
-         self._subscribers[subscribe.topic] = set()
-
-      if not proto in self._subscribers[subscribe.topic]:
-         self._subscribers[subscribe.topic].add(proto)
-
-
-   def onUnsubscribe(self, proto, unsubscribe):
-      assert(proto in self._protos)
-
-      if self._subscribers.has_key(unsubscribe.topic):
-         if proto in self._subscribers[unsubscribe.topic]:
-            self._subscribers[unsubscribe.topic].discard(proto)
-
-
-
 class Wamp2Protocol:
 
    def sendWampMessage(self, msg):
@@ -603,3 +346,49 @@ class Wamp2ClientProtocol(Wamp2Protocol, WebSocketClientProtocol):
    # def connectionLost(self, reason):
    #    Wamp2Protocol.connectionLost(self, reason)
    #    WebSocketClientProtocol.connectionLost(self, reason)
+
+
+class Wamp2Factory:
+
+   def __init__(self, serializer = None):
+      if serializer is None:
+         #serializer = JsonDefaultSerializer()
+         serializer = MsgPackSerializer()
+      self._serializer = WampSerializer(serializer)
+
+
+
+class Wamp2ServerFactory(WebSocketServerFactory, Wamp2Factory):
+
+   protocol = Wamp2ServerProtocol
+
+   def __init__(self,
+                url,
+                debugWs = False,
+                serializer = None,
+                reactor = None):
+      WebSocketServerFactory.__init__(self,
+                                      url,
+                                      debug = debugWs,
+                                      protocols = ["wamp2"],
+                                      reactor = reactor)
+      Wamp2Factory.__init__(self, serializer)
+
+
+
+class Wamp2ClientFactory(WebSocketClientFactory, Wamp2Factory):
+
+   protocol = Wamp2ClientProtocol
+
+   def __init__(self,
+                url,
+                debugWs = False,
+                serializer = None,
+                reactor = None):
+      WebSocketClientFactory.__init__(self,
+                                      url,
+                                      debug = debugWs,
+                                      protocols = ["wamp2"],
+                                      reactor = reactor)
+      Wamp2Factory.__init__(self, serializer)
+

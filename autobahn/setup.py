@@ -65,7 +65,8 @@ setup (
    install_requires = ['setuptools', 'Twisted>=11.1'],
    extras_require = {
       'accelerate': ["wsaccel>=0.6.2"],
-      'compress': ["python-snappy>=0.5", "lz4>=0.2.1"]
+      'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
+      'binary': ["msgpack-python>=0.4.0"]
    },
    packages = ['autobahn'],
    zip_safe = False,
