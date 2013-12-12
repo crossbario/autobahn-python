@@ -23,24 +23,23 @@ from zope.interface import implementer
 
 from interfaces import ISerializer
 from error import WampProtocolError
-from message import \
-   WampMessageHello,
-   WampMessageHeartbeat,
-   WampMessageRoleChange,
-   WampMessageSubscribe,
-   WampMessageSubscription,
-   WampMessageSubscribeError,
-   WampMessageUnsubscribe,
-   WampMessagePublish,
-   WampMessageEvent,
-   WampMessageMetaEvent,
-   WampMessageProvide,
-   WampMessageUnprovide,
-   WampMessageCall,
-   WampMessageCancelCall,
-   WampMessageCallProgress,
-   WampMessageCallResult,
-   WampMessageCallError
+from message import WampMessageHello, \
+                    WampMessageHeartbeat, \
+                    WampMessageRoleChange, \
+                    WampMessageSubscribe, \
+                    WampMessageSubscription, \
+                    WampMessageSubscribeError, \
+                    WampMessageUnsubscribe, \
+                    WampMessagePublish, \
+                    WampMessageEvent, \
+                    WampMessageMetaEvent, \
+                    WampMessageProvide, \
+                    WampMessageUnprovide, \
+                    WampMessageCall, \
+                    WampMessageCancelCall, \
+                    WampMessageCallProgress, \
+                    WampMessageCallResult, \
+                    WampMessageCallError
 
 
 

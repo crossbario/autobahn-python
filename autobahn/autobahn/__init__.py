@@ -35,3 +35,4 @@ import websocket
 
 import prefixmap
 import wamp
+import wamp2

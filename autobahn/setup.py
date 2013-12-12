@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 LONGSDESC = """
 Twisted-based WebSocket/WAMP client and server framework.
@@ -68,7 +68,7 @@ setup (
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
       'binary': ["msgpack-python>=0.4.0"]
    },
-   packages = ['autobahn'],
+   packages = find_packages(),
    zip_safe = False,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##

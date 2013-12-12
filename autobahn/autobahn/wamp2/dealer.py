@@ -19,12 +19,11 @@
 
 import inspect, types
 
-from message import \
-   WampMessageProvide,
-   WampMessageUnprovide,
-   WampMessageCallProgress,
-   WampMessageCallResult,
-   WampMessageCallError
+from message import WampMessageProvide, \
+                    WampMessageUnprovide, \
+                    WampMessageCallProgress, \
+                    WampMessageCallResult, \
+                    WampMessageCallError
 
 
 def exportRpc(arg = None):

@@ -21,14 +21,15 @@
 ## incoming broker connections
 ## outgoing broker connections
 
-from message import \
-   WampMessageSubscribe,
-   WampMessageSubscription,
-   WampMessageSubscribeError,
-   WampMessageUnsubscribe,
-   WampMessagePublish,
-   WampMessageEvent,
-   WampMessageMetaEvent
+from autobahn.util import newid
+
+from message import WampMessageSubscribe, \
+                    WampMessageSubscription, \
+                    WampMessageSubscribeError, \
+                    WampMessageUnsubscribe, \
+                    WampMessagePublish, \
+                    WampMessageEvent, \
+                    WampMessageMetaEvent
 
 
 class Broker:

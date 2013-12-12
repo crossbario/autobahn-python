@@ -20,30 +20,33 @@ from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
 from autobahn.websocket import WebSocketProtocol, HttpException, Timings
-from autobahn.websocket import WebSocketServerProtocol, WebSocketClientProtocol
+from autobahn.websocket import WebSocketServerProtocol, \
+                               WebSocketServerFactory, \
+                               WebSocketClientProtocol, \
+                               WebSocketClientFactory
 
 from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from autobahn.util import newid
 
-from message import \
-   WampMessageHello,
-   WampMessageHeartbeat,
-   WampMessageRoleChange,
-   WampMessageSubscribe,
-   WampMessageSubscription,
-   WampMessageSubscribeError,
-   WampMessageUnsubscribe,
-   WampMessagePublish,
-   WampMessageEvent,
-   WampMessageMetaEvent,
-   WampMessageProvide,
-   WampMessageUnprovide,
-   WampMessageCall,
-   WampMessageCancelCall,
-   WampMessageCallProgress,
-   WampMessageCallResult,
-   WampMessageCallError
+from message import WampMessageHello, \
+                    WampMessageHeartbeat, \
+                    WampMessageRoleChange, \
+                    WampMessageSubscribe, \
+                    WampMessageSubscription, \
+                    WampMessageSubscribeError, \
+                    WampMessageUnsubscribe, \
+                    WampMessagePublish, \
+                    WampMessageEvent, \
+                    WampMessageMetaEvent, \
+                    WampMessageProvide, \
+                    WampMessageUnprovide, \
+                    WampMessageCall, \
+                    WampMessageCancelCall, \
+                    WampMessageCallProgress, \
+                    WampMessageCallResult, \
+                    WampMessageCallError
 
+from autobahn.wamp2.serializer import JsonSerializer, MsgPackSerializer, WampSerializer
 
 
 class WampProtocol:
@@ -369,7 +372,7 @@ class WampFactory:
 
    def __init__(self, serializer = None):
       if serializer is None:
-         #serializer = JsonDefaultSerializer()
+         #serializer = JsonSerializer()
          serializer = MsgPackSerializer()
       self._serializer = WampSerializer(serializer)
 

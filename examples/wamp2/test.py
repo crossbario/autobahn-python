@@ -18,21 +18,26 @@
 
 import sys
 
-from websocket import WebSocketProtocol, HttpException, Timings
-from websocket import WebSocketClientProtocol, WebSocketClientFactory
-from websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.websocket import WebSocketProtocol, HttpException, Timings
+from autobahn.websocket import WebSocketClientProtocol, WebSocketClientFactory
+from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
 
-from httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
-from util import utcnow, newid
+from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
+from autobahn.util import utcnow, newid
 
-from wamp2factory import *
-from wamp2protocol import *
-from wamp2message import *
+from autobahn.wamp2.dealer import Dealer, exportRpc
+from autobahn.wamp2.broker import Broker
+from autobahn.wamp2.protocol import WampServerProtocol, \
+                                    WampServerFactory, \
+                                    WampClientProtocol, \
+                                    WampClientFactory
+
+from autobahn.wamp2.serializer import JsonSerializer, MsgPackSerializer
 
 from twisted.python import log
 from twisted.internet import reactor
 
-from websocket import connectWS, listenWS
+from autobahn.websocket import connectWS, listenWS
 
 
 
@@ -110,24 +115,24 @@ def test_server(wsuri, wsuri2 = None):
 
    broker = Broker()
 
-   class MyPubSubServerProtocol(Wamp2ServerProtocol):
+   class MyPubSubServerProtocol(WampServerProtocol):
 
       def onSessionOpen(self):
          self.setBroker(broker)
          self.setDealer(dealer)
 
-   wampFactory = Wamp2ServerFactory(wsuri)
+   wampFactory = WampServerFactory(wsuri)
    wampFactory.protocol = MyPubSubServerProtocol
    listenWS(wampFactory)
 
    if wsuri2:
-      class MyPubSubClientProtocol(Wamp2ClientProtocol):
+      class MyPubSubClientProtocol(WampClientProtocol):
 
          def onSessionOpen(self):
             self.setBroker(broker)
             self.setDealer(dealer)
 
-      factory = Wamp2ClientFactory(wsuri2)
+      factory = WampClientFactory(wsuri2)
       factory.protocol = MyPubSubClientProtocol
       connectWS(factory)
 
@@ -136,7 +141,7 @@ def test_client(wsuri, dopub):
 
    dorpc = False
 
-   class MyPubSubClientProtocol(Wamp2ClientProtocol):
+   class MyPubSubClientProtocol(WampClientProtocol):
 
       def onSessionOpen(self):
 
@@ -185,14 +190,14 @@ def test_client(wsuri, dopub):
          print "Connection closed", reason
          reactor.stop()
 
-   factory = Wamp2ClientFactory(wsuri)
+   factory = WampClientFactory(wsuri)
    factory.protocol = MyPubSubClientProtocol
    connectWS(factory)
 
 
 def test_client2(wsuri):
 
-   class MyPubSubClientProtocol(Wamp2ClientProtocol):
+   class MyPubSubClientProtocol(WampClientProtocol):
 
       def onSessionOpen(self):
 
@@ -208,19 +213,19 @@ def test_client2(wsuri):
          print "Connection closed", reason
          reactor.stop()
 
-   factory = Wamp2ClientFactory(wsuri)
+   factory = WampClientFactory(wsuri)
    factory.protocol = MyPubSubClientProtocol
    connectWS(factory)
 
-## python wamp2.py server ws://127.0.0.1:9000
-## python wamp2.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
-## python wamp2.py client ws://127.0.0.1:9000 pub
+## python test.py server ws://127.0.0.1:9000
+## python test.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
+## python test.py client ws://127.0.0.1:9000 pub
 
 
-## python wamp2.py server ws://127.0.0.1:9000
-## python wamp2.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
-## python wamp2.py client2 ws://127.0.0.1:9001
-## python wamp2.py client ws://127.0.0.1:9000
+## python test.py server ws://127.0.0.1:9000
+## python test.py server ws://127.0.0.1:9001 ws://127.0.0.1:9000
+## python test.py client2 ws://127.0.0.1:9001
+## python test.py client ws://127.0.0.1:9000
 
 
 if __name__ == '__main__':
