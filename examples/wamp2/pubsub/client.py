@@ -20,13 +20,15 @@
 from autobahn.wamp2.protocol import WampClientProtocol, \
                                     WampClientFactory
 
+from autobahn.wamp2.serializer import WampJsonSerializer, WampMsgPackSerializer
+
 
 class PubSubClientProtocol(WampClientProtocol):
    """
    """ 
 
    def onSessionOpen(self):
-      print "WAMP session opened"
+      print "WAMP session opened", self.websocket_protocol_in_use
 
       def onMyEvent1(topic, event):
          print "Received event:", event
@@ -70,8 +72,8 @@ class PubSubClientFactory(WampClientFactory):
 
    protocol = PubSubClientProtocol
 
-   def __init__(self, url, period = 0, debug = False):
-      WampClientFactory.__init__(self, url, debug)
+   def __init__(self, url, serializers = None, period = 0, debug = False):
+      WampClientFactory.__init__(self, url, serializers = serializers, debug = debug)
       self.period = period
 
 
@@ -100,6 +102,9 @@ if __name__ == '__main__':
    parser.add_argument("--period", type = float, default = 2,
                        help = 'Auto-publication period in seconds.')
 
+   parser.add_argument("--serializers", type = str, default = None,
+                       help = 'If set, use this (comma separated) list of WAMP serializers, e.g. "json" or "msgpack,json"')
+
    #parser.add_argument("--period", type = float, default = 2,
    #                    help = 'Auto-publication period in seconds.')
 
@@ -120,7 +125,20 @@ if __name__ == '__main__':
 
    ## start a WebSocket client
    ##
-   wsfactory = PubSubClientFactory(args.wsurl, args.period, debug = args.debug)
+   if args.serializers:
+      serializers = []
+      for id in args.serializers.split(','):
+         if id.strip() == WampJsonSerializer.SERIALIZER_ID:
+            serializers.append(WampJsonSerializer())
+         elif id.strip() == WampMsgPackSerializer.SERIALIZER_ID:
+            serializers.append(WampMsgPackSerializer())
+         else:
+            raise Exception("unknown WAMP serializer %s" % id)
+      if len(serializers) == 0:
+         raise Exception("no WAMP serializers selected")
+   else:
+      serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
+   wsfactory = PubSubClientFactory(args.wsurl, serializers = serializers, period = args.period, debug = args.debug)
    wsclient = clientFromString(reactor, args.websocket)
    d = wsclient.connect(wsfactory)
 

@@ -74,14 +74,14 @@ class Broker:
 
       for broker_proto in self._brokers:
          if broker_proto != proto:
-            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
+            bytes, isbinary = broker_proto._serializer.serialize(publish)
             broker_proto.sendMessage(bytes, isbinary)
 
       if self._subscribers.has_key(publish.topic):
          subscriptionid, receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(subscriptionid, publish.topic, publish.event)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
+            bytes, isbinary = proto._serializer.serialize(msg)
             for proto in receivers:
                proto.sendMessage(bytes, isbinary)
 
@@ -111,14 +111,14 @@ class Broker:
 
       for broker_proto in self._brokers:
          if broker_proto != proto:
-            bytes, isbinary = broker_proto.factory._serializer.serialize(publish)
+            bytes, isbinary = broker_proto._serializer.serialize(publish)
             broker_proto.sendMessage(bytes, isbinary)
 
       if self._subscribers.has_key(publish.topic):
          receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(publish.topic, publish.event)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
+            bytes, isbinary = proto._serializer.serialize(msg)
             for proto in receivers:
                proto.sendMessage(bytes, isbinary)
 

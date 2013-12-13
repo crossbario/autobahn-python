@@ -5,7 +5,7 @@ broker1:
 	PYTHONPATH=../../autobahn python ./pubsub/server.py
 
 brokerclient1:
-	PYTHONPATH=../../autobahn python ./pubsub/client.py
+	PYTHONPATH=../../autobahn python ./pubsub/client.py --period 1
 
 brokerclient2:
 	PYTHONPATH=../../autobahn python ./pubsub/client.py --period 0

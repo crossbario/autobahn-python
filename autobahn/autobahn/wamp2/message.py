@@ -62,6 +62,17 @@ class WampMessage:
    """
    WAMP message base class.
    """
+   def __init__(self):
+      ## serialization cache: mapping from ISerializer instances to serialized bytes
+      self._serialized = {}
+
+   def serialize(self, serializer):
+      print "WampMessage.serialize"
+      if not self._serialized.has_key(serializer):
+         self._serialized[serializer] = serializer.serialize(self.marshal())
+
+      return self._serialized[serializer]
+
    def __eq__(self, other):
       return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
 
@@ -88,6 +99,7 @@ class WampMessageError(WampMessage):
       :param value: Arbitrary error value to transport error detail data for programatic consumption (must be serializable using the serializer in use).
       :type value: any
       """
+      WampMessage.__init__(self)
       self.requestid = requestid
       self.error = error
       self.message = message
@@ -162,12 +174,9 @@ class WampMessageError(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       details = {}
 
@@ -178,9 +187,9 @@ class WampMessageError(WampMessage):
          details['value'] = self.value
 
       if len(details):
-         return serializer.serialize([self.MESSAGE_TYPE, self.requestid, self.error, details])
+         return [self.MESSAGE_TYPE, self.requestid, self.error, details]
       else:
-         return serializer.serialize([self.MESSAGE_TYPE, self.requestid, self.error])
+         return [self.MESSAGE_TYPE, self.requestid, self.error]
 
 
    def __str__(self):
@@ -211,6 +220,7 @@ class WampMessageHello(WampMessage):
       :param sessionid: The WAMP session ID the other peer is assigned.
       :type sessionid: str
       """
+      WampMessage.__init__(self)
       self.sessionid = sessionid
 
 
@@ -244,14 +254,11 @@ class WampMessageHello(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return serializer.serialize([WampMessageHello.MESSAGE_TYPE, self.sessionid])
+      return [WampMessageHello.MESSAGE_TYPE, self.sessionid]
 
 
    def __str__(self):
@@ -295,6 +302,7 @@ class WampMessageRoleChange(WampMessage):
       :param role: Role to be added or removed.
       :type role: str
       """
+      WampMessage.__init__(self)
       self.op = op
       self.role = role
 
@@ -336,14 +344,11 @@ class WampMessageRoleChange(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return serializer.serialize([WampMessageRoleChange.MESSAGE_TYPE, self.op, self.role])
+      return [WampMessageRoleChange.MESSAGE_TYPE, self.op, self.role]
 
 
    def __str__(self):
@@ -376,6 +381,7 @@ class WampMessageHeartbeat(WampMessage):
       :param outgoing: Outgoing heartbeat.
       :type outgoing: int
       """
+      WampMessage.__init__(self)
       self.incoming = incoming
       self.outgoing = outgoing
 
@@ -421,14 +427,11 @@ class WampMessageHeartbeat(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return serializer.serialize([WampMessageHeartbeat.MESSAGE_TYPE, self.incoming, self.outgoing])
+      return [WampMessageHeartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
 
 
    def __str__(self):
@@ -467,6 +470,7 @@ class WampMessageSubscribe(WampMessage):
       :param match: The topic matching method to be used for the subscription.
       :type match: int
       """
+      WampMessage.__init__(self)
       self.subscribeid = subscribeid
       self.topic = topic
       self.match = match
@@ -536,12 +540,9 @@ class WampMessageSubscribe(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -549,9 +550,9 @@ class WampMessageSubscribe(WampMessage):
          options['match'] = self.match
 
       if len(options):
-         return serializer.serialize([WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic, options])
+         return [WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic, options]
       else:
-         return serializer.serialize([WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic])
+         return [WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic]
 
 
    def __str__(self):
@@ -583,6 +584,7 @@ class WampMessageSubscription(WampMessage):
       :param match: The topic matching method to be used for the subscription.
       :type match: int
       """
+      WampMessage.__init__(self)
       self.subscribeid = subscribeid
       self.subscriptionid = subscriptionid
 
@@ -626,14 +628,11 @@ class WampMessageSubscription(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return serializer.serialize([WampMessageSubscription.MESSAGE_TYPE, self.subscribeid, self.subscriptionid])
+      return [WampMessageSubscription.MESSAGE_TYPE, self.subscribeid, self.subscriptionid]
 
 
    def __str__(self):
@@ -678,6 +677,7 @@ class WampMessageUnsubscribe(WampMessage):
       :param match: The topic matching method effective for the subscription to unsubscribe from.
       :type match: int
       """
+      WampMessage.__init__(self)
       self.topic = topic
       self.match = match
 
@@ -737,12 +737,9 @@ class WampMessageUnsubscribe(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -750,9 +747,9 @@ class WampMessageUnsubscribe(WampMessage):
          options['match'] = self.match
 
       if len(options):
-         return serializer.serialize([WampMessageUnsubscribe.MESSAGE_TYPE, self.topic, options])
+         return [WampMessageUnsubscribe.MESSAGE_TYPE, self.topic, options]
       else:
-         return serializer.serialize([WampMessageUnsubscribe.MESSAGE_TYPE, self.topic])
+         return [WampMessageUnsubscribe.MESSAGE_TYPE, self.topic]
 
 
    def __str__(self):
@@ -793,6 +790,7 @@ class WampMessagePublish(WampMessage):
       :param discloseMe: If True, request to disclose the publisher of this event to subscribers.
       :type discloseMe: bool
       """
+      WampMessage.__init__(self)
       self.topic = topic
       self.event = event
       self.excludeMe = excludeMe
@@ -892,12 +890,9 @@ class WampMessagePublish(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -911,9 +906,9 @@ class WampMessagePublish(WampMessage):
          options['discloseme'] = self.discloseMe
 
       if len(options):
-         return serializer.serialize([WampMessagePublish.MESSAGE_TYPE, self.topic, self.event, options])
+         return [WampMessagePublish.MESSAGE_TYPE, self.topic, self.event, options]
       else:
-         return serializer.serialize([WampMessagePublish.MESSAGE_TYPE, self.topic, self.event])
+         return [WampMessagePublish.MESSAGE_TYPE, self.topic, self.event]
 
 
    def __str__(self):
@@ -948,6 +943,7 @@ class WampMessageEvent(WampMessage):
       :param publisher: If present, the WAMP session ID of the publisher of this event.
       :type publisher: str
       """
+      WampMessage.__init__(self)
       self.subscriptionid = subscriptionid
       self.topic = topic
       self.event = event
@@ -1021,12 +1017,9 @@ class WampMessageEvent(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       details = {}
 
@@ -1034,12 +1027,12 @@ class WampMessageEvent(WampMessage):
          details['publisher'] = self.publisher
 
       if len(details):
-         return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.topic, self.event, details])
+         return [WampMessageEvent.MESSAGE_TYPE, self.topic, self.event, details]
       else:
          if self.event is not None:
-            return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic, self.event])
+            return [WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic, self.event]
          else:
-            return serializer.serialize([WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic])
+            return [WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic]
 
 
    def __str__(self):
@@ -1074,6 +1067,7 @@ class WampMessageMetaEvent(WampMessage):
       :param metaevent: WAMP metaevent payload.
       :type metaevent: any
       """
+      WampMessage.__init__(self)
       self.topic = topic
       self.metatopic = metatopic
       self.metaevent = metaevent
@@ -1124,17 +1118,14 @@ class WampMessageMetaEvent(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       if self.metaevent is not None:
-         return serializer.serialize([WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic, self.metaevent])
+         return [WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic, self.metaevent]
       else:
-         return serializer.serialize([WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic])
+         return [WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic]
 
 
    def __str__(self):
@@ -1157,7 +1148,6 @@ class WampMessageProvide(WampMessage):
    The WAMP message code for this type of message.
    """
 
-
    def __init__(self, endpoint, pkeys = None):
       """
       Message constructor.
@@ -1167,6 +1157,7 @@ class WampMessageProvide(WampMessage):
       :param pkeys: The endpoint can work for this list of application partition keys.
       :type pkeys: list
       """
+      WampMessage.__init__(self)
       self.endpoint = endpoint
       self.pkeys = pkeys
 
@@ -1227,12 +1218,9 @@ class WampMessageProvide(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -1240,9 +1228,9 @@ class WampMessageProvide(WampMessage):
          options['pkeys'] = self.pkeys
 
       if len(options):
-         return serializer.serialize([WampMessageProvide.MESSAGE_TYPE, self.endpoint, options])
+         return [WampMessageProvide.MESSAGE_TYPE, self.endpoint, options]
       else:
-         return serializer.serialize([WampMessageProvide.MESSAGE_TYPE, self.endpoint])
+         return [WampMessageProvide.MESSAGE_TYPE, self.endpoint]
 
 
    def __str__(self):
@@ -1275,6 +1263,7 @@ class WampMessageUnprovide(WampMessage):
       :param pkeys: The endpoint is unprovided to work for this list of application partition keys.
       :type pkeys: list
       """
+      WampMessage.__init__(self)
       self.endpoint = endpoint
       self.pkeys = pkeys
 
@@ -1335,12 +1324,9 @@ class WampMessageUnprovide(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -1348,9 +1334,9 @@ class WampMessageUnprovide(WampMessage):
          options['pkeys'] = self.pkeys
 
       if len(options):
-         return serializer.serialize([WampMessageUnprovide.MESSAGE_TYPE, self.endpoint, options])
+         return [WampMessageUnprovide.MESSAGE_TYPE, self.endpoint, options]
       else:
-         return serializer.serialize([WampMessageUnprovide.MESSAGE_TYPE, self.endpoint])
+         return [WampMessageUnprovide.MESSAGE_TYPE, self.endpoint]
 
 
    def __str__(self):
@@ -1389,6 +1375,7 @@ class WampMessageCall(WampMessage):
       :param timeout: If present, let the callee automatically cancel the call after this ms.
       :type timeout: int
       """
+      WampMessage.__init__(self)
       self.callid = callid
       self.endpoint = endpoint
       self.args = args
@@ -1481,12 +1468,9 @@ class WampMessageCall(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -1497,12 +1481,12 @@ class WampMessageCall(WampMessage):
          options['session'] = self.sessionid
 
       if len(options):
-         return serializer.serialize([WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args, options])
+         return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args, options]
       else:
          if len(self.args) > 0:
-            return serializer.serialize([WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args])
+            return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args]
          else:
-            return serializer.serialize([WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint])
+            return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint]
 
 
    def __str__(self):
@@ -1545,6 +1529,7 @@ class WampMessageCancelCall(WampMessage):
       :param mode: Specifies how to cancel the call (skip, abort or kill).
       :type mode: int
       """
+      WampMessage.__init__(self)
       self.callid = callid
       self.mode = mode
 
@@ -1604,12 +1589,9 @@ class WampMessageCancelCall(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
       options = {}
 
@@ -1617,9 +1599,9 @@ class WampMessageCancelCall(WampMessage):
          options['mode'] = self.mode
 
       if len(options):
-         return serializer.serialize([WampMessageCancelCall.MESSAGE_TYPE, self.callid, options])
+         return [WampMessageCancelCall.MESSAGE_TYPE, self.callid, options]
       else:
-         return serializer.serialize([WampMessageCancelCall.MESSAGE_TYPE, self.callid])
+         return [WampMessageCancelCall.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):
@@ -1652,6 +1634,7 @@ class WampMessageCallProgress(WampMessage):
       :param progress: Arbitrary application progress (must be serializable using the serializer in use).
       :type progress: any
       """
+      WampMessage.__init__(self)
       self.callid = callid
       self.progress = progress
 
@@ -1692,18 +1675,14 @@ class WampMessageCallProgress(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-
       if self.progress is not None:
-         return serializer.serialize([WampMessageCallProgress.MESSAGE_TYPE, self.callid, self.progress])
+         return [WampMessageCallProgress.MESSAGE_TYPE, self.callid, self.progress]
       else:
-         return serializer.serialize([WampMessageCallProgress.MESSAGE_TYPE, self.callid])
+         return [WampMessageCallProgress.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):
@@ -1736,6 +1715,7 @@ class WampMessageCallResult(WampMessage):
       :param result: Arbitrary application result (must be serializable using the serializer in use).
       :type result: any
       """
+      WampMessage.__init__(self)
       self.callid = callid
       self.result = result
 
@@ -1776,18 +1756,14 @@ class WampMessageCallResult(WampMessage):
       return obj
 
    
-   def serialize(self, serializer):
+   def marshal(self):
       """
-      Serialize this object into a wire level bytestring representation.
-
-      :param serializer: The wire level serializer to use.
-      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      Marshal this object into a raw message for subsequent serialization to bytes.
       """
-
       if self.result is not None:
-         return serializer.serialize([WampMessageCallResult.MESSAGE_TYPE, self.callid, self.result])
+         return [WampMessageCallResult.MESSAGE_TYPE, self.callid, self.result]
       else:
-         return serializer.serialize([WampMessageCallResult.MESSAGE_TYPE, self.callid])
+         return [WampMessageCallResult.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):

@@ -16,7 +16,9 @@
 ##
 ###############################################################################
 
-__all__ = ['WampSerializer', 'JsonSerializer']
+__all__ = ['WampSerializer',
+           'JsonSerializer',
+           'WampJsonSerializer']
 
 
 from zope.interface import implementer
@@ -40,40 +42,6 @@ from message import WampMessageHello, \
                     WampMessageCallProgress, \
                     WampMessageCallResult, \
                     WampMessageCallError
-
-
-
-import json
-
-@implementer(ISerializer)
-class JsonSerializer:
-
-   def serialize(self, obj):
-      return json.dumps(obj, separators = (',',':')), False
-
-
-   def unserialize(self, bytes, isbinary):
-      return json.loads(bytes)
-
-
-
-try:
-   import msgpack
-except:
-   pass
-else:
-   @implementer(ISerializer)
-   class MsgPackSerializer:
-
-      def serialize(self, obj):
-         return msgpack.packb(obj, use_bin_type = True), True
-
-
-      def unserialize(self, bytes, isbinary):
-         return msgpack.unpackb(bytes, encoding = 'utf-8')
-
-   __all__.append('MsgPackSerializer')
-
 
 
 
@@ -128,10 +96,10 @@ class WampSerializer:
       :type wampMessage: obj
       :returns str -- A byte string.
       """
-      return wampMessage.serialize(self._serializer)
+      return wampMessage.serialize(self._serializer), self._serializer.isBinary
 
 
-   def unserialize(self, bytes, isbinary):
+   def unserialize(self, bytes, isBinary):
       """
       Unserializes bytes from a transport and parses a WAMP message.
 
@@ -139,7 +107,13 @@ class WampSerializer:
       :type bytes: str or bytes
       :returns obj -- An instance of a subclass of :class:`autobahn.wamp2message.WampMessage`.
       """
-      raw_msg = self._serializer.unserialize(bytes, isbinary)
+      if isBinary != self._serializer.isBinary:
+         raise WampProtocolError("invalid serialization of WAMP message [binary = %s, but expected %s]" % (isBinary, self._serializer.isBinary))
+
+      try:
+         raw_msg = self._serializer.unserialize(bytes)
+      except Exception, e:
+         raise WampProtocolError("invalid serialization of WAMP message [%s]" % e)
 
       if type(raw_msg) != list:
          raise WampProtocolError("invalid type %s for WAMP message" % type(raw_msg))
@@ -160,3 +134,59 @@ class WampSerializer:
       msg = Klass.parse(raw_msg)
 
       return msg
+
+
+
+import json
+
+@implementer(ISerializer)
+class JsonSerializer:
+
+   isBinary = False
+
+   def serialize(self, obj):
+      return json.dumps(obj, separators = (',',':'))
+
+
+   def unserialize(self, bytes):
+      return json.loads(bytes)
+
+
+
+class WampJsonSerializer(WampSerializer):
+
+   SERIALIZER_ID = "json"
+
+   def __init__(self):
+      WampSerializer.__init__(self, JsonSerializer())
+
+
+
+try:
+   import msgpack
+except:
+   pass
+else:
+   @implementer(ISerializer)
+   class MsgPackSerializer:
+
+      isBinary = True
+
+      def serialize(self, obj):
+         return msgpack.packb(obj, use_bin_type = True)
+
+
+      def unserialize(self, bytes):
+         return msgpack.unpackb(bytes, encoding = 'utf-8')
+
+   __all__.append('MsgPackSerializer')
+
+
+   class WampMsgPackSerializer(WampSerializer):
+
+      SERIALIZER_ID = "msgpack"
+
+      def __init__(self):
+         WampSerializer.__init__(self, MsgPackSerializer())
+
+   __all__.append('WampMsgPackSerializer')

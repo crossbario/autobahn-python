@@ -58,11 +58,17 @@ import json
 from pprint import pformat
 from collections import deque
 
+from zope.interface import implementer
+
 from twisted.internet import protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
 from _version import __version__
+
+from interfaces import IWebSocketChannel, \
+                       IWebSocketChannelFrameApi, \
+                       IWebSocketChannelStreamingApi
 from utf8validator import Utf8Validator
 from xormasker import XorMaskerNull, createXorMasker
 from httpstatus import *
@@ -562,7 +568,9 @@ class Timings:
       return pformat(self._timings)
 
 
-
+@implementer(IWebSocketChannel)
+@implementer(IWebSocketChannelFrameApi)
+@implementer(IWebSocketChannelStreamingApi)
 class WebSocketProtocol(protocol.Protocol):
    """
    A Twisted Protocol class for WebSocket. This class is used by both WebSocket
@@ -2608,7 +2616,7 @@ class WebSocketProtocol(protocol.Protocol):
    def sendMessage(self,
                    payload,
                    binary = False,
-                   payload_frag_size = None,
+                   fragmentSize = None,
                    sync = False,
                    doNotCompress = False):
       """
@@ -2616,7 +2624,7 @@ class WebSocketProtocol(protocol.Protocol):
 
       You can send text or binary message, and optionally specifiy a payload fragment size.
       When the latter is given, the payload will be split up into frames with
-      payload <= the payload_frag_size given.
+      payload <= the fragmentSize given.
 
       Modes: Hybi, Hixie
 
@@ -2624,8 +2632,8 @@ class WebSocketProtocol(protocol.Protocol):
       :type payload: binary or UTF-8 string
       :param binary: Flag to indicate payload type (`True == binary`).
       :type bool
-      :param payload_frag_size: Fragment message into fragments of this size. This overrrides `autoFragmentSize` if set.
-      :type payload_frag_size: int
+      :param fragmentSize: Fragment message into fragments of this size. This overrrides `autoFragmentSize` if set.
+      :type fragmentSize: int
       :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
       :type sync: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
@@ -2640,11 +2648,11 @@ class WebSocketProtocol(protocol.Protocol):
       if self.websocket_version == 0:
          if binary:
             raise Exception("cannot send binary message in Hixie76 mode")
-         if payload_frag_size:
+         if fragmentSize:
             raise Exception("cannot fragment messages in Hixie76 mode")
          self.sendMessageHixie76(payload, sync)
       else:
-         self.sendMessageHybi(payload, binary, payload_frag_size, sync, doNotCompress)
+         self.sendMessageHybi(payload, binary, fragmentSize, sync, doNotCompress)
 
 
    def sendMessageHixie76(self, payload, sync = False):
@@ -2659,7 +2667,7 @@ class WebSocketProtocol(protocol.Protocol):
    def sendMessageHybi(self,
                        payload,
                        binary = False,
-                       payload_frag_size = None,
+                       fragmentSize = None,
                        sync = False,
                        doNotCompress = False):
       """
@@ -2697,10 +2705,10 @@ class WebSocketProtocol(protocol.Protocol):
          self.trafficStats.outgoingOctetsAppLevel += l
          self.trafficStats.outgoingOctetsWebSocketLevel += l
 
-      ## explicit payload_frag_size arguments overrides autoFragmentSize setting
+      ## explicit fragmentSize arguments overrides autoFragmentSize setting
       ##
-      if payload_frag_size is not None:
-         pfs = payload_frag_size
+      if fragmentSize is not None:
+         pfs = fragmentSize
       else:
          if self.autoFragmentSize > 0:
             pfs = self.autoFragmentSize

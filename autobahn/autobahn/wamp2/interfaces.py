@@ -25,6 +25,7 @@ class ISerializer(Interface):
    """
    Serialization and unserialization.
    """
+   isBinary = Attribute("""Flag to indicate if serializer requires a binary clean transport (or if UTF8 transparency is sufficient).""")
 
    def serialize(self, obj):
       """
@@ -36,7 +37,7 @@ class ISerializer(Interface):
       :returns str -- Serialized byte string.
       """
 
-   def unserialize(self, bytes, isbinar):
+   def unserialize(self, bytes):
       """
       Unserialize an object from a byte string.
 
@@ -45,6 +46,84 @@ class ISerializer(Interface):
 
       :returns obj -- Any type that can be unserialized.
       """
+
+
+class IWampMessage(Interface):
+   """
+   A WAMP message.
+   """
+
+   # @classmethod
+   # def parse(Klass, wmsg):
+   #    """
+   #    Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+   #    :param wmsg: The unserialized raw message.
+   #    :type wmsg: list
+   #    :returns obj -- An instance of this class.
+   #    """
+
+   
+   def serialize(serializer):
+      """
+      Serialize this object into a wire level bytestring representation.
+
+      :param serializer: The wire level serializer to use.
+      :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      """
+
+   def __eq__(other):
+      """
+      """
+
+   def __ne__(other):
+      """
+      """
+
+   def __str__():
+      """
+      Returns text representation of this message.
+
+      :returns str -- Human readable representation (e.g. for logging or debugging purposes).
+      """
+
+#   serializer = Attribute("""The WAMP message serializer for this channel.""")
+
+
+
+class IMessageChannel(Interface):
+
+   def send(message):
+      """
+      """
+
+   def isOpen():
+      """
+      """
+
+   def close():
+      """
+      """
+
+   def abort():
+      """
+      """
+
+
+class IMessageChannelHandler(Interface):
+
+   def onOpen(channel):
+      """
+      """
+
+   def onMessage(message):
+      """
+      """
+
+   def onClose():
+      """
+      """
+
 
 
 class IWampDealer(Interface):
@@ -81,9 +160,9 @@ class IWampBroker(Interface):
       """
 
 
-class IWampPublishOptions(Interface):
+# class IWampPublishOptions(Interface):
 
-   excludeMe = Attribute("Exclude me, the publisher, from receiving the event (even though I may be subscribed).")
+#    excludeMe = Attribute("Exclude me, the publisher, from receiving the event (even though I may be subscribed).")
 
 
 

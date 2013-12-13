@@ -46,13 +46,14 @@ from message import WampMessageHello, \
                     WampMessageCallResult, \
                     WampMessageCallError
 
-from autobahn.wamp2.serializer import JsonSerializer, MsgPackSerializer, WampSerializer
+from error import WampProtocolError
+from serializer import WampJsonSerializer, WampMsgPackSerializer
 
 
 class WampProtocol:
 
    def sendWampMessage(self, msg):
-      bytes, isbinary = self.factory._serializer.serialize(msg)
+      bytes, isbinary = self._serializer.serialize(msg)
       self.sendMessage(bytes, isbinary)
 
 
@@ -67,12 +68,12 @@ class WampProtocol:
    def setBroker(self, broker = None):
       if self._broker and not broker:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
          self.sendMessage(bytes, isbinary)
 
       if not self._broker and broker:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER)
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
          self.sendMessage(bytes, isbinary)
 
       if self._broker:
@@ -87,12 +88,12 @@ class WampProtocol:
    def setDealer(self, dealer = None):
       if self._dealer and not dealer:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
          self.sendMessage(bytes, isbinary)
 
       if not self._dealer and dealer:
          msg = WampMessageRoleChange(WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER)
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
          self.sendMessage(bytes, isbinary)
 
       if self._dealer:
@@ -119,7 +120,7 @@ class WampProtocol:
       self._subscribes = {}
 
       msg = WampMessageHello(self._this_sessionid)
-      bytes, isbinary = self.factory._serializer.serialize(msg)
+      bytes, isbinary = self._serializer.serialize(msg)
       self.sendMessage(bytes, isbinary)
 
 
@@ -127,10 +128,10 @@ class WampProtocol:
       self.onSessionClose()
 
 
-   def onMessage(self, bytes, isbinary):
+   def onMessage(self, bytes, isBinary):
       #print bytes
       try:
-         msg = self.factory._serializer.unserialize(bytes, isbinary)
+         msg = self._serializer.unserialize(bytes, isBinary)
       except WampProtocolError, e:
          print "WAMP protocol error", e
       else:
@@ -260,14 +261,14 @@ class WampProtocol:
 
       msg = WampMessageCall(callid, endpoint, args = args[1:])
       try:
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
       except Exception, e:
          print "X"*100, e
          raise Exception("call argument(s) not serializable")
 
       def canceller(_d):
          msg = WampMessageCancelCall(callid)
-         bytes, isbinary = self.factory._serializer.serialize(msg)
+         bytes, isbinary = self._serializer.serialize(msg)
          self.sendMessage(bytes, isbinary)
 
       d = Deferred(canceller)
@@ -317,7 +318,7 @@ class WampProtocol:
             self._subscriptions[topic].remove(handler)
          if handler is None or len(self._subscriptions[topic]) == 0:
             msg = WampMessageUnsubscribe(topic)
-            bytes, isbinary = self.factory._serializer.serialize(msg)
+            bytes = self._serializer.serialize(msg)
             self.sendMessage(bytes, isbinary)
 
 
@@ -330,18 +331,30 @@ class WampProtocol:
 
 
 
+def parseWampSubprotocolIdentifier(subprotocol):
+   try:
+      s = subprotocol.split('.')
+      if s[0] != "wamp":
+         raise Exception()
+      version = int(s[1])
+      serializerId = s[2]
+      return version, serializerId
+   except:
+      return None, None
+
+
+
 class WampServerProtocol(WampProtocol, WebSocketServerProtocol):
 
    def onConnect(self, connectionRequest):
-      """
-      Default implementation for WAMP connection acceptance:
-      check if client announced WAMP subprotocol, and only accept connection
-      if client did so.
-      """
-      if 'wamp2' in connectionRequest.protocols:
-         return ('wamp2', {}) # (protocol, headers)
-      else:
-         raise HttpException(HTTP_STATUS_CODE_BAD_REQUEST[0], "this server only speaks WAMP2")
+      headers = {}
+      for subprotocol in connectionRequest.protocols:
+         version, serializerId = parseWampSubprotocolIdentifier(subprotocol)
+         if version == 2 and serializerId in self.factory._serializers.keys():
+            self._serializer = self.factory._serializers[serializerId]
+            return subprotocol, headers
+
+      raise HttpException(HTTP_STATUS_CODE_BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
 
 
    # def connectionMade(self):
@@ -359,7 +372,10 @@ class WampClientProtocol(WampProtocol, WebSocketClientProtocol):
 
    def onConnect(self, connectionResponse):
       if connectionResponse.protocol not in self.factory.protocols:
-         raise Exception("server does not speak WAMP2")
+         raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
+
+      version, serializerId = parseWampSubprotocolIdentifier(connectionResponse.protocol)
+      self._serializer = self.factory._serializers[serializerId]
 
 
    # def connectionMade(self):
@@ -374,11 +390,10 @@ class WampClientProtocol(WampProtocol, WebSocketClientProtocol):
 
 class WampFactory:
 
-   def __init__(self, serializer = None):
-      if serializer is None:
-         #serializer = JsonSerializer()
-         serializer = MsgPackSerializer()
-      self._serializer = WampSerializer(serializer)
+   def __init__(self, serializers):
+      self._serializers = {}
+      for ser in serializers:
+         self._serializers[ser.SERIALIZER_ID] = ser
 
 
 
@@ -389,14 +404,21 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
    def __init__(self,
                 url,
                 debug = False,
-                serializer = None,
+                serializers = None,
                 reactor = None):
+
+      if serializers is None:
+         serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
+
+      protocols = ["wamp.2.%s" % ser.SERIALIZER_ID for ser in serializers]
+
       WebSocketServerFactory.__init__(self,
                                       url,
                                       debug = debug,
-                                      protocols = ["wamp2"],
+                                      protocols = protocols,
                                       reactor = reactor)
-      WampFactory.__init__(self, serializer)
+
+      WampFactory.__init__(self, serializers)
 
 
 
@@ -407,11 +429,18 @@ class WampClientFactory(WebSocketClientFactory, WampFactory):
    def __init__(self,
                 url,
                 debug = False,
-                serializer = None,
+                serializers = None,
                 reactor = None):
+
+      if serializers is None:
+         serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
+
+      protocols = ["wamp.2.%s" % ser.SERIALIZER_ID for ser in serializers]
+
       WebSocketClientFactory.__init__(self,
                                       url,
                                       debug = debug,
-                                      protocols = ["wamp2"],
+                                      protocols = protocols,
                                       reactor = reactor)
-      WampFactory.__init__(self, serializer)
+
+      WampFactory.__init__(self, serializers)
