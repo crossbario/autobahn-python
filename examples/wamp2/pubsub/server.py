@@ -17,13 +17,8 @@
 ###############################################################################
 
 
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
-
 from autobahn.wamp2.broker import Broker
-from autobahn.wamp2.protocol import WampServerProtocol, \
-                                    WampServerFactory, \
-                                    WampClientProtocol, \
-                                    WampClientFactory
+from autobahn.wamp2.protocol import WampServerProtocol, WampServerFactory
 
 
 class PubSubServerProtocol(WampServerProtocol):
