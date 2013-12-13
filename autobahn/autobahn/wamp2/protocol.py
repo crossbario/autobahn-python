@@ -19,13 +19,6 @@
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from autobahn.websocket import WebSocketProtocol, HttpException, Timings
-from autobahn.websocket import WebSocketServerProtocol, \
-                               WebSocketServerFactory, \
-                               WebSocketClientProtocol, \
-                               WebSocketClientFactory
-
-from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 from autobahn.util import newid
 
 from message import WampMessageHello, \
@@ -47,7 +40,6 @@ from message import WampMessageHello, \
                     WampMessageCallError
 
 from error import WampProtocolError
-from serializer import WampJsonSerializer, WampMsgPackSerializer
 
 
 class WampProtocol:
@@ -328,119 +320,3 @@ class WampProtocol:
       """
       msg = WampMessagePublish(topic, event, excludeMe = excludeMe, exclude = exclude, eligible = eligible, discloseMe = discloseMe)
       self.sendWampMessage(msg)
-
-
-
-def parseWampSubprotocolIdentifier(subprotocol):
-   try:
-      s = subprotocol.split('.')
-      if s[0] != "wamp":
-         raise Exception()
-      version = int(s[1])
-      serializerId = s[2]
-      return version, serializerId
-   except:
-      return None, None
-
-
-
-class WampServerProtocol(WampProtocol, WebSocketServerProtocol):
-
-   def onConnect(self, connectionRequest):
-      headers = {}
-      for subprotocol in connectionRequest.protocols:
-         version, serializerId = parseWampSubprotocolIdentifier(subprotocol)
-         if version == 2 and serializerId in self.factory._serializers.keys():
-            self._serializer = self.factory._serializers[serializerId]
-            return subprotocol, headers
-
-      raise HttpException(HTTP_STATUS_CODE_BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
-
-
-   # def connectionMade(self):
-   #    WebSocketServerProtocol.connectionMade(self)
-   #    WampProtocol.connectionMade(self)
-
-
-   # def connectionLost(self, reason):
-   #    WampProtocol.connectionLost(self, reason)
-   #    WebSocketServerProtocol.connectionLost(self, reason)
-
-
-
-class WampClientProtocol(WampProtocol, WebSocketClientProtocol):
-
-   def onConnect(self, connectionResponse):
-      if connectionResponse.protocol not in self.factory.protocols:
-         raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
-
-      version, serializerId = parseWampSubprotocolIdentifier(connectionResponse.protocol)
-      self._serializer = self.factory._serializers[serializerId]
-
-
-   # def connectionMade(self):
-   #    WebSocketClientProtocol.connectionMade(self)
-   #    WampProtocol.connectionMade(self)
-
-
-   # def connectionLost(self, reason):
-   #    Wamp2Protocol.connectionLost(self, reason)
-   #    WebSocketClientProtocol.connectionLost(self, reason)
-
-
-class WampFactory:
-
-   def __init__(self, serializers):
-      self._serializers = {}
-      for ser in serializers:
-         self._serializers[ser.SERIALIZER_ID] = ser
-
-
-
-class WampServerFactory(WebSocketServerFactory, WampFactory):
-
-   protocol = WampServerProtocol
-
-   def __init__(self,
-                url,
-                debug = False,
-                serializers = None,
-                reactor = None):
-
-      if serializers is None:
-         serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
-
-      protocols = ["wamp.2.%s" % ser.SERIALIZER_ID for ser in serializers]
-
-      WebSocketServerFactory.__init__(self,
-                                      url,
-                                      debug = debug,
-                                      protocols = protocols,
-                                      reactor = reactor)
-
-      WampFactory.__init__(self, serializers)
-
-
-
-class WampClientFactory(WebSocketClientFactory, WampFactory):
-
-   protocol = WampClientProtocol
-
-   def __init__(self,
-                url,
-                debug = False,
-                serializers = None,
-                reactor = None):
-
-      if serializers is None:
-         serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
-
-      protocols = ["wamp.2.%s" % ser.SERIALIZER_ID for ser in serializers]
-
-      WebSocketClientFactory.__init__(self,
-                                      url,
-                                      debug = debug,
-                                      protocols = protocols,
-                                      reactor = reactor)
-
-      WampFactory.__init__(self, serializers)

@@ -63,13 +63,21 @@ class WampMessage:
    WAMP message base class.
    """
    def __init__(self):
-      ## serialization cache: mapping from ISerializer instances to serialized bytes
+      self.resetSerialization()
+
+   def resetSerialization(self):
+      ## serialization cache: mapping from ISerializer instances
+      ## to serialized bytes
+      ##
       self._serialized = {}
 
    def serialize(self, serializer):
-      print "WampMessage.serialize"
       if not self._serialized.has_key(serializer):
+         #print "WampMessage.serialize [new]", serializer
          self._serialized[serializer] = serializer.serialize(self.marshal())
+      else:
+         #print "WampMessage.serialize [cached]", serializer
+         pass
 
       return self._serialized[serializer]
 

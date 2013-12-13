@@ -81,8 +81,8 @@ class Broker:
          subscriptionid, receivers = self._subscribers[publish.topic]
          if len(receivers) > 0:
             msg = WampMessageEvent(subscriptionid, publish.topic, publish.event)
-            bytes, isbinary = proto._serializer.serialize(msg)
             for proto in receivers:
+               bytes, isbinary = proto._serializer.serialize(msg)
                proto.sendMessage(bytes, isbinary)
 
 

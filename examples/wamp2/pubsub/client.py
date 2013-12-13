@@ -17,13 +17,13 @@
 ###############################################################################
 
 
-from autobahn.wamp2.protocol import WampClientProtocol, \
-                                    WampClientFactory
+from autobahn.wamp2.websocket import WampWebSocketClientProtocol, \
+                                     WampWebSocketClientFactory
 
 from autobahn.wamp2.serializer import WampJsonSerializer, WampMsgPackSerializer
 
 
-class PubSubClientProtocol(WampClientProtocol):
+class PubSubClientProtocol(WampWebSocketClientProtocol):
    """
    """ 
 
@@ -66,14 +66,14 @@ class PubSubClientProtocol(WampClientProtocol):
 
 
 
-class PubSubClientFactory(WampClientFactory):
+class PubSubClientFactory(WampWebSocketClientFactory):
    """
    """
 
    protocol = PubSubClientProtocol
 
    def __init__(self, url, serializers = None, period = 0, debug = False):
-      WampClientFactory.__init__(self, url, serializers = serializers, debug = debug)
+      WampWebSocketClientFactory.__init__(self, url, serializers = serializers, debug = debug)
       self.period = period
 
 

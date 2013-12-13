@@ -18,10 +18,11 @@
 
 
 from autobahn.wamp2.broker import Broker
-from autobahn.wamp2.protocol import WampServerProtocol, WampServerFactory
+from autobahn.wamp2.websocket import WampWebSocketServerProtocol, \
+                                     WampWebSocketServerFactory
 
 
-class PubSubServerProtocol(WampServerProtocol):
+class PubSubServerProtocol(WampWebSocketServerProtocol):
    """
    """
 
@@ -30,14 +31,14 @@ class PubSubServerProtocol(WampServerProtocol):
 
 
 
-class PubSubServerFactory(WampServerFactory):
+class PubSubServerFactory(WampWebSocketServerFactory):
    """
    """
 
    protocol = PubSubServerProtocol
 
    def __init__(self, url, debug = False):
-      WampServerFactory.__init__(self, url, debug)
+      WampWebSocketServerFactory.__init__(self, url, debug)
       self.broker = Broker()
 
 
