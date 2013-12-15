@@ -12,3 +12,6 @@ brokerclient2:
 
 ser1:
 	PYTHONPATH=../../autobahn python -s test_serializer.py server ws://127.0.0.1:9000
+
+http1:
+	PYTHONPATH=../../autobahn python ./longpoll/server.py

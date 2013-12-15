@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script src="jquery-1.10.2.min.js"></script>
+      <script src="wamp.js"></script>
+      <script type="text/javascript">
+         window.onload = function() {
+            console.log("test");
+
+            var options = {'subprotocols': ['wamp.2.msgpack', 'wamp.2.json']};
+
+            httppost('http://127.0.0.1:8080/wamp/open', options).then(
+               function (res) {
+                  console.log("ok", res);
+               },
+               function (code, msg) {
+                  console.log("failed", code, msg);
+               }
+            );
+         }
+      </script>
+   </head>
+   <body>
+      <h1>WampHttpTest</h1>
+   </body>
+</html>
