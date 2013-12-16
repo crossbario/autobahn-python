@@ -22,28 +22,143 @@ from autobahn.util import newid
 
 from twisted.web.resource import Resource, NoResource
 from twisted.web.server import NOT_DONE_YET
+from twisted.web import resource, http
+
+from collections import deque
+
+from protocol import WampProtocol
+
+from twisted.internet import reactor
 
 
-class WampHttpResourceSession(Resource):
-
-   def __init__(self, sessionid):
-      Resource.__init__(self)
-      self._sessionid = sessionid
-
-   def render_GET(self, request):
-      return self._sessionid
-
-
-
-class WampHttpResourceOpen(Resource):
+class WampHttpResourceSessionSend(Resource):
+   """
+   A Web resource for sending via XHR that is part of a WampHttpResourceSession.
+   """
 
    def __init__(self, parent):
       Resource.__init__(self)
       self._parent = parent
 
    def render_POST(self, request):
+      """
+      WAMP message send.
+      """
+      payload = request.content.read()
       try:
-         payload = request.content.read()
+         print "processing received WAMP message", payload
+         self._parent.onMessage(payload, False)
+      except Exception, e:
+         request.setHeader('content-type', 'text/plain; charset=UTF-8')
+         request.setResponseCode(http.BAD_REQUEST)
+         return "could not unserialize WAMP message [%s]" % e
+
+
+      request.setResponseCode(http.NO_CONTENT)
+      self._parent._parent.setStandardHeaders(request)
+      request.setHeader('content-type', 'application/json; charset=utf-8')
+      return ""
+
+
+
+class WampHttpResourceSessionReceive(Resource):
+   """
+   A Web resource for receiving via XHR that is part of a WampHttpResourceSession.
+   """
+
+   def __init__(self, parent):
+      Resource.__init__(self)
+      self._parent = parent
+
+      self._queue = deque()
+      self._request = None
+
+      def printQueue():
+         print "send queue", self._parent._sessionid, self._queue
+         if not self._request:
+            print "no poll request"
+         reactor.callLater(1, printQueue)
+
+      printQueue()
+
+
+   def queue(self, data):
+      self._queue.append(data)
+      self._trigger()
+
+
+   def _trigger(self):
+      if self._request and len(self._queue):
+         self._request.write('[')
+         while len(self._queue) > 0:
+            msg = self._queue.popleft()
+            self._request.write(msg)
+            if len(self._queue):
+               self._request.write(',')
+         self._request.write(']')
+         self._request.finish()
+         self._request = None
+
+
+   def render_POST(self, request):
+
+      self._parent._parent.setStandardHeaders(request)
+      request.setHeader('content-type', 'application/json; charset=utf-8')
+
+      self._request = request
+
+      def cancel(err):
+         print "cancelling, request gone"
+         self._request = None
+
+      request.notifyFinish().addErrback(cancel)
+
+      self._trigger()
+
+      return NOT_DONE_YET
+
+
+
+class WampHttpResourceSession(Resource, WampProtocol):
+   """
+   A Web resource representing an open WAMP session.
+   """
+
+   def __init__(self, parent, sessionid):
+      Resource.__init__(self)
+      self._parent = parent
+      self._sessionid = sessionid
+      self._serializer = parent._serializers[1]
+
+      self._send = WampHttpResourceSessionSend(self)
+      self._receive = WampHttpResourceSessionReceive(self)
+
+      self.putChild("send", self._send)
+      self.putChild("receive", self._receive)
+
+      self.onOpen()
+
+
+   def sendMessage(self, bytes, isBinary):
+      print "send", bytes
+      self._receive.queue(bytes)
+
+
+
+class WampHttpResourceOpen(Resource):
+   """
+   A Web resource for creating new WAMP sessions.
+   """
+
+   def __init__(self, parent):
+      Resource.__init__(self)
+      self._parent = parent
+
+   def render_POST(self, request):
+      self._parent.setStandardHeaders(request)
+
+      payload = request.content.read()
+      try:
          options = json.loads(payload)
       except Exception, e:
          return
@@ -52,6 +167,8 @@ class WampHttpResourceOpen(Resource):
 
       sessionid = newid()
 
+      self._parent._sessions[sessionid] = self._parent.protocol(self._parent, sessionid)
+
       ret = {'session': sessionid}
 
       return json.dumps(ret)
@@ -59,26 +176,58 @@ class WampHttpResourceOpen(Resource):
 
 
 class WampHttpResource(Resource):
+   """
+   A WAMP Web base resource.
+   """
+   protocol = WampHttpResourceSession
 
-   def __init__(self, factory, options = None):
+   def __init__(self, serializers, debug = False):
       Resource.__init__(self)
-      self._factory = factory
+      self._serializers = serializers
+      self._debug = debug
       self._sessions = {
          'foo': 23      
       }
-      self._options = {
-      }
-      if options is not None:
-         self._options.update(options)
+      #self._options = {
+      #}
+      #if options is not None:
+      #   self._options.update(options)
+
+      print self.protocol
 
       self.putChild("open", WampHttpResourceOpen(self))
 
    def getChild(self, name, request):
+
       print "getChild", name, request.postpath
+
       if name not in self._sessions:
          return NoResource("No WAMP session '%s'" % name)
-      if len(request.postpath) != 1 or request.postpath[0] not in ['send', 'poll']:
-         return NoResource("Invalid WAMP session method '%s'" % request.postpath[0])
+
+      if len(request.postpath) != 1 or request.postpath[0] not in ['send', 'receive']:
+         return NoResource("Invalid WAMP session operation '%s'" % request.postpath[0])
+
+      sessionid = name
+      op = request.postpath[0]
+
+      print sessionid, op
+      print self._sessions
+      res = self._sessions[sessionid]
+      print res
+
+      return res
+
+   def setStandardHeaders(self, request):
+      origin = request.getHeader("Origin")
+      if origin is None or origin == "null":
+         origin = "*"
+      request.setHeader('access-control-allow-origin', origin)
+      request.setHeader('access-control-allow-credentials', 'true')
+      request.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+
+      headers = request.getHeader('Access-Control-Request-Headers')
+      if headers is not None:
+         request.setHeader('Access-Control-Allow-Headers', headers)
 
 
    # def putChild(self, path, child):

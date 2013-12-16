@@ -17,6 +17,50 @@
 ###############################################################################
 
 
+from autobahn.wamp2.broker import Broker
+from autobahn.wamp2.websocket import WampWebSocketServerProtocol, \
+                                     WampWebSocketServerFactory
+
+from autobahn.wamp2.serializer import WampJsonSerializer, WampMsgPackSerializer
+
+from autobahn.wamp2.http import WampHttpResourceSession, \
+                                WampHttpResource
+
+
+class MyPubSubResourceSession(WampHttpResourceSession):
+
+   def onSessionOpen(self):
+      self.setBroker(self._parent._broker)
+
+
+class MyPubSubResource(WampHttpResource):
+
+   protocol = MyPubSubResourceSession
+
+   def __init__(self, serializers, broker, debug = False):
+      WampHttpResource.__init__(self, serializers = serializers, debug = debug)
+      self._broker = broker
+
+
+
+class PubSubServerProtocol(WampWebSocketServerProtocol):
+
+   def onSessionOpen(self):
+      self.setBroker(self.factory._broker)
+
+
+
+class PubSubServerFactory(WampWebSocketServerFactory):
+
+   protocol = PubSubServerProtocol
+
+   def __init__(self, url, serializers, broker, debug = False):
+      WampWebSocketServerFactory.__init__(self, url, serializers = serializers, debug = debug)
+      self._broker = broker
+
+
+
+
 if __name__ == '__main__':
 
    import sys
@@ -26,16 +70,26 @@ if __name__ == '__main__':
    from twisted.web.server import Site
    from twisted.web.static import File
 
-   from autobahn.wamp2.http import WampHttpResource
+   from twisted.internet.endpoints import serverFromString
 
    log.startLogging(sys.stdout)
 
-   wampResource = WampHttpResource(None)
+   broker = Broker()
+
+   serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
+
+   wampfactory = PubSubServerFactory("ws://localhost:9000", serializers, broker, debug = False)
+   wampserver = serverFromString(reactor, "tcp:9000")
+   wampserver.listen(wampfactory)
+
+
+   wampResource = MyPubSubResource(serializers, broker)
 
    root = File("longpoll")
    root.putChild("wamp", wampResource)
 
    site = Site(root)
+   site.log = lambda _: None # disable any logging
    reactor.listenTCP(8080, site)
 
    reactor.run()

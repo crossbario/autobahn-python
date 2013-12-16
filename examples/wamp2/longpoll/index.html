@@ -12,11 +12,42 @@
             httppost('http://127.0.0.1:8080/wamp/open', options).then(
                function (res) {
                   console.log("ok", res);
+                  console.log(res.session);
+
+                  httppost('http://127.0.0.1:8080/wamp/' + res.session + '/send', [1, "ksjdfsdf"]);
+
+                  var msg = [3, "kshdfsdf", "http://example.com/myEvent1"];
+
+                  httppost('http://127.0.0.1:8080/wamp/' + res.session + '/send', msg).then(
+                     function (res) {
+                        console.log("ok 2", res);
+                        
+                     },
+                     function (code, msg) {
+                        console.log("failed", code, msg);
+                     }
+                  );
+
+                  function poll() {
+                     httppost('http://127.0.0.1:8080/wamp/' + res.session + '/receive').then(
+                        function (res) {
+                           console.log("poll ok", res);
+                           poll();
+                        },
+                        function (code, msg) {
+                           console.log("poll failed", code, msg);
+                           poll();
+                        }
+                     );
+                  }
+
+                  poll();
                },
                function (code, msg) {
                   console.log("failed", code, msg);
                }
             );
+
          }
       </script>
    </head>
