@@ -30,21 +30,8 @@ from autobahn.websocket import WebSocketServerProtocol, \
 from autobahn.websocket import HttpException
 from autobahn.httpstatus import HTTP_STATUS_CODE_BAD_REQUEST
 
-from protocol import WampProtocol
+from protocol import WampProtocol, parseSubprotocolIdentifier
 from serializer import WampJsonSerializer, WampMsgPackSerializer
-
-
-
-def _parse_subprotocol(subprotocol):
-   try:
-      s = subprotocol.split('.')
-      if s[0] != "wamp":
-         raise Exception()
-      version = int(s[1])
-      serializerId = s[2]
-      return version, serializerId
-   except:
-      return None, None
 
 
 
@@ -53,7 +40,7 @@ class WampWebSocketServerProtocol(WampProtocol, WebSocketServerProtocol):
    def onConnect(self, connectionRequest):
       headers = {}
       for subprotocol in connectionRequest.protocols:
-         version, serializerId = _parse_subprotocol(subprotocol)
+         version, serializerId = parseSubprotocolIdentifier(subprotocol)
          if version == 2 and serializerId in self.factory._serializers.keys():
             self._serializer = self.factory._serializers[serializerId]
             return subprotocol, headers
@@ -69,7 +56,7 @@ class WampWebSocketClientProtocol(WampProtocol, WebSocketClientProtocol):
       if connectionResponse.protocol not in self.factory.protocols:
          raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
 
-      version, serializerId = _parse_subprotocol(connectionResponse.protocol)
+      version, serializerId = parseSubprotocolIdentifier(connectionResponse.protocol)
       self._serializer = self.factory._serializers[serializerId]
 
 

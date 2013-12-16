@@ -65,7 +65,7 @@ class Broker:
    def remove(self, proto):
       assert(proto in self._protos)
       self._protos.remove(proto)
-      for subscribers in self._subscribers:
+      for subscriptionid, subscribers in self._subscribers.values():
          subscribers.discard(proto)
 
 

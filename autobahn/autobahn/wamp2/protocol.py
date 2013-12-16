@@ -42,6 +42,19 @@ from message import WampMessageHello, \
 from error import WampProtocolError
 
 
+def parseSubprotocolIdentifier(subprotocol):
+   try:
+      s = subprotocol.split('.')
+      if s[0] != "wamp":
+         raise Exception("invalid protocol %s" % s[0])
+      version = int(s[1])
+      serializerId = s[2]
+      return version, serializerId
+   except:
+      return None, None
+
+
+
 class WampProtocol:
 
    def sendWampMessage(self, msg):
@@ -117,6 +130,8 @@ class WampProtocol:
 
 
    def onClose(self, wasClean, code, reason):
+      self.setBroker(None)
+      self.setDealer(None)
       self.onSessionClose()
 
 

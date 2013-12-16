@@ -7,18 +7,18 @@
          window.onload = function() {
             console.log("test");
 
-            var options = {'subprotocols': ['wamp.2.msgpack', 'wamp.2.json']};
+            var options = {'protocols': ['wamp.2.msgpack', 'wamp.2.json']};
 
             httppost('http://127.0.0.1:8080/wamp/open', options).then(
                function (res) {
                   console.log("ok", res);
-                  console.log(res.session);
+                  console.log(res.transport);
 
-                  httppost('http://127.0.0.1:8080/wamp/' + res.session + '/send', [1, "ksjdfsdf"]);
+                  httppost('http://127.0.0.1:8080/wamp/' + res.transport + '/send', [1, "ksjdfsdf"]);
 
                   var msg = [3, "kshdfsdf", "http://example.com/myEvent1"];
 
-                  httppost('http://127.0.0.1:8080/wamp/' + res.session + '/send', msg).then(
+                  httppost('http://127.0.0.1:8080/wamp/' + res.transport + '/send', msg).then(
                      function (res) {
                         console.log("ok 2", res);
                         
@@ -29,7 +29,7 @@
                   );
 
                   function poll() {
-                     httppost('http://127.0.0.1:8080/wamp/' + res.session + '/receive').then(
+                     httppost('http://127.0.0.1:8080/wamp/' + res.transport + '/receive').then(
                         function (res) {
                            console.log("poll ok", res);
                            poll();

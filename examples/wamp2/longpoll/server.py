@@ -27,17 +27,43 @@ from autobahn.wamp2.http import WampHttpResourceSession, \
                                 WampHttpResource
 
 
+from autobahn.wamp2.protocol import WampProtocol
+
+
+class MyWampSession(WampProtocol):
+
+   def __init__(self, broker):
+      self._broker = broker
+
+   def onSessionOpen(self):
+      self.setBroker(self._broker)
+
+
+class MyWampSessionFactory:
+
+   def __init__(self):
+      self._broker = Broker()
+
+   def createSession(self):
+      session = MyWampSession(self._broker)
+      return session
+
+
+
 class MyPubSubResourceSession(WampHttpResourceSession):
 
    def onSessionOpen(self):
       self.setBroker(self._parent._broker)
+
+   def onSessionClose(self):
+      print "SESSION CLOSED"
 
 
 class MyPubSubResource(WampHttpResource):
 
    protocol = MyPubSubResourceSession
 
-   def __init__(self, serializers, broker, debug = False):
+   def __init__(self, serializers, broker, debug = True):
       WampHttpResource.__init__(self, serializers = serializers, debug = debug)
       self._broker = broker
 
@@ -76,14 +102,16 @@ if __name__ == '__main__':
 
    broker = Broker()
 
-   serializers = [WampMsgPackSerializer(), WampJsonSerializer()]
+   jsonSerializer = WampJsonSerializer()
+
+   serializers = [WampMsgPackSerializer(), jsonSerializer]
 
    wampfactory = PubSubServerFactory("ws://localhost:9000", serializers, broker, debug = False)
    wampserver = serverFromString(reactor, "tcp:9000")
    wampserver.listen(wampfactory)
 
 
-   wampResource = MyPubSubResource(serializers, broker)
+   wampResource = MyPubSubResource([jsonSerializer], broker)
 
    root = File("longpoll")
    root.putChild("wamp", wampResource)

@@ -4,13 +4,13 @@ function httppost(url, data) {
 
    req.onreadystatechange = function (evt) {
 
-      console.log("onreadystatechange", evt, req.readyState);
+/*      console.log("onreadystatechange", evt, req.readyState);
 
       console.log(req.readyState);
       console.log(req.response);
       console.log(req.responseText);
       console.log(req.responseType);
-
+*/
       if (req.readyState === 4) {
 
          if (req.status === 200) {
