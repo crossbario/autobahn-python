@@ -6,3 +6,4 @@
 /autobahn/autobahn.egg-info*/
 doc/_build/*
 *.sublime-workspace
+__pycache__

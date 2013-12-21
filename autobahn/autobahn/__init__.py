@@ -16,23 +16,26 @@
 ##
 ###############################################################################
 
-from _version import __version__
-version = __version__ # backward compat.
+# from _version import __version__
+# version = __version__ # backward compat.
 
-import util
-import choosereactor
-import useragent
-import flashpolicy
-import httpstatus
-import utf8validator
-import xormasker
-import compress
-import websocket
+# import util
+# import choosereactor
+# import useragent
+# import flashpolicy
+# import httpstatus
+# import utf8validator
+# import xormasker
+# import compress
+# import websocket
 
-## disable import, since it leads to reactor import
-## https://twistedmatrix.com/trac/ticket/6849
-#import resource
+# ## disable import, since it leads to reactor import
+# ## https://twistedmatrix.com/trac/ticket/6849
+# #import resource
 
-import prefixmap
-import wamp
-import wamp2
+# import prefixmap
+# import wamp
+# import wamp2
+
+#import twisted
+#import asyncio
