@@ -21,9 +21,9 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.websocket import WebSocketClientFactory, \
-                               WebSocketClientProtocol, \
-                               connectWS
+from autobahn.twisted.websocket import WebSocketClientProtocol, \
+                                       WebSocketClientFactory, \
+                                       connectWS
 
 
 class EchoClientProtocol(WebSocketClientProtocol):

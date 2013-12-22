@@ -20,6 +20,9 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
                                        WebSocketServerFactory
 
 
+#from autobahn.websocket import WebSocketServerProtocol, \
+#                               WebSocketServerFactory
+
 
 class MyServerProtocol(WebSocketServerProtocol):
 
@@ -27,8 +30,8 @@ class MyServerProtocol(WebSocketServerProtocol):
       print("message received")
       self.sendMessage(payload)
 
-   def onConnect(self, connectionRequest):
-      return None
+   #def onConnect(self, connectionRequest):
+   #   return None
 
 
 class MyServerFactory(WebSocketServerFactory):
@@ -39,11 +42,16 @@ class MyServerFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
 
+   import sys
+
    from twisted.internet.endpoints import TCP4ServerEndpoint
    from twisted.internet import reactor
+   from twisted.python import log
 
-   factory = MyServerFactory()
+   log.startLogging(sys.stdout)
 
-   endpoint = TCP4ServerEndpoint(reactor, 8888)
+   factory = MyServerFactory("ws://localhost:9000", debug = True)
+
+   endpoint = TCP4ServerEndpoint(reactor, 9000)
    endpoint.listen(factory)
    reactor.run()   
