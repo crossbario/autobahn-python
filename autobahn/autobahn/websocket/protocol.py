@@ -74,11 +74,11 @@ from autobahn.interfaces import IWebSocketChannel, \
                                 IWebSocketChannelFrameApi, \
                                 IWebSocketChannelStreamingApi
 
-from autobahn.utf8validator import Utf8Validator
-from autobahn.xormasker import XorMaskerNull, createXorMasker
-from autobahn.httpstatus import *
 from autobahn.util import Stopwatch
-from autobahn.compress import *
+from autobahn.websocket.utf8validator import Utf8Validator
+from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
+from autobahn.websocket.httpstatus import *
+from autobahn.websocket.compress import *
 
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):

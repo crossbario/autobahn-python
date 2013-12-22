@@ -40,9 +40,9 @@ __all__ = ["PerMessageCompressOffer",
            "PERMESSAGE_COMPRESSION_EXTENSION"
            ]
 
-from autobahn.compress_base import *
-from autobahn.compress_deflate import *
-from autobahn.compress_bzip2 import *
+from autobahn.websocket.compress_base import *
+from autobahn.websocket.compress_deflate import *
+from autobahn.websocket.compress_bzip2 import *
 
 
 ## class for "permessage-deflate" and "permessage-bzip2" are always available

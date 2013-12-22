@@ -29,11 +29,11 @@ __all__ = ["PerMessageBzip2Mixin",
 
 import bz2
 
-from autobahn.compress_base import PerMessageCompressOffer, \
-                                   PerMessageCompressOfferAccept, \
-                                   PerMessageCompressResponse, \
-                                   PerMessageCompressResponseAccept, \
-                                   PerMessageCompress
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+                                             PerMessageCompressOfferAccept, \
+                                             PerMessageCompressResponse, \
+                                             PerMessageCompressResponseAccept, \
+                                             PerMessageCompress
 
 
 class PerMessageBzip2Mixin:

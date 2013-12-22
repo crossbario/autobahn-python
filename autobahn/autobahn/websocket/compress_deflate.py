@@ -29,11 +29,11 @@ __all__ = ["PerMessageDeflateMixin",
 
 import zlib
 
-from autobahn.compress_base import PerMessageCompressOffer, \
-                                   PerMessageCompressOfferAccept, \
-                                   PerMessageCompressResponse, \
-                                   PerMessageCompressResponseAccept, \
-                                   PerMessageCompress
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+                                             PerMessageCompressOfferAccept, \
+                                             PerMessageCompressResponse, \
+                                             PerMessageCompressResponseAccept, \
+                                             PerMessageCompress
 
 
 class PerMessageDeflateMixin:

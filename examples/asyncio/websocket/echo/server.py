@@ -23,17 +23,23 @@ from autobahn.asyncio.websocket import WebSocketServerProtocol, \
 
 class MyServerProtocol(WebSocketServerProtocol):
 
+   def onConnect(self, request):
+      print("Client connecting: {}".format(request.peer))
+
+   def onOpen(self):
+      print("WebSocket connection open.")
+
    def onMessage(self, payload, isBinary):
-      print("message received")
-      self.sendMessage(payload)
+      if isBinary:
+         print("Binary message received: {} bytes".format(len(payload)))
+      else:
+         print("Text message received: {}".format(payload.decode('utf8')))
 
-   def onConnect(self, connectionRequest):
-      return None
+      ## echo back message verbatim
+      self.sendMessage(payload, isBinary)
 
-
-class MyServerFactory(WebSocketServerFactory):
-
-   protocol = MyServerProtocol
+   def onClose(self, wasClean, code, reason):
+      print("WebSocket connection closed: {}".format(reason))
 
 
 
@@ -41,18 +47,17 @@ if __name__ == '__main__':
 
    import asyncio
 
-   factory = MyServerFactory("ws://localhost:9000", debug = True)
+   factory = WebSocketServerFactory("ws://localhost:9000", debug = False)
+   factory.protocol = MyServerProtocol
 
    loop = asyncio.get_event_loop()
    coro = loop.create_server(factory, '127.0.0.1', 9000)
    server = loop.run_until_complete(coro)
 
-   print('serving on {}'.format(server.sockets[0].getsockname()))
-
    try:
       loop.run_forever()
    except KeyboardInterrupt:
-      print("exit")
+      pass
    finally:
       server.close()
       loop.close()

@@ -29,11 +29,11 @@ __all__ = ["PerMessageSnappyMixin",
 
 import snappy
 
-from autobahn.compress_base import PerMessageCompressOffer, \
-                                   PerMessageCompressOfferAccept, \
-                                   PerMessageCompressResponse, \
-                                   PerMessageCompressResponseAccept, \
-                                   PerMessageCompress
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+                                             PerMessageCompressOfferAccept, \
+                                             PerMessageCompressResponse, \
+                                             PerMessageCompressResponseAccept, \
+                                             PerMessageCompress
 
 
 class PerMessageSnappyMixin:

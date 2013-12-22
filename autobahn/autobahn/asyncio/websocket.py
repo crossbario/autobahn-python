@@ -22,13 +22,23 @@ from autobahn.websocket import protocol
 
 
 
-
 class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol):
 
    def connection_made(self, transport):
       self.transport = transport
-      self.peer = transport.get_extra_info('peername')
+
+      peer = transport.get_extra_info('peername')
+      try:
+         self.peer = "%s:%d" % (peer[0], peer[1])
+      except:
+         ## eg Unix Domain sockets don't have host/port
+         self.peer = str(peer)
+
       protocol.WebSocketServerProtocol.connectionMade(self)
+
+
+   def connection_lost(self, exc):
+      self.connectionLost(exc)
 
 
    def data_received(self, data):
@@ -40,7 +50,8 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
 
 
    def _run_onConnect(self, connectionRequest):
-      self._processHandshake_buildResponse(None)
+      res = self.onConnect(connectionRequest)
+      self._processHandshake_buildResponse(res)
 
 
    def registerProducer(self, producer, streaming):
