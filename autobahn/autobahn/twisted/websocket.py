@@ -22,11 +22,11 @@ import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
-from autobahn import websocket
+from autobahn.websocket import protocol
 
 
 
-class WebSocketServerProtocol(websocket.WebSocketServerProtocol, twisted.internet.protocol.Protocol):
+class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet.protocol.Protocol):
    """
    """
 
@@ -39,7 +39,7 @@ class WebSocketServerProtocol(websocket.WebSocketServerProtocol, twisted.interne
          ## eg Unix Domain sockets don't have host/port
          self.peer = str(peer)
 
-      websocket.WebSocketServerProtocol.connectionMade(self)
+      protocol.WebSocketServerProtocol.connectionMade(self)
 
       ## Set "Nagle"
       try:
@@ -94,7 +94,7 @@ class WebSocketServerProtocol(websocket.WebSocketServerProtocol, twisted.interne
 
 
 
-class WebSocketServerFactory(websocket.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
+class WebSocketServerFactory(protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
    """
    """
 
@@ -102,7 +102,7 @@ class WebSocketServerFactory(websocket.WebSocketServerFactory, twisted.internet.
 
       #twisted.internet.protocol.ServerFactory.__init__(self)
 
-      websocket.WebSocketServerFactory.__init__(self, *args, **kwargs)
+      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
@@ -136,7 +136,7 @@ class WebSocketServerFactory(websocket.WebSocketServerFactory, twisted.internet.
    #    return proto
 
 
-class WebSocketClientProtocol(websocket.WebSocketClientProtocol, twisted.internet.protocol.Protocol):
+class WebSocketClientProtocol(protocol.WebSocketClientProtocol, twisted.internet.protocol.Protocol):
    """
    """
 
@@ -149,7 +149,7 @@ class WebSocketClientProtocol(websocket.WebSocketClientProtocol, twisted.interne
          ## eg Unix Domain sockets don't have host/port
          self.peer = str(peer)
 
-      websocket.WebSocketClientProtocol.connectionMade(self)
+      protocol.WebSocketClientProtocol.connectionMade(self)
 
       ## Set "Nagle"
       try:
@@ -182,7 +182,7 @@ class WebSocketClientProtocol(websocket.WebSocketClientProtocol, twisted.interne
 
 
 
-class WebSocketClientFactory(websocket.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
+class WebSocketClientFactory(protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
    """
    """
 
@@ -190,7 +190,7 @@ class WebSocketClientFactory(websocket.WebSocketClientFactory, twisted.internet.
 
       #twisted.internet.protocol.ClientFactory.__init__(self)
 
-      websocket.WebSocketClientFactory.__init__(self, *args, **kwargs)
+      protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:

@@ -18,17 +18,17 @@
 
 import asyncio
 
-from autobahn import websocket
+from autobahn.websocket import protocol
 
 
 
 
-class WebSocketServerProtocol(websocket.WebSocketServerProtocol, asyncio.Protocol):
+class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol):
 
    def connection_made(self, transport):
       self.transport = transport
       self.peer = transport.get_extra_info('peername')
-      websocket.WebSocketServerProtocol.connectionMade(self)
+      protocol.WebSocketServerProtocol.connectionMade(self)
 
 
    def data_received(self, data):
@@ -48,11 +48,11 @@ class WebSocketServerProtocol(websocket.WebSocketServerProtocol, asyncio.Protoco
 
 
 
-class WebSocketServerFactory(websocket.WebSocketServerFactory):
+class WebSocketServerFactory(protocol.WebSocketServerFactory):
 
    def __init__(self, *args, **kwargs):
 
-      websocket.WebSocketServerFactory.__init__(self, *args, **kwargs)
+      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
       if 'loop' in kwargs:
          self.loop = kwargs['loop']
