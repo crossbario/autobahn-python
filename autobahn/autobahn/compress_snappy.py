@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+
 __all__ = ["PerMessageSnappyMixin",
            "PerMessageSnappyOffer",
            "PerMessageSnappyOfferAccept",
@@ -26,11 +29,11 @@ __all__ = ["PerMessageSnappyMixin",
 
 import snappy
 
-from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressOfferAccept, \
-                          PerMessageCompressResponse, \
-                          PerMessageCompressResponseAccept, \
-                          PerMessageCompress
+from autobahn.compress_base import PerMessageCompressOffer, \
+                                   PerMessageCompressOfferAccept, \
+                                   PerMessageCompressResponse, \
+                                   PerMessageCompressResponseAccept, \
+                                   PerMessageCompress
 
 
 class PerMessageSnappyMixin:

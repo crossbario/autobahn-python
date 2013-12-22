@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+
 __all__ = ["PerMessageBzip2Mixin",
            "PerMessageBzip2Offer",
            "PerMessageBzip2OfferAccept",
@@ -26,11 +29,11 @@ __all__ = ["PerMessageBzip2Mixin",
 
 import bz2
 
-from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressOfferAccept, \
-                          PerMessageCompressResponse, \
-                          PerMessageCompressResponseAccept, \
-                          PerMessageCompress
+from autobahn.compress_base import PerMessageCompressOffer, \
+                                   PerMessageCompressOfferAccept, \
+                                   PerMessageCompressResponse, \
+                                   PerMessageCompressResponseAccept, \
+                                   PerMessageCompress
 
 
 class PerMessageBzip2Mixin:

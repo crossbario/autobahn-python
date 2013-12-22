@@ -62,7 +62,9 @@ setup (
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
-   install_requires = ['setuptools', 'Twisted>=11.1'],
+   install_requires = ['setuptools',
+                       'Twisted>=11.1',
+                       'zope.interface>=4.0.2'],
    extras_require = {
       'accelerate': ["wsaccel>=0.6.2"],
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],

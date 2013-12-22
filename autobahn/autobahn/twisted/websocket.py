@@ -70,12 +70,12 @@ class WebSocketServerProtocol(websocket.WebSocketServerProtocol, twisted.interne
 
    def _run_onConnect(self, connectionRequest):
 
-         ## onConnect() will return the selected subprotocol or None
-         ## or a pair (protocol, headers) or raise an HttpException
-         ##
-         res = maybeDeferred(self.onConnect, connectionRequest)
-         res.addCallback(self._processHandshake_buildResponse)
-         res.addErrback(self._processHandshake_failed)
+      ## onConnect() will return the selected subprotocol or None
+      ## or a pair (protocol, headers) or raise an HttpException
+      ##
+      res = maybeDeferred(self.onConnect, connectionRequest)
+      res.addCallback(self._processHandshake_buildResponse)
+      res.addErrback(self._processHandshake_failed)
 
 
    def registerProducer(self, producer, streaming):
@@ -105,7 +105,7 @@ class WebSocketServerFactory(websocket.WebSocketServerFactory, twisted.internet.
       websocket.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
       ## lazy import to avoid reactor install upon module import
-      if kwargs.has_key('reactor'):
+      if 'reactor' in kwargs:
          self.reactor = kwargs['reactor']
       else:
          from twisted.internet import reactor
@@ -193,7 +193,7 @@ class WebSocketClientFactory(websocket.WebSocketClientFactory, twisted.internet.
       websocket.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
       ## lazy import to avoid reactor install upon module import
-      if kwargs.has_key('reactor'):
+      if 'reactor' in kwargs:
          self.reactor = kwargs['reactor']
       else:
          from twisted.internet import reactor

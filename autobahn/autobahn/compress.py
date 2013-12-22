@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+
 __all__ = ["PerMessageCompressOffer",
            "PerMessageCompressOfferAccept",
            "PerMessageCompressResponse",
@@ -37,9 +40,9 @@ __all__ = ["PerMessageCompressOffer",
            "PERMESSAGE_COMPRESSION_EXTENSION"
            ]
 
-from compress_base import *
-from compress_deflate import *
-from compress_bzip2 import *
+from autobahn.compress_base import *
+from autobahn.compress_deflate import *
+from autobahn.compress_bzip2 import *
 
 
 ## class for "permessage-deflate" and "permessage-bzip2" are always available

@@ -16,6 +16,9 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+
 __all__ = ["PerMessageDeflateMixin",
            "PerMessageDeflateOffer",
            "PerMessageDeflateOfferAccept",
@@ -26,11 +29,11 @@ __all__ = ["PerMessageDeflateMixin",
 
 import zlib
 
-from compress_base import PerMessageCompressOffer, \
-                          PerMessageCompressOfferAccept, \
-                          PerMessageCompressResponse, \
-                          PerMessageCompressResponseAccept, \
-                          PerMessageCompress
+from autobahn.compress_base import PerMessageCompressOffer, \
+                                   PerMessageCompressOfferAccept, \
+                                   PerMessageCompressResponse, \
+                                   PerMessageCompressResponseAccept, \
+                                   PerMessageCompress
 
 
 class PerMessageDeflateMixin:

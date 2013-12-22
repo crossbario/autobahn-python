@@ -18,34 +18,54 @@
 
 import asyncio
 
-from autobahn.websocket2 import protocol
+from autobahn import websocket
 
 
 
-class WebSocketServerProtocol(asyncio.Protocol, protocol.WebSocketServerProtocol):
+
+class WebSocketServerProtocol(websocket.WebSocketServerProtocol, asyncio.Protocol):
 
    def connection_made(self, transport):
       self.transport = transport
-      peername = transport.get_extra_info('peername')
-      print('connection from {}'.format(peername))
+      self.peer = transport.get_extra_info('peername')
+      websocket.WebSocketServerProtocol.connectionMade(self)
+
 
    def data_received(self, data):
-      self._onData(data)
-      #print('data received: {}'.format(data.decode()))
-      #self.transport.write(data)
-      #self.transport.close()
+      self.dataReceived(data)
+
+
+   def _closeConnection(self, abort = False):
+      self.transport.close()
+
+
+   def _run_onConnect(self, connectionRequest):
+      self._processHandshake_buildResponse(None)
+
+
+   def registerProducer(self, producer, streaming):
+      raise Exception("not implemented")
 
 
 
-class WebSocketServerFactory(protocol.WebSocketServerFactory):
+class WebSocketServerFactory(websocket.WebSocketServerFactory):
 
-   protocol = WebSocketServerProtocol
+   def __init__(self, *args, **kwargs):
 
-   def __init__(self, loop = None):
+      websocket.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
-      if loop is None:
-         loop = asyncio.get_event_loop()
-      self._loop = loop
+      if 'loop' in kwargs:
+         self.loop = kwargs['loop']
+      else:
+         self.loop = asyncio.get_event_loop()
+
+
+   def _log(self, msg):
+      print(msg)
+
+
+   def _callLater(self, delay, fun):
+      return self.loop.call_later(delay, fun)
 
 
    def __call__(self):

@@ -36,7 +36,12 @@ __all__ = ["createWsUrl",
 ## The Python urlparse module currently does not contain the ws/wss
 ## schemes, so we add those dynamically (which is a hack of course).
 ##
-import urlparse
+try:
+   import urlparse
+except:
+   ## Python 3
+   from urllib import parse as urlparse
+
 wsschemes = ["ws", "wss"]
 urlparse.uses_relative.extend(wsschemes)
 urlparse.uses_netloc.extend(wsschemes)
@@ -410,7 +415,7 @@ def parseHttpHeader(data):
          value = h[i+1:].strip().decode("utf-8")
 
          ## handle HTTP headers split across multiple lines
-         if http_headers.has_key(key):
+         if key in http_headers:
             http_headers[key] += ", %s" % value
             http_headers_cnt[key] += 1
          else:
@@ -455,7 +460,7 @@ class Timings:
 
       :returns: float or str -- Computed time period in seconds (or formatted string).
       """
-      if self._timings.has_key(endKey) and self._timings.has_key(startKey):
+      if endKey in self._timings and startKey in self._timings:
          d = self._timings[endKey] - self._timings[startKey]
          if format:
             if d < 0.00001: # 10us
@@ -2654,7 +2659,7 @@ class WebSocketProtocol:
                            value = value[:-1]
                   else:
                      value = True
-                  if not params.has_key(key):
+                  if not key in params:
                      params[key] = []
                   params[key].append(value)
                extensions.append((extension, params))
@@ -2928,7 +2933,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Host
          ##
-         if not self.http_headers.has_key("host"):
+         if not 'host' in self.http_headers:
             return self.failHandshake("HTTP Host header missing in opening handshake request")
          if http_headers_cnt["host"] > 1:
             return self.failHandshake("HTTP Host header appears more than once in opening handshake request")
@@ -2948,11 +2953,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Upgrade
          ##
-         if not self.http_headers.has_key("upgrade"):
+         if not 'upgrade' in self.http_headers:
             ## When no WS upgrade, render HTML server status page
             ##
             if self.webStatus:
-               if self.http_request_params.has_key('redirect') and len(self.http_request_params['redirect']) > 0:
+               if 'redirect' in self.http_request_params and len(self.http_request_params['redirect']) > 0:
                   ## To specifiy an URL for redirection, encode the URL, i.e. from JavaScript:
                   ##
                   ##    var url = encodeURIComponent("http://autobahn.ws/python");
@@ -2969,7 +2974,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   ##    https://localhost:9000/?redirect=https%3A%2F%2Ftwitter.com%2F&after=3
                   ##
                   url = self.http_request_params['redirect'][0]
-                  if self.http_request_params.has_key('after') and len(self.http_request_params['after']) > 0:
+                  if 'after' in self.http_request_params and len(self.http_request_params['after']) > 0:
                      after = int(self.http_request_params['after'][0])
                      if self.debugCodePaths:
                         self.factory._log("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
@@ -2996,7 +3001,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Connection
          ##
-         if not self.http_headers.has_key("connection"):
+         if not 'connection' in self.http_headers:
             return self.failHandshake("HTTP Connection header missing")
          connectionUpgrade = False
          for c in self.http_headers["connection"].split(","):
@@ -3008,7 +3013,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Sec-WebSocket-Version PLUS determine mode: Hybi or Hixie
          ##
-         if not self.http_headers.has_key("sec-websocket-version"):
+         if not 'sec-websocket-version' in self.http_headers:
             if self.debugCodePaths:
                self.factory._log("Hixie76 protocol detected")
             if self.allowHixie76:
@@ -3041,12 +3046,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## Sec-WebSocket-Protocol
          ##
-         if self.http_headers.has_key("sec-websocket-protocol"):
+         if 'sec-websocket-protocol' in self.http_headers:
             protocols = [str(x.strip()) for x in self.http_headers["sec-websocket-protocol"].split(",")]
             # check for duplicates in protocol header
             pp = {}
             for p in protocols:
-               if pp.has_key(p):
+               if p in pp:
                   return self.failHandshake("duplicate protocol '%s' specified in HTTP Sec-WebSocket-Protocol header" % p)
                else:
                   pp[p] = 1
@@ -3066,7 +3071,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             websocket_origin_header_key = "origin"
 
          self.websocket_origin = None
-         if self.http_headers.has_key(websocket_origin_header_key):
+         if websocket_origin_header_key in self.http_headers:
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
             self.websocket_origin = self.http_headers[websocket_origin_header_key].strip()
@@ -3079,7 +3084,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if self.websocket_version == 0:
             for kk in ['Sec-WebSocket-Key1', 'Sec-WebSocket-Key2']:
                k = kk.lower()
-               if not self.http_headers.has_key(k):
+               if not k in self.http_headers:
                   return self.failHandshake("HTTP %s header missing" % kk)
                if http_headers_cnt[k] > 1:
                   return self.failHandshake("HTTP %s header appears more than once in opening handshake request" % kk)
@@ -3089,7 +3094,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                except:
                   return self.failHandshake("could not parse Sec-WebSocket-Key1/2")
          else:
-            if not self.http_headers.has_key("sec-websocket-key"):
+            if not 'sec-websocket-key' in self.http_headers:
                return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
             if http_headers_cnt["sec-websocket-key"] > 1:
                return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
@@ -3105,7 +3110,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## Sec-WebSocket-Extensions
          ##
          self.websocket_extensions = []
-         if self.http_headers.has_key("sec-websocket-extensions"):
+         if 'sec-websocket-extensions' in self.http_headers:
 
             if self.websocket_version == 0:
                return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
@@ -3204,14 +3209,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## process permessage-compress extension
          ##
-         if PERMESSAGE_COMPRESSION_EXTENSION.has_key(extension):
+         if extension in PERMESSAGE_COMPRESSION_EXTENSION:
 
             PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
             try:
                offer = PMCE['Offer'].parse(params)
                pmceOffers.append(offer)
-            except Exception, e:
+            except Exception as e:
                return self.failHandshake(str(e))
 
          else:
@@ -3884,7 +3889,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       Items 16 - 22
       """
       spaces1 = random.randint(1, 12)
-      max1 = int(4294967295L / spaces1)
+      max1 = int(4294967295 / spaces1)
       number1 = random.randint(0, max1)
       product1 = number1 * spaces1
       key1 = str(product1)
@@ -4048,14 +4053,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
          ## Upgrade
          ##
-         if not self.http_headers.has_key("upgrade"):
+         if not 'upgrade' in self.http_headers:
             return self.failHandshake("HTTP Upgrade header missing")
          if self.http_headers["upgrade"].strip().lower() != "websocket":
             return self.failHandshake("HTTP Upgrade header different from 'websocket' (case-insensitive) : %s" % self.http_headers["upgrade"])
 
          ## Connection
          ##
-         if not self.http_headers.has_key("connection"):
+         if not 'connection' in self.http_headers:
             return self.failHandshake("HTTP Connection header missing")
          connectionUpgrade = False
          for c in self.http_headers["connection"].split(","):
@@ -4068,7 +4073,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## compute Sec-WebSocket-Accept
          ##
          if self.version != 0:
-            if not self.http_headers.has_key("sec-websocket-accept"):
+            if not 'sec-websocket-accept' in self.http_headers:
                return self.failHandshake("HTTP Sec-WebSocket-Accept header missing in opening handshake reply")
             else:
                if http_headers_cnt["sec-websocket-accept"] > 1:
@@ -4089,7 +4094,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ##
          self.websocket_extensions_in_use = []
 
-         if self.http_headers.has_key("sec-websocket-extensions"):
+         if 'sec-websocket-extensions' in self.http_headers:
 
             if self.version == 0:
                return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
@@ -4110,7 +4115,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                ## process permessage-compress extension
                ##
-               if PERMESSAGE_COMPRESSION_EXTENSION.has_key(extension):
+               if extension in PERMESSAGE_COMPRESSION_EXTENSION:
 
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
@@ -4121,7 +4126,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                   try:
                      pmceResponse = PMCE['Response'].parse(params)
-                  except Exception, e:
+                  except Exception as e:
                      return self.failHandshake(str(e))
 
                   accept = self.perMessageCompressionAccept(pmceResponse)
@@ -4139,7 +4144,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## handle "subprotocol in use" - if any
          ##
          self.websocket_protocol_in_use = None
-         if self.http_headers.has_key("sec-websocket-protocol"):
+         if 'sec-websocket-protocol' in self.http_headers:
             if http_headers_cnt["sec-websocket-protocol"] > 1:
                return self.failHandshake("HTTP Sec-WebSocket-Protocol header appears more than once in opening handshake reply")
             sp = str(self.http_headers["sec-websocket-protocol"].strip())
@@ -4188,7 +4193,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             self.onConnect(connectionResponse)
 
-         except Exception, e:
+         except Exception as e:
             ## immediately close the WS connection
             ##
             self.failConnection(1000, str(e))
