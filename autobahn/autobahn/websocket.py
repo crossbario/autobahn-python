@@ -18,6 +18,9 @@
 
 from __future__ import absolute_import
 
+import sys
+PY3 = sys.version_info.major > 2
+
 __all__ = ["createWsUrl",
            "parseWsUrl",
 
@@ -401,7 +404,7 @@ def parseHttpHeader(data):
 
    :returns: tuple -- Tuple of HTTP status line, headers and headers count.
    """
-   raw = data.splitlines()
+   raw = data.decode('utf8').splitlines()
    http_status_line = raw[0].strip()
    http_headers = {}
    http_headers_cnt = {}
@@ -412,7 +415,7 @@ def parseHttpHeader(data):
          key = h[:i].strip().lower()
 
          ## not sure if UTF-8 is allowed for HTTP header values..
-         value = h[i+1:].strip().decode("utf-8")
+         value = h[i+1:].strip()
 
          ## handle HTTP headers split across multiple lines
          if key in http_headers:
@@ -542,7 +545,7 @@ class WebSocketProtocol:
    done by using setProtocolOptions() on the factories for clients and servers.
    """
 
-   _WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+   _WS_MAGIC = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
    """
    Protocol defined magic used during WebSocket handshake (used in Hybi-drafts
    and final RFC6455.
@@ -785,7 +788,7 @@ class WebSocketProtocol:
       Modes: Hybi, Hixie
       """
       if not self.failedByMe:
-         payload = ''.join(self.message_data)
+         payload = b''.join(self.message_data)
          if self.trackedTimings:
             self.trackedTimings.track("onMessage")
          self.onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
@@ -1192,7 +1195,7 @@ class WebSocketProtocol:
       else:
          self.state = WebSocketProtocol.STATE_CONNECTING
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
-      self.data = ""
+      self.data = b""
 
       ## for chopped/synched sends, we need to queue to maintain
       ## ordering when recalling the reactor to actually "force"
@@ -1309,7 +1312,7 @@ class WebSocketProtocol:
 
       Modes: Hybi
       """
-      data = ''.join(payload)
+      data = b''.join(payload)
       info = (self.peer,
               frameHeader.fin,
               frameHeader.rsv,
@@ -1627,14 +1630,20 @@ class WebSocketProtocol:
 
             ## FIN, RSV, OPCODE
             ##
-            b = ord(self.data[0])
+            if PY3:
+               b = self.data[0]
+            else:
+               b = ord(self.data[0])
             frame_fin = (b & 0x80) != 0
             frame_rsv = (b & 0x70) >> 4
             frame_opcode = b & 0x0f
 
             ## MASK, PAYLOAD LEN 1
             ##
-            b = ord(self.data[1])
+            if PY3:
+               b = self.data[1]
+            else:
+               b = ord(self.data[1])
             frame_masked = (b & 0x80) != 0
             frame_payload_len1 = b & 0x7f
 
@@ -2050,7 +2059,7 @@ class WebSocketProtocol:
          if len(payload) < 1:
             raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
          l = payload_len
-         pl = ''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
+         pl = b''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
       else:
          l = len(payload)
          pl = payload
@@ -2072,7 +2081,7 @@ class WebSocketProtocol:
             mask = struct.pack("!I", random.getrandbits(32))
             mv = mask
          else:
-            mv = ""
+            mv = b''
 
          ## mask frame payload
          ##
@@ -2083,10 +2092,10 @@ class WebSocketProtocol:
             plm = pl
 
       else:
-         mv = ""
+         mv = b''
          plm = pl
 
-      el = ""
+      el = b''
       if l <= 125:
          b1 |= l
       elif l <= 0xFFFF:
@@ -2098,7 +2107,10 @@ class WebSocketProtocol:
       else:
          raise Exception("invalid payload length")
 
-      raw = ''.join([chr(b0), chr(b1), el, mv, plm])
+      if PY3:
+         raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
+      else:
+         raw = b''.join([chr(b0), chr(b1), el, mv, plm])
 
       if opcode in [0, 1, 2]:
          self.trafficStats.outgoingWebSocketFrames += 1
@@ -2355,9 +2367,9 @@ class WebSocketProtocol:
          b1 |= 1 << 7
          mv = self.send_message_frame_mask
       else:
-         mv = ""
+         mv = b''
 
-      el = ""
+      el = b''
       if length <= 125:
          b1 |= length
       elif length <= 0xFFFF:
@@ -2371,7 +2383,11 @@ class WebSocketProtocol:
 
       ## write message frame header
       ##
-      header = ''.join([chr(b0), chr(b1), el, mv])
+      if PY3:
+         header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
+      else:
+         header = b''.join([chr(b0), chr(b1), el, mv])
+
       self.sendData(header)
 
       ## now we are inside message frame ..
@@ -2739,12 +2755,12 @@ class PreparedMessage:
             plm = createXorMasker(mask, l).process(payload)
       else:
          b1 = 0
-         mask = ""
+         mask = b''
          plm = payload
 
       ## payload extended length
       ##
-      el = ""
+      el = b''
       if l <= 125:
          b1 |= l
       elif l <= 0xFFFF:
@@ -2758,7 +2774,10 @@ class PreparedMessage:
 
       ## raw WS message (single frame)
       ##
-      self.payloadHybi = ''.join([chr(b0), chr(b1), el, mask, plm])
+      if PY3:
+         self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
+      else:
+         self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])
 
 
 
@@ -2880,7 +2899,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          self.http_request_data = self.data[:end_of_header + 4]
@@ -3242,7 +3261,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
 
       if self.factory.server is not None and self.factory.server != "":
-         response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+         response += "Server: %s\x0d\x0a" % self.factory.server
 
       response += "Upgrade: WebSocket\x0d\x0a"
       response += "Connection: Upgrade\x0d\x0a"
@@ -3251,10 +3270,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
       ##
       ## headers from factory
       for uh in self.factory.headers.items():
-         response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+         response += "%s: %s\x0d\x0a" % (uh[0], uh[1])
       ## headers from onConnect
       for uh in headers.items():
-         response += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+         response += "%s: %s\x0d\x0a" % (uh[0], uh[1])
 
       if self.websocket_protocol_in_use is not None:
          response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
@@ -3297,15 +3316,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          accept_val = struct.pack(">II", key1, key2) + key3
          accept = hashlib.md5(accept_val).digest()
-         response_body = str(accept)
+         response_body = accept
+
       else:
          ## compute Sec-WebSocket-Accept
          ##
          sha1 = hashlib.sha1()
-         sha1.update(key + WebSocketProtocol._WS_MAGIC)
+         sha1.update(key.encode('utf8') + WebSocketProtocol._WS_MAGIC)
          sec_websocket_accept = base64.b64encode(sha1.digest())
 
-         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept
+         response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept.decode()
 
          ## agreed extensions
          ##
@@ -3314,14 +3334,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## end of HTTP response headers
          response += "\x0d\x0a"
-         response_body = ''
+         response_body = b''
 
       if self.debug:
          self.factory._log("sending HTTP response:\n\n%s%s\n\n" % (response, binascii.b2a_hex(response_body)))
 
       ## save and send out opening HS data
       ##
-      self.http_response_data = response + response_body
+      self.http_response_data = response.encode('utf8') + response_body
       self.sendData(self.http_response_data)
 
       ## opening handshake completed, move WebSocket connection into OPEN state

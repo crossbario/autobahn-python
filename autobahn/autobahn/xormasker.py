@@ -25,6 +25,13 @@ try:
 except:
    ## fallback to pure Python implementation
 
+   ## http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
+   try:
+      xrange
+   except NameError:
+      ## Python 3
+      xrange = range
+
    from array import array
 
    class XorMaskerNull:
