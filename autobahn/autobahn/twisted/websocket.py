@@ -16,37 +16,40 @@
 ##
 ###############################################################################
 
-import asyncio
-from asyncio import Protocol
+from __future__ import absolute_import
+import twisted.internet.protocol
+
+from autobahn.websocket2 import protocol
 
 
-class AdapterProtocol(Protocol):
 
-   def connection_made(self, transport):
-      peername = transport.get_extra_info('peername')
+class WebSocketServerProtocol(twisted.internet.protocol.Protocol, protocol.WebSocketServerProtocol):
+
+   def connectionMade(self):
+      peername = str(self.transport.getPeer())
       print('connection from {}'.format(peername))
-      self._protocol.transport = transport
 
-   def data_received(self, data):
-      self._protocol.data_received(data)
+   def dataReceived(self, data):
+      self._onData(data)
       #print('data received: {}'.format(data.decode()))
       #self.transport.write(data)
-      #self.transport.close()
+      #self.transport.loseConnection()
 
 
-class AdapterFactory:
 
-   def __init__(self, factory, loop = None):
-      self._factory = factory
+class WebSocketServerFactory(twisted.internet.protocol.Factory, protocol.WebSocketServerFactory):
 
-      if loop is None:
-         loop = asyncio.get_event_loop()
-      self._loop = loop
+   protocol = WebSocketServerProtocol
+
+   def __init__(self, reactor = None):
+
+      ## lazy import to avoid reactor install upon module import
+      if reactor is None:
+         from twisted.internet import reactor
+      self._reactor = reactor
 
 
-   def __call__(self):
-      proto = AdapterProtocol()
+   def buildProtocol(self, addr):
+      proto = self.protocol()
       proto.factory = self
-      proto._protocol = self._factory()
-      print("asyncio protocol created")
       return proto

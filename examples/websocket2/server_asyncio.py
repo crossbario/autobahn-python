@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 ##
 ###############################################################################
 
-from autobahn.websocket2.protocol import WebSocketServerProtocol, WebSocketServerFactory
+from autobahn.asyncio.websocket import WebSocketServerProtocol, \
+                                       WebSocketServerFactory
+
 
 
 class MyServerProtocol(WebSocketServerProtocol):
@@ -25,6 +27,9 @@ class MyServerProtocol(WebSocketServerProtocol):
       print("message received")
       self.sendMessage(payload)
 
+   def onConnect(self, connectionRequest):
+      return None
+
 
 class MyServerFactory(WebSocketServerFactory):
 
@@ -32,14 +37,16 @@ class MyServerFactory(WebSocketServerFactory):
 
 
 
-def run_test_asyncio(factory):
+if __name__ == '__main__':
+
    import asyncio
 
-   from autobahn.asyncio import AdapterFactory
+   factory = MyServerFactory()
 
    loop = asyncio.get_event_loop()
-   coro = loop.create_server(AdapterFactory(factory), '127.0.0.1', 8888)
+   coro = loop.create_server(factory, '127.0.0.1', 8888)
    server = loop.run_until_complete(coro)
+
    print('serving on {}'.format(server.sockets[0].getsockname()))
 
    try:
@@ -49,27 +56,3 @@ def run_test_asyncio(factory):
    finally:
       server.close()
       loop.close()
-
-
-def run_test_twisted(factory):
-   from twisted.internet.endpoints import TCP4ServerEndpoint
-   from twisted.internet import reactor
-
-   from autobahn.twisted import AdapterFactory
-
-   endpoint = TCP4ServerEndpoint(reactor, 8888)
-   endpoint.listen(AdapterFactory(factory))
-   reactor.run()   
-
-
-if __name__ == '__main__':
-   import sys
-
-   factory = MyServerFactory()
-
-   if sys.argv[1] == "asyncio":
-      run_test_asyncio(factory)
-   elif sys.argv[1] == "twisted":
-      run_test_twisted(factory)
-   else:
-      raise Exception("no such variant")

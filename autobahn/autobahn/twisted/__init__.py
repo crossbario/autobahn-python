@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,19 +16,3 @@
 ##
 ###############################################################################
 
-class WebSocketServerProtocol:
-
-   def _onData(self, data):
-      print('data received: {}'.format(data.decode()))
-      self.onMessage(data, False)
-
-   def onMessage(self, payload, isBinary):
-      pass
-
-   def sendMessage(self, payload, isBinary = False):
-      self.transport.write(payload)
-
-
-class WebSocketServerFactory:
-
-   pass

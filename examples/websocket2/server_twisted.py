@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,19 +16,34 @@
 ##
 ###############################################################################
 
-class WebSocketServerProtocol:
+from autobahn.twisted.websocket import WebSocketServerProtocol, \
+                                       WebSocketServerFactory
 
-   def _onData(self, data):
-      print('data received: {}'.format(data.decode()))
-      self.onMessage(data, False)
+
+
+class MyServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, payload, isBinary):
-      pass
+      print("message received")
+      self.sendMessage(payload)
 
-   def sendMessage(self, payload, isBinary = False):
-      self.transport.write(payload)
+   def onConnect(self, connectionRequest):
+      return None
 
 
-class WebSocketServerFactory:
+class MyServerFactory(WebSocketServerFactory):
 
-   pass
+   protocol = MyServerProtocol
+
+
+
+if __name__ == '__main__':
+
+   from twisted.internet.endpoints import TCP4ServerEndpoint
+   from twisted.internet import reactor
+
+   factory = MyServerFactory()
+
+   endpoint = TCP4ServerEndpoint(reactor, 8888)
+   endpoint.listen(factory)
+   reactor.run()   
