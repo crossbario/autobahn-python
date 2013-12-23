@@ -43,8 +43,24 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
    Base class for Asyncio WebSocket server protocols.
    """
 
+   @asyncio.coroutine
+   def _consume(self):
+      while True:
+         print("1"*10)
+         try:
+            data = yield from self.reader.read()
+            print("2"*10)
+            #self.dataReceived(data)
+         except Exception as e:
+            print(e)
+
+
    def connection_made(self, transport):
       self.transport = transport
+
+      self.reader = asyncio.StreamReader()
+      self.reader.set_transport(self.transport)
+      self.readtask = asyncio.Task(self._consume())
 
       peer = transport.get_extra_info('peername')
       try:
@@ -61,7 +77,9 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
 
 
    def data_received(self, data):
-      self.dataReceived(data)
+      self.reader.feed_data(data)
+      print("data_received {}".format(len(data)))
+      #self.dataReceived(data)
 
 
    def _closeConnection(self, abort = False):

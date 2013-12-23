@@ -471,6 +471,7 @@ class Timings:
       return pformat(self._timings)
 
 
+
 @implementer(IWebSocketChannel)
 @implementer(IWebSocketChannelFrameApi)
 @implementer(IWebSocketChannelStreamingApi)
@@ -3159,18 +3160,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                     self.websocket_protocols,
                                                     self.websocket_extensions)
 
-         print("1"*10)
          self._onConnect(self.connectionRequest)
-         #yield from self._onConnect(self.connectionRequest)
-         print("2"*10)
 
 
    def succeedHandshake(self, res):
       """
       Callback after onConnect() returns successfully. Generates the response for the handshake.
       """
-      print("0"*10)
-      print(res)
       protocol = None
       headers = {}
       if type(res) == tuple:
@@ -4192,10 +4188,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ##
             if self.trackedTimings:
                self.trackedTimings.track("onOpen")
-
-            print("X"*100)
-            yield from self.onOpen()
-            print("Y"*100)
+            self.onOpen()
 
          ## process rest, if any
          ##
