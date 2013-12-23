@@ -24,7 +24,6 @@ PY3 = sys.version_info.major > 2
 __all__ = ["createWsUrl",
            "parseWsUrl",
 
-           "HttpException",
            "ConnectionRequest",
            "ConnectionResponse",
            "Timings",
@@ -77,8 +76,8 @@ from autobahn.interfaces import IWebSocketChannel, \
 from autobahn.util import Stopwatch
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
-from autobahn.websocket.httpstatus import *
 from autobahn.websocket.compress import *
+from autobahn.websocket import http
 
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
@@ -269,27 +268,6 @@ class FrameHeader:
       self.rsv = rsv
       self.length = length
       self.mask = mask
-
-
-
-class HttpException:
-   """
-   Throw an instance of this class to deny a WebSocket connection
-   during handshake in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
-   You can find definitions of HTTP status codes in module :mod:`autobahn.httpstatus`.
-   """
-
-   def __init__(self, code, reason):
-      """
-      Constructor.
-
-      :param code: HTTP error code.
-      :type code: int
-      :param reason: HTTP error reason.
-      :type reason: str
-      """
-      self.code = code
-      self.reason = reason
 
 
 
@@ -1991,7 +1969,7 @@ class WebSocketProtocol:
       Modes: Hybi
       """
 
-      payload = ''.join(self.control_frame_data)
+      payload = b''.join(self.control_frame_data)
       self.control_frame_data = None
 
       ## CLOSE frame
@@ -2200,7 +2178,7 @@ class WebSocketProtocol:
             self.sendData("\xff\x00")
          else:
             ## construct Hybi close frame payload and send frame
-            payload = ""
+            payload = b''
             if code is not None:
                payload += struct.pack("!H", code)
             if reasonUtf8 is not None:
@@ -2842,7 +2820,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       Throw HttpException when you don't want to accept the WebSocket
       connection request. For example, throw a
-      `HttpException(httpstatus.HTTP_STATUS_CODE_UNAUTHORIZED[0], "You are not authorized for this!")`.
+      `HttpException(httpstatus.http.UNAUTHORIZED[0], "You are not authorized for this!")`.
 
       When you want to accept the connection, return the accepted protocol
       from list of WebSocket (sub)protocols provided by client or None to
@@ -2922,10 +2900,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if len(rl) != 3:
             return self.failHandshake("Bad HTTP request status line '%s'" % self.http_status_line)
          if rl[0].strip() != "GET":
-            return self.failHandshake("HTTP method '%s' not allowed" % rl[0], HTTP_STATUS_CODE_METHOD_NOT_ALLOWED[0])
+            return self.failHandshake("HTTP method '%s' not allowed" % rl[0], http.METHOD_NOT_ALLOWED[0])
          vs = rl[2].strip().split("/")
          if len(vs) != 2 or vs[0] != "HTTP" or vs[1] not in ["1.1"]:
-            return self.failHandshake("Unsupported HTTP version '%s'" % rl[2], HTTP_STATUS_CODE_UNSUPPORTED_HTTP_VERSION[0])
+            return self.failHandshake("Unsupported HTTP version '%s'" % rl[2], http.UNSUPPORTED_HTTP_VERSION[0])
 
          ## HTTP Request line : REQUEST-URI
          ##
@@ -3009,7 +2987,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                self.dropConnection(abort = False)
                return
             else:
-               return self.failHandshake("HTTP Upgrade header missing", HTTP_STATUS_CODE_UPGRADE_REQUIRED[0])
+               return self.failHandshake("HTTP Upgrade header missing", http.UPGRADE_REQUIRED[0])
          upgradeWebSocket = False
          for u in self.http_headers["upgrade"].split(","):
             if u.strip().lower() == "websocket":
@@ -3057,7 +3035,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             sv.reverse()
             svs = ','.join([str(x) for x in sv])
             return self.failHandshake("WebSocket version %d not supported (supported versions: %s)" % (version, svs),
-                                      HTTP_STATUS_CODE_BAD_REQUEST[0],
+                                      http.BAD_REQUEST[0],
                                       [("Sec-WebSocket-Version", svs)])
          else:
             ## store the protocol version we are supposed to talk
@@ -3181,13 +3159,18 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                     self.websocket_protocols,
                                                     self.websocket_extensions)
 
-         self._run_onConnect(self.connectionRequest)
+         print("1"*10)
+         self._onConnect(self.connectionRequest)
+         #yield from self._onConnect(self.connectionRequest)
+         print("2"*10)
 
 
-   def _processHandshake_buildResponse(self, res):
+   def succeedHandshake(self, res):
       """
-      Callback for Deferred returned by self.onConnect. Generates the response for the handshake.
+      Callback after onConnect() returns successfully. Generates the response for the handshake.
       """
+      print("0"*10)
+      print(res)
       protocol = None
       headers = {}
       if type(res) == tuple:
@@ -3258,7 +3241,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       ## build response to complete WebSocket handshake
       ##
-      response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]
+      response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % http.SWITCHING_PROTOCOLS[0]
 
       if self.factory.server is not None and self.factory.server != "":
          response += "Server: %s\x0d\x0a" % self.factory.server
@@ -3315,8 +3298,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## compute accept body
          ##
          accept_val = struct.pack(">II", key1, key2) + key3
-         accept = hashlib.md5(accept_val).digest()
-         response_body = accept
+         response_body = hashlib.md5(accept_val).digest()
 
       else:
          ## compute Sec-WebSocket-Accept
@@ -3334,15 +3316,18 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## end of HTTP response headers
          response += "\x0d\x0a"
-         response_body = b''
+         response_body = None
 
-      if self.debug:
-         self.factory._log("sending HTTP response:\n\n%s%s\n\n" % (response, binascii.b2a_hex(response_body)))
-
-      ## save and send out opening HS data
+      ## send out opening handshake response
       ##
-      self.http_response_data = response.encode('utf8') + response_body
-      self.sendData(self.http_response_data)
+      if self.debug:
+         self.factory._log("sending HTTP response:\n\n%s" % response)
+      self.sendData(response.encode('utf8'))
+
+      if response_body:
+         if self.debug:
+            self.factory._log("sending HTTP response body:\n\n%s" % binascii.b2a_hex(response_body))
+         self.sendData(response_body)
 
       ## opening handshake completed, move WebSocket connection into OPEN state
       ##
@@ -3374,20 +3359,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          self.consumeData()
 
 
-   def _processHandshake_failed(self, failure):
-      """
-      Errback for Deferred returned by self.onConnect. Generates a HTTP error response for the handshake.
-      """
-      e = failure.value
-
-      if failure.check(HttpException):
-         return self.failHandshake(e.reason, e.code)
-      else:
-         self.factory._log("Exception raised in onConnect() - %s" % str(e))
-         return self.failHandshake("Internal Server Error", HTTP_STATUS_CODE_INTERNAL_SERVER_ERROR[0])
-
-
-   def failHandshake(self, reason, code = HTTP_STATUS_CODE_BAD_REQUEST[0], responseHeaders = []):
+   def failHandshake(self, reason, code = http.BAD_REQUEST[0], responseHeaders = []):
       """
       During opening handshake the client request was invalid, we send a HTTP
       error response and then drop the connection.
@@ -3402,38 +3374,37 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       Send out HTTP error response.
       """
-      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason.encode("utf-8"))
+      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason)
       for h in responseHeaders:
-         response += "%s: %s\x0d\x0a" % (h[0], h[1].encode("utf-8"))
+         response += "%s: %s\x0d\x0a" % (h[0], h[1])
       response += "\x0d\x0a"
-      self.sendData(response)
+      self.sendData(response.encode('utf8'))
 
 
    def sendHtml(self, html):
       """
       Send HTML page HTTP response.
       """
-      raw = html.encode("utf-8")
-      response  = "HTTP/1.1 %d %s\x0d\x0a" % (HTTP_STATUS_CODE_OK[0], HTTP_STATUS_CODE_OK[1])
+      response  = "HTTP/1.1 %d %s\x0d\x0a" % (http.OK[0], http.OK[1])
       if self.factory.server is not None and self.factory.server != "":
-         response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
+         response += "Server: %s\x0d\x0a" % self.factory.server
       response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
       response += "Content-Length: %d\x0d\x0a" % len(raw)
       response += "\x0d\x0a"
-      response += raw
-      self.sendData(response)
+      self.sendData(response.encode('utf8'))
+      self.sendData(html.encode('utf8'))
 
 
    def sendRedirect(self, url):
       """
       Send HTTP Redirect (303) response.
       """
-      response  = "HTTP/1.1 %d\x0d\x0a" % HTTP_STATUS_CODE_SEE_OTHER[0]
-      #if self.factory.server is not None and self.factory.server != "":
-      #   response += "Server: %s\x0d\x0a" % self.factory.server.encode("utf-8")
-      response += "Location: %s\x0d\x0a" % url.encode("utf-8")
+      response  = "HTTP/1.1 %d\x0d\x0a" % http.SEE_OTHER[0]
+      if self.factory.server is not None and self.factory.server != "":
+         response += "Server: %s\x0d\x0a" % self.factory.server
+      response += "Location: %s\x0d\x0a" % url
       response += "\x0d\x0a"
-      self.sendData(response)
+      self.sendData(response.encode('utf8'))
 
 
    def sendServerStatus(self, redirectUrl = None, redirectAfter = 0):
@@ -3930,12 +3901,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       ## construct WS opening handshake HTTP header
       ##
-      request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource.encode("utf-8")
+      request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource
 
       if self.factory.useragent is not None and self.factory.useragent != "":
-         request += "User-Agent: %s\x0d\x0a" % self.factory.useragent.encode("utf-8")
+         request += "User-Agent: %s\x0d\x0a" % self.factory.useragent
 
-      request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+      request += "Host: %s:%d\x0d\x0a" % (self.factory.host, self.factory.port)
       request += "Upgrade: WebSocket\x0d\x0a"
       request += "Connection: Upgrade\x0d\x0a"
 
@@ -3951,7 +3922,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       ## optional, user supplied additional HTTP headers
       ##
       for uh in self.factory.headers.items():
-         request += "%s: %s\x0d\x0a" % (uh[0].encode("utf-8"), uh[1].encode("utf-8"))
+         request += "%s: %s\x0d\x0a" % (uh[0], uh[1])
 
       ## handshake random key
       ##
@@ -3970,17 +3941,19 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## First two keys.
          request += "Sec-WebSocket-Key1: %s\x0d\x0a" % self.websocket_key1
          request += "Sec-WebSocket-Key2: %s\x0d\x0a" % self.websocket_key2
-      else:
+         request_body = self.websocket_key3
+      else:         
          self.websocket_key = base64.b64encode(os.urandom(16))
-         request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key
+         request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key.decode()
+         request_body = None
 
       ## optional origin announced
       ##
       if self.factory.origin:
          if self.version > 10 or self.version == 0:
-            request += "Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Origin: %s\x0d\x0a" % self.factory.origin
          else:
-            request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin.encode("utf-8")
+            request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin
 
       ## optional list of WS subprotocols announced
       ##
@@ -4007,16 +3980,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       request += "\x0d\x0a"
 
-      if self.version == 0:
+      self.sendData(request.encode('utf8'))
+      if request_body:
          ## Write HTTP request body for Hixie-76
-         request += self.websocket_key3
-
-      self.http_request_data = request
+         self.sendData(request_body)
 
       if self.debug:
-         self.factory._log(self.http_request_data)
-
-      self.sendData(self.http_request_data)
+         self.factory._log(request)
 
 
    def processHandshake(self):
@@ -4025,7 +3995,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          self.http_response_data = self.data[:end_of_header + 4]
@@ -4060,7 +4030,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             status_code = int(sl[1].strip())
          except:
             return self.failHandshake("Bad HTTP status code ('%s')" % sl[1].strip())
-         if status_code != HTTP_STATUS_CODE_SWITCHING_PROTOCOLS[0]:
+         if status_code != http.SWITCHING_PROTOCOLS[0]:
 
             ## FIXME: handle redirects
             ## FIXME: handle authentication required
@@ -4102,7 +4072,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
                sha1 = hashlib.sha1()
                sha1.update(self.websocket_key + WebSocketProtocol._WS_MAGIC)
-               sec_websocket_accept = base64.b64encode(sha1.digest())
+               sec_websocket_accept = base64.b64encode(sha1.digest()).decode()
 
                if sec_websocket_accept_got != sec_websocket_accept:
                   return self.failHandshake("HTTP Sec-WebSocket-Accept bogus value : expected %s / got %s" % (sec_websocket_accept, sec_websocket_accept_got))
@@ -4222,7 +4192,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ##
             if self.trackedTimings:
                self.trackedTimings.track("onOpen")
-            self.onOpen()
+
+            print("X"*100)
+            yield from self.onOpen()
+            print("Y"*100)
 
          ## process rest, if any
          ##

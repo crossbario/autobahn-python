@@ -16,33 +16,49 @@
 ##
 ###############################################################################
 
-from autobahn.asyncio.websocket import WebSocketServerProtocol, \
-                                       WebSocketServerFactory
+from autobahn.asyncio.websocket import WebSocketClientProtocol, \
+                                       WebSocketClientFactory
 
 
 import asyncio
-from autobahn.websocket import http
 
-class MyServerProtocol(WebSocketServerProtocol):
 
-   def onConnect(self, request):
-      print("Client connecting: {}".format(request.peer))
-      #yield from asyncio.sleep(0.2)
-      return None
-      #raise Exception("denied")
-      #raise http.HttpException(http.UNAUTHORIZED[0], "You are now allowed.")
+class MyClientProtocol(WebSocketClientProtocol):
+
+   def onConnect(self, response):
+      print("Server connected: {}".format(response.peer))
+
+   @asyncio.coroutine
+   def slow_sqrt_coroutine(self, x):
+      yield from asyncio.sleep(1)
+      if x >= 0:
+         return math.sqrt(x)
+      else:
+         raise Exception("negative number")
 
    def onOpen(self):
       print("WebSocket connection open.")
+      value = yield from self.slow_sqrt_coroutine(2)
+      #value = 2.1
+      msg = "result = {}".format(value)
+      self.sendMessage(msg.encode('utf8'))
+
+   def onOpen2(self):
+      print("WebSocket connection open.")
+
+      def hello():
+         self.sendMessage(u"Hello, world!".encode('utf8'))
+         self.sendMessage(b"\x00\x01\x03\x04", binary = True)
+         self.factory.loop.call_later(1, hello)
+
+      ## start sending messages every second ..
+      hello()
 
    def onMessage(self, payload, isBinary):
       if isBinary:
          print("Binary message received: {} bytes".format(len(payload)))
       else:
          print("Text message received: {}".format(payload.decode('utf8')))
-
-      ## echo back message verbatim
-      self.sendMessage(payload, isBinary)
 
    def onClose(self, wasClean, code, reason):
       print("WebSocket connection closed: {}".format(reason))
@@ -53,17 +69,11 @@ if __name__ == '__main__':
 
    import asyncio
 
-   factory = WebSocketServerFactory("ws://localhost:9000", debug = True)
-   factory.protocol = MyServerProtocol
+   factory = WebSocketClientFactory("ws://localhost:9000", debug = True)
+   factory.protocol = MyClientProtocol
 
    loop = asyncio.get_event_loop()
-   coro = loop.create_server(factory, '127.0.0.1', 9000)
-   server = loop.run_until_complete(coro)
-
-   try:
-      loop.run_forever()
-   except KeyboardInterrupt:
-      pass
-   finally:
-      server.close()
-      loop.close()
+   coro = loop.create_connection(factory, '127.0.0.1', 9000)
+   loop.run_until_complete(coro)
+   loop.run_forever()
+   loop.close()

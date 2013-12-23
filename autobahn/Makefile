@@ -16,7 +16,8 @@ clean:
 	rm -rf ./autobahn.egg-info
 	rm -rf ./build
 	rm -rf ./dist
-	find . -name "*.pyc" -exec rm -f {} \;
+	find . -name "*.pyc" -type f -exec rm -f {} \;
+	find . -name "*__pycache__" -type d -exec rm -rf {} \;
 
 build: clean
 	python setup.py bdist_egg

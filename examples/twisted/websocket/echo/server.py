@@ -18,13 +18,25 @@
 
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
                                        WebSocketServerFactory
+from autobahn.websocket import http
 
+
+from twisted.internet.defer import Deferred
 
 
 class MyServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, request):
       print("Client connecting: {}".format(request.peer))
+      d = Deferred()
+      def fail():
+         #raise Exception("denied")
+         #raise http.HttpException(http.UNAUTHORIZED[0], "You are now allowed.")
+         #d.errback(http.HttpException(http.UNAUTHORIZED[0], "You are now allowed."))
+         #d.errback(Exception("denied"))
+         d.callback(None)
+      self.factory.reactor.callLater(0.2, fail)
+      return d
 
    def onOpen(self):
       print("WebSocket connection open.")

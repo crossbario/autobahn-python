@@ -18,16 +18,24 @@
 
 from __future__ import absolute_import
 
+__all__ = ['WebSocketServerProtocol',
+           'WebSocketServerFactory',
+           'WebSocketClientProtocol',
+           'WebSocketClientFactory',
+           'listenWS',
+           'connectWS']
+
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 
 from autobahn.websocket import protocol
-
+from autobahn.websocket import http
 
 
 class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet.protocol.Protocol):
    """
+   Base class for Twisted WebSocket server protocols.
    """
 
    def connectionMade(self):
@@ -49,18 +57,6 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet
          pass
 
 
-   #    peername = str(self.transport.getPeer())
-   #    print('connection from {}'.format(peername))
-
-   # def dataReceived(self, data):
-   #    self._onData(data)
-   #    #print('data received: {}'.format(data.decode()))
-   #    #self.transport.write(data)
-   #    #self.transport.loseConnection()
-
-   # def connectionLost(self, reason):
-   #    pass
-
    def _closeConnection(self, abort = False):
       if abort:
          self.transport.abortConnection()
@@ -68,14 +64,23 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet
          self.transport.loseConnection()
 
 
-   def _run_onConnect(self, connectionRequest):
-
+   def _onConnect(self, connectionRequest):
       ## onConnect() will return the selected subprotocol or None
       ## or a pair (protocol, headers) or raise an HttpException
       ##
       res = maybeDeferred(self.onConnect, connectionRequest)
-      res.addCallback(self._processHandshake_buildResponse)
-      res.addErrback(self._processHandshake_failed)
+
+      res.addCallback(self.succeedHandshake)
+
+      def forwardError(failure):
+         if failure.check(http.HttpException):
+            return self.failHandshake(failure.value.reason, failure.value.code)
+         else:
+            if True or self.debug:
+               self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
+            return self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
+
+      res.addErrback(forwardError)
 
 
    def registerProducer(self, producer, streaming):
@@ -93,14 +98,12 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet
 
 
 
-
 class WebSocketServerFactory(protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
    """
+   Base class for Twisted WebSocket server factories.
    """
 
    def __init__(self, *args, **kwargs):
-
-      #twisted.internet.protocol.ServerFactory.__init__(self)
 
       protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
@@ -120,24 +123,10 @@ class WebSocketServerFactory(protocol.WebSocketServerFactory, twisted.internet.p
       return self.reactor.callLater(delay, fun)
 
 
-   #protocol = WebSocketServerProtocol
-
-   # def __init__(self, reactor = None):
-
-   #    ## lazy import to avoid reactor install upon module import
-   #    if reactor is None:
-   #       from twisted.internet import reactor
-   #    self._reactor = reactor
-
-
-   # def buildProtocol(self, addr):
-   #    proto = self.protocol()
-   #    proto.factory = self
-   #    return proto
-
 
 class WebSocketClientProtocol(protocol.WebSocketClientProtocol, twisted.internet.protocol.Protocol):
    """
+   Base class for Twisted WebSocket client protocols.
    """
 
    def connectionMade(self):
@@ -184,11 +173,10 @@ class WebSocketClientProtocol(protocol.WebSocketClientProtocol, twisted.internet
 
 class WebSocketClientFactory(protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
    """
+   Base class for Twisted WebSocket client factories.
    """
 
    def __init__(self, *args, **kwargs):
-
-      #twisted.internet.protocol.ClientFactory.__init__(self)
 
       protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
