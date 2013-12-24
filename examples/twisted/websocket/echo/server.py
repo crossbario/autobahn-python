@@ -21,12 +21,35 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
 from autobahn.websocket import http
 
 
-from twisted.internet.defer import Deferred
+#from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, returnValue, inlineCallbacks
+from twisted.internet import reactor
+
+
+def inlinesleep(delay):
+   d = Deferred()
+   def resume():
+      d.callback(None)
+   reactor.callLater(delay, resume)
+   return d
 
 
 class MyServerProtocol(WebSocketServerProtocol):
 
+   @inlineCallbacks
+   def myfun(self):
+      r = yield inlinesleep(0.8)
+      returnValue(r)
+
+   @inlineCallbacks
    def onConnect(self, request):
+      yield inlinesleep(0.8)
+      #return self.myfun()
+      #res = yield self.myfun()
+      #returnValue(res)
+
+   @inlineCallbacks
+   def onConnect2(self, request):
       print("Client connecting: {}".format(request.peer))
       d = Deferred()
       def fail():

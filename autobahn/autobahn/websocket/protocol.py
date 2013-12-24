@@ -770,8 +770,7 @@ class WebSocketProtocol:
          payload = b''.join(self.message_data)
          if self.trackedTimings:
             self.trackedTimings.track("onMessage")
-         self.onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
-
+         self._onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
       self.message_data = None
 
 
@@ -1262,9 +1261,9 @@ class WebSocketProtocol:
       if not self.wasClean:
          if not self.droppedByMe and self.wasNotCleanReason is None:
             self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
-         self.onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
+         self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
       else:
-         self.onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+         self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def logRxOctets(self, data):
@@ -3159,7 +3158,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                                     self.websocket_origin,
                                                     self.websocket_protocols,
                                                     self.websocket_extensions)
-
          self._onConnect(self.connectionRequest)
 
 
@@ -3347,7 +3345,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       ##
       if self.trackedTimings:
          self.trackedTimings.track("onOpen")
-      self.onOpen()
+      self._onOpen()
 
       ## process rest, if any
       ##
@@ -4188,7 +4186,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ##
             if self.trackedTimings:
                self.trackedTimings.track("onOpen")
-            self.onOpen()
+            self._onOpen()
 
          ## process rest, if any
          ##

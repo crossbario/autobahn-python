@@ -83,6 +83,18 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, twisted.internet
       res.addErrback(forwardError)
 
 
+   def _onOpen(self):
+      self.onOpen()
+
+
+   def _onMessage(self, payload, isBinary):
+      self.onMessage(payload, isBinary)
+
+
+   def _onClose(self, wasClean, code, reason):
+      self.onClose(self, wasClean, code, reason)
+
+
    def registerProducer(self, producer, streaming):
       """
       Register a Twisted producer with this protocol.

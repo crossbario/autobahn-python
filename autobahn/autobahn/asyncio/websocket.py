@@ -23,6 +23,7 @@ __all__ = ['WebSocketServerProtocol',
 
 import asyncio
 import inspect
+from collections import deque
 
 from autobahn.websocket import protocol
 from autobahn.websocket import http
@@ -43,24 +44,11 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
    Base class for Asyncio WebSocket server protocols.
    """
 
-   @asyncio.coroutine
-   def _consume(self):
-      while True:
-         print("1"*10)
-         try:
-            data = yield from self.reader.read()
-            print("2"*10)
-            #self.dataReceived(data)
-         except Exception as e:
-            print(e)
-
-
    def connection_made(self, transport):
       self.transport = transport
 
-      self.reader = asyncio.StreamReader()
-      self.reader.set_transport(self.transport)
-      self.readtask = asyncio.Task(self._consume())
+      self.receive_queue = deque()
+      asyncio.Task(self._consume())
 
       peer = transport.get_extra_info('peername')
       try:
@@ -76,40 +64,61 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
       self.connectionLost(exc)
 
 
+   def _consume(self):
+      while True:
+         self.waiter = asyncio.Future()
+         yield from self.waiter
+         while len(self.receive_queue):
+            data = self.receive_queue.popleft()
+            if self.transport:
+               try:
+                  self.dataReceived(data)
+               except Exception as e:
+                  raise e
+
+
    def data_received(self, data):
-      self.reader.feed_data(data)
-      print("data_received {}".format(len(data)))
-      #self.dataReceived(data)
+      self.receive_queue.append(data)
+      if not self.waiter.done():
+         self.waiter.set_result(None)
 
 
    def _closeConnection(self, abort = False):
       self.transport.close()
 
 
-   #@asyncio.coroutine
    def _onConnect(self, connectionRequest):
       ## onConnect() will return the selected subprotocol or None
       ## or a pair (protocol, headers) or raise an HttpException
       ##
       try:
-         print("-"*10)
-         #res = yield from self.onConnect(connectionRequest)
          res = self.onConnect(connectionRequest)
-         print(res)
-         print("*"*10)
          #if yields(res):
-         #   print("here")
-         #   res = yield from res
-         #else:
-         #   print("NOOO")
+         #  res = yield from res
       except http.HttpException as exc:
-         print(exc)
          self.failHandshake(exc.reason, exc.code)
       except Exception as exc:
-         print(exc)
          self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
       else:
          self.succeedHandshake(res)
+
+
+   def _onOpen(self):
+      res = self.onOpen()
+      if yields(res):
+         asyncio.async(res)
+
+
+   def _onMessage(self, payload, isBinary):
+      res = self.onMessage(payload, isBinary)
+      if yields(res):
+         asyncio.async(res)
+
+
+   def _onClose(self, wasClean, code, reason):
+      res = self.onClose(self, wasClean, code, reason)
+      if yields(res):
+         asyncio.async(res)
 
 
    def registerProducer(self, producer, streaming):
