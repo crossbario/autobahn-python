@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -35,13 +35,13 @@ def yields(value):
 
    See: http://stackoverflow.com/questions/20730248/maybedeferred-analog-with-asyncio
    """
-   return isinstance(value, asyncio.futures.Future) or inspect.isgenerator(value)
+   return isinstance(value, asyncio.Future) or inspect.isgenerator(value)
 
 
 
-class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol):
+class WebSocketAdapterProtocol(asyncio.Protocol):
    """
-   Base class for Asyncio WebSocket server protocols.
+   Adapter class for Asyncio WebSocket protocols.
    """
 
    def connection_made(self, transport):
@@ -57,11 +57,11 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
          ## eg Unix Domain sockets don't have host/port
          self.peer = str(peer)
 
-      protocol.WebSocketServerProtocol.connectionMade(self)
+      self._connectionMade()
 
 
    def connection_lost(self, exc):
-      self.connectionLost(exc)
+      self._connectionLost(exc)
 
 
    def _consume(self):
@@ -72,7 +72,7 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
             data = self.receive_queue.popleft()
             if self.transport:
                try:
-                  self.dataReceived(data)
+                  self._dataReceived(data)
                except Exception as e:
                   raise e
 
@@ -85,22 +85,6 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
 
    def _closeConnection(self, abort = False):
       self.transport.close()
-
-
-   def _onConnect(self, connectionRequest):
-      ## onConnect() will return the selected subprotocol or None
-      ## or a pair (protocol, headers) or raise an HttpException
-      ##
-      try:
-         res = self.onConnect(connectionRequest)
-         #if yields(res):
-         #  res = yield from res
-      except http.HttpException as exc:
-         self.failHandshake(exc.reason, exc.code)
-      except Exception as exc:
-         self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
-      else:
-         self.succeedHandshake(res)
 
 
    def _onOpen(self):
@@ -116,7 +100,7 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
 
 
    def _onClose(self, wasClean, code, reason):
-      res = self.onClose(self, wasClean, code, reason)
+      res = self.onClose(wasClean, code, reason)
       if yields(res):
          asyncio.async(res)
 
@@ -126,7 +110,61 @@ class WebSocketServerProtocol(protocol.WebSocketServerProtocol, asyncio.Protocol
 
 
 
-class WebSocketServerFactory(protocol.WebSocketServerFactory):
+class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
+   """
+   Base class for Asyncio WebSocket server protocols.
+   """
+
+   def _onConnect(self, request):
+      ## onConnect() will return the selected subprotocol or None
+      ## or a pair (protocol, headers) or raise an HttpException
+      ##
+      try:
+         res = self.onConnect(request)
+         #if yields(res):
+         #  res = yield from res
+      except http.HttpException as exc:
+         self.failHandshake(exc.reason, exc.code)
+      except Exception as exc:
+         self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
+      else:
+         self.succeedHandshake(res)
+
+
+
+class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
+   """
+   Base class for Asyncio WebSocket client protocols.
+   """
+
+   def _onConnect(self, response):
+      res = self.onConnect(response)
+      if yields(res):
+         asyncio.async(res)
+
+
+
+class WebSocketAdapterFactory:
+   """
+   Adapter class for Asyncio WebSocket factories.
+   """
+
+   def _log(self, msg):
+      print(msg)
+
+
+   def _callLater(self, delay, fun):
+      return self.loop.call_later(delay, fun)
+
+
+   def __call__(self):
+      proto = self.protocol()
+      proto.factory = self
+      return proto
+
+
+
+class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
    """
    Base class for Asyncio WebSocket server factories.
    """
@@ -141,57 +179,8 @@ class WebSocketServerFactory(protocol.WebSocketServerFactory):
          self.loop = asyncio.get_event_loop()
 
 
-   def _log(self, msg):
-      print(msg)
 
-
-   def _callLater(self, delay, fun):
-      return self.loop.call_later(delay, fun)
-
-
-   def __call__(self):
-      proto = self.protocol()
-      proto.factory = self
-      return proto
-
-
-
-class WebSocketClientProtocol(protocol.WebSocketClientProtocol, asyncio.Protocol):
-   """
-   Base class for Asyncio WebSocket client protocols.
-   """
-
-   def connection_made(self, transport):
-      self.transport = transport
-
-      peer = transport.get_extra_info('peername')
-      try:
-         self.peer = "%s:%d" % (peer[0], peer[1])
-      except:
-         ## eg Unix Domain sockets don't have host/port
-         self.peer = str(peer)
-
-      protocol.WebSocketClientProtocol.connectionMade(self)
-
-
-   def connection_lost(self, exc):
-      self.connectionLost(exc)
-
-
-   def data_received(self, data):
-      self.dataReceived(data)
-
-
-   def _closeConnection(self, abort = False):
-      self.transport.close()
-
-
-   def registerProducer(self, producer, streaming):
-      raise Exception("not implemented")
-
-
-
-class WebSocketClientFactory(protocol.WebSocketClientFactory):
+class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
    """
    Base class for Asyncio WebSocket client factories.
    """
@@ -204,17 +193,3 @@ class WebSocketClientFactory(protocol.WebSocketClientFactory):
          self.loop = kwargs['loop']
       else:
          self.loop = asyncio.get_event_loop()
-
-
-   def _log(self, msg):
-      print(msg)
-
-
-   def _callLater(self, delay, fun):
-      return self.loop.call_later(delay, fun)
-
-
-   def __call__(self):
-      proto = self.protocol()
-      proto.factory = self
-      return proto

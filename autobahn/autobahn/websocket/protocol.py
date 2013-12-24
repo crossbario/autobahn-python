@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -477,7 +477,7 @@ class Timings:
 @implementer(IWebSocketChannelStreamingApi)
 class WebSocketProtocol:
    """
-   A Twisted Protocol class for WebSocket. This class is used by both WebSocket
+   Protocol base class for WebSocket. This class is used by both WebSocket
    client and server protocol version. It is unusable standalone, for example
    the WebSocket initial handshake is implemented in derived class differently
    for clients and servers.
@@ -1016,10 +1016,7 @@ class WebSocketProtocol:
 
    def dropConnection(self, abort = False):
       """
-      Drop the underlying TCP connection. For abort parameter, see:
-
-        * http://twistedmatrix.com/documents/current/core/howto/servers.html#auto2
-        * https://github.com/tavendo/AutobahnPython/issues/96
+      Drop the underlying TCP connection.
 
       Modes: Hybi, Hixie
       """
@@ -1132,9 +1129,9 @@ class WebSocketProtocol:
             self.trackedTimings = None
 
 
-   def connectionMade(self):
+   def _connectionMade(self):
       """
-      This is called by Twisted framework when a new TCP connection has been established
+      This is called by network framework when a new TCP connection has been established
       and handed over to a Protocol instance (an instance of this class).
 
       Modes: Hybi, Hixie
@@ -1243,9 +1240,9 @@ class WebSocketProtocol:
          self.openHandshakeTimeoutCall = self.factory._callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
 
-   def connectionLost(self, reason):
+   def _connectionLost(self, reason):
       """
-      This is called by Twisted framework when a TCP connection was lost.
+      This is called by network framework when a transport connection was lost.
 
       Modes: Hybi, Hixie
       """
@@ -1322,9 +1319,9 @@ class WebSocketProtocol:
       self.factory._log("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
 
 
-   def dataReceived(self, data):
+   def _dataReceived(self, data):
       """
-      This is called by Twisted framework upon receiving data on TCP connection.
+      This is called by network framework upon receiving data on transport connection.
 
       Modes: Hybi, Hixie
       """
@@ -2807,7 +2804,7 @@ class WebSocketFactory:
 
 class WebSocketServerProtocol(WebSocketProtocol):
    """
-   A Twisted protocol for WebSocket servers.
+   Protocol for WebSocket servers.
    """
 
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
@@ -2834,27 +2831,27 @@ class WebSocketServerProtocol(WebSocketProtocol):
       return None
 
 
-   def connectionMade(self):
+   def _connectionMade(self):
       """
-      Called by Twisted when new TCP connection from client was accepted. Default
-      implementation will prepare for initial WebSocket opening handshake.
-      When overriding in derived class, make sure to call this base class
+      Called by network framework when new transport connection from client was
+      accepted. Default implementation will prepare for initial WebSocket opening
+      handshake. When overriding in derived class, make sure to call this base class
       implementation *before* your code.
       """
-      WebSocketProtocol.connectionMade(self)
+      WebSocketProtocol._connectionMade(self)
       self.factory.countConnections += 1
       if self.debug:
          self.factory._log("connection accepted from peer %s" % self.peer)
 
 
-   def connectionLost(self, reason):
+   def _connectionLost(self, reason):
       """
-      Called by Twisted when established TCP connection from client was lost. Default
-      implementation will tear down all state properly.
+      Called by network framework when established transport connection from client
+      was lost. Default implementation will tear down all state properly.
       When overriding in derived class, make sure to call this base class
       implementation *after* your code.
       """
-      WebSocketProtocol.connectionLost(self, reason)
+      WebSocketProtocol._connectionLost(self, reason)
       self.factory.countConnections -= 1
       if self.debug:
          self.factory._log("connection from %s lost" % self.peer)
@@ -3149,16 +3146,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## the connection. onConnect() may throw, in which case the connection is denied, or it
          ## may return a protocol from the protocols provided by client or None.
          ##
-         self.connectionRequest = ConnectionRequest(self.peer,
-                                                    self.http_headers,
-                                                    self.http_request_host,
-                                                    self.http_request_path,
-                                                    self.http_request_params,
-                                                    self.websocket_version,
-                                                    self.websocket_origin,
-                                                    self.websocket_protocols,
-                                                    self.websocket_extensions)
-         self._onConnect(self.connectionRequest)
+         request = ConnectionRequest(self.peer,
+                                     self.http_headers,
+                                     self.http_request_host,
+                                     self.http_request_path,
+                                     self.http_request_params,
+                                     self.websocket_version,
+                                     self.websocket_origin,
+                                     self.websocket_protocols,
+                                     self.websocket_extensions)
+         self._onConnect(request)
 
 
    def succeedHandshake(self, res):
@@ -3446,7 +3443,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 class WebSocketServerFactory(WebSocketFactory):
    """
-   A Twisted factory for WebSocket server protocols.
+   A protocol factory for WebSocket server protocols.
    """
 
    protocol = WebSocketServerProtocol
@@ -3699,22 +3696,6 @@ class WebSocketServerFactory(WebSocketFactory):
       return self.countConnections
 
 
-   def startFactory(self):
-      """
-      Called by Twisted before starting to listen on port for incoming connections.
-      Default implementation does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
-   def stopFactory(self):
-      """
-      Called by Twisted before stopping to listen on port for incoming connections.
-      Default implementation does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
 
 class WebSocketClientProtocol(WebSocketProtocol):
    """
@@ -3735,14 +3716,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
       pass
 
 
-   def connectionMade(self):
+   def _connectionMade(self):
       """
-      Called by Twisted when new TCP connection to server was established. Default
+      Called by network framework when new transport connection to server was established. Default
       implementation will start the initial WebSocket opening handshake (or proxy connect).
       When overriding in derived class, make sure to call this base class
       implementation _before_ your code.
       """
-      WebSocketProtocol.connectionMade(self)
+      WebSocketProtocol._connectionMade(self)
       if self.debug:
          self.factory._log("connection to %s established" % self.peer)
 
@@ -3754,14 +3735,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
          self.startHandshake()
 
 
-   def connectionLost(self, reason):
+   def _connectionLost(self, reason):
       """
-      Called by Twisted when established TCP connection to server was lost. Default
+      Called by network framework when established transport connection to server was lost. Default
       implementation will tear down all state properly.
       When overriding in derived class, make sure to call this base class
       implementation _after_ your code.
       """
-      WebSocketProtocol.connectionLost(self, reason)
+      WebSocketProtocol._connectionLost(self, reason)
       if self.debug:
          self.factory._log("connection to %s lost" % self.peer)
 
@@ -4169,13 +4150,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## client a chance to bail out .. i.e. on no subprotocol selected
          ## by server
          try:
-            connectionResponse = ConnectionResponse(self.peer,
-                                                    self.http_headers,
-                                                    None, # FIXME
-                                                    self.websocket_protocol_in_use,
-                                                    self.websocket_extensions_in_use)
+            response = ConnectionResponse(self.peer,
+                                          self.http_headers,
+                                          None, # FIXME
+                                          self.websocket_protocol_in_use,
+                                          self.websocket_extensions_in_use)
 
-            self.onConnect(connectionResponse)
+            self._onConnect(response)
 
          except Exception as e:
             ## immediately close the WS connection
@@ -4207,7 +4188,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
 class WebSocketClientFactory(WebSocketFactory):
    """
-   A Twisted factory for WebSocket client protocols.
+   A protocol factory for WebSocket client protocols.
    """
 
    protocol = WebSocketClientProtocol
@@ -4462,19 +4443,3 @@ class WebSocketClientFactory(WebSocketFactory):
 
       if perMessageCompressionAccept is not None and perMessageCompressionAccept != self.perMessageCompressionAccept:
          self.perMessageCompressionAccept = perMessageCompressionAccept
-
-
-   def clientConnectionFailed(self, connector, reason):
-      """
-      Called by Twisted when the connection to server has failed. Default implementation
-      does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
-   def clientConnectionLost(self, connector, reason):
-      """
-      Called by Twisted when the connection to server was lost. Default implementation
-      does nothing. Override in derived class when appropriate.
-      """
-      pass
