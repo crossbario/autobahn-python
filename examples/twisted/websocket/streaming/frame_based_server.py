@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,9 +18,10 @@
 
 import hashlib
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
 
 
 class FrameBasedHashServerProtocol(WebSocketServerProtocol):
@@ -53,10 +54,10 @@ if __name__ == '__main__':
    factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = FrameBasedHashServerProtocol
 
-   enableCompression = True
+   enableCompression = False
    if enableCompression:
-      from autobahn.compress import PerMessageDeflateOffer, \
-                                    PerMessageDeflateOfferAccept
+      from autobahn.websocket.compress import PerMessageDeflateOffer, \
+                                              PerMessageDeflateOfferAccept
       ## Function to accept offers from the client ..
       def accept(offers):
          for offer in offers:         
