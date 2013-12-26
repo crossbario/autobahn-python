@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,9 +16,16 @@
 ##
 ###############################################################################
 
-from autobahn.asyncio.websocket import WebSocketClientProtocol, \
+from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory
 
+from twisted.internet.defer import Deferred, inlineCallbacks
+
+
+def sleep(delay):
+   d = Deferred()
+   reactor.callLater(delay, d.callback, None)
+   return d
 
 
 class MyClientProtocol(WebSocketClientProtocol):
@@ -26,16 +33,15 @@ class MyClientProtocol(WebSocketClientProtocol):
    def onConnect(self, response):
       print("Server connected: {}".format(response.peer))
 
+   @inlineCallbacks
    def onOpen(self):
       print("WebSocket connection open.")
 
-      def hello():
+      ## start sending messages every second ..
+      while True:
          self.sendMessage(u"Hello, world!".encode('utf8'))
          self.sendMessage(b"\x00\x01\x03\x04", binary = True)
-         self.factory.loop.call_later(1, hello)
-
-      ## start sending messages every second ..
-      hello()
+         yield sleep(1)
 
    def onMessage(self, payload, isBinary):
       if isBinary:
@@ -50,13 +56,15 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   import asyncio
+   import sys
+
+   from twisted.python import log
+   from twisted.internet import reactor
+
+   log.startLogging(sys.stdout)
 
    factory = WebSocketClientFactory("ws://localhost:9000", debug = False)
    factory.protocol = MyClientProtocol
 
-   loop = asyncio.get_event_loop()
-   coro = loop.create_connection(factory, '127.0.0.1', 9000)
-   loop.run_until_complete(coro)
-   loop.run_forever()
-   loop.close()
+   reactor.connectTCP("127.0.0.1", 9000, factory)
+   reactor.run()

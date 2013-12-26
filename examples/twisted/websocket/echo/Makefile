@@ -1,5 +1,8 @@
+server:
+	PYTHONPATH=../../../../autobahn python server.py
+
 client:
 	PYTHONPATH=../../../../autobahn python client.py
 
-server:
-	PYTHONPATH=../../../../autobahn python server.py
+client_coroutines:
+	PYTHONPATH=../../../../autobahn python client_coroutines.py

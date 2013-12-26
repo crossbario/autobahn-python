@@ -32,7 +32,7 @@ class MyClientProtocol(WebSocketClientProtocol):
       def hello():
          self.sendMessage(u"Hello, world!".encode('utf8'))
          self.sendMessage(b"\x00\x01\x03\x04", binary = True)
-         reactor.callLater(1, hello)
+         self.factory.reactor.callLater(1, hello)
 
       ## start sending messages every second ..
       hello()

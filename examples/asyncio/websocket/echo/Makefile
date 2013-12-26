@@ -3,3 +3,6 @@ server:
 
 client:
 	PYTHONPATH=../../../../autobahn python3 client.py
+
+client_coroutines:
+	PYTHONPATH=../../../../autobahn python3 client_coroutines.py

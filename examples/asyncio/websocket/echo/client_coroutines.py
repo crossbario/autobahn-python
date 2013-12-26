@@ -19,6 +19,8 @@
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory
 
+import asyncio
+
 
 
 class MyClientProtocol(WebSocketClientProtocol):
@@ -26,16 +28,15 @@ class MyClientProtocol(WebSocketClientProtocol):
    def onConnect(self, response):
       print("Server connected: {}".format(response.peer))
 
+   @asyncio.coroutine
    def onOpen(self):
       print("WebSocket connection open.")
 
-      def hello():
+      ## start sending messages every second ..
+      while True:
          self.sendMessage(u"Hello, world!".encode('utf8'))
          self.sendMessage(b"\x00\x01\x03\x04", binary = True)
-         self.factory.loop.call_later(1, hello)
-
-      ## start sending messages every second ..
-      hello()
+         yield from asyncio.sleep(1)
 
    def onMessage(self, payload, isBinary):
       if isBinary:
