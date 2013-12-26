@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,11 +23,12 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
 
-from autobahn.resource import WebSocketResource
+from autobahn.twisted.resource import WebSocketResource
+
 
 
 class PingServerProtocol(WebSocketServerProtocol):
@@ -35,22 +36,23 @@ class PingServerProtocol(WebSocketServerProtocol):
    def doPing(self):
       if self.run:
          self.sendPing()
-         self.factory.pingsSent[self.peerstr] += 1
-         print self.peerstr, "PING Sent", self.factory.pingsSent[self.peerstr]
+         self.factory.pingsSent[self.peer] += 1
+         print self.peer, "PING Sent", self.factory.pingsSent[self.peer]
          reactor.callLater(1, self.doPing)
 
    def onPong(self, payload):
-      self.factory.pongsReceived[self.peerstr] += 1
-      print self.peerstr, "PONG Received", self.factory.pongsReceived[self.peerstr]
+      self.factory.pongsReceived[self.peer] += 1
+      print self.peer, "PONG Received", self.factory.pongsReceived[self.peer]
 
    def onOpen(self):
-      self.factory.pingsSent[self.peerstr] = 0
-      self.factory.pongsReceived[self.peerstr] = 0
+      self.factory.pingsSent[self.peer] = 0
+      self.factory.pongsReceived[self.peer] = 0
       self.run = True
       self.doPing()
 
    def onClose(self, wasClean, code, reason):
       self.run = False
+
 
 
 class PingServerFactory(WebSocketServerFactory):
@@ -59,6 +61,7 @@ class PingServerFactory(WebSocketServerFactory):
       WebSocketServerFactory.__init__(self, uri, debug = debug)
       self.pingsSent = {}
       self.pongsReceived = {}
+
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,9 +18,9 @@
 
 import sys
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, \
-                               WebSocketClientProtocol, \
-                               connectWS
+from autobahn.twisted.websocket import WebSocketClientFactory, \
+                                       WebSocketClientProtocol, \
+                                       connectWS
 
 
 class EchoClientProtocol(WebSocketClientProtocol):

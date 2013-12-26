@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -21,22 +21,22 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
-   def onConnect(self, connectionRequest):
+   def onConnect(self, request):
       headers = {'MyCustomDynamicServerHeader1': 'Hello'}
 
       ## Note: HTTP header field names are case-insensitive,
       ## hence AutobahnPython will normalize header field names to
       ## lower case.
       ##
-      if connectionRequest.headers.has_key('mycustomclientheader'):
-         headers['MyCustomDynamicServerHeader2'] = connectionRequest.headers['mycustomclientheader']
+      if request.headers.has_key('mycustomclientheader'):
+         headers['MyCustomDynamicServerHeader2'] = request.headers['mycustomclientheader']
 
       ## return a pair with WS protocol spoken (or None for any) and
       ## custom headers to send in initial WS opening handshake HTTP response

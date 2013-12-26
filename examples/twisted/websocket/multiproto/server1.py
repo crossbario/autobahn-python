@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS, \
-                               HttpException
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
+
+from autobahn.websocket.http import HttpException
+
 
 
 class BaseService:
@@ -54,6 +56,7 @@ class Echo1Service(BaseService):
       self.proto.sendMessage("Echo 1 - " + msg)
 
 
+
 class Echo2Service(BaseService):
    """
    Awesome Echo Service 2.
@@ -71,29 +74,28 @@ class ServiceServerProtocol(WebSocketServerProtocol):
    def __init__(self):
       self.service = None
 
-   def onConnect(self, connectionRequest):
-      ## connectionRequest has all the information from the initial
+   def onConnect(self, request):
+      ## request has all the information from the initial
       ## WebSocket opening handshake ..
-      print connectionRequest.peer
-      print connectionRequest.peerstr
-      print connectionRequest.headers
-      print connectionRequest.host
-      print connectionRequest.path
-      print connectionRequest.params
-      print connectionRequest.version
-      print connectionRequest.origin
-      print connectionRequest.protocols
-      print connectionRequest.extensions
+      print request.peer
+      print request.headers
+      print request.host
+      print request.path
+      print request.params
+      print request.version
+      print request.origin
+      print request.protocols
+      print request.extensions
 
       ## We map to services based on path component of the URL the
       ## WebSocket client requested. This is just an example. We could
-      ## use other information from connectionRequest, such has HTTP headers,
+      ## use other information from request, such has HTTP headers,
       ## WebSocket subprotocol, WebSocket origin etc etc
       ##
-      if self.SERVICEMAP.has_key(connectionRequest.path):
-         self.service = self.SERVICEMAP[connectionRequest.path](self)
+      if self.SERVICEMAP.has_key(request.path):
+         self.service = self.SERVICEMAP[request.path](self)
       else:
-         err = "No service under %s" % connectionRequest.path
+         err = "No service under %s" % request.path
          print err
          raise HttpException(404, err)
 
@@ -108,6 +110,7 @@ class ServiceServerProtocol(WebSocketServerProtocol):
    def onClose(self, wasClean, code, reason):
       if self.service:
          self.service.onClose(wasClean, code, reason)
+
 
 
 if __name__ == '__main__':

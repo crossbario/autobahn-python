@@ -17,7 +17,8 @@
 ###############################################################################
 
 
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol
+from autobahn.twisted.websocket import WebSocketClientFactory, \
+                                       WebSocketClientProtocol
 
 
 
@@ -36,6 +37,7 @@ class EchoClientProtocol(WebSocketClientProtocol):
    def onMessage(self, msg, binary):
       print "Got echo: " + msg
       self.factory.reactor.callLater(1, self.sendHello)
+
 
 
 class EchoClientFactory(WebSocketClientFactory):

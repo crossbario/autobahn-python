@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 (C) Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -63,9 +63,10 @@ from twisted.internet.protocol import Factory
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               parseWsUrl
+from autobahn.websocket import parseWsUrl
+
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol
 
 from autobahn.util import Stopwatch
 

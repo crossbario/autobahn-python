@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011,2012 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
 
 
 class BroadcastServerProtocol(WebSocketServerProtocol):
@@ -35,7 +35,7 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, msg, binary):
       if not binary:
-         self.factory.broadcast("'%s' from %s" % (msg, self.peerstr))
+         self.factory.broadcast("'%s' from %s" % (msg, self.peer))
 
    def connectionLost(self, reason):
       WebSocketServerProtocol.connectionLost(self, reason)
@@ -61,19 +61,19 @@ class BroadcastServerFactory(WebSocketServerFactory):
 
    def register(self, client):
       if not client in self.clients:
-         print "registered client " + client.peerstr
+         print "registered client " + client.peer
          self.clients.append(client)
 
    def unregister(self, client):
       if client in self.clients:
-         print "unregistered client " + client.peerstr
+         print "unregistered client " + client.peer
          self.clients.remove(client)
 
    def broadcast(self, msg):
       print "broadcasting message '%s' .." % msg
       for c in self.clients:
          c.sendMessage(msg)
-         print "message sent to " + c.peerstr
+         print "message sent to " + c.peer
 
 
 class BroadcastPreparedServerFactory(BroadcastServerFactory):
@@ -87,7 +87,7 @@ class BroadcastPreparedServerFactory(BroadcastServerFactory):
       preparedMsg = self.prepareMessage(msg)
       for c in self.clients:
          c.sendPreparedMessage(preparedMsg)
-         print "prepared message sent to " + c.peerstr
+         print "prepared message sent to " + c.peer
 
 
 if __name__ == '__main__':

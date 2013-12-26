@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,10 +23,11 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import Data
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol
 
-from autobahn.resource import WebSocketResource
+from autobahn.twisted.resource import WebSocketResource
+
 
 
 class Echo1ServerProtocol(WebSocketServerProtocol):
@@ -39,6 +40,7 @@ class Echo2ServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, msg, binary):
       self.sendMessage("Echo 2 - " + msg)
+
 
 
 if __name__ == '__main__':

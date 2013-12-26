@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,9 +18,14 @@
 
 import sys
 from optparse import OptionParser
+
 from twisted.python import log
 from twisted.internet import reactor, ssl
-from autobahn.websocket import WebSocketClientFactory, WebSocketClientProtocol, connectWS
+
+from autobahn.twisted.websocket import WebSocketClientFactory, \
+                                       WebSocketClientProtocol, \
+                                       connectWS
+
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
@@ -34,6 +39,7 @@ class EchoClientProtocol(WebSocketClientProtocol):
    def onMessage(self, msg, binary):
       print "Got echo: " + msg
       reactor.callLater(1, self.sendHello)
+
 
 
 if __name__ == '__main__':

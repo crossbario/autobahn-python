@@ -17,7 +17,8 @@
 ###############################################################################
 
 
-from autobahn.websocket import WebSocketServerFactory, WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol
 
 
 

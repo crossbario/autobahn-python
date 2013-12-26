@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012 Tavendo GmbH
+##  Copyright (C) 2012-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -25,12 +25,12 @@ from twisted.web.wsgi import WSGIResource
 
 from flask import Flask, render_template
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol
 
-from autobahn.resource import WebSocketResource, \
-                              WSGIRootResource, \
-                              HTTPChannelHixie76Aware
+from autobahn.twisted.resource import WebSocketResource, \
+                                      WSGIRootResource, \
+                                      HTTPChannelHixie76Aware
 
 
 ##
