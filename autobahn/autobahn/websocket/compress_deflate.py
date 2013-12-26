@@ -107,10 +107,15 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                acceptNoContextTakeover = True
 
          elif p == 'server_max_window_bits':
-            if val not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+            try:
+               val = int(val)
+            except:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               requestMaxWindowBits = int(val)
+               if val not in PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES:
+                  raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               else:
+                  requestMaxWindowBits = val
 
          elif p == 'server_no_context_takeover':
             if val != True:
@@ -353,10 +358,15 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
          val = params[p][0]
 
          if p == 'client_max_window_bits':
-            if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+            try:
+               val = int(val)
+            except:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               client_max_window_bits = int(val)
+               if val not in PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES:
+                  raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               else:
+                  client_max_window_bits = val
 
          elif p == 'client_no_context_takeover':
             if val != True:
@@ -365,10 +375,15 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                client_no_context_takeover = True
 
          elif p == 'server_max_window_bits':
-            if val not in ['8', '9', '10', '11', '12', '13', '14', '15']:
+            try:
+               val = int(val)
+            except:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               server_max_window_bits = int(val)
+               if val not in PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES:
+                  raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               else:
+                  server_max_window_bits = val
 
          elif p == 'server_no_context_takeover':
             if val != True:

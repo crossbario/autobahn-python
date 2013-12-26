@@ -116,7 +116,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
          if failure.check(http.HttpException):
             return self.failHandshake(failure.value.reason, failure.value.code)
          else:
-            if True or self.debug:
+            if self.debug:
                self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
             return self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
 

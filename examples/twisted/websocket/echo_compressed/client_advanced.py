@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -21,18 +21,18 @@ import sys
 from twisted.internet import reactor
 from twisted.python import log
 
-from autobahn.websocket import WebSocketClientFactory, \
-                               WebSocketClientProtocol, \
-                               connectWS
+from autobahn.twisted.websocket import WebSocketClientFactory, \
+                                       WebSocketClientProtocol, \
+                                       connectWS
 
-from autobahn.compress import *
+from autobahn.websocket.compress import *
 
 
 
 class EchoClientProtocol(WebSocketClientProtocol):
 
-   def onConnect(self, connectionResponse):
-      print "WebSocket extensions in use: %s" % connectionResponse.extensions
+   def onConnect(self, response):
+      print "WebSocket extensions in use: %s" % response.extensions
 
    def sendHello(self):
       self.sendMessage("Hello, world!" * 100)

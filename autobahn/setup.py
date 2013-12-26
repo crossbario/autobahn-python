@@ -18,6 +18,9 @@
 
 from setuptools import setup, find_packages
 
+import sys
+PY3 = sys.version_info.major > 2
+
 LONGSDESC = """
 Twisted-based WebSocket/WAMP client and server framework.
 
@@ -52,7 +55,34 @@ else:
    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 
-setup (
+#packages = find_packages()
+packages = ['autobahn', 
+            'autobahn/wamp',
+            'autobahn/websocket']
+
+## Twisted integration
+##
+try:
+   import twisted
+except:
+   print "Twisted not installed - skipping Twisted support packages"
+else:
+   packages.append('autobahn/twisted')
+
+## Asyncio integration
+##
+if PY3:
+   try:
+      import asyncio
+   except:
+      print "Asyncio not available - skipping Asyncio support packages"
+   else:
+      packages.append('autobahn/asyncio')
+else:
+   print "Python 2 detected - skipping Asyncio support packages"
+
+
+setup(
    name = 'autobahn',
    version = verstr,
    description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
@@ -62,15 +92,14 @@ setup (
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
-   install_requires = ['setuptools',
-                       'Twisted>=11.1',
-                       'zope.interface>=4.0.2'],
+   install_requires = ['zope.interface>=4.0.2'],
    extras_require = {
+      'twisted': ["Twisted>=11.1"],
       'accelerate': ["wsaccel>=0.6.2"],
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
       'binary': ["msgpack-python>=0.4.0"]
    },
-   packages = find_packages(),
+   packages = packages,
    zip_safe = False,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##

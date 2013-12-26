@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+                                       WebSocketServerProtocol, \
+                                       listenWS
 
-from autobahn.compress import *
+from autobahn.websocket.compress import *
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
-   def onConnect(self, connectionRequest):
-      pass
+   def onConnect(self, request):
+      print "WebSocket connection request by", request.peer
 
    def onOpen(self):
       print "WebSocket extensions in use: %s" % self.websocket_extensions_in_use
