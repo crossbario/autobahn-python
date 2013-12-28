@@ -136,17 +136,12 @@ class WampProtocol:
 
 
    def onMessage(self, bytes, isBinary):
-      #print bytes
       try:
          msg = self._serializer.unserialize(bytes, isBinary)
       except WampProtocolError as e:
-         print "WAMP protocol error", e
+         print("WAMP protocol error: %s" % e)
       else:
          if self._peer_sessionid is not None:
-
-            #print msg.__class__
-            #print msg
-
             if isinstance(msg, WampMessageRoleChange):
                if msg.op == WampMessageRoleChange.ROLE_CHANGE_OP_ADD and msg.role == WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER:
                   if self._broker:

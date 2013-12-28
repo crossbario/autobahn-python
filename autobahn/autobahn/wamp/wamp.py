@@ -888,7 +888,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                   log.msg("unknown message type")
             else:
                log.msg("msg not a list")
-         except Exception, e:
+         except Exception as e:
             traceback.print_exc()
       else:
          log.msg("binary message")
@@ -1051,7 +1051,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
                msg = self._serialize(o)
                if self.debugWamp:
                   log.msg("serialized event msg: " + str(msg))
-            except Exception, e:
+            except Exception as e:
                raise Exception("invalid type for event - serialization failed [%s]" % e)
 
             preparedMsg = self.prepareMessage(msg)
@@ -1270,7 +1270,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
       ##
       try:
          obj = self.factory._unserialize(msg)
-      except Exception, e:
+      except Exception as e:
          self._protocolError("WAMP message payload could not be unserialized [%s]" % e)
          return
 
@@ -2214,7 +2214,7 @@ class CallHandler(Handler):
       try:
          error_info, killsession = self._extractErrorInfo(call)
          rmsg = self._assembleErrorMessage(call, *error_info)
-      except Exception, e:
+      except Exception as e:
          rmsg = self._handleProcessingError(call, e)
       finally:
          if rmsg:
