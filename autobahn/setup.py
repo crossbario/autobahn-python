@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ packages = ['autobahn',
 try:
    import twisted
 except:
-   print "Twisted not installed - skipping Twisted support packages"
+   print("Twisted not installed - skipping Twisted support packages")
 else:
    packages.append('autobahn/twisted')
 
@@ -75,11 +75,11 @@ if PY3:
    try:
       import asyncio
    except:
-      print "Asyncio not available - skipping Asyncio support packages"
+      print("Asyncio not available - skipping Asyncio support packages")
    else:
       packages.append('autobahn/asyncio')
 else:
-   print "Python 2 detected - skipping Asyncio support packages"
+   print("Python 2 detected - skipping Asyncio support packages")
 
 
 setup(
