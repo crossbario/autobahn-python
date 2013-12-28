@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from setuptools import setup, find_packages
+from setuptools import setup
 
 import sys
 PY3 = sys.version_info.major > 2
@@ -92,7 +92,7 @@ setup(
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
-   install_requires = ['zope.interface>=4.0.2'],
+   install_requires = ['setuptools', 'zope.interface>=4.0.2'],
    extras_require = {
       'twisted': ["Twisted>=11.1"],
       'accelerate': ["wsaccel>=0.6.2"],
