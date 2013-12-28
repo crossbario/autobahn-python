@@ -1529,7 +1529,7 @@ class WebSocketProtocol:
 
             ## new message
             ##
-            if self.data[0] == '\x00':
+            if self.data[0] == b'\x00':
 
                self.inside_message = True
 
@@ -1547,7 +1547,7 @@ class WebSocketProtocol:
 
             ## Hixie close from peer received
             ##
-            elif self.data[0] == '\xff' and self.data[1] == '\x00':
+            elif self.data[0] == b'\xff' and self.data[1] == b'\x00':
                self.onCloseFrame(None, None)
                self.data = self.data[2:]
                # stop receiving/processing after having received close!
@@ -1562,13 +1562,13 @@ class WebSocketProtocol:
             ## need more data
             return False
 
-      end_index = self.data.find('\xff')
+      end_index = self.data.find(b'\xff')
       if end_index > 0:
          payload = self.data[:end_index]
          self.data = self.data[end_index + 1:]
       else:
          payload = self.data
-         self.data = ''
+         self.data = b''
 
       ## incrementally validate UTF-8 payload
       ##
@@ -1802,7 +1802,7 @@ class WebSocketProtocol:
          else:
             data = self.data
             length = buffered_len
-            self.data = ""
+            self.data = b''
 
          if length > 0:
             ## unmask payload
@@ -1813,7 +1813,7 @@ class WebSocketProtocol:
             ## our hooks (at least for streaming processing, this is
             ## necessary for correct protocol state transitioning)
             ##
-            payload = ""
+            payload = b''
 
          ## process frame data
          ##
@@ -3770,7 +3770,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       """
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
-      end_of_header = self.data.find("\x0d\x0a\x0d\x0a")
+      end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
       if end_of_header >= 0:
 
          http_response_data = self.data[:end_of_header + 4]
