@@ -22,7 +22,6 @@ __all__ = ['WebSocketServerProtocol',
            'WebSocketClientFactory']
 
 import asyncio
-import inspect
 from collections import deque
 
 from autobahn.websocket import protocol
@@ -35,7 +34,7 @@ def yields(value):
 
    See: http://stackoverflow.com/questions/20730248/maybedeferred-analog-with-asyncio
    """
-   return isinstance(value, asyncio.Future) or inspect.isgenerator(value)
+   return isinstance(value, asyncio.Future) or asyncio.iscoroutine(value)
 
 
 
