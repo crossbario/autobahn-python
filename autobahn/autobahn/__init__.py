@@ -16,7 +16,9 @@
 ##
 ###############################################################################
 
-from _version import __version__
+from __future__ import absolute_import
+
+from autobahn._version import __version__
 version = __version__ # backward compat.
 
 # import util
