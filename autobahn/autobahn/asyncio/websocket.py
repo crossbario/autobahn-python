@@ -50,6 +50,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       self.transport = transport
 
       self.receive_queue = deque()
+      self.waiter = None
       asyncio.Task(self._consume())
 
       peer = transport.get_extra_info('peername')
@@ -81,7 +82,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
    def data_received(self, data):
       self.receive_queue.append(data)
-      if not self.waiter.done():
+      if self.waiter and not self.waiter.done():
          self.waiter.set_result(None)
 
 
