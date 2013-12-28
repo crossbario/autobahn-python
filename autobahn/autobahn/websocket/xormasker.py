@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012-2013 Tavendo GmbH
+##  Copyright (C) 2012-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
 ##  limitations under the License.
 ##
 ###############################################################################
+
+import sys
+PY3 = sys.version_info.major > 2
 
 
 ## use Cython implementation of XorMasker validator if available
@@ -78,11 +81,18 @@ except:
          assert len(mask) == 4
          self.ptr = 0
          self.mskarray = [array('B'), array('B'), array('B'), array('B')]
-         for j in xrange(4):
-            self.mskarray[0].append(ord(mask[ j & 3]))
-            self.mskarray[1].append(ord(mask[(j + 1) & 3]))
-            self.mskarray[2].append(ord(mask[(j + 2) & 3]))
-            self.mskarray[3].append(ord(mask[(j + 3) & 3]))
+         if PY3:
+            for j in xrange(4):
+               self.mskarray[0].append(mask[ j & 3])
+               self.mskarray[1].append(mask[(j + 1) & 3])
+               self.mskarray[2].append(mask[(j + 2) & 3])
+               self.mskarray[3].append(mask[(j + 3) & 3])
+         else:
+            for j in xrange(4):
+               self.mskarray[0].append(ord(mask[ j & 3]))
+               self.mskarray[1].append(ord(mask[(j + 1) & 3]))
+               self.mskarray[2].append(ord(mask[(j + 2) & 3]))
+               self.mskarray[3].append(ord(mask[(j + 3) & 3]))
 
       def pointer(self):
          return self.ptr
