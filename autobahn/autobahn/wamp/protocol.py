@@ -139,7 +139,7 @@ class WampProtocol:
       #print bytes
       try:
          msg = self._serializer.unserialize(bytes, isBinary)
-      except WampProtocolError, e:
+      except WampProtocolError as e:
          print "WAMP protocol error", e
       else:
          if self._peer_sessionid is not None:
@@ -269,8 +269,7 @@ class WampProtocol:
       msg = WampMessageCall(callid, endpoint, args = args[1:])
       try:
          bytes, isbinary = self._serializer.serialize(msg)
-      except Exception, e:
-         print "X"*100, e
+      except Exception as e:
          raise Exception("call argument(s) not serializable")
 
       def canceller(_d):

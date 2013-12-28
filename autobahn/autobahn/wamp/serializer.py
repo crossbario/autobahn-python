@@ -112,7 +112,7 @@ class WampSerializer:
 
       try:
          raw_msg = self._serializer.unserialize(bytes)
-      except Exception, e:
+      except Exception as e:
          raise WampProtocolError("invalid serialization of WAMP message [%s]" % e)
 
       if type(raw_msg) != list:

@@ -58,7 +58,7 @@ class WampHttpResourceSessionSend(Resource):
          if self._debug:
             log.msg("WAMP session data received (transport ID %s): %s" % (self._parent._transportid, payload))
          self._parent.onMessage(payload, False)
-      except Exception, e:
+      except Exception as e:
          request.setHeader('content-type', 'text/plain; charset=UTF-8')
          request.setResponseCode(http.BAD_REQUEST)
          return "could not unserialize WAMP message [%s]" % e
@@ -246,7 +246,7 @@ class WampHttpResourceOpen(Resource):
 
       try:
          options = json.loads(payload)
-      except Exception, e:
+      except Exception as e:
          return self._failRequest(request, "could not parse WAMP session open request body [%s]" % e)
 
       if type(options) != dict:

@@ -90,7 +90,7 @@ class Dealer:
       pass
 
    def addDealer(self, proto):
-      print "addDealer"
+      print("addDealer")
       assert(proto not in self._dealers)
       self._dealers.add(proto)
 
@@ -118,13 +118,13 @@ class Dealer:
             proto.sendMessage(bytes, isbinary)
 
          def onError(err):
-            print err
+            print(err)
 
          d = endpoint(*cargs)
          d.addCallbacks(onSuccess, onError)
 
       else:
-         print "FOOOOOOOOOOO"
+         print("FOOOOOOOOOOO")
 
 
    def onCancelCall(self, proto, call):

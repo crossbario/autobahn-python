@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -2272,8 +2272,8 @@ class CallHandler(Handler):
             call.error.printTraceback(file = io)
             tb = io.getvalue()
 
-         except Exception, ie:
-            print "INTERNAL ERROR [_extractErrorInfo / getTraceback()]", ie
+         except Exception as ie:
+            print("INTERNAL ERROR [_extractErrorInfo / getTraceback()]: %s" % ie)
             traceback.print_stack()
          else:
             errordetails = tb.splitlines()
@@ -2322,7 +2322,7 @@ class CallHandler(Handler):
       ## serializable
       try:
          rmsg = self.proto.serializeMessage(msg)
-      except Exception, e:
+      except Exception as e:
          raise Exception(
             "invalid object for errorDetails - not serializable (%s)" %
             str(e))
@@ -2344,10 +2344,10 @@ class CallHandler(Handler):
       if self.proto.includeTraceback:
          try:
             tb = call.error.getTraceback()
-         except Exception, ie:
+         except Exception as ie:
             ## FIXME: find out why this can fail with
             ## "'unicode' does not have the buffer interface"
-            print "INTERNAL ERROR (getTraceback)", ie
+            print("INTERNAL ERROR (getTraceback): %s" % ie)
          else:
             msg.append(tb.splitlines())
 
