@@ -75,10 +75,32 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
    def _onOpen(self):
       self.onOpen()
 
+   def _onMessageBegin(self, isBinary):
+      self.onMessageBegin(isBinary)
+
+   def _onMessageFrameBegin(self, length):
+      self.onMessageFrameBegin(length)
+
+   def _onMessageFrameData(self, payload):
+      self.onMessageFrameData(payload)
+
+   def _onMessageFrameEnd(self):
+      self.onMessageFrameEnd()
+
+   def _onMessageFrame(self, payload):
+      self.onMessageFrame(payload)
+
+   def _onMessageEnd(self):
+      self.onMessageEnd()
 
    def _onMessage(self, payload, isBinary):
       self.onMessage(payload, isBinary)
 
+   def _onPing(self, payload):
+      self.onPing(payload)
+
+   def _onPong(self, payload):
+      self.onPong(payload)
 
    def _onClose(self, wasClean, code, reason):
       self.onClose(wasClean, code, reason)

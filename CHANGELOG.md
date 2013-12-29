@@ -1,6 +1,8 @@
 # AutobahnPython: Changelog
 
 ## v0.7.0
+ * asyncio support
+ * Python 3 support
  * initial support for WAMPv2
  * support WebSocket (and WAMP) over Twisted endpoints
  * various new examples

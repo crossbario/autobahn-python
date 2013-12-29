@@ -664,22 +664,22 @@ class WebSocketProtocol:
          self.factory._log("WebSocketProtocol.onOpen")
 
 
-   def onMessageBegin(self, opcode):
+   def onMessageBegin(self, isBinary):
       """
       Callback when receiving a new message has begun. Default implementation will
       prepare to buffer message frames. Override in derived class.
 
       Modes: Hybi, Hixie
 
-      :param opcode: Opcode of message.
-      :type opcode: int
+      :param isBinary: If True, payload is binary, otherwise text (UTF-8 encoded).
+      :type isBinary: bool
       """
-      self.message_opcode = opcode
+      self.message_is_binary = isBinary
       self.message_data = []
       self.message_data_total_length = 0
 
 
-   def onMessageFrameBegin(self, length, reserved):
+   def onMessageFrameBegin(self, length):
       """
       Callback when receiving a new message frame has begun. Default implementation will
       prepare to buffer message frame data. Override in derived class.
@@ -688,11 +688,8 @@ class WebSocketProtocol:
 
       :param length: Payload length of message frame which is to be received.
       :type length: int
-      :param reserved: Reserved bits set in frame (an integer from 0 to 7).
-      :type reserved: int
       """
       self.frame_length = length
-      self.frame_reserved = reserved
       self.frame_data = []
       self.message_data_total_length += length
       if not self.failedByMe:
@@ -737,12 +734,12 @@ class WebSocketProtocol:
       Modes: Hybi
       """
       if not self.failedByMe:
-         self.onMessageFrame(self.frame_data, self.frame_reserved)
+         self._onMessageFrame(self.frame_data)
 
       self.frame_data = None
 
 
-   def onMessageFrame(self, payload, reserved):
+   def onMessageFrame(self, payload):
       """
       Callback fired when complete message frame has been received. Default implementation
       will buffer frame for message. Override in derived class.
@@ -750,9 +747,7 @@ class WebSocketProtocol:
       Modes: Hybi
 
       :param payload: Message frame payload.
-      :type payload: list of str
-      :param reserved: Reserved bits set in frame (an integer from 0 to 7).
-      :type reserved: int
+      :type payload: list of bytestrings
       """
       if not self.failedByMe:
          self.message_data.extend(payload)
@@ -770,11 +765,11 @@ class WebSocketProtocol:
          payload = b''.join(self.message_data)
          if self.trackedTimings:
             self.trackedTimings.track("onMessage")
-         self._onMessage(payload, self.message_opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
+         self._onMessage(payload, self.message_is_binary)
       self.message_data = None
 
 
-   def onMessage(self, payload, binary):
+   def onMessage(self, payload, isBinary):
       """
       Callback when a complete message was received. Default implementation does nothing.
       Override in derived class.
@@ -783,8 +778,8 @@ class WebSocketProtocol:
 
       :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be an empty string, when message contained no payload.
       :type payload: str
-      :param binary: If True, payload is binary, otherwise text.
-      :type binary: bool
+      :param isBinary: If True, payload is binary, otherwise text.
+      :type isBinary: bool
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onMessage")
@@ -798,7 +793,7 @@ class WebSocketProtocol:
       Modes: Hybi
 
       :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
-      :type payload: str
+      :type payload: bytes
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPing")
@@ -814,6 +809,7 @@ class WebSocketProtocol:
       Modes: Hybi
 
       :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
+      :type payload: bytes
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPong")
@@ -1543,7 +1539,7 @@ class WebSocketProtocol:
                self.data = self.data[1:]
                if self.trackedTimings:
                   self.trackedTimings.track("onMessageBegin")
-               self.onMessageBegin(1)
+               self._onMessageBegin(False)
 
             ## Hixie close from peer received
             ##
@@ -1578,11 +1574,11 @@ class WebSocketProtocol:
             if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                return False
 
-      self.onMessageFrameData(payload)
+      self._onMessageFrameData(payload)
 
       if end_index > 0:
          self.inside_message = False
-         self.onMessageEnd()
+         self._onMessageEnd()
 
       return len(self.data) > 0
 
@@ -1872,9 +1868,9 @@ class WebSocketProtocol:
 
             ## fire onMessageBegin
             ##
-            self.onMessageBegin(self.current_frame.opcode)
+            self._onMessageBegin(self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
 
-         self.onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
+         self._onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
 
 
    def onFrameData(self, payload):
@@ -1912,7 +1908,7 @@ class WebSocketProtocol:
                if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
                   return False
 
-         self.onMessageFrameData(payload)
+         self._onMessageFrameData(payload)
 
 
    def onFrameEnd(self):
@@ -1931,7 +1927,7 @@ class WebSocketProtocol:
          if self.logFrames:
             self.logRxFrame(self.current_frame, self.frame_data)
 
-         self.onMessageFrameEnd()
+         self._onMessageFrameData()
 
          if self.current_frame.fin:
 
@@ -1953,7 +1949,7 @@ class WebSocketProtocol:
             if self.state == WebSocketProtocol.STATE_OPEN:
                self.trafficStats.incomingWebSocketMessages += 1
 
-            self.onMessageEnd()
+            self._onMessageEnd()
             self.inside_message = False
 
       self.current_frame = None
@@ -1987,12 +1983,12 @@ class WebSocketProtocol:
       ## PING frame
       ##
       elif self.current_frame.opcode == 9:
-         self.onPing(payload)
+         self._onPing(payload)
 
       ## PONG frame
       ##
       elif self.current_frame.opcode == 10:
-         self.onPong(payload)
+         self._onPong(payload)
 
       else:
          ## we might arrive here, when protocolViolation
@@ -2108,7 +2104,7 @@ class WebSocketProtocol:
       Modes: Hybi
 
       :param payload: An optional, arbitrary payload of length < 126 octets.
-      :type payload: str
+      :type payload: bytes
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2131,7 +2127,7 @@ class WebSocketProtocol:
       Modes: Hybi
 
       :param payload: An optional, arbitrary payload of length < 126 octets.
-      :type payload: str
+      :type payload: bytes
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2222,7 +2218,7 @@ class WebSocketProtocol:
             raise Exception("close reason without close code")
          if type(reason) not in [str, unicode]:
             raise Exception("invalid type %s for close reason" % type(reason))
-         reasonUtf8 = reason.encode("UTF-8")
+         reasonUtf8 = reason.encode("utf8")
          if len(reasonUtf8) + 2 > 125:
             raise Exception("close reason too long (%d)" % len(reasonUtf8))
       else:
@@ -2496,7 +2492,7 @@ class WebSocketProtocol:
 
    def sendMessage(self,
                    payload,
-                   binary = False,
+                   isBinary = False,
                    fragmentSize = None,
                    sync = False,
                    doNotCompress = False):
@@ -2511,8 +2507,8 @@ class WebSocketProtocol:
 
       :param payload: The message payload. When sending a text message (`binary == False`), the payload must be UTF-8 encoded already.
       :type payload: binary or UTF-8 string
-      :param binary: Flag to indicate payload type (`True == binary`).
-      :type bool
+      :param isBinary: Flag to indicate payload type (`True == binary`).
+      :type isBinary: bool
       :param fragmentSize: Fragment message into fragments of this size. This overrrides `autoFragmentSize` if set.
       :type fragmentSize: int
       :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
@@ -2527,13 +2523,13 @@ class WebSocketProtocol:
          self.trackedTimings.track("sendMessage")
 
       if self.websocket_version == 0:
-         if binary:
+         if isBinary:
             raise Exception("cannot send binary message in Hixie76 mode")
          if fragmentSize:
             raise Exception("cannot fragment messages in Hixie76 mode")
          self.sendMessageHixie76(payload, sync)
       else:
-         self.sendMessageHybi(payload, binary, fragmentSize, sync, doNotCompress)
+         self.sendMessageHybi(payload, isBinary, fragmentSize, sync, doNotCompress)
 
 
    def sendMessageHixie76(self, payload, sync = False):
@@ -2547,7 +2543,7 @@ class WebSocketProtocol:
 
    def sendMessageHybi(self,
                        payload,
-                       binary = False,
+                       isBinary = False,
                        fragmentSize = None,
                        sync = False,
                        doNotCompress = False):
@@ -2558,7 +2554,7 @@ class WebSocketProtocol:
       """
       ## (initial) frame opcode
       ##
-      if binary:
+      if isBinary:
          opcode = 2
       else:
          opcode = 1

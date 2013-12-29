@@ -27,22 +27,21 @@ class IWebSocketChannel(Interface):
    over a WebSocket connection as specified in RFC6455.
    """
 
+   def onConnect(requestOrResponse):
+      """
+      Callback fired when a client connects (with request from client) or when
+      server connection established (with response from server).
+
+      :param requestOrResponse: Connection request or response.
+      :type requestOrResponse: Instance of :class:`autobahn.websocket.protocol.ConnectionRequest` or :class:`autobahn.websocket.protocol.ConnectionResponse`.
+      """
+
    def onOpen():
       """
       Callback fired when the initial WebSocket opening handshake was completed.
       """
 
-   def onMessage(payload, isBinary):
-      """
-      Callback fired when a complete message was received.
-
-      :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be empty, when message contained no payload.
-      :type payload: str
-      :param isBinary: If True, payload is binary, otherwise text (UTF-8 encoded).
-      :type isBinary: bool
-      """
-
-   def sendMessage(payload, isBinary = False, fragmentSize = None, doNotCompress = False):
+   def sendMessage(payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
       """
       Send out a WebSocket message.
 
@@ -56,8 +55,20 @@ class IWebSocketChannel(Interface):
       :type bool
       :param fragmentSize: Fragment message into WebSocket fragments of this size.
       :type fragmentSize: int
+      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
+      :type sync: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
+      """
+
+   def onMessage(payload, isBinary):
+      """
+      Callback fired when a complete message was received.
+
+      :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be empty, when message contained no payload.
+      :type payload: str
+      :param isBinary: If True, payload is binary, otherwise text (UTF-8 encoded).
+      :type isBinary: bool
       """
 
    def sendClose(code = None, reason = None):
@@ -66,7 +77,7 @@ class IWebSocketChannel(Interface):
 
       :param code: An optional close status code (1000 for normal close or 3000-4999 for application defined close).
       :type code: int
-      :param reason: An optional close reason (a UTF-8 encoded string that when present, a status code MUST also be present).
+      :param reason: An optional close reason (a string that when present, a status code MUST also be present).
       :type reason: str
       """
 
@@ -78,10 +89,45 @@ class IWebSocketChannel(Interface):
       :type wasClean: bool
       :param code: None or close status code (as sent by the WebSocket peer).
       :type code: int
-      :param reason: None or close reason (as sent by the WebSocket peer) as UTF-8 encoded string.
+      :param reason: None or close reason (as sent by the WebSocket peer).
       :type reason: str
       """
 
+   def sendPing(payload = None):
+      """
+      Send out Ping to peer. A peer is expected to Pong back the payload a soon
+      as "practical". When more than 1 Ping is outstanding at a peer, the peer may
+      elect to respond only to the last Ping.
+
+      :param payload: An optional, arbitrary payload of length < 126 octets.
+      :type payload: bytes
+      """
+
+   def onPing(payload):
+      """
+      Callback when Ping was received. Default implementation responds
+      with a Pong.
+
+      :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
+      :type payload: bytes
+      """
+
+   def sendPong(payload = None):
+      """
+      Send out Pong to peer. A Pong frame MAY be sent unsolicited.
+      This serves as a unidirectional heartbeat. A response to an unsolicited pong is "not expected".
+
+      :param payload: An optional, arbitrary payload of length < 126 octets.
+      :type payload: bytes
+      """
+
+   def onPong(self, payload):
+      """
+      Callback when Pong was received. Default implementation does nothing.
+
+      :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
+      :type payload: bytes
+      """
 
 
 class IWebSocketChannelFrameApi(IWebSocketChannel):
@@ -89,7 +135,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
    Frame-based API to WebSocket channel.
    """
 
-   def onMessageBegin(opcode):
+   def onMessageBegin(isBinary):
       """
       Callback fired when receiving a new WebSocket message has begun.
 
@@ -97,15 +143,13 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type opcode: int
       """
 
-   def onMessageFrame(payload, reserved):
+   def onMessageFrame(payload):
       """
       Callback fired when a complete WebSocket message frame for a previously begun
       WebSocket message has been received.
 
       :param payload: Message frame payload (a list of chunks received).
       :type payload: list of str
-      :param reserved: Reserved bits set in WebSocket frame (an integer from 0 to 7).
-      :type reserved: int
       """
 
    def onMessageEnd():
@@ -118,13 +162,13 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       """
       Begin sending a new WebSocket message.
 
-      :param binary: Flag to indicate payload type (`True == binary`).
-      :type bool
+      :param isBinary: Flag to indicate payload type (`True == binary`).
+      :type isBinary: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
-   def sendMessageFrame(self, payload, sync = False):
+   def sendMessageFrame(payload, sync = False):
       """
       When a message has been previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`,
       send a complete message frame in one go.
@@ -149,7 +193,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
 
 class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
 
-   def onMessageFrameBegin(self, length, reserved):
+   def onMessageFrameBegin(self, length):
       """
       Callback when receiving a new message frame has begun. Default implementation will
       prepare to buffer message frame data. Override in derived class.
@@ -158,8 +202,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
 
       :param length: Payload length of message frame which is to be received.
       :type length: int
-      :param reserved: Reserved bits set in frame (an integer from 0 to 7).
-      :type reserved: int
       """
 
    def onMessageFrameData(self, payload):
