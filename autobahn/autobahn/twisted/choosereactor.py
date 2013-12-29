@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -32,8 +32,8 @@ def install_optimal_reactor():
             raise Exception("Python version too old (%s)" % sys.version)
          from twisted.internet import kqreactor
          kqreactor.install()
-      except Exception, e:
-         print """
+      except Exception as e:
+         print("""
    WARNING: Running on BSD or Darwin, but cannot use kqueue Twisted reactor.
 
     => %s
@@ -46,34 +46,34 @@ def install_optimal_reactor():
    Note the use of >= and >.
 
    Will let Twisted choose a default reactor (potential performance degradation).
-   """ % str(e)
+   """ % str(e))
          pass
 
    if sys.platform in ['win32']:
       try:
          from twisted.application.reactors import installReactor
          installReactor("iocp")
-      except Exception, e:
-         print """
+      except Exception as e:
+         print("""
    WARNING: Running on Windows, but cannot use IOCP Twisted reactor.
 
     => %s
 
    Will let Twisted choose a default reactor (potential performance degradation).
-   """ % str(e)
+   """ % str(e))
 
    if sys.platform.startswith('linux'):
       try:
          from twisted.internet import epollreactor
          epollreactor.install()
-      except Exception, e:
-         print """
+      except Exception as e:
+         print("""
    WARNING: Running on Linux, but cannot use Epoll Twisted reactor.
 
     => %s
 
    Will let Twisted choose a default reactor (potential performance degradation).
-   """ % str(e)
+   """ % str(e))
 
 
 
@@ -87,17 +87,17 @@ def install_reactor(_reactor = None, verbose = False):
       ## install explicitly given reactor
       ##
       from twisted.application.reactors import installReactor
-      print "Trying to install explicitly specified Twisted reactor '%s'" % _reactor
+      print("Trying to install explicitly specified Twisted reactor '%s'" % _reactor)
       try:
          installReactor(_reactor)
-      except Exception, e:
-         print "Could not install Twisted reactor %s%s" % (_reactor, ' ["%s"]' % e if verbose else '')
+      except Exception as e:
+         print("Could not install Twisted reactor %s%s" % (_reactor, ' ["%s"]' % e if verbose else ''))
          sys.exit(1)
    else:
       ## automatically choose optimal reactor
       ##
       if verbose:
-         print "Automatically choosing optimal Twisted reactor"
+         print("Automatically choosing optimal Twisted reactor")
       install_optimal_reactor()
 
    ## now the reactor is installed, import it
@@ -105,6 +105,6 @@ def install_reactor(_reactor = None, verbose = False):
 
    if verbose:
       from twisted.python.reflect import qual
-      print "Running Twisted reactor %s" % qual(reactor.__class__)
+      print("Running Twisted reactor %s" % qual(reactor.__class__))
 
    return reactor
