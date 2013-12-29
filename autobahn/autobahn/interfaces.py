@@ -25,6 +25,9 @@ class IWebSocketChannel(Interface):
    """
    A WebSocket channel is a bidirectional, ordered, reliable message channel
    over a WebSocket connection as specified in RFC6455.
+
+   This interface defines a message-based API to WebSocket plus auxiliary hooks
+   and methods.
    """
 
    def onConnect(requestOrResponse):
@@ -33,7 +36,8 @@ class IWebSocketChannel(Interface):
       server connection established (with response from server).
 
       :param requestOrResponse: Connection request or response.
-      :type requestOrResponse: Instance of :class:`autobahn.websocket.protocol.ConnectionRequest` or :class:`autobahn.websocket.protocol.ConnectionResponse`.
+      :type requestOrResponse: Instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
+                               or :class:`autobahn.websocket.protocol.ConnectionResponse`.
       """
 
    def onOpen():
@@ -43,31 +47,37 @@ class IWebSocketChannel(Interface):
 
    def sendMessage(payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
       """
-      Send out a WebSocket message.
+      Send a WebSocket message.
 
-      You can send text or binary message, and optionally specifiy a payload fragment size.
-      When the latter is given, the payload will be split up into WebSocket frames with
-      payload <= the fragmentSize given.
+      You can send text or binary messages, and optionally specifiy a payload fragment size.
+      When the latter is given, the payload will be split up into WebSocket frames each with
+      payload <= the `fragmentSize` given.
 
-      :param payload: The message payload. When sending a text message (`isBinary == False`), the payload must be UTF-8 encoded already.
-      :type payload: binary or UTF-8 string
-      :param isBinary: Flag to indicate payload type (`True == binary`).
+      :param payload: The message payload.
+      :type payload: bytes
+      :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
       :type bool
       :param fragmentSize: Fragment message into WebSocket fragments of this size.
       :type fragmentSize: int
-      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
+      :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
+                   this normally, performance likely will suffer significantly. This feature
+                   is mainly here for use by the testsuite.
       :type sync: bool
-      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to
+                            Hybi-Mode and when WebSocket compression has been negotiated on
+                            the WebSocket client-server connection. Use when you know the
+                            payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
    def onMessage(payload, isBinary):
       """
-      Callback fired when a complete message was received.
+      Callback fired when a complete WebSocket message was received.
 
-      :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be empty, when message contained no payload.
-      :type payload: str
-      :param isBinary: If True, payload is binary, otherwise text (UTF-8 encoded).
+      :param payload: Message payload (UTF-8 encoded text or binary). Can also be empty when
+                      the WebSocket message contained no payload.
+      :type payload: bytes
+      :param isBinary: `True` iff payload is binary, else the payload is UTF-8 encoded text.
       :type isBinary: bool
       """
 
@@ -75,15 +85,18 @@ class IWebSocketChannel(Interface):
       """
       Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
-      :param code: An optional close status code (1000 for normal close or 3000-4999 for application defined close).
+      :param code: An optional close status code (1000 for normal close or 3000-4999 for
+                   application specific close)..
       :type code: int
-      :param reason: An optional close reason (a string that when present, a status code MUST also be present).
+      :param reason: An optional close reason (a string that when present, a status
+                     code MUST also be present).
       :type reason: str
       """
 
    def onClose(wasClean, code, reason):
       """
-      Callback fired when the WebSocket connection has been closed (WebSocket closing handshake finished).
+      Callback fired when the WebSocket connection has been closed (WebSocket closing
+      handshake has been finished or the connection was closed uncleanly).
 
       :param wasClean: True, iff the WebSocket connection was closed cleanly.
       :type wasClean: bool
@@ -95,52 +108,55 @@ class IWebSocketChannel(Interface):
 
    def sendPing(payload = None):
       """
-      Send out Ping to peer. A peer is expected to Pong back the payload a soon
-      as "practical". When more than 1 Ping is outstanding at a peer, the peer may
-      elect to respond only to the last Ping.
+      Send a WebSocket ping to the peer.
 
-      :param payload: An optional, arbitrary payload of length < 126 octets.
+      A peer is expected to pong back the payload a soon as "practical". When more than
+      one ping is outstanding at a peer, the peer may elect to respond only to the last ping.
+
+      :param payload: An (optional) arbitrary payload of length < 126 octets.
       :type payload: bytes
       """
 
    def onPing(payload):
       """
-      Callback when Ping was received. Default implementation responds
-      with a Pong.
+      Callback fired when a WebSocket ping was received. A default implementation responds
+      by sending a WebSocket pong.
 
-      :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
+      :param payload: Payload of ping (when there was any). Can be arbitrary, up to 125 octets.
       :type payload: bytes
       """
 
    def sendPong(payload = None):
       """
-      Send out Pong to peer. A Pong frame MAY be sent unsolicited.
-      This serves as a unidirectional heartbeat. A response to an unsolicited pong is "not expected".
+      Send a WebSocket pong to the peer.
 
-      :param payload: An optional, arbitrary payload of length < 126 octets.
+      A WebSocket pong may be sent unsolicited. This serves as a unidirectional heartbeat.
+      A response to an unsolicited pong is "not expected".
+
+      :param payload: An (optional) arbitrary payload of length < 126 octets.
       :type payload: bytes
       """
 
    def onPong(self, payload):
       """
-      Callback when Pong was received. Default implementation does nothing.
+      Callback fired when a WebSocket pong was received. A default implementation does nothing.
 
-      :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
+      :param payload: Payload of pong (when there was any). Can be arbitrary, up to 125 octets.
       :type payload: bytes
       """
 
 
 class IWebSocketChannelFrameApi(IWebSocketChannel):
    """
-   Frame-based API to WebSocket channel.
+   Frame-based API to a WebSocket channel.
    """
 
    def onMessageBegin(isBinary):
       """
-      Callback fired when receiving a new WebSocket message has begun.
+      Callback fired when receiving of a new WebSocket message has begun.
 
-      :param opcode: WebSocket frame opcode of message begun.
-      :type opcode: int
+      :param isBinary: `True` iff payload is binary, else the payload is UTF-8 encoded text.
+      :type isBinary: bool
       """
 
    def onMessageFrame(payload):
@@ -149,70 +165,67 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       WebSocket message has been received.
 
       :param payload: Message frame payload (a list of chunks received).
-      :type payload: list of str
+      :type payload: list of bytes
       """
 
    def onMessageEnd():
       """
       Callback fired when a WebSocket message has been completely received (the last
-      WebSocket frame for that message has arrived)
+      WebSocket frame for that message has been received).
       """
 
    def beginMessage(isBinary = False, doNotCompress = False):
       """
       Begin sending a new WebSocket message.
 
-      :param isBinary: Flag to indicate payload type (`True == binary`).
+      :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
       :type isBinary: bool
-      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to
+                            Hybi-Mode and when WebSocket compression has been negotiated on
+                            the WebSocket client-server connection. Use when you know the
+                            payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
    def sendMessageFrame(payload, sync = False):
       """
-      When a message has been previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`,
-      send a complete message frame in one go.
+      When a message has been previously begun, send a complete message frame in one go.
 
-      Modes: Hybi
-
-      :param payload: The message payload. When sending a text message, the payload must be UTF-8 encoded already.
-      :type payload: binary or UTF-8 string
-      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
+      :param payload: The message frame payload. When sending a text message, the payload must
+                      be UTF-8 encoded already.
+      :type payload: bytes
+      :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
+                   this normally, performance likely will suffer significantly. This feature
+                   is mainly here for use by the testsuite.
       :type sync: bool
       """
 
    def endMessage(self):
       """
-      End a message previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`.
-      No more frames may be sent (for that message). You have to begin a new message before sending again.
-
-      Modes: Hybi, Hixie
+      End a message previously begun message. No more frames may be sent (for that message).
+      You have to begin a new message before sending again.
       """
 
 
 
 class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
+   """
+   Streaming API to a WebSocket channel.
+   """
 
    def onMessageFrameBegin(self, length):
       """
-      Callback when receiving a new message frame has begun. Default implementation will
-      prepare to buffer message frame data. Override in derived class.
+      Callback fired when receiving a new message frame has begun.
+      A default implementation will prepare to buffer message frame data.
 
-      Modes: Hybi
-
-      :param length: Payload length of message frame which is to be received.
+      :param length: Payload length of message frame which is subsequently received.
       :type length: int
       """
 
    def onMessageFrameData(self, payload):
       """
-      Callback when receiving data witin message frame. Default implementation will
-      buffer data for frame. Override in derived class.
-
-      Modes: Hybi, Hixie
-
-      Notes:
-        - For Hixie mode, this method is slightly misnamed for historic reasons.
+      Callback fired when receiving data within a previously begun message frame.
+      A default implementation will buffer data for frame.
 
       :param payload: Partial payload for message frame.
       :type payload: str
@@ -220,44 +233,38 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
 
    def onMessageFrameEnd(self):
       """
-      Callback when a message frame has been completely received. Default implementation
-      will flatten the buffered frame data and callback onMessageFrame. Override
-      in derived class.
-
-      Modes: Hybi
+      Callback fired when a previously begun message frame has been completely received.
+      A default implementation will flatten the buffered frame data and
+      fire `onMessageFrame`.
       """
 
    def beginMessageFrame(self, length):
       """
-      Begin sending new message frame.
+      Begin sending a new message frame.
 
-      Modes: Hybi
-
-      :param length: Length of frame which is started. Must be >= 0 and <= 2^63.
+      :param length: Length of the frame which is to be started. Must be >= 0 and <= 2^63.
       :type length: int
-      :param reserved: Reserved bits for frame (an integer from 0 to 7). Note that reserved != 0 is only legal when an extension has been negoiated which defines semantics.
-      :type reserved: int
-      :param mask: Optional frame mask. When given, this is used. When None and the peer is a client, a mask will be internally generated. For servers None is default.
-      :type mask: str
       """
 
    def sendMessageFrameData(self, payload, sync = False):
       """
-      Send out data when within message frame (message was begun, frame was begun).
-      Note that the frame is automatically ended when enough data has been sent
-      that is, there is no endMessageFrame, since you have begun the frame specifying
-      the frame length, which implicitly defined the frame end. This is different from
-      messages, which you begin and end, since a message can contain an unlimited number
+      Send out data when within a message frame (message was begun, frame was begun).
+      Note that the frame is automatically ended when enough data has been sent.
+      In other words, there is no `endMessageFrame`, since you have begun the frame
+      specifying the frame length, which implicitly defined the frame end. This is different
+      from messages, which you begin and end, since a message can contain an unlimited number
       of frames.
 
-      Modes: Hybi, Hixie
+      :param payload: bytes
+      :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
+                   this normally, performance likely will suffer significantly. This feature
+                   is mainly here for use by the testsuite.
+      :type sync: bool
 
-      Notes:
-        - For Hixie mode, this method is slightly misnamed for historic reasons.
-
-      :param payload: Data to send.
-
-      :returns: int -- Hybi mode: when frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument. Hixie mode: returns None.
+      :returns: int -- When the currently sent message frame is still incomplete,
+                       returns octets remaining to be sent. When the frame is complete,
+                       returns <= 0, when < 0, the amount of unconsumed data in payload
+                       argument.
       """
 
 
