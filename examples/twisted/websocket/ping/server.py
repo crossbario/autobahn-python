@@ -37,12 +37,12 @@ class PingServerProtocol(WebSocketServerProtocol):
       if self.run:
          self.sendPing()
          self.factory.pingsSent[self.peer] += 1
-         print self.peer, "PING Sent", self.factory.pingsSent[self.peer]
+         print("Ping sent to {} - {}".format(self.peer, self.factory.pingsSent[self.peer])
          reactor.callLater(1, self.doPing)
 
    def onPong(self, payload):
       self.factory.pongsReceived[self.peer] += 1
-      print self.peer, "PONG Received", self.factory.pongsReceived[self.peer]
+      print("Pong received from {} - {}".format(self.peer, self.factory.pongsReceived[self.peer])
 
    def onOpen(self):
       self.factory.pingsSent[self.peer] = 0

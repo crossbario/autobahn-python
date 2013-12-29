@@ -38,8 +38,8 @@ from autobahn.twisted.resource import WebSocketResource, \
 ##
 class EchoServerProtocol(WebSocketServerProtocol):
 
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+   def onMessage(self, payload, isBinary):
+      self.sendMessage(payload, isBinary)
 
 
 ##
@@ -64,7 +64,7 @@ if __name__ == "__main__":
    app.debug = debug
    if debug:
       log.startLogging(sys.stdout)
-   
+
    ##
    ## create a Twisted Web resource for our WebSocket server
    ##
@@ -81,13 +81,13 @@ if __name__ == "__main__":
    ## create a Twisted Web WSGI resource for our Flask server
    ##
    wsgiResource = WSGIResource(reactor, reactor.getThreadPool(), app)
-   
+
    ##
    ## create a root resource serving everything via WSGI/Flask, but
    ## the path "/ws" served by our WebSocket stuff
    ##
    rootResource = WSGIRootResource(wsgiResource, {'ws': wsResource})
-   
+
    ##
    ## create a Twisted Web Site and run everything
    ##

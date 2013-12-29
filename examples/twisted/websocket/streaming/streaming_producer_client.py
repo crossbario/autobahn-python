@@ -48,7 +48,7 @@ class RandomByteStreamProducer:
       self.paused = False
 
       if not self.started:
-         self.proto.beginMessage(binary = True)
+         self.proto.beginMessage(isBinary = True)
          self.proto.beginMessageFrame(FRAME_SIZE)
          self.started = True
 
@@ -78,8 +78,8 @@ class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
       self.registerProducer(producer, True)
       producer.resumeProducing()
 
-   def onMessage(self, message, binary):
-      print "Digest for batch %d computed by server: %s" % (self.count, message)
+   def onMessage(self, payload, isBinary):
+      print("Digest for batch {} computed by server: {}".format(self.count, payload))
       self.count += 1
 
 

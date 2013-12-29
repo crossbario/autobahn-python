@@ -29,16 +29,17 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 class EchoClientProtocol(WebSocketClientProtocol):
 
    def onConnect(self, response):
-      print response
+      print(response)
 
    def sendHello(self):
-      self.sendMessage("Hello, world!")
+      self.sendMessage("Hello, world!".encode('utf8'))
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       reactor.callLater(1, self.sendHello)
 
 
@@ -46,7 +47,7 @@ class EchoClientProtocol(WebSocketClientProtocol):
 if __name__ == '__main__':
 
    if len(sys.argv) < 2:
-      print "Need the WebSocket server address, i.e. ws://localhost:9000"
+      print("Need the WebSocket server address, i.e. ws://localhost:9000")
       sys.exit(1)
 
    if len(sys.argv) > 2 and sys.argv[2] == 'debug':

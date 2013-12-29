@@ -30,14 +30,15 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
    """
 
    def sendHello(self):
-      self.sendMessage("Hello from Python!")
+      self.sendMessage("Hello from Python!".encode('utf8'))
       reactor.callLater(2, self.sendHello)
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got message: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
 
 
 if __name__ == '__main__':

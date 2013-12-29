@@ -32,17 +32,17 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
    of frames. Digest is reset upon new message.
    """
 
-   def onMessageBegin(self, opcode):
-      WebSocketServerProtocol.onMessageBegin(self, opcode)
+   def onMessageBegin(self, isBinary):
+      WebSocketServerProtocol.onMessageBegin(self, isBinary)
       self.sha256 = hashlib.sha256()
 
-   def onMessageFrame(self, payload, reserved):
+   def onMessageFrame(self, payload):
       l = 0
       for data in payload:
          l += len(data)
          self.sha256.update(data)
       digest = self.sha256.hexdigest()
-      print "Received frame with payload length %7d, compute digest: %s" % (l, digest)
+      print("Received frame with payload length {}, compute digest: {}".format(l, digest))
       self.sendMessage(digest)
 
    def onMessageEnd(self):
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                                               PerMessageDeflateOfferAccept
       ## Function to accept offers from the client ..
       def accept(offers):
-         for offer in offers:         
+         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
                return PerMessageDeflateOfferAccept(offer)
 

@@ -30,18 +30,20 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 class EchoClientProtocol(WebSocketClientProtocol):
 
    def sendHello(self):
-      self.sendMessage("Hello, world!")
+      self.sendMessage("Hello, world!".encode('utf8'))
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       reactor.callLater(1, self.sendHello)
 
 
+
 class EchoClientFactory(ReconnectingClientFactory, WebSocketClientFactory):
-   
+
    protocol = EchoClientProtocol
 
    ## http://twistedmatrix.com/documents/current/api/twisted.internet.protocol.ReconnectingClientFactory.html
@@ -50,14 +52,14 @@ class EchoClientFactory(ReconnectingClientFactory, WebSocketClientFactory):
    maxRetries = 5
 
    def startedConnecting(self, connector):
-     print 'Started to connect.'
+     print('Started to connect.')
 
    def clientConnectionLost(self, connector, reason):
-      print 'Lost connection.  Reason:', reason
+      print('Lost connection. Reason: {}'.format(reason))
       ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
    def clientConnectionFailed(self, connector, reason):
-      print 'Connection failed. Reason:', reason
+      print('Connection failed. Reason: {}'.format(reason))
       ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
 
 
@@ -65,7 +67,7 @@ class EchoClientFactory(ReconnectingClientFactory, WebSocketClientFactory):
 if __name__ == '__main__':
 
    if len(sys.argv) < 2:
-      print "Need the WebSocket server address, i.e. ws://localhost:9000"
+      print("Need the WebSocket server address, i.e. ws://localhost:9000")
       sys.exit(1)
 
    if len(sys.argv) > 2 and sys.argv[2] == 'debug':

@@ -45,14 +45,13 @@ class StreamingHashClientProtocol(WebSocketClientProtocol):
 
    def onOpen(self):
       self.count = 0
-      self.beginMessage(binary = True)
+      self.beginMessage(isBinary = True)
       # 2^63 - This is the maximum imposed by the WS protocol
       self.beginMessageFrame(0x7FFFFFFFFFFFFFFF)
       self.sendOneBatch()
 
-   def onMessage(self, message, binary):
-      print "Digest for batch %d computed by server: %s" \
-            % (self.count, message)
+   def onMessage(self, payload, isBinary):
+      print("Digest for batch {} computed by server: {}".format(self.count, message))
       self.count += 1
       self.sendOneBatch()
 

@@ -34,23 +34,25 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
 class EchoClientProtocol(WebSocketClientProtocol):
 
    def onConnect(self, response):
-      print "WebSocket extensions in use: %s" % response.extensions
+      print("WebSocket extensions in use: {}".format(response.extensions))
 
    def sendHello(self):
-      self.sendMessage("Hello, world!" * 100)
+      msg = "Hello, world!" * 100
+      self.sendMessage(msg.encode('utf8'))
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       reactor.callLater(1, self.sendHello)
 
 
 if __name__ == '__main__':
 
    if len(sys.argv) < 2:
-      print "Need the WebSocket server address, i.e. ws://localhost:9000"
+      print("Need the WebSocket server address, i.e. ws://localhost:9000")
       sys.exit(1)
 
    if len(sys.argv) > 2 and sys.argv[2] == 'debug':

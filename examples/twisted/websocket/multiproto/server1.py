@@ -44,7 +44,7 @@ class BaseService:
    def onClose(self, wasClean, code, reason):
       pass
 
-   def onMessage(self, msg, isBinary):
+   def onMessage(self, payload, isBinary):
       pass
 
 
@@ -52,8 +52,10 @@ class Echo1Service(BaseService):
    """
    Awesome Echo Service 1.
    """
-   def onMessage(self, msg, isBinary):
-      self.proto.sendMessage("Echo 1 - " + msg)
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         msg = "Echo 1 - {}".format(payload.decode('utf8'))
+         self.proto.sendMessage(msg.encode('utf8'))
 
 
 
@@ -61,8 +63,10 @@ class Echo2Service(BaseService):
    """
    Awesome Echo Service 2.
    """
-   def onMessage(self, msg, isBinary):
-      self.proto.sendMessage("Echo 2 - " + msg)
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         msg = "Echo 2 - {}".format(payload.decode('utf8'))
+         self.proto.sendMessage(msg.encode('utf8'))
 
 
 
@@ -77,15 +81,15 @@ class ServiceServerProtocol(WebSocketServerProtocol):
    def onConnect(self, request):
       ## request has all the information from the initial
       ## WebSocket opening handshake ..
-      print request.peer
-      print request.headers
-      print request.host
-      print request.path
-      print request.params
-      print request.version
-      print request.origin
-      print request.protocols
-      print request.extensions
+      print(request.peer)
+      print(request.headers)
+      print(request.host)
+      print(request.path)
+      print(request.params)
+      print(request.version)
+      print(request.origin)
+      print(request.protocols)
+      print(request.extensions)
 
       ## We map to services based on path component of the URL the
       ## WebSocket client requested. This is just an example. We could
@@ -96,16 +100,16 @@ class ServiceServerProtocol(WebSocketServerProtocol):
          self.service = self.SERVICEMAP[request.path](self)
       else:
          err = "No service under %s" % request.path
-         print err
+         print(err)
          raise HttpException(404, err)
 
    def onOpen(self):
       if self.service:
          self.service.onOpen()
 
-   def onMessage(self, msg, isBinary):
+   def onMessage(self, payload, isBinary):
       if self.service:
-         self.service.onMessage(msg, isBinary)
+         self.service.onMessage(payload, isBinary)
 
    def onClose(self, wasClean, code, reason):
       if self.service:

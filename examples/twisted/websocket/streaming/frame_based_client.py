@@ -51,12 +51,12 @@ class FrameBasedHashClientProtocol(WebSocketClientProtocol):
    def onOpen(self):
       self.count = 0
       self.finished = False
-      self.beginMessage(binary = True)
+      self.beginMessage(isBinary = True)
       self.sha256 = hashlib.sha256()
       self.sendOneFrame()
 
-   def onMessage(self, message, binary):
-      print "Digest for frame %d computed by server: %s" % (self.count, message)
+   def onMessage(self, payload, isBinary):
+      print("Digest for frame {} computed by server: {}".format(self.count, payload))
       #pprint(self.trafficStats.__json__())
       self.count += 1
 

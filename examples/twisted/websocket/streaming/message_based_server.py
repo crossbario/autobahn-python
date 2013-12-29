@@ -30,12 +30,12 @@ class MessageBasedHashServerProtocol(WebSocketServerProtocol):
    message it receives and sends back the computed digest.
    """
 
-   def onMessage(self, message, binary):
+   def onMessage(self, payload, isBinary):
       sha256 = hashlib.sha256()
-      sha256.update(message)
+      sha256.update(payload)
       digest = sha256.hexdigest()
       self.sendMessage(digest)
-      print "Sent digest for message: %s" % digest
+      print("Sent digest for message: {}".format(digest))
 
 
 if __name__ == '__main__':

@@ -32,14 +32,19 @@ from autobahn.twisted.resource import WebSocketResource
 
 class Echo1ServerProtocol(WebSocketServerProtocol):
 
-   def onMessage(self, msg, binary):
-      self.sendMessage("Echo 1 - " + msg)
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         msg = "Echo 1 - {}".format(payload.decode('utf8'))
+         self.proto.sendMessage(msg.encode('utf8'))
+
 
 
 class Echo2ServerProtocol(WebSocketServerProtocol):
 
-   def onMessage(self, msg, binary):
-      self.sendMessage("Echo 2 - " + msg)
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         msg = "Echo 2 - {}".format(payload.decode('utf8'))
+         self.proto.sendMessage(msg.encode('utf8'))
 
 
 

@@ -25,24 +25,25 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 
 class EchoClientProtocol(WebSocketClientProtocol):
 
-   def __init__(self, helloMsg):
-      self.helloMsg = helloMsg
+   def __init__(self, message):
+      self.message = message.encode('utf8')
 
    def sendHello(self):
-      self.sendMessage(self.helloMsg)
+      self.sendMessage(self.message)
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       reactor.callLater(1, self.sendHello)
 
 
 class EchoClientFactory(WebSocketClientFactory):
 
    def buildProtocol(self, addr):
-      proto = EchoClientProtocol(self.helloMsg)
+      proto = EchoClientProtocol(self.message)
       proto.factory = self
       return proto
 
@@ -54,7 +55,7 @@ if __name__ == '__main__':
       sys.exit(1)
 
    factory = EchoClientFactory(sys.argv[1])
-   factory.helloMsg = sys.argv[2] if len(sys.argv) > 2 else "My configurable message"
+   factory.message = sys.argv[2] if len(sys.argv) > 2 else "My configurable message"
    connectWS(factory)
 
    reactor.run()

@@ -31,9 +31,9 @@ from autobahn.twisted.resource import WebSocketResource, \
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
-   
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+
+   def onMessage(self, payload, isBinary):
+      self.sendMessage(payload, isBinary)
 
 
 if __name__ == '__main__':
@@ -43,7 +43,7 @@ if __name__ == '__main__':
       debug = True
    else:
       debug = False
-      
+
    contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                      'keys/server.crt')
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
    ## both under one Twisted Web Site
    site = Site(root)
    site.protocol = HTTPChannelHixie76Aware # needed if Hixie76 is to be supported
-   
+
    reactor.listenSSL(8080, site, contextFactory)
 
    reactor.run()

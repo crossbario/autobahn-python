@@ -33,8 +33,8 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
    def onOpen(self):
       self.factory.register(self)
 
-   def onMessage(self, msg, binary):
-      if not binary:
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
          self.factory.broadcast("'%s' from %s" % (msg, self.peer))
 
    def connectionLost(self, reason):
@@ -61,19 +61,19 @@ class BroadcastServerFactory(WebSocketServerFactory):
 
    def register(self, client):
       if not client in self.clients:
-         print "registered client " + client.peer
+         print("registered client {}".format(client.peer))
          self.clients.append(client)
 
    def unregister(self, client):
       if client in self.clients:
-         print "unregistered client " + client.peer
+         print("unregistered client {}".format(client.peer))
          self.clients.remove(client)
 
    def broadcast(self, msg):
-      print "broadcasting message '%s' .." % msg
+      print("broadcasting message '{}' ..".format(msg))
       for c in self.clients:
          c.sendMessage(msg)
-         print "message sent to " + c.peer
+         print("message sent to {}".format(c.peer))
 
 
 class BroadcastPreparedServerFactory(BroadcastServerFactory):
@@ -83,11 +83,11 @@ class BroadcastPreparedServerFactory(BroadcastServerFactory):
    """
 
    def broadcast(self, msg):
-      print "broadcasting prepared message '%s' .." % msg
+      print("broadcasting prepared message '{}' ..".format(msg))
       preparedMsg = self.prepareMessage(msg)
       for c in self.clients:
          c.sendPreparedMessage(preparedMsg)
-         print "prepared message sent to " + c.peer
+         print("prepared message sent to {}".format(c.peer))
 
 
 if __name__ == '__main__':

@@ -26,16 +26,17 @@ class EchoClientProtocol(WebSocketClientProtocol):
    """
    Example WebSocket client protocol. This is where you define your application
    specific protocol and logic.
-   """ 
+   """
 
    def sendHello(self):
-      self.sendMessage("Hello, world!")
+      self.sendMessage("Hello, world!".encode('utf8'))
 
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       self.factory.reactor.callLater(1, self.sendHello)
 
 
@@ -83,7 +84,7 @@ if __name__ == '__main__':
    ##
    from autobahn.choosereactor import install_reactor
    reactor = install_reactor()
-   print "Running on reactor", reactor
+   print("Running on reactor {}".format(reactor))
 
 
    ## start a WebSocket client

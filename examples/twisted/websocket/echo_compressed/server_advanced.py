@@ -33,13 +33,13 @@ from autobahn.websocket.compress import *
 class EchoServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, request):
-      print "WebSocket connection request by", request.peer
+      print("WebSocket connection request by {}".format(request.peer))
 
    def onOpen(self):
-      print "WebSocket extensions in use: %s" % self.websocket_extensions_in_use
+      print("WebSocket extensions in use: {}".format(self.websocket_extensions_in_use))
 
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+   def onMessage(self, payload, isBinary):
+      self.sendMessage(payload, isBinary)
 
 
 if __name__ == '__main__':

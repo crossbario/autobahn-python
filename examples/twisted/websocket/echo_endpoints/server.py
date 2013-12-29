@@ -28,11 +28,11 @@ class EchoServerProtocol(WebSocketServerProtocol):
    specific protocol and logic.
    """
 
-   def onMessage(self, msg, binary):
+   def onMessage(self, payload, isBinary):
 
       ## just echo any WebSocket message received back to client
       ##
-      self.sendMessage(msg, binary)
+      self.sendMessage(payload, isBinary)
 
 
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
    ##
    from autobahn.choosereactor import install_reactor
    reactor = install_reactor()
-   print "Running on reactor", reactor
+   print("Running on reactor {}".format(reactor))
 
 
    ## start a WebSocket server

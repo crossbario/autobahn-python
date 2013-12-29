@@ -43,8 +43,8 @@ class EchoServerProtocol(WebSocketServerProtocol):
       ##
       return (None, headers)
 
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+   def onMessage(self, payload, isBinary):
+      self.sendMessage(payload, isBinary)
 
 
 

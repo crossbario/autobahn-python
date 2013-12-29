@@ -40,8 +40,9 @@ class EchoClientProtocol(WebSocketClientProtocol):
    def onOpen(self):
       self.sendHello()
 
-   def onMessage(self, msg, binary):
-      print "Got echo: " + msg
+   def onMessage(self, payload, isBinary):
+      if not isBinary:
+         print("Text message received: {}".format(payload.decode('utf8')))
       reactor.callLater(1, self.sendHello)
 
 
