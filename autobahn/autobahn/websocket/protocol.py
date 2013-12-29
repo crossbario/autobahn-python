@@ -1421,7 +1421,7 @@ class WebSocketProtocol:
       """
       if len(self.send_queue) > 0:
          e = self.send_queue.popleft()
-         
+
          if self.state != WebSocketProtocol.STATE_CLOSED:
 
             self.transport.write(e[0])
@@ -2004,7 +2004,7 @@ class WebSocketProtocol:
 
    def sendFrame(self,
                  opcode,
-                 payload = "",
+                 payload = b'',
                  fin = True,
                  rsv = 0,
                  mask = None,
@@ -2462,7 +2462,7 @@ class WebSocketProtocol:
             self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
          else:
             ## send continuation frame with empty payload and FIN set to end message
-            payload = ""
+            payload = b''
          self.sendFrame(opcode = 0, payload = payload, fin = True)
 
       self.send_state = WebSocketProtocol.SEND_STATE_GROUND
@@ -2542,7 +2542,7 @@ class WebSocketProtocol:
 
       Modes: Hixie
       """
-      self.sendData('\x00' + payload + '\xff', sync = sync)
+      self.sendData(b'\x00' + payload + b'\xff', sync = sync)
 
 
    def sendMessageHybi(self,
@@ -3917,7 +3917,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          request += "Sec-WebSocket-Key1: %s\x0d\x0a" % self.websocket_key1
          request += "Sec-WebSocket-Key2: %s\x0d\x0a" % self.websocket_key2
          request_body = self.websocket_key3
-      else:         
+      else:
          self.websocket_key = base64.b64encode(os.urandom(16))
          request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key.decode()
          request_body = None

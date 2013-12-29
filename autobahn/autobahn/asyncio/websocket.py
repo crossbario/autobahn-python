@@ -21,9 +21,11 @@ __all__ = ['WebSocketServerProtocol',
            'WebSocketClientProtocol',
            'WebSocketClientFactory']
 
-import asyncio
-import inspect
 from collections import deque
+
+import asyncio
+from asyncio.tasks import iscoroutine
+from asyncio import Future
 
 from autobahn.websocket import protocol
 from autobahn.websocket import http
@@ -35,9 +37,7 @@ def yields(value):
 
    See: http://stackoverflow.com/questions/20730248/maybedeferred-analog-with-asyncio
    """
-   return isinstance(value, asyncio.Future) or inspect.isgenerator(value)
-   ## FIXME: replace with the following when iscoroutine is avail:
-   #return isinstance(value, asyncio.Future) or asyncio.iscoroutine(value)
+   return isinstance(value, Future) or iscoroutine(value)
 
 
 
@@ -50,7 +50,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       self.transport = transport
 
       self.receive_queue = deque()
-      self.waiter = None
+      self.waiter = Future()
       asyncio.Task(self._consume())
 
       peer = transport.get_extra_info('peername')
@@ -65,24 +65,27 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
    def connection_lost(self, exc):
       self._connectionLost(exc)
+      self.transport = None
 
 
    def _consume(self):
       while True:
-         self.waiter = asyncio.Future()
          yield from self.waiter
+         self.waiter = Future()
          while len(self.receive_queue):
             data = self.receive_queue.popleft()
             if self.transport:
                try:
                   self._dataReceived(data)
                except Exception as e:
-                  raise e
+                  print("WebSocketAdapterProtocol._consume: {}".format(e))
+            else:
+               print("WebSocketAdapterProtocol._consume: no transport")
 
 
    def data_received(self, data):
       self.receive_queue.append(data)
-      if self.waiter and not self.waiter.done():
+      if not self.waiter.done():
          self.waiter.set_result(None)
 
 
