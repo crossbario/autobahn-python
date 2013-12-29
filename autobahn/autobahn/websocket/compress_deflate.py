@@ -616,4 +616,4 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
       ## Eat stripped LEN and NLEN field of a non-compressed block added
       ## for Z_SYNC_FLUSH.
       ##
-      self._decompressor.decompress(b'\x00\x00\xff\xff')
+      self._decompressor.decompress('\x00\x00\xff\xff')
