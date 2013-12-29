@@ -78,7 +78,8 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
                try:
                   self._dataReceived(data)
                except Exception as e:
-                  print("WebSocketAdapterProtocol._consume: {}".format(e))
+                  raise e
+                  #print("WebSocketAdapterProtocol._consume: {}".format(e))
             else:
                print("WebSocketAdapterProtocol._consume: no transport")
 

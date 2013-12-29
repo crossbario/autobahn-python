@@ -2576,7 +2576,7 @@ class WebSocketProtocol:
 
          payload1 = self._perMessageCompress.compressMessageData(payload)
          payload2 = self._perMessageCompress.endCompressMessage()
-         payload = ''.join([payload1, payload2])
+         payload = b''.join([payload1, payload2])
 
          self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
 

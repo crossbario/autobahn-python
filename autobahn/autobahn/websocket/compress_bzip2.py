@@ -91,10 +91,14 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                acceptMaxCompressLevel = True
 
          elif p == 'server_max_compress_level':
-            if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+            try:
+               val = int(val)
+            except:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               requestMaxCompressLevel = int(val)
+               requestMaxCompressLevel = val
 
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
@@ -266,16 +270,24 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
          val = params[p][0]
 
          if p == 'client_max_compress_level':
-            if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+            try:
+               val = int(val)
+            except:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               client_max_compress_level = int(val)
+               client_max_compress_level = val
 
          elif p == 'server_max_compress_level':
-            if val not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
+            try:
+               val = int(val)
+            except:
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+            if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
             else:
-               server_max_compress_level = int(val)
+               server_max_compress_level = val
 
          else:
             raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
