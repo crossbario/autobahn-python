@@ -1870,7 +1870,7 @@ class WebSocketProtocol:
             ##
             self._onMessageBegin(self.current_frame.opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
 
-         self._onMessageFrameBegin(self.current_frame.length, self.current_frame.rsv)
+         self._onMessageFrameBegin(self.current_frame.length)
 
 
    def onFrameData(self, payload):
@@ -1927,7 +1927,7 @@ class WebSocketProtocol:
          if self.logFrames:
             self.logRxFrame(self.current_frame, self.frame_data)
 
-         self._onMessageFrameData()
+         self._onMessageFrameEnd()
 
          if self.current_frame.fin:
 
