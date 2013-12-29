@@ -766,6 +766,7 @@ class WebSocketProtocol:
          if self.trackedTimings:
             self.trackedTimings.track("onMessage")
          self._onMessage(payload, self.message_is_binary)
+
       self.message_data = None
 
 
@@ -2290,7 +2291,7 @@ class WebSocketProtocol:
       if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
          raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state [%d]" % self.send_state)
 
-      if (not type(length) in [int, long]) or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
+      if type(length) != int or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
          raise Exception("invalid value for message frame length")
 
       self.send_message_frame_length = length

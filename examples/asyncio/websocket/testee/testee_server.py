@@ -27,23 +27,23 @@ from autobahn.websocket.compress import *
 
 class TesteeServerProtocol(WebSocketServerProtocol):
 
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
+   def onMessage(self, payload, isBinary):
+      self.sendMessage(payload, isBinary)
 
 
 
 class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
-   def onMessageBegin(self, opcode):
-      WebSocketServerProtocol.onMessageBegin(self, opcode)
-      self.beginMessage(binary = opcode == WebSocketProtocol.MESSAGE_TYPE_BINARY)
+   def onMessageBegin(self, isBinary):
+      WebSocketServerProtocol.onMessageBegin(self, isBinary)
+      self.beginMessage(isBinary)
 
-   def onMessageFrameBegin(self, length, reserved):
-      WebSocketServerProtocol.onMessageFrameBegin(self, length, reserved)
+   def onMessageFrameBegin(self, length):
+      WebSocketServerProtocol.onMessageFrameBegin(self, length)
       self.beginMessageFrame(length)
 
-   def onMessageFrameData(self, data):
-      self.sendMessageFrameData(data)
+   def onMessageFrameData(self, payload):
+      self.sendMessageFrameData(payload)
 
    def onMessageFrameEnd(self):
       pass
@@ -55,8 +55,8 @@ class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
 class TesteeServerFactory(WebSocketServerFactory):
 
-   protocol = TesteeServerProtocol
-   #protocol = StreamingTesteeServerProtocol
+   #protocol = TesteeServerProtocol
+   protocol = StreamingTesteeServerProtocol
 
    def __init__(self, url, debug = False, ident = None):
       if ident is not None:
@@ -65,7 +65,7 @@ class TesteeServerFactory(WebSocketServerFactory):
          server = "AutobahnPython-Asyncio/%s" % autobahn.version
       WebSocketServerFactory.__init__(self, url, debug = debug, debugCodePaths = debug, server = server)
       self.setProtocolOptions(failByDrop = False) # spec conformance
-      #self.setProtocolOptions(failByDrop = True) # needed for streaming mode
+      self.setProtocolOptions(failByDrop = True) # needed for streaming mode
       #self.setProtocolOptions(utf8validateIncoming = False)
 
       ## enable permessage-deflate
