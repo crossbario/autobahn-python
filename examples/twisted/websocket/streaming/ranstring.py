@@ -18,8 +18,17 @@
 
 import random, struct
 
+## http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
+try:
+   xrange
+except NameError:
+   ## Python 3
+   xrange = range
+
+
 def randomByteString(len):
    """
    Generate a string of random bytes.
    """
-   return b''.join([struct.pack("!Q", random.getrandbits(64)) for x in xrange(0, len / 8 + int(len % 8 > 0))])[:len]
+   ll = int(len / 8 + int(len % 8 > 0))
+   return b''.join([struct.pack("!Q", random.getrandbits(64)) for x in xrange(0, ll)])[:len]

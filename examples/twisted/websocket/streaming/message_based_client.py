@@ -36,14 +36,14 @@ class MessageBasedHashClientProtocol(WebSocketClientProtocol):
 
    def sendOneMessage(self):
       data = randomByteString(MESSAGE_SIZE)
-      self.sendMessage(data, binary = True)
+      self.sendMessage(data, isBinary = True)
 
    def onOpen(self):
       self.count = 0
       self.sendOneMessage()
 
    def onMessage(self, payload, isBinary):
-      print("Digest for message {} computed by server: {}".format(self.count, message))
+      print("Digest for message {} computed by server: {}".format(self.count, payload.decode('utf8')))
       self.count += 1
       self.sendOneMessage()
 

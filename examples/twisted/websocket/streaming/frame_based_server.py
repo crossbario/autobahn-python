@@ -43,7 +43,7 @@ class FrameBasedHashServerProtocol(WebSocketServerProtocol):
          self.sha256.update(data)
       digest = self.sha256.hexdigest()
       print("Received frame with payload length {}, compute digest: {}".format(l, digest))
-      self.sendMessage(digest)
+      self.sendMessage(digest.encode('utf8'))
 
    def onMessageEnd(self):
       self.sha256 = None

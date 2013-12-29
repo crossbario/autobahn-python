@@ -2227,7 +2227,7 @@ class WebSocketProtocol:
       self.sendCloseFrame(code = code, reasonUtf8 = reasonUtf8, isReply = False)
 
 
-   def beginMessage(self, binary = False, doNotCompress = False):
+   def beginMessage(self, isBinary = False, doNotCompress = False):
       """
       Begin sending new message.
 
@@ -2247,13 +2247,13 @@ class WebSocketProtocol:
          raise Exception("WebSocketProtocol.beginMessage invalid in current sending state")
 
       if self.websocket_version == 0:
-         if binary:
+         if isBinary:
             raise Exception("cannot send binary message in Hixie76 mode")
 
          self.sendData('\x00')
          self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
       else:
-         self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if binary else WebSocketProtocol.MESSAGE_TYPE_TEXT
+         self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if isBinary else WebSocketProtocol.MESSAGE_TYPE_TEXT
          self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
 
          ## setup compressor
@@ -2517,6 +2517,8 @@ class WebSocketProtocol:
       :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
+      assert(type(payload) == bytes)
+
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
 

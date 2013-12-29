@@ -17,7 +17,7 @@
 ###############################################################################
 
 from ranstring import randomByteString
-from zope.interface import implements
+from zope.interface import implementer
 from twisted.internet import reactor, interfaces
 
 from autobahn.twisted.websocket import WebSocketClientFactory, \
@@ -29,12 +29,12 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
 FRAME_SIZE = 0x7FFFFFFFFFFFFFFF
 
 
+@implementer(interfaces.IPushProducer)
 class RandomByteStreamProducer:
    """
    A Twisted Push Producer generating a stream of random octets sending out data
    in a WebSockets message frame.
    """
-   implements(interfaces.IPushProducer)
 
    def __init__(self, proto):
       self.proto = proto
@@ -56,7 +56,7 @@ class RandomByteStreamProducer:
          data = randomByteString(1024)
          if self.proto.sendMessageFrameData(data) <= 0:
             self.proto.beginMessageFrame(FRAME_SIZE)
-            print "new frame started!"
+            print("new frame started!")
 
    def stopProducing(self):
       pass
@@ -79,7 +79,7 @@ class StreamingProducerHashClientProtocol(WebSocketClientProtocol):
       producer.resumeProducing()
 
    def onMessage(self, payload, isBinary):
-      print("Digest for batch {} computed by server: {}".format(self.count, payload))
+      print("Digest for batch {} computed by server: {}".format(self.count, payload.decode('utf8')))
       self.count += 1
 
 

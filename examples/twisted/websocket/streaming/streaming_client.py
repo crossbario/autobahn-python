@@ -51,7 +51,7 @@ class StreamingHashClientProtocol(WebSocketClientProtocol):
       self.sendOneBatch()
 
    def onMessage(self, payload, isBinary):
-      print("Digest for batch {} computed by server: {}".format(self.count, message))
+      print("Digest for batch {} computed by server: {}".format(self.count, payload.decode('utf8')))
       self.count += 1
       self.sendOneBatch()
 

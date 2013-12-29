@@ -35,7 +35,8 @@ class BroadcastServerProtocol(WebSocketServerProtocol):
 
    def onMessage(self, payload, isBinary):
       if not isBinary:
-         self.factory.broadcast("'%s' from %s" % (msg, self.peer))
+         msg = "{} from {}".format(payload.decode('utf8'), self.peer)
+         self.factory.broadcast(msg)
 
    def connectionLost(self, reason):
       WebSocketServerProtocol.connectionLost(self, reason)
@@ -56,7 +57,7 @@ class BroadcastServerFactory(WebSocketServerFactory):
 
    def tick(self):
       self.tickcount += 1
-      self.broadcast("'tick %d' from server" % self.tickcount)
+      self.broadcast("tick %d from server" % self.tickcount)
       reactor.callLater(1, self.tick)
 
    def register(self, client):
@@ -72,7 +73,7 @@ class BroadcastServerFactory(WebSocketServerFactory):
    def broadcast(self, msg):
       print("broadcasting message '{}' ..".format(msg))
       for c in self.clients:
-         c.sendMessage(msg)
+         c.sendMessage(msg.encode('utf8'))
          print("message sent to {}".format(c.peer))
 
 

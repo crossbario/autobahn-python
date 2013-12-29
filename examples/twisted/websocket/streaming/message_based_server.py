@@ -34,7 +34,7 @@ class MessageBasedHashServerProtocol(WebSocketServerProtocol):
       sha256 = hashlib.sha256()
       sha256.update(payload)
       digest = sha256.hexdigest()
-      self.sendMessage(digest)
+      self.sendMessage(digest.encode('utf8'))
       print("Sent digest for message: {}".format(digest))
 
 
