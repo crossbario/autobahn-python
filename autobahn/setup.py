@@ -17,9 +17,15 @@
 ###############################################################################
 
 from setuptools import setup
+from distutils import log
 
 import sys
 PY3 = sys.version_info.major > 2
+if PY3:
+   log.info("Python 3 detected.")
+else:
+   log.info("Python 2 detected.")
+
 
 LONGSDESC = """
 Twisted-based WebSocket/WAMP client and server framework.
@@ -55,19 +61,26 @@ else:
    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 
-#packages = find_packages()
+## Autobahn core packages
+##
 packages = ['autobahn', 
-            'autobahn/wamp',
-            'autobahn/websocket']
+            'autobahn.wamp',
+            'autobahn.websocket']
+
 
 ## Twisted integration
 ##
 try:
    import twisted
 except:
-   print("Twisted not installed - skipping Twisted support packages")
+   log.info("Twisted not installed - skipping Twisted support packages")
+   HAS_TWISTED = False
 else:
-   packages.append('autobahn/twisted')
+   log.info("Twisted detected - installing Autobahn/Twisted integration")
+   packages.append('autobahn.twisted')
+   packages.append('autobahn.twisted.plugins')
+   HAS_TWISTED = True
+
 
 ## Asyncio integration
 ##
@@ -75,17 +88,20 @@ if PY3:
    try:
       import asyncio
    except:
-      print("Asyncio not available - skipping Asyncio support packages")
+      log.info("Asyncio not available - skipping Asyncio support packages")
    else:
-      packages.append('autobahn/asyncio')
+      log.info("Asyncio detected - installing Autobahn/Asyncio integration")
+      packages.append('autobahn.asyncio')
 else:
-   print("Python 2 detected - skipping Asyncio support packages")
+   log.info("Python 2 detected - skipping Autobahn/Asyncio integration")
 
 
+## Now install Autobahn ..
+##
 setup(
    name = 'autobahn',
    version = verstr,
-   description = 'AutobahnPython - WebSocket/WAMP implementation for Python/Twisted.',
+   description = 'Autobahn|Python provides WebSocket and WAMP for Twisted and Asyncio',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
@@ -94,9 +110,20 @@ setup(
    platforms = ('Any'),
    install_requires = ['setuptools', 'zope.interface>=4.0.2'],
    extras_require = {
-      'twisted': ["Twisted>=11.1"],
-      'accelerate': ["wsaccel>=0.6.2"],
+      ## this is ONLY needed on Python 3.3. Python 3.4+ has that integrated already!
+      'asyncio': ["asyncio>=0.2.1"],
+
+      ## you need Twisted for Autobahn/Twisted - obviously
+      'twisted': ["twisted>=11.1"],
+
+      ## native WebSocket and JSON acceleration: this should ONLY be used on CPython
+      'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"],
+
+      ## for (non-standard) WebSocket compression methods - not needed if you
+      ## only want standard WebSocket compression ("permessage-deflate")
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
+
+      ## needed if you want WAMPv2 binary serialization support
       'binary': ["msgpack-python>=0.4.0"]
    },
    packages = packages,
@@ -112,5 +139,18 @@ setup(
                   "Programming Language :: Python",
                   "Topic :: Internet",
                   "Topic :: Software Development :: Libraries"],
-   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub'
+   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
+
+
+if HAS_TWISTED:
+   # Make Twisted regenerate the dropin.cache, if possible. This is necessary
+   # because in a site-wide install, dropin.cache cannot be rewritten by
+   # normal users.
+   try:
+      from twisted.plugin import IPlugin, getPlugins
+      list(getPlugins(IPlugin))
+   except Exception as e:
+      log.warn("Failed to update Twisted plugin cache: {}".format(e))
+   else:
+      log.info("Twisted dropin.cache regenerated.")

@@ -328,7 +328,7 @@ class ConnectionRequest:
 
 
 
-class ConnectionResponse():
+class ConnectionResponse:
    """
    Thin-wrapper for WebSocket connection response information
    provided in :meth:`autobahn.websocket.WebSocketClientProtocol.onConnect` when a WebSocket
@@ -3364,9 +3364,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       Send out HTTP error response.
       """
-      response  = "HTTP/1.1 %d %s\x0d\x0a" % (code, reason)
+      response  = "HTTP/1.1 {} {}\x0d\x0a".format(code, reason)
       for h in responseHeaders:
-         response += "%s: %s\x0d\x0a" % (h[0], h[1])
+         response += "{}: {}\x0d\x0a".format(h[0], h[1])
       response += "\x0d\x0a"
       self.sendData(response.encode('utf8'))
 

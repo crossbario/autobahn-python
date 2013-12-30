@@ -22,15 +22,27 @@ __all__ = ['WebSocketServerProtocol',
            'WebSocketServerFactory',
            'WebSocketClientProtocol',
            'WebSocketClientFactory',
+           'WrappingWebSocketServerFactory',
+           'WrappingWebSocketClientFactory',
            'listenWS',
            'connectWS']
+
+from base64 import b64encode, b64decode
+
+from zope.interface import implementer
 
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.python import log
+from twisted.internet.interfaces import ITransport
 
 from autobahn.websocket import protocol
 from autobahn.websocket import http
+
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+                                        PerMessageDeflateOfferAccept, \
+                                        PerMessageDeflateResponse, \
+                                        PerMessageDeflateResponseAccept
 
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
@@ -235,6 +247,208 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
       does nothing. Override in derived class when appropriate.
       """
       pass
+
+
+
+@implementer(ITransport)
+class WrappingWebSocketAdapter:
+   """
+   An adapter for stream-based transport over WebSocket.
+
+   This follows "websockify" (https://github.com/kanaka/websockify)
+   and should be compatible with that.
+
+   It uses WebSocket subprotocol negotiation and 2 subprotocols:
+     - binary
+     - base64
+
+   Octets are either transmitted as the payload of WebSocket binary
+   messages when using the 'binary' subprotocol, or encoded with Base64
+   and then transmitted as the payload of WebSocket text messages when
+   using the 'base64' subprotocol.
+   """
+
+   def onConnect(self, requestOrResponse):
+
+      ## Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
+      ##
+      if isinstance(requestOrResponse, protocol.ConnectionRequest):
+         request = requestOrResponse
+         for p in request.protocols:
+            if p in ['binary', 'base64']:
+               self._binaryMode = (p == 'binary')
+               return p
+         raise http.HttpException(http.NOT_ACCEPTABLE[0], "this server only speaks 'binary' and 'base64' WebSocket subprotocols")
+      elif isinstance(requestOrResponse, protocol.ConnectionResponse):
+         response = requestOrResponse
+         if response.protocol not in ['binary', 'base64']:
+            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks 'binary' and 'base64' WebSocket subprotocols")
+         self._binaryMode = (response.protocol == 'binary')
+      else:
+         ## should not arrive here
+         raise Exception("logic error")
+
+   def onOpen(self):
+      self._proto.connectionMade()
+
+   def onMessage(self, payload, isBinary):
+      if isBinary != self._binaryMode:
+         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA, "message payload type does not match the negotiated subprotocol")
+      else:
+         if not isBinary:
+            try:
+               payload = b64decode(payload)
+            except Exception as e:
+               self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {}".format(e))
+         self._proto.dataReceived(payload)
+
+   def onClose(self, wasClean, code, reason):
+      self._proto.connectionLost(None)
+
+   def write(self, data):
+      ## part of ITransport
+      assert(type(data) == bytes)
+      if self._binaryMode:
+         self.sendMessage(data, isBinary = True)
+      else:
+         data = b64encode(data)
+         self.sendMessage(data, isBinary = False)
+
+   def writeSequence(self, data):
+      ## part of ITransport
+      for d in data:
+         self.write(data)
+
+   def loseConnection(self):
+      ## part of ITransport
+      self.sendClose()
+
+
+
+class WrappingWebSocketServerProtocol(WrappingWebSocketAdapter, WebSocketServerProtocol):
+   """
+   Server protocol for stream-based transport over WebSocket.
+   """
+
+
+
+class WrappingWebSocketClientProtocol(WrappingWebSocketAdapter, WebSocketClientProtocol):
+   """
+   Client protocol for stream-based transport over WebSocket.
+   """
+
+
+
+class WrappingWebSocketServerFactory(WebSocketServerFactory):
+   """
+   Wrapping server factory for stream-based transport over WebSocket.
+   """
+
+   def __init__(self,
+                factory,
+                url,
+                enableCompression = True,
+                autoFragmentSize = 0,
+                debug = True):
+      """
+      Constructor.
+
+      :param factory: Stream-based factory to be wrapped.
+      :type factory: A subclass of `twisted.internet.protocol.Factory`
+      :param url: WebSocket URL of the server this server factory will work for.
+      :type url: str
+      """
+      self._factory = factory
+
+      WebSocketServerFactory.__init__(self,
+         url = url,
+         protocols = ['binary', 'base64'],
+         debug = debug)
+
+      ## automatically fragment outgoing traffic into WebSocket frames
+      ## of this size
+      self.setProtocolOptions(autoFragmentSize = autoFragmentSize)
+
+      ## play nice and perform WS closing handshake
+      self.setProtocolOptions(failByDrop = False)
+
+      if enableCompression:
+         ## Enable WebSocket extension "permessage-deflate".
+         ##
+
+         ## Function to accept offers from the client ..
+         def accept(offers):
+            for offer in offers:
+               if isinstance(offer, PerMessageDeflateOffer):
+                  return PerMessageDeflateOfferAccept(offer)
+
+         self.setProtocolOptions(perMessageCompressionAccept = accept)
+
+
+   def buildProtocol(self, addr):
+      proto = WrappingWebSocketServerProtocol()
+      proto.factory = self
+      proto._proto = self._factory.buildProtocol(addr)
+      proto._proto.transport = proto
+      return proto
+
+
+
+class WrappingWebSocketClientFactory(WebSocketClientFactory):
+   """
+   Wrapping client factory for stream-based transport over WebSocket.
+   """
+
+   def __init__(self,
+                factory,
+                url,
+                enableCompression = True,
+                autoFragmentSize = 0,
+                debug = True):
+      """
+      Constructor.
+
+      :param factory: Stream-based factory to be wrapped.
+      :type factory: A subclass of `twisted.internet.protocol.Factory`
+      :param url: WebSocket URL of the server this client factory will connect to.
+      :type url: str
+      """
+      self._factory = factory
+
+      WebSocketClientFactory.__init__(self,
+         url = url,
+         protocols = ['binary', 'base64'],
+         debug = debug)
+
+      ## automatically fragment outgoing traffic into WebSocket frames
+      ## of this size
+      self.setProtocolOptions(autoFragmentSize = autoFragmentSize)
+
+      ## play nice and perform WS closing handshake
+      self.setProtocolOptions(failByDrop = False)
+
+      if enableCompression:
+         ## Enable WebSocket extension "permessage-deflate".
+         ##
+
+         ## The extensions offered to the server ..
+         offers = [PerMessageDeflateOffer()]
+         self.setProtocolOptions(perMessageCompressionOffers = offers)
+
+         ## Function to accept responses from the server ..
+         def accept(response):
+            if isinstance(response, PerMessageDeflateResponse):
+               return PerMessageDeflateResponseAccept(response)
+
+         self.setProtocolOptions(perMessageCompressionAccept = accept)
+
+
+   def buildProtocol(self, addr):
+      proto = WrappingWebSocketClientProtocol()
+      proto.factory = self
+      proto._proto = self._factory.buildProtocol(addr)
+      proto._proto.transport = proto
+      return proto
 
 
 

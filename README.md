@@ -1,5 +1,4 @@
-AutobahnPython
-==============
+# Autobahn|Python
 
 **Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
