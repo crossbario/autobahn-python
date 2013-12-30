@@ -60,6 +60,15 @@ def _parseOptions(options):
 
       opts['autoFragmentSize'] = value
 
+   if 'debug' in options:
+      value = options['debug'].lower().strip()
+      if value == 'true':
+         opts['debug'] = True
+      elif value == 'false':
+         opts['debug'] = False
+      else:
+         raise Exception("invalid value '{}' for debug".format(value))
+
    return opts
 
 
@@ -70,25 +79,43 @@ class AutobahnServerParser(object):
    prefix = "autobahn"
 
    def parseStreamServer(self, reactor, description, **options):
-      ## "description" is the underyling stream descriptor like
-      ## eg "tcp:9000:interface=0.0.0.0" while "options" contains
-      ## the rest, eg {'url': 'ws://localhost:9000'}
+
+      ## The present endpoint plugin is intended to be used as in the
+      ## following for running a streaming protocol over WebSocket over
+      ## an underlying stream transport.
+      ##
+      ##  endpoint = serverFromString(reactor,
+      ##    "autobahn:tcp\:9000\:interface\=0.0.0.0:url=ws\://localhost\:9000:compress=false"
+      ##
+      ## This will result in `parseStreamServer` to be called will
+      ##
+      ##   description == tcp:9000:interface=0.0.0.0
+      ##
+      ## and
+      ##
+      ##   options == {'url': 'ws://localhost:9000', 'compress': 'false'}
+      ##
+      ## Essentially, we are using the `\:` escape to coerce the endpoint descriptor
+      ## of the underyling stream transport into one (first) positional argument.
+      ##
+      ## Note that the `\:` within "url" is another form of escaping!
       ##
       opts = _parseOptions(options)
       endpoint = serverFromString(reactor, description)
-      return AutobahnServerEndpoint(endpoint, opts)
+      return AutobahnServerEndpoint(reactor, endpoint, opts)
 
 
 @implementer(IPlugin)
 @implementer(IStreamServerEndpoint)
 class AutobahnServerEndpoint(object):
 
-   def __init__(self, endpoint, options):
+   def __init__(self, reactor, endpoint, options):
+      self._reactor = reactor
       self._endpoint = endpoint
       self._options = options
 
    def listen(self, protocolFactory):
-      return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, **self._options))
+      return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, reactor = self._reactor, **self._options))
 
 
 @implementer(IPlugin)
@@ -97,24 +124,32 @@ class AutobahnClientParser(object):
 
    prefix = "autobahn"
 
-   def parseStreamClient(self, reactor, description, **options):
-      print("*"*10)
-      print(description)
+## <oberstet> Is there are particular reason why "plugin.parseStreamServer" provides a "reactor" argument while "plugin.parseStreamClient" does not?
+## <oberstet> http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.2.0/twisted/internet/endpoints.py#L1396
+## <oberstet> http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.2.0/twisted/internet/endpoints.py#L1735
+
+## => http://twistedmatrix.com/trac/ticket/4956
+## => https://twistedmatrix.com/trac/ticket/5069
+
+#   def parseStreamClient(self, reactor, description, **options):
+   def parseStreamClient(self, description, **options):
+      from twisted.internet import reactor
       opts = _parseOptions(options)
       endpoint = clientFromString(reactor, description)
-      return AutobahnClientEndpoint(endpoint, opts)
+      return AutobahnClientEndpoint(reactor, endpoint, opts)
 
 
 @implementer(IPlugin)
 @implementer(IStreamClientEndpoint)
 class AutobahnClientEndpoint(object):
 
-   def __init__(self, endpoint, options):
+   def __init__(self, reactor, endpoint, options):
+      self._reactor = reactor
       self._endpoint = endpoint
       self._options = options
 
-   def listen(self, protocolFactory):
-      return self._endpoint.connect(WrappingWebSocketClientFactory(protocolFactory, **self._options))
+   def connect(self, protocolFactory):
+      return self._endpoint.connect(WrappingWebSocketClientFactory(protocolFactory, reactor = self._reactor, **self._options))
 
 
 autobahnServerParser = AutobahnServerParser()

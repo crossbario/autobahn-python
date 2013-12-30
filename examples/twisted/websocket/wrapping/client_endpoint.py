@@ -23,7 +23,7 @@ class HelloClientProtocol(Protocol):
 
    def connectionMade(self):
       print("connectionMade")
-      self.transport.write('hello' * 100)
+      self.transport.write('hello')
 
    def dataReceived(self, data):
       print("dataReceived: {}".format(data))

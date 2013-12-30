@@ -216,12 +216,13 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
    def __init__(self, *args, **kwargs):
 
-      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
-
       if 'loop' in kwargs:
          self.loop = kwargs['loop']
+         del kwargs['loop']
       else:
          self.loop = asyncio.get_event_loop()
+
+      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
 
@@ -232,9 +233,10 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
    def __init__(self, *args, **kwargs):
 
-      protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
-
       if 'loop' in kwargs:
          self.loop = kwargs['loop']
+         del kwargs['loop']
       else:
          self.loop = asyncio.get_event_loop()
+
+      protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)

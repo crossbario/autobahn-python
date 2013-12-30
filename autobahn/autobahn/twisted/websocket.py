@@ -189,14 +189,15 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
    def __init__(self, *args, **kwargs):
 
-      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
-
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
          self.reactor = kwargs['reactor']
+         del kwargs['reactor']
       else:
          from twisted.internet import reactor
          self.reactor = reactor
+
+      protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
    def startFactory(self):
@@ -223,14 +224,16 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
    def __init__(self, *args, **kwargs):
 
-      protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
-
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
          self.reactor = kwargs['reactor']
+         del kwargs['reactor']
       else:
          from twisted.internet import reactor
          self.reactor = reactor
+
+      protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
+
 
 
    def clientConnectionFailed(self, connector, reason):
@@ -347,6 +350,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
    def __init__(self,
                 factory,
                 url,
+                reactor = None,
                 enableCompression = True,
                 autoFragmentSize = 0,
                 debug = False):
@@ -362,6 +366,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
 
       WebSocketServerFactory.__init__(self,
          url = url,
+         reactor = reactor,
          protocols = ['binary', 'base64'],
          debug = debug)
 
@@ -402,6 +407,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
    def __init__(self,
                 factory,
                 url,
+                reactor = None,
                 enableCompression = True,
                 autoFragmentSize = 0,
                 debug = False):
@@ -417,6 +423,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
 
       WebSocketClientFactory.__init__(self,
          url = url,
+         reactor = reactor,
          protocols = ['binary', 'base64'],
          debug = debug)
 
