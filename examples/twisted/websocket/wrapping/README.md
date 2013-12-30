@@ -1,9 +1,13 @@
-# Stream-based Transport over WebSocket
+# Stream-based Endpoints over WebSocket
 
 **Autobahn**|Python provides facilities to wrap existing stream-based Twisted factories and protocols with WebSocket. 
 That means, you can run any stream-based protocol *over* WebSocket without any modification to the existing protocol and factory.
 
 Why would you want to do that? For example, to create a VNC, SSH, IRC, IMAP or other client for some existing protocol that runs on browsers, and connects to an *unmodified* server.
+
+> This example is about running any stream-based Twisted endpoint over WebSocket.
+> **Autobahn**|Python also supports running WebSocket over any stream-based Twisted endpoint. Please see [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_endpoints).
+> 
 
 ## WebSocket Transport Scheme
 
