@@ -3,9 +3,18 @@
 **Autobahn**|Python provides facilities to wrap existing stream-based Twisted factories and protocols with WebSocket. 
 That means, you can run any stream-based protocol *over* WebSocket without any modification to the existing protocol and factory.
 
-Why would you want to do that? For example, to run a VNC, SSH or IMAP client in a HTML5 browser.
+Why would you want to do that? For example, to run write a VNC, SSH or IMAP client in JavaScript and run it in a HTML5 browser.
 
-**Autobahn**|Python follows the transport scheme established by [websockify](https://github.com/kanaka/websockify): a WebSocket subprotocol is negotiated, either `binary` or `base64`. With the `binary` WebSocket subprotocol, any data is simply sent as payload of WebSocket binary messages. With the `base64` WebSocket subprotocol, any data is first Base64 encoded before being sent as the payload of WebSocket text messages.
+## WebSocket Transport Scheme
+
+**Autobahn**|Python follows the transport scheme established by [websockify](https://github.com/kanaka/websockify): a WebSocket subprotocol is negotiated, either `binary` or `base64`.
+
+With the `binary` WebSocket subprotocol, any data is simply sent as payload of WebSocket binary messages. With the `base64` WebSocket subprotocol, any data is first Base64 encoded before being sent as the payload of WebSocket text messages.
+
+Since **Autobahn**|Python implements WebSocket compression, traffic is automatically compressed ("permessage-deflate"). This can be turned off if you want.
+
+> Currently the only browser with support for WebSocket compression is Chrome 32+.
+> 
 
 ## Wrapping Factories and Protocols
 
@@ -41,8 +50,7 @@ This allows you to run any stream-based, endpoint-using program over the WebSock
 ```python
 wrappedFactory = Factory.forProtocol(HelloClientProtocol)
 
-endpoint = clientFromString(reactor,
-	"autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000")
+endpoint = clientFromString(reactor, "autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000")
 endpoint.connect(wrappedFactory)
 ```
 
