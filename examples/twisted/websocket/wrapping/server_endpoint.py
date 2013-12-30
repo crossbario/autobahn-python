@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
    wrappedFactory = Factory.forProtocol(HelloServerProtocol)
 
-   endpoint = serverFromString(reactor, "autobahn:tcp\:9000\:interface\=0.0.0.0:url=ws\://localhost\:9000:compress=false")
+   endpoint = serverFromString(reactor, "autobahn:tcp\:9000:url=ws\://localhost\:9000")
    endpoint.listen(wrappedFactory)
 
    reactor.run()
