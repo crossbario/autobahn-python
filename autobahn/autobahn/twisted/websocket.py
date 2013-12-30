@@ -349,7 +349,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
                 url,
                 enableCompression = True,
                 autoFragmentSize = 0,
-                debug = True):
+                debug = False):
       """
       Constructor.
 
@@ -404,7 +404,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
                 url,
                 enableCompression = True,
                 autoFragmentSize = 0,
-                debug = True):
+                debug = False):
       """
       Constructor.
 

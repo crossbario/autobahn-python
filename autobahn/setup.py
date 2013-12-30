@@ -78,7 +78,7 @@ except:
 else:
    log.info("Twisted detected - installing Autobahn/Twisted integration")
    packages.append('autobahn.twisted')
-   packages.append('autobahn.twisted.plugins')
+   packages.append('twisted.plugins')
    HAS_TWISTED = True
 
 
@@ -154,3 +154,30 @@ if HAS_TWISTED:
       log.warn("Failed to update Twisted plugin cache: {}".format(e))
    else:
       log.info("Twisted dropin.cache regenerated.")
+
+   ## verify that Autobahn Twisted endpoints have been installed
+
+   from twisted.internet.interfaces import IStreamServerEndpointStringParser
+   from twisted.internet.interfaces import IStreamClientEndpointStringParser
+
+   has_server_endpoint = False
+   for plugin in getPlugins(IStreamServerEndpointStringParser):
+      if plugin.prefix == "autobahn":
+         has_server_endpoint = True
+         break
+
+   if has_server_endpoint:
+      log.info("Autobahn Twisted stream server endpoint successfully installed")
+   else:
+      log.warn("Autobahn Twisted stream server endpoint installation seems to have failed")
+
+   has_client_endpoint = False
+   for plugin in getPlugins(IStreamClientEndpointStringParser):
+      if plugin.prefix == "autobahn":
+         has_client_endpoint = True
+         break
+
+   if has_client_endpoint:
+      log.info("Autobahn Twisted stream client endpoint successfully installed")
+   else:
+      log.warn("Autobahn Twisted stream client endpoint installation seems to have failed")
