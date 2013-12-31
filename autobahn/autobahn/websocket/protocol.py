@@ -1944,8 +1944,8 @@ class WebSocketProtocol:
                   if self.invalidPayload("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
                      return False
 
-            if self.debug:
-               self.factory._log("Traffic statistics:\n" + str(self.trafficStats))
+            #if self.debug:
+            #   self.factory._log("Traffic statistics:\n" + str(self.trafficStats))
 
             if self.state == WebSocketProtocol.STATE_OPEN:
                self.trafficStats.incomingWebSocketMessages += 1
@@ -2621,8 +2621,8 @@ class WebSocketProtocol:
                self.sendFrame(opcode = 0, payload = payload[i:j], fin = done, sync = sync)
             i += pfs
 
-      if self.debug:
-         self.factory._log("Traffic statistics:\n" + str(self.trafficStats))
+      #if self.debug:
+      #   self.factory._log("Traffic statistics:\n" + str(self.trafficStats))
 
 
    def _parseExtensionsHeader(self, header, removeQuotes = True):
