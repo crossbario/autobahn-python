@@ -1,11 +1,11 @@
 # Autobahn|Python
 
-## Introduction
-
 **Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
 * **[The WebSocket Protocol](http://tools.ietf.org/html/rfc6455)**
 * **[The Web Application Messaging Protocol (WAMP)](http://wamp.ws/)**
+
+in Python running on [**Twisted**](http://twistedmatrix.com/) and [**asyncio**](http://docs.python.org/3.4/library/asyncio.html).
 
 WebSocket allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and WAMP adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on top of WebSocket. 
 
@@ -21,9 +21,6 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
 * implements WebSocket [RFC6455](http://tools.ietf.org/html/rfc6455), Draft Hybi-10+, Hixie-76
 * implements [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression)
 * implements [WAMPv1](http://wamp.ws/spec/) and [WAMPv2](https://github.com/tavendo/WAMP/blob/master/spec/README.md) (*upcoming*)
-
-and more
-
 * high-performance, fully asynchronous implementation
 * best-in-class standards conformance (100% strict passes with [Autobahn Testsuite](http://autobahn.ws/testsuite))
 * message-, frame- and streaming-APIs for WebSocket
