@@ -252,6 +252,8 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
       pass
 
 
+import binascii
+
 
 @implementer(ITransport)
 class WrappingWebSocketAdapter:
@@ -303,12 +305,14 @@ class WrappingWebSocketAdapter:
                payload = b64decode(payload)
             except Exception as e:
                self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {}".format(e))
+         #print("forwarding payload: {}".format(binascii.hexlify(payload)))
          self._proto.dataReceived(payload)
 
    def onClose(self, wasClean, code, reason):
       self._proto.connectionLost(None)
 
    def write(self, data):
+      #print("sending payload: {}".format(binascii.hexlify(data)))
       ## part of ITransport
       assert(type(data) == bytes)
       if self._binaryMode:
@@ -396,6 +400,16 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
       proto._proto = self._factory.buildProtocol(addr)
       proto._proto.transport = proto
       return proto
+
+
+   def startFactory(self):
+      self._factory.startFactory()
+      WebSocketServerFactory.startFactory(self)
+
+
+   def stopFactory(self):
+      self._factory.stopFactory()
+      WebSocketServerFactory.stopFactory(self)
 
 
 

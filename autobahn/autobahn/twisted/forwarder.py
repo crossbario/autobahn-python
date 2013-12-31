@@ -25,15 +25,57 @@ from twisted.internet.endpoints import clientFromString, serverFromString
 from twisted.application import service
 
 
+
+class DestEndpointForwardingProtocol(Protocol):
+
+   def connectionMade(self):
+      #print("DestEndpointForwardingProtocol.connectionMade")
+      pass
+
+   def dataReceived(self, data):
+      #print("DestEndpointForwardingProtocol.dataReceived: {}".format(data))
+      if self.factory._sourceProtocol:
+         self.factory._sourceProtocol.transport.write(data)
+
+   def connectionLost(self, reason):
+      #print("DestEndpointForwardingProtocol.connectionLost")
+      if self.factory._sourceProtocol:
+         self.factory._sourceProtocol.transport.loseConnection()
+
+
+
+class DestEndpointForwardingFactory(Factory):
+
+   def __init__(self, sourceProtocol):
+      self._sourceProtocol = sourceProtocol
+      self._proto = None
+
+   def buildProtocol(self, addr):
+      self._proto = DestEndpointForwardingProtocol()
+      self._proto.factory = self
+      return self._proto
+
+
+
 class EndpointForwardingProtocol(Protocol):
 
    @inlineCallbacks
    def connectionMade(self):
-      print("connectionMade")
-      self.transport.write('how are you?')
+      #print("EndpointForwardingProtocol.connectionMade")
+      self._destFactory = DestEndpointForwardingFactory(self)
+      self._destEndpoint = clientFromString(self.factory.service._reactor,
+                                            self.factory.service._destEndpointDescriptor)
+      self._destEndpointPort = yield self._destEndpoint.connect(self._destFactory)
 
    def dataReceived(self, data):
-      print("dataReceived: {}".format(data))
+      #print("EndpointForwardingProtocol.dataReceived: {}".format(data))
+      if self._destFactory._proto:
+         self._destFactory._proto.transport.write(data)
+
+   def connectionLost(self, reason):
+      #print("EndpointForwardingProtocol.connectionLost")
+      if self._destFactory._proto:
+         self._destFactory._proto.transport.loseConnection()
 
 
 
