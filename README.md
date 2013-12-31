@@ -27,28 +27,39 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
 * supports TLS (secure WebSocket) and proxies
 * Open-source (Apache 2 [license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
+
+## Installation
+
+You will need at least one of Twisted or Asyncio as your networking framework.
+
+> Asyncio comes bundled with Python 3.4. For Python 3.3, install it from [here](https://pypi.python.org/pypi/asyncio). For Twisted, please see [here](http://twistedmatrix.com/).
+
+Install from the [Python Package Index](http://pypi.python.org/pypi/autobahn):
+
+	easy_install autobahn
+
+Install from sources:
+
+	python setup.py install
+
+> If installing from source, you should checkout a tagged release. Do not use head/trunk.
+> 
+
+
 ## Getting Started
 
-Autobahn comes with lots of [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples) with ready-to-run code. The "Hello, world!" of WebSocket is probably the "WebSocket Echo":
+The *"Hello, world!"* of WebSocket is probably:
 
  * [WebSocket Echo (Twisted-based)](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo)
  * [WebSocket Echo (Asyncio-based)](https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo)
 
+Autobahn comes with lots of [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples) with ready-to-run code.
 
-Documentation
--------------
-
-To get started quickly, check out the [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples).
 For complete API documentation, please consult the [reference documentation](https://autobahnpython.readthedocs.org/).
 
-
-Where to go
------------
-
-For more information, including getting started, tutorials and reference documentation, please visit the project's [homepage](http://autobahn.ws/python), or check out the examples in this repository.
+For more information, including some tutorials, please visit the project's [homepage](http://autobahn.ws/python).
 
 
-Get in touch
-------------
+## Get in touch
 
-Get in touch on IRC #autobahn on chat.freenode.net or join the [mailing list](http://groups.google.com/group/autobahnws).
+Get in touch on IRC `#autobahn` on `chat.freenode.net`, follow us on [Twitter](https://twitter.com/autobahnws) or join the [mailing list](http://groups.google.com/group/autobahnws).
