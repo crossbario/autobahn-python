@@ -4,7 +4,9 @@
  * asyncio support
  * Python 3 support
  * initial support for WAMPv2
- * support WebSocket (and WAMP) over Twisted endpoints
+ * support WebSocket (and WAMP) over Twisted stream endpoints
+ * support Twisted stream endpoints over WebSocket
+ * twistd stream endpoint forwarding plugin
  * various new examples
  * fix Flash policy factory
 

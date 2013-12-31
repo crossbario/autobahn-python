@@ -64,7 +64,7 @@ else:
 ## Autobahn core packages
 ##
 packages = ['autobahn', 
-            'autobahn.wamp',
+            'autobahn.wamp2',
             'autobahn.websocket']
 
 

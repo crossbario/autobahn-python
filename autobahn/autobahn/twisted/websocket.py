@@ -191,7 +191,11 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
-         self.reactor = kwargs['reactor']
+         if kwargs['reactor']:
+            self.reactor = kwargs['reactor']
+         else:
+            from twisted.internet import reactor
+            self.reactor = reactor
          del kwargs['reactor']
       else:
          from twisted.internet import reactor
@@ -226,7 +230,11 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
-         self.reactor = kwargs['reactor']
+         if kwargs['reactor']:
+            self.reactor = kwargs['reactor']
+         else:
+            from twisted.internet import reactor
+            self.reactor = reactor
          del kwargs['reactor']
       else:
          from twisted.internet import reactor
