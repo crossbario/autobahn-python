@@ -1,0 +1,54 @@
+<html>
+    <head>
+        <title>Telnet client using WebSocket</title>
+        <script src="telnet/base64.js"></script>
+        <script src="telnet/util.js"></script>
+        <script src="telnet/websock.js"></script>
+        <script src="telnet/webutil.js"></script> 
+        <script src="telnet/keysym.js"></script> 
+        <script src="telnet/VT100.js"></script> 
+        <script src="telnet/wstelnet.js"></script> 
+    </head>
+    <body>
+        <p>Telnet client example code from the <a href="https://github.com/kanaka/websockify">Websockify project</a>!</p>
+        Host: <input id="host" style="width:100" type="text" value="192.168.1.37" />&nbsp;
+        Port: <input id="port" style="width:50" type="text" value="9000" />&nbsp;
+        Encrypt: <input id='encrypt' type='checkbox'>&nbsp;
+        <input id='connectButton' type='button' value='Connect' style='width:100px' onclick="connect();">&nbsp;
+        <br><br>
+        <pre id="terminal"></pre>
+        <script>
+            var telnet;
+
+            function connect() {
+                telnet.connect($D('host').value,
+                               $D('port').value,
+                               $D('encrypt').checked);
+                $D('connectButton').disabled = true;
+                $D('connectButton').value = "Connecting";
+            }
+
+            function disconnect() {
+                $D('connectButton').disabled = true;
+                $D('connectButton').value = "Disconnecting";
+                telnet.disconnect();
+            }
+
+            function connected() {
+                $D('connectButton').disabled = false;
+                $D('connectButton').value = "Disconnect";
+                $D('connectButton').onclick = disconnect;
+            }
+
+            function disconnected() {
+                $D('connectButton').disabled = false;
+                $D('connectButton').value = "Connect";
+                $D('connectButton').onclick = connect;
+            }
+
+            window.onload = function() {
+                telnet = Telnet('terminal', connected, disconnected);
+            }
+        </script>
+    </body>
+</html>
