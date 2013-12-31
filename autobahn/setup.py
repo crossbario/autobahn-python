@@ -16,8 +16,11 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
 from setuptools import setup
 from distutils import log
+
 
 import sys
 PY3 = sys.version_info.major > 2
@@ -71,9 +74,9 @@ packages = ['autobahn',
 ## Twisted integration
 ##
 try:
-   import twisted
+   from twisted.internet import reactor
 except:
-   log.info("Twisted not installed - skipping Twisted support packages")
+   log.warn("Twisted not installed - skipping Twisted support packages")
    HAS_TWISTED = False
 else:
    log.info("Twisted detected - installing Autobahn/Twisted integration")
@@ -86,14 +89,14 @@ else:
 ##
 if PY3:
    try:
-      import asyncio
+      from asyncio import Future
    except:
-      log.info("Asyncio not available - skipping Asyncio support packages")
+      log.warn("Asyncio not available - skipping Asyncio support packages")
    else:
       log.info("Asyncio detected - installing Autobahn/Asyncio integration")
       packages.append('autobahn.asyncio')
 else:
-   log.info("Python 2 detected - skipping Autobahn/Asyncio integration")
+   log.warn("Python 2 detected - skipping Autobahn/Asyncio integration")
 
 
 ## Now install Autobahn ..
@@ -156,28 +159,31 @@ if HAS_TWISTED:
       log.info("Twisted dropin.cache regenerated.")
 
    ## verify that Autobahn Twisted endpoints have been installed
+   try:
+      from twisted.internet.interfaces import IStreamServerEndpointStringParser
+      from twisted.internet.interfaces import IStreamClientEndpointStringParser
 
-   from twisted.internet.interfaces import IStreamServerEndpointStringParser
-   from twisted.internet.interfaces import IStreamClientEndpointStringParser
+      has_server_endpoint = False
+      for plugin in getPlugins(IStreamServerEndpointStringParser):
+         if plugin.prefix == "autobahn":
+            has_server_endpoint = True
+            break
 
-   has_server_endpoint = False
-   for plugin in getPlugins(IStreamServerEndpointStringParser):
-      if plugin.prefix == "autobahn":
-         has_server_endpoint = True
-         break
+      if has_server_endpoint:
+         log.info("Autobahn Twisted stream server endpoint successfully installed")
+      else:
+         log.warn("Autobahn Twisted stream server endpoint installation seems to have failed")
 
-   if has_server_endpoint:
-      log.info("Autobahn Twisted stream server endpoint successfully installed")
-   else:
-      log.warn("Autobahn Twisted stream server endpoint installation seems to have failed")
+      has_client_endpoint = False
+      for plugin in getPlugins(IStreamClientEndpointStringParser):
+         if plugin.prefix == "autobahn":
+            has_client_endpoint = True
+            break
 
-   has_client_endpoint = False
-   for plugin in getPlugins(IStreamClientEndpointStringParser):
-      if plugin.prefix == "autobahn":
-         has_client_endpoint = True
-         break
+      if has_client_endpoint:
+         log.info("Autobahn Twisted stream client endpoint successfully installed")
+      else:
+         log.warn("Autobahn Twisted stream client endpoint installation seems to have failed")
 
-   if has_client_endpoint:
-      log.info("Autobahn Twisted stream client endpoint successfully installed")
-   else:
-      log.warn("Autobahn Twisted stream client endpoint installation seems to have failed")
+   except:
+      log.warn("Autobahn Twisted endpoint installation could not be verified")

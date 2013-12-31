@@ -40,7 +40,7 @@ class MyClientProtocol(WebSocketClientProtocol):
       ## start sending messages every second ..
       while True:
          self.sendMessage(u"Hello, world!".encode('utf8'))
-         self.sendMessage(b"\x00\x01\x03\x04", binary = True)
+         self.sendMessage(b"\x00\x01\x03\x04", isBinary = True)
          yield sleep(1)
 
    def onMessage(self, payload, isBinary):

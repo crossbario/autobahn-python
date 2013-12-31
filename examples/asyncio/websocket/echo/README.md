@@ -1,4 +1,4 @@
-# WebSocket Echo (Twisted-based)
+# WebSocket Echo (Asyncio-based)
 
 This example shows a WebSocket echo server that will echo back any WebSocket message it receives to the client that sent the message.
 
@@ -6,7 +6,7 @@ It also includes a WebSocket client that will send a WebSocket message every sec
 
 Lastly, a HTML5 client is also included.
 
-This example uses the Twisted integration of **Autobahn**|Python. You can find the corresponding example using the Asyncio integration [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo).
+This example uses the Asyncio integration of **Autobahn**|Python. You can find the corresponding example using the Twisted integration [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo).
 
 ## Running
 
