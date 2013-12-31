@@ -21,7 +21,7 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 
-from autobahn.websocket import connectWS
+from autobahn.twisted.websocket import connectWS
 from autobahn.wamp import WampClientFactory, \
                           WampClientProtocol
 

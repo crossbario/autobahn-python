@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012 Tavendo GmbH
+##  Copyright (C) 2012-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ from twisted.internet import reactor, defer
 
 from txdbus import error, client
 
-from autobahn.websocket import connectWS
+from autobahn.twisted.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampCraClientProtocol
 
 

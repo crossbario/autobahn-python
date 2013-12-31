@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012 Tavendo GmbH
+##  Copyright (C) 2012-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ from pprint import pprint
 from twisted.python import log
 from twisted.internet import reactor
 
-from autobahn.websocket import connectWS
+from autobahn.twisted.websocket import connectWS
 from autobahn.wamp import WampClientFactory, WampCraClientProtocol
 
 

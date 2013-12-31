@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright (C) 2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import sys
 from twisted.python import log
 from twisted.internet import reactor
 
-from autobahn.websocket import listenWS
+from autobahn.twisted.websocket import listenWS
 from autobahn.wamp import WampServerFactory, WampServerProtocol
 
 
