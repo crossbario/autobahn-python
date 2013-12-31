@@ -75,3 +75,38 @@ You can find a complete example for both client and server in these files:
  1. `"autobahn:tcp\:9000:url=ws\://localhost\:9000"`
  1. `"autobahn:tcp\:9000:url=ws\://localhost\:9000:autofrag=4096:debug=true"`
  1. `"autobahn:tcp\:9000\:interface\=0.0.0.0:url=ws\://localhost\:9000:compress=true"`
+
+
+## Twistd
+
+### Endpoint Forwarder
+
+**Autobahn**|Python further includes a `twistd` (the Twisted Daemon) plugin that provides a generic **stream endpoint forwarder**.
+
+The forwarder can listen on any stream-based server endpoint and forward traffic to any other stream-based client endpoint.
+
+As an example, here is how you forward WebSocket to Telnet:
+
+	twistd -n endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000" --dest_endpoint="tcp:127.0.0.1:23"
+
+Included in this directory is a Terminal client written in JavaScript (this code is from the [websockify project](https://github.com/kanaka/websockify)).
+
+Open `telnet.html` in your browser, provide the server IP and port (the one running `twistd`) and press connect.
+
+As soon as the Process support for endpoints in Twisted is fully here, the forwarder will allow you to expose any program over WebSocket, by forwarding the program's `stdin` and `stdout`.
+
+Essentially, these features are equivalent of what the following two projects provide:
+
+ * [websockify](https://github.com/kanaka/websockify)
+ * [websocketd](https://github.com/joewalnes/websocketd)
+
+But since Twisted endpoints are extensible, eg support for serial is coming, this will also allow you to expose serial devices directly over WebSocket!
+
+### Manhole
+
+Start manhole
+
+	echo "admin:admin" > passwd
+	twistd -n manhole --telnetPort "autobahn:tcp\:9000:url=ws\://localhost\:9000:compress=false:debug=true" --passwd ./passwd
+
+It seems, login is possible, but then the JS Terminal seems to get confused by Manhole sending `fffc01`. I don't know what's going on.
