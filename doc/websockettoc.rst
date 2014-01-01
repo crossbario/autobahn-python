@@ -8,5 +8,6 @@ WebSocket
    websocketbase
    websocketclient
    websocketserver
-   websocketaux
    websocketcompress
+   websocketaux
+   twistedintegration

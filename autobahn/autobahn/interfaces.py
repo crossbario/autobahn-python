@@ -23,7 +23,7 @@ from zope.interface import Interface, Attribute
 
 class IWebSocketChannel(Interface):
    """
-   A WebSocket channel is a bidirectional, ordered, reliable message channel
+   A WebSocket channel is a bidirectional, full-duplex, ordered, reliable message channel
    over a WebSocket connection as specified in RFC6455.
 
    This interface defines a message-based API to WebSocket plus auxiliary hooks
@@ -32,8 +32,9 @@ class IWebSocketChannel(Interface):
 
    def onConnect(requestOrResponse):
       """
-      Callback fired when a client connects (with request from client) or when
-      server connection established (with response from server).
+      Callback fired during WebSocket opening handshake when a client connects (with
+      request from client) or when server connection established (with response from
+      server).
 
       :param requestOrResponse: Connection request or response.
       :type requestOrResponse: Instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
@@ -43,6 +44,7 @@ class IWebSocketChannel(Interface):
    def onOpen():
       """
       Callback fired when the initial WebSocket opening handshake was completed.
+      You now can send and receive WebSocket messages.
       """
 
    def sendMessage(payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
@@ -51,22 +53,22 @@ class IWebSocketChannel(Interface):
 
       You can send text or binary messages, and optionally specifiy a payload fragment size.
       When the latter is given, the payload will be split up into WebSocket frames each with
-      payload <= the `fragmentSize` given.
+      payload length `<= fragmentSize`.
 
       :param payload: The message payload.
       :type payload: bytes
       :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
-      :type bool
+      :type isBinary: bool
       :param fragmentSize: Fragment message into WebSocket fragments of this size.
       :type fragmentSize: int
       :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
-                   this normally, performance likely will suffer significantly. This feature
-                   is mainly here for use by the testsuite.
+                   this normally unless you know what you are doing. Performance likely will
+                   suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
       :type sync: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to
-                            Hybi-Mode and when WebSocket compression has been negotiated on
-                            the WebSocket client-server connection. Use when you know the
-                            payload is not compressible (e.g. encrypted or already compressed).
+                            Hybi-Mode and only when WebSocket compression has been negotiated on
+                            the WebSocket connection. Use when you know the payload 
+                            uncompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
@@ -85,8 +87,8 @@ class IWebSocketChannel(Interface):
       """
       Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
-      :param code: An optional close status code (1000 for normal close or 3000-4999 for
-                   application specific close)..
+      :param code: An optional close status code (`1000` for normal close or `3000-4999` for
+                   application specific close).
       :type code: int
       :param reason: An optional close reason (a string that when present, a status
                      code MUST also be present).
@@ -106,6 +108,14 @@ class IWebSocketChannel(Interface):
       :type reason: str
       """
 
+   def sendPreparedMessage(preparedMsg):
+      """
+      Send a message that was previously prepared with :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`.
+
+      :param prepareMessage: A previsouly prepared message.
+      :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
+      """
+
    def sendPing(payload = None):
       """
       Send a WebSocket ping to the peer.
@@ -113,7 +123,7 @@ class IWebSocketChannel(Interface):
       A peer is expected to pong back the payload a soon as "practical". When more than
       one ping is outstanding at a peer, the peer may elect to respond only to the last ping.
 
-      :param payload: An (optional) arbitrary payload of length < 126 octets.
+      :param payload: An (optional) arbitrary payload of length `<126` octets.
       :type payload: bytes
       """
 
@@ -122,7 +132,7 @@ class IWebSocketChannel(Interface):
       Callback fired when a WebSocket ping was received. A default implementation responds
       by sending a WebSocket pong.
 
-      :param payload: Payload of ping (when there was any). Can be arbitrary, up to 125 octets.
+      :param payload: Payload of ping (when there was any). Can be arbitrary, up to `125` octets.
       :type payload: bytes
       """
 
@@ -137,7 +147,7 @@ class IWebSocketChannel(Interface):
       :type payload: bytes
       """
 
-   def onPong(self, payload):
+   def onPong(payload):
       """
       Callback fired when a WebSocket pong was received. A default implementation does nothing.
 
@@ -181,9 +191,9 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
       :type isBinary: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to
-                            Hybi-Mode and when WebSocket compression has been negotiated on
-                            the WebSocket client-server connection. Use when you know the
-                            payload is not compressible (e.g. encrypted or already compressed).
+                            Hybi-Mode and only when WebSocket compression has been negotiated on
+                            the WebSocket connection. Use when you know the payload 
+                            uncompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
@@ -195,12 +205,12 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
                       be UTF-8 encoded already.
       :type payload: bytes
       :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
-                   this normally, performance likely will suffer significantly. This feature
-                   is mainly here for use by the testsuite.
+                   this normally unless you know what you are doing. Performance likely will
+                   suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
       :type sync: bool
       """
 
-   def endMessage(self):
+   def endMessage():
       """
       End a message previously begun message. No more frames may be sent (for that message).
       You have to begin a new message before sending again.
@@ -213,7 +223,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
    Streaming API to a WebSocket channel.
    """
 
-   def onMessageFrameBegin(self, length):
+   def onMessageFrameBegin(length):
       """
       Callback fired when receiving a new message frame has begun.
       A default implementation will prepare to buffer message frame data.
@@ -222,48 +232,49 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
       :type length: int
       """
 
-   def onMessageFrameData(self, payload):
+   def onMessageFrameData(payload):
       """
       Callback fired when receiving data within a previously begun message frame.
       A default implementation will buffer data for frame.
 
       :param payload: Partial payload for message frame.
-      :type payload: str
+      :type payload: bytes
       """
 
-   def onMessageFrameEnd(self):
+   def onMessageFrameEnd():
       """
       Callback fired when a previously begun message frame has been completely received.
       A default implementation will flatten the buffered frame data and
       fire `onMessageFrame`.
       """
 
-   def beginMessageFrame(self, length):
+   def beginMessageFrame(length):
       """
       Begin sending a new message frame.
 
-      :param length: Length of the frame which is to be started. Must be >= 0 and <= 2^63.
+      :param length: Length of the frame which is to be started. Must be `>= 0` and `<= 2^63`.
       :type length: int
       """
 
-   def sendMessageFrameData(self, payload, sync = False):
+   def sendMessageFrameData(payload, sync = False):
       """
       Send out data when within a message frame (message was begun, frame was begun).
       Note that the frame is automatically ended when enough data has been sent.
       In other words, there is no `endMessageFrame`, since you have begun the frame
       specifying the frame length, which implicitly defined the frame end. This is different
-      from messages, which you begin and end, since a message can contain an unlimited number
-      of frames.
+      from messages, which you begin *and* end explicitly , since a message can contain
+      an unlimited number of frames.
 
-      :param payload: bytes
+      :param payload: Frame payload to send.
+      :type payload: bytes
       :param sync: Iff `True`, try to force data onto the wire immediately. Note: do NOT use
-                   this normally, performance likely will suffer significantly. This feature
-                   is mainly here for use by the testsuite.
+                   this normally unless you know what you are doing. Performance likely will
+                   suffer significantly. This feature is mainly here for use by Autobahn|Testsuite.
       :type sync: bool
 
       :returns: int -- When the currently sent message frame is still incomplete,
                        returns octets remaining to be sent. When the frame is complete,
-                       returns <= 0, when < 0, the amount of unconsumed data in payload
+                       returns `0`, when `< 0`, the amount of unconsumed data in payload
                        argument.
       """
 

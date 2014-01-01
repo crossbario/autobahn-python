@@ -273,9 +273,9 @@ class FrameHeader:
 
 class ConnectionRequest:
    """
-   Thin-wrapper for WebSocket connection request information
-   provided in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect` when a WebSocket
-   client establishes a connection to a WebSocket server.
+   Thin-wrapper for WebSocket connection request information provided in
+   :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
+   a WebSocket client want to establish a connection to a WebSocket server.
    """
    def __init__(self, peer, headers, host, path, params, version, origin, protocols, extensions):
       """
@@ -330,9 +330,9 @@ class ConnectionRequest:
 
 class ConnectionResponse:
    """
-   Thin-wrapper for WebSocket connection response information
-   provided in :meth:`autobahn.websocket.WebSocketClientProtocol.onConnect` when a WebSocket
-   client has established a connection to a WebSocket server.
+   Thin-wrapper for WebSocket connection response information provided in
+   :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
+   a WebSocket server has accepted a connection request by a client.
    """
    def __init__(self, peer, headers, version, protocol, extensions):
       """
@@ -477,10 +477,13 @@ class Timings:
 @implementer(IWebSocketChannelStreamingApi)
 class WebSocketProtocol:
    """
-   Protocol base class for WebSocket. This class is used by both WebSocket
-   client and server protocol version. It is unusable standalone, for example
-   the WebSocket initial handshake is implemented in derived class differently
-   for clients and servers.
+   Protocol base class for WebSocket.
+
+   This class implements:
+
+     * :class:`autobahn.interfaces.IWebSocketChannel`
+     * :class:`autobahn.interfaces.IWebSocketChannelFrameApi`
+     * :class:`autobahn.interfaces.IWebSocketChannelStreamingApi`
    """
 
    SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -655,10 +658,7 @@ class WebSocketProtocol:
 
    def onOpen(self):
       """
-      Callback when initial WebSocket handshake was completed. Now you may send messages.
-      Default implementation does nothing. Override in derived class.
-
-      Modes: Hybi, Hixie
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onOpen`
       """
       if self.debugCodePaths:
          self.factory._log("WebSocketProtocol.onOpen")
@@ -666,13 +666,7 @@ class WebSocketProtocol:
 
    def onMessageBegin(self, isBinary):
       """
-      Callback when receiving a new message has begun. Default implementation will
-      prepare to buffer message frames. Override in derived class.
-
-      Modes: Hybi, Hixie
-
-      :param isBinary: If True, payload is binary, otherwise text (UTF-8 encoded).
-      :type isBinary: bool
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageBegin`
       """
       self.message_is_binary = isBinary
       self.message_data = []
@@ -681,13 +675,7 @@ class WebSocketProtocol:
 
    def onMessageFrameBegin(self, length):
       """
-      Callback when receiving a new message frame has begun. Default implementation will
-      prepare to buffer message frame data. Override in derived class.
-
-      Modes: Hybi
-
-      :param length: Payload length of message frame which is to be received.
-      :type length: int
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameBegin`
       """
       self.frame_length = length
       self.frame_data = []
@@ -703,16 +691,7 @@ class WebSocketProtocol:
 
    def onMessageFrameData(self, payload):
       """
-      Callback when receiving data witin message frame. Default implementation will
-      buffer data for frame. Override in derived class.
-
-      Modes: Hybi, Hixie
-
-      Notes:
-        - For Hixie mode, this method is slightly misnamed for historic reasons.
-
-      :param payload: Partial payload for message frame.
-      :type payload: str
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameData`
       """
       if not self.failedByMe:
          if self.websocket_version == 0:
@@ -727,11 +706,7 @@ class WebSocketProtocol:
 
    def onMessageFrameEnd(self):
       """
-      Callback when a message frame has been completely received. Default implementation
-      will flatten the buffered frame data and callback onMessageFrame. Override
-      in derived class.
-
-      Modes: Hybi
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameEnd`
       """
       if not self.failedByMe:
          self._onMessageFrame(self.frame_data)
@@ -741,13 +716,7 @@ class WebSocketProtocol:
 
    def onMessageFrame(self, payload):
       """
-      Callback fired when complete message frame has been received. Default implementation
-      will buffer frame for message. Override in derived class.
-
-      Modes: Hybi
-
-      :param payload: Message frame payload.
-      :type payload: list of bytestrings
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrame`
       """
       if not self.failedByMe:
          self.message_data.extend(payload)
@@ -755,11 +724,7 @@ class WebSocketProtocol:
 
    def onMessageEnd(self):
       """
-      Callback when a message has been completely received. Default implementation
-      will flatten the buffered frames and callback onMessage. Override
-      in derived class.
-
-      Modes: Hybi, Hixie
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageEnd`
       """
       if not self.failedByMe:
          payload = b''.join(self.message_data)
@@ -772,15 +737,7 @@ class WebSocketProtocol:
 
    def onMessage(self, payload, isBinary):
       """
-      Callback when a complete message was received. Default implementation does nothing.
-      Override in derived class.
-
-      Modes: Hybi, Hixie
-
-      :param payload: Message payload (UTF-8 encoded text string or binary string). Can also be an empty string, when message contained no payload.
-      :type payload: str
-      :param isBinary: If True, payload is binary, otherwise text.
-      :type isBinary: bool
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessage`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onMessage")
@@ -788,13 +745,7 @@ class WebSocketProtocol:
 
    def onPing(self, payload):
       """
-      Callback when Ping was received. Default implementation responds
-      with a Pong. Override in derived class.
-
-      Modes: Hybi
-
-      :param payload: Payload of Ping, when there was any. Can be arbitrary, up to 125 octets.
-      :type payload: bytes
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onPing`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPing")
@@ -804,13 +755,7 @@ class WebSocketProtocol:
 
    def onPong(self, payload):
       """
-      Callback when Pong was received. Default implementation does nothing.
-      Override in derived class.
-
-      Modes: Hybi
-
-      :param payload: Payload of Pong, when there was any. Can be arbitrary, up to 125 octets.
-      :type payload: bytes
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onPong`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPong")
@@ -818,16 +763,7 @@ class WebSocketProtocol:
 
    def onClose(self, wasClean, code, reason):
       """
-      Callback when the connection has been closed. Override in derived class.
-
-      Modes: Hybi, Hixie
-
-      :param wasClean: True, iff the connection was closed cleanly.
-      :type wasClean: bool
-      :param code: None or close status code (sent by peer), if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-      :type code: int
-      :param reason: None or close reason (sent by peer) (when present, a status code MUST have been also be present).
-      :type reason: str
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.onClose`
       """
       if self.debugCodePaths:
          s = "WebSocketProtocol.onClose:\n"
@@ -1484,10 +1420,7 @@ class WebSocketProtocol:
 
    def sendPreparedMessage(self, preparedMsg):
       """
-      Send a message that was previously prepared with
-      WebSocketFactory.prepareMessage().
-
-      Modes: Hybi, Hixie
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPreparedMessage`
       """
       if self.websocket_version != 0:
          if self._perMessageCompress is None or preparedMsg.doNotCompress:
@@ -2098,14 +2031,7 @@ class WebSocketProtocol:
 
    def sendPing(self, payload = None):
       """
-      Send out Ping to peer. A peer is expected to Pong back the payload a soon
-      as "practical". When more than 1 Ping is outstanding at a peer, the peer may
-      elect to respond only to the last Ping.
-
-      Modes: Hybi
-
-      :param payload: An optional, arbitrary payload of length < 126 octets.
-      :type payload: bytes
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPing`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2122,13 +2048,7 @@ class WebSocketProtocol:
 
    def sendPong(self, payload = None):
       """
-      Send out Pong to peer. A Pong frame MAY be sent unsolicited.
-      This serves as a unidirectional heartbeat. A response to an unsolicited pong is "not expected".
-
-      Modes: Hybi
-
-      :param payload: An optional, arbitrary payload of length < 126 octets.
-      :type payload: bytes
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPong`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2197,17 +2117,7 @@ class WebSocketProtocol:
 
    def sendClose(self, code = None, reason = None):
       """
-      Starts a closing handshake.
-
-      Modes: Hybi, Hixie
-
-      Notes:
-        - For Hixie mode, code and reason will be silently ignored.
-
-      :param code: An optional close status code (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_NORMAL or 3000-4999).
-      :type code: int
-      :param reason: An optional close reason (a string that when present, a status code MUST also be present).
-      :type reason: str
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendClose`
       """
       if code is not None:
          if type(code) != int:
@@ -2229,14 +2139,7 @@ class WebSocketProtocol:
 
    def beginMessage(self, isBinary = False, doNotCompress = False):
       """
-      Begin sending new message.
-
-      Modes: Hybi, Hixie
-
-      :param isBinary: Flag to indicate payload type (`True == binary`).
-      :type isBinary: bool
-      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
-      :type doNotCompress: bool
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.beginMessage`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2269,16 +2172,7 @@ class WebSocketProtocol:
 
    def beginMessageFrame(self, length):
       """
-      Begin sending new message frame.
-
-      Modes: Hybi
-
-      :param length: Length of frame which is started. Must be >= 0 and <= 2^63.
-      :type length: int
-      :param reserved: Reserved bits for frame (an integer from 0 to 7). Note that reserved != 0 is only legal when an extension has been negoiated which defines semantics.
-      :type reserved: int
-      :param mask: Optional frame mask. When given, this is used. When None and the peer is a client, a mask will be internally generated. For servers None is default.
-      :type mask: str
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.beginMessageFrame`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2369,21 +2263,7 @@ class WebSocketProtocol:
 
    def sendMessageFrameData(self, payload, sync = False):
       """
-      Send out data when within message frame (message was begun, frame was begun).
-      Note that the frame is automatically ended when enough data has been sent
-      that is, there is no endMessageFrame, since you have begun the frame specifying
-      the frame length, which implicitly defined the frame end. This is different from
-      messages, which you begin and end, since a message can contain an unlimited number
-      of frames.
-
-      Modes: Hybi, Hixie
-
-      Notes:
-        - For Hixie mode, this method is slightly misnamed for historic reasons.
-
-      :param payload: Data to send.
-
-      :returns: int -- Hybi mode: when frame still incomplete, returns outstanding octets, when frame complete, returns <= 0, when < 0, the amount of unconsumed data in payload argument. Hixie mode: returns None.
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessageFrameData`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2438,10 +2318,7 @@ class WebSocketProtocol:
 
    def endMessage(self):
       """
-      End a message previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`.
-      No more frames may be sent (for that message). You have to begin a new message before sending again.
-
-      Modes: Hybi, Hixie
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.endMessage`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2467,15 +2344,7 @@ class WebSocketProtocol:
 
    def sendMessageFrame(self, payload, sync = False):
       """
-      When a message has been previously begun with :meth:`autobahn.websocket.WebSocketProtocol.beginMessage`,
-      send a complete message frame in one go.
-
-      Modes: Hybi
-
-      :param payload: The message payload. When sending a text message, the payload must be UTF-8 encoded already.
-      :type payload: binary or UTF-8 string
-      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
-      :type sync: bool
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessageFrame`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2498,24 +2367,7 @@ class WebSocketProtocol:
                    sync = False,
                    doNotCompress = False):
       """
-      Send out a message in one go.
-
-      You can send text or binary message, and optionally specifiy a payload fragment size.
-      When the latter is given, the payload will be split up into frames with
-      payload <= the fragmentSize given.
-
-      Modes: Hybi, Hixie
-
-      :param payload: The message payload. When sending a text message (`binary == False`), the payload must be UTF-8 encoded already.
-      :type payload: binary or UTF-8 string
-      :param isBinary: Flag to indicate payload type (`True == binary`).
-      :type isBinary: bool
-      :param fragmentSize: Fragment message into fragments of this size. This overrrides `autoFragmentSize` if set.
-      :type fragmentSize: int
-      :param sync: Iff `True`, try to force message onto wire before sending more stuff. Note: do NOT use this normally, performance likely will suffer significantly. This feature is mainly here for use by the testsuite.
-      :type sync: bool
-      :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
-      :type doNotCompress: bool
+      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessage`
       """
       assert(type(payload) == bytes)
 
@@ -2662,43 +2514,39 @@ class WebSocketProtocol:
 class PreparedMessage:
    """
    Encapsulates a prepared message to be sent later once or multiple
-   times. This is used for optimizing Broadcast/PubSub.
-
-   The message serialization formats currently created internally are:
-      * Hybi
-      * Hixie
-
-   The construction of different formats is needed, since we support
-   mixed clients (speaking different protocol versions).
-
-   It will also be the place to add a 3rd format, when we support
-   the deflate extension, since then, the clients will be mixed
-   between Hybi-Deflate-Unsupported, Hybi-Deflate-Supported and Hixie.
+   times on one or more WebSocket connections.
+   This can be used for optimizing Broadcast/PubSub.
    """
 
-   def __init__(self, payload, binary, masked, doNotCompress):
+   def __init__(self, payload, isBinary, applyMask, doNotCompress):
       """
       Ctor for a prepared message.
 
       :param payload: The message payload.
       :type payload: str
-      :param binary: Provide `True` for binary payload.
-      :type binary: bool
-      :param masked: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
-      :type masked: bool
+      :param isBinary: Provide `True` for binary payload.
+      :type isBinary: bool
+      :param applyMask: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
+      :type applyMask: bool
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to
+                            Hybi-Mode and only when WebSocket compression has been negotiated on
+                            the WebSocket connection. Use when you know the payload 
+                            uncompressible (e.g. encrypted or already compressed).
+      :type doNotCompress: bool
       """
       if not doNotCompress:
          ## we need to store original payload for compressed WS
-         ## connections (cannot compress/frame in advanced)
+         ## connections (cannot compress/frame in advanced when
+         ## compression is on, and context takeover is off)
          self.payload = payload
-         self.binary = binary
+         self.binary = isBinary
       self.doNotCompress = doNotCompress
 
-      ## store pre-framed octets to be sent to Hixie-76 clients
-      self._initHixie(payload, binary)
+      ## store pre-framed octets to be sent to Hixie-76 peers
+      self._initHixie(payload, isBinary)
 
-      ## store pre-framed octets to be sent to Hybi clients
-      self._initHybi(payload, binary, masked)
+      ## store pre-framed octets to be sent to Hybi peers
+      self._initHybi(payload, isBinary, applyMask)
 
 
    def _initHixie(self, payload, binary):
@@ -2803,7 +2651,7 @@ class WebSocketFactory:
 
 class WebSocketServerProtocol(WebSocketProtocol):
    """
-   Protocol for WebSocket servers.
+   Protocol base class for WebSocket servers.
    """
 
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
@@ -2814,15 +2662,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
       Callback fired during WebSocket opening handshake when new WebSocket client
       connection is about to be established.
 
-      Throw HttpException when you don't want to accept the WebSocket
-      connection request. For example, throw a
-      `HttpException(httpstatus.http.UNAUTHORIZED[0], "You are not authorized for this!")`.
-
       When you want to accept the connection, return the accepted protocol
-      from list of WebSocket (sub)protocols provided by client or None to
-      speak no specific one or when the client list was empty.
+      from list of WebSocket (sub)protocols provided by client or `None` to
+      speak no specific one or when the client protocol list was empty.
 
-      You may also return a pair of `(protocol, headers)` to send additional HTTP `headers`.
+      You may also return a pair of `(protocol, headers)` to send additional
+      HTTP headers, with `headers` being a dictionary of key-values.
+
+      Throw :class:`autobahn.websocket.http.HttpException` when you don't want
+      to accept the WebSocket connection request.
 
       :param request: WebSocket connection request information.
       :type request: instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
@@ -3442,12 +3290,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
 class WebSocketServerFactory(WebSocketFactory):
    """
-   A protocol factory for WebSocket server protocols.
+   A protocol factory for WebSocket servers.
    """
 
    protocol = WebSocketServerProtocol
    """
-   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketServerProtocol`.
+   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketServerProtocol`.
    """
 
    isServer = True
@@ -3468,22 +3316,22 @@ class WebSocketServerFactory(WebSocketFactory):
       Create instance of WebSocket server factory.
 
       Note that you MUST provide URL either here or using
-      :meth:`autobahn.websocket.WebSocketServerFactory.setSessionParameters`
+      :meth:`autobahn.websocket.protocol.WebSocketServerFactory.setSessionParameters`
       *before* the factory is started.
 
-      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ].
+      :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
-      :param server: Server as announced in HTTP response header during opening handshake or None (default: "AutobahnWebSocket/x.x.x").
+      :param server: Server as announced in HTTP response header during opening handshake or None (default: `AutobahnWebSocket/?.?.?`).
       :type server: str
       :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
       :type headers: dict
-      :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+      :param externalPort: Optionally, the external visible port this factory will be reachable under (i.e. when running behind a L2/L3 forwarding device).
       :type externalPort: int
-      :param debug: Debug mode (default: False).
+      :param debug: Debug mode (default: `False`).
       :type debug: bool
-      :param debugCodePaths: Debug code paths mode (default: False).
+      :param debugCodePaths: Debug code paths mode (default: `False`).
       :type debugCodePaths: bool
       """
       self.debug = debug
@@ -3519,7 +3367,7 @@ class WebSocketServerFactory(WebSocketFactory):
       """
       Set WebSocket session parameters.
 
-      :param url: WebSocket listening URL - ("ws:" | "wss:") "//" host [ ":" port ].
+      :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
@@ -3598,35 +3446,35 @@ class WebSocketServerFactory(WebSocketFactory):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
-      :param versions: The WebSocket protocol versions accepted by the server (default: WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS).
+      :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
       :type versions: list of ints
       :param allowHixie76: Allow to speak Hixie76 protocol version.
       :type allowHixie76: bool
-      :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: True).
+      :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
       :type webStatus: bool
-      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
+      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
       :type utf8validateIncoming: bool
-      :param maskServerFrames: Mask server-to-client frames (default: False).
+      :param maskServerFrames: Mask server-to-client frames (default: `False`).
       :type maskServerFrames: bool
-      :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: True).
+      :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: `True`).
       :type requireMaskedClientFrames: bool
-      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: True).
+      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
       :type applyMask: bool
-      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or 0 for unlimited (default: 0).
+      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
       :type maxFramePayloadSize: int
-      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
+      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
       :type maxMessagePayloadSize: int
-      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
       :type autoFragmentSize: int
-      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: True).
+      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: `True`).
       :type failbyDrop: bool
-      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
       :type echoCloseCodeReason: bool
-      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or 0 to deactivate (default: 0).
+      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
       :type openHandshakeTimeout: float
-      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
       :type closeHandshakeTimeout: float
-      :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: True).
+      :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: `True`).
       :type tcpNoDelay: bool
       :param perMessageCompressionAccept: Acceptor function for offers.
       :type perMessageCompressionAccept: callable
@@ -3698,7 +3546,7 @@ class WebSocketServerFactory(WebSocketFactory):
 
 class WebSocketClientProtocol(WebSocketProtocol):
    """
-   Client protocol for WebSocket.
+   Protocol base class for WebSocket clients.
    """
 
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
@@ -4187,12 +4035,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
 class WebSocketClientFactory(WebSocketFactory):
    """
-   A protocol factory for WebSocket client protocols.
+   A protocol factory for WebSocket clients.
    """
 
    protocol = WebSocketClientProtocol
    """
-   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.WebSocketClientProtocol`.
+   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketClientProtocol`.
    """
 
    isServer = False
@@ -4217,21 +4065,21 @@ class WebSocketClientFactory(WebSocketFactory):
       :meth:`autobahn.websocket.WebSocketClientFactory.setSessionParameters`
       *before* the factory is started.
 
-      :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath`.
       :type url: str
-      :param origin: The origin to be sent in WebSocket opening handshake or None (default: None).
+      :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
       :type origin: str
-      :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: []).
+      :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: `[]`).
       :type protocols: list of strings
-      :param useragent: User agent as announced in HTTP request header or None (default: "AutobahnWebSocket/x.x.x").
+      :param useragent: User agent as announced in HTTP request header or None (default: `AutobahnWebSocket/?.?.?`).
       :type useragent: str
       :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
       :type headers: dict
-      :param proxy: Explicit proxy server to use (hostname:port or IP:port), e.g. "192.168.1.100:8080".
+      :param proxy: Explicit proxy server to use (`hostname:port` or `IP:port`), e.g. `192.168.1.100:8080`.
       :type proxy: str
-      :param debug: Debug mode (default: False).
+      :param debug: Debug mode (default: `False`).
       :type debug: bool
-      :param debugCodePaths: Debug code paths mode (default: False).
+      :param debugCodePaths: Debug code paths mode (default: `False`).
       :type debugCodePaths: bool
       """
       self.debug = debug
@@ -4264,7 +4112,7 @@ class WebSocketClientFactory(WebSocketFactory):
       """
       Set WebSocket session parameters.
 
-      :param url: WebSocket URL to connect to - ("ws:" | "wss:") "//" host [ ":" port ] path [ "?" query ].
+      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath`.
       :type url: str
       :param origin: The origin to be sent in opening handshake.
       :type origin: str
@@ -4349,32 +4197,32 @@ class WebSocketClientFactory(WebSocketFactory):
       """
       Set WebSocket protocol options used as defaults for _new_ protocol instances.
 
-      :param version: The WebSocket protocol spec (draft) version to be used (default: WebSocketProtocol.DEFAULT_SPEC_VERSION).l
-      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: True).
+      :param version: The WebSocket protocol spec (draft) version to be used (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
+      :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
       :type utf8validateIncoming: bool
-      :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: False).
+      :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: `False`).
       :type acceptMaskedServerFrames: bool
-      :param maskClientFrames: Mask client-to-server frames (default: True).
+      :param maskClientFrames: Mask client-to-server frames (default: `True`).
       :type maskClientFrames: bool
-      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: True).
+      :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
       :type applyMask: bool
-      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or 0 for unlimited (default: 0).
+      :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
       :type maxFramePayloadSize: int
-      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or 0 for unlimited (default: 0).
+      :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
       :type maxMessagePayloadSize: int
-      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length <= this size or 0 for no auto-fragmentation (default: 0).
+      :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
       :type autoFragmentSize: int
-      :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: True).
+      :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
       :type failbyDrop: bool
-      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with code == NORMAL, reason = "" (default: False).
+      :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
       :type echoCloseCodeReason: bool
-      :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: 1).
+      :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: `1`).
       :type serverConnectionDropTimeout: float
-      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or 0 to deactivate (default: 0).
+      :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
       :type openHandshakeTimeout: float
-      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: 1).
+      :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
       :type closeHandshakeTimeout: float
-      :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: True).
+      :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: `True`).
       :type tcpNoDelay: bool
       :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
       :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer

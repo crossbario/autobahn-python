@@ -77,21 +77,26 @@ def install_optimal_reactor():
 
 
 
-def install_reactor(_reactor = None, verbose = False):
+def install_reactor(explicitReactor = None, verbose = False):
    """
-   Install Twisted reactor. This is used from CLI.
+   Install Twisted reactor.
+
+   :param explicitReactor: If provided, install this reactor. Else, install optimal reactor.
+   :type explicitReactor: obj
+   :param verbose: If `True`, print what happens.
+   :type verbose: bool
    """
    import sys
 
-   if _reactor:
+   if explicitReactor:
       ## install explicitly given reactor
       ##
       from twisted.application.reactors import installReactor
-      print("Trying to install explicitly specified Twisted reactor '%s'" % _reactor)
+      print("Trying to install explicitly specified Twisted reactor '%s'" % explicitReactor)
       try:
-         installReactor(_reactor)
+         installReactor(explicitReactor)
       except Exception as e:
-         print("Could not install Twisted reactor %s%s" % (_reactor, ' ["%s"]' % e if verbose else ''))
+         print("Could not install Twisted reactor %s%s" % (explicitReactor, ' ["%s"]' % e if verbose else ''))
          sys.exit(1)
    else:
       ## automatically choose optimal reactor

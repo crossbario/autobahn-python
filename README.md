@@ -57,6 +57,14 @@ For complete API documentation, please consult the [reference documentation](htt
 For more information, including some tutorials, please visit the project's [homepage](http://autobahn.ws/python).
 
 
+## Performance
+
+**Autobahn**|Python is portable, well tuned code. You can further accelerate performance by
+
+* Running under [PyPy](http://pypy.org/) or
+* on CPython, install the native accelerators [wsaccel](https://pypi.python.org/pypi/wsaccel/) and [ujson](https://pypi.python.org/pypi/ujson/)
+
+
 ## Get in touch
 
 Get in touch on IRC `#autobahn` on `chat.freenode.net`, follow us on [Twitter](https://twitter.com/autobahnws) or join the [mailing list](http://groups.google.com/group/autobahnws).

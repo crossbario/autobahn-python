@@ -1,10 +1,10 @@
-AutobahnPython Reference
-========================
+*************************
+Autobahn|Python Reference
+*************************
 
 .. toctree::
    :maxdepth: 3
 
-   features
    websockettoc
    wamptoc
 

@@ -30,6 +30,9 @@ Both Twisted and Asyncio server protocols share the following functionality.
 .. autoclass:: autobahn.websocket.protocol.ConnectionRequest
    :members: __init__
 
+.. autoclass:: autobahn.websocket.http.HttpException
+   :members: __init__
+
 
 Twisted WebSocket Server Protocol
 ---------------------------------

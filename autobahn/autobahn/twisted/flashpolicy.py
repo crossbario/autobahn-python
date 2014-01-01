@@ -35,7 +35,7 @@ class FlashPolicyProtocol(Protocol):
    older browser, in particular MSIE9/8.
 
    See:
-      * `Autobahn WebSocket fallbacks example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_wsfallbacks>`_
+      * `Autobahn WebSocket fallbacks example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsfallbacks>`_
       * `Flash policy files background <http://www.lightsphere.com/dev/articles/flash_socket_policy.html>`_
    """
 
@@ -96,6 +96,8 @@ class FlashPolicyFactory(Factory):
 
       :param allowedPort: The port to which Flash player should be allowed to connect.
       :type allowedPort: int
+      :param reactor: Twisted reactor to use. If not given, autoimport.
+      :type reactor: obj
       """
       ## lazy import to avoid reactor install upon module import
       if reactor is None:
