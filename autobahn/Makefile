@@ -29,7 +29,7 @@ deploy_test: build
 	sudo cp dist/*.egg /usr/local/www/tavendo_download/webmq/test/eggs/
 
 publish: clean
-	python setup.py register
-	python setup.py sdist upload
-	python setup.py bdist_egg upload
-	python setup.py bdist_wininst upload
+	python3 setup.py register
+	python3 setup.py sdist upload
+	#python setup.py bdist_egg upload
+	#python setup.py bdist_wininst upload

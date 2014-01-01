@@ -31,23 +31,18 @@ else:
 
 
 LONGSDESC = """
-Twisted-based WebSocket/WAMP client and server framework.
+Autobahn|Python provides implementations of
 
-AutobahnPython provides a WebSocket (RFC6455, Hybi-10 to -17, Hixie-76)
-framework for creating WebSocket-based clients and servers.
+ * The WebSocket Protocol
+ * The Web Application Messaging Protocol (WAMP)
 
-AutobahnPython also includes an implementation of WAMP
-(The WebSockets Application Messaging Protocol), a light-weight,
-asynchronous RPC/PubSub over JSON/WebSocket protocol.
+for Twisted and Asyncio.
 
 More information:
 
-   * http://autobahn.ws/python
-   * http://wamp.ws
-
-Source Code:
-
-   * https://github.com/tavendo/AutobahnPython
+ * https://github.com/tavendo/AutobahnPython
+ * http://autobahn.ws/python
+ * http://wamp.ws
 """
 
 ## get version string from "autobahn/__init__.py"
