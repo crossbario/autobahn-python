@@ -50,11 +50,11 @@ Source Code:
    * https://github.com/tavendo/AutobahnPython
 """
 
-## get version string from "autobahn/_version.py"
+## get version string from "autobahn/__init__.py"
 ## See: http://stackoverflow.com/a/7071358/884770
 ##
 import re
-VERSIONFILE="autobahn/_version.py"
+VERSIONFILE="autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
@@ -66,7 +66,7 @@ else:
 
 ## Autobahn core packages
 ##
-packages = ['autobahn', 
+packages = ['autobahn',
             'autobahn.wamp2',
             'autobahn.websocket']
 

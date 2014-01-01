@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2013 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,28 +16,5 @@
 ##
 ###############################################################################
 
-from __future__ import absolute_import
-
-from autobahn._version import __version__
+__version__ = "0.7.0"
 version = __version__ # backward compat.
-
-# import util
-# import choosereactor
-# import useragent
-# import flashpolicy
-# import httpstatus
-# import utf8validator
-# import xormasker
-# import compress
-# import websocket
-
-# ## disable import, since it leads to reactor import
-# ## https://twistedmatrix.com/trac/ticket/6849
-# #import resource
-
-# import prefixmap
-# import wamp
-# import wamp2
-
-#import twisted
-#import asyncio

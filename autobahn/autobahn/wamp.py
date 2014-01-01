@@ -49,7 +49,7 @@ from twisted.python import log
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from autobahn._version import __version__
+from autobahn import __version__
 
 from autobahn.websocket.protocol import WebSocketProtocol, \
                                         Timings

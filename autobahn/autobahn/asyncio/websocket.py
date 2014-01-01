@@ -43,7 +43,7 @@ def yields(value):
 
 class WebSocketAdapterProtocol(asyncio.Protocol):
    """
-   Adapter class for Asyncio WebSocket protocols.
+   Adapter class for Asyncio WebSocket client and server protocols.
    """
 
    def connection_made(self, transport):
@@ -191,7 +191,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 class WebSocketAdapterFactory:
    """
-   Adapter class for Asyncio WebSocket factories.
+   Adapter class for Asyncio WebSocket client and server factories.
    """
 
    def _log(self, msg):
@@ -216,7 +216,10 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
    def __init__(self, *args, **kwargs):
       """
-      Foo.
+      In addition to all arguments to the constructor of
+      :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
+      you can supply a `loop` keyword argument to specify the
+      Asyncio loop to be used.
       """
       if 'loop' in kwargs:
          if kwargs['loop']:
@@ -238,7 +241,10 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
    def __init__(self, *args, **kwargs):
       """
-      Foo.
+      In addition to all arguments to the constructor of
+      :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
+      you can supply a `loop` keyword argument to specify the
+      Asyncio loop to be used.
       """
       if 'loop' in kwargs:
          if kwargs['loop']:

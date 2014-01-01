@@ -67,7 +67,7 @@ from collections import deque
 
 from zope.interface import implementer
 
-from autobahn._version import __version__
+from autobahn import __version__
 
 from autobahn.interfaces import IWebSocketChannel, \
                                 IWebSocketChannelFrameApi, \
@@ -2530,7 +2530,7 @@ class PreparedMessage:
       :type applyMask: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to
                             Hybi-Mode and only when WebSocket compression has been negotiated on
-                            the WebSocket connection. Use when you know the payload 
+                            the WebSocket connection. Use when you know the payload
                             uncompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
@@ -2610,42 +2610,30 @@ class WebSocketFactory:
    :class:`autobahn.websocket.protocol.WebSocketServerFactory`.
    """
 
-   def prepareMessage(self, payload, binary = False, masked = None, doNotCompress = False):
+   def prepareMessage(self, payload, isBinary = False, doNotCompress = False):
       """
-      Prepare a WebSocket message. This can be later used on multiple
+      Prepare a WebSocket message. This can be later sent on multiple
       instances of :class:`autobahn.websocket.WebSocketProtocol` using
       :meth:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`.
 
       By doing so, you can avoid the (small) overhead of framing the
-      *same* payload into WS messages when that payload is to be sent
-      out on multiple connections.
-
-      Caveats:
-
-         1. Only use when you know what you are doing. I.e. calling
-            :meth:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`
-            on the *same* protocol instance multiples times with the *same*
-            prepared message might break the spec, since i.e. the frame mask
-            will be the same!
-
-         2. Treat the object returned as opaque. It may change!
-
-      Modes: Hybi, Hixie
+      *same* payload into WebSocket messages multiple times when that
+      same payload is to be sent out on multiple connections.
 
       :param payload: The message payload.
-      :type payload: str
-      :param binary: Provide `True` for binary payload.
-      :type binary: bool
-      :param masked: Provide `True` if WebSocket message is to be
-                     masked (required for client-to-server WebSocket messages).
-      :type masked: bool
+      :type payload: bytes
+      :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
+      :type isBinary: bool
+      :param doNotCompress: Iff `True`, never compress this message. This only applies to
+                            Hybi-Mode and only when WebSocket compression has been negotiated on
+                            the WebSocket connection. Use when you know the payload
+                            uncompressible (e.g. encrypted or already compressed).
+      :type doNotCompress: bool
 
-      :returns: obj -- The prepared message.
+      :returns: obj -- An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
       """
-      if masked is None:
-         masked = not self.isServer
-
-      return PreparedMessage(payload, binary, masked, doNotCompress)
+      applyMask = not self.isServer
+      return PreparedMessage(payload, isBinary, applyMask, doNotCompress)
 
 
 
