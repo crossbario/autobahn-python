@@ -52,7 +52,7 @@ class HTTPChannelHixie76Aware(HTTPChannel):
    `twisted.web.server.Site <http://twistedmatrix.com/documents/current/api/twisted.web.server.Site.html>`_ instance.
 
    See:
-      * `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_site>`_
+      * `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_site>`_
    """
 
    def headerReceived(self, line):
@@ -73,7 +73,7 @@ class WSGIRootResource(Resource):
    does not provide a `putChild()` method.
    
    See also:
-      * `Autobahn Twisted Web WSGI example <https://github.com/tavendo/AutobahnPython/tree/master/examples/websocket/echo_wsgi>`_
+      * `Autobahn Twisted Web WSGI example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsgi>`_
       * `Original hack <http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html>`_
    """
 
@@ -110,7 +110,7 @@ class WebSocketResource(object):
       """
       Ctor.
 
-      :param factory: An instance of WebSocketServerFactory.
+      :param factory: An instance of :class:`autobahn.twisted.websocket.WebSocketServerFactory`.
       :type factory: obj
       """
       self._factory = factory

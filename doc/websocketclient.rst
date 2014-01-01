@@ -1,44 +1,84 @@
-Client
-======
+*****************
+WebSocket Clients
+*****************
 
-The classes :class:`autobahn.websocket.WebSocketClientProtocol` and
-:class:`autobahn.websocket.WebSocketClientFactory` are the base classes
-you derive from to implement WebSocket clients.
+The classes
+
+ * :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+ * :class:`autobahn.twisted.websocket.WebSocketClientFactory`
+
+are the base classes you derive from to implement Twisted-based WebSocket clients.
+
+The classes
+
+ * :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+ * :class:`autobahn.asyncio.websocket.WebSocketClientFactory`
+
+are the base classes you derive from to implement Asyncio-based WebSocket clients.
 
 
-Factory
--------
 
-To create your actual client, you need a factory with the protocol attribute
-set to your protocol.
+WebSocket Client Protocol
+=========================
 
-You may either use :class:`autobahn.websocket.WebSocketClientFactory` directly
-and without modification or you can derive from that class when you want to
-extend it's behavior i.e. with state that is available for all client connections.
+Both Twisted and Asyncio client protocols share the following functionality.
+
+.. autoclass:: autobahn.websocket.protocol.WebSocketClientProtocol
+   :show-inheritance:
+   :members: onConnect
+
+.. autoclass:: autobahn.websocket.protocol.ConnectionResponse
+   :members: __init__
 
 
-.. autoclass:: autobahn.websocket.WebSocketClientFactory
+Twisted WebSocket Client Protocol
+---------------------------------
+
+To create a Twisted-based WebSocket client, subclass the following protocol class.
+
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientProtocol
+   :show-inheritance:
+
+
+Asyncio WebSocket Client Protocol
+---------------------------------
+
+To create an Asyncio-based WebSocket client, subclass the following protocol class.
+
+.. autoclass:: autobahn.asyncio.websocket.WebSocketClientProtocol
+   :show-inheritance:
+
+
+
+WebSocket Client Factory
+========================
+
+Both Twisted and Asyncio client factories share the following functionality.
+
+.. autoclass:: autobahn.websocket.protocol.WebSocketClientFactory
    :members: protocol,
+             isServer,
              __init__,
              setSessionParameters,
              setProtocolOptions,
-             resetProtocolOptions,
-             clientConnectionFailed,
-             clientConnectionLost
+             resetProtocolOptions
 
 
+Twisted WebSocket Client Factory
+--------------------------------
 
-Protocol
---------
+To create a Twisted-based WebSocket client, use the following factory class.
 
-Usually, you implement your WebSocket client by creating a protocol that
-derives from :class:`autobahn.websocket.WebSocketClientProtocol`.
-
-This class in turn derives from :class:`autobahn.websocket.WebSocketProtocol`,
-which is where you find all the callbacks and methods.
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientFactory
+   :show-inheritance:
+   :members: __init__
 
 
-.. autoclass:: autobahn.websocket.WebSocketClientProtocol
-   :members: onConnect,
-             connectionMade,
-             connectionLost
+Asyncio WebSocket Client Factory
+--------------------------------
+
+To create an Asyncio-based WebSocket client, use the following factory class.
+
+.. autoclass:: autobahn.asyncio.websocket.WebSocketClientFactory
+   :show-inheritance:
+   :members: __init__

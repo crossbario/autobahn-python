@@ -215,7 +215,9 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
    """
 
    def __init__(self, *args, **kwargs):
-
+      """
+      Foo.
+      """
       if 'loop' in kwargs:
          if kwargs['loop']:
             self.loop = kwargs['loop']
@@ -235,7 +237,9 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
    """
 
    def __init__(self, *args, **kwargs):
-
+      """
+      Foo.
+      """
       if 'loop' in kwargs:
          if kwargs['loop']:
             self.loop = kwargs['loop']

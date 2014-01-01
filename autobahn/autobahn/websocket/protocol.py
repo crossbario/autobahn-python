@@ -2233,8 +2233,8 @@ class WebSocketProtocol:
 
       Modes: Hybi, Hixie
 
-      :param binary: Flag to indicate payload type (`True == binary`).
-      :type bool
+      :param isBinary: Flag to indicate payload type (`True == binary`).
+      :type isBinary: bool
       :param doNotCompress: Iff `True`, never compress this message. This only applies to Hybi-Mode and if WebSocket compression has been negotiated on the WebSocket client-server connection. Use when you know the payload is not compressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
@@ -2758,8 +2758,8 @@ class PreparedMessage:
 class WebSocketFactory:
    """
    Mixin for
-   :class:`autobahn.websocket.WebSocketClientFactory` and
-   :class:`autobahn.websocket.WebSocketServerFactory`.
+   :class:`autobahn.websocket.protocol.WebSocketClientFactory` and
+   :class:`autobahn.websocket.protocol.WebSocketServerFactory`.
    """
 
    def prepareMessage(self, payload, binary = False, masked = None, doNotCompress = False):
@@ -2809,7 +2809,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
 
 
-   def onConnect(self, connectionRequest):
+   def onConnect(self, request):
       """
       Callback fired during WebSocket opening handshake when new WebSocket client
       connection is about to be established.
@@ -2824,8 +2824,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       You may also return a pair of `(protocol, headers)` to send additional HTTP `headers`.
 
-      :param connectionRequest: WebSocket connection request information.
-      :type connectionRequest: instance of :class:`autobahn.websocket.ConnectionRequest`
+      :param request: WebSocket connection request information.
+      :type request: instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
       """
       return None
 
@@ -3704,13 +3704,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
    CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
 
-   def onConnect(self, connectionResponse):
+   def onConnect(self, response):
       """
       Callback fired directly after WebSocket opening handshake when new WebSocket server
       connection was established.
 
-      :param connectionResponse: WebSocket connection response information.
-      :type connectionResponse: instance of :class:`autobahn.websocket.ConnectionResponse`
+      :param response: WebSocket connection response information.
+      :type response: instance of :class:`autobahn.websocket.protocol.ConnectionResponse`
       """
       pass
 

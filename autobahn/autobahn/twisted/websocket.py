@@ -47,7 +47,7 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
    """
-   Adapter class for Twisted WebSocket protocols.
+   Adapter class for Twisted WebSocket client and server protocols.
    """
 
    def connectionMade(self):
@@ -170,7 +170,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 class WebSocketAdapterFactory:
    """
-   Adapter class for Twisted WebSocket factories.
+   Adapter class for Twisted WebSocket client and server factories.
    """
 
    def _log(self, msg):
@@ -185,10 +185,17 @@ class WebSocketAdapterFactory:
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
    """
    Base class for Twisted WebSocket server factories.
+
+   .. seealso:: `twisted.internet.protocol.ServerFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.protocol.ServerFactory.html>`_
    """
 
    def __init__(self, *args, **kwargs):
-
+      """
+      In addition to all arguments to the constructor of
+      :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
+      you can supply a `reactor` keyword argument to specify the 
+      Twisted reactor to be used.
+      """
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
          if kwargs['reactor']:
@@ -204,30 +211,21 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
       protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-   def startFactory(self):
-      """
-      Called by Twisted before starting to listen on port for incoming connections.
-      Default implementation does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
-   def stopFactory(self):
-      """
-      Called by Twisted before stopping to listen on port for incoming connections.
-      Default implementation does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
 
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
    """
    Base class for Twisted WebSocket client factories.
+
+   .. seealso:: `twisted.internet.protocol.ClientFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.protocol.ClientFactory.html>`_
    """
 
    def __init__(self, *args, **kwargs):
-
+      """
+      In addition to all arguments to the constructor of
+      :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
+      you can supply a `reactor` keyword argument to specify the 
+      Twisted reactor to be used.
+      """
       ## lazy import to avoid reactor install upon module import
       if 'reactor' in kwargs:
          if kwargs['reactor']:
@@ -242,25 +240,6 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
       protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
-
-
-   def clientConnectionFailed(self, connector, reason):
-      """
-      Called by Twisted when the connection to server has failed. Default implementation
-      does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
-   def clientConnectionLost(self, connector, reason):
-      """
-      Called by Twisted when the connection to server was lost. Default implementation
-      does nothing. Override in derived class when appropriate.
-      """
-      pass
-
-
-import binascii
 
 
 @implementer(ITransport)

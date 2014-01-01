@@ -8,68 +8,62 @@ functionality to the WebSocket implementation.
 Connect & Listen
 ----------------
 
-.. autofunction:: autobahn.websocket.connectWS
+.. autofunction:: autobahn.twisted.websocket.connectWS
 
-.. autofunction:: autobahn.websocket.listenWS
+.. autofunction:: autobahn.twisted.websocket.listenWS
 
 
 URL Handling
 ------------
 
-.. autofunction:: autobahn.websocket.createWsUrl
+.. autofunction:: autobahn.websocket.protocol.createWsUrl
 
-.. autofunction:: autobahn.websocket.parseWsUrl
+.. autofunction:: autobahn.websocket.protocol.parseWsUrl
 
 
 Opening Handshake
 -----------------
 
-.. autoclass:: autobahn.websocket.ConnectionRequest
-   :members: __init__
-
-.. autoclass:: autobahn.websocket.ConnectionResponse
-   :members: __init__
-
-.. autoclass:: autobahn.websocket.HttpException
+.. autoclass:: autobahn.websocket.http.HttpException
    :members: __init__
 
 
 Twisted Web Integration
 -----------------------
 
-.. autoclass:: autobahn.resource.WebSocketResource
+.. autoclass:: autobahn.twisted.resource.WebSocketResource
    :members: __init__,
              getChildWithDefault,
              putChild,
              render
 
-.. autoclass:: autobahn.resource.WSGIRootResource
+.. autoclass:: autobahn.twisted.resource.WSGIRootResource
    :members: __init__
 
-.. autoclass:: autobahn.resource.HTTPChannelHixie76Aware
+.. autoclass:: autobahn.twisted.resource.HTTPChannelHixie76Aware
 
 
 Flash Policy File Server
 ------------------------
 
-.. autoclass:: autobahn.flashpolicy.FlashPolicyProtocol
+.. autoclass:: autobahn.twisted.flashpolicy.FlashPolicyProtocol
    :members: __init__
 
-.. autoclass:: autobahn.flashpolicy.FlashPolicyFactory
+.. autoclass:: autobahn.twisted.flashpolicy.FlashPolicyFactory
    :members: __init__
 
 
 Misc
 ----
 
-.. autofunction:: autobahn.useragent.lookupWsSupport
+.. autofunction:: autobahn.websocket.useragent.lookupWsSupport
 
-.. autoclass:: autobahn.websocket.Timings
+.. autoclass:: autobahn.websocket.protocol.Timings
    :members: __init__,
              track,
              diff
 
-.. autoclass:: autobahn.websocket.TrafficStats
+.. autoclass:: autobahn.websocket.protocol.TrafficStats
    :members: __init__,
              reset,
              __json__
