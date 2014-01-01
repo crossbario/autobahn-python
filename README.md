@@ -9,10 +9,7 @@ in Python running on [**Twisted**](http://twistedmatrix.com/) and [**asyncio**](
 
 WebSocket allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and WAMP adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on top of WebSocket. 
 
-You can use **Autobahn**|Python to create clients and servers in Python speaking just plain WebSocket or WAMP.
-
-
-**Autobahn**|Python features:
+You can use **Autobahn**|Python to create clients and servers in Python speaking just plain WebSocket or WAMP:
 
 * framework for [WebSocket](http://tools.ietf.org/html/rfc6455) / [WAMP](http://wamp.ws/) clients and servers
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
