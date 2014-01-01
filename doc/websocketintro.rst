@@ -1,30 +1,30 @@
 Introduction
 ============
 
-The class :class:`autobahn.websocket.WebSocketProtocol` implements the
+The class :class:`autobahn.websocket.protocol.WebSocketProtocol` implements the
 WebSocket protocol.
 
 Though you will use methods and override callbacks from this class, you must
 implement your clients/servers by deriving from the classes
-:class:`autobahn.websocket.WebSocketClientProtocol` and
-:class:`autobahn.websocket.WebSocketServerProtocol`.
+:class:`autobahn.websocket.protocol.WebSocketClientProtocol` and
+:class:`autobahn.websocket.protocol.WebSocketServerProtocol`.
 
 
 Class Diagrams
 --------------
 
 
-* :class:`autobahn.websocket.WebSocketProtocol`
-* :class:`autobahn.websocket.WebSocketClientProtocol`
-* :class:`autobahn.websocket.WebSocketServerProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketClientProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketServerProtocol`
 * :class:`autobahn.wamp.WampClientProtocol`
 * :class:`autobahn.wamp.WampServerProtocol`
 
 .. image:: protocolclasses.png
 
 
-* :class:`autobahn.websocket.WebSocketClientFactory`
-* :class:`autobahn.websocket.WebSocketServerFactory`
+* :class:`autobahn.websocket.protocol.WebSocketClientFactory`
+* :class:`autobahn.websocket.protocol.WebSocketServerFactory`
 * :class:`autobahn.wamp.WampClientFactory`
 * :class:`autobahn.wamp.WampServerFactory`
 
@@ -43,11 +43,11 @@ API (see below).
 
 The basic API consists of the following methods and callbacks
 
-  * :func:`autobahn.websocket.WebSocketProtocol.onOpen`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessage`
-  * :func:`autobahn.websocket.WebSocketProtocol.onClose`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendMessage`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendClose`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onOpen`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onClose`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendClose`
 
 
 Advanced API
@@ -60,7 +60,7 @@ and 2^63 octets.
 The implementation of the basic API is message-based, and thus has to buffer
 all data received for a message frame, and buffer all frames received for
 a message, and only when the message finally ends, flattens all buffered
-data and fires :func:`autobahn.websocket.WebSocketProtocol.onMessage`.
+data and fires :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessage`.
 
 Usually, when you produce/consume messages of small to limited size (like
 say <256k), this is absolutely sufficient and convenient.
@@ -78,29 +78,29 @@ do WebSockets using frame-based processing or even completely streaming
 processing - both sending and receiving.
 
 API for prepared message processing:
-  * :func:`autobahn.websocket.WebSocketFactory.prepareMessage`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendPreparedMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPreparedMessage`
 
 API for frame-based processing:
 
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageBegin`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageFrame`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageEnd`
-  * :func:`autobahn.websocket.WebSocketProtocol.beginMessage`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendMessageFrame`
-  * :func:`autobahn.websocket.WebSocketProtocol.endMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageBegin`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrame`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageEnd`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessageFrame`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.endMessage`
 
 API for streaming processing:
 
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageBegin`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageFrameBegin`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageFrameData`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageFrameEnd`
-  * :func:`autobahn.websocket.WebSocketProtocol.onMessageEnd`
-  * :func:`autobahn.websocket.WebSocketProtocol.beginMessage`
-  * :func:`autobahn.websocket.WebSocketProtocol.beginMessageFrame`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendMessageFrameData`
-  * :func:`autobahn.websocket.WebSocketProtocol.endMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageBegin`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameBegin`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameData`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameEnd`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageEnd`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessage`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessageFrame`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessageFrameData`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.endMessage`
 
 The advanced API for frame-based/streaming processing of WebSockets
 messages also provides access to extension points in the WebSockets
@@ -114,7 +114,7 @@ Anyway, if you want, you can do.
 
 API for explicit Ping/Pong processing:
 
-  * :func:`autobahn.websocket.WebSocketProtocol.onPing`
-  * :func:`autobahn.websocket.WebSocketProtocol.onPong`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendPing`
-  * :func:`autobahn.websocket.WebSocketProtocol.sendPong`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onPing`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onPong`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPing`
+  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPong`

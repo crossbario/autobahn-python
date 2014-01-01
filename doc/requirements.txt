@@ -1,4 +1,3 @@
-autobahn>=0.7.0
 twisted>=13.2.0
 asyncio>=0.2.1
 python-snappy>=0.5
