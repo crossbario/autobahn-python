@@ -21,14 +21,14 @@ __all__ = ("WebSocketResource",
            "WSGIRootResource",)
 
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
 try:
    from twisted.web.error import NoResource
 except:
    ## starting from Twisted 12.2, NoResource has moved
-   from twisted.web.resource import NoResource  
+   from twisted.web.resource import NoResource
 from twisted.web.resource import IResource, Resource
 
 ## The following imports reactor at module level
@@ -62,16 +62,17 @@ class HTTPChannelHixie76Aware(HTTPChannel):
       HTTPChannel.headerReceived(self, line)
 
 
+
 class WSGIRootResource(Resource):
    """
    Root resource when you want a WSGI resource be the default serving
    resource for a Twisted Web site, but have subpaths served by
    different resources.
-   
+
    This is a hack needed since
    `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
    does not provide a `putChild()` method.
-   
+
    See also:
       * `Autobahn Twisted Web WSGI example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsgi>`_
       * `Original hack <http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html>`_
@@ -81,7 +82,7 @@ class WSGIRootResource(Resource):
       """
       Creates a Twisted Web root resource.
 
-      :param wsgiResource: 
+      :param wsgiResource:
       :type wsgiResource: Instance of `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
       :param children: A dictionary with string keys constituting URL subpaths, and Twisted Web resources as values.
       :type children: dict
@@ -96,13 +97,13 @@ class WSGIRootResource(Resource):
       return self._wsgiResource
 
 
+
+@implementer(IResource)
 class WebSocketResource(object):
    """
    A Twisted Web resource for WebSocket. This resource needs to be instantiated
    with a factory derived from WebSocketServerFactory.
    """
-
-   implements(IResource)
 
    isLeaf = True
 

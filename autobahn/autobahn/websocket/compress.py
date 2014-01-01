@@ -69,7 +69,7 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 ##
 try:
    import snappy
-   from compress_snappy import *
+   from autobahn.websocket.compress_snappy import *
    PMCE = {
       'Offer': PerMessageSnappyOffer,
       'OfferAccept': PerMessageSnappyOfferAccept,

@@ -44,13 +44,19 @@
 __all__ = ("pbkdf2_hex",
            "pbkdf2_bin",)
 
+import sys
+PY3 = sys.version_info.major > 2
 
 import hmac
 import hashlib
 from struct import Struct
 from operator import xor
-from itertools import izip, starmap
+from itertools import starmap
 
+if PY3:
+   izip = zip
+else:
+   from itertools import izip, starmap
 
 _pack_int = Struct('>I').pack
 

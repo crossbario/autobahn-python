@@ -18,6 +18,9 @@
 
 from __future__ import absolute_import
 
+import sys
+PY3 = sys.version_info.major > 2
+
 __all__ = ("WampProtocol",
            "WampFactory",
            "WampServerProtocol",
@@ -34,7 +37,11 @@ __all__ = ("WampProtocol",
 
 import inspect, types
 import traceback
-import StringIO
+
+if PY3:
+   from io import StringIO
+else:
+   import StringIO
 
 import hashlib, hmac, binascii, random
 
