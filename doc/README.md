@@ -9,7 +9,7 @@ The documentation is generated automatically from the Python source file via [Sp
 To generate the documentation yourself, you will need to install Sphinx:
 
 	easy_install sphinx
-   easy_install repoze.sphinx.autointerface
+    easy_install repoze.sphinx.autointerface
 
 and then
 

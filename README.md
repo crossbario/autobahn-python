@@ -52,7 +52,7 @@ The *"Hello, world!"* of WebSocket is probably:
 
 Autobahn comes with lots of [examples](https://github.com/tavendo/AutobahnPython/tree/master/examples) with ready-to-run code.
 
-For complete API documentation, please consult the [reference documentation](https://autobahnpython.readthedocs.org/).
+For complete API documentation, please consult the [reference documentation](http://autobahn.ws/python/reference/).
 
 For more information, including some tutorials, please visit the project's [homepage](http://autobahn.ws/python).
 
