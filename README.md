@@ -39,7 +39,8 @@ Install from sources:
 
 	python setup.py install
 
-> If installing from source, you should checkout a tagged release. Do not use head/trunk.
+> 1. The setup will install the Twisted integration automatically if Twisted is available. If Twisted is not available, no integration will be installed. Same for asyncio.
+> 2. If installing from source, you should checkout a tagged release. Do not use head/trunk.
 > 
 
 
@@ -55,6 +56,23 @@ Autobahn comes with lots of [examples](https://github.com/tavendo/AutobahnPython
 For complete API documentation, please consult the [reference documentation](http://autobahn.ws/python/reference/).
 
 For more information, including some tutorials, please visit the project's [homepage](http://autobahn.ws/python).
+
+
+## Upgrading from Autobahn < 0.7.0
+
+Starting with release 0.7.0, **Autobahn**|Python now supports both Twisted and asyncio as the underlying network library. This required changing module naming, e.g.
+
+Autobahn|Python **< 0.7.0**:
+
+     from autobahn.websocket import WebSocketServerProtocol
+
+Autobahn|Python **>= 0.7.0**:
+
+     from autobahn.twisted.websocket import WebSocketServerProtocol
+
+or
+
+     from autobahn.asyncio.websocket import WebSocketServerProtocol 
 
 
 ## Performance
