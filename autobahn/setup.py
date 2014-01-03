@@ -23,7 +23,8 @@ from distutils import log
 
 
 import sys
-PY3 = sys.version_info.major > 2
+
+PY3 = sys.version_info >= (3,)
 if PY3:
    log.info("Python 3 detected.")
 else:
