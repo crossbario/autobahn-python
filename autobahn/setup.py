@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,17 +18,15 @@
 
 from __future__ import absolute_import
 
+from ez_setup import use_setuptools
+use_setuptools()
+
 from setuptools import setup
 from distutils import log
 
 
 import sys
-
-PY3 = sys.version_info >= (3,)
-if PY3:
-   log.info("Python 3 detected.")
-else:
-   log.info("Python 2 detected.")
+PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
 
 LONGSDESC = """
@@ -64,35 +62,10 @@ else:
 ##
 packages = ['autobahn',
             'autobahn.wamp2',
-            'autobahn.websocket']
-
-
-## Twisted integration
-##
-try:
-   from twisted.internet import reactor
-except:
-   log.warn("Twisted not installed - skipping Twisted support packages")
-   HAS_TWISTED = False
-else:
-   log.info("Twisted detected - installing Autobahn/Twisted integration")
-   packages.append('autobahn.twisted')
-   packages.append('twisted.plugins')
-   HAS_TWISTED = True
-
-
-## Asyncio integration
-##
-if PY3:
-   try:
-      from asyncio import Future
-   except:
-      log.warn("Asyncio not available - skipping Asyncio support packages")
-   else:
-      log.info("Asyncio detected - installing Autobahn/Asyncio integration")
-      packages.append('autobahn.asyncio')
-else:
-   log.warn("Python 2 detected - skipping Autobahn/Asyncio integration")
+            'autobahn.websocket',
+            'autobahn.asyncio',
+            'autobahn.twisted',
+            'twisted.plugins']
 
 
 ## Now install Autobahn ..
@@ -109,8 +82,9 @@ setup(
    platforms = ('Any'),
    install_requires = ['setuptools', 'zope.interface>=4.0.2'],
    extras_require = {
-      ## this is ONLY needed on Python 3.3. Python 3.4+ has that integrated already!
-      'asyncio': ["asyncio>=0.2.1"],
+      ## This is ONLY needed on Python 3.3. Python 3.4+ has that integrated already!
+      ## And Python 2 doesn't have it.
+      'asyncio': ["asyncio>=0.2.1"] if PY33 else [],
 
       ## you need Twisted for Autobahn/Twisted - obviously
       'twisted': ["twisted>=11.1"],
@@ -140,6 +114,15 @@ setup(
                   "Topic :: Software Development :: Libraries"],
    keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
+
+
+
+try:
+   from twisted.internet import reactor
+except:
+   HAS_TWISTED = False
+else:
+   HAS_TWISTED = True
 
 
 if HAS_TWISTED:

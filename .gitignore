@@ -8,3 +8,5 @@ doc/_build/*
 *.sublime-workspace
 __pycache__
 dropin.cache
+*.egg
+*.tar.gz

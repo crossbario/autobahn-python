@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,5 +16,5 @@
 ##
 ###############################################################################
 
-__version__ = "0.7.0"
+__version__ = "0.7.1"
 version = __version__ # backward compat.
