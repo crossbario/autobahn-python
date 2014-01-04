@@ -1,5 +1,9 @@
 # AutobahnPython: Changelog
 
+## v0.7.1
+ * setup fixes
+ * fixes for Python2.6
+
 ## v0.7.0
  * asyncio support
  * Python 3 support

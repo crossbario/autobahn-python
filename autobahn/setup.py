@@ -26,6 +26,7 @@ from distutils import log
 
 
 import sys
+PY3 = sys.version_info >= (3,)
 PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
 
@@ -63,9 +64,13 @@ else:
 packages = ['autobahn',
             'autobahn.wamp2',
             'autobahn.websocket',
-            'autobahn.asyncio',
             'autobahn.twisted',
             'twisted.plugins']
+
+if PY3:
+   packages.append('autobahn.asyncio')
+else:
+   log.warn("Python 2 detected - skipping Autobahn asyncio integration")
 
 
 ## Now install Autobahn ..
@@ -80,14 +85,14 @@ setup(
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
-   install_requires = ['setuptools', 'zope.interface>=4.0.2'],
+   install_requires = ['zope.interface>=4.0.2'],
    extras_require = {
       ## This is ONLY needed on Python 3.3. Python 3.4+ has that integrated already!
       ## And Python 2 doesn't have it.
       'asyncio': ["asyncio>=0.2.1"] if PY33 else [],
 
       ## you need Twisted for Autobahn/Twisted - obviously
-      'twisted': ["twisted>=11.1"],
+      'twisted': ["Twisted>=11.1"],
 
       ## native WebSocket and JSON acceleration: this should ONLY be used on CPython
       'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"],
