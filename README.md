@@ -48,7 +48,7 @@ To install from sources, clone the repo
 checkout a tagged release
 
 	cd AutobahnPython
-	git checkout v0.7.0
+	git checkout v0.7.1
 
 and install
 
@@ -86,11 +86,11 @@ For more information, including some tutorials, please visit the project's [home
 
 To require **Autobahn**|Python as a dependency of your package, include the following in your `setup.py`:
 
-	install_requires = ["autobahn>=0.7.0"]
+	install_requires = ["autobahn>=0.7.1"]
 
 You can also depend on an install variant which automatically installs respective packages:
 
-	install_requires = ["autobahn[twisted,accelerate]>=0.7.0"]
+	install_requires = ["autobahn[twisted,accelerate]>=0.7.1"]
 
 
 ## Upgrading from Autobahn < 0.7.0
