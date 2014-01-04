@@ -24,6 +24,8 @@ use_setuptools()
 from setuptools import setup
 from distutils import log
 
+import platform
+CPY = platform.python_implementation() == 'CPython'
 
 import sys
 PY3 = sys.version_info >= (3,)
@@ -95,7 +97,7 @@ setup(
       'twisted': ["Twisted>=11.1"],
 
       ## native WebSocket and JSON acceleration: this should ONLY be used on CPython
-      'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"],
+      'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
 
       ## for (non-standard) WebSocket compression methods - not needed if you
       ## only want standard WebSocket compression ("permessage-deflate")
