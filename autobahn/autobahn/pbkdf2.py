@@ -45,7 +45,8 @@ __all__ = ("pbkdf2_hex",
            "pbkdf2_bin",)
 
 import sys
-PY3 = sys.version_info.major > 2
+PY3 = sys.version_info >= (3,)
+
 
 import hmac
 import hashlib

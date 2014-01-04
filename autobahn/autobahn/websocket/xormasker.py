@@ -17,7 +17,8 @@
 ###############################################################################
 
 import sys
-PY3 = sys.version_info.major > 2
+PY3 = sys.version_info >= (3,)
+
 
 
 ## use Cython implementation of XorMasker validator if available
