@@ -104,7 +104,7 @@ setup(
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
 
       ## needed if you want WAMPv2 binary serialization support
-      'binary': ["msgpack-python>=0.4.0"]
+      'serialization': ["msgpack-python>=0.4.0"]
    },
    packages = packages,
    zip_safe = False,

@@ -31,17 +31,41 @@ You will need at least one of Twisted or Asyncio as your networking framework.
 
 > Asyncio comes bundled with Python 3.4. For Python 3.3, install it from [here](https://pypi.python.org/pypi/asyncio). For Twisted, please see [here](http://twistedmatrix.com/).
 
-Install from the [Python Package Index](http://pypi.python.org/pypi/autobahn):
+Install from the [Python Package Index](http://pypi.python.org/pypi/autobahn) using [Pip](http://www.pip-installer.org/en/latest/installing.html):
 
-	easy_install autobahn
+	pip install autobahn
 
-Install from sources:
+You can also specify install variants
 
+	pip install autobahn[twisted,accelerate]
+
+The latter will automatically install Twisted and native acceleration packages when running on CPython.
+
+To install from sources, clone the repo
+
+	git clone git@github.com:tavendo/AutobahnPython.git
+
+checkout a tagged release
+
+	cd AutobahnPython
+	git checkout v0.7.0
+
+and install
+
+	cd autobahn
 	python setup.py install
 
-> 1. The setup will install the Twisted integration automatically if Twisted is available. If Twisted is not available, no integration will be installed. Same for asyncio.
-> 2. If installing from source, you should checkout a tagged release. Do not use head/trunk.
-> 
+You can also use Pip for the last step, which allows to specify install variants
+
+	pip install -e .[twisted]
+
+**Autobahn**|Python has the following install variants:
+
+ 1. `twisted`: Install Twisted as a dependency
+ 2. `asyncio`: Install asyncio on Python 3.3 as a dependency
+ 3. `accelerate`: Install native acceleration packages on CPython
+ 4. `compress`: Install packages for non-standard WebSocket compression methods
+ 5. `serialization`: Install packages for additional WAMP serialization formats (currently, MsgPack)
 
 
 ## Getting Started
@@ -56,6 +80,17 @@ Autobahn comes with lots of [examples](https://github.com/tavendo/AutobahnPython
 For complete API documentation, please consult the [reference documentation](http://autobahn.ws/python/reference/).
 
 For more information, including some tutorials, please visit the project's [homepage](http://autobahn.ws/python).
+
+
+## Depending on Autobahn
+
+To require **Autobahn**|Python as a dependency of your package, include the following in your `setup.py`:
+
+	install_requires = ["autobahn>=0.7.0"]
+
+You can also depend on an install variant which automatically installs respective packages:
+
+	install_requires = ["autobahn[twisted,accelerate]>=0.7.0"]
 
 
 ## Upgrading from Autobahn < 0.7.0
@@ -80,7 +115,7 @@ or
 **Autobahn**|Python is portable, well tuned code. You can further accelerate performance by
 
 * Running under [PyPy](http://pypy.org/) or
-* on CPython, install the native accelerators [wsaccel](https://pypi.python.org/pypi/wsaccel/) and [ujson](https://pypi.python.org/pypi/ujson/)
+* on CPython, install the native accelerators [wsaccel](https://pypi.python.org/pypi/wsaccel/) and [ujson](https://pypi.python.org/pypi/ujson/) (you can use the install variant `acceleration` for that)
 
 
 ## Get in touch
