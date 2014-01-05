@@ -17,7 +17,7 @@ clean:
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;
-	find . -name "__pycache__" -type d -exec rm -rf {} \;
+	find . -name "*__pycache__" -type d -exec rm -rf {} \;
 
 publish: clean
 	python3 setup.py register
