@@ -168,14 +168,30 @@ def deleteTask(taskId, invocation = Invocation):
 yield session.register("com.myapp.task.delete", deleteTask)
 ```
 
+This endpoint can now be called
+
+```python
+yield session.call("com.myapp.task.delete", "t130")
+```
+
 ### Pattern-based registrations
 
 ```python
 def deleteTask(invocation = Invocation):
+   # retrieve wildcard component from procedure URI
    taskId = invocation.procedure.split('.')[3]
+   # delete "task" ..
    db.deleteTask(taskId)
+   # .. and notify all but the caller
+   session.publish("com.myapp.task.{}.on_delete".format(taskId), PublishOptions(exclude = [invocation.caller])
 
 yield session.register("com.myapp.task..delete", deleteTask)
+```
+
+This endpoint can now be called
+
+```python
+yield session.call("com.myapp.task.t130.delete")
 ```
 
 ### Distributed endpoints
