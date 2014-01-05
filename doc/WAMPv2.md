@@ -52,3 +52,36 @@ def deletedSoFar(n):
 total = yield session.call("com.myapp.log.delete", options = CallOptions(onProgress = deletedSoFar))
 print("{} items deleted in total.".format(total))
 ```
+
+### Canceling calls
+
+Call a remote procedure which produces interim, progressive results:
+
+```python
+def done(res):
+   print("Alrighty.")
+
+def nope(err):
+   if isinstance(err, CanceledError):
+      print("Canceled.")
+   else:
+      print("Error: {}".format(err))
+
+d = session.call("com.myapp.longop")
+d.addCallbacks(done, nope)
+...
+d.cancel()
+```
+
+### Call timeouts
+
+Call a procedure, but automatically timeout the call after given time:
+
+```python
+try:
+   total = yield session.call("com.myapp.longop", options = CallOptions(timeout = 10))
+except TimeoutError:
+   print("Giving up.")
+except Exception as err:
+   print("Error: {}".format(err))
+```
