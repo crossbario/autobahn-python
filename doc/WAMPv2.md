@@ -63,7 +63,7 @@ print("Result: {} + {}i".format(c.kwresults["real"], c.kwresults["imag"])
 
 ### Canceling calls
 
-Call a remote procedure which produces interim, progressive results:
+Canceling of calls results in a `autobahn.wamp.error.CanceledError` exception being raised:
 
 ```python
 def done(res):
@@ -122,3 +122,60 @@ result = yield session.call("com.myapp.order.place", order = {...},
 								options = CallOptions(runAt = "partition", pkey = 2391))
 ```
 
+
+## Registering endpoints
+
+### Basic registration
+
+*Callees* can register endpoints to be called remotely:
+
+```python
+def hello(msg):
+   return "You said {}. I say hello!".format(msg)
+
+try:
+   yield session.register("com.myapp.hello", hello)
+except ApplicationError as err:
+   print("Registration failed: {}".format(err))
+else:
+   print("Ok, endpoint registered!")
+```
+
+### Unregistering
+
+The following will unregister a previously registered endpoint from a *Callee*:
+
+```python
+registration = yield session.register("com.myapp.hello", hello)
+
+try:
+   yield session.unregister(registration)
+except ApplicationError as err:
+   print("Unregistration failed: {}".format(err))
+else:
+   print("Ok, endpoint unregistered!")
+```
+
+### Registration with invocation details
+
+```python
+def deleteTask(taskId, invocation = Invocation):
+   # delete "task" ..
+   db.deleteTask(taskId)
+   # .. and notify all but the caller
+   session.publish("com.myapp.task.on_delete", taskId, PublishOptions(exclude = [invocation.caller])
+
+yield session.register("com.myapp.task.delete", deleteTask)
+```
+
+### Pattern-based registrations
+
+```python
+def deleteTask(invocation = Invocation):
+   taskId = invocation.procedure.split('.')[3]
+   db.deleteTask(taskId)
+
+yield session.register("com.myapp.task..delete", deleteTask)
+```
+
+### Distributed endpoints
