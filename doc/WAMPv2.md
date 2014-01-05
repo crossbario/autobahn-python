@@ -113,10 +113,12 @@ result = yield session.call("com.myapp.customer.count", options = CallOptions(ru
 ```
 
 ```python
-yield session.call("com.myapp.pageview.log", page = "http://www.myapp.com/page1.html", options = CallOptions(runAt = "any"))
+yield session.call("com.myapp.pageview.log", page = "http://www.myapp.com/page1.html",
+						options = CallOptions(runAt = "any"))
 ```
 
 ```python
-result = yield session.call("com.myapp.order.place", order = {...}, options = CallOptions(runAt = "partition", pkey = 2391))
+result = yield session.call("com.myapp.order.place", order = {...},
+								options = CallOptions(runAt = "partition", pkey = 2391))
 ```
 
