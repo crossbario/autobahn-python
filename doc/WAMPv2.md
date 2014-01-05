@@ -158,6 +158,8 @@ else:
 
 ### Registration with invocation details
 
+For an endpoint to receive invocation details during invocation, the callable registered for the endpoint must consume a keyword argument of type `autobahn.wamp.types.Invocation`:
+
 ```python
 def deleteTask(taskId, invocation = Invocation):
    # delete "task" ..
@@ -183,7 +185,7 @@ def deleteTask(invocation = Invocation):
    # delete "task" ..
    db.deleteTask(taskId)
    # .. and notify all but the caller
-   session.publish("com.myapp.task.{}.on_delete".format(taskId), PublishOptions(exclude = [invocation.caller])
+   session.publish("com.myapp.task.{}.on_delete".format(taskId))
 
 yield session.register("com.myapp.task..delete", deleteTask)
 ```
@@ -193,5 +195,30 @@ This endpoint can now be called
 ```python
 yield session.call("com.myapp.task.t130.delete")
 ```
+
+### Progressive invocations
+
+The following endpoint will produce progressive call results:
+
+```python
+def longop(n, invocation = Invocation):
+  for i in range(n):
+     invocation.progress(i)
+     yield sleep(1)
+  return n
+
+yield session.register("com.myapp.longop", longop)
+```
+
+and can be called like this
+
+```python
+def processedSoFar(i):
+   print("{} items processed so far ..".format(i))
+
+total = yield session.call("com.myapp.longop", 10, options = CallOptions(onProgress = processedSoFar))
+print("{} items deleted in total.".format(total))
+```
+
 
 ### Distributed endpoints
