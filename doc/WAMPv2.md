@@ -41,6 +41,26 @@ except ApplicationError as err:
    print("Error: {}".format(err))
 ```
 
+### Calls with complex results
+
+In Python, a function has always exactly one (positional) result. In WAMP, procedures can also have multiple positional and/or keyword results.
+
+If a WAMP procedure call has such a result, the result is wrapped into an instance of `CallResult` to fit the Python host language.
+
+Call with more than multiple positional results:
+
+```python
+c = yield session.call("com.math.complex.add", 5, 8, 2, 3)
+print("Result: {} + {}i".format(c.results[0], c.results[1]))
+```
+
+Call with keyword results:
+
+```python
+c = yield session.call("com.math.complex.add", x = (5, 8), y = (2, 3))
+print("Result: {} + {}i".format(c.kwresults["real"], c.kwresults["imag"])
+```
+
 ### Call with progressive results
 
 Call a remote procedure which produces interim, progressive results:
