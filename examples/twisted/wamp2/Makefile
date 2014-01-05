@@ -15,3 +15,6 @@ ser1:
 
 http1:
 	PYTHONPATH=../../autobahn python ./longpoll/server.py
+
+test3:
+	PYTHONPATH=../../../autobahn python ./test3.py

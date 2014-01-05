@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -156,6 +156,7 @@ class IWebSocketChannel(Interface):
       """
 
 
+
 class IWebSocketChannelFrameApi(IWebSocketChannel):
    """
    Frame-based API to a WebSocket channel.
@@ -276,78 +277,4 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
                        returns octets remaining to be sent. When the frame is complete,
                        returns `0`, when `< 0`, the amount of unconsumed data in payload
                        argument.
-      """
-
-
-
-class IWampDealer(Interface):
-   """
-   """
-
-   def register(self, endpoint, obj):
-      """
-      """
-
-   def registerMethod(self, endpoint, obj, method):
-      """
-      """
-
-   def registerProcedure(self, endpoint, procedure):
-      """
-      """
-
-   def unregister(self, endpoint):
-      """
-      """
-
-
-class IWampBroker(Interface):
-   """
-   """
-
-   def register(self, topic, prefix = False, publish = True, subscribe = True):
-      """
-      """
-
-   def unregister(self, topic):
-      """
-      """
-
-
-class IWampPublishOptions(Interface):
-
-   excludeMe = Attribute("Exclude me, the publisher, from receiving the event (even though I may be subscribed).")
-
-
-
-class IWampSession(Interface):
-   """
-   """
-
-   def call(self, *args):
-      """
-      """
-
-   def subscribe(self, topic, handler):
-      """
-      """
-
-   def unsubscribe(self, topic, handler = None):
-      """
-      """
-
-   def publish(self, topic, event,
-               excludeMe = None,
-               exclude = None,
-               eligible = None,
-               discloseMe = None):
-      """
-      """
-
-   def setDealer(self, dealer = None):
-      """
-      """
-
-   def setBroker(self, broker = None):
-      """
       """
