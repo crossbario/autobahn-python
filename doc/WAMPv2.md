@@ -146,11 +146,11 @@ print("Result: {} + {}i".format(c.kwresults["real"], c.kwresults["imag"])
 
 ### Handling errors
 
-Using Twisted coroutines (`defer.inlineDeferred`):
+Using Twisted coroutines (`twisted.internet.defer.inlineDeferred`):
 
 ```python
 try:
-   res = yield session.call("com.myapp.sqrt", -1)
+   res = yield session.call("com.calculator.sqrt", -1)
 except ApplicationError as err:
    print("Error: {}".format(err))
 else:
@@ -161,14 +161,14 @@ Using asyncio coroutines (`asyncio.coroutine`):
 
 ```python
 try:
-   res = yield from session.call("com.myapp.sqrt", -1)
+   res = yield from session.call("com.calculator.sqrt", -1)
 except ApplicationError as err:
    print("Error: {}".format(err))
 else:
    print("Result: {}".format(res))
 ```
 
-Using Twisted Deferreds:
+Using Twisted Deferreds (`twisted.internet.defer.Deferred`):
 
 ```python
 def success(res):
@@ -178,11 +178,11 @@ def failed(failure):
    err = failure.value
    print("Error: {}".format(err))
 
-d = session.call("com.myapp.sqrt", -1)
+d = session.call("com.calculator.sqrt", -1)
 d.addCallbacks(success, failed)
 ```
 
-Using asyncio Futures:
+Using asyncio Futures (`asyncio.Future`):
 
 ```python
 def done(future):
@@ -193,7 +193,7 @@ def done(future):
    else:
       print("Result: {}".format(res))
 
-f = session.call("com.myapp.sqrt", -1)
+f = session.call("com.calculator.sqrt", -1)
 f.add_done_callback(done)
 ```
 
