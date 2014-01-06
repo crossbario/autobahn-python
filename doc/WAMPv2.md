@@ -1,6 +1,6 @@
 # Programming with WAMP
 
-This document gives an introduction for pgroamming with WAMP in Python using **Autobahn**|Python.
+This document gives an introduction for programming with WAMP in Python using **Autobahn**|Python.
 
 We will cover:
 
@@ -15,19 +15,72 @@ We will cover:
 
 ### Standard Calls
 
-Call a remote procedure with no result:
+Calling remote procedure with WAMP and **Autobahn**|Python is easy and probably quickest to introduce by giving examples.
+
+For example, here is how you call a remote procedure that takes no arguments and returns a single result - the current time:
+
+```python
+now = yield session.call("com.timeservice.now")
+print(now)
+```
+
+This is using `yield`, which assumes the context in that you run this code is a *co-routine* (something decorated with `defer.inlineDeferred` in Twisted or `asyncio.coroutine` in asyncio).
+
+The same call using plain Twisted Deferreds would look like:
+
+```python
+d = session.call("com.timeservice.now")
+d.addCallback(print)
+```
+
+> Note: This use of `print` relies on `print` being a real function in Python 3. If you are on Python 2, you need to do `from __future__ import print_function` at the very beginning of your Python source file.
+> 
+
+Here are a couple of more idioms using Twisted `Deferreds`.
+
+Process the result in a chain of functions:
+
+```python
+d = session.call("com.timeservice.now")
+d.addCallback(lambda now: "Now: {}".format(now))
+d.addCallback(print)
+```
+
+Process the result in a callback function:
+
+```python
+def success(now):
+   print("Now: {}".format(now))
+
+d = session.call("com.timeservice.now")
+d.addCallback(success)
+```
+
+Here is how that works with asyncio:
+
+```python
+def success(future):
+   now = future.result()
+   print("Now: {}".format(now))
+
+f = session.call("com.timeservice.now")
+f.add_done_callback(success)
+```
+
+
+Call a remote procedure with one positional argument and no result:
 
 ```python
 yield session.call("com.supervotes.vote", "cherrycream")
 ```
 
-Call a remote procedure with no arguments:
+Call a remote procedure with no arguments and no result:
 
 ```python
-result = yield session.call("com.timeservice.now")
+yield session.call("com.myapp.ping")
 ```
 
-Call a remote procedure with positional arguments:
+Call a remote procedure with multiple positional arguments:
 
 ```python
 result = yield session.call("com.myapp.add2", 2, 5)
@@ -36,7 +89,7 @@ result = yield session.call("com.myapp.add2", 2, 5)
 Call a remote procedure with keyword arguments:
 
 ```python
-result = yield session.call("com.myapp.getuser", nick = "homer")
+result = yield session.call("com.myapp.getuser", nick = "homer", stars = 5)
 ```
 
 Call a remote procedure with positional and keyword arguments:
@@ -93,11 +146,55 @@ print("Result: {} + {}i".format(c.kwresults["real"], c.kwresults["imag"])
 
 ### Handling errors
 
+Using Twisted coroutines (`defer.inlineDeferred`):
+
 ```python
 try:
    res = yield session.call("com.myapp.sqrt", -1)
 except ApplicationError as err:
    print("Error: {}".format(err))
+else:
+   print("Result: {}".format(res))
+```
+
+Using asyncio coroutines (`asyncio.coroutine`):
+
+```python
+try:
+   res = yield from session.call("com.myapp.sqrt", -1)
+except ApplicationError as err:
+   print("Error: {}".format(err))
+else:
+   print("Result: {}".format(res))
+```
+
+Using Twisted Deferreds:
+
+```python
+def success(res):
+   print("Result: {}".format(res))
+   
+def failed(failure):
+   err = failure.value
+   print("Error: {}".format(err))
+
+d = session.call("com.myapp.sqrt", -1)
+d.addCallbacks(success, failed)
+```
+
+Using asyncio Futures:
+
+```python
+def done(future):
+   try:
+      res = future.result()
+   except Exception as err:
+      print("Error: {}".format(err))
+   else:
+      print("Result: {}".format(res))
+
+f = session.call("com.myapp.sqrt", -1)
+f.add_done_callback(done)
 ```
 
 ### Canceling calls
