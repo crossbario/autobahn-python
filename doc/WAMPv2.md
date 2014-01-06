@@ -141,6 +141,24 @@ else:
    print("Ok, endpoint registered!")
 ```
 
+Registering via decorators:
+
+```python
+from autobahn.wamp import export
+
+@export("com.myapp.hello")
+def hello(msg):
+   return "You said {}. I say hello!".format(msg)
+
+try:
+   yield session.register(hello)
+except ApplicationError as err:
+   print("Registration failed: {}".format(err))
+else:
+   print("Ok, endpoint registered!")
+```
+
+
 ### Unregistering
 
 The following will unregister a previously registered endpoint from a *Callee*:
@@ -184,11 +202,11 @@ def deleteTask(invocation = Invocation):
    taskId = invocation.procedure.split('.')[3]
    # delete "task" ..
    db.deleteTask(taskId)
-   # .. and notify all but the caller
+   # .. and notify all
    session.publish("com.myapp.task.{}.on_delete".format(taskId))
 
 yield session.register("com.myapp.task..delete", deleteTask,
-							options = RegisterOptions(match = "wildcard"))
+					   options = RegisterOptions(match = "wildcard"))
 ```
 
 This endpoint can now be called
@@ -196,6 +214,23 @@ This endpoint can now be called
 ```python
 yield session.call("com.myapp.task.t130.delete")
 ```
+
+Registering via decorators:
+
+```python
+from autobahn.wamp import export
+
+@export("com.myapp.task.<taskId>.delete")
+def deleteTask(taskId):
+   # delete "task" ..
+   db.deleteTask(taskId)
+   # .. and notify all
+   session.publish("com.myapp.task.{}.on_delete".format(taskId))
+
+yield session.register(deleteTask,
+					   options = RegisterOptions(match = "wildcard"))
+```
+
 
 ### Invocation producing progressive results
 
