@@ -13,9 +13,96 @@ We will cover:
 
 And we will cover programming using
 
-[Twisted Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) and [Asyncio Futures](http://docs.python.org/3.4/library/asyncio-task.html#future)
+* [Twisted Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) and [Asyncio Futures](http://docs.python.org/3.4/library/asyncio-task.html#future)
+* [Twisted inlineCallbacks](http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks) and [Asyncio Coroutines](http://docs.python.org/3.4/library/asyncio-task.html#coroutines)
 
-[Asyncio Coroutines](http://docs.python.org/3.4/library/asyncio-task.html#coroutines)
+## Introduction
+
+### Some useful Resources
+
+* [Wikipedia on Promises](http://en.wikipedia.org/wiki/Promise_%28programming%29)
+* [Twisted Deferred Reference](https://twistedmatrix.com/documents/current/core/howto/defer.html)
+* [Twisted Introduction](http://krondo.com/?page_id=1327)
+* [Python 3.4 docs - asyncio](http://docs.python.org/3.4/library/asyncio.html)
+* [PEP-3156 - Asynchronous IO Support Rebooted](http://www.python.org/dev/peps/pep-3156/)
+* [Guido van Rossum's Keynot at PyCon US 2013](http://pyvideo.org/video/1667/keynote-1)
+* [Tulip: Async I/O for Python 3](http://www.youtube.com/watch?v=1coLC-MUCJc)
+
+
+### Twisted Deferreds
+
+Write me.
+
+ 
+### Asyncio Futures
+
+[Asyncio Futures](http://docs.python.org/3.4/library/asyncio-task.html#future) like Twisted Deferreds encapsulate the result of a future computation. At the time of creation, the result is (usually) not yet available, and will only be available eventually.
+
+On the other hand, asyncio futures are quite different from Twisted Deferreds. On difference is that they have no builtin machinery for chaining.
+
+
+### Twisted Inline Callbacks
+
+[Twisted inlineCallbacks](http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks) let you write code in a sequential (looking) manner, that nevertheless executes asynchronously and non-blocking under the hood.
+
+```python
+from twisted.internet import reactor, defer
+
+@defer.inlineCallbacks
+def slow_square(x):
+   yield sleep(1)
+   defer.returnValue(x * x)
+
+@defer.inlineCallbacks
+def test():
+   res = yield slow_square(3)
+   print(res)
+   reactor.stop()
+
+test()
+reactor.run()
+```
+
+Here, we use a little helper for sleeping "inline":
+
+```python
+def sleep(delay):
+   d = defer.Deferred()
+   reactor.callLater(delay, d.callback, None)
+   return d
+```
+
+### Asyncio Coroutines
+
+[Asyncio Coroutines](http://docs.python.org/3.4/library/asyncio-task.html#coroutines) are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
+
+
+```python
+import asyncio
+
+@asyncio.coroutine
+def slow_square(x):
+   yield from asyncio.sleep(1)
+   return x * x
+
+
+@asyncio.coroutine
+def test():
+   res = yield from slow_square(3)
+   print(res)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(test())
+```
+
+The main differences (on surface) are:
+
+1. The use of the decorator `@asyncio.coroutine` in asyncio versus `@defer.inlineCallbacks` with Twisted
+2. The use of `defer.returnValue` in Twisted for returning values
+3. The use of `yield from` in asyncio, versus plain `yield` in Twisted
+4. The auxiliary code to get the event loop started and stopped
+
+Most of the examples that follow will show code for both Twisted and asyncio, unless the conversion is trivial.
 
 
 ## Calling Procedures
