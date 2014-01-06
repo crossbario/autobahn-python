@@ -280,18 +280,35 @@ for product in ["product2", "product3", "product5"]:
    d.addCallback(print_sales, product)
 ```
 
-The asyncio equivalent of above would be:
+The direct asyncio equivalent of above would be:
 
 ```python
-def print_sales(future):
+import functools
+
+def print_sales(product, future):
    sales = future.result()
-   product = future.args[0]
    print("Sales {}: {}".format(product, sales))
 
+fl = []
 for product in ["product2", "product3", "product5"]:
    f = session.call("com.myapp.sales_by_product", product)
-   f.args = [product]
-   f.add_done_callback(print_sales)
+   f.add_done_callback(functools.partial(print_sales, product))
+   fl.append(f)
+yield from asyncio.gather(*fl)
+```
+
+> Note: Part of the verbosity stems from the fact that, different from Twisted's `addCallback`, asyncio's `add_done_callback` sadly does not take and forward `args` and `kwargs` to the callback added.
+> 
+
+However, there is a better way, if we restructure the code a litte:
+
+```python
+def get_and_print_sales(product):
+   sales = yield from session.call("com.myapp.sales_by_product", product)
+   print("Sales {}: {}".format(product, sales))
+
+tasks = [get_and_print_sales(product) for product in ["product2", "product3", "product5"]]
+yield from asyncio.wait(tasks)
 ```
 
 
@@ -510,9 +527,9 @@ Above will run the registrations in parallel ("batched").
 Endpoints can also be defined by using Python decorators:
 
 ```python
-from autobahn.wamp import export
+from autobahn import wamp
 
-@export("com.myapp.hello")
+@wamp.procedure("com.myapp.hello")
 def hello(msg):
    return "You said {}. I say hello!".format(msg)
 
@@ -527,15 +544,15 @@ else:
 This also works for whole objects with decorated methods at once:
 
 ```python
-from autobahn.wamp import export
+from autobahn import wamp
 
 class Calculator:
 
-   @export("com.calculator.add")
+   @wamp.procedure("com.calculator.add")
    def add(self, a, b):
       return a + b
 
-   @export("com.calculator.square")
+   @wamp.procedure("com.calculator.square")
    def square(self, x):
       return x * x
 
@@ -553,19 +570,6 @@ Above will register all methods of `Calculator` which have been decorated using 
 
 In this case, `session.register`, will, upon success, return a list of registrations.
 
-
-```python
-@export("com.calculator")
-class Calculator:
-
-   @export("add")
-   def add(self, a, b):
-      return a + b
-
-   @export
-   def square(self, x):
-      return x * x
-```
 
 ### Unregistering
 
@@ -656,9 +660,9 @@ yield session.call("com.myapp.task.t130.delete")
 Registering via decorators:
 
 ```python
-from autobahn.wamp import export
+from autobahn import wamp
 
-@export("com.myapp.task.<taskId>.delete")
+@wamp.procedure("com.myapp.task.<taskId>.delete")
 def deleteTask(taskId):
    # delete "task" ..
    db.deleteTask(taskId)
@@ -670,13 +674,13 @@ yield session.register(deleteTask,
 ```
 
 ```python
-@export("com.myapp.item.<int:id>.get_name")
+@wamp.procedure("com.myapp.item.<int:id>.get_name")
 def get_item_name(id):
    return db.get_item_name(id)
 ```
 
 ```python
-@export("com.myapp.<string:obj_type>.<int:id>.get_name")
+@wamp.procedure("com.myapp.<string:obj_type>.<int:id>.get_name")
 def get_object_name(obj_type, id):
    if obj_type == "item":
       return db.get_item_name(id)
@@ -687,10 +691,33 @@ def get_object_name(obj_type, id):
 ```
 
 ```python
-@export("com.myapp.<suffix:path>")
+@wamp.procedure("com.myapp.<suffix:path>")
 def generic_proc(path):
    if path == "proc.echo":
       ...
 ```
 
 ### Distributed endpoints
+
+## Publish & Subscribe
+
+### Pattern-based Subscriptions
+
+### Subscriptions via decorators
+
+Event handlers can also be defined using Python decorators:
+
+```python
+from autobahn import wamp
+
+@wamp.topic("com.myapp.product.on_create")
+def on_product_create(id, label, price):
+   printf("New product created: {} ({})".format(label, id))
+
+try:
+   yield session.subscribe(on_product_create)
+except ApplicationError as err:
+   print("Subscription failed: {}".format(err))
+else:
+   print("Ok, event handler subscribed!")
+```
