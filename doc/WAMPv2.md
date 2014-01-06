@@ -141,7 +141,10 @@ else:
    print("Ok, endpoint registered!")
 ```
 
-Registering via decorators:
+
+### Registrations via decorators
+
+Endpoints can also be marked and registered via decorators:
 
 ```python
 from autobahn.wamp import export
@@ -156,6 +159,31 @@ except ApplicationError as err:
    print("Registration failed: {}".format(err))
 else:
    print("Ok, endpoint registered!")
+```
+
+This also works for object methods:
+
+```python
+from autobahn.wamp import export
+
+class Calculator:
+
+   @export("com.calculator.add")
+   def add(self, a, b):
+      return a + b
+
+   @export("com.calculator.square")
+   def square(self, x):
+      return x * x
+
+calc = Calculator()
+
+try:
+   registrations = yield session.register(calc)
+except ApplicationError as err:
+   print("Registration failed: {}".format(err))
+else:
+   print("Ok, {} object endpoints registered!".format(len(registrations)))
 ```
 
 
@@ -173,6 +201,32 @@ except ApplicationError as err:
 else:
    print("Ok, endpoint unregistered!")
 ```
+
+
+### Producing progressive results in invocations
+
+The following endpoint will produce progressive call results:
+
+```python
+def longop(n, invocation = Invocation):
+   for i in range(n):
+      invocation.progress(i)
+      yield sleep(1)
+   return n
+
+yield session.register("com.myapp.longop", longop)
+```
+
+and can be called like this
+
+```python
+def processedSoFar(i):
+   print("{} items processed so far ..".format(i))
+
+total = yield session.call("com.myapp.longop", 10, options = CallOptions(onProgress = processedSoFar))
+print("{} items deleted in total.".format(total))
+```
+
 
 ### Registration with invocation details
 
@@ -229,31 +283,6 @@ def deleteTask(taskId):
 
 yield session.register(deleteTask,
 					   options = RegisterOptions(match = "wildcard"))
-```
-
-
-### Invocation producing progressive results
-
-The following endpoint will produce progressive call results:
-
-```python
-def longop(n, invocation = Invocation):
-   for i in range(n):
-      invocation.progress(i)
-      yield sleep(1)
-   return n
-
-yield session.register("com.myapp.longop", longop)
-```
-
-and can be called like this
-
-```python
-def processedSoFar(i):
-   print("{} items processed so far ..".format(i))
-
-total = yield session.call("com.myapp.longop", 10, options = CallOptions(onProgress = processedSoFar))
-print("{} items deleted in total.".format(total))
 ```
 
 
