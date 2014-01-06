@@ -141,15 +141,23 @@ else:
    print("Ok, endpoint registered!")
 ```
 
-A registered callable is then called an *endpoint*.
+Upon success, `session.register` will return a *registration* - an opaque handle that may be used later to unregister the endpoint. A registered callable is then called an *endpoint*.
 
-Upon success, `session.register` will return a *registration* - an opaque handle that may be used later to unregister the endpoint.
+You could then call above endpoint from another WAMP session:
 
-Here is how you would register two methods on an object:
+```python
+try:
+   res = yield session.call("com.myapp.hello", "foooo")
+except ApplicationError as err:
+   print("Error: {}".format(err))
+else:
+   print(res)
+```
+
+As another example, here is how you would register two methods on an object:
 
 ```python
 class Calculator:
-
    def add(self, a, b):
       return a + b
 
@@ -166,6 +174,28 @@ except ApplicationError as err:
 else:
    print("Ok, object endpoints registered!")
 ```
+
+Since above example uses `yield`, the registrations run sequentially. The second registration will not be executed until the first registration returns.
+
+Further, should the first registration fail, the second won't be executed, and if the first succeeds, but the second fails, the first registration will nevertheless be in place though the second fails.
+
+Each endpoint registration "stands on it's own". There is no way of registering multiple endpoints atomically.
+
+If you want to leverage the asynchronous nature of WAMP and issue registrations in parallel ("batching"), you can do:
+
+```python
+try:
+   dl = []
+   dl.append(session.register("com.calculator.add", calc.add))
+   dl.append(session.register("com.calculator.square", calc.square))
+   regs = yield gatherResults(dl)
+except ApplicationError as err:
+   print("Registration failed: {}".format(err))
+else:
+   print("Ok, {} object endpoints registered!".format(len(regs)))
+```
+
+Above will run the registrations in parallel ("batched").
 
 
 ### Registrations via decorators
@@ -231,8 +261,6 @@ class Calculator:
 ```
 
 
-
-
 ### Unregistering
 
 The following will unregister a previously registered endpoint from a *Callee*:
@@ -269,24 +297,28 @@ and can be called like this
 def processedSoFar(i):
    print("{} items processed so far ..".format(i))
 
-total = yield session.call("com.myapp.longop", 10, options = CallOptions(onProgress = processedSoFar))
+total = yield session.call("com.myapp.longop", 10,
+                           options = CallOptions(onProgress = processedSoFar))
 print("{} items deleted in total.".format(total))
 ```
 
 
 ### Registration with invocation details
 
-For an endpoint to receive invocation details during invocation, the callable registered for the endpoint must consume a keyword argument of type `autobahn.wamp.types.Invocation`:
+For an endpoint to receive invocation details during invocation, the callable registered for the endpoint must consume a keyword argument with a default value of type `autobahn.wamp.types.Invocation`:
 
 ```python
 def deleteTask(taskId, invocation = Invocation):
    # delete "task" ..
    db.deleteTask(taskId)
    # .. and notify all but the caller
-   session.publish("com.myapp.task.on_delete", taskId, PublishOptions(exclude = [invocation.caller])
+   session.publish("com.myapp.task.on_delete", taskId,
+				   PublishOptions(exclude = [invocation.caller])
 
 yield session.register("com.myapp.task.delete", deleteTask)
 ```
+
+Note that the default value must be of `class` type (not an instance of `autobahn.wamp.types.Invocation`).
 
 This endpoint can now be called
 
