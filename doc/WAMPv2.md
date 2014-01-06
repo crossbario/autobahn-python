@@ -204,7 +204,7 @@ def print_sales(future):
 for product in ["product2", "product3", "product5"]:
    f = session.call("com.myapp.sales_by_product", product)
    f.args = [product]
-   d.add_done_callback(print_sales)
+   f.add_done_callback(print_sales)
 ```
 
 
