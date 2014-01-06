@@ -10,7 +10,14 @@ We will cover:
 2. Publish & Subscribe
  * Publishing Events
  * Subscribing to Topics
- 
+
+And we will cover programming using
+
+[Twisted Deferreds](https://twistedmatrix.com/documents/current/core/howto/defer.html) and [Asyncio Futures](http://docs.python.org/3.4/library/asyncio-task.html#future)
+
+[Asyncio Coroutines](http://docs.python.org/3.4/library/asyncio-task.html#coroutines)
+
+
 ## Calling Procedures
 
 ### Standard Calls
@@ -100,7 +107,59 @@ result = yield session.call("com.myapp.getorders", "product5", limit = 10)
 
 ### Batching Calls
 
-Lets say you want to gather the total sales for three products:
+If you have multistep code running remote procedures where each step depends on the results of the previous call, it is natural, and inevitable to schedule the calls sequentially:
+
+```python
+sales = yield session.call("com.myapp.sales_by_product", "product1")
+sales_sq = yield session.call("com.calculator.square", sales)
+print("Squared sales: {}".format(sales_sq))
+```
+
+In above, `com.calculator.square` could not be run before or even while `com.myapp.sales_by_product` is still running and has not yet returned, since the former depends on the result of the latter.
+
+On the other hand, if you have code like the following
+
+```python
+sales1 = yield session.call("com.myapp.sales_by_product", "product1")
+print("Sales 1: {}".format(sales1))
+sales2 = yield session.call("com.myapp.sales_by_product", "product2")
+print("Sales 2: {}".format(sales2))
+```
+
+then these calls do not depend on the result of the other. Hence, these calls could be executed concurrently. And doing so might speed up your program.
+
+Now, above code does not leverage the asynchronous and concurrent abilities of WAMP. To do so, you need to restructure the code a little:
+
+```python
+d1 = session.call("com.myapp.sales_by_product", "product1")
+d2 = session.call("com.myapp.sales_by_product", "product2")
+sales1 = yield d1
+print("Sales 1: {}".format(sales1))
+sales2 = yield d2
+print("Sales 2: {}".format(sales2))
+```
+
+This way, you get both calls running simultaneously, but you wait on the results as they come in.
+
+There is still one catch: if the call result for "Sales 1" comes in after the result for "Sales 2", the result of the former will not be printed until the result for the latter comes in.
+
+Say you want to run the calls concurrently, and print each result as soon as it comes in, without any waiting for others.
+
+This is how you would do that:
+
+```python
+def print_sales(sales, product):
+   print("Sales {}: {}".format(product, sales))
+
+d1 = session.call("com.myapp.sales_by_product", "product1")
+d2 = session.call("com.myapp.sales_by_product", "product2")
+d1.addCallback(print_sales, 1)
+d2.addCallback(print_sales, 2)
+```
+
+Notice the order of arguments in `print_sales`. The `sales` parameter comes first, since a Deferreds callback will always get the Deferreds result as the first positional argument. Additional callback arguments can be forwarded to the callback from `addCallback`. Twisted lets you forward both (additional) positional arguments, and keyword arguments.
+
+Now lets say you want to gather the total sales for a whole list of products:
 
 ```python
 sales = []
@@ -111,7 +170,7 @@ print("Sales: {}".format(sales))
 
 Since above uses `yield`, it will call the remote procedure `com.myapp.sales_by_product` three times, but one after the other. That is, it won't call the procedure for `product3` until the result (or an error) has been received for the call for `product2`.
 
-Now, probably you wan't to speed up things, and leverage the asynchronous and batching capabilities of WAMP. You could do:
+Now, probably you wan't to again speed up things, and leverage the asynchronous and batching capabilities of WAMP. You could do:
 
 ```python
 dl = []
@@ -396,7 +455,6 @@ class Calculator:
       return x * x
 ```
 
-
 ### Unregistering
 
 The following will unregister a previously registered endpoint from a *Callee*:
@@ -499,5 +557,28 @@ yield session.register(deleteTask,
 					   options = RegisterOptions(match = "wildcard"))
 ```
 
+```python
+@export("com.myapp.item.<int:id>.get_name")
+def get_item_name(id):
+   return db.get_item_name(id)
+```
+
+```python
+@export("com.myapp.<string:obj_type>.<int:id>.get_name")
+def get_object_name(obj_type, id):
+   if obj_type == "item":
+      return db.get_item_name(id)
+   elif obj_type == "user":
+      return db.get_user_name(id)
+   else:
+      raise ApplicationError("com.myapp.error.no_such_object_type")
+```
+
+```python
+@export("com.myapp.<suffix:path>")
+def generic_proc(path):
+   if path == "proc.echo":
+      ...
+```
 
 ### Distributed endpoints
