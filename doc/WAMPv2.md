@@ -1,6 +1,19 @@
-## Calling procedures
+# Programming with WAMP
 
-### Standard calls
+This document gives an introduction for pgroamming with WAMP in Python using **Autobahn**|Python.
+
+We will cover:
+
+1. Remote Procedure Calls
+ * Calling Procedures
+ * Registering Endpoints 
+2. Publish & Subscribe
+ * Publishing Events
+ * Subscribing to Topics
+ 
+## Calling Procedures
+
+### Standard Calls
 
 Call a remote procedure with no result:
 
@@ -32,14 +45,31 @@ Call a remote procedure with positional and keyword arguments:
 result = yield session.call("com.myapp.getorders", "product5", limit = 10)
 ```
 
-### Handling errors
+### Batching Calls
+
+Lets say you want to gather the total sales for three products:
 
 ```python
-try:
-   res = yield session.call("com.myapp.sqrt", -1)
-except ApplicationError as err:
-   print("Error: {}".format(err))
+sales = []
+for product in ["product2", "product3", "product5"]:
+   sales.append(yield session.call("com.myapp.sales_by_product", product))
+print("Sales: {}".format(sales))
 ```
+
+Since above uses `yield`, it will call the remote procedure `com.myapp.sales_by_product` three times, but one after the other. That is, it won't call the procedure for `product3` until the result (or an error) has been received for the call for `product2`.
+
+Now, probably you wan't to speed up things, and leverage the asynchronous and batching capabilities of WAMP. You could do:
+
+```python
+dl = []
+for product in ["product2", "product3", "product5"]:
+   dl.append(session.call("com.myapp.sales_by_product", product))
+sales = yield gatherResults(dl)
+print("Sales: {}".format(sales))
+```
+
+This will fire off all three calls essentially immediately, and then wait asynchronously until all three results have arrived. Doing so will - if the endpoint implementing `com.myapp.sales_by_product` is able to run concurrently - execute the three calls in parallel, and the result might be available faster.
+
 
 ### Calls with complex results
 
@@ -59,6 +89,15 @@ Call with keyword results:
 ```python
 c = yield session.call("com.math.complex.add", a = (5, 8), b = (2, 3))
 print("Result: {} + {}i".format(c.kwresults["real"], c.kwresults["imag"])
+```
+
+### Handling errors
+
+```python
+try:
+   res = yield session.call("com.myapp.sqrt", -1)
+except ApplicationError as err:
+   print("Error: {}".format(err))
 ```
 
 ### Canceling calls
