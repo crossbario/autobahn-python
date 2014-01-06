@@ -127,7 +127,7 @@ result = yield session.call("com.myapp.order.place", order = {...},
 
 ### Basic registration
 
-*Callees* can register endpoints to be called remotely:
+*Callees* can register any Python callable (such as functions, methods or objects that provide `__call__`) for remote calling via WAMP:
 
 ```python
 def hello(msg):
@@ -141,10 +141,36 @@ else:
    print("Ok, endpoint registered!")
 ```
 
+A registered callable is then called an *endpoint*.
+
+Upon success, `session.register` will return a *registration* - an opaque handle that may be used later to unregister the endpoint.
+
+Here is how you would register two methods on an object:
+
+```python
+class Calculator:
+
+   def add(self, a, b):
+      return a + b
+
+   def square(self, x):
+      return x * x
+
+calc = Calculator()
+
+try:
+   yield session.register("com.calculator.add", calc.add)
+   yield session.register("com.calculator.square", calc.square)
+except ApplicationError as err:
+   print("Registration failed: {}".format(err))
+else:
+   print("Ok, object endpoints registered!")
+```
+
 
 ### Registrations via decorators
 
-Endpoints can also be marked and registered via decorators:
+Endpoints can also be defined by using Python decorators:
 
 ```python
 from autobahn.wamp import export
@@ -161,7 +187,7 @@ else:
    print("Ok, endpoint registered!")
 ```
 
-This also works for object methods:
+This also works for whole objects with decorated methods at once:
 
 ```python
 from autobahn.wamp import export
@@ -185,6 +211,26 @@ except ApplicationError as err:
 else:
    print("Ok, {} object endpoints registered!".format(len(registrations)))
 ```
+
+Above will register all methods of `Calculator` which have been decorated using `export`.
+
+In this case, `session.register`, will, upon success, return a list of registrations.
+
+
+```python
+@export("com.calculator")
+class Calculator:
+
+   @export("add")
+   def add(self, a, b):
+      return a + b
+
+   @export
+   def square(self, x):
+      return x * x
+```
+
+
 
 
 ### Unregistering
