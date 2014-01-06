@@ -107,7 +107,7 @@ result = yield session.call("com.myapp.getorders", "product5", limit = 10)
 
 ### Batching Calls
 
-If you have multistep code running remote procedures where each step depends on the results of the previous call, it is natural, and inevitable to schedule the calls sequentially:
+If you have multi-step code running remote procedures where each step depends on the results of the previous call, it is natural, and inevitable to schedule the calls sequentially:
 
 ```python
 sales = yield session.call("com.myapp.sales_by_product", "product1")
@@ -143,9 +143,9 @@ This way, you get both calls running simultaneously, but you wait on the results
 
 There is still one catch: if the call result for "Sales 1" comes in after the result for "Sales 2", the result of the former will not be printed until the result for the latter comes in.
 
-Say you want to run the calls concurrently, and print each result as soon as it comes in, without any waiting for others.
+Say you want to run the calls concurrently **and** print each result as soon as it comes in, without any waiting for others - neither for issuing calls, nor for printing results.
 
-This is how you would do that:
+This is how you could approach that:
 
 ```python
 def print_sales(sales, product):
@@ -168,9 +168,9 @@ for product in ["product2", "product3", "product5"]:
 print("Sales: {}".format(sales))
 ```
 
-Since above uses `yield`, it will call the remote procedure `com.myapp.sales_by_product` three times, but one after the other. That is, it won't call the procedure for `product3` until the result (or an error) has been received for the call for `product2`.
+Since above uses `yield` again, it will call the remote procedure `com.myapp.sales_by_product` three times, but one after the other. That is, it won't call the procedure for `product3` until the result (or an error) has been received for the call for `product2`.
 
-Now, probably you wan't to again speed up things, and leverage the asynchronous and batching capabilities of WAMP. You could do:
+Now, probably you want to speed up things like we did before and leverage the asynchronous and concurrent capabilities of WAMP. You could do:
 
 ```python
 dl = []
@@ -181,6 +181,18 @@ print("Sales: {}".format(sales))
 ```
 
 This will fire off all three calls essentially immediately, and then wait asynchronously until all three results have arrived. Doing so will - if the endpoint implementing `com.myapp.sales_by_product` is able to run concurrently - execute the three calls in parallel, and the result might be available faster.
+
+Doing away with waiting before printing could be done like this:
+
+```python
+def print_sales(sales, product):
+   print("Sales {}: {}".format(product, sales))
+
+for product in ["product2", "product3", "product5"]:
+   d = session.call("com.myapp.sales_by_product", product)
+   d.addCallback(print_sales, product)
+```
+
 
 
 ### Calls with complex results
