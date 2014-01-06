@@ -1,5 +1,7 @@
 # Autobahn|Python
 
+[![Build Status](https://travis-ci.org/tavendo/AutobahnPython.png?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
+
 **Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
 * **[The WebSocket Protocol](http://tools.ietf.org/html/rfc6455)**
