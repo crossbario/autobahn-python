@@ -243,6 +243,54 @@ class ICallee(IPeerRole):
    Interface for WAMP peers implementing role "Callee".
    """
 
+   def register(procedure, endpoint, options = None):
+      """
+      Register an endpoint on a procedure to (subsequently) receive calls
+      calling that procedure.
+
+      This will return a deferred/future, that when resolved provides
+      an instance of :class:`autobahn.wamp2.types.Registration`.
+
+      If the registration fails, the returned deferred/future will be rejected
+      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+
+      :param procedure: The URI (or URI pattern) of the procedure to register for,
+                        e.g. "com.myapp.myprocedure1".
+      :type procedure: str
+      :param endpoint: The endpoint called under the procedure.
+      :type endpoint: callable
+      :param options: Options for registering.
+      :type options: An instance of :class:`autobahn.wamp2.types.RegisterOptions`.
+
+      :returns: obj -- A deferred/future for the registration -
+                       an instance of :class:`twisted.internet.defer.Deferred`
+                       (when running under Twisted) or an instance of
+                       :class:`asyncio.Future` (when running under asyncio).
+      """
+
+
+   def unregister(registration):
+      """
+      Unregister the endpoint registration that was previously registered.
+
+      After a registration has been unregistered, calls won't get routed
+      to the endpoint any more.
+
+      This will return a deferred/future, that when resolved signals
+      successful unregistration.
+
+      If the unregistration fails, the returned deferred/future will be rejected
+      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+
+      :param registration: The registration to unregister from.
+      :type registration: An instance of :class:`autobahn.wamp2.types.Registration`
+                          that was previously registered.
+
+      :returns: obj -- A deferred/future for the unregistration -
+                       an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
+                       or an instance of :class:`asyncio.Future` (when running under asyncio).
+      """
+
 
 
 class IPublisher(IPeerRole):

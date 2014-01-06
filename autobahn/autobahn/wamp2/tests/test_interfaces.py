@@ -1,4 +1,25 @@
+###############################################################################
+##
+##  Copyright (C) 2014 Tavendo GmbH
+##
+##  Licensed under the Apache License, Version 2.0 (the "License");
+##  you may not use this file except in compliance with the License.
+##  You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+##  Unless required by applicable law or agreed to in writing, software
+##  distributed under the License is distributed on an "AS IS" BASIS,
+##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+##  See the License for the specific language governing permissions and
+##  limitations under the License.
+##
+###############################################################################
+
 from __future__ import absolute_import
+
+#from twisted.trial import unittest
+import unittest
 
 from zope.interface import implementer
 
@@ -88,16 +109,10 @@ class MockSession:
 
    def call(self, procedure, *args, **kwargs):
       assert(type(procedure) == str)
-
-      invocation = Invocation()
       if 'options' in kwargs:
          options = kwargs['options']
          del kwargs['options']
          assert(isinstance(options, CallOptions))
-         if options.discloseMe:
-            invocation.caller = newid()
-         if options.onProgress:
-            invocation.progress = options.onProgress
 
       d = Deferred()
       if procedure == "com.myapp.echo":
@@ -110,7 +125,6 @@ class MockSession:
 
       elif self._registrations.has_key(procedure):
          try:
-            kwargs['invocation'] = invocation
             res = self._registrations[procedure]._endpoint(*args, **kwargs)
          except TypeError as err:
             d.errback(ApplicationError(ApplicationError.INVALID_ARGUMENT, str(err)))
@@ -122,17 +136,12 @@ class MockSession:
       return d
 
 
-import inspect
 
 @inlineCallbacks
 def test_rpc(session):
 
-   def hello(msg, invocation = Invocation):
-      for i in range(5):
-         invocation.progress(i)
+   def hello(msg):
       return "You said {}. I say hello!".format(msg)
-
-   print inspect.getargspec(hello)
 
    try:
       reg1 = yield session.register("com.myapp.hello", hello)
@@ -140,14 +149,11 @@ def test_rpc(session):
    except ApplicationError as err:
       print(err)
    else:
-      def onProgress(i):
-         print("progress {}".format(i))
-
-      res = yield session.call("com.myapp.hello", "foooo", options = CallOptions(discloseMe = True, onProgress = onProgress))
-      print(res)
+      res = yield session.call("com.myapp.hello", "foooo")
+      print (res)
       yield session.unregister(reg1)
       res = yield session.call("com.myapp.hello", "baaar")
-      print(res)
+      print (res)
 
    try:
 #      res = yield session.call("com.myapp.echo", "Hello, world!", 23)
@@ -187,9 +193,32 @@ def test_pubsub(session):
 
 
 
+class Publisher(unittest.TestCase):
+
+   def setUp(self):
+      self.session = MockSession()
+
+   def tearDown(self):
+      pass
+
+   @inlineCallbacks
+   def testPublish(self):
+
+      def hello(msg):
+         return "You said {}. I say hello!".format(msg)
+
+      try:
+         reg1 = yield self.session.register("com.myapp.hello", hello)
+         print(reg1)
+      except ApplicationError as err:
+         print(err)
+
+
+   @inlineCallbacks
+   def test_sample(self):
+      with self.assertRaises(ApplicationError):
+         yield self.session.register("com.myapp.hello", None)
+
+
 if __name__ == '__main__':
-
-   session = MockSession()
-
-   test_rpc(session)
-   test_pubsub(session)
+   unittest.main()

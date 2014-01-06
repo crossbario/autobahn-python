@@ -10,3 +10,4 @@ __pycache__
 dropin.cache
 *.egg
 *.tar.gz
+_trial_temp

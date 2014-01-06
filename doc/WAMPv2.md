@@ -187,7 +187,8 @@ def deleteTask(invocation = Invocation):
    # .. and notify all but the caller
    session.publish("com.myapp.task.{}.on_delete".format(taskId))
 
-yield session.register("com.myapp.task..delete", deleteTask)
+yield session.register("com.myapp.task..delete", deleteTask,
+							options = RegisterOptions(match = "wildcard"))
 ```
 
 This endpoint can now be called
@@ -196,16 +197,16 @@ This endpoint can now be called
 yield session.call("com.myapp.task.t130.delete")
 ```
 
-### Progressive invocations
+### Invocation producing progressive results
 
 The following endpoint will produce progressive call results:
 
 ```python
 def longop(n, invocation = Invocation):
-  for i in range(n):
-     invocation.progress(i)
-     yield sleep(1)
-  return n
+   for i in range(n):
+      invocation.progress(i)
+      yield sleep(1)
+   return n
 
 yield session.register("com.myapp.longop", longop)
 ```

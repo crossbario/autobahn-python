@@ -54,6 +54,7 @@ class ApplicationError(Error):
    NO_SUCH_REGISTRATION       = "wamp.error.no_such_registration"
    NO_SUCH_SUBSCRIPTION       = "wamp.error.no_such_subscription"
    NO_SUCH_PROCEDURE          = "wamp.error.no_such_procedure"
+   CANCELED                   = "wamp.error.canceled"
 
    def __init__(self, error, reason = None):
       """
@@ -72,7 +73,7 @@ class ApplicationError(Error):
 
 class CallError(ApplicationError):
    """
-   Wrapper for WAMP remote procedure call errors. 
+   Remote procedure call errors. 
    """
 
    def __init__(self, error, problem):
@@ -86,3 +87,16 @@ class CallError(ApplicationError):
       """
       ApplicationError.__init__(self, error)
       self.problem = problem
+
+
+
+class CanceledError(ApplicationError):
+   """
+   Error for canceled calls.
+   """
+
+   def __init__(self):
+      """
+      Constructor.
+      """
+      ApplicationError.__init__(self, ApplicationError.CANCELED)
