@@ -37,7 +37,9 @@ class SlowSquareClientProtocol(WebSocketClientProtocol):
          self.sendClose()
 
    def onClose(self, wasClean, code, reason):
-      loop.close()
+      if reason:
+         print(reason)
+      loop.stop()
 
 
 
@@ -52,4 +54,4 @@ if __name__ == '__main__':
    coro = loop.create_connection(factory, '127.0.0.1', 9000)
    loop.run_until_complete(coro)
    loop.run_forever()
-#   loop.close()
+   loop.close()

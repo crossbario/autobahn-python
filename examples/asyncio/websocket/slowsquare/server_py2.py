@@ -30,15 +30,15 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
       if x > 5:
          raise Exception("number too large")
       else:
-         yield from asyncio.sleep(1)
-         return x * x
+         yield asyncio.sleep(1)
+         raise asyncio.Return(x * x)
 
    @asyncio.coroutine
    def onMessage(self, payload, isBinary):
       if not isBinary:
          x = json.loads(payload.decode('utf8'))
          try:
-            res = yield from self.slowsquare(x)
+            res = yield self.slowsquare(x)
          except Exception as e:
             self.sendClose(1000, str(e))
          else:
