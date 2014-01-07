@@ -83,7 +83,7 @@ if PY3:
       asyncio_packages = []
 else:
    ## backport of asyncio
-   asyncio_packages = ["trollius>=0.1.1"]
+   asyncio_packages = ["trollius>=0.1.1", "futures>=2.1.5"]
 
 
 ## Now install Autobahn ..
