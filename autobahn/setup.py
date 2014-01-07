@@ -66,13 +66,20 @@ else:
 packages = ['autobahn',
             'autobahn.wamp2',
             'autobahn.websocket',
+            'autobahn.asyncio',
             'autobahn.twisted',
             'twisted.plugins']
 
 if PY3:
-   packages.append('autobahn.asyncio')
+   if PY33:
+      ## "Tulip"
+      asyncio_packages = ["asyncio>=0.2.1"]
+   else:
+      ## Python 3.4+ has asyncio builtin
+      asyncio_packages = []
 else:
-   log.warn("Python 2 detected - skipping Autobahn asyncio integration")
+   ## backport of asyncio
+   asyncio_packages = ["trollius>=0.1.1"]
 
 
 ## Now install Autobahn ..
@@ -89,9 +96,8 @@ setup(
    platforms = ('Any'),
    install_requires = ['zope.interface>=4.0.2'],
    extras_require = {
-      ## This is ONLY needed on Python 3.3. Python 3.4+ has that integrated already!
-      ## And Python 2 doesn't have it.
-      'asyncio': ["asyncio>=0.2.1"] if PY33 else [],
+      ## asyncio is needed for Autobahn/asyncio
+      'asyncio': asyncio_packages,
 
       ## you need Twisted for Autobahn/Twisted - obviously
       'twisted': ["Twisted>=11.1"],

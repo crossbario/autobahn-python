@@ -50,8 +50,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       self.transport = transport
 
       self.receive_queue = deque()
-      self.waiter = Future()
-      asyncio.Task(self._consume())
+      self._consume()
 
       peer = transport.get_extra_info('peername')
       try:
@@ -69,9 +68,9 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
 
    def _consume(self):
-      while True:
-         yield from self.waiter
-         self.waiter = Future()
+      self.waiter = Future()
+
+      def process(_):
          while len(self.receive_queue):
             data = self.receive_queue.popleft()
             if self.transport:
@@ -82,6 +81,9 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
                   #print("WebSocketAdapterProtocol._consume: {}".format(e))
             else:
                print("WebSocketAdapterProtocol._consume: no transport")
+         self._consume()
+
+      self.waiter.add_done_callback(process)
 
 
    def data_received(self, data):
