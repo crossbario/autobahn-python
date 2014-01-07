@@ -243,7 +243,7 @@ class ICallee(IPeerRole):
    Interface for WAMP peers implementing role "Callee".
    """
 
-   def register(procedure, endpoint, options = None):
+   def register(endpoint, procedure = None, options = None):
       """
       Register an endpoint on a procedure to (subsequently) receive calls
       calling that procedure.
@@ -298,7 +298,7 @@ class IPublisher(IPeerRole):
    Interface for WAMP peers implementing role "Publisher".
    """
 
-   def publish(topic, payload, options = None):
+   def publish(topic, *args, **kwargs):
       """
       Publish an event to a topic.
 
@@ -327,30 +327,42 @@ class ISubscriber(IPeerRole):
    Interface for WAMP peers implementing role "Subscriber".
    """
 
-   def subscribe(topic, options = None):
+   def subscribe(handler, topic = None, options = None):
       """
-      Subscribe to a topic to (subsequently) receive events published to that topic.
+      Subscribe to a topic and subsequently receive events published to that topic.
 
-      This will return a deferred/future, that when resolved provides
-      an instance of :class:`autobahn.wamp2.types.Subscription`.
+      If `handler` is a callable (function, method or object that implements `__call__`),
+      then `topic` must be provided and an instance of
+      :class:`twisted.internet.defer.Deferred` (when running on Twisted) or an instance
+      of :class:`asyncio.Future` (when running on asyncio) is returned.
+      If the subscription succeeds the Deferred/Future will resolve to an instance
+      of :class:`autobahn.wamp.types.Subscription`. If the subscription fails the
+      Deferred/Future will reject with an instance of :class:`autobahn.error.RuntimeError`.
 
-      If the subscription fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+      If `handler` is an object, then each of the object's methods that are decorated
+      with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
+      Deferreds/Futures is returned that each resolves or rejects as above.
 
-      :param topic: The URI (or URI pattern) of the topic to subscribe to.
+      :param handler: The event handler or handler object to receive events.
+      :type handler: callable or obj
+      :param topic: When `handler` is a single event handler, the URI (or URI pattern)
+                    of the topic to subscribe to. When `handler` is an event handler
+                    object, this value is ignored (and should be `None`).
       :type topic: str
       :param options: Options for subscribing.
-      :type options: An instance of :class:`autobahn.wamp2.types.SubscribeOptions`.
+      :type options: An instance of :class:`autobahn.wamp.types.SubscribeOptions`.
 
-      :returns: obj -- A deferred/future for the subscription -
-                       an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
-                       or an instance of :class:`asyncio.Future` (when running under asyncio).
+      :returns: obj -- A (list of) Deferred(s)/Future(s) for the subscription(s) -
+                       instance(s) of :class:`twisted.internet.defer.Deferred` (when
+                       running under Twisted) or instance(s) of :class:`asyncio.Future`
+                       (when running under asyncio).
       """
 
 
    def unsubscribe(subscription):
       """
-      Unsubscribe the subscription that was previsouly subscribed.
+      Unsubscribe a subscription that was previously created with
+      :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
 
       After a subscription has been unsubscribed, watchers won't get notified
       any more, and you cannot use the subscription anymore.
@@ -365,7 +377,8 @@ class ISubscriber(IPeerRole):
       :type subscription: An instance of :class:`autobahn.wamp2.types.Subscription`
                           that was previously subscribed.
 
-      :returns: obj -- A deferred/future for the publication -
-                       an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
-                       or an instance of :class:`asyncio.Future` (when running under asyncio).
+      :returns: obj -- A (list of) Deferred(s)/Future(s) for the unsubscription(s) -
+                       instance(s) of :class:`twisted.internet.defer.Deferred` (when
+                       running under Twisted) or instance(s) of :class:`asyncio.Future`
+                       (when running under asyncio).
       """

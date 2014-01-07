@@ -559,16 +559,22 @@ class Calculator:
 calc = Calculator()
 
 try:
-   registrations = yield session.register(calc)
+   registrations = yield defer.gatherResults(session.register(calc))
 except ApplicationError as err:
    print("Registration failed: {}".format(err))
 else:
    print("Ok, {} object endpoints registered!".format(len(registrations)))
 ```
 
-Above will register all methods of `Calculator` which have been decorated using `export`.
+Above will register all methods of `Calculator` which have been decorated using `@wamp.procedure`.
 
-In this case, `session.register`, will, upon success, return a list of registrations.
+In asyncio, use
+
+```python
+registrations = yield from asyncio.gather(*session.register(calc))
+```
+
+to yield a list of registrations.
 
 
 ### Unregistering
@@ -701,7 +707,33 @@ def generic_proc(path):
 
 ## Publish & Subscribe
 
-### Pattern-based Subscriptions
+### Subscribing event handlers
+
+Event handlers are callables subscribed on topics to receive events published to that topic.
+
+To subscribe a callable (and hence make it an event handler):
+
+```python
+def on_product_create(id, label, price):
+   printf("New product created: {} ({})".format(label, id))
+
+try:
+   yield session.subscribe("com.myapp.product.on_create", on_product_create)
+except ApplicationError as err:
+   print("Subscription failed: {}".format(err))
+else:
+   print("Ok, event handler subscribed!")
+```
+
+Above event handler will then receive events published from another WAMP session:
+
+try:
+   yield session.publish("com.myapp.product.on_create", 103, "PyJacket", 50.3)
+except ApplicationError as err:
+   print("Publication failed: {}".format(err))
+else:
+   print("Ok, event published!")
+
 
 ### Subscriptions via decorators
 
@@ -721,3 +753,6 @@ except ApplicationError as err:
 else:
    print("Ok, event handler subscribed!")
 ```
+
+### Pattern-based Subscriptions
+
