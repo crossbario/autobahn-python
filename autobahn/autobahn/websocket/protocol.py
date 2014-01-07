@@ -805,7 +805,6 @@ class WebSocketProtocol:
          self.factory._log("WebSocketProtocol.onCloseFrame")
 
       self.remoteCloseCode = code
-      self.remoteCloseReason = reasonRaw
 
       ## reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
       ##
@@ -823,6 +822,7 @@ class WebSocketProtocol:
          if not val[0]:
             if self.invalidPayload("invalid close reason (non-UTF-8 payload)"):
                return True
+         self.remoteCloseReason = reasonRaw.decode('utf8')
 
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
@@ -2128,8 +2128,12 @@ class WebSocketProtocol:
       if reason is not None:
          if code is None:
             raise Exception("close reason without close code")
-         if type(reason) not in [str, unicode]:
-            raise Exception("invalid type %s for close reason" % type(reason))
+         if PY3:
+            if type(reason) != str:
+               raise Exception("invalid type %s for close reason" % type(reason))
+         else:
+            if type(reason) not in [str, unicode]:
+               raise Exception("invalid type %s for close reason" % type(reason))
          reasonUtf8 = reason.encode("utf8")
          if len(reasonUtf8) + 2 > 125:
             raise Exception("close reason too long (%d)" % len(reasonUtf8))
