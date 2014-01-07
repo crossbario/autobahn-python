@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-from autobahn.asyncio.websocket import WebSocketClientProtocol, \
+from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory
 
 import json, random
@@ -38,19 +38,21 @@ class SlowSquareClientProtocol(WebSocketClientProtocol):
    def onClose(self, wasClean, code, reason):
       if reason:
          print(reason)
-      loop.stop()
+      reactor.stop()
 
 
 
 if __name__ == '__main__':
 
-   import asyncio
+   import sys
+
+   from twisted.python import log
+   from twisted.internet import reactor
+
+   log.startLogging(sys.stdout)
 
    factory = WebSocketClientFactory("ws://localhost:9000", debug = False)
    factory.protocol = SlowSquareClientProtocol
 
-   loop = asyncio.get_event_loop()
-   coro = loop.create_connection(factory, '127.0.0.1', 9000)
-   loop.run_until_complete(coro)
-   loop.run_forever()
-   loop.close()
+   reactor.connectTCP("127.0.0.1", 9000, factory)
+   reactor.run()
