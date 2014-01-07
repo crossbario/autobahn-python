@@ -30,15 +30,15 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
 
 Support for Autobahn/Twisted and Autobahn/asyncio is as follows:
 
-| Python        | Twisted   | asyncio |
-|---------------|-----------|----------------------------
-| CPython 2.6	| yes       | no      |
-| CPython 2.7	| yes       | yes     | asyncio support via [trollius](https://pypi.python.org/pypi/trollius/)
-| CPython 3.3	| yes       | yes     | asyncio support via [tulip](https://pypi.python.org/pypi/asyncio/)
-| CPython 3.4+	| yes       | yes     |
-| PyPy 2.2	    | yes       | ?       |
-| PyPy3         | ?	        | no      |
-| Jython 2.7+   | ?	        | no      | Issues: [1](http://twistedmatrix.com/trac/ticket/3413), [2](http://twistedmatrix.com/trac/ticket/6746)
+| Python        | Twisted   | asyncio | Notes |
+|---------------|-----------|---------|-------|
+| CPython 2.6	| yes       | no      | |
+| CPython 2.7	| yes       | yes     | asyncio support via [trollius](https://pypi.python.org/pypi/trollius/) |
+| CPython 3.3	| yes       | yes     | asyncio support via [tulip](https://pypi.python.org/pypi/asyncio/) |
+| CPython 3.4+	| yes       | yes     | |
+| PyPy 2.2	    | yes       | ?       | |
+| PyPy3         | ?	        | no      | |
+| Jython 2.7+   | ?	        | no      | Issues: [1](http://twistedmatrix.com/trac/ticket/3413), [2](http://twistedmatrix.com/trac/ticket/6746) |
 
 ## Installation
 
