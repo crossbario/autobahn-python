@@ -26,9 +26,10 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
 * supports TLS (secure WebSocket) and proxies
 * Open-source (Apache 2 [license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
+
 ## Python support
 
-Support for Autobahn/Twisted and Autobahn/asyncio is as follows:
+Support for **Autobahn**|Python on Twisted and asyncio is as follows:
 
 | Python        | Twisted   | asyncio | Notes |
 |---------------|-----------|---------|-------|
@@ -38,7 +39,8 @@ Support for Autobahn/Twisted and Autobahn/asyncio is as follows:
 | CPython 3.4+	| yes       | yes     | |
 | PyPy 2.2	    | yes       | ?       | |
 | PyPy3         | ?	        | no      | |
-| Jython 2.7+   | ?	        | no      | Issues: [1](http://twistedmatrix.com/trac/ticket/3413), [2](http://twistedmatrix.com/trac/ticket/6746) |
+| Jython 2.7+   | yes       | ?       | Issues: [1](http://twistedmatrix.com/trac/ticket/3413), [2](http://twistedmatrix.com/trac/ticket/6746) |
+
 
 ## Installation
 
@@ -56,6 +58,10 @@ You can also specify install variants
 
 The latter will automatically install Twisted and native acceleration packages when running on CPython.
 
+	pip install autobahn[asyncio,accelerate]
+
+The latter will automatically install asyncio backports when required and native acceleration packages when running on CPython.
+
 To install from sources, clone the repo
 
 	git clone git@github.com:tavendo/AutobahnPython.git
@@ -63,7 +69,7 @@ To install from sources, clone the repo
 checkout a tagged release
 
 	cd AutobahnPython
-	git checkout v0.7.1
+	git checkout v0.7.2
 
 and install
 
@@ -77,15 +83,39 @@ You can also use Pip for the last step, which allows to specify install variants
 **Autobahn**|Python has the following install variants:
 
  1. `twisted`: Install Twisted as a dependency
- 2. `asyncio`: Install asyncio on Python 3.3 as a dependency
+ 2. `asyncio`: Install asyncio backports when required
  3. `accelerate`: Install native acceleration packages on CPython
  4. `compress`: Install packages for non-standard WebSocket compression methods
- 5. `serialization`: Install packages for additional WAMP serialization formats (currently, MsgPack)
+ 5. `serialization`: Install packages for additional WAMP serialization formats (currently [MsgPack](http://msgpack.org/))
 
 
 ## Getting Started
 
-The *"Hello, world!"* of WebSocket is probably:
+The *"Hello, world!"* of WebSocket is probably an echo server:
+
+```python
+class MyServerProtocol(WebSocketServerProtocol):
+
+   def onConnect(self, request):
+      print("Client connecting: {}".format(request.peer))
+
+   def onOpen(self):
+      print("WebSocket connection open.")
+
+   def onMessage(self, payload, isBinary):
+      if isBinary:
+         print("Binary message received: {} bytes".format(len(payload)))
+      else:
+         print("Text message received: {}".format(payload.decode('utf8')))
+
+      ## echo back message verbatim
+      self.sendMessage(payload, isBinary)
+
+   def onClose(self, wasClean, code, reason):
+      print("WebSocket connection closed: {}".format(reason))
+```
+
+Complete examples are here:
 
  * [WebSocket Echo (Twisted-based)](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo)
  * [WebSocket Echo (Asyncio-based)](https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo)
@@ -101,11 +131,11 @@ For more information, including some tutorials, please visit the project's [home
 
 To require **Autobahn**|Python as a dependency of your package, include the following in your `setup.py`:
 
-	install_requires = ["autobahn>=0.7.1"]
+	install_requires = ["autobahn>=0.7.2"]
 
 You can also depend on an install variant which automatically installs respective packages:
 
-	install_requires = ["autobahn[twisted,accelerate]>=0.7.1"]
+	install_requires = ["autobahn[twisted,accelerate]>=0.7.2"]
 
 
 ## Upgrading from Autobahn < 0.7.0
