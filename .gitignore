@@ -11,3 +11,4 @@ dropin.cache
 *.egg
 *.tar.gz
 _trial_temp
+_trial_temp*

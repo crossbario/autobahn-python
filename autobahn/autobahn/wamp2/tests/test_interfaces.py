@@ -202,22 +202,15 @@ class Publisher(unittest.TestCase):
       pass
 
    @inlineCallbacks
-   def testPublish(self):
+   def test_register(self):
 
       def hello(msg):
          return "You said {}. I say hello!".format(msg)
 
       try:
          reg1 = yield self.session.register("com.myapp.hello", hello)
-         print(reg1)
       except ApplicationError as err:
          print(err)
-
-
-   @inlineCallbacks
-   def test_sample(self):
-      with self.assertRaises(ApplicationError):
-         yield self.session.register("com.myapp.hello", None)
 
 
 if __name__ == '__main__':
