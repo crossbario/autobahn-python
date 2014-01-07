@@ -28,9 +28,13 @@ To run the Python client
 
     python client.py ws://127.0.0.1:9000
 
-or
+or (Python 3)
 
     python client_coroutines.py ws://127.0.0.1:9000
+
+or (Python 2)
+
+    python client_coroutines_py2.py ws://127.0.0.1:9000
 
 To activate debug output on the client
 

@@ -1,5 +1,11 @@
 # AutobahnPython: Changelog
 
+## v0.7.3
+ * support asyncio on Python 2 (via "Trollius" backport)
+
+## v0.7.2
+ * really fix setup/packaging
+
 ## v0.7.1
  * setup fixes
  * fixes for Python2.6

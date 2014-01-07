@@ -42,9 +42,13 @@ for Twisted and Asyncio.
 
 More information:
 
- * https://github.com/tavendo/AutobahnPython
+ * https://github.com/tavendo/AutobahnPython/blob/master/README.md
  * http://autobahn.ws/python
  * http://wamp.ws
+
+Source code:
+
+ * https://github.com/tavendo/AutobahnPython
 """
 
 ## get version string from "autobahn/__init__.py"
