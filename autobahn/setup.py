@@ -33,12 +33,19 @@ PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
 
 LONGSDESC = """
-Autobahn|Python provides implementations of
+Autobahn|Python is a network library implementing
 
  * The WebSocket Protocol
  * The Web Application Messaging Protocol (WAMP)
 
-for Twisted and Asyncio.
+for Twisted and Asyncio on Python 2 and 3.
+
+Autobahn|Python is part of the Autobahn project:
+
+The Autobahn project provides open-source implementations of the
+WebSocket and WAMP protocols. WebSocket allows bidirectional real-time
+messaging on the Web and WAMP adds asynchronous Remote Procedure Calls
+and Publish & Subscribe on top of WebSocket. 
 
 More information:
 
@@ -122,13 +129,27 @@ setup(
    ##
    classifiers = ["License :: OSI Approved :: Apache Software License",
                   "Development Status :: 5 - Production/Stable",
-                  "Environment :: Console",
+                  "Environment :: No Input/Output (Daemon)",
                   "Framework :: Twisted",
                   "Intended Audience :: Developers",
                   "Operating System :: OS Independent",
                   "Programming Language :: Python",
+                  "Programming Language :: Python :: 2",
+                  "Programming Language :: Python :: 2.6",
+                  "Programming Language :: Python :: 2.7",
+                  "Programming Language :: Python :: 3",
+                  "Programming Language :: Python :: 3.3",
+                  "Programming Language :: Python :: 3.4",
+                  "Programming Language :: Python :: Implementation :: CPython",
+                  "Programming Language :: Python :: Implementation :: PyPy",
+                  "Programming Language :: Python :: Implementation :: Jython",
                   "Topic :: Internet",
-                  "Topic :: Software Development :: Libraries"],
+                  "Topic :: Internet :: WWW/HTTP",
+                  "Topic :: Communications",
+                  "Topic :: System :: Distributed Computing",
+                  "Topic :: Software Development :: Libraries",
+                  "Topic :: Software Development :: Libraries :: Python Modules",
+                  "Topic :: Software Development :: Object Brokering"],
    keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
