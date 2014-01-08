@@ -322,6 +322,90 @@ class TestDecorators(unittest.TestCase):
 
 
 
+class KwException(Exception):
+   def __init__(self, *args, **kwargs):
+      Exception.__init__(self, *args)
+      self.kwargs = kwargs
+
+# what if the WAMP error message received
+# contains args/kwargs that cannot be
+# consumed by the constructor of the exception
+# class defined for the WAMP error URI?
+
+# 1. we can bail out (but we are already signaling an error)
+# 2. we can require a generic constructor
+# 3. we can map only unconsumed args/kwargs to generic attributes
+# 4. we can silently drop unconsumed args/kwargs
+
+
+def getargs(fun):
+   try:
+      argspec = inspect.getargspec(fun)
+   except:
+      if fun == Exception.__init__:
+         # `inspect.getargspec(Exception.__init__)` does work on PyPy, but not
+         # on CPython, since `Exception.__init__` is C code in CPython that
+         # cannot be reflected upon.
+         argspec = inspect.ArgSpec(args = ['self'], varargs = 'args', keywords = None, defaults = None)
+      else:
+         raise Exception("could not inspect function {}".format(fun))
+
+   args = argspec.args[:-len(argspec.defaults)]
+   kwargs = argspec.args[-len(argspec.defaults):]
+
+   return args, kwargs, argspec.varargs, argspec.keywords
+
+
+class MockSession:
+
+   def __init__(self):
+      self._ecls_to_uri_pat = {}
+      self._uri_to_ecls = {}
+
+
+   def define(self, exception, error = None):
+      if error is None:
+         assert(hasattr(exception, '_wampuris'))
+         self._ecls_to_uri_pat[exception] = exception._wampuris
+         self._uri_to_ecls[exception._wampuris[0].uri()] = exception
+      else:
+         assert(not hasattr(exception, '_wampuris'))
+         self._ecls_to_uri_pat[exception] = [Pattern(error, Pattern.URI_TARGET_HANDLER)]
+         self._uri_to_ecls[error] = exception
+
+
+   def map_error(self, error, args = [], kwargs = {}):
+
+      # FIXME:
+      # 1. map to ecls based on error URI wildcard/prefix
+      # 2. extract additional args/kwargs from error URI
+
+      if self._uri_to_ecls.has_key(error):
+         ecls = self._uri_to_ecls[error]
+         try:
+            ## the following might fail, eg. TypeError when
+            ## signature of exception constructor is incompatible
+            ## with args/kwargs or when the exception constructor raises
+            if kwargs:
+               if args:
+                  exc = ecls(*args, **kwargs)
+               else:
+                  exc = ecls(**kwargs)
+            else:
+               if args:
+                  exc = ecls(*args)
+               else:
+                  exc = ecls()
+         except Exception as e:
+            ## FIXME: log e
+            exc = KwException(error, *args, **kwargs)
+      else:
+         ## this never fails
+         exc = KwException(error, *args, **kwargs)
+      return exc
+
+
+
 class TestDecoratorsAdvanced(unittest.TestCase):
 
    def test_decorate_exception_non_exception(self):
@@ -354,6 +438,114 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
       self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
       self.assertEqual(square._wampuris[1].uri(), "com.oldapp.oldproc")
+
+
+   def test_marshal_decorated_exception(self):
+
+      @wamp.error("com.myapp.error")
+      class AppError(Exception):
+         pass
+
+      try:
+         raise AppError("fuck")
+      except Exception as e:
+         self.assertEqual(e._wampuris[0].uri(), "com.myapp.error")
+
+
+      @wamp.error("com.myapp.product.<product:int>.product_inactive")
+      class ProductInactiveError(Exception):
+
+         def __init__(self, msg, product = None):
+            Exception.__init__(self, msg)
+            self.product = product
+
+      try:
+         raise ProductInactiveError("fuck", 123456)
+      except Exception as e:
+         self.assertEqual(e._wampuris[0].uri(), "com.myapp.product.<product:int>.product_inactive")
+
+      class AppErrorUndecorated(Exception):
+         pass
+
+      session = MockSession()
+      session.define(AppError)
+
+
+   def test_define_exception_undecorated(self):
+
+      session = MockSession()
+
+      class AppError(Exception):
+         pass
+
+      ## defining an undecorated exception requires
+      ## an URI to be provided
+      self.assertRaises(Exception, session.define, AppError)
+
+      session.define(AppError, "com.myapp.error")
+
+      exc = session.map_error("com.myapp.error")
+      self.assertIsInstance(exc, AppError)
+
+
+   def test_define_exception_decorated(self):
+
+      session = MockSession()
+
+      @wamp.error("com.myapp.error")
+      class AppError(Exception):
+         pass
+
+      ## when defining a decorated exception
+      ## an URI must not be provided
+      self.assertRaises(Exception, session.define, AppError, "com.myapp.error")
+
+      session.define(AppError)
+
+      exc = session.map_error("com.myapp.error")
+      self.assertIsInstance(exc, AppError)
+
+
+   def test_map_exception_undefined(self):
+
+      session = MockSession()
+
+      exc = session.map_error("com.myapp.error")
+      self.assertIsInstance(exc, Exception)
+
+
+   def test_map_exception_args(self):
+
+      session = MockSession()
+
+      @wamp.error("com.myapp.error")
+      class AppError(Exception):
+         pass
+
+      @wamp.error("com.myapp.error.product_inactive")
+      class ProductInactiveError(Exception):
+         def __init__(self, product = None):
+            self.product = product
+
+      ## define exceptions in mock session
+      session.define(AppError)
+      session.define(ProductInactiveError)
+
+      for test in [
+         #("com.myapp.foo.error", [], {}, KwException),
+         ("com.myapp.error", [], {}, AppError),
+         ("com.myapp.error", ["you are doing it wrong"], {}, AppError),
+         ("com.myapp.error", ["you are doing it wrong", 1, 2, 3], {}, AppError),
+
+         ("com.myapp.error.product_inactive", [], {}, ProductInactiveError),
+         ("com.myapp.error.product_inactive", [], {"product": 123456}, ProductInactiveError),
+         ]:
+         error, args, kwargs, ecls = test
+         exc = session.map_error(error, args, kwargs)
+
+         self.assertIsInstance(exc, ecls)
+         self.assertEqual(list(exc.args), args)
+
 
 
 if __name__ == '__main__':
