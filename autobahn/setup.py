@@ -49,7 +49,7 @@ Autobahn|Python is part of the Autobahn project:
 The Autobahn project provides open-source implementations of the
 WebSocket and WAMP protocols. WebSocket allows bidirectional real-time
 messaging on the Web and WAMP adds asynchronous Remote Procedure Calls
-and Publish & Subscribe on top of WebSocket. 
+and Publish & Subscribe on top of WebSocket.
 
 More information:
 
@@ -94,7 +94,7 @@ if PY3:
       asyncio_packages = []
 else:
    ## backport of asyncio
-   asyncio_packages = ["trollius>=0.1.1", "futures>=2.1.5"]
+   asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
 
 
 ## Now install Autobahn ..
