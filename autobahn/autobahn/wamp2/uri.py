@@ -20,9 +20,13 @@ import re
 
 
 class Pattern:
+   """
+   A WAMP URI Pattern.
+   """
 
    URI_TARGET_ENDPOINT = 1
    URI_TARGET_HANDLER = 2
+   URI_TARGET_EXCEPTION = 3
 
    URI_TYPE_EXACT = 1
    URI_TYPE_PREFIX = 2
@@ -30,13 +34,23 @@ class Pattern:
 
    _URI_COMPONENT = re.compile(r"^[a-z][a-z0-9_]*$")
    _URI_NAMED_COMPONENT = re.compile(r"^<([a-z][a-z0-9_]*)>$")
-   _URI_CONVERTED_COMPONENT = re.compile(r"^<([a-z]*):([a-z][a-z0-9_]*)>$")
+   _URI_NAMED_CONVERTED_COMPONENT = re.compile(r"^<([a-z][a-z0-9_]*):([a-z]*)>$")
 
 
    def __init__(self, uri, target):
+      """
+      Constructor for WAMP URI pattern.
+
+      :param uri: The URI or URI pattern, e.g. `"com.myapp.product.<product:int>.update"`.
+      :type uri: str
+      :param target: The target for this pattern: a procedure endpoint (a callable),
+                     an event handler (a callable) or an exception (a class).
+      """
       assert(type(uri) == str)
       assert(type(target) == int)
-      assert(target in [Pattern.URI_TARGET_ENDPOINT, Pattern.URI_TARGET_HANDLER])
+      assert(target in [Pattern.URI_TARGET_ENDPOINT,
+                        Pattern.URI_TARGET_HANDLER,
+                        Pattern.URI_TARGET_EXCEPTION])
 
       components = uri.split('.')
       pl = []
@@ -44,16 +58,16 @@ class Pattern:
       i = 0
       for component in components:
 
-         match = Pattern._URI_CONVERTED_COMPONENT.match(component)
+         match = Pattern._URI_NAMED_CONVERTED_COMPONENT.match(component)
          if match:
-            ctype = match.groups()[0]
+            ctype = match.groups()[1]
             if ctype not in ['string', 'int', 'suffix']:
                raise Exception("invalid URI")
 
             if ctype == 'suffix' and i != len(components) - 1:
                raise Exception("invalid URI")
 
-            name = match.groups()[1]
+            name = match.groups()[0]
             if name in nc:
                raise Exception("invalid URI")
 
@@ -100,25 +114,63 @@ class Pattern:
       self._target = target
 
 
+   def uri(self):
+      """
+      Returns the original URI (pattern) for this pattern.
+
+      :returns str -- The URI (pattern), e.g. `"com.myapp.product.<product:int>.update"`.
+      """
+      return self._uri
+
+
    def match(self, uri):
+      """
+      Match the given (fully qualified) URI according to this pattern
+      and return extracted args and kwargs.
+
+      :param uri: The URI to match, e.g. `"com.myapp.product.123456.update"`.
+      :type uri: str
+
+      :returns tuple -- A tuple `(args, kwargs)`
+      """
+      args = []
+      kwargs = {}
       if self._type == Pattern.URI_TYPE_EXACT:
-         return {}
+         return args, kwargs
       elif self._type == Pattern.URI_TYPE_WILDCARD:
          match = self._pattern.match(uri)
          if match:
-            kwargs = {}
             for key in self._names:
                val = match.group(key)
                val = self._names[key](val)
                kwargs[key] = val
-            return kwargs
+            return args, kwargs
          else:
             raise Exception("no match")
 
 
    def is_endpoint(self):
+      """
+      Check if this pattern is for a procedure endpoint.
+
+      :returns bool -- `True`, iff this pattern is for a procedure endpoint.
+      """
       return self._target == Pattern.URI_TARGET_ENDPOINT
 
 
    def is_handler(self):
+      """
+      Check if this pattern is for an event handler.
+
+      :returns bool -- `True`, iff this pattern is for an event handler.
+      """
       return self._target == Pattern.URI_TARGET_HANDLER
+
+
+   def is_exception(self):
+      """
+      Check if this pattern is for an exception.
+
+      :returns bool -- `True`, iff this pattern is for an exception.
+      """
+      return self._target == Pattern.URI_TARGET_EXCEPTION
