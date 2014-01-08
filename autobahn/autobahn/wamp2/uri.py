@@ -28,19 +28,10 @@ class Pattern:
    URI_TYPE_PREFIX = 2
    URI_TYPE_WILDCARD = 3
 
-   # "com.myapp.topic1"
-   # "com.myapp.<product>.update"
-   # "com.myapp.<int:product>.update"
-
-   # "com.myapp.<string>.update"
-   # "com.myapp.topic.<suffix>"
-   # "com.myapp.topic.<suffix:>"
-
    _URI_COMPONENT = re.compile(r"^[a-z][a-z0-9_]*$")
    _URI_NAMED_COMPONENT = re.compile(r"^<([a-z][a-z0-9_]*)>$")
    _URI_CONVERTED_COMPONENT = re.compile(r"^<([a-z]*):([a-z][a-z0-9_]*)>$")
 
-   # (?P<name>...)
 
    def __init__(self, uri, target):
       assert(type(uri) == str)
@@ -111,7 +102,7 @@ class Pattern:
 
    def match(self, uri):
       if self._type == Pattern.URI_TYPE_EXACT:
-         pass
+         return {}
       elif self._type == Pattern.URI_TYPE_WILDCARD:
          match = self._pattern.match(uri)
          if match:
@@ -123,3 +114,11 @@ class Pattern:
             return kwargs
          else:
             raise Exception("no match")
+
+
+   def is_endpoint(self):
+      return self._target == Pattern.URI_TARGET_ENDPOINT
+
+
+   def is_handler(self):
+      return self._target == Pattern.URI_TARGET_HANDLER

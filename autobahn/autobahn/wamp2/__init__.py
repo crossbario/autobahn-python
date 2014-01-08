@@ -15,3 +15,21 @@
 ##  limitations under the License.
 ##
 ###############################################################################
+
+from __future__ import absolute_import
+
+from autobahn.wamp2.uri import Pattern
+
+
+def procedure(uri):
+   def decorate(f):
+      f._autobahn_uri = Pattern(uri, Pattern.URI_TARGET_ENDPOINT)
+      return f
+   return decorate
+
+
+def topic(uri):
+   def decorate(f):
+      f._autobahn_uri = Pattern(uri, Pattern.URI_TARGET_HANDLER)
+      return f
+   return decorate
