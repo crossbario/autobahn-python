@@ -1,5 +1,10 @@
 # AutobahnPython: Changelog
 
+## v0.7.4
+ * fix close reason string handling
+ * new "slowsquare" example
+ * Python 2.6 fixes
+
 ## v0.7.3
  * support asyncio on Python 2 (via "Trollius" backport)
 

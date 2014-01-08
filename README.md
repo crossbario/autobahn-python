@@ -33,12 +33,11 @@ Support for **Autobahn**|Python on Twisted and asyncio is as follows:
 
 | Python        | Twisted   | asyncio | Notes |
 |---------------|-----------|---------|-------|
-| CPython 2.6	| yes       | ?       | |
+| CPython 2.6	| yes       | yes     | asyncio support via [trollius](https://pypi.python.org/pypi/trollius/) |
 | CPython 2.7	| yes       | yes     | asyncio support via [trollius](https://pypi.python.org/pypi/trollius/) |
 | CPython 3.3	| yes       | yes     | asyncio support via [tulip](https://pypi.python.org/pypi/asyncio/) |
 | CPython 3.4+	| yes       | yes     | asyncio in the standard library |
 | PyPy 2.2+	    | yes       | yes     | asyncio support via [trollius](https://pypi.python.org/pypi/trollius/) |
-| PyPy3 2.1b    | ?	        | ?       | |
 | Jython 2.7+   | yes       | ?       | Issues: [1](http://twistedmatrix.com/trac/ticket/3413), [2](http://twistedmatrix.com/trac/ticket/6746) |
 
 
