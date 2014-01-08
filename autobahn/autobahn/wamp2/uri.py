@@ -18,6 +18,12 @@
 
 import re
 
+# TODO:
+# suffix matches
+# args + kwargs
+# uuid converter
+# multiple URI patterns per decorated object
+# classes: Pattern, EndpointPattern, ..
 
 class Pattern:
    """

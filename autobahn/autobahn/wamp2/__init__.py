@@ -27,7 +27,9 @@ def procedure(uri):
    """
    def decorate(f):
       assert(callable(f))
-      f._wampuri = Pattern(uri, Pattern.URI_TARGET_ENDPOINT)
+      if not hasattr(f, '_wampuris'):
+         f._wampuris = []
+      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
       return f
    return decorate
 
@@ -38,7 +40,9 @@ def topic(uri):
    """
    def decorate(f):
       assert(callable(f))
-      f._wampuri = Pattern(uri, Pattern.URI_TARGET_HANDLER)
+      if not hasattr(f, '_wampuris'):
+         f._wampuris = []
+      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
       return f
    return decorate
 
@@ -49,6 +53,8 @@ def error(uri):
    """
    def decorate(cls):
       assert(issubclass(cls, Exception))
-      cls._wampuri = Pattern(uri, Pattern.URI_TARGET_EXCEPTION)
+      if not hasattr(cls, '_wampuris'):
+         cls._wampuris = []
+      cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
       return cls
    return decorate

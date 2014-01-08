@@ -90,34 +90,43 @@ class TestDecorators(unittest.TestCase):
       def square(x):
          pass
 
-      self.assertIsInstance(square._wampuri, Pattern)
-      self.assertTrue(square._wampuri.is_endpoint())
-      self.assertFalse(square._wampuri.is_handler())
-      self.assertFalse(square._wampuri.is_exception())
-      self.assertEqual(square._wampuri.uri(), "com.calculator.square")
-      self.assertEqual(square._wampuri._type, Pattern.URI_TYPE_EXACT)
+      self.assertTrue(hasattr(square, '_wampuris'))
+      self.assertTrue(type(square._wampuris) == list)
+      self.assertEqual(len(square._wampuris), 1)
+      self.assertIsInstance(square._wampuris[0], Pattern)
+      self.assertTrue(square._wampuris[0].is_endpoint())
+      self.assertFalse(square._wampuris[0].is_handler())
+      self.assertFalse(square._wampuris[0].is_exception())
+      self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
+      self.assertEqual(square._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
       @wamp.procedure("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          pass
 
-      self.assertIsInstance(update_product._wampuri, Pattern)
-      self.assertTrue(update_product._wampuri.is_endpoint())
-      self.assertFalse(update_product._wampuri.is_handler())
-      self.assertFalse(update_product._wampuri.is_exception())
-      self.assertEqual(update_product._wampuri.uri(), "com.myapp.product.<product:int>.update")
-      self.assertEqual(update_product._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(update_product, '_wampuris'))
+      self.assertTrue(type(update_product._wampuris) == list)
+      self.assertEqual(len(update_product._wampuris), 1)
+      self.assertIsInstance(update_product._wampuris[0], Pattern)
+      self.assertTrue(update_product._wampuris[0].is_endpoint())
+      self.assertFalse(update_product._wampuris[0].is_handler())
+      self.assertFalse(update_product._wampuris[0].is_exception())
+      self.assertEqual(update_product._wampuris[0].uri(), "com.myapp.product.<product:int>.update")
+      self.assertEqual(update_product._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
       @wamp.procedure("com.myapp.<category:string>.<id:int>.update")
       def update(category = None, id = None):
          pass
 
-      self.assertIsInstance(update._wampuri, Pattern)
-      self.assertTrue(update._wampuri.is_endpoint())
-      self.assertFalse(update._wampuri.is_handler())
-      self.assertFalse(update._wampuri.is_exception())
-      self.assertEqual(update._wampuri.uri(), "com.myapp.<category:string>.<id:int>.update")
-      self.assertEqual(update._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(update, '_wampuris'))
+      self.assertTrue(type(update._wampuris) == list)
+      self.assertEqual(len(update._wampuris), 1)
+      self.assertIsInstance(update._wampuris[0], Pattern)
+      self.assertTrue(update._wampuris[0].is_endpoint())
+      self.assertFalse(update._wampuris[0].is_handler())
+      self.assertFalse(update._wampuris[0].is_exception())
+      self.assertEqual(update._wampuris[0].uri(), "com.myapp.<category:string>.<id:int>.update")
+      self.assertEqual(update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
 
    def test_decorate_handler(self):
@@ -126,34 +135,43 @@ class TestDecorators(unittest.TestCase):
       def on_shutdown():
          pass
 
-      self.assertIsInstance(on_shutdown._wampuri, Pattern)
-      self.assertFalse(on_shutdown._wampuri.is_endpoint())
-      self.assertTrue(on_shutdown._wampuri.is_handler())
-      self.assertFalse(on_shutdown._wampuri.is_exception())
-      self.assertEqual(on_shutdown._wampuri.uri(), "com.myapp.on_shutdown")
-      self.assertEqual(on_shutdown._wampuri._type, Pattern.URI_TYPE_EXACT)
+      self.assertTrue(hasattr(on_shutdown, '_wampuris'))
+      self.assertTrue(type(on_shutdown._wampuris) == list)
+      self.assertEqual(len(on_shutdown._wampuris), 1)
+      self.assertIsInstance(on_shutdown._wampuris[0], Pattern)
+      self.assertFalse(on_shutdown._wampuris[0].is_endpoint())
+      self.assertTrue(on_shutdown._wampuris[0].is_handler())
+      self.assertFalse(on_shutdown._wampuris[0].is_exception())
+      self.assertEqual(on_shutdown._wampuris[0].uri(), "com.myapp.on_shutdown")
+      self.assertEqual(on_shutdown._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
       @wamp.topic("com.myapp.product.<product:int>.on_update")
       def on_product_update(product = None, label = None):
          pass
 
-      self.assertIsInstance(on_product_update._wampuri, Pattern)
-      self.assertFalse(on_product_update._wampuri.is_endpoint())
-      self.assertTrue(on_product_update._wampuri.is_handler())
-      self.assertFalse(on_product_update._wampuri.is_exception())
-      self.assertEqual(on_product_update._wampuri.uri(), "com.myapp.product.<product:int>.on_update")
-      self.assertEqual(on_product_update._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(on_product_update, '_wampuris'))
+      self.assertTrue(type(on_product_update._wampuris) == list)
+      self.assertEqual(len(on_product_update._wampuris), 1)
+      self.assertIsInstance(on_product_update._wampuris[0], Pattern)
+      self.assertFalse(on_product_update._wampuris[0].is_endpoint())
+      self.assertTrue(on_product_update._wampuris[0].is_handler())
+      self.assertFalse(on_product_update._wampuris[0].is_exception())
+      self.assertEqual(on_product_update._wampuris[0].uri(), "com.myapp.product.<product:int>.on_update")
+      self.assertEqual(on_product_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
       @wamp.topic("com.myapp.<category:string>.<id:int>.on_update")
       def on_update(category = None, id = None, label = None):
          pass
 
-      self.assertIsInstance(on_update._wampuri, Pattern)
-      self.assertFalse(on_update._wampuri.is_endpoint())
-      self.assertTrue(on_update._wampuri.is_handler())
-      self.assertFalse(on_update._wampuri.is_exception())
-      self.assertEqual(on_update._wampuri.uri(), "com.myapp.<category:string>.<id:int>.on_update")
-      self.assertEqual(on_update._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(on_update, '_wampuris'))
+      self.assertTrue(type(on_update._wampuris) == list)
+      self.assertEqual(len(on_update._wampuris), 1)
+      self.assertIsInstance(on_update._wampuris[0], Pattern)
+      self.assertFalse(on_update._wampuris[0].is_endpoint())
+      self.assertTrue(on_update._wampuris[0].is_handler())
+      self.assertFalse(on_update._wampuris[0].is_exception())
+      self.assertEqual(on_update._wampuris[0].uri(), "com.myapp.<category:string>.<id:int>.on_update")
+      self.assertEqual(on_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
 
    def test_decorate_exception(self):
@@ -162,34 +180,43 @@ class TestDecorators(unittest.TestCase):
       class AppError(Exception):
          pass
 
-      self.assertIsInstance(AppError._wampuri, Pattern)
-      self.assertFalse(AppError._wampuri.is_endpoint())
-      self.assertFalse(AppError._wampuri.is_handler())
-      self.assertTrue(AppError._wampuri.is_exception())
-      self.assertEqual(AppError._wampuri.uri(), "com.myapp.error")
-      self.assertEqual(AppError._wampuri._type, Pattern.URI_TYPE_EXACT)
+      self.assertTrue(hasattr(AppError, '_wampuris'))
+      self.assertTrue(type(AppError._wampuris) == list)
+      self.assertEqual(len(AppError._wampuris), 1)
+      self.assertIsInstance(AppError._wampuris[0], Pattern)
+      self.assertFalse(AppError._wampuris[0].is_endpoint())
+      self.assertFalse(AppError._wampuris[0].is_handler())
+      self.assertTrue(AppError._wampuris[0].is_exception())
+      self.assertEqual(AppError._wampuris[0].uri(), "com.myapp.error")
+      self.assertEqual(AppError._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
       @wamp.error("com.myapp.product.<product:int>.product_inactive")
       class ProductInactiveError(Exception):
          pass
 
-      self.assertIsInstance(ProductInactiveError._wampuri, Pattern)
-      self.assertFalse(ProductInactiveError._wampuri.is_endpoint())
-      self.assertFalse(ProductInactiveError._wampuri.is_handler())
-      self.assertTrue(ProductInactiveError._wampuri.is_exception())
-      self.assertEqual(ProductInactiveError._wampuri.uri(), "com.myapp.product.<product:int>.product_inactive")
-      self.assertEqual(ProductInactiveError._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(ProductInactiveError, '_wampuris'))
+      self.assertTrue(type(ProductInactiveError._wampuris) == list)
+      self.assertEqual(len(ProductInactiveError._wampuris), 1)
+      self.assertIsInstance(ProductInactiveError._wampuris[0], Pattern)
+      self.assertFalse(ProductInactiveError._wampuris[0].is_endpoint())
+      self.assertFalse(ProductInactiveError._wampuris[0].is_handler())
+      self.assertTrue(ProductInactiveError._wampuris[0].is_exception())
+      self.assertEqual(ProductInactiveError._wampuris[0].uri(), "com.myapp.product.<product:int>.product_inactive")
+      self.assertEqual(ProductInactiveError._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
       @wamp.error("com.myapp.<category:string>.<product:int>.inactive")
       class ObjectInactiveError(Exception):
          pass
 
-      self.assertIsInstance(ObjectInactiveError._wampuri, Pattern)
-      self.assertFalse(ObjectInactiveError._wampuri.is_endpoint())
-      self.assertFalse(ObjectInactiveError._wampuri.is_handler())
-      self.assertTrue(ObjectInactiveError._wampuri.is_exception())
-      self.assertEqual(ObjectInactiveError._wampuri.uri(), "com.myapp.<category:string>.<product:int>.inactive")
-      self.assertEqual(ObjectInactiveError._wampuri._type, Pattern.URI_TYPE_WILDCARD)
+      self.assertTrue(hasattr(ObjectInactiveError, '_wampuris'))
+      self.assertTrue(type(ObjectInactiveError._wampuris) == list)
+      self.assertEqual(len(ObjectInactiveError._wampuris), 1)
+      self.assertIsInstance(ObjectInactiveError._wampuris[0], Pattern)
+      self.assertFalse(ObjectInactiveError._wampuris[0].is_endpoint())
+      self.assertFalse(ObjectInactiveError._wampuris[0].is_handler())
+      self.assertTrue(ObjectInactiveError._wampuris[0].is_exception())
+      self.assertEqual(ObjectInactiveError._wampuris[0].uri(), "com.myapp.<category:string>.<product:int>.inactive")
+      self.assertEqual(ObjectInactiveError._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
 
    def test_match_decorated_endpoint(self):
@@ -198,14 +225,14 @@ class TestDecorators(unittest.TestCase):
       def square(x):
          return x
 
-      args, kwargs = square._wampuri.match("com.calculator.square")
+      args, kwargs = square._wampuris[0].match("com.calculator.square")
       self.assertEqual(square(666, **kwargs), 666)
 
       @wamp.procedure("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          return product, label
 
-      args, kwargs = update_product._wampuri.match("com.myapp.product.123456.update")
+      args, kwargs = update_product._wampuris[0].match("com.myapp.product.123456.update")
       kwargs['label'] = "foobar"
       self.assertEqual(update_product(**kwargs), (123456, "foobar"))
 
@@ -213,7 +240,7 @@ class TestDecorators(unittest.TestCase):
       def update(category = None, id = None, label = None):
          return category, id, label
 
-      args, kwargs = update._wampuri.match("com.myapp.product.123456.update")
+      args, kwargs = update._wampuris[0].match("com.myapp.product.123456.update")
       kwargs['label'] = "foobar"
       self.assertEqual(update(**kwargs), ("product", 123456, "foobar"))
 
@@ -224,14 +251,14 @@ class TestDecorators(unittest.TestCase):
       def on_shutdown():
          pass
 
-      args, kwargs = on_shutdown._wampuri.match("com.myapp.on_shutdown")
+      args, kwargs = on_shutdown._wampuris[0].match("com.myapp.on_shutdown")
       self.assertEqual(on_shutdown(**kwargs), None)
 
       @wamp.topic("com.myapp.product.<product:int>.on_update")
       def on_product_update(product = None, label = None):
          return product, label
 
-      args, kwargs = on_product_update._wampuri.match("com.myapp.product.123456.on_update")
+      args, kwargs = on_product_update._wampuris[0].match("com.myapp.product.123456.on_update")
       kwargs['label'] = "foobar"
       self.assertEqual(on_product_update(**kwargs), (123456, "foobar"))
 
@@ -239,7 +266,7 @@ class TestDecorators(unittest.TestCase):
       def on_update(category = None, id = None, label = None):
          return category, id, label
 
-      args, kwargs = on_update._wampuri.match("com.myapp.product.123456.on_update")
+      args, kwargs = on_update._wampuris[0].match("com.myapp.product.123456.on_update")
       kwargs['label'] = "foobar"
       self.assertEqual(on_update(**kwargs), ("product", 123456, "foobar"))
 
@@ -256,7 +283,7 @@ class TestDecorators(unittest.TestCase):
             return self.__class__ == other.__class__ and \
                    self.args == other.args
 
-      args, kwargs = AppError._wampuri.match("com.myapp.error")
+      args, kwargs = AppError._wampuris[0].match("com.myapp.error")
       self.assertEqual(AppError("fuck", **kwargs), AppError("fuck"))
 
 
@@ -272,7 +299,7 @@ class TestDecorators(unittest.TestCase):
                    self.args == other.args and \
                    self.product == other.product
 
-      args, kwargs = ProductInactiveError._wampuri.match("com.myapp.product.123456.product_inactive")
+      args, kwargs = ProductInactiveError._wampuris[0].match("com.myapp.product.123456.product_inactive")
       self.assertEqual(ProductInactiveError("fuck", **kwargs), ProductInactiveError("fuck", 123456))
 
 
@@ -290,8 +317,43 @@ class TestDecorators(unittest.TestCase):
                    self.category == other.category and \
                    self.product == other.product
 
-      args, kwargs = ObjectInactiveError._wampuri.match("com.myapp.product.123456.inactive")
+      args, kwargs = ObjectInactiveError._wampuris[0].match("com.myapp.product.123456.inactive")
       self.assertEqual(ObjectInactiveError("fuck", **kwargs), ObjectInactiveError("fuck", "product", 123456))
+
+
+
+class TestDecoratorsAdvanced(unittest.TestCase):
+
+   def test_decorate_exception_non_exception(self):
+
+      def test():
+         @wamp.error("com.test.error")
+         class Foo:
+            pass
+
+      self.assertRaises(Exception, test)
+
+
+   def test_decorate_endpoint_multiple(self):
+
+      @wamp.procedure("com.oldapp.oldproc")
+      @wamp.procedure("com.calculator.square")
+      def square(x):
+         pass
+
+      self.assertTrue(hasattr(square, '_wampuris'))
+      self.assertTrue(type(square._wampuris) == list)
+      self.assertEqual(len(square._wampuris), 2)
+
+      for i in range(2):
+         self.assertIsInstance(square._wampuris[i], Pattern)
+         self.assertTrue(square._wampuris[i].is_endpoint())
+         self.assertFalse(square._wampuris[i].is_handler())
+         self.assertFalse(square._wampuris[i].is_exception())
+         self.assertEqual(square._wampuris[i]._type, Pattern.URI_TYPE_EXACT)
+
+      self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
+      self.assertEqual(square._wampuris[1].uri(), "com.oldapp.oldproc")
 
 
 if __name__ == '__main__':
