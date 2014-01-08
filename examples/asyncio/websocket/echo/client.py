@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ from autobahn.asyncio.websocket import WebSocketClientProtocol, \
 class MyClientProtocol(WebSocketClientProtocol):
 
    def onConnect(self, response):
-      print("Server connected: {}".format(response.peer))
+      print("Server connected: {0}".format(response.peer))
 
    def onOpen(self):
       print("WebSocket connection open.")
@@ -39,12 +39,12 @@ class MyClientProtocol(WebSocketClientProtocol):
 
    def onMessage(self, payload, isBinary):
       if isBinary:
-         print("Binary message received: {} bytes".format(len(payload)))
+         print("Binary message received: {0} bytes".format(len(payload)))
       else:
-         print("Text message received: {}".format(payload.decode('utf8')))
+         print("Text message received: {0}".format(payload.decode('utf8')))
 
    def onClose(self, wasClean, code, reason):
-      print("WebSocket connection closed: {}".format(reason))
+      print("WebSocket connection closed: {0}".format(reason))
 
 
 

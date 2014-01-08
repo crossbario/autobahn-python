@@ -3205,9 +3205,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       Send out HTTP error response.
       """
-      response  = "HTTP/1.1 {} {}\x0d\x0a".format(code, reason)
+      response  = "HTTP/1.1 {0} {1}\x0d\x0a".format(code, reason)
       for h in responseHeaders:
-         response += "{}: {}\x0d\x0a".format(h[0], h[1])
+         response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
       response += "\x0d\x0a"
       self.sendData(response.encode('utf8'))
 

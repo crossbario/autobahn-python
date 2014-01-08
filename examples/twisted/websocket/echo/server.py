@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,22 +23,22 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
 class MyServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, request):
-      print("Client connecting: {}".format(request.peer))
+      print("Client connecting: {0}".format(request.peer))
 
    def onOpen(self):
       print("WebSocket connection open.")
 
    def onMessage(self, payload, isBinary):
       if isBinary:
-         print("Binary message received: {} bytes".format(len(payload)))
+         print("Binary message received: {0} bytes".format(len(payload)))
       else:
-         print("Text message received: {}".format(payload.decode('utf8')))
+         print("Text message received: {0}".format(payload.decode('utf8')))
 
       ## echo back message verbatim
       self.sendMessage(payload, isBinary)
 
    def onClose(self, wasClean, code, reason):
-      print("WebSocket connection closed: {}".format(reason))
+      print("WebSocket connection closed: {0}".format(reason))
 
 
 
