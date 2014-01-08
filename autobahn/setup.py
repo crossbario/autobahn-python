@@ -18,11 +18,15 @@
 
 from __future__ import absolute_import
 
-from ez_setup import use_setuptools
-use_setuptools()
-
-from setuptools import setup
 from distutils import log
+
+try:
+   from ez_setup import use_setuptools
+   use_setuptools()
+except Exception as e:
+   log.warn("ez_setup failed: {0}".format(e))
+finally:
+   from setuptools import setup
 
 import platform
 CPY = platform.python_implementation() == 'CPython'
