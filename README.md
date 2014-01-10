@@ -1,6 +1,8 @@
 # Autobahn|Python
 
 [![Build Status](https://travis-ci.org/tavendo/AutobahnPython.png?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
+![Version](https://pypip.in/v/autobahn/badge.png)
+![Downloads](https://pypip.in/d/autobahn/badge.png)
 
 **Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
