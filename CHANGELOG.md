@@ -1,6 +1,7 @@
-# AutobahnPython: Changelog
+# Autobahn|Python Changelog
 
 ## v0.7.4
+ * fix WebSocket server HTML status page
  * fix close reason string handling
  * new "slowsquare" example
  * Python 2.6 fixes
