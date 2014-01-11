@@ -3160,6 +3160,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
             self.factory._log("sending HTTP response body:\n\n%s" % binascii.b2a_hex(response_body))
          self.sendData(response_body)
 
+      ## save response for testsuite
+      ##
+      self.http_response_data = response
+
       ## opening handshake completed, move WebSocket connection into OPEN state
       ##
       self.state = WebSocketProtocol.STATE_OPEN
