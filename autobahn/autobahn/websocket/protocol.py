@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -3216,14 +3216,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
       """
       Send HTML page HTTP response.
       """
+      responseBody = html.encode('utf8')
       response  = "HTTP/1.1 %d %s\x0d\x0a" % (http.OK[0], http.OK[1])
       if self.factory.server is not None and self.factory.server != "":
          response += "Server: %s\x0d\x0a" % self.factory.server
       response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
-      response += "Content-Length: %d\x0d\x0a" % len(raw)
+      response += "Content-Length: %d\x0d\x0a" % len(responseBody)
       response += "\x0d\x0a"
       self.sendData(response.encode('utf8'))
-      self.sendData(html.encode('utf8'))
+      self.sendData(responseBody)
 
 
    def sendRedirect(self, url):
