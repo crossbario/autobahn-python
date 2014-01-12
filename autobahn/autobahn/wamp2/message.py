@@ -16,14 +16,13 @@
 ##
 ###############################################################################
 
-
-from zope.interface import implementer
-
-
-from interfaces import ISerializer
-
+from __future__ import absolute_import
 
 import urlparse, urllib
+
+from autobahn.wamp2.error import ProtocolError
+
+
 
 
 def parse_wamp_uri(bytes):
@@ -135,33 +134,33 @@ class Error(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Klass.MESSAGE_TYPE)
 
       if len(wmsg) not in (4, 5, 6):
-         raise WampProtocolError("invalid message length %d for WAMP Error message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Error message" % len(wmsg))
 
       ## request
       ##
       request = wmsg[1]
-      if request != int:
-         raise WampProtocolError("invalid type %s for 'request' in WAMP Error message" % type(request))
+      if type(request) != int:
+         raise ProtocolError("invalid type %s for 'request' in WAMP Error message" % type(request))
 
       ## error
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'error' in WAMP Error message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for 'error' in WAMP Error message" % type(wmsg[2]))
 
       error = parse_wamp_uri(wmsg[2])
       if error is None:
-         raise WampProtocolError("invalid value '%s' for 'error' in WAMP Error message" % wmsg[2])
+         raise ProtocolError("invalid value '%s' for 'error' in WAMP Error message" % wmsg[2])
 
       ## details
       ##
       details = wmsg[3]
 
       if type(details) != dict:
-         raise WampProtocolError("invalid type %s for 'details' in WAMP Error message" % type(details))
+         raise ProtocolError("invalid type %s for 'details' in WAMP Error message" % type(details))
 
       for k in details.keys():
          if type(k) not in (str, unicode):
-            raise WampProtocolError("invalid type %s for key '%s' in 'details' in WAMP Error message" % (k, type(k)))
+            raise ProtocolError("invalid type %s for key '%s' in 'details' in WAMP Error message" % (k, type(k)))
 
       ## exception
       ##
@@ -169,7 +168,7 @@ class Error(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise WampProtocolError("invalid type %s for 'args' in WAMP Error message" % type(args))
+            raise ProtocolError("invalid type %s for 'args' in WAMP Error message" % type(args))
 
       ## exceptionkw
       ##
@@ -177,7 +176,7 @@ class Error(Message):
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise WampProtocolError("invalid type %s for 'kwargs' in WAMP Error message" % type(kwargs))
+            raise ProtocolError("invalid type %s for 'kwargs' in WAMP Error message" % type(kwargs))
 
       obj = Klass(request, error, args = args, kwargs = kwargs)
 
@@ -244,16 +243,16 @@ class Hello(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
       if len(wmsg) != 2:
-         raise WampProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
 
       ## sessionid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'sessionid' in WAMP Hello message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'sessionid' in WAMP Hello message" % type(wmsg[1]))
 
       sessionid = parse_wamp_sessionid(wmsg[1])
       if sessionid is None:
-         raise WampProtocolError("invalid value '%s' for 'sessionid' in WAMP Hello message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'sessionid' in WAMP Hello message" % wmsg[1])
 
       obj = Klass(sessionid)
 
@@ -327,23 +326,23 @@ class RoleChange(Message):
       assert(len(wmsg) > 0 and wmsg[0] == RoleChange.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise WampProtocolError("invalid message length %d for WAMP Role-Change message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Role-Change message" % len(wmsg))
 
       ## op
       ##
       op = wmsg[1]
       if type(op) != int:
-         raise WampProtocolError("invalid type %s for 'op' in WAMP Role-Change message" % type(op))
+         raise ProtocolError("invalid type %s for 'op' in WAMP Role-Change message" % type(op))
       if op not in [RoleChange.ROLE_CHANGE_OP_ADD, RoleChange.ROLE_CHANGE_OP_REMOVE]:
-         raise WampProtocolError("invalid value '%s' for 'op' in WAMP Role-Change message" % op)
+         raise ProtocolError("invalid value '%s' for 'op' in WAMP Role-Change message" % op)
 
       ## role
       ##
       role = wmsg[2]
       if type(role) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'role' in WAMP Role-Change message" % type(role))
+         raise ProtocolError("invalid type %s for 'role' in WAMP Role-Change message" % type(role))
       if role not in [RoleChange.ROLE_CHANGE_ROLE_BROKER, RoleChange.ROLE_CHANGE_ROLE_DEALER]:
-         raise WampProtocolError("invalid value '%s' for 'role' in WAMP Role-Change message" % role)
+         raise ProtocolError("invalid value '%s' for 'role' in WAMP Role-Change message" % role)
 
       obj = Klass(op, role)
 
@@ -406,27 +405,27 @@ class Heartbeat(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise WampProtocolError("invalid message length %d for WAMP Heartbeat message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Heartbeat message" % len(wmsg))
 
       ## incoming
       ##
       incoming = wmsg[1]
 
       if type(incoming) != int:
-         raise WampProtocolError("invalid type %s for 'incoming' in WAMP Heartbeat message" % type(incoming))
+         raise ProtocolError("invalid type %s for 'incoming' in WAMP Heartbeat message" % type(incoming))
 
       if incoming < 0: # must be non-negative
-         raise WampProtocolError("invalid value %d for 'incoming' in WAMP Heartbeat message" % incoming)
+         raise ProtocolError("invalid value %d for 'incoming' in WAMP Heartbeat message" % incoming)
 
       ## outgoing
       ##
       outgoing = wmsg[2]
 
       if type(outgoing) != int:
-         raise WampProtocolError("invalid type %s for 'outgoing' in WAMP Heartbeat message" % type(outgoing))
+         raise ProtocolError("invalid type %s for 'outgoing' in WAMP Heartbeat message" % type(outgoing))
 
       if outgoing <= 0: # must be positive
-         raise WampProtocolError("invalid value %d for 'outgoing' in WAMP Heartbeat message" % outgoing)
+         raise ProtocolError("invalid value %d for 'outgoing' in WAMP Heartbeat message" % outgoing)
 
       obj = Klass(incoming, outgoing)
 
@@ -496,25 +495,25 @@ class Subscribe(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
-         raise WampProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
 
       ## subscribeid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'subscribeid' in WAMP Subscribe message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'subscribeid' in WAMP Subscribe message" % type(wmsg[1]))
 
       subscribeid = parse_wamp_callid(wmsg[1])
       if subscribeid is None:
-         raise WampProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscribe message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscribe message" % wmsg[1])
 
       ## topic
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for topic in WAMP Subscribe message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for topic in WAMP Subscribe message" % type(wmsg[2]))
 
       topic = parse_wamp_uri(wmsg[2])
       if topic is None:
-         raise WampProtocolError("invalid value '%s' for topic in WAMP Subscribe message" % wmsg[2])
+         raise ProtocolError("invalid value '%s' for topic in WAMP Subscribe message" % wmsg[2])
 
       ## options
       ##
@@ -524,20 +523,20 @@ class Subscribe(Message):
          options = wmsg[3]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for options in WAMP Subscribe message" % type(options))
+            raise ProtocolError("invalid type %s for options in WAMP Subscribe message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in options in WAMP Subscribe message" % type(k))
+               raise ProtocolError("invalid type %s for key in options in WAMP Subscribe message" % type(k))
 
          if options.has_key('match'):
 
             option_match = options['match']
             if type(option_match) != int:
-               raise WampProtocolError("invalid type %s for 'match' option in WAMP Subscribe message" % type(option_match))
+               raise ProtocolError("invalid type %s for 'match' option in WAMP Subscribe message" % type(option_match))
 
             if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
-               raise WampProtocolError("invalid value %d for 'match' option in WAMP Subscribe message" % option_match)
+               raise ProtocolError("invalid value %d for 'match' option in WAMP Subscribe message" % option_match)
 
             match = option_match
 
@@ -609,25 +608,25 @@ class Subscription(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Subscription.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise WampProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
 
       ## subscribeid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'subscribeid' in WAMP Subscription message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'subscribeid' in WAMP Subscription message" % type(wmsg[1]))
 
       subscribeid = parse_wamp_callid(wmsg[1])
       if subscribeid is None:
-         raise WampProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscription message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscription message" % wmsg[1])
 
       ## subscriptionid
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'subscriptionid' in WAMP Subscription message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for 'subscriptionid' in WAMP Subscription message" % type(wmsg[2]))
 
       subscriptionid = parse_wamp_callid(wmsg[2])
       if subscriptionid is None:
-         raise WampProtocolError("invalid value '%s' for 'subscriptionid' in WAMP Subscription message" % wmsg[2])
+         raise ProtocolError("invalid value '%s' for 'subscriptionid' in WAMP Subscription message" % wmsg[2])
 
       obj = Klass(subscribeid, subscriptionid)
 
@@ -702,16 +701,16 @@ class Unsubscribe(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Unsubscribe message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Unsubscribe message" % len(wmsg))
 
       ## topic
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for topic in WAMP Unsubscribe message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for topic in WAMP Unsubscribe message" % type(wmsg[1]))
 
       topic = parse_wamp_uri(wmsg[1])
       if topic is None:
-         raise WampProtocolError("invalid URI '%s' for topic in WAMP Unsubscribe message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for topic in WAMP Unsubscribe message" % wmsg[1])
 
       ## options
       ##
@@ -721,20 +720,20 @@ class Unsubscribe(Message):
          options = wmsg[2]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for options in WAMP Unsubscribe message" % type(options))
+            raise ProtocolError("invalid type %s for options in WAMP Unsubscribe message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in options in WAMP Unsubscribe message" % type(k))
+               raise ProtocolError("invalid type %s for key in options in WAMP Unsubscribe message" % type(k))
 
          if options.has_key('match'):
 
             option_match = options['match']
             if type(option_match) != int:
-               raise WampProtocolError("invalid type %s for 'match' option in WAMP Unsubscribe message" % type(option_match))
+               raise ProtocolError("invalid type %s for 'match' option in WAMP Unsubscribe message" % type(option_match))
 
             if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
-               raise WampProtocolError("invalid value %d for 'match' option in WAMP Unsubscribe message" % option_match)
+               raise ProtocolError("invalid value %d for 'match' option in WAMP Unsubscribe message" % option_match)
 
             match = option_match
 
@@ -819,16 +818,16 @@ class Publish(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
-         raise WampProtocolError("invalid message length %d for WAMP Publish message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Publish message" % len(wmsg))
 
       ## topic
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for topic in WAMP Publish message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for topic in WAMP Publish message" % type(wmsg[1]))
 
       topic = parse_wamp_uri(wmsg[1])
       if topic is None:
-         raise WampProtocolError("invalid URI '%s' for topic in WAMP Publish message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for topic in WAMP Publish message" % wmsg[1])
 
       ## event
       ##
@@ -845,17 +844,17 @@ class Publish(Message):
          options = wmsg[3]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for options in WAMP Publish message" % type(options))
+            raise ProtocolError("invalid type %s for options in WAMP Publish message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in options in WAMP Publish message" % type(k))
+               raise ProtocolError("invalid type %s for key in options in WAMP Publish message" % type(k))
 
          if options.has_key('excludeme'):
 
             option_excludeMe = options['excludeme']
             if type(option_excludeMe) != bool:
-               raise WampProtocolError("invalid type %s for 'excludeme' option in WAMP Publish message" % type(option_excludeMe))
+               raise ProtocolError("invalid type %s for 'excludeme' option in WAMP Publish message" % type(option_excludeMe))
 
             excludeMe = option_excludeMe
 
@@ -863,11 +862,11 @@ class Publish(Message):
 
             option_exclude = options['exclude']
             if type(option_exclude) != list:
-               raise WampProtocolError("invalid type %s for 'exclude' option in WAMP Publish message" % type(option_exclude))
+               raise ProtocolError("invalid type %s for 'exclude' option in WAMP Publish message" % type(option_exclude))
 
             for sessionId in option_exclude:
                if type(sessionId) not in (str, unicode):
-                  raise WampProtocolError("invalid type %s for value in 'exclude' option in WAMP Publish message" % type(sessionId))
+                  raise ProtocolError("invalid type %s for value in 'exclude' option in WAMP Publish message" % type(sessionId))
 
             exclude = option_exclude
 
@@ -875,11 +874,11 @@ class Publish(Message):
 
             option_eligible = options['eligible']
             if type(option_eligible) != list:
-               raise WampProtocolError("invalid type %s for 'eligible' option in WAMP Publish message" % type(option_eligible))
+               raise ProtocolError("invalid type %s for 'eligible' option in WAMP Publish message" % type(option_eligible))
 
             for sessionId in option_eligible:
                if type(sessionId) not in (str, unicode):
-                  raise WampProtocolError("invalid type %s for value in 'eligible' option in WAMP Publish message" % type(sessionId))
+                  raise ProtocolError("invalid type %s for value in 'eligible' option in WAMP Publish message" % type(sessionId))
 
             eligible = option_eligible
 
@@ -887,7 +886,7 @@ class Publish(Message):
 
             option_discloseMe = options['discloseme']
             if type(option_discloseMe) != bool:
-               raise WampProtocolError("invalid type %s for 'discloseme' option in WAMP Publish message" % type(option_identifyMe))
+               raise ProtocolError("invalid type %s for 'discloseme' option in WAMP Publish message" % type(option_identifyMe))
 
             discloseMe = option_discloseMe
 
@@ -970,25 +969,25 @@ class Event(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
-         raise WampProtocolError("invalid message length %d for WAMP Event message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Event message" % len(wmsg))
 
       ## subscriptionid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'subscriptionid' in WAMP Event message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'subscriptionid' in WAMP Event message" % type(wmsg[1]))
 
       subscriptionid = parse_wamp_callid(wmsg[1])
       if subscriptionid is None:
-         raise WampProtocolError("invalid value '%s' for 'subscriptionid' in WAMP Event message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'subscriptionid' in WAMP Event message" % wmsg[1])
 
       ## topic
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for topic in WAMP Event message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for topic in WAMP Event message" % type(wmsg[2]))
 
       topic = parse_wamp_uri(wmsg[2])
       if topic is None:
-         raise WampProtocolError("invalid URI '%s' for topic in WAMP Event message" % wmsg[2])
+         raise ProtocolError("invalid URI '%s' for topic in WAMP Event message" % wmsg[2])
 
       ## event
       ##
@@ -1004,17 +1003,17 @@ class Event(Message):
          details = wmsg[4]
 
          if type(details) != dict:
-            raise WampProtocolError("invalid type %s for 'details' in WAMP Event message" % type(details))
+            raise ProtocolError("invalid type %s for 'details' in WAMP Event message" % type(details))
 
          for k in details.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in 'details' in WAMP Event message" % type(k))
+               raise ProtocolError("invalid type %s for key in 'details' in WAMP Event message" % type(k))
 
          if details.has_key('publisher'):
 
             detail_publisher = details['publisher']
             if type(detail_publisher) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for 'publisher' detail in WAMP Event message" % type(detail_publisher))
+               raise ProtocolError("invalid type %s for 'publisher' detail in WAMP Event message" % type(detail_publisher))
 
             publisher = detail_publisher
 
@@ -1093,25 +1092,25 @@ class MetaEvent(Message):
       assert(len(wmsg) > 0 and wmsg[0] == MetaEvent.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
-         raise WampProtocolError("invalid message length %d for WAMP Meta-Event message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Meta-Event message" % len(wmsg))
 
       ## topic
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'topic' in WAMP Meta-Event message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'topic' in WAMP Meta-Event message" % type(wmsg[1]))
 
       topic = parse_wamp_uri(wmsg[1])
       if topic is None:
-         raise WampProtocolError("invalid URI '%s' for 'topic' in WAMP Meta-Event message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for 'topic' in WAMP Meta-Event message" % wmsg[1])
 
       ## metatopic
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'metatopic' in WAMP Meta-Event message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for 'metatopic' in WAMP Meta-Event message" % type(wmsg[2]))
 
       metatopic = parse_wamp_uri(wmsg[2])
       if metatopic is None:
-         raise WampProtocolError("invalid URI '%s' for 'metatopic' in WAMP Meta-Event message" % wmsg[2])
+         raise ProtocolError("invalid URI '%s' for 'metatopic' in WAMP Meta-Event message" % wmsg[2])
 
       ## metaevent
       ##
@@ -1182,16 +1181,16 @@ class Provide(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Provide.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Provide message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Provide message" % len(wmsg))
 
       ## topic
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'endpoint' in WAMP Provide message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'endpoint' in WAMP Provide message" % type(wmsg[1]))
 
       endpoint = parse_wamp_uri(wmsg[1])
       if endpoint is None:
-         raise WampProtocolError("invalid URI '%s' for 'endpoint' in WAMP Provide message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for 'endpoint' in WAMP Provide message" % wmsg[1])
 
       ## options
       ##
@@ -1201,21 +1200,21 @@ class Provide(Message):
          options = wmsg[2]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for 'options' in WAMP Provide message" % type(options))
+            raise ProtocolError("invalid type %s for 'options' in WAMP Provide message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in 'options' in WAMP Provide message" % type(k))
+               raise ProtocolError("invalid type %s for key in 'options' in WAMP Provide message" % type(k))
 
          if options.has_key('pkeys'):
 
             option_pkeys = options['pkeys']
             if type(option_pkeys) != list:
-               raise WampProtocolError("invalid type %s for 'pkeys' option in WAMP Provide message" % type(option_pkeys))
+               raise ProtocolError("invalid type %s for 'pkeys' option in WAMP Provide message" % type(option_pkeys))
 
             for pk in option_pkeys:
                if type(pk) not in (str, unicode):
-                  raise WampProtocolError("invalid type for value '%s' in 'pkeys' option in WAMP Provide message" % type(pk))
+                  raise ProtocolError("invalid type for value '%s' in 'pkeys' option in WAMP Provide message" % type(pk))
 
             pkeys = option_pkeys
 
@@ -1288,16 +1287,16 @@ class Unprovide(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unprovide.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Unprovide message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Unprovide message" % len(wmsg))
 
       ## topic
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'endpoint' in WAMP Unprovide message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'endpoint' in WAMP Unprovide message" % type(wmsg[1]))
 
       endpoint = parse_wamp_uri(wmsg[1])
       if endpoint is None:
-         raise WampProtocolError("invalid URI '%s' for 'endpoint' in WAMP Unprovide message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for 'endpoint' in WAMP Unprovide message" % wmsg[1])
 
       ## options
       ##
@@ -1307,21 +1306,21 @@ class Unprovide(Message):
          options = wmsg[2]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for 'options' in WAMP Unprovide message" % type(options))
+            raise ProtocolError("invalid type %s for 'options' in WAMP Unprovide message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in 'options' in WAMP Unprovide message" % type(k))
+               raise ProtocolError("invalid type %s for key in 'options' in WAMP Unprovide message" % type(k))
 
          if options.has_key('pkeys'):
 
             option_pkeys = options['pkeys']
             if type(option_pkeys) != list:
-               raise WampProtocolError("invalid type %s for 'pkeys' option in WAMP Unprovide message" % type(option_pkeys))
+               raise ProtocolError("invalid type %s for 'pkeys' option in WAMP Unprovide message" % type(option_pkeys))
 
             for pk in option_pkeys:
                if type(pk) not in (str, unicode):
-                  raise WampProtocolError("invalid type for value '%s' in 'pkeys' option in WAMP Unprovide message" % type(pk))
+                  raise ProtocolError("invalid type for value '%s' in 'pkeys' option in WAMP Unprovide message" % type(pk))
 
             pkeys = option_pkeys
 
@@ -1403,32 +1402,32 @@ class Call(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
-         raise WampProtocolError("invalid message length %d for WAMP Call message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Call message" % len(wmsg))
 
       ## callid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'callid' in WAMP Call message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'callid' in WAMP Call message" % type(wmsg[1]))
 
       callid = parse_wamp_callid(wmsg[1])
       if callid is None:
-         raise WampProtocolError("invalid value '%s' for 'callid' in WAMP Call message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call message" % wmsg[1])
 
       ## endpoint
       ##
       if type(wmsg[2]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'endpoint' in WAMP Call message" % type(wmsg[2]))
+         raise ProtocolError("invalid type %s for 'endpoint' in WAMP Call message" % type(wmsg[2]))
 
       endpoint = parse_wamp_uri(wmsg[2])
       if endpoint is None:
-         raise WampProtocolError("invalid value '%s' for 'endpoint' in WAMP Call message" % wmsg[2])
+         raise ProtocolError("invalid value '%s' for 'endpoint' in WAMP Call message" % wmsg[2])
 
       ## args
       ##
       args = []
       if len(wmsg) > 3:
          if type(wmsg[3]) != list:
-            raise WampProtocolError("invalid type %s for 'arguments' in WAMP Call message" % type(wmsg[3]))
+            raise ProtocolError("invalid type %s for 'arguments' in WAMP Call message" % type(wmsg[3]))
          args = wmsg[3]
 
       ## options
@@ -1440,21 +1439,21 @@ class Call(Message):
          options = wmsg[4]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for 'options' in WAMP Call message" % type(options))
+            raise ProtocolError("invalid type %s for 'options' in WAMP Call message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in 'options' in WAMP Call message" % type(k))
+               raise ProtocolError("invalid type %s for key in 'options' in WAMP Call message" % type(k))
 
          if options.has_key('session'):
 
             option_sessionid = options['session']
             if type(option_sessionid) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for 'session' option in WAMP Call message" % type(option_session))
+               raise ProtocolError("invalid type %s for 'session' option in WAMP Call message" % type(option_session))
 
             option_sessionid = parse_wamp_session(option_sessionid)
             if option_sessionid is None:
-               raise WampProtocolError("invalid value %s for 'session' option in WAMP Call message" % options['session'])
+               raise ProtocolError("invalid value %s for 'session' option in WAMP Call message" % options['session'])
 
             sessionid = option_sessionid
 
@@ -1462,10 +1461,10 @@ class Call(Message):
 
             option_timeout = options['timeout']
             if type(option_timeout) != int:
-               raise WampProtocolError("invalid type %s for 'timeout' option in WAMP Call message" % type(option_timeout))
+               raise ProtocolError("invalid type %s for 'timeout' option in WAMP Call message" % type(option_timeout))
 
             if option_timeout < 0:
-               raise WampProtocolError("invalid value %d for 'timeout' option in WAMP Call message" % option_timeout)
+               raise ProtocolError("invalid value %d for 'timeout' option in WAMP Call message" % option_timeout)
 
             timeout = option_timeout
 
@@ -1554,16 +1553,16 @@ class CancelCall(Message):
       assert(len(wmsg) > 0 and wmsg[0] == CancelCall.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Cancel-Call message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Cancel-Call message" % len(wmsg))
 
       ## callid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'callid' in WAMP Cancel-Call message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'callid' in WAMP Cancel-Call message" % type(wmsg[1]))
 
       callid = parse_wamp_callid(wmsg[1])
       if callid is None:
-         raise WampProtocolError("invalid URI '%s' for 'callid' in WAMP Cancel-Call message" % wmsg[1])
+         raise ProtocolError("invalid URI '%s' for 'callid' in WAMP Cancel-Call message" % wmsg[1])
 
       ## options
       ##
@@ -1573,20 +1572,20 @@ class CancelCall(Message):
          options = wmsg[2]
 
          if type(options) != dict:
-            raise WampProtocolError("invalid type %s for 'options' in WAMP Cancel-Call message" % type(options))
+            raise ProtocolError("invalid type %s for 'options' in WAMP Cancel-Call message" % type(options))
 
          for k in options.keys():
             if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key in 'options' in WAMP Cancel-Call message" % type(k))
+               raise ProtocolError("invalid type %s for key in 'options' in WAMP Cancel-Call message" % type(k))
 
          if options.has_key('mode'):
 
             option_mode = options['mode']
             if type(option_mode) != int:
-               raise WampProtocolError("invalid type %s for 'mode' option in WAMP Cancel-Call message" % type(option_mode))
+               raise ProtocolError("invalid type %s for 'mode' option in WAMP Cancel-Call message" % type(option_mode))
 
             if option_moption_modeatch not in [CancelCall.CANCEL_SKIP, CancelCall.CANCEL_ABORT, CancelCall.CANCEL_KILL]:
-               raise WampProtocolError("invalid value %d for 'mode' option in WAMP Cancel-Call message" % option_mode)
+               raise ProtocolError("invalid value %d for 'mode' option in WAMP Cancel-Call message" % option_mode)
 
             mode = option_mode
 
@@ -1659,16 +1658,16 @@ class CallProgress(Message):
       assert(len(wmsg) > 0 and wmsg[0] == CallProgress.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Call-Progress message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Call-Progress message" % len(wmsg))
 
       ## callid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'callid' in WAMP Call-Progress message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'callid' in WAMP Call-Progress message" % type(wmsg[1]))
 
       callid = parse_wamp_callid(wmsg[1])
       if callid is None:
-         raise WampProtocolError("invalid value '%s' for 'callid' in WAMP Call-Progress message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call-Progress message" % wmsg[1])
 
       ## result
       ##
@@ -1740,16 +1739,16 @@ class CallResult(Message):
       assert(len(wmsg) > 0 and wmsg[0] == CallResult.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
-         raise WampProtocolError("invalid message length %d for WAMP Call-Result message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for WAMP Call-Result message" % len(wmsg))
 
       ## callid
       ##
       if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'callid' in WAMP Call-Result message" % type(wmsg[1]))
+         raise ProtocolError("invalid type %s for 'callid' in WAMP Call-Result message" % type(wmsg[1]))
 
       callid = parse_wamp_callid(wmsg[1])
       if callid is None:
-         raise WampProtocolError("invalid value '%s' for 'callid' in WAMP Call-Result message" % wmsg[1])
+         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call-Result message" % wmsg[1])
 
       ## result
       ##

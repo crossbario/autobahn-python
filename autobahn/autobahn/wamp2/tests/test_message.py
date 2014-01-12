@@ -132,7 +132,7 @@ class MockSession:
 
 
 
-class TestUris(unittest.TestCase):
+class TestErrorMessage(unittest.TestCase):
 
    def test_exception_message_ctor(self):
       e = message.Error(123456, 'com.myapp.error1')
@@ -141,6 +141,15 @@ class TestUris(unittest.TestCase):
       self.assertEqual(msg[1], 123456)
       self.assertEqual(msg[2], 'com.myapp.error1')
       self.assertEqual(msg[3], {})
+
+
+   def test_exception_parse(self):
+      wmsg = [message.Error.MESSAGE_TYPE, 123456, 'com.myapp.error1', {}]
+      msg = message.Error.parse(wmsg)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.error, 'com.myapp.error1')
+      self.assertEqual(msg.args, None)
+      self.assertEqual(msg.kwargs, None)
 
 
    def test_exception_from_message(self):
