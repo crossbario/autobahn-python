@@ -79,7 +79,7 @@ else:
 ## Autobahn core packages
 ##
 packages = ['autobahn',
-            'autobahn.wamp2',
+            'autobahn.wamp',
             'autobahn.websocket',
             'autobahn.asyncio',
             'autobahn.twisted',

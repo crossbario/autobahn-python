@@ -23,10 +23,10 @@ import unittest
 
 from zope.interface import implementer
 
-from autobahn.wamp2.interfaces import *
-from autobahn.wamp2.types import *
+from autobahn.wamp.interfaces import *
+from autobahn.wamp.types import *
 
-from autobahn.wamp2.error import ApplicationError, ProtocolError
+from autobahn.wamp.exception import ApplicationError, ProtocolError
 
 from twisted.internet.defer import Deferred, inlineCallbacks
 

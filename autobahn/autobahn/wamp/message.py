@@ -20,9 +20,10 @@ from __future__ import absolute_import
 
 import urlparse, urllib
 
-from autobahn.wamp2.error import ProtocolError
+#from autobahn.wamp.error import ProtocolError
 
-
+class ProtocolError(Exception):
+   pass
 
 
 def parse_wamp_uri(bytes):
@@ -42,6 +43,31 @@ def parse_wamp_uri(bytes):
       return None
 
    return uri
+
+
+def check_or_raise_uri(value, message):
+   if type(value) not in [str, unicode]:
+      raise ProtocolError("{}: invalid type {} for URI".format(message, type(value)))
+   if len(value) == 0:
+      raise ProtocolError("{}: invalid value '{}' for URI".format(message, value))
+   return value
+
+
+def check_or_raise_id(value, message):
+   if type(value) != int:
+      raise ProtocolError("{}: invalid type {} for ID".format(message, type(value)))
+   if value < 0 or value > 9007199254740992: # 2**53
+      raise ProtocolError("{}: invalid value {} for ID".format(message, value))
+   return value
+
+
+def check_or_raise_dict(value, message):
+   if type(value) != dict:
+      raise ProtocolError("{}: invalid type {}".format(message, type(value)))
+   for k in value.keys():
+      if type(k) not in (str, unicode):
+         raise ProtocolError("{}: invalid type {} for key '{}'".format(type(k), k))
+   return value
 
 
 
@@ -136,42 +162,16 @@ class Error(Message):
       if len(wmsg) not in (4, 5, 6):
          raise ProtocolError("invalid message length %d for WAMP Error message" % len(wmsg))
 
-      ## request
-      ##
-      request = wmsg[1]
-      if type(request) != int:
-         raise ProtocolError("invalid type %s for 'request' in WAMP Error message" % type(request))
+      request = check_or_raise_id(wmsg[1], "'request' in WAMP Error message")
+      error = check_or_raise_uri(wmsg[2], "'error' in WAMP Error message")
+      details = check_or_raise_dict(wmsg[3], "'details' in WAMP Error message")
 
-      ## error
-      ##
-      if type(wmsg[2]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'error' in WAMP Error message" % type(wmsg[2]))
-
-      error = parse_wamp_uri(wmsg[2])
-      if error is None:
-         raise ProtocolError("invalid value '%s' for 'error' in WAMP Error message" % wmsg[2])
-
-      ## details
-      ##
-      details = wmsg[3]
-
-      if type(details) != dict:
-         raise ProtocolError("invalid type %s for 'details' in WAMP Error message" % type(details))
-
-      for k in details.keys():
-         if type(k) not in (str, unicode):
-            raise ProtocolError("invalid type %s for key '%s' in 'details' in WAMP Error message" % (k, type(k)))
-
-      ## exception
-      ##
       args = None
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
             raise ProtocolError("invalid type %s for 'args' in WAMP Error message" % type(args))
 
-      ## exceptionkw
-      ##
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]

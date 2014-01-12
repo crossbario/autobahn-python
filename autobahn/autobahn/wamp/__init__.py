@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp2.uri import Pattern
+from autobahn.wamp.uri import Pattern
 
 
 def procedure(uri):

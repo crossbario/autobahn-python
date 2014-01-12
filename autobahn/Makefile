@@ -24,9 +24,11 @@ publish: clean
 	python3 setup.py sdist upload
 
 test:
-#	trial.py autobahn.wamp2.tests
-	trial.py autobahn.wamp2.tests.test_message
-#	trial.py autobahn.wamp2.tests.test_uri_pattern
+	trial.py autobahn.wamp.tests
+#	trial.py autobahn.wamp.tests.test_message
+#	trial.py autobahn.wamp.tests.test_uri_pattern
 
 testp:
-	python autobahn/wamp2/tests/test_uri_pattern.py
+	python -m autobahn.wamp.tests.test_message
+#	python autobahn/wamp/tests/test_message.py
+#	python autobahn/wamp2/tests/test_uri_pattern.py
