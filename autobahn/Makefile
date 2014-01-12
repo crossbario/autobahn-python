@@ -25,7 +25,8 @@ publish: clean
 
 test:
 #	trial.py autobahn.wamp2.tests
-	trial.py autobahn.wamp2.tests.test_uri_pattern
+	trial.py autobahn.wamp2.tests.test_message
+#	trial.py autobahn.wamp2.tests.test_uri_pattern
 
 testp:
 	python autobahn/wamp2/tests/test_uri_pattern.py

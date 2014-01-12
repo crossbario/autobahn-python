@@ -58,7 +58,7 @@ def parse_wamp_callid(string):
 
 
 
-class WampMessage:
+class Message:
    """
    WAMP message base class.
    """
@@ -73,10 +73,10 @@ class WampMessage:
 
    def serialize(self, serializer):
       if not self._serialized.has_key(serializer):
-         #print "WampMessage.serialize [new]", serializer
+         #print "Message.serialize [new]", serializer
          self._serialized[serializer] = serializer.serialize(self.marshal())
       else:
-         #print "WampMessage.serialize [cached]", serializer
+         #print "Message.serialize [cached]", serializer
          pass
 
       return self._serialized[serializer]
@@ -89,29 +89,36 @@ class WampMessage:
 
 
 
-class WampMessageError(WampMessage):
+class Error(Message):
    """
-   A WAMP Error message base class.
+   A WAMP Error message.
    """
 
-   def __init__(self, requestid, error, message = None, value = None):
+   MESSAGE_TYPE = 17
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, request, error, args = None, kwargs = None):
       """
       Message constructor.
 
-      :param requestid: The WAMP request ID (callid, subscribeid, ..) of the original request (call, subscribe, ..) this error is for.
-      :type requestid: str
+      :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occured for.
+      :type request: int
       :param error: The WAMP or application error URI for the error that occured.
       :type error: str
-      :param message: Human readable error message.
-      :type message: str
-      :param value: Arbitrary error value to transport error detail data for programatic consumption (must be serializable using the serializer in use).
-      :type value: any
+      :param args: Exception positional values.
+      :type args: list
+      :param kwargs: Exception keyword values.
+      :type kwargs: dict
       """
-      WampMessage.__init__(self)
-      self.requestid = requestid
+      assert(not (kwargs and not args))
+      Message.__init__(self)
+      self.request = request
       self.error = error
-      self.message = message
-      self.value = value
+      self.args = args
+      self.kwargs = kwargs
 
 
    @classmethod
@@ -127,17 +134,14 @@ class WampMessageError(WampMessage):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Klass.MESSAGE_TYPE)
 
-      if len(wmsg) not in (3, 4):
+      if len(wmsg) not in (4, 5, 6):
          raise WampProtocolError("invalid message length %d for WAMP Error message" % len(wmsg))
 
-      ## callid
+      ## request
       ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise WampProtocolError("invalid type %s for 'requestid' in WAMP Error message" % type(wmsg[1]))
-
-      requestid = parse_wamp_callid(wmsg[1])
-      if requestid is None:
-         raise WampProtocolError("invalid value '%s' for 'requestid' in WAMP Error message" % wmsg[1])
+      request = wmsg[1]
+      if request != int:
+         raise WampProtocolError("invalid type %s for 'request' in WAMP Error message" % type(request))
 
       ## error
       ##
@@ -150,34 +154,32 @@ class WampMessageError(WampMessage):
 
       ## details
       ##
-      message = None
-      value = None
+      details = wmsg[3]
 
-      if len(wmsg) == 4:
-         details = wmsg[3]
+      if type(details) != dict:
+         raise WampProtocolError("invalid type %s for 'details' in WAMP Error message" % type(details))
 
-         if type(details) != dict:
-            raise WampProtocolError("invalid type %s for 'details' in WAMP Error message" % type(details))
+      for k in details.keys():
+         if type(k) not in (str, unicode):
+            raise WampProtocolError("invalid type %s for key '%s' in 'details' in WAMP Error message" % (k, type(k)))
 
-         for k in details.keys():
-            if type(k) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for key '%s' in 'details' in WAMP Error message" % (k, type(k)))
+      ## exception
+      ##
+      args = None
+      if len(wmsg) > 4:
+         args = wmsg[4]
+         if type(args) != list:
+            raise WampProtocolError("invalid type %s for 'args' in WAMP Error message" % type(args))
 
-         ## error message (should be human readable)
-         ##
-         if details.has_key('message'):
+      ## exceptionkw
+      ##
+      kwargs = None
+      if len(wmsg) > 5:
+         kwargs = wmsg[5]
+         if type(kwargs) != dict:
+            raise WampProtocolError("invalid type %s for 'kwargs' in WAMP Error message" % type(kwargs))
 
-            option_message = options['message']
-            if type(option_message) not in (str, unicode):
-               raise WampProtocolError("invalid type %s for 'message' option in WAMP Error message" % type(option_message))
-
-            message = option_message
-
-         ## arbitrary application error value
-         ##
-         value = details['value']
-
-      obj = Klass(requestid, error, message = message, value = value)
+      obj = Klass(request, error, args = args, kwargs = kwargs)
 
       return obj
 
@@ -188,16 +190,12 @@ class WampMessageError(WampMessage):
       """
       details = {}
 
-      if self.message is not None:
-         details['message'] = self.message
-
-      if self.value is not None:
-         details['value'] = self.value
-
-      if len(details):
-         return [self.MESSAGE_TYPE, self.requestid, self.error, details]
+      if self.kwargs:
+         return [self.MESSAGE_TYPE, self.request, self.error, details, self.args, self.kwargs]
+      elif self.args:
+         return [self.MESSAGE_TYPE, self.request, self.error, details, self.args]
       else:
-         return [self.MESSAGE_TYPE, self.requestid, self.error]
+         return [self.MESSAGE_TYPE, self.request, self.error, details]
 
 
    def __str__(self):
@@ -206,11 +204,11 @@ class WampMessageError(WampMessage):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Error Message (requestid = '%s', error = '%s', message = '%s', value = %s)" % (self.requestid, self.error, self.message, self.value)
+      return "WAMP Error Message (request = {}, error = {}, exception = {}, exceptionkw = {})".format(self.request, self.error, self.exception, self.exceptionkw)
 
 
 
-class WampMessageHello(WampMessage):
+class Hello(Message):
    """
    A WAMP Hello message.
    """
@@ -228,7 +226,7 @@ class WampMessageHello(WampMessage):
       :param sessionid: The WAMP session ID the other peer is assigned.
       :type sessionid: str
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.sessionid = sessionid
 
 
@@ -243,7 +241,7 @@ class WampMessageHello(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageHello.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
       if len(wmsg) != 2:
          raise WampProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
@@ -266,7 +264,7 @@ class WampMessageHello(WampMessage):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [WampMessageHello.MESSAGE_TYPE, self.sessionid]
+      return [Hello.MESSAGE_TYPE, self.sessionid]
 
 
    def __str__(self):
@@ -279,7 +277,7 @@ class WampMessageHello(WampMessage):
 
 
 
-class WampMessageRoleChange(WampMessage):
+class RoleChange(Message):
    """
    A WAMP Role-Change message.
    """
@@ -310,7 +308,7 @@ class WampMessageRoleChange(WampMessage):
       :param role: Role to be added or removed.
       :type role: str
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.op = op
       self.role = role
 
@@ -326,7 +324,7 @@ class WampMessageRoleChange(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageRoleChange.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == RoleChange.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
          raise WampProtocolError("invalid message length %d for WAMP Role-Change message" % len(wmsg))
@@ -336,7 +334,7 @@ class WampMessageRoleChange(WampMessage):
       op = wmsg[1]
       if type(op) != int:
          raise WampProtocolError("invalid type %s for 'op' in WAMP Role-Change message" % type(op))
-      if op not in [WampMessageRoleChange.ROLE_CHANGE_OP_ADD, WampMessageRoleChange.ROLE_CHANGE_OP_REMOVE]:
+      if op not in [RoleChange.ROLE_CHANGE_OP_ADD, RoleChange.ROLE_CHANGE_OP_REMOVE]:
          raise WampProtocolError("invalid value '%s' for 'op' in WAMP Role-Change message" % op)
 
       ## role
@@ -344,7 +342,7 @@ class WampMessageRoleChange(WampMessage):
       role = wmsg[2]
       if type(role) not in (str, unicode):
          raise WampProtocolError("invalid type %s for 'role' in WAMP Role-Change message" % type(role))
-      if role not in [WampMessageRoleChange.ROLE_CHANGE_ROLE_BROKER, WampMessageRoleChange.ROLE_CHANGE_ROLE_DEALER]:
+      if role not in [RoleChange.ROLE_CHANGE_ROLE_BROKER, RoleChange.ROLE_CHANGE_ROLE_DEALER]:
          raise WampProtocolError("invalid value '%s' for 'role' in WAMP Role-Change message" % role)
 
       obj = Klass(op, role)
@@ -356,7 +354,7 @@ class WampMessageRoleChange(WampMessage):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [WampMessageRoleChange.MESSAGE_TYPE, self.op, self.role]
+      return [RoleChange.MESSAGE_TYPE, self.op, self.role]
 
 
    def __str__(self):
@@ -365,11 +363,11 @@ class WampMessageRoleChange(WampMessage):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Role-Change Message (op = '%s', role = '%s')" % (WampMessageRoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)
+      return "WAMP Role-Change Message (op = '%s', role = '%s')" % (RoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)
 
 
 
-class WampMessageHeartbeat(WampMessage):
+class Heartbeat(Message):
    """
    A WAMP Hearbeat message.
    """
@@ -389,7 +387,7 @@ class WampMessageHeartbeat(WampMessage):
       :param outgoing: Outgoing heartbeat.
       :type outgoing: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.incoming = incoming
       self.outgoing = outgoing
 
@@ -405,7 +403,7 @@ class WampMessageHeartbeat(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageHeartbeat.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
          raise WampProtocolError("invalid message length %d for WAMP Heartbeat message" % len(wmsg))
@@ -439,7 +437,7 @@ class WampMessageHeartbeat(WampMessage):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [WampMessageHeartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
+      return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
 
 
    def __str__(self):
@@ -452,7 +450,7 @@ class WampMessageHeartbeat(WampMessage):
 
 
 
-class WampMessageSubscribe(WampMessage):
+class Subscribe(Message):
    """
    A WAMP Subscribe message.
    """
@@ -478,7 +476,7 @@ class WampMessageSubscribe(WampMessage):
       :param match: The topic matching method to be used for the subscription.
       :type match: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.subscribeid = subscribeid
       self.topic = topic
       self.match = match
@@ -495,7 +493,7 @@ class WampMessageSubscribe(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageSubscribe.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
          raise WampProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
@@ -520,7 +518,7 @@ class WampMessageSubscribe(WampMessage):
 
       ## options
       ##
-      match = WampMessageSubscribe.MATCH_EXACT
+      match = Subscribe.MATCH_EXACT
 
       if len(wmsg) == 4:
          options = wmsg[3]
@@ -538,7 +536,7 @@ class WampMessageSubscribe(WampMessage):
             if type(option_match) != int:
                raise WampProtocolError("invalid type %s for 'match' option in WAMP Subscribe message" % type(option_match))
 
-            if option_match not in [WampMessageSubscribe.MATCH_EXACT, WampMessageSubscribe.MATCH_PREFIX, WampMessageSubscribe.MATCH_WILDCARD]:
+            if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
                raise WampProtocolError("invalid value %d for 'match' option in WAMP Subscribe message" % option_match)
 
             match = option_match
@@ -554,13 +552,13 @@ class WampMessageSubscribe(WampMessage):
       """
       options = {}
 
-      if self.match != WampMessageSubscribe.MATCH_EXACT:
+      if self.match != Subscribe.MATCH_EXACT:
          options['match'] = self.match
 
       if len(options):
-         return [WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic, options]
+         return [Subscribe.MESSAGE_TYPE, self.subscribeid, self.topic, options]
       else:
-         return [WampMessageSubscribe.MESSAGE_TYPE, self.subscribeid, self.topic]
+         return [Subscribe.MESSAGE_TYPE, self.subscribeid, self.topic]
 
 
    def __str__(self):
@@ -569,11 +567,11 @@ class WampMessageSubscribe(WampMessage):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Subscribe Message (subscribeid = '%s', topic = '%s', match = %s)" % (self.subscribeid, self.topic, WampMessageSubscribe.MATCH_DESC.get(self.match))
+      return "WAMP Subscribe Message (subscribeid = '%s', topic = '%s', match = %s)" % (self.subscribeid, self.topic, Subscribe.MATCH_DESC.get(self.match))
 
 
 
-class WampMessageSubscription(WampMessage):
+class Subscription(Message):
    """
    A WAMP Subscription message.
    """
@@ -592,7 +590,7 @@ class WampMessageSubscription(WampMessage):
       :param match: The topic matching method to be used for the subscription.
       :type match: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.subscribeid = subscribeid
       self.subscriptionid = subscriptionid
 
@@ -608,7 +606,7 @@ class WampMessageSubscription(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageSubscription.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Subscription.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
          raise WampProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
@@ -640,7 +638,7 @@ class WampMessageSubscription(WampMessage):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [WampMessageSubscription.MESSAGE_TYPE, self.subscribeid, self.subscriptionid]
+      return [Subscription.MESSAGE_TYPE, self.subscribeid, self.subscriptionid]
 
 
    def __str__(self):
@@ -653,7 +651,7 @@ class WampMessageSubscription(WampMessage):
 
 
 
-class WampMessageSubscribeError(WampMessageError):
+class SubscribeError(Error):
    """
    A WAMP Subscribe-Error message.
    """
@@ -665,7 +663,7 @@ class WampMessageSubscribeError(WampMessageError):
 
 
 
-class WampMessageUnsubscribe(WampMessage):
+class Unsubscribe(Message):
    """
    A WAMP Unsubscribe message.
    """
@@ -676,7 +674,7 @@ class WampMessageUnsubscribe(WampMessage):
    """
 
 
-   def __init__(self, topic, match = WampMessageSubscribe.MATCH_EXACT):
+   def __init__(self, topic, match = Subscribe.MATCH_EXACT):
       """
       Message constructor.
 
@@ -685,7 +683,7 @@ class WampMessageUnsubscribe(WampMessage):
       :param match: The topic matching method effective for the subscription to unsubscribe from.
       :type match: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.topic = topic
       self.match = match
 
@@ -701,7 +699,7 @@ class WampMessageUnsubscribe(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageUnsubscribe.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Unsubscribe message" % len(wmsg))
@@ -717,7 +715,7 @@ class WampMessageUnsubscribe(WampMessage):
 
       ## options
       ##
-      match = WampMessageSubscribe.MATCH_EXACT
+      match = Subscribe.MATCH_EXACT
 
       if len(wmsg) == 3:
          options = wmsg[2]
@@ -735,7 +733,7 @@ class WampMessageUnsubscribe(WampMessage):
             if type(option_match) != int:
                raise WampProtocolError("invalid type %s for 'match' option in WAMP Unsubscribe message" % type(option_match))
 
-            if option_match not in [WampMessageSubscribe.MATCH_EXACT, WampMessageSubscribe.MATCH_PREFIX, WampMessageSubscribe.MATCH_WILDCARD]:
+            if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
                raise WampProtocolError("invalid value %d for 'match' option in WAMP Unsubscribe message" % option_match)
 
             match = option_match
@@ -751,13 +749,13 @@ class WampMessageUnsubscribe(WampMessage):
       """
       options = {}
 
-      if self.match != WampMessageSubscribe.MATCH_EXACT:
+      if self.match != Subscribe.MATCH_EXACT:
          options['match'] = self.match
 
       if len(options):
-         return [WampMessageUnsubscribe.MESSAGE_TYPE, self.topic, options]
+         return [Unsubscribe.MESSAGE_TYPE, self.topic, options]
       else:
-         return [WampMessageUnsubscribe.MESSAGE_TYPE, self.topic]
+         return [Unsubscribe.MESSAGE_TYPE, self.topic]
 
 
    def __str__(self):
@@ -766,11 +764,11 @@ class WampMessageUnsubscribe(WampMessage):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Unsubscribe Message (topic = '%s', match = %s)" % (self.topic, WampMessageSubscribe.MATCH_DESC.get(self.match))
+      return "WAMP Unsubscribe Message (topic = '%s', match = %s)" % (self.topic, Subscribe.MATCH_DESC.get(self.match))
 
 
 
-class WampMessagePublish(WampMessage):
+class Publish(Message):
    """
    A WAMP Publish message.
    """
@@ -798,7 +796,7 @@ class WampMessagePublish(WampMessage):
       :param discloseMe: If True, request to disclose the publisher of this event to subscribers.
       :type discloseMe: bool
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.topic = topic
       self.event = event
       self.excludeMe = excludeMe
@@ -818,7 +816,7 @@ class WampMessagePublish(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessagePublish.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
          raise WampProtocolError("invalid message length %d for WAMP Publish message" % len(wmsg))
@@ -914,9 +912,9 @@ class WampMessagePublish(WampMessage):
          options['discloseme'] = self.discloseMe
 
       if len(options):
-         return [WampMessagePublish.MESSAGE_TYPE, self.topic, self.event, options]
+         return [Publish.MESSAGE_TYPE, self.topic, self.event, options]
       else:
-         return [WampMessagePublish.MESSAGE_TYPE, self.topic, self.event]
+         return [Publish.MESSAGE_TYPE, self.topic, self.event]
 
 
    def __str__(self):
@@ -929,7 +927,7 @@ class WampMessagePublish(WampMessage):
 
 
 
-class WampMessageEvent(WampMessage):
+class Event(Message):
    """
    A WAMP Event message.
    """
@@ -951,7 +949,7 @@ class WampMessageEvent(WampMessage):
       :param publisher: If present, the WAMP session ID of the publisher of this event.
       :type publisher: str
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.subscriptionid = subscriptionid
       self.topic = topic
       self.event = event
@@ -969,7 +967,7 @@ class WampMessageEvent(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageEvent.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
          raise WampProtocolError("invalid message length %d for WAMP Event message" % len(wmsg))
@@ -1035,12 +1033,12 @@ class WampMessageEvent(WampMessage):
          details['publisher'] = self.publisher
 
       if len(details):
-         return [WampMessageEvent.MESSAGE_TYPE, self.topic, self.event, details]
+         return [Event.MESSAGE_TYPE, self.topic, self.event, details]
       else:
          if self.event is not None:
-            return [WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic, self.event]
+            return [Event.MESSAGE_TYPE, self.subscriptionid, self.topic, self.event]
          else:
-            return [WampMessageEvent.MESSAGE_TYPE, self.subscriptionid, self.topic]
+            return [Event.MESSAGE_TYPE, self.subscriptionid, self.topic]
 
 
    def __str__(self):
@@ -1053,7 +1051,7 @@ class WampMessageEvent(WampMessage):
 
 
 
-class WampMessageMetaEvent(WampMessage):
+class MetaEvent(Message):
    """
    A WAMP Meta-Event message.
    """
@@ -1075,7 +1073,7 @@ class WampMessageMetaEvent(WampMessage):
       :param metaevent: WAMP metaevent payload.
       :type metaevent: any
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.topic = topic
       self.metatopic = metatopic
       self.metaevent = metaevent
@@ -1092,7 +1090,7 @@ class WampMessageMetaEvent(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageMetaEvent.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == MetaEvent.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4):
          raise WampProtocolError("invalid message length %d for WAMP Meta-Event message" % len(wmsg))
@@ -1131,9 +1129,9 @@ class WampMessageMetaEvent(WampMessage):
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
       if self.metaevent is not None:
-         return [WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic, self.metaevent]
+         return [MetaEvent.MESSAGE_TYPE, self.topic, self.metatopic, self.metaevent]
       else:
-         return [WampMessageMetaEvent.MESSAGE_TYPE, self.topic, self.metatopic]
+         return [MetaEvent.MESSAGE_TYPE, self.topic, self.metatopic]
 
 
    def __str__(self):
@@ -1146,7 +1144,7 @@ class WampMessageMetaEvent(WampMessage):
 
 
 
-class WampMessageProvide(WampMessage):
+class Provide(Message):
    """
    A WAMP Provide message.
    """
@@ -1165,7 +1163,7 @@ class WampMessageProvide(WampMessage):
       :param pkeys: The endpoint can work for this list of application partition keys.
       :type pkeys: list
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.endpoint = endpoint
       self.pkeys = pkeys
 
@@ -1181,7 +1179,7 @@ class WampMessageProvide(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageProvide.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Provide.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Provide message" % len(wmsg))
@@ -1236,9 +1234,9 @@ class WampMessageProvide(WampMessage):
          options['pkeys'] = self.pkeys
 
       if len(options):
-         return [WampMessageProvide.MESSAGE_TYPE, self.endpoint, options]
+         return [Provide.MESSAGE_TYPE, self.endpoint, options]
       else:
-         return [WampMessageProvide.MESSAGE_TYPE, self.endpoint]
+         return [Provide.MESSAGE_TYPE, self.endpoint]
 
 
    def __str__(self):
@@ -1251,7 +1249,7 @@ class WampMessageProvide(WampMessage):
 
 
 
-class WampMessageUnprovide(WampMessage):
+class Unprovide(Message):
    """
    A WAMP Unprovide message.
    """
@@ -1271,7 +1269,7 @@ class WampMessageUnprovide(WampMessage):
       :param pkeys: The endpoint is unprovided to work for this list of application partition keys.
       :type pkeys: list
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.endpoint = endpoint
       self.pkeys = pkeys
 
@@ -1287,7 +1285,7 @@ class WampMessageUnprovide(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageUnprovide.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Unprovide.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Unprovide message" % len(wmsg))
@@ -1342,9 +1340,9 @@ class WampMessageUnprovide(WampMessage):
          options['pkeys'] = self.pkeys
 
       if len(options):
-         return [WampMessageUnprovide.MESSAGE_TYPE, self.endpoint, options]
+         return [Unprovide.MESSAGE_TYPE, self.endpoint, options]
       else:
-         return [WampMessageUnprovide.MESSAGE_TYPE, self.endpoint]
+         return [Unprovide.MESSAGE_TYPE, self.endpoint]
 
 
    def __str__(self):
@@ -1357,7 +1355,7 @@ class WampMessageUnprovide(WampMessage):
 
 
 
-class WampMessageCall(WampMessage):
+class Call(Message):
    """
    A WAMP Call message.
    """
@@ -1383,7 +1381,7 @@ class WampMessageCall(WampMessage):
       :param timeout: If present, let the callee automatically cancel the call after this ms.
       :type timeout: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.callid = callid
       self.endpoint = endpoint
       self.args = args
@@ -1402,7 +1400,7 @@ class WampMessageCall(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageCall.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
          raise WampProtocolError("invalid message length %d for WAMP Call message" % len(wmsg))
@@ -1489,12 +1487,12 @@ class WampMessageCall(WampMessage):
          options['session'] = self.sessionid
 
       if len(options):
-         return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args, options]
+         return [Call.MESSAGE_TYPE, self.callid, self.endpoint, self.args, options]
       else:
          if len(self.args) > 0:
-            return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint, self.args]
+            return [Call.MESSAGE_TYPE, self.callid, self.endpoint, self.args]
          else:
-            return [WampMessageCall.MESSAGE_TYPE, self.callid, self.endpoint]
+            return [Call.MESSAGE_TYPE, self.callid, self.endpoint]
 
 
    def __str__(self):
@@ -1507,7 +1505,7 @@ class WampMessageCall(WampMessage):
 
 
 
-class WampMessageCancelCall(WampMessage):
+class CancelCall(Message):
    """
    A WAMP Cancel-Call message.
    """
@@ -1537,7 +1535,7 @@ class WampMessageCancelCall(WampMessage):
       :param mode: Specifies how to cancel the call (skip, abort or kill).
       :type mode: int
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.callid = callid
       self.mode = mode
 
@@ -1553,7 +1551,7 @@ class WampMessageCancelCall(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageCancelCall.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == CancelCall.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Cancel-Call message" % len(wmsg))
@@ -1587,7 +1585,7 @@ class WampMessageCancelCall(WampMessage):
             if type(option_mode) != int:
                raise WampProtocolError("invalid type %s for 'mode' option in WAMP Cancel-Call message" % type(option_mode))
 
-            if option_moption_modeatch not in [WampMessageCancelCall.CANCEL_SKIP, WampMessageCancelCall.CANCEL_ABORT, WampMessageCancelCall.CANCEL_KILL]:
+            if option_moption_modeatch not in [CancelCall.CANCEL_SKIP, CancelCall.CANCEL_ABORT, CancelCall.CANCEL_KILL]:
                raise WampProtocolError("invalid value %d for 'mode' option in WAMP Cancel-Call message" % option_mode)
 
             mode = option_mode
@@ -1607,9 +1605,9 @@ class WampMessageCancelCall(WampMessage):
          options['mode'] = self.mode
 
       if len(options):
-         return [WampMessageCancelCall.MESSAGE_TYPE, self.callid, options]
+         return [CancelCall.MESSAGE_TYPE, self.callid, options]
       else:
-         return [WampMessageCancelCall.MESSAGE_TYPE, self.callid]
+         return [CancelCall.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):
@@ -1618,11 +1616,11 @@ class WampMessageCancelCall(WampMessage):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Cancel-Call Message (callid = '%s', mode = %s)" % (self.callid, WampMessageCancelCall.CANCEL_DESC.get(self.mode))
+      return "WAMP Cancel-Call Message (callid = '%s', mode = %s)" % (self.callid, CancelCall.CANCEL_DESC.get(self.mode))
 
 
 
-class WampMessageCallProgress(WampMessage):
+class CallProgress(Message):
    """
    A WAMP Call-Progress message.
    """
@@ -1642,7 +1640,7 @@ class WampMessageCallProgress(WampMessage):
       :param progress: Arbitrary application progress (must be serializable using the serializer in use).
       :type progress: any
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.callid = callid
       self.progress = progress
 
@@ -1658,7 +1656,7 @@ class WampMessageCallProgress(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageCallProgress.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == CallProgress.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Call-Progress message" % len(wmsg))
@@ -1688,9 +1686,9 @@ class WampMessageCallProgress(WampMessage):
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
       if self.progress is not None:
-         return [WampMessageCallProgress.MESSAGE_TYPE, self.callid, self.progress]
+         return [CallProgress.MESSAGE_TYPE, self.callid, self.progress]
       else:
-         return [WampMessageCallProgress.MESSAGE_TYPE, self.callid]
+         return [CallProgress.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):
@@ -1703,7 +1701,7 @@ class WampMessageCallProgress(WampMessage):
 
 
 
-class WampMessageCallResult(WampMessage):
+class CallResult(Message):
    """
    A WAMP Call-Result message.
    """
@@ -1723,7 +1721,7 @@ class WampMessageCallResult(WampMessage):
       :param result: Arbitrary application result (must be serializable using the serializer in use).
       :type result: any
       """
-      WampMessage.__init__(self)
+      Message.__init__(self)
       self.callid = callid
       self.result = result
 
@@ -1739,7 +1737,7 @@ class WampMessageCallResult(WampMessage):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == WampMessageCallResult.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == CallResult.MESSAGE_TYPE)
 
       if len(wmsg) not in (2, 3):
          raise WampProtocolError("invalid message length %d for WAMP Call-Result message" % len(wmsg))
@@ -1769,9 +1767,9 @@ class WampMessageCallResult(WampMessage):
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
       if self.result is not None:
-         return [WampMessageCallResult.MESSAGE_TYPE, self.callid, self.result]
+         return [CallResult.MESSAGE_TYPE, self.callid, self.result]
       else:
-         return [WampMessageCallResult.MESSAGE_TYPE, self.callid]
+         return [CallResult.MESSAGE_TYPE, self.callid]
 
 
    def __str__(self):
@@ -1784,7 +1782,7 @@ class WampMessageCallResult(WampMessage):
 
 
 
-class WampMessageCallError(WampMessageError):
+class CallError(Error):
    """
    A WAMP Call-Error message.
    """
