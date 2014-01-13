@@ -141,28 +141,28 @@ class TestErrorMessage(unittest.TestCase):
       msg = e.marshal()
       self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
       self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], 'com.myapp.error1')
-      self.assertEqual(msg[3], {})
+      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[3], 'com.myapp.error1')
 
       e = message.Error(123456, 'com.myapp.error1', args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
       msg = e.marshal()
       self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
       self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], 'com.myapp.error1')
-      self.assertEqual(msg[3], {})
+      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[3], 'com.myapp.error1')
       self.assertEqual(msg[4], [1, 2, 3])
       self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
 
 
    def test_exception_parse(self):
-      wmsg = [message.Error.MESSAGE_TYPE, 123456, 'com.myapp.error1', {}]
+      wmsg = [message.Error.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1']
       msg = message.Error.parse(wmsg)
       self.assertEqual(msg.request, 123456)
       self.assertEqual(msg.error, 'com.myapp.error1')
       self.assertEqual(msg.args, None)
       self.assertEqual(msg.kwargs, None)
 
-      wmsg = [message.Error.MESSAGE_TYPE, 123456, 'com.myapp.error1', {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+      wmsg = [message.Error.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
       msg = message.Error.parse(wmsg)
       self.assertEqual(msg.request, 123456)
       self.assertEqual(msg.error, 'com.myapp.error1')
@@ -234,7 +234,7 @@ class TestErrorMessage(unittest.TestCase):
       exc = AppError1()
       msg = session.message_from_exception(123456, exc)
 
-      self.assertEqual(msg.marshal(), [message.Error.MESSAGE_TYPE, 123456, "com.myapp.error1", {}])
+      self.assertEqual(msg.marshal(), [message.Error.MESSAGE_TYPE, 123456, {}, "com.myapp.error1"])
 
 
 if __name__ == '__main__':

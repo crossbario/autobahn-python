@@ -117,6 +117,11 @@ class Message:
 class Error(Message):
    """
    A WAMP Error message.
+
+   Formats:
+     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri]`
+     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]`
+     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
    MESSAGE_TYPE = 17
@@ -163,8 +168,8 @@ class Error(Message):
          raise ProtocolError("invalid message length %d for WAMP Error message" % len(wmsg))
 
       request = check_or_raise_id(wmsg[1], "'request' in WAMP Error message")
-      error = check_or_raise_uri(wmsg[2], "'error' in WAMP Error message")
-      details = check_or_raise_dict(wmsg[3], "'details' in WAMP Error message")
+      details = check_or_raise_dict(wmsg[2], "'details' in WAMP Error message")
+      error = check_or_raise_uri(wmsg[3], "'error' in WAMP Error message")
 
       args = None
       if len(wmsg) > 4:
@@ -190,11 +195,11 @@ class Error(Message):
       details = {}
 
       if self.kwargs:
-         return [self.MESSAGE_TYPE, self.request, self.error, details, self.args, self.kwargs]
+         return [self.MESSAGE_TYPE, self.request, details, self.error, self.args, self.kwargs]
       elif self.args:
-         return [self.MESSAGE_TYPE, self.request, self.error, details, self.args]
+         return [self.MESSAGE_TYPE, self.request, details, self.error, self.args]
       else:
-         return [self.MESSAGE_TYPE, self.request, self.error, details]
+         return [self.MESSAGE_TYPE, self.request, details, self.error]
 
 
    def __str__(self):
@@ -452,6 +457,9 @@ class Heartbeat(Message):
 class Subscribe(Message):
    """
    A WAMP Subscribe message.
+
+   Format:
+     * `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
    """
 
    MESSAGE_TYPE = 3
@@ -466,17 +474,19 @@ class Subscribe(Message):
    MATCH_DESC = {MATCH_EXACT: 'exact', MATCH_PREFIX: 'prefix', MATCH_WILDCARD: 'wildcard'}
 
 
-   def __init__(self, subscribeid, topic, match = MATCH_EXACT):
+   def __init__(self, request, topic, match = MATCH_EXACT):
       """
       Message constructor.
 
+      :param request: The WAMP request ID of this request.
+      :type request: int
       :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
       :type topic: str
       :param match: The topic matching method to be used for the subscription.
       :type match: int
       """
       Message.__init__(self)
-      self.subscribeid = subscribeid
+      self.request = request
       self.topic = topic
       self.match = match
 
@@ -494,53 +504,27 @@ class Subscribe(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
-      if len(wmsg) not in (3, 4):
+      if len(wmsg) != 4:
          raise ProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
 
-      ## subscribeid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'subscribeid' in WAMP Subscribe message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in WAMP Subscribe message")
+      options = check_or_raise_dict(wmsg[2], "'options' in WAMP Subscribe message")
+      topic = check_or_raise_uri(wmsg[3], "'error' in WAMP Subscribe message")
 
-      subscribeid = parse_wamp_callid(wmsg[1])
-      if subscribeid is None:
-         raise ProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscribe message" % wmsg[1])
-
-      ## topic
-      ##
-      if type(wmsg[2]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for topic in WAMP Subscribe message" % type(wmsg[2]))
-
-      topic = parse_wamp_uri(wmsg[2])
-      if topic is None:
-         raise ProtocolError("invalid value '%s' for topic in WAMP Subscribe message" % wmsg[2])
-
-      ## options
-      ##
       match = Subscribe.MATCH_EXACT
 
-      if len(wmsg) == 4:
-         options = wmsg[3]
+      if options.has_key('match'):
 
-         if type(options) != dict:
-            raise ProtocolError("invalid type %s for options in WAMP Subscribe message" % type(options))
+         option_match = options['match']
+         if type(option_match) != int:
+            raise ProtocolError("invalid type %s for 'match' option in WAMP Subscribe message" % type(option_match))
 
-         for k in options.keys():
-            if type(k) not in (str, unicode):
-               raise ProtocolError("invalid type %s for key in options in WAMP Subscribe message" % type(k))
+         if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
+            raise ProtocolError("invalid value %d for 'match' option in WAMP Subscribe message" % option_match)
 
-         if options.has_key('match'):
+         match = option_match
 
-            option_match = options['match']
-            if type(option_match) != int:
-               raise ProtocolError("invalid type %s for 'match' option in WAMP Subscribe message" % type(option_match))
-
-            if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
-               raise ProtocolError("invalid value %d for 'match' option in WAMP Subscribe message" % option_match)
-
-            match = option_match
-
-      obj = Klass(subscribeid, topic, match)
+      obj = Klass(request, topic, match)
 
       return obj
 
@@ -554,10 +538,7 @@ class Subscribe(Message):
       if self.match != Subscribe.MATCH_EXACT:
          options['match'] = self.match
 
-      if len(options):
-         return [Subscribe.MESSAGE_TYPE, self.subscribeid, self.topic, options]
-      else:
-         return [Subscribe.MESSAGE_TYPE, self.subscribeid, self.topic]
+      return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
 
 
    def __str__(self):
@@ -566,13 +547,16 @@ class Subscribe(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Subscribe Message (subscribeid = '%s', topic = '%s', match = %s)" % (self.subscribeid, self.topic, Subscribe.MATCH_DESC.get(self.match))
+      return "WAMP Subscribe Message (request = {}, topic = {}, match = {})".format(self.request, self.topic, Subscribe.MATCH_DESC.get(self.match))
 
 
 
-class Subscription(Message):
+class Subscribed(Message):
    """
-   A WAMP Subscription message.
+   A WAMP Subscribed message.
+
+   Format:
+     * `[SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]`
    """
 
    MESSAGE_TYPE = 103
@@ -580,18 +564,18 @@ class Subscription(Message):
    The WAMP message code for this type of message.
    """
 
-   def __init__(self, subscribeid, subscriptionid):
+   def __init__(self, request, subscription):
       """
       Message constructor.
 
-      :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
-      :type topic: str
-      :param match: The topic matching method to be used for the subscription.
-      :type match: int
+      :param request: The request ID of the original `SUBSCRIBE` request.
+      :type request: int
+      :param subscription: The subscription ID for the subscribed topic (pattern).
+      :type subscription: int
       """
       Message.__init__(self)
-      self.subscribeid = subscribeid
-      self.subscriptionid = subscriptionid
+      self.request = request
+      self.subscription = subscription
 
 
    @classmethod
@@ -605,30 +589,15 @@ class Subscription(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == Subscription.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length %d for WAMP Subscribe message" % len(wmsg))
+         raise ProtocolError("invalid message length %d for SUBSCRIBED message" % len(wmsg))
 
-      ## subscribeid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'subscribeid' in WAMP Subscription message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED message")
+      subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED message")
 
-      subscribeid = parse_wamp_callid(wmsg[1])
-      if subscribeid is None:
-         raise ProtocolError("invalid value '%s' for 'subscribeid' in WAMP Subscription message" % wmsg[1])
-
-      ## subscriptionid
-      ##
-      if type(wmsg[2]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'subscriptionid' in WAMP Subscription message" % type(wmsg[2]))
-
-      subscriptionid = parse_wamp_callid(wmsg[2])
-      if subscriptionid is None:
-         raise ProtocolError("invalid value '%s' for 'subscriptionid' in WAMP Subscription message" % wmsg[2])
-
-      obj = Klass(subscribeid, subscriptionid)
+      obj = Klass(request, subscription)
 
       return obj
 
@@ -637,7 +606,7 @@ class Subscription(Message):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [Subscription.MESSAGE_TYPE, self.subscribeid, self.subscriptionid]
+      return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
 
 
    def __str__(self):
@@ -646,25 +615,16 @@ class Subscription(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Subscription Message (subscribeid = '%s', subscriptionid = '%s')" % (self.subscribeid, self.subscriptionid)
-
-
-
-class SubscribeError(Error):
-   """
-   A WAMP Subscribe-Error message.
-   """
-
-   MESSAGE_TYPE = 104
-   """
-   The WAMP message code for this type of message.
-   """
+      return "WAMP Subscribed Message (request = {}, subscription = {})".format(self.request, self.subscription)
 
 
 
 class Unsubscribe(Message):
    """
    A WAMP Unsubscribe message.
+
+   Format:
+     * `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
    """
 
    MESSAGE_TYPE = 4
@@ -673,18 +633,18 @@ class Unsubscribe(Message):
    """
 
 
-   def __init__(self, topic, match = Subscribe.MATCH_EXACT):
+   def __init__(self, request, subscription):
       """
       Message constructor.
 
-      :param topic: The WAMP or application URI of the PubSub topic to unsubscribe from.
-      :type topic: str
-      :param match: The topic matching method effective for the subscription to unsubscribe from.
-      :type match: int
+      :param request: The WAMP request ID of this request.
+      :type request: int
+      :param subscription: The subscription ID for the subscribed topic (pattern).
+      :type subscription: int
       """
       Message.__init__(self)
-      self.topic = topic
-      self.match = match
+      self.request = request
+      self.subscription = subscription
 
 
    @classmethod
@@ -700,44 +660,13 @@ class Unsubscribe(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
-      if len(wmsg) not in (2, 3):
+      if len(wmsg) != 3:
          raise ProtocolError("invalid message length %d for WAMP Unsubscribe message" % len(wmsg))
 
-      ## topic
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for topic in WAMP Unsubscribe message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBE message")
+      subscription = check_or_raise_id(wmsg[2], "'subscription' in UNSUBSCRIBE message")
 
-      topic = parse_wamp_uri(wmsg[1])
-      if topic is None:
-         raise ProtocolError("invalid URI '%s' for topic in WAMP Unsubscribe message" % wmsg[1])
-
-      ## options
-      ##
-      match = Subscribe.MATCH_EXACT
-
-      if len(wmsg) == 3:
-         options = wmsg[2]
-
-         if type(options) != dict:
-            raise ProtocolError("invalid type %s for options in WAMP Unsubscribe message" % type(options))
-
-         for k in options.keys():
-            if type(k) not in (str, unicode):
-               raise ProtocolError("invalid type %s for key in options in WAMP Unsubscribe message" % type(k))
-
-         if options.has_key('match'):
-
-            option_match = options['match']
-            if type(option_match) != int:
-               raise ProtocolError("invalid type %s for 'match' option in WAMP Unsubscribe message" % type(option_match))
-
-            if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
-               raise ProtocolError("invalid value %d for 'match' option in WAMP Unsubscribe message" % option_match)
-
-            match = option_match
-
-      obj = Klass(topic, match)
+      obj = Klass(request, subscription)
 
       return obj
 
@@ -746,15 +675,7 @@ class Unsubscribe(Message):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      options = {}
-
-      if self.match != Subscribe.MATCH_EXACT:
-         options['match'] = self.match
-
-      if len(options):
-         return [Unsubscribe.MESSAGE_TYPE, self.topic, options]
-      else:
-         return [Unsubscribe.MESSAGE_TYPE, self.topic]
+      return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
 
    def __str__(self):
@@ -763,7 +684,71 @@ class Unsubscribe(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Unsubscribe Message (topic = '%s', match = %s)" % (self.topic, Subscribe.MATCH_DESC.get(self.match))
+      return "WAMP Unsubscribe Message (request = {}, subscription = {})".format(self.request, self.subscription)
+
+
+
+class Unsubscribed(Message):
+   """
+   A WAMP Unsubscribed message.
+
+   Format:
+     * `[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]`
+   """
+
+   MESSAGE_TYPE = 153
+   """
+   The WAMP message code for this type of message.
+   """
+
+   def __init__(self, request):
+      """
+      Message constructor.
+
+      :param request: The request ID of the original `UNSUBSCRIBE` request.
+      :type request: int
+      """
+      Message.__init__(self)
+      self.request = request
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE)
+
+      if len(wmsg) != 2:
+         raise ProtocolError("invalid message length {} for UNSUBSCRIBED message".format(len(wmsg)))
+
+      request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED message")
+
+      obj = Klass(request)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      return [Unsubscribed.MESSAGE_TYPE, self.request]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP Unsubscribed Message (request = {})".format(self.request)
 
 
 
