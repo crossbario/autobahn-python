@@ -16,33 +16,17 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
 __all__ = ['WampSerializer',
            'JsonSerializer',
            'WampJsonSerializer']
 
-
 from zope.interface import implementer
 
-from interfaces import ISerializer
-from error import WampProtocolError
-from message import WampMessageHello, \
-                    WampMessageHeartbeat, \
-                    WampMessageRoleChange, \
-                    WampMessageSubscribe, \
-                    WampMessageSubscription, \
-                    WampMessageSubscribeError, \
-                    WampMessageUnsubscribe, \
-                    WampMessagePublish, \
-                    WampMessageEvent, \
-                    WampMessageMetaEvent, \
-                    WampMessageProvide, \
-                    WampMessageUnprovide, \
-                    WampMessageCall, \
-                    WampMessageCancelCall, \
-                    WampMessageCallProgress, \
-                    WampMessageCallResult, \
-                    WampMessageCallError
-
+from autobahn.wamp.interfaces import ISerializer
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp import message
 
 
 class WampSerializer:
@@ -52,29 +36,27 @@ class WampSerializer:
    """
 
    MESSAGE_TYPE_MAP = {
-      ## Session
-      WampMessageHello.MESSAGE_TYPE:            WampMessageHello,
-      WampMessageHeartbeat.MESSAGE_TYPE:        WampMessageHeartbeat,
-      WampMessageRoleChange.MESSAGE_TYPE:       WampMessageRoleChange,
-
-      ## PubSub
-      WampMessageSubscribe.MESSAGE_TYPE:        WampMessageSubscribe,
-      WampMessageSubscription.MESSAGE_TYPE:     WampMessageSubscription,
-      WampMessageSubscribeError.MESSAGE_TYPE:   WampMessageSubscribeError,
-
-      WampMessageUnsubscribe.MESSAGE_TYPE:      WampMessageUnsubscribe,
-      WampMessagePublish.MESSAGE_TYPE:          WampMessagePublish,
-      WampMessageEvent.MESSAGE_TYPE:            WampMessageEvent,
-      WampMessageMetaEvent.MESSAGE_TYPE:        WampMessageMetaEvent,
-
-      ## RPC
-      WampMessageProvide.MESSAGE_TYPE:          WampMessageProvide,
-      WampMessageUnprovide.MESSAGE_TYPE:        WampMessageUnprovide,
-      WampMessageCall.MESSAGE_TYPE:             WampMessageCall,
-      WampMessageCancelCall.MESSAGE_TYPE:       WampMessageCancelCall,
-      WampMessageCallProgress.MESSAGE_TYPE:     WampMessageCallProgress,
-      WampMessageCallResult.MESSAGE_TYPE:       WampMessageCallResult,
-      WampMessageCallError.MESSAGE_TYPE:        WampMessageCallError,
+      message.Hello.MESSAGE_TYPE:           message.Hello,
+      message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
+      message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
+      message.Error.MESSAGE_TYPE:           message.Error,
+      message.Publish.MESSAGE_TYPE:         message.Publish,
+      message.Published.MESSAGE_TYPE:       message.Published,
+      message.Subscribe.MESSAGE_TYPE:       message.Subscribe,
+      message.Subscribed.MESSAGE_TYPE:      message.Subscribed,
+      message.Unsubscribe.MESSAGE_TYPE:     message.Unsubscribe,
+      message.Unsubscribed.MESSAGE_TYPE:    message.Unsubscribed,
+      message.Event.MESSAGE_TYPE:           message.Event,
+      message.Call.MESSAGE_TYPE:            message.Call,
+      message.Cancel.MESSAGE_TYPE:          message.Cancel,
+      message.Result.MESSAGE_TYPE:          message.Result,
+      message.Register.MESSAGE_TYPE:        message.Register,
+      message.Registered.MESSAGE_TYPE:      message.Registered,
+      message.Unregister.MESSAGE_TYPE:      message.Unregister,
+      message.Unregistered.MESSAGE_TYPE:    message.Unregistered,
+      message.Invocation.MESSAGE_TYPE:      message.Invocation,
+      message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
+      message.Yield.MESSAGE_TYPE:           message.Yield,
    }
 
 
@@ -108,28 +90,28 @@ class WampSerializer:
       :returns obj -- An instance of a subclass of :class:`autobahn.wamp2message.WampMessage`.
       """
       if isBinary != self._serializer.isBinary:
-         raise WampProtocolError("invalid serialization of WAMP message [binary = %s, but expected %s]" % (isBinary, self._serializer.isBinary))
+         raise ProtocolError("invalid serialization of WAMP message [binary = %s, but expected %s]" % (isBinary, self._serializer.isBinary))
 
       try:
          raw_msg = self._serializer.unserialize(bytes)
       except Exception as e:
-         raise WampProtocolError("invalid serialization of WAMP message [%s]" % e)
+         raise ProtocolError("invalid serialization of WAMP message [%s]" % e)
 
       if type(raw_msg) != list:
-         raise WampProtocolError("invalid type %s for WAMP message" % type(raw_msg))
+         raise ProtocolError("invalid type %s for WAMP message" % type(raw_msg))
 
       if len(raw_msg) == 0:
-         raise WampProtocolError("missing message type in WAMP message")
+         raise ProtocolError("missing message type in WAMP message")
 
       message_type = raw_msg[0]
 
       if type(message_type) != int:
-         raise WampProtocolError("invalid type %d for WAMP message type" % type(message_type))
+         raise ProtocolError("invalid type %d for WAMP message type" % type(message_type))
 
       Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
       if Klass is None:
-         raise WampProtocolError("invalid WAMP message type %d" % message_type)
+         raise ProtocolError("invalid WAMP message type %d" % message_type)
 
       msg = Klass.parse(raw_msg)
 

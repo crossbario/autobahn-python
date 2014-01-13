@@ -74,7 +74,15 @@ class Message:
       return self._serialized[serializer]
 
    def __eq__(self, other):
-      return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
+      if not isinstance(other, self.__class__):
+         return False
+      # we only want the actual message data attributes (not eg _serialize)
+      for k in self.__dict__:
+         if not k.startswith('_'):
+            if not self.__dict__[k] == other.__dict__[k]:
+               return False
+      return True
+      #return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
 
    def __ne__(self, other):
       return not self.__eq__(other)
@@ -91,7 +99,7 @@ class Error(Message):
      * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 17
+   MESSAGE_TYPE = 4
    """
    The WAMP message code for this type of message.
    """
@@ -188,7 +196,7 @@ class Subscribe(Message):
    Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
    """
 
-   MESSAGE_TYPE = 3
+   MESSAGE_TYPE = 32
    """
    The WAMP message code for this type of message.
    """
@@ -281,7 +289,7 @@ class Subscribed(Message):
    Format: `[SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]`
    """
 
-   MESSAGE_TYPE = 103
+   MESSAGE_TYPE = 33
    """
    The WAMP message code for this type of message.
    """
@@ -348,7 +356,7 @@ class Unsubscribe(Message):
    Format: `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
    """
 
-   MESSAGE_TYPE = 4
+   MESSAGE_TYPE = 34
    """
    The WAMP message code for this type of message.
    """
@@ -416,7 +424,7 @@ class Unsubscribed(Message):
    Format: `[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]`
    """
 
-   MESSAGE_TYPE = 153
+   MESSAGE_TYPE = 35
    """
    The WAMP message code for this type of message.
    """
@@ -482,7 +490,7 @@ class Publish(Message):
      * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 5
+   MESSAGE_TYPE = 16
    """
    The WAMP message code for this type of message.
    """
@@ -648,7 +656,7 @@ class Published(Message):
    Format: `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
    """
 
-   MESSAGE_TYPE = 103
+   MESSAGE_TYPE = 17
    """
    The WAMP message code for this type of message.
    """
@@ -719,7 +727,7 @@ class Event(Message):
      * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 6
+   MESSAGE_TYPE = 36
    """
    The WAMP message code for this type of message.
    """
@@ -832,7 +840,7 @@ class Register(Message):
    Format: `[REGISTER, Request|id, Options|dict, Procedure|uri]`
    """
 
-   MESSAGE_TYPE = 8
+   MESSAGE_TYPE = 64
    """
    The WAMP message code for this type of message.
    """
@@ -922,7 +930,7 @@ class Registered(Message):
    Format: `[REGISTERED, REGISTER.Request|id, Registration|id]`
    """
 
-   MESSAGE_TYPE = 103
+   MESSAGE_TYPE = 65
    """
    The WAMP message code for this type of message.
    """
@@ -989,7 +997,7 @@ class Unregister(Message):
    Format: `[UNREGISTER, Request|id, REGISTERED.Registration|id]`
    """
 
-   MESSAGE_TYPE = 9
+   MESSAGE_TYPE = 66
    """
    The WAMP message code for this type of message.
    """
@@ -1057,7 +1065,7 @@ class Unregistered(Message):
    Format: `[UNREGISTERED, UNREGISTER.Request|id]`
    """
 
-   MESSAGE_TYPE = 153
+   MESSAGE_TYPE = 67
    """
    The WAMP message code for this type of message.
    """
@@ -1123,7 +1131,7 @@ class Call(Message):
      * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 10
+   MESSAGE_TYPE = 48
    """
    The WAMP message code for this type of message.
    """
@@ -1239,7 +1247,7 @@ class Cancel(Message):
    Format: `[CANCEL, CALL.Request|id, Options|dict]`
    """
 
-   MESSAGE_TYPE = 11
+   MESSAGE_TYPE = 49
    """
    The WAMP message code for this type of message.
    """
@@ -1334,7 +1342,7 @@ class Result(Message):
      * `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 13
+   MESSAGE_TYPE = 50
    """
    The WAMP message code for this type of message.
    """
@@ -1446,7 +1454,7 @@ class Invocation(Message):
      * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 10
+   MESSAGE_TYPE = 68
    """
    The WAMP message code for this type of message.
    """
@@ -1563,7 +1571,7 @@ class Interrupt(Message):
    Format: `[INTERRUPT, INVOCATION.Request|id, Options|dict]`
    """
 
-   MESSAGE_TYPE = 11
+   MESSAGE_TYPE = 69
    """
    The WAMP message code for this type of message.
    """
@@ -1657,7 +1665,7 @@ class Yield(Message):
      * `[YIELD, Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 13
+   MESSAGE_TYPE = 70
    """
    The WAMP message code for this type of message.
    """
@@ -1696,7 +1704,7 @@ class Yield(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
          raise ProtocolError("invalid message length {} for YIELD".format(len(wmsg)))
@@ -1831,7 +1839,7 @@ class Goodbye(Message):
    Format: `[GOODBYE, Details|dict]`
    """
 
-   MESSAGE_TYPE = 1
+   MESSAGE_TYPE = 2
    """
    The WAMP message code for this type of message.
    """
@@ -1895,7 +1903,7 @@ class Heartbeat(Message):
      * `[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]`
    """
 
-   MESSAGE_TYPE = 2
+   MESSAGE_TYPE = 3
    """
    The WAMP message code for this type of message.
    """
