@@ -18,29 +18,8 @@
 
 from __future__ import absolute_import
 
-import urlparse, urllib
-
 from autobahn.wamp.exception import ProtocolError
 
-
-
-def parse_wamp_uri(bytes):
-   try:
-      uri = urllib.unquote(bytes).decode('utf8')
-      parsed = urlparse.urlparse(uri)
-   except:
-      return None
-
-   if parsed.scheme not in ["http", "https"]:
-      return None
-
-   if parsed.port is not None:
-      return None
-
-   if parsed.query is not None and parsed.query != "":
-      return None
-
-   return uri
 
 
 def check_or_raise_uri(value, message):
@@ -51,12 +30,14 @@ def check_or_raise_uri(value, message):
    return value
 
 
+
 def check_or_raise_id(value, message):
    if type(value) != int:
       raise ProtocolError("{}: invalid type {} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
       raise ProtocolError("{}: invalid value {} for ID".format(message, value))
    return value
+
 
 
 def check_or_raise_dict(value, message):
@@ -66,18 +47,6 @@ def check_or_raise_dict(value, message):
       if type(k) not in (str, unicode):
          raise ProtocolError("{}: invalid type {} for key '{}'".format(type(k), k))
    return value
-
-
-
-def parse_wamp_sessionid(string):
-   ## FIXME: verify/parse WAMP session ID
-   return string
-
-
-
-def parse_wamp_callid(string):
-   ## FIXME: verify/parse WAMP call ID
-   return string
 
 
 
@@ -523,6 +492,8 @@ class Publish(Message):
       """
       Message constructor.
 
+      :param request: The WAMP request ID of this request.
+      :type request: int
       :param topic: The WAMP or application URI of the PubSub topic the event should
                     be published to.
       :type topic: str
@@ -531,6 +502,7 @@ class Publish(Message):
       :type args: list
       :param kwargs: Keyword values for application-defined event payload.
                      Must be serializable using any serializers in use.
+      :type kwargs: dict
       :param excludeMe: If True, exclude the publisher from receiving the event, even
                         if he is subscribed (and eligible).
       :type excludeMe: bool
@@ -669,6 +641,73 @@ class Publish(Message):
 
 
 
+class Published(Message):
+   """
+   A WAMP `PUBLISHED` message.
+
+   Format: `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
+   """
+
+   MESSAGE_TYPE = 103
+   """
+   The WAMP message code for this type of message.
+   """
+
+   def __init__(self, request, publication):
+      """
+      Message constructor.
+
+      :param request: The request ID of the original `PUBLISH` request.
+      :type request: int
+      :param publication: The publication ID for the published event.
+      :type publication: int
+      """
+      Message.__init__(self)
+      self.request = request
+      self.publication = publication
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for PUBLISHED".format(len(wmsg)))
+
+      request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
+      publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
+
+      obj = Klass(request, publication)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      return [Published.MESSAGE_TYPE, self.request, self.publication]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP PUBLISHED Message (request = {}, publication = {})".format(self.request, self.publication)
+
+
+
 class Event(Message):
    """
    A WAMP `EVENT` message.
@@ -783,99 +822,6 @@ class Event(Message):
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
       return "WAMP EVENT Message (subscription = {}, publication = {}, args = {}, kwargs = {}, publisher = {})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher)
-
-
-
-class MetaEvent(Message):
-   """
-   A WAMP Meta-Event message.
-   """
-
-   MESSAGE_TYPE = 7
-   """
-   The WAMP message code for this type of message.
-   """
-
-
-   def __init__(self, topic, metatopic, metaevent = None):
-      """
-      Message constructor.
-
-      :param topic: The WAMP or application URI of the PubSub topic the metaevent is published for.
-      :type topic: str
-      :param metatopic: The WAMP URI of the metatopic of the metaevent.
-      :type metatopic: str
-      :param metaevent: WAMP metaevent payload.
-      :type metaevent: any
-      """
-      Message.__init__(self)
-      self.topic = topic
-      self.metatopic = metatopic
-      self.metaevent = metaevent
-
-
-   @classmethod
-   def parse(Klass, wmsg):
-      """
-      Verifies and parses an unserialized raw message into an actual WAMP message instance.
-
-      :param wmsg: The unserialized raw message.
-      :type wmsg: list
-      :returns obj -- An instance of this class.
-      """
-      ## this should already be verified by WampSerializer.unserialize
-      ##
-      assert(len(wmsg) > 0 and wmsg[0] == MetaEvent.MESSAGE_TYPE)
-
-      if len(wmsg) not in (3, 4):
-         raise ProtocolError("invalid message length %d for WAMP Meta-Event message" % len(wmsg))
-
-      ## topic
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'topic' in WAMP Meta-Event message" % type(wmsg[1]))
-
-      topic = parse_wamp_uri(wmsg[1])
-      if topic is None:
-         raise ProtocolError("invalid URI '%s' for 'topic' in WAMP Meta-Event message" % wmsg[1])
-
-      ## metatopic
-      ##
-      if type(wmsg[2]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'metatopic' in WAMP Meta-Event message" % type(wmsg[2]))
-
-      metatopic = parse_wamp_uri(wmsg[2])
-      if metatopic is None:
-         raise ProtocolError("invalid URI '%s' for 'metatopic' in WAMP Meta-Event message" % wmsg[2])
-
-      ## metaevent
-      ##
-      metaevent = None
-      if len(wmsg) == 4:
-         metaevent = wmsg[3]
-
-      obj = Klass(topic, metatopic, metaevent)
-
-      return obj
-
-   
-   def marshal(self):
-      """
-      Marshal this object into a raw message for subsequent serialization to bytes.
-      """
-      if self.metaevent is not None:
-         return [MetaEvent.MESSAGE_TYPE, self.topic, self.metatopic, self.metaevent]
-      else:
-         return [MetaEvent.MESSAGE_TYPE, self.topic, self.metatopic]
-
-
-   def __str__(self):
-      """
-      Returns text representation of this instance.
-
-      :returns str -- Human readable representation (eg for logging or debugging purposes).
-      """
-      return "WAMP Meta-Event Message (topic = '%s', metatopic = '%s', metaevent = %s)" % (self.topic, self.metatopic, self.metaevent)
 
 
 
@@ -1169,7 +1115,12 @@ class Unregistered(Message):
 
 class Call(Message):
    """
-   A WAMP Call message.
+   A WAMP `CALL` message.
+
+   Formats:
+     * `[CALL, Request|id, Options|dict, Procedure|uri]`
+     * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]`
+     * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
    MESSAGE_TYPE = 10
@@ -1178,26 +1129,28 @@ class Call(Message):
    """
 
 
-   def __init__(self, callid, endpoint, args = [], sessionid = None, timeout = None):
+   def __init__(self, request, procedure, args = None, kwargs = None, timeout = None):
       """
       Message constructor.
 
-      :param callid: The WAMP call ID of the original call.
-      :type callid: str
-      :param endpoint: The WAMP or application URI of the RPC endpoint to be called.
-      :type endpoint: str
-      :param args: The (positional) arguments to be supplied for the parameters to the called endpoint.
+      :param request: The WAMP request ID of this request.
+      :type request: int
+      :param topic: The WAMP or application URI of the procedure which should be called.
+      :type topic: str
+      :param args: Positional values for application-defined call arguments.
+                   Must be serializable using any serializers in use.
       :type args: list
-      :param sessionid: If present, restrict the callee to the given WAMP session ID.
-      :type sessionid: str
-      :param timeout: If present, let the callee automatically cancel the call after this ms.
+      :param kwargs: Keyword values for application-defined call arguments.
+                     Must be serializable using any serializers in use.
+      :param timeout: If present, let the callee automatically cancel
+                      the call after this ms.
       :type timeout: int
       """
       Message.__init__(self)
-      self.callid = callid
-      self.endpoint = endpoint
+      self.request = request
+      self.procedure = procedure
       self.args = args
-      self.sessionid = sessionid
+      self.kwargs = kwargs
       self.timeout = timeout
 
 
@@ -1214,74 +1167,40 @@ class Call(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
-      if len(wmsg) not in (3, 4, 5):
-         raise ProtocolError("invalid message length %d for WAMP Call message" % len(wmsg))
+      if len(wmsg) not in (4, 5, 6):
+         raise ProtocolError("invalid message length {} for CALL".format(len(wmsg)))
 
-      ## callid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'callid' in WAMP Call message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in CALL")
+      options = check_or_raise_dict(wmsg[2], "'options' in CALL")
+      procedure = check_or_raise_uri(wmsg[3], "'procedure' in CALL")
 
-      callid = parse_wamp_callid(wmsg[1])
-      if callid is None:
-         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call message" % wmsg[1])
+      args = None
+      if len(wmsg) > 4:
+         args = wmsg[4]
+         if type(args) != list:
+            raise ProtocolError("invalid type {} for 'args' in CALL".format(type(args)))
 
-      ## endpoint
-      ##
-      if type(wmsg[2]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'endpoint' in WAMP Call message" % type(wmsg[2]))
+      kwargs = None
+      if len(wmsg) > 5:
+         kwargs = wmsg[5]
+         if type(kwargs) != dict:
+            raise ProtocolError("invalid type {} for 'kwargs' in CALL".format(type(kwargs)))
 
-      endpoint = parse_wamp_uri(wmsg[2])
-      if endpoint is None:
-         raise ProtocolError("invalid value '%s' for 'endpoint' in WAMP Call message" % wmsg[2])
 
-      ## args
-      ##
-      args = []
-      if len(wmsg) > 3:
-         if type(wmsg[3]) != list:
-            raise ProtocolError("invalid type %s for 'arguments' in WAMP Call message" % type(wmsg[3]))
-         args = wmsg[3]
-
-      ## options
-      ##
-      sessionid = None
       timeout = None
 
-      if len(wmsg) == 5:
-         options = wmsg[4]
+      if options.has_key('timeout'):
 
-         if type(options) != dict:
-            raise ProtocolError("invalid type %s for 'options' in WAMP Call message" % type(options))
+         option_timeout = options['timeout']
+         if type(option_timeout) != int:
+            raise ProtocolError("invalid type {} for 'timeout' option in CALL".format(type(option_timeout)))
 
-         for k in options.keys():
-            if type(k) not in (str, unicode):
-               raise ProtocolError("invalid type %s for key in 'options' in WAMP Call message" % type(k))
+         if option_timeout < 0:
+            raise ProtocolError("invalid value {} for 'timeout' option in CALL".format(option_timeout))
 
-         if options.has_key('session'):
+         timeout = option_timeout
 
-            option_sessionid = options['session']
-            if type(option_sessionid) not in (str, unicode):
-               raise ProtocolError("invalid type %s for 'session' option in WAMP Call message" % type(option_session))
-
-            option_sessionid = parse_wamp_session(option_sessionid)
-            if option_sessionid is None:
-               raise ProtocolError("invalid value %s for 'session' option in WAMP Call message" % options['session'])
-
-            sessionid = option_sessionid
-
-         if options.has_key('timeout'):
-
-            option_timeout = options['timeout']
-            if type(option_timeout) != int:
-               raise ProtocolError("invalid type %s for 'timeout' option in WAMP Call message" % type(option_timeout))
-
-            if option_timeout < 0:
-               raise ProtocolError("invalid value %d for 'timeout' option in WAMP Call message" % option_timeout)
-
-            timeout = option_timeout
-
-      obj = Klass(callid, endpoint, args, sessionid = sessionid, timeout = timeout)
+      obj = Klass(request, procedure, args = args, kwargs = kwargs, timeout = timeout)
 
       return obj
 
@@ -1295,16 +1214,12 @@ class Call(Message):
       if self.timeout is not None:
          options['timeout'] = self.timeout
 
-      if self.sessionid is not None:
-         options['session'] = self.sessionid
-
-      if len(options):
-         return [Call.MESSAGE_TYPE, self.callid, self.endpoint, self.args, options]
+      if self.kwargs:
+         return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
+      elif self.args:
+         return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args]
       else:
-         if len(self.args) > 0:
-            return [Call.MESSAGE_TYPE, self.callid, self.endpoint, self.args]
-         else:
-            return [Call.MESSAGE_TYPE, self.callid, self.endpoint]
+         return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
 
    def __str__(self):
@@ -1313,13 +1228,15 @@ class Call(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Call Message (callid = '%s', endpoint = '%s', args = %s, sessionid = '%s', timeout = %s)" % (self.callid, self.endpoint, self.args, self.sessionid, self.timeout)
+      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {})" % (self.request, self.procedure, self.args, self.kwargs, self.timeout)
 
 
 
-class CancelCall(Message):
+class Cancel(Message):
    """
-   A WAMP Cancel-Call message.
+   A WAMP `CANCEL` message.
+
+   Format: `[CANCEL, CALL.Request|id, Options|dict]`
    """
 
    MESSAGE_TYPE = 11
@@ -1327,28 +1244,22 @@ class CancelCall(Message):
    The WAMP message code for this type of message.
    """
 
-   CANCEL_SKIP = 1
-   CANCEL_ABORT = 2
-   CANCEL_KILL = 3
-
-   CANCEL_DESC = {
-      CANCEL_SKIP: 'skip',
-      CANCEL_ABORT: 'abort',
-      CANCEL_KILL: 'kill'
-   }
+   SKIP = 'skip'
+   ABORT = 'abort'
+   KILL = 'kill'
 
 
-   def __init__(self, callid, mode = None):
+   def __init__(self, request, mode = None):
       """
       Message constructor.
 
-      :param callid: The WAMP call ID of the original call to cancel.
-      :type callid: str
+      :param request: The WAMP request ID of the original `CALL` to cancel.
+      :type request: int
       :param mode: Specifies how to cancel the call (skip, abort or kill).
-      :type mode: int
+      :type mode: str
       """
       Message.__init__(self)
-      self.callid = callid
+      self.request = request
       self.mode = mode
 
 
@@ -1363,46 +1274,30 @@ class CancelCall(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == CancelCall.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE)
 
-      if len(wmsg) not in (2, 3):
-         raise ProtocolError("invalid message length %d for WAMP Cancel-Call message" % len(wmsg))
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for CANCEL".format(len(wmsg)))
 
-      ## callid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'callid' in WAMP Cancel-Call message" % type(wmsg[1]))
-
-      callid = parse_wamp_callid(wmsg[1])
-      if callid is None:
-         raise ProtocolError("invalid URI '%s' for 'callid' in WAMP Cancel-Call message" % wmsg[1])
+      request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
+      options = check_or_raise_dict(wmsg[2], "'options' in CANCEL")
 
       ## options
       ##
       mode = None
 
-      if len(wmsg) == 3:
-         options = wmsg[2]
+      if options.has_key('mode'):
 
-         if type(options) != dict:
-            raise ProtocolError("invalid type %s for 'options' in WAMP Cancel-Call message" % type(options))
+         option_mode = options['mode']
+         if type(option_mode) not in (str, unicode):
+            raise ProtocolError("invalid type {} for 'mode' option in CANCEL".format(type(option_mode)))
 
-         for k in options.keys():
-            if type(k) not in (str, unicode):
-               raise ProtocolError("invalid type %s for key in 'options' in WAMP Cancel-Call message" % type(k))
+         if option_mode not in [Cancel.SKIP, Cancel.ABORT, Cancel.KILL]:
+            raise ProtocolError("invalid value '{}' for 'mode' option in CANCEL".format(option_mode))
 
-         if options.has_key('mode'):
+         mode = option_mode
 
-            option_mode = options['mode']
-            if type(option_mode) != int:
-               raise ProtocolError("invalid type %s for 'mode' option in WAMP Cancel-Call message" % type(option_mode))
-
-            if option_moption_modeatch not in [CancelCall.CANCEL_SKIP, CancelCall.CANCEL_ABORT, CancelCall.CANCEL_KILL]:
-               raise ProtocolError("invalid value %d for 'mode' option in WAMP Cancel-Call message" % option_mode)
-
-            mode = option_mode
-
-      obj = Klass(callid, mode = mode)
+      obj = Klass(request, mode = mode)
 
       return obj
 
@@ -1416,10 +1311,7 @@ class CancelCall(Message):
       if self.mode is not None:
          options['mode'] = self.mode
 
-      if len(options):
-         return [CancelCall.MESSAGE_TYPE, self.callid, options]
-      else:
-         return [CancelCall.MESSAGE_TYPE, self.callid]
+      return [Cancel.MESSAGE_TYPE, self.request, options]
 
 
    def __str__(self):
@@ -1428,32 +1320,46 @@ class CancelCall(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Cancel-Call Message (callid = '%s', mode = %s)" % (self.callid, CancelCall.CANCEL_DESC.get(self.mode))
+      return "WAMP CANCEL Message (request = {}, mode = '{}'')" % (self.request, self.mode)
 
 
 
-class CallProgress(Message):
+class Result(Message):
    """
-   A WAMP Call-Progress message.
+   A WAMP `RESULT` message.
+
+   Formats:
+     * `[RESULT, CALL.Request|id, Details|dict]`
+     * `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]`
+     * `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 12
+   MESSAGE_TYPE = 13
    """
    The WAMP message code for this type of message.
    """
 
 
-   def __init__(self, callid, progress = None):
+   def __init__(self, request, args = None, kwargs = None, progress = None):
       """
       Message constructor.
 
-      :param callid: The WAMP call ID of the original call this result is for.
-      :type callid: str
-      :param progress: Arbitrary application progress (must be serializable using the serializer in use).
-      :type progress: any
+      :param request: The request ID of the original `CALL` request.
+      :type request: int
+      :param args: Positional values for application-defined event payload.
+                   Must be serializable using any serializers in use.
+      :type args: list
+      :param kwargs: Keyword values for application-defined event payload.
+                     Must be serializable using any serializers in use.
+      :type kwargs: dict
+      :progress: If `True`, this result is a progressive call result, and subsequent
+                 results (or a final error) will follow.
       """
+      assert(not (kwargs and not args))
       Message.__init__(self)
-      self.callid = callid
+      self.request = request
+      self.args = args
+      self.kwargs = kwargs
       self.progress = progress
 
 
@@ -1468,27 +1374,37 @@ class CallProgress(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == CallProgress.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
 
-      if len(wmsg) not in (2, 3):
-         raise ProtocolError("invalid message length %d for WAMP Call-Progress message" % len(wmsg))
+      if len(wmsg) not in (3, 4, 5):
+         raise ProtocolError("invalid message length {} for RESULT".format(len(wmsg)))
 
-      ## callid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'callid' in WAMP Call-Progress message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in RESULT")
+      details = check_or_raise_dict(wmsg[2], "'details' in RESULT")
 
-      callid = parse_wamp_callid(wmsg[1])
-      if callid is None:
-         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call-Progress message" % wmsg[1])
+      args = None
+      if len(wmsg) > 3:
+         args = wmsg[3]
+         if type(args) != list:
+            raise ProtocolError("invalid type {} for 'args' in RESULT".format(type(args)))
 
-      ## result
-      ##
+      kwargs = None
+      if len(wmsg) > 4:
+         kwargs = wmsg[4]
+         if type(kwargs) != dict:
+            raise ProtocolError("invalid type {} for 'kwargs' in RESULT".format(type(kwargs)))
+
       progress = None
-      if len(wmsg) > 2:
-         progress = wmsg[2]
 
-      obj = Klass(callid, progress)
+      if details.has_key('progress'):
+
+         detail_progress = details['progress']
+         if type(detail_progress) != bool:
+            raise ProtocolError("invalid type {} for 'progress' option in RESULT".format(type(detail_progress)))
+
+         progress = detail_progress
+
+      obj = Klass(request, args = args, kwargs = kwargs, progress = progress)
 
       return obj
 
@@ -1497,10 +1413,17 @@ class CallProgress(Message):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
+      details = {}
+
       if self.progress is not None:
-         return [CallProgress.MESSAGE_TYPE, self.callid, self.progress]
+         details['progress'] = self.progress
+
+      if self.kwargs:
+         return [Result.MESSAGE_TYPE, self.request, details, self.args, self.kwargs]
+      elif self.args:
+         return [Result.MESSAGE_TYPE, self.request, details, self.args]
       else:
-         return [CallProgress.MESSAGE_TYPE, self.callid]
+         return [Result.MESSAGE_TYPE, self.request, details]
 
 
    def __str__(self):
@@ -1509,33 +1432,50 @@ class CallProgress(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Call-Progress Message (callid = '%s', progress = %s)" % (self.callid, self.progress)
+      return "WAMP RESULT Message (request = {}, args = {}, kwargs = {}, progress = {})" % (self.request, self.args, self.kwargs, self.progress)
 
 
 
-class CallResult(Message):
+class Invocation(Message):
    """
-   A WAMP Call-Result message.
+   A WAMP `INVOCATION` message.
+
+   Formats:
+     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]`
+     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Arguments|list]`
+     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 13
+   MESSAGE_TYPE = 10
    """
    The WAMP message code for this type of message.
    """
 
 
-   def __init__(self, callid, result = None):
+   def __init__(self, request, registration, args = None, kwargs = None, timeout = None):
       """
       Message constructor.
 
-      :param callid: The WAMP call ID of the original call this result is for.
-      :type callid: str
-      :param result: Arbitrary application result (must be serializable using the serializer in use).
-      :type result: any
+      :param request: The WAMP request ID of this request.
+      :type request: int
+      :param registration: The registration ID of the endpoint to be invoked.
+      :type registration: int
+      :param args: Positional values for application-defined event payload.
+                   Must be serializable using any serializers in use.
+      :type args: list
+      :param kwargs: Keyword values for application-defined event payload.
+                     Must be serializable using any serializers in use.
+      :type kwargs: dict
+      :param timeout: If present, let the callee automatically cancels
+                      the invocation after this ms.
+      :type timeout: int
       """
       Message.__init__(self)
-      self.callid = callid
-      self.result = result
+      self.request = request
+      self.registration = registration
+      self.args = args
+      self.kwargs = kwargs
+      self.timeout = timeout
 
 
    @classmethod
@@ -1549,27 +1489,42 @@ class CallResult(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == CallResult.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE)
 
-      if len(wmsg) not in (2, 3):
-         raise ProtocolError("invalid message length %d for WAMP Call-Result message" % len(wmsg))
+      if len(wmsg) not in (4, 5, 6):
+         raise ProtocolError("invalid message length {} for INVOCATION".format(len(wmsg)))
 
-      ## callid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'callid' in WAMP Call-Result message" % type(wmsg[1]))
+      request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
+      registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
+      details = check_or_raise_dict(wmsg[3], "'details' in INVOCATION")
 
-      callid = parse_wamp_callid(wmsg[1])
-      if callid is None:
-         raise ProtocolError("invalid value '%s' for 'callid' in WAMP Call-Result message" % wmsg[1])
+      args = None
+      if len(wmsg) > 4:
+         args = wmsg[4]
+         if type(args) != list:
+            raise ProtocolError("invalid type {} for 'args' in INVOCATION".format(type(args)))
 
-      ## result
-      ##
-      result = None
-      if len(wmsg) > 2:
-         result = wmsg[2]
+      kwargs = None
+      if len(wmsg) > 5:
+         kwargs = wmsg[5]
+         if type(kwargs) != dict:
+            raise ProtocolError("invalid type {} for 'kwargs' in INVOCATION".format(type(kwargs)))
 
-      obj = Klass(callid, result)
+
+      timeout = None
+
+      if details.has_key('timeout'):
+
+         detail_timeout = details['timeout']
+         if type(detail_timeout) != int:
+            raise ProtocolError("invalid type {} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
+
+         if detail_timeout < 0:
+            raise ProtocolError("invalid value {} for 'timeout' detail in INVOCATION".format(detail_timeout))
+
+         timeout = detail_timeout
+
+      obj = Klass(request, registration, args = args, kwargs = kwargs, timeout = timeout)
 
       return obj
 
@@ -1578,10 +1533,17 @@ class CallResult(Message):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      if self.result is not None:
-         return [CallResult.MESSAGE_TYPE, self.callid, self.result]
+      options = {}
+
+      if self.timeout is not None:
+         options['timeout'] = self.timeout
+
+      if self.kwargs:
+         return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
+      elif self.args:
+         return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args]
       else:
-         return [CallResult.MESSAGE_TYPE, self.callid]
+         return [Invocation.MESSAGE_TYPE, self.request, self.registration, options]
 
 
    def __str__(self):
@@ -1590,25 +1552,215 @@ class CallResult(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Call-Result Message (callid = '%s', result = %s)" % (self.callid, self.result)
+      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {})" % (self.request, self.registration, self.args, self.kwargs, self.timeout)
 
 
 
-class CallError(Error):
+class Interrupt(Message):
    """
-   A WAMP Call-Error message.
+   A WAMP `INTERRUPT` message.
+
+   Format: `[INTERRUPT, INVOCATION.Request|id, Options|dict]`
    """
 
-   MESSAGE_TYPE = 14
+   MESSAGE_TYPE = 11
+   """
+   The WAMP message code for this type of message.
+   """
+
+   INTERRUPT_ABORT = 'abort'
+   INTERRUPT_KILL = 'kill'
+
+
+   def __init__(self, request, mode = None):
+      """
+      Message constructor.
+
+      :param request: The WAMP request ID of the original `INVOCATION` to interrupt.
+      :type request: int
+      :param mode: Specifies how to interrupt the invocation (abort or kill).
+      :type mode: str
+      """
+      Message.__init__(self)
+      self.request = request
+      self.mode = mode
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for INTERRUPT".format(len(wmsg)))
+
+      request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
+      options = check_or_raise_dict(wmsg[2], "'options' in INTERRUPT")
+
+      ## options
+      ##
+      mode = None
+
+      if options.has_key('mode'):
+
+         option_mode = options['mode']
+         if type(option_mode) not in (str, unicode):
+            raise ProtocolError("invalid type {} for 'mode' option in INTERRUPT".format(type(option_mode)))
+
+         if option_mode not in [Interrupt.INTERRUPT_ABORT, Interrupt.INTERRUPT_KILL]:
+            raise ProtocolError("invalid value '{}' for 'mode' option in INTERRUPT".format(option_mode))
+
+         mode = option_mode
+
+      obj = Klass(request, mode = mode)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      options = {}
+
+      if self.mode is not None:
+         options['mode'] = self.mode
+
+      return [Interrupt.MESSAGE_TYPE, self.request, options]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP INTERRUPT Message (request = {}, mode = '{}'')" % (self.request, self.mode)
+
+
+
+class Yield(Message):
+   """
+   A WAMP `YIELD` message.
+
+   Formats:
+     * `[YIELD, Request|id, Options|dict]`
+     * `[YIELD, Request|id, Options|dict, Arguments|list]`
+     * `[YIELD, Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
+   """
+
+   MESSAGE_TYPE = 13
    """
    The WAMP message code for this type of message.
    """
 
 
+   def __init__(self, request, args = None, kwargs = None, progress = None):
+      """
+      Message constructor.
+
+      :param request: The WAMP request ID of this request.
+      :type request: int
+      :param args: Positional values for application-defined event payload.
+                   Must be serializable using any serializers in use.
+      :type args: list
+      :param kwargs: Keyword values for application-defined event payload.
+                     Must be serializable using any serializers in use.
+      :type kwargs: dict
+      :progress: If `True`, this result is a progressive invocation result, and subsequent
+                 results (or a final error) will follow.
+      """
+      Message.__init__(self)
+      self.request = request
+      self.args = args
+      self.kwargs = kwargs
+      self.progress = progress
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
+
+      if len(wmsg) not in (3, 4, 5):
+         raise ProtocolError("invalid message length {} for YIELD".format(len(wmsg)))
+
+      request = check_or_raise_id(wmsg[1], "'request' in YIELD")
+      options = check_or_raise_dict(wmsg[2], "'options' in YIELD")
+
+      args = None
+      if len(wmsg) > 4:
+         args = wmsg[4]
+         if type(args) != list:
+            raise ProtocolError("invalid type {} for 'args' in YIELD".format(type(args)))
+
+      kwargs = None
+      if len(wmsg) > 5:
+         kwargs = wmsg[5]
+         if type(kwargs) != dict:
+            raise ProtocolError("invalid type {} for 'kwargs' in YIELD".format(type(kwargs)))
+
+      progress = None
+
+      if options.has_key('progress'):
+
+         option_progress = options['progress']
+         if type(option_progress) != bool:
+            raise ProtocolError("invalid type {} for 'progress' option in YIELD".format(type(option_progress)))
+
+         progress = option_progress
+
+      obj = Klass(request, args = args, kwargs = kwargs, progress = progress)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      options = {}
+
+      if self.progress is not None:
+         options['progress'] = self.progress
+
+      if self.kwargs:
+         return [Yield.MESSAGE_TYPE, self.request, options, self.args, self.kwargs]
+      elif self.args:
+         return [Yield.MESSAGE_TYPE, self.request, options, self.args]
+      else:
+         return [Yield.MESSAGE_TYPE, self.request, options]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP YIELD Message (request = {}, args = {}, kwargs = {}, progress = {})" % (self.request, self.args, self.kwargs, self.progress)
+
+
 
 class Hello(Message):
    """
-   A WAMP Hello message.
+   A WAMP `HELLO` message.
    """
 
    MESSAGE_TYPE = 1
@@ -1617,15 +1769,15 @@ class Hello(Message):
    """
 
 
-   def __init__(self, sessionid):
+   def __init__(self, session):
       """
       Message constructor.
 
-      :param sessionid: The WAMP session ID the other peer is assigned.
-      :type sessionid: str
+      :param session: The WAMP session ID the other peer is assigned.
+      :type session: int
       """
       Message.__init__(self)
-      self.sessionid = sessionid
+      self.session = session
 
 
    @classmethod
@@ -1641,19 +1793,13 @@ class Hello(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
-      if len(wmsg) != 2:
-         raise ProtocolError("invalid message length %d for WAMP Hello message" % len(wmsg))
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for HELLO".format(len(wmsg)))
 
-      ## sessionid
-      ##
-      if type(wmsg[1]) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'sessionid' in WAMP Hello message" % type(wmsg[1]))
+      session = check_or_raise_id(wmsg[1], "'session' in HELLO")
+      details = check_or_raise_dict(wmsg[2], "'details' in HELLO")
 
-      sessionid = parse_wamp_sessionid(wmsg[1])
-      if sessionid is None:
-         raise ProtocolError("invalid value '%s' for 'sessionid' in WAMP Hello message" % wmsg[1])
-
-      obj = Klass(sessionid)
+      obj = Klass(session)
 
       return obj
 
@@ -1662,7 +1808,8 @@ class Hello(Message):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
       """
-      return [Hello.MESSAGE_TYPE, self.sessionid]
+      details = {}
+      return [Hello.MESSAGE_TYPE, self.session, details]
 
 
    def __str__(self):
@@ -1671,7 +1818,162 @@ class Hello(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Hello Message (sessionid = '%s')" % (self.sessionid)
+      return "WAMP HELLO Message (session = '%s')" % (self.session)
+
+
+
+class Goodbye(Message):
+   """
+   A WAMP `GOODBYE` message.
+   """
+
+   MESSAGE_TYPE = 1
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self):
+      """
+      Message constructor.
+      """
+      Message.__init__(self)
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE)
+
+      if len(wmsg) != 2:
+         raise ProtocolError("invalid message length {} for GOODBYE".format(len(wmsg)))
+
+      details = check_or_raise_dict(wmsg[1], "'details' in GOODBYE")
+
+      obj = Klass(session)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      details = {}
+      return [Goodbye.MESSAGE_TYPE, details]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP GOODBYE Message ()"
+
+
+
+class Heartbeat(Message):
+   """
+   A WAMP `HEARTBEAT` message.
+
+   Formats:
+
+     * `[HEARTBEAT, IncomingSeq|integer, OutgoingSeq|integer]`
+     * `[HEARTBEAT, IncomingSeq|integer, OutgoingSeq|integer, Discard|string]`
+   """
+
+   MESSAGE_TYPE = 2
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, incoming, outgoing, discard = None):
+      """
+      Message constructor.
+
+      :param incoming: Last incoming heartbeat processed from peer.
+      :type incoming: int
+      :param outgoing: Outgoing heartbeat.
+      :type outgoing: int
+      :param discard: Optional data that is discared by peer.
+      :type discard: str
+      """
+      Message.__init__(self)
+      self.incoming = incoming
+      self.outgoing = outgoing
+
+
+   @classmethod
+   def parse(Klass, wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
+
+      if len(wmsg) not in [3, 4]:
+         raise ProtocolError("invalid message length {} for HEARTBEAT".format(len(wmsg)))
+
+      incoming = wmsg[1]
+
+      if type(incoming) != int:
+         raise ProtocolError("invalid type {} for 'incoming' in HEARTBEAT".format(type(incoming)))
+
+      if incoming < 0: # must be non-negative
+         raise ProtocolError("invalid value {} for 'incoming' in HEARTBEAT".format(incoming))
+
+      outgoing = wmsg[2]
+
+      if type(outgoing) != int:
+         raise ProtocolError("invalid type %s for 'outgoing' in HEARTBEAT".format(type(outgoing)))
+
+      if outgoing <= 0: # must be positive
+         raise ProtocolError("invalid value %d for 'outgoing' in HEARTBEAT".format(outgoing))
+
+      discard = None
+      if len(wmsg) > 3:
+         discard = wmsg[3]
+         if type(discard) not in (str, unicode):
+            raise ProtocolError("invalid type {} for 'discard' in HEARTBEAT".format(type(discard)))
+
+      obj = Klass(incoming, outgoing, discard = discard)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+      """
+      if self.discard:
+         return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing, self.discard]
+      else:
+         return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
+
+
+   def __str__(self):
+      """
+      Returns text representation of this instance.
+
+      :returns str -- Human readable representation (eg for logging or debugging purposes).
+      """
+      return "WAMP HEARTBEAT Message (incoming {}, outgoing = {}, len(discard) = {})" % (self.incoming, self.outgoing, len(self.discard) if self.discard else None)
+
 
 
 
@@ -1762,89 +2064,3 @@ class RoleChange(Message):
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
       return "WAMP Role-Change Message (op = '%s', role = '%s')" % (RoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)
-
-
-
-class Heartbeat(Message):
-   """
-   A WAMP Hearbeat message.
-   """
-
-   MESSAGE_TYPE = 2
-   """
-   The WAMP message code for this type of message.
-   """
-
-
-   def __init__(self, incoming, outgoing):
-      """
-      Message constructor.
-
-      :param incoming: Last incoming heartbeat processed from peer.
-      :type incoming: int
-      :param outgoing: Outgoing heartbeat.
-      :type outgoing: int
-      """
-      Message.__init__(self)
-      self.incoming = incoming
-      self.outgoing = outgoing
-
-
-   @classmethod
-   def parse(Klass, wmsg):
-      """
-      Verifies and parses an unserialized raw message into an actual WAMP message instance.
-
-      :param wmsg: The unserialized raw message.
-      :type wmsg: list
-      :returns obj -- An instance of this class.
-      """
-      ## this should already be verified by WampSerializer.unserialize
-      ##
-      assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
-
-      if len(wmsg) != 3:
-         raise ProtocolError("invalid message length %d for WAMP Heartbeat message" % len(wmsg))
-
-      ## incoming
-      ##
-      incoming = wmsg[1]
-
-      if type(incoming) != int:
-         raise ProtocolError("invalid type %s for 'incoming' in WAMP Heartbeat message" % type(incoming))
-
-      if incoming < 0: # must be non-negative
-         raise ProtocolError("invalid value %d for 'incoming' in WAMP Heartbeat message" % incoming)
-
-      ## outgoing
-      ##
-      outgoing = wmsg[2]
-
-      if type(outgoing) != int:
-         raise ProtocolError("invalid type %s for 'outgoing' in WAMP Heartbeat message" % type(outgoing))
-
-      if outgoing <= 0: # must be positive
-         raise ProtocolError("invalid value %d for 'outgoing' in WAMP Heartbeat message" % outgoing)
-
-      obj = Klass(incoming, outgoing)
-
-      return obj
-
-   
-   def marshal(self):
-      """
-      Marshal this object into a raw message for subsequent serialization to bytes.
-      """
-      return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
-
-
-   def __str__(self):
-      """
-      Returns text representation of this instance.
-
-      :returns str -- Human readable representation (eg for logging or debugging purposes).
-      """
-      return "WAMP Hearbeat Message (incoming %d, outgoing = %d)" % (self.incoming, self.outgoing)
-
-
-
