@@ -21,9 +21,7 @@ from __future__ import absolute_import
 from twisted.trial import unittest
 #import unittest
 
-#import autobahn
 from autobahn import wamp
-#from autobahn.wamp import error
 from autobahn.wamp.uri import Pattern
 from autobahn.wamp import message
 
@@ -32,6 +30,7 @@ class KwException(Exception):
    def __init__(self, *args, **kwargs):
       Exception.__init__(self, *args)
       self.kwargs = kwargs
+
 
 
 class MockSession:
@@ -751,6 +750,236 @@ class TestResultMessage(unittest.TestCase):
       self.assertEqual(msg.args, None)
       self.assertEqual(msg.kwargs, None)
       self.assertEqual(msg.progress, True)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestInvocationMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Invocation(123456, 789123)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 4)
+      self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], 789123)
+      self.assertEqual(msg[3], {})
+
+      e = message.Invocation(123456, 789123, args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
+      msg = e.marshal()
+      self.assertEqual(len(msg), 6)
+      self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], 789123)
+      self.assertEqual(msg[3], {})
+      self.assertEqual(msg[4], [1, 2, 3])
+      self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+
+      e = message.Invocation(123456, 789123, timeout = 10000)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 4)
+      self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], 789123)
+      self.assertEqual(msg[3], {'timeout': 10000})
+
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}]
+      msg = message.Invocation.parse(wmsg)
+      self.assertIsInstance(msg, message.Invocation)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.registration, 789123)
+      self.assertEqual(msg.args, None)
+      self.assertEqual(msg.kwargs, None)
+      self.assertEqual(msg.timeout, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+      msg = message.Invocation.parse(wmsg)
+      self.assertIsInstance(msg, message.Invocation)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.registration, 789123)
+      self.assertEqual(msg.args, [1, 2, 3])
+      self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+      self.assertEqual(msg.timeout, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {'timeout': 10000}]
+      msg = message.Invocation.parse(wmsg)
+      self.assertIsInstance(msg, message.Invocation)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.registration, 789123)
+      self.assertEqual(msg.args, None)
+      self.assertEqual(msg.kwargs, None)
+      self.assertEqual(msg.timeout, 10000)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestInterruptMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Interrupt(123456)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Interrupt.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {})
+
+      e = message.Interrupt(123456, mode = message.Interrupt.KILL)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Interrupt.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {'mode': message.Interrupt.KILL})
+
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Interrupt.MESSAGE_TYPE, 123456, {}]
+      msg = message.Interrupt.parse(wmsg)
+      self.assertIsInstance(msg, message.Interrupt)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.mode, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Interrupt.MESSAGE_TYPE, 123456, {'mode': message.Interrupt.KILL}]
+      msg = message.Interrupt.parse(wmsg)
+      self.assertIsInstance(msg, message.Interrupt)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.mode, message.Interrupt.KILL)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestYieldMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Yield(123456)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {})
+
+      e = message.Yield(123456, args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
+      msg = e.marshal()
+      self.assertEqual(len(msg), 5)
+      self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[3], [1, 2, 3])
+      self.assertEqual(msg[4], {'foo': 23, 'bar': 'hello'})
+
+      e = message.Yield(123456, progress = True)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {'progress': True})
+
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}]
+      msg = message.Yield.parse(wmsg)
+      self.assertIsInstance(msg, message.Yield)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.args, None)
+      self.assertEqual(msg.kwargs, None)
+      self.assertEqual(msg.progress, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+      msg = message.Yield.parse(wmsg)
+      self.assertIsInstance(msg, message.Yield)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.args, [1, 2, 3])
+      self.assertEqual(msg.kwargs, {'foo': 23, 'bar': 'hello'})
+      self.assertEqual(msg.progress, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Yield.MESSAGE_TYPE, 123456, {'progress': True}]
+      msg = message.Yield.parse(wmsg)
+      self.assertIsInstance(msg, message.Yield)
+      self.assertEqual(msg.request, 123456)
+      self.assertEqual(msg.args, None)
+      self.assertEqual(msg.kwargs, None)
+      self.assertEqual(msg.progress, True)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestHelloMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Hello(123456)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {})
+
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {}]
+      msg = message.Hello.parse(wmsg)
+      self.assertIsInstance(msg, message.Hello)
+      self.assertEqual(msg.session, 123456)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestGoodbyeMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Goodbye()
+      msg = e.marshal()
+      self.assertEqual(len(msg), 2)
+      self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
+      self.assertEqual(msg[1], {})
+
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {}]
+      msg = message.Goodbye.parse(wmsg)
+      self.assertIsInstance(msg, message.Goodbye)
+      self.assertEqual(msg.marshal(), wmsg)
+
+
+
+class TestHeartbeatMessage(unittest.TestCase):
+
+   def test_ctor(self):
+      e = message.Heartbeat(123, 456)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Heartbeat.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123)
+      self.assertEqual(msg[2], 456)
+
+      e = message.Heartbeat(123, 456, "discard me")
+      msg = e.marshal()
+      self.assertEqual(len(msg), 4)
+      self.assertEqual(msg[0], message.Heartbeat.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123)
+      self.assertEqual(msg[2], 456)
+      self.assertEqual(msg[3], "discard me")
+
+   def test_parse_and_marshal(self):
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 123, 456]
+      msg = message.Heartbeat.parse(wmsg)
+      self.assertIsInstance(msg, message.Heartbeat)
+      self.assertEqual(msg.incoming, 123)
+      self.assertEqual(msg.outgoing, 456)
+      self.assertEqual(msg.discard, None)      
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 123, 456, "discard me"]
+      msg = message.Heartbeat.parse(wmsg)
+      self.assertIsInstance(msg, message.Heartbeat)
+      self.assertEqual(msg.incoming, 123)
+      self.assertEqual(msg.outgoing, 456)
+      self.assertEqual(msg.discard, "discard me")      
       self.assertEqual(msg.marshal(), wmsg)
 
 

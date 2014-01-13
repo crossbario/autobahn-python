@@ -1568,8 +1568,8 @@ class Interrupt(Message):
    The WAMP message code for this type of message.
    """
 
-   INTERRUPT_ABORT = 'abort'
-   INTERRUPT_KILL = 'kill'
+   ABORT = 'abort'
+   KILL = 'kill'
 
 
    def __init__(self, request, mode = None):
@@ -1615,7 +1615,7 @@ class Interrupt(Message):
          if type(option_mode) not in (str, unicode):
             raise ProtocolError("invalid type {} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
-         if option_mode not in [Interrupt.INTERRUPT_ABORT, Interrupt.INTERRUPT_KILL]:
+         if option_mode not in [Interrupt.ABORT, Interrupt.KILL]:
             raise ProtocolError("invalid value '{}' for 'mode' option in INTERRUPT".format(option_mode))
 
          mode = option_mode
@@ -1705,14 +1705,14 @@ class Yield(Message):
       options = check_or_raise_dict(wmsg[2], "'options' in YIELD")
 
       args = None
-      if len(wmsg) > 4:
-         args = wmsg[4]
+      if len(wmsg) > 3:
+         args = wmsg[3]
          if type(args) != list:
             raise ProtocolError("invalid type {} for 'args' in YIELD".format(type(args)))
 
       kwargs = None
-      if len(wmsg) > 5:
-         kwargs = wmsg[5]
+      if len(wmsg) > 4:
+         kwargs = wmsg[4]
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in YIELD".format(type(kwargs)))
 
@@ -1761,6 +1761,8 @@ class Yield(Message):
 class Hello(Message):
    """
    A WAMP `HELLO` message.
+
+   Format: `[HELLO, Session|id, Details|dict]`
    """
 
    MESSAGE_TYPE = 1
@@ -1825,6 +1827,8 @@ class Hello(Message):
 class Goodbye(Message):
    """
    A WAMP `GOODBYE` message.
+
+   Format: `[GOODBYE, Details|dict]`
    """
 
    MESSAGE_TYPE = 1
@@ -1858,7 +1862,7 @@ class Goodbye(Message):
 
       details = check_or_raise_dict(wmsg[1], "'details' in GOODBYE")
 
-      obj = Klass(session)
+      obj = Klass()
 
       return obj
 
@@ -1887,8 +1891,8 @@ class Heartbeat(Message):
 
    Formats:
 
-     * `[HEARTBEAT, IncomingSeq|integer, OutgoingSeq|integer]`
-     * `[HEARTBEAT, IncomingSeq|integer, OutgoingSeq|integer, Discard|string]`
+     * `[HEARTBEAT, Incoming|integer, Outgoing|integer]`
+     * `[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]`
    """
 
    MESSAGE_TYPE = 2
@@ -1911,6 +1915,7 @@ class Heartbeat(Message):
       Message.__init__(self)
       self.incoming = incoming
       self.outgoing = outgoing
+      self.discard = discard
 
 
    @classmethod
