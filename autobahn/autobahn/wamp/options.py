@@ -58,3 +58,11 @@ class Subscribe:
    def __init__(self, match = None):
       assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
       self.match = match
+
+
+class Register:
+   """
+   """
+   def __init__(self, pkeys = None):
+      assert(pkeys is None or type(pkeys) == list)
+      self.pkeys = pkeys

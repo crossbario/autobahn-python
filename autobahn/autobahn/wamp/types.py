@@ -19,16 +19,6 @@
 from __future__ import absolute_import
 
 
-class RegisterOptions:
-   """
-   """
-   def __init__(self,
-                match = None):
-      assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
-      self.match = match
-
-
-
 class Registration:
    """
    """

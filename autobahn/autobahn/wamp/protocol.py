@@ -23,7 +23,13 @@ from zope.interface import implementer
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from autobahn.wamp.interfaces import IPublisher, IMessageTransportHandler, IMessageTransport
+from autobahn.wamp.interfaces import IPublisher, \
+                                     ISubscriber, \
+                                     ICaller, \
+                                     ICallee, \
+                                     IMessageTransportHandler, \
+                                     IMessageTransport
+
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
 from autobahn import util
@@ -136,6 +142,8 @@ class Peer:
 
 @implementer(IPublisher)
 @implementer(ISubscriber)
+@implementer(ICaller)
+@implementer(ICallee)
 @implementer(IMessageTransportHandler)
 class WampProtocol(Peer):
 
@@ -169,10 +177,30 @@ class WampProtocol(Peer):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
-      if isinstance(msg, message.Published):
+      if isinstance(msg, message.Event):
+
+         if msg.subscription in self._subscriptions:
+            handler = self._subscriptions[msg.subscription]
+            try:
+               if msg.kwargs:
+                  if msg.args:
+                     handler(*msg.args, **msg.kwargs)
+                  else:
+                     handler(**msg.kwargs)
+               else:
+                  if msg.args:
+                     handler(*msg.args)
+                  else:
+                     handler()
+            except Exception as e:
+               print("Exception raised in event handler: {}".format(e))
+         else:
+            raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
+
+      elif isinstance(msg, message.Published):
 
          if msg.request in self._publish_reqs:
-            d = self._publish_reqs[msg.request]
+            d = self._publish_reqs.pop(msg.request)
             d.callback(msg.publication)
          else:
             raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
@@ -180,7 +208,7 @@ class WampProtocol(Peer):
       elif isinstance(msg, message.Subscribed):
 
          if msg.request in self._subscribe_reqs:
-            d, handler = self._subscribe_reqs[msg.request]
+            d, handler = self._subscribe_reqs.pop(msg.request)
             self._subscriptions[msg.subscription] = handler
             d.callback(msg.subscription)
          else:
@@ -189,12 +217,31 @@ class WampProtocol(Peer):
       elif isinstance(msg, message.Unsubscribed):
 
          if msg.request in self._unsubscribe_reqs:
-            d, subscription = self._unsubscribe_reqs[msg.request]
+            d, subscription = self._unsubscribe_reqs.pop(msg.request)
             if subscription in self._subscriptions:
                del self._subscriptions[subscription]
             d.callback(None)
          else:
             raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
+
+      elif isinstance(msg, message.Registered):
+
+         if msg.request in self._register_reqs:
+            d, endpoint = self._register_reqs.pop(msg.request)
+            self._registrations[msg.registration] = endpoint
+            d.callback(msg.registration)
+         else:
+            raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
+
+      elif isinstance(msg, message.Unregistered):
+
+         if msg.request in self._unregister_reqs:
+            d, registration = self._unregister_reqs.pop(msg.request)
+            if registration in self._registrations:
+               del self._registrations[registration]
+            d.callback(None)
+         else:
+            raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
 
       elif isinstance(msg, message.Error):
 
@@ -255,7 +302,7 @@ class WampProtocol(Peer):
 
    def subscribe(self, handler, topic = None, options = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.IPublisher.subscribe`
+      Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
       """
       assert(callable(handler))
       assert(type(topic) in (str, unicode))
@@ -280,9 +327,10 @@ class WampProtocol(Peer):
 
    def unsubscribe(self, subscription):
       """
-      Implements :func:`autobahn.wamp.interfaces.IPublisher.unsubscribe`
+      Implements :func:`autobahn.wamp.interfaces.ISubscriber.unsubscribe`
       """
       assert(type(subscription) in [int, long])
+      assert(subscription in self._subscriptions)
 
       if not self._transport:
          raise exception.TransportLost()
@@ -293,6 +341,76 @@ class WampProtocol(Peer):
       self._unsubscribe_reqs[request] = (d, subscription)
 
       msg = message.Unsubscribe(request, subscription)
+
+      self._transport.send(msg)
+      return d
+
+
+   def call(procedure, *args, **kwargs):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ICaller.call`
+      """
+      assert(type(procedure) in (str, unicode))
+
+      if not self._transport:
+         raise exception.TransportLost()
+
+      request = util.id()
+
+      d = Deferred()
+      self._publish_reqs[request] = d
+
+      if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Publish):
+         opts = kwargs.pop('options')
+         msg = message.Publish(request, topic, args = args, kwargs = kwargs, **opts.__dict__)
+      else:
+         msg = message.Publish(request, topic, args = args, kwargs = kwargs)
+
+      self._transport.send(msg)
+      return d
+
+
+   def register(self, endpoint, procedure = None, options = None):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ICallee.register`
+      """
+      assert(callable(endpoint))
+      assert(type(procedure) in (str, unicode))
+      assert(options is None or isinstance(options, wamp.options.Register))
+
+      if not self._transport:
+         raise exception.TransportLost()
+
+      request = util.id()
+
+      d = Deferred()
+      self._register_reqs[request] = (d, endpoint)
+
+      if options is not None:
+         msg = message.Register(request, procedure, **options.__dict__)
+      else:
+         msg = message.Register(request, procedure)
+
+      self._transport.send(msg)
+      return d
+
+
+   def unregister(self, registration):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ICallee.unregister`
+      """
+      assert(type(registration) in [int, long])
+      assert(registration in self._registrations)
+
+      if not self._transport:
+         raise exception.TransportLost()
+
+      request = util.id()
+
+      d = Deferred()
+      self._unregister_reqs[request] = (d, registration)
+
+      msg = message.Unregister(request, registration)
 
       self._transport.send(msg)
       return d

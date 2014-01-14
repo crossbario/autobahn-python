@@ -41,7 +41,9 @@ class MockTransport:
 
    def send(self, msg):
       bytes, isbinary = self._serializer.serialize(msg)
-      print bytes
+      print("Send: {}".format(bytes))
+
+      reply = None
 
       if isinstance(msg, message.Publish):
          if msg.topic.startswith('com.myapp'):
@@ -50,15 +52,23 @@ class MockTransport:
             reply = message.Error(msg.request, 'wamp.error.invalid_topic')
          else:
             reply = message.Error(msg.request, 'wamp.error.not_authorized')
-         #print reply
-         self._handler.onMessage(reply)
 
       elif isinstance(msg, message.Subscribe):
          reply = message.Subscribed(msg.request, util.id())
-         self._handler.onMessage(reply)
 
       elif isinstance(msg, message.Unsubscribe):
          reply = message.Unsubscribed(msg.request)
+         
+      elif isinstance(msg, message.Register):
+         reply = message.Registered(msg.request, util.id())
+
+      elif isinstance(msg, message.Unregister):
+         reply = message.Unregistered(msg.request)
+         
+
+      if reply:
+         bytes, isbinary = self._serializer.serialize(reply)
+         print("Receive: {}".format(bytes))
          self._handler.onMessage(reply)
 
    def isOpen(self):
@@ -141,6 +151,21 @@ class TestPublisher(unittest.TestCase):
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
       yield handler.unsubscribe(subscription)
+
+
+   @inlineCallbacks
+   def test_register(self):
+      handler = protocol.WampProtocol()
+      transport = MockTransport(handler)
+
+      def on_call(*args, **kwargs):
+         print "got call"
+
+      registration = yield handler.register(on_call, 'com.myapp.procedure1')
+      self.assertTrue(type(registration) in (int, long))
+
+      registration = yield handler.register(on_call, 'com.myapp.procedure1', options = options.Register(pkeys = [0, 1, 2]))
+      self.assertTrue(type(registration) in (int, long))
 
 
    # ## variant 1: works
