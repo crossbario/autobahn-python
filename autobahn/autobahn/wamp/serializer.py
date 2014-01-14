@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,21 +18,22 @@
 
 from __future__ import absolute_import
 
-__all__ = ['WampSerializer',
-           'JsonSerializer',
-           'WampJsonSerializer']
+__all__ = ['Serializer',
+           'JsonObjectSerializer',
+           'JsonSerializer']
 
 from zope.interface import implementer
 
-from autobahn.wamp.interfaces import ISerializer
+from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
 
 
-class WampSerializer:
+
+class Serializer:
    """
-   WAMP serializer is the core glue between parsed WAMP message objects and the
-   bytes on wire (the transport).
+   Base class for WAMP serializers. A WAMP serializer is the core glue between
+   parsed WAMP message objects and the bytes on wire (the transport).
    """
 
    MESSAGE_TYPE_MAP = {
@@ -58,47 +59,42 @@ class WampSerializer:
       message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
       message.Yield.MESSAGE_TYPE:           message.Yield,
    }
+   """
+   Mapping of WAMP message type codes to WAMP message classes.
+   """
 
 
    def __init__(self, serializer):
       """
       Constructor.
 
-      :param serializer: The wire serializer to use for WAMP wire processing.
-      :type serializer: An object that implements :class:`autobahn.interfaces.ISerializer`.
+      :param serializer: The object serializer to use for WAMP wire-level serialization.
+      :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
       """
       self._serializer = serializer
 
 
-   def serialize(self, wampMessage):
+   def serialize(self, message):
       """
-      Serializes a WAMP message to bytes to be sent to a transport.
-
-      :param wampMessage: An instance of a subclass of :class:`autobahn.wamp2message.WampMessage`.
-      :type wampMessage: obj
-      :returns str -- A byte string.
+      Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
       """
-      return wampMessage.serialize(self._serializer), self._serializer.isBinary
+      return message.serialize(self._serializer), self._serializer.BINARY
 
 
    def unserialize(self, bytes, isBinary):
       """
-      Unserializes bytes from a transport and parses a WAMP message.
-
-      :param bytes: Byte string from wire.
-      :type bytes: str or bytes
-      :returns obj -- An instance of a subclass of :class:`autobahn.wamp2message.WampMessage`.
+      Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
       """
-      if isBinary != self._serializer.isBinary:
-         raise ProtocolError("invalid serialization of WAMP message [binary = %s, but expected %s]" % (isBinary, self._serializer.isBinary))
+      if isBinary != self._serializer.BINARY:
+         raise ProtocolError("invalid serialization of WAMP message (binary {}, but expected {})".format(isBinary, self._serializer.BINARY))
 
       try:
          raw_msg = self._serializer.unserialize(bytes)
       except Exception as e:
-         raise ProtocolError("invalid serialization of WAMP message [%s]" % e)
+         raise ProtocolError("invalid serialization of WAMP message ({})".format(e))
 
       if type(raw_msg) != list:
-         raise ProtocolError("invalid type %s for WAMP message" % type(raw_msg))
+         raise ProtocolError("invalid type {} for WAMP message".format(type(raw_msg)))
 
       if len(raw_msg) == 0:
          raise ProtocolError("missing message type in WAMP message")
@@ -106,69 +102,89 @@ class WampSerializer:
       message_type = raw_msg[0]
 
       if type(message_type) != int:
-         raise ProtocolError("invalid type %d for WAMP message type" % type(message_type))
+         raise ProtocolError("invalid type {} for WAMP message type".fornat(type(message_type)))
 
       Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
       if Klass is None:
-         raise ProtocolError("invalid WAMP message type %d" % message_type)
+         raise ProtocolError("invalid WAMP message type {}".format(message_type))
 
+      ## this might again raise `ProtocolError` ..
       msg = Klass.parse(raw_msg)
 
       return msg
 
 
-
+##
+## JSON serialization is always supported
+##
 import json
 
-@implementer(ISerializer)
-class JsonSerializer:
+@implementer(IObjectSerializer)
+class JsonObjectSerializer:
 
-   isBinary = False
+   BINARY = False
 
    def serialize(self, obj):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+      """
       return json.dumps(obj, separators = (',',':'))
 
 
    def unserialize(self, bytes):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+      """
       return json.loads(bytes)
 
 
 
-class WampJsonSerializer(WampSerializer):
+@implementer(ISerializer)
+class JsonSerializer(Serializer):
 
    SERIALIZER_ID = "json"
 
    def __init__(self):
-      WampSerializer.__init__(self, JsonSerializer())
+      Serializer.__init__(self, JsonObjectSerializer())
 
 
 
+##
+## MsgPack serialization depends on the `msgpack` package being available
+##
 try:
    import msgpack
 except:
    pass
 else:
-   @implementer(ISerializer)
-   class MsgPackSerializer:
+   @implementer(IObjectSerializer)
+   class MsgPackObjectSerializer:
 
-      isBinary = True
+      BINARY = True
 
       def serialize(self, obj):
+         """
+         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+         """
          return msgpack.packb(obj, use_bin_type = True)
 
 
       def unserialize(self, bytes):
+         """
+         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+         """
          return msgpack.unpackb(bytes, encoding = 'utf-8')
 
-   __all__.append('MsgPackSerializer')
+   __all__.append('MsgPackObjectSerializer')
 
 
-   class WampMsgPackSerializer(WampSerializer):
+   @implementer(ISerializer)
+   class MsgPackSerializer(Serializer):
 
       SERIALIZER_ID = "msgpack"
 
       def __init__(self):
-         WampSerializer.__init__(self, MsgPackSerializer())
+         Serializer.__init__(self, MsgPackObjectSerializer())
 
-   __all__.append('WampMsgPackSerializer')
+   __all__.append('MsgPackSerializer')

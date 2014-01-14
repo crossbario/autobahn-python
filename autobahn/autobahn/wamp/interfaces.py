@@ -21,13 +21,15 @@ import zope
 from zope.interface import Interface, Attribute
 
 
-class ISerializer(Interface):
+class IObjectSerializer(Interface):
    """
-   Serialization and unserialization.
+   Raw object serialization and unserialization.
    """
-   isBinary = Attribute("""Flag to indicate if serializer requires a binary clean transport (or if UTF8 transparency is sufficient).""")
 
-   def serialize(self, obj):
+   BINARY = Attribute("""Flag to indicate if serializer requires a binary clean
+      transport (or if UTF8 transparency is sufficient).""")
+
+   def serialize(obj):
       """
       Serialize an object to a byte string.
 
@@ -37,7 +39,7 @@ class ISerializer(Interface):
       :returns str -- Serialized byte string.
       """
 
-   def unserialize(self, bytes):
+   def unserialize(bytes):
       """
       Unserialize an object from a byte string.
 
@@ -48,21 +50,20 @@ class ISerializer(Interface):
       """
 
 
-class IWampMessage(Interface):
+class IMessage(Interface):
    """
    A WAMP message.
    """
 
-   # @classmethod
-   # def parse(Klass, wmsg):
-   #    """
-   #    Verifies and parses an unserialized raw message into an actual WAMP message instance.
+   MESSAGE_TYPE = Attribute("""WAMP message type code.""")
 
-   #    :param wmsg: The unserialized raw message.
-   #    :type wmsg: list
-   #    :returns obj -- An instance of this class.
-   #    """
 
+   def marshal():
+      """
+      Marshal this object into a raw message for subsequent serialization to bytes.
+
+      :returns list -- The serialized raw message.
+      """
    
    def serialize(serializer):
       """
@@ -70,14 +71,23 @@ class IWampMessage(Interface):
 
       :param serializer: The wire level serializer to use.
       :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+      :returns bytes -- The serialized bytes.
+      """
+
+   def reset_cache():
+      """
+      Resets the serialization cache.
       """
 
    def __eq__(other):
       """
+      Message equality. This does an attribute-wise comparison (but skips attributes
+      that start with "_").
       """
 
    def __ne__(other):
       """
+      Message inequality: just the negate of message equality.
       """
 
    def __str__():
@@ -87,7 +97,35 @@ class IWampMessage(Interface):
       :returns str -- Human readable representation (e.g. for logging or debugging purposes).
       """
 
-#   serializer = Attribute("""The WAMP message serializer for this channel.""")
+
+class ISerializer(Interface):
+   """
+   WAMP message serialization and unserialization.
+   """
+
+   MESSAGE_TYPE_MAP = Attribute("""Mapping of WAMP message type codes to WAMP message classes.""")
+
+   SERIALIZER_ID = Attribute("""The WAMP serialization format ID.""")
+
+
+   def serialize(message):
+      """
+      Serializes a WAMP message to bytes to be sent to a transport.
+
+      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
+      :type message: obj
+      :returns tuple -- A pair `(bytes, isBinary)`.
+      """
+
+   def unserialize(bytes, isBinary):
+      """
+      Unserializes bytes from a transport and parses a WAMP message.
+
+      :param bytes: Byte string from wire.
+      :type bytes: bytes
+      :returns obj -- An instance that implements :class:`autobahn.wamp.interfaces.IMessage`.
+      """
+
 
 
 
