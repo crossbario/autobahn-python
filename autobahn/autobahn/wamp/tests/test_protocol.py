@@ -29,7 +29,7 @@ from autobahn.wamp import protocol
 from autobahn import util
 from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidTopic
 from autobahn.wamp import options
-
+from autobahn.wamp import types
 
 
 class MockTransport:
@@ -38,10 +38,14 @@ class MockTransport:
       self._handler = handler
       self._handler.onOpen(self)
       self._serializer = serializer.JsonSerializer()
+      self._log = False
+      self._registrations = {}
+      self._invocations = {}
 
    def send(self, msg):
-      bytes, isbinary = self._serializer.serialize(msg)
-      print("Send: {}".format(bytes))
+      if self._log:
+         bytes, isbinary = self._serializer.serialize(msg)
+         print("Send: {}".format(bytes))
 
       reply = None
 
@@ -53,6 +57,27 @@ class MockTransport:
          else:
             reply = message.Error(msg.request, 'wamp.error.not_authorized')
 
+      elif isinstance(msg, message.Call):
+         if msg.procedure == 'com.myapp.procedure1':
+            reply = message.Result(msg.request, args = [100])
+         elif msg.procedure == 'com.myapp.procedure2':
+            reply = message.Result(msg.request, args = [1, 2, 3])
+         elif msg.procedure == 'com.myapp.procedure3':
+            reply = message.Result(msg.request, args = [1, 2, 3], kwargs = {'foo':'bar', 'baz': 23})
+
+         elif msg.procedure.startswith('com.myapp.myproc'):
+            registration = self._registrations[msg.procedure]
+            request = util.id()
+            self._invocations[request] = msg.request
+            reply = message.Invocation(request, registration, args = msg.args, kwargs = msg.kwargs)
+         else:
+            reply = message.Error(msg.request, 'wamp.error.no_such_procedure')
+
+      elif isinstance(msg, message.Yield):
+         if self._invocations.has_key(msg.request):
+            request = self._invocations[msg.request]
+            reply = message.Result(request, args = msg.args, kwargs = msg.kwargs)
+
       elif isinstance(msg, message.Subscribe):
          reply = message.Subscribed(msg.request, util.id())
 
@@ -60,15 +85,17 @@ class MockTransport:
          reply = message.Unsubscribed(msg.request)
          
       elif isinstance(msg, message.Register):
-         reply = message.Registered(msg.request, util.id())
+         registration = util.id()
+         self._registrations[msg.procedure] = registration
+         reply = message.Registered(msg.request, registration)
 
       elif isinstance(msg, message.Unregister):
          reply = message.Unregistered(msg.request)
          
-
       if reply:
-         bytes, isbinary = self._serializer.serialize(reply)
-         print("Receive: {}".format(bytes))
+         if self._log:
+            bytes, isbinary = self._serializer.serialize(reply)
+            print("Receive: {}".format(bytes))
          self._handler.onMessage(reply)
 
    def isOpen(self):
@@ -127,6 +154,43 @@ class TestPublisher(unittest.TestCase):
 
 
    @inlineCallbacks
+   def test_call(self):
+      handler = protocol.WampProtocol()
+      transport = MockTransport(handler)
+
+      res = yield handler.call('com.myapp.procedure1')
+      self.assertEqual(res, 100)
+
+      res = yield handler.call('com.myapp.procedure1', 1, 2, 3)
+      self.assertEqual(res, 100)
+
+      res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello')
+      self.assertEqual(res, 100)
+
+      res = yield handler.call('com.myapp.procedure1', options = options.Call(timeout = 10000))
+      self.assertEqual(res, 100)
+
+      res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello', options = options.Call(timeout = 10000))
+      self.assertEqual(res, 100)
+
+
+   @inlineCallbacks
+   def test_call_with_complex_result(self):
+      handler = protocol.WampProtocol()
+      transport = MockTransport(handler)
+
+      res = yield handler.call('com.myapp.procedure2')
+      self.assertIsInstance(res, types.CallResult)
+      self.assertEqual(res.results, (1, 2, 3))
+      self.assertEqual(res.kwresults, {})
+
+      res = yield handler.call('com.myapp.procedure3')
+      self.assertIsInstance(res, types.CallResult)
+      self.assertEqual(res.results, (1, 2, 3))
+      self.assertEqual(res.kwresults, {'foo':'bar', 'baz': 23})
+
+
+   @inlineCallbacks
    def test_subscribe(self):
       handler = protocol.WampProtocol()
       transport = MockTransport(handler)
@@ -166,6 +230,32 @@ class TestPublisher(unittest.TestCase):
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1', options = options.Register(pkeys = [0, 1, 2]))
       self.assertTrue(type(registration) in (int, long))
+
+
+   @inlineCallbacks
+   def test_unregister(self):
+      handler = protocol.WampProtocol()
+      transport = MockTransport(handler)
+
+      def on_call(*args, **kwargs):
+         print "got call"
+
+      registration = yield handler.register(on_call, 'com.myapp.procedure1')
+      yield handler.unregister(registration)
+
+
+   @inlineCallbacks
+   def test_invoke(self):
+      handler = protocol.WampProtocol()
+      transport = MockTransport(handler)
+
+      def myproc1():
+         return 23
+
+      yield handler.register(myproc1, 'com.myapp.myproc1')
+
+      res = yield handler.call('com.myapp.myproc1')
+      self.assertEqual(res, 23)
 
 
    # ## variant 1: works

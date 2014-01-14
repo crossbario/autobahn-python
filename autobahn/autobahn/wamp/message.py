@@ -1686,9 +1686,9 @@ class Yield(Message):
    A WAMP `YIELD` message.
 
    Formats:
-     * `[YIELD, Request|id, Options|dict]`
-     * `[YIELD, Request|id, Options|dict, Arguments|list]`
-     * `[YIELD, Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
+     * `[YIELD, INVOCATION.Request|id, Options|dict]`
+     * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list]`
+     * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
    """
 
    MESSAGE_TYPE = 70

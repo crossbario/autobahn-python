@@ -251,11 +251,6 @@ class IPeer(Interface):
    Base interface for WAMP peers.
    """
 
-   def process(self, msg):
-      """
-      """
-
-
    def define(self, exception, error = None):
       """
       Defines an exception for a WAMP error in the context of this WAMP session.

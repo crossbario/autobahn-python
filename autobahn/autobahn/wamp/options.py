@@ -66,3 +66,11 @@ class Register:
    def __init__(self, pkeys = None):
       assert(pkeys is None or type(pkeys) == list)
       self.pkeys = pkeys
+
+
+class Call:
+   """
+   """
+   def __init__(self, timeout = None):
+      assert(timeout is None or type(timeout) == int)
+      self.timeout = timeout

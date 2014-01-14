@@ -23,7 +23,8 @@ from zope.interface import implementer
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from autobahn.wamp.interfaces import IPublisher, \
+from autobahn.wamp.interfaces import IPeer, \
+                                     IPublisher, \
                                      ISubscriber, \
                                      ICaller, \
                                      ICallee, \
@@ -40,6 +41,7 @@ from autobahn.wamp import options
 from autobahn import wamp
 
 
+@implementer(IPeer)
 class Peer:
 
    def __init__(self):
@@ -49,7 +51,7 @@ class Peer:
 
    def define(self, exception, error = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
+      Implements :func:`autobahn.wamp.interfaces.IPeer.define`
       """
       if error is None:
          assert(hasattr(exception, '_wampuris'))
@@ -224,6 +226,51 @@ class WampProtocol(Peer):
          else:
             raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
 
+      elif isinstance(msg, message.Result):
+
+         if msg.request in self._call_reqs:
+            d = self._call_reqs.pop(msg.request)
+            if msg.kwargs:
+               if msg.args:
+                  res = types.CallResult(*msg.args, **msg.kwargs)
+               else:
+                  res = types.CallResult(**msg.kwargs)
+               d.callback(res)
+            else:
+               if msg.args:
+                  if len(msg.args) > 1:
+                     res = types.CallResult(*msg.args)
+                     d.callback(res)
+                  else:
+                     d.callback(msg.args[0])
+               else:
+                  d.callback(None)
+         else:
+            raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
+
+      elif isinstance(msg, message.Invocation):
+
+         if msg.registration in self._registrations:
+            endpoint = self._registrations[msg.registration]
+            try:
+               if msg.kwargs:
+                  if msg.args:
+                     res = endpoint(*msg.args, **msg.kwargs)
+                  else:
+                     res = endpoint(**msg.kwargs)
+               else:
+                  if msg.args:
+                     res = endpoint(*msg.args)
+                  else:
+                     res = endpoint()
+               reply = message.Yield(msg.request, args = [res])
+            except Exception as e:
+               reply = self._message_from_exception(msg.request, e)
+            finally:
+               self._transport.send(reply)
+         else:
+            raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
+
       elif isinstance(msg, message.Registered):
 
          if msg.request in self._register_reqs:
@@ -346,7 +393,7 @@ class WampProtocol(Peer):
       return d
 
 
-   def call(procedure, *args, **kwargs):
+   def call(self, procedure, *args, **kwargs):
       """
       Implements :func:`autobahn.wamp.interfaces.ICaller.call`
       """
@@ -358,13 +405,13 @@ class WampProtocol(Peer):
       request = util.id()
 
       d = Deferred()
-      self._publish_reqs[request] = d
+      self._call_reqs[request] = d
 
-      if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Publish):
+      if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Call):
          opts = kwargs.pop('options')
-         msg = message.Publish(request, topic, args = args, kwargs = kwargs, **opts.__dict__)
+         msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.__dict__)
       else:
-         msg = message.Publish(request, topic, args = args, kwargs = kwargs)
+         msg = message.Call(request, procedure, args = args, kwargs = kwargs)
 
       self._transport.send(msg)
       return d
