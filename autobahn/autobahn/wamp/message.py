@@ -226,7 +226,7 @@ class Error(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP Error Message (request = {}, error = {}, exception = {}, exceptionkw = {})".format(self.request, self.error, self.exception, self.exceptionkw)
+      return "WAMP Error Message (request = {}, error = {}, args = {}, kwargs = {})".format(self.request, self.error, self.args, self.kwargs)
 
 
 
@@ -681,7 +681,7 @@ class Publish(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP PUBLISH Message (request = {}, topic = {}, args = {}, kwargs = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})" % (self.request, self.topic, self.args, self.kwargs, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+      return "WAMP PUBLISH Message (request = {}, topic = {}, args = {}, kwargs = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.request, self.topic, self.args, self.kwargs, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
 
 
 

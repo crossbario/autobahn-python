@@ -17,6 +17,12 @@
 ###############################################################################
 
 
+from __future__ import absolute_import
+
+from autobahn import wamp
+
+
+
 class Error(RuntimeError):
    """
    Base class for all exceptions related to WAMP.
@@ -40,6 +46,11 @@ class ProtocolError(Error):
    """
 
 
+class TransportLost(Error):
+   """
+   Exception raised when transport was lost or is not connected.
+   """
+
 
 class ApplicationError(Error):
    """
@@ -56,19 +67,40 @@ class ApplicationError(Error):
    NO_SUCH_PROCEDURE          = "wamp.error.no_such_procedure"
    CANCELED                   = "wamp.error.canceled"
 
-   def __init__(self, error, reason = None):
+   def __init__(self, error, *args, **kwargs):
       """
       Constructor.
 
       :param error: The URI of the error that occurred, e.g. "wamp.error.not_authorized".
       :type error: str
       """
-      if reason:
-         Error.__init__(self, "application error with URI '{}' - '{}'".format(error, reason))
-      else:
-         Error.__init__(self, "application error with URI '{}'".format(error))
+      Exception.__init__(self, *args)
+      self.kwargs = kwargs
       self.error = error
+      # if reason:
+      #    Error.__init__(self, "application error with URI '{}' - '{}'".format(error, reason))
+      # else:
+      #    Error.__init__(self, "application error with URI '{}'".format(error))
 
+   def __str__(self):
+      return "ApplicationError({})".format(self.error)
+
+
+
+#class GenericException(Exception)
+
+@wamp.error("wamp.error.not_authorized")
+class NotAuthorized(Exception):
+   """
+   Not authorized to perform the respective action.
+   """
+
+
+@wamp.error("wamp.error.invalid_topic")
+class InvalidTopic(Exception):
+   """
+   The topic to publish or subscribe to is invalid.
+   """
 
 
 class CallError(ApplicationError):

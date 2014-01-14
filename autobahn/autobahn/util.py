@@ -62,6 +62,13 @@ def utcstr(dt):
       return None
 
 
+def id():
+   """
+   Generate a new random object ID.
+   """
+   return random.randint(0, 9007199254740992)
+
+
 def newid():
    """
    Generate a new random object ID.

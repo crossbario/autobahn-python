@@ -191,13 +191,14 @@ class Subscription:
 
 
 
-class PublishOptions:
+class Publish:
    """
    Wrapper allowing to specify a topic to be published to while providing
    details on exactly how the publishing should be performed.
    """
 
    def __init__(self,
+                topic,
                 excludeMe = None,
                 exclude = None,
                 eligible = None,
@@ -218,6 +219,7 @@ class PublishOptions:
       assert(eligible is None or (type(eligible) == list and all(type(x) == int for x in eligible)))
       assert(discloseMe is None or type(discloseMe) == bool)
 
+      self.topic = topic
       self.excludeMe = excludeMe
       self.exclude = exclude
       self.eligible = eligible

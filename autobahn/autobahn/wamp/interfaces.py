@@ -129,7 +129,7 @@ class ISerializer(Interface):
 
 
 
-class IMessageChannel(Interface):
+class IMessageTransport(Interface):
 
    def send(message):
       """
@@ -148,14 +148,22 @@ class IMessageChannel(Interface):
       """
 
 
-class IMessageChannelHandler(Interface):
+class IMessageTransportHandler(Interface):
 
-   def onOpen(channel):
+   def onOpen(transport):
       """
+      Called fired when transport is open.
+
+      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
+      :type message: obj      
       """
 
    def onMessage(message):
       """
+      Callback fired when a WAMP message was received.
+
+      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
+      :type message: obj
       """
 
    def onClose():
@@ -238,14 +246,29 @@ class IWampSession(Interface):
 
 
 
-class IPeerRole(Interface):
+class IPeer(Interface):
    """
-   Base interface for WAMP peer roles.
+   Base interface for WAMP peers.
    """
 
+   def process(self, msg):
+      """
+      """
 
 
-class ICaller(IPeerRole):
+   def define(self, exception, error = None):
+      """
+      Defines an exception for a WAMP error in the context of this WAMP session.
+
+      :param exception: The exception class to define an error mapping for.
+      :type exception: A class that derives of `Exception`.
+      :param error: The URI (or URI pattern) the exception class should be mapped for.
+                    Iff the `exception` class is decorated, this must be `None`.
+      :type error: str
+      """
+
+
+class ICaller(IPeer):
    """
    Interface for WAMP peers implementing role "Caller".
    """
@@ -257,17 +280,17 @@ class ICaller(IPeerRole):
       This will return a deferred/future, that when resolved, provides the actual result.
       If the result is a single positional return value, it'll be returned "as-is". If the
       result contains multiple positional return values or keyword return values,
-      the result is wrapped in an instance of :class:`autobahn.wamp2.types.CallResult`.
+      the result is wrapped in an instance of :class:`autobahn.wamp.types.CallResult`.
 
       If the call fails, the returned deferred/future will be rejected with an instance
-      of :class:`autobahn.wamp2.error.CallError`.
+      of :class:`autobahn.wamp.error.CallError`.
 
       If the Caller and Dealer implementations support cancelling of calls, the call may
       be canceled by canceling the returned deferred/future.
 
       :param procedure: The URI of the remote procedure to be called, e.g. "com.myapp.hello" or
                         a procedure object specifying details on the call to be performed.
-      :type procedure: str or an instance of :class:`autobahn.wamp2.types.Call`
+      :type procedure: str or an instance of :class:`autobahn.wamp.types.Call`
 
       :returns: obj -- A deferred/future for the call -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted) or
@@ -276,7 +299,7 @@ class ICaller(IPeerRole):
 
 
 
-class ICallee(IPeerRole):
+class ICallee(IPeer):
    """
    Interface for WAMP peers implementing role "Callee".
    """
@@ -287,10 +310,10 @@ class ICallee(IPeerRole):
       calling that procedure.
 
       This will return a deferred/future, that when resolved provides
-      an instance of :class:`autobahn.wamp2.types.Registration`.
+      an instance of :class:`autobahn.wamp.types.Registration`.
 
       If the registration fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
 
       :param procedure: The URI (or URI pattern) of the procedure to register for,
                         e.g. "com.myapp.myprocedure1".
@@ -298,7 +321,7 @@ class ICallee(IPeerRole):
       :param endpoint: The endpoint called under the procedure.
       :type endpoint: callable
       :param options: Options for registering.
-      :type options: An instance of :class:`autobahn.wamp2.types.RegisterOptions`.
+      :type options: An instance of :class:`autobahn.wamp.types.RegisterOptions`.
 
       :returns: obj -- A deferred/future for the registration -
                        an instance of :class:`twisted.internet.defer.Deferred`
@@ -318,10 +341,10 @@ class ICallee(IPeerRole):
       successful unregistration.
 
       If the unregistration fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
 
       :param registration: The registration to unregister from.
-      :type registration: An instance of :class:`autobahn.wamp2.types.Registration`
+      :type registration: An instance of :class:`autobahn.wamp.types.Registration`
                           that was previously registered.
 
       :returns: obj -- A deferred/future for the unregistration -
@@ -331,7 +354,7 @@ class ICallee(IPeerRole):
 
 
 
-class IPublisher(IPeerRole):
+class IPublisher(IPeer):
    """
    Interface for WAMP peers implementing role "Publisher".
    """
@@ -344,14 +367,14 @@ class IPublisher(IPeerRole):
       for the published event.
 
       If the publication fails, the returned deferred/future will be rejected with an instance
-      of :class:`autobahn.wamp2.error.ApplicationError`.
+      of :class:`autobahn.wamp.error.ApplicationError`.
 
       :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
       :type topic: str
       :param payload: The payload for the event to be published.
       :type payload: obj
       :param options: Options for publishing.
-      :type options: None or an instance of :class:`autobahn.wamp2.types.PublishOptions`
+      :type options: None or an instance of :class:`autobahn.wamp.types.PublishOptions`
 
       :returns: obj -- A deferred/future for the publication -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
@@ -360,7 +383,7 @@ class IPublisher(IPeerRole):
 
 
 
-class ISubscriber(IPeerRole):
+class ISubscriber(IPeer):
    """
    Interface for WAMP peers implementing role "Subscriber".
    """
@@ -409,10 +432,10 @@ class ISubscriber(IPeerRole):
       successful unsubscription.
 
       If the unsubscription fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp2.error.ApplicationError`.
+      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
 
       :param subscription: The subscription to unscribe from.
-      :type subscription: An instance of :class:`autobahn.wamp2.types.Subscription`
+      :type subscription: An instance of :class:`autobahn.wamp.types.Subscription`
                           that was previously subscribed.
 
       :returns: obj -- A (list of) Deferred(s)/Future(s) for the unsubscription(s) -
