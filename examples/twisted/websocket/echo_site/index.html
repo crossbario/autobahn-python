@@ -43,9 +43,12 @@
 
          function send() {
             var msg = document.getElementById('message').value;
+            var batchsize = parseInt(document.getElementById('batch').value);
             if (sock) {
-               sock.send(msg);
-               log("Sent: " + msg);
+               for (var i = 0; i < batchsize; ++i) {
+                  sock.send(msg);
+               }
+               log("Sent " + batchsize + "x : " + msg);
             } else {
                log("Not connected.");
             }
@@ -62,6 +65,14 @@
       <noscript>You must enable JavaScript</noscript>
       <form>
          <p>Message: <input id="message" type="text" size="50" maxlength="50" value="Hello, world!"></p>
+         <p>Batchsize:
+            <select id="batch">
+               <option value="1">1</option>
+               <option value="2">2</option>
+               <option value="4">4</option>
+               <option value="8">8</option>
+            </select>
+         </p>
       </form>
       <button onclick='send();'>Send Message</button>
       <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
