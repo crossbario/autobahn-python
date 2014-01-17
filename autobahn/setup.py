@@ -83,7 +83,9 @@ packages = ['autobahn',
             'autobahn.websocket',
             'autobahn.asyncio',
             'autobahn.twisted',
-            'twisted.plugins']
+            'twisted.plugins',
+            'autobahn.wamp1', # WAMPv1 - remove this later
+            ]
 
 if PY3:
    if PY33:

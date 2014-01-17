@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2012-2013 Tavendo GmbH
+##  Copyright (C) 2012-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -25,14 +25,11 @@ from twisted.web.static import File
 
 from autobahn.twisted.websocket import listenWS
 
-from autobahn.wamp import exportRpc, \
-                          WampCraProtocol, \
-                          WampServerFactory, \
-                          WampCraServerProtocol
+from autobahn.wamp1 import wamp
 
 
 
-class MyServerProtocol(WampCraServerProtocol):
+class MyServerProtocol(wamp.WampCraServerProtocol):
    """
    Authenticating WAMP server using WAMP-Challenge-Response-Authentication ("WAMP-CRA").
    """
@@ -48,7 +45,7 @@ class MyServerProtocol(WampCraServerProtocol):
 
    ## secrets by authkey
    ##
-   SECRETS = {'foobar': WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
+   SECRETS = {'foobar': wamp.WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
 
    print "Auth Extra/Secrets"
    print AUTHEXTRA
@@ -75,7 +72,7 @@ class MyServerProtocol(WampCraServerProtocol):
       self.clientAuthAllowAnonymous = True
 
       ## call base class method
-      WampCraServerProtocol.onSessionOpen(self)
+      wamp.WampCraServerProtocol.onSessionOpen(self)
 
 
    def getAuthPermissions(self, authKey, authExtra):
@@ -113,7 +110,7 @@ class MyServerProtocol(WampCraServerProtocol):
                              [MyServerProtocol.hello])
 
 
-   @exportRpc("hello")
+   @wamp.exportRpc("hello")
    def hello(self, name):
       return "Hello back %s!" % name
 
@@ -127,7 +124,7 @@ if __name__ == '__main__':
    else:
       debug = False
 
-   factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
+   factory = wamp.WampServerFactory("ws://localhost:9000", debugWamp = debug)
    factory.protocol = MyServerProtocol
    listenWS(factory)
 

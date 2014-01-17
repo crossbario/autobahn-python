@@ -59,8 +59,8 @@ from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory, \
                                        WebSocketServerFactory, \
                                        WebSocketServerProtocol
-from autobahn.pbkdf2 import pbkdf2_bin
-from autobahn.prefixmap import PrefixMap
+from autobahn.wamp1.pbkdf2 import pbkdf2_bin
+from autobahn.wamp1.prefixmap import PrefixMap
 from autobahn.util import utcnow, newid
 
 
