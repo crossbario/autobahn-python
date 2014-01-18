@@ -155,6 +155,11 @@ or
 
      from autobahn.asyncio.websocket import WebSocketServerProtocol 
 
+Two more small changes (also see the [interface definition](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/autobahn/interfaces.py) now available):
+
+ 1. `WebSocketProtocol.sendMessage`: renaming of parameter `binary` to `isBinary` (for consistency with `onMessage`)
+ 2. `ConnectionRequest` no longer provides `peerstr`, but only `peer`, and the latter is a plain, descriptive string (this was needed since we now support both Twisted and asyncio, and also non-TCP transports)
+
 
 ## Performance
 
