@@ -727,12 +727,14 @@ else:
 
 Above event handler will then receive events published from another WAMP session:
 
+```python
 try:
    yield session.publish("com.myapp.product.on_create", 103, "PyJacket", 50.3)
 except ApplicationError as err:
    print("Publication failed: {}".format(err))
 else:
    print("Ok, event published!")
+```
 
 
 ### Subscriptions via decorators
@@ -744,7 +746,7 @@ from autobahn import wamp
 
 @wamp.topic("com.myapp.product.on_create")
 def on_product_create(id, label, price):
-   printf("New product created: {} ({})".format(label, id))
+   print("New product created: {} ({})".format(label, id))
 
 try:
    yield session.subscribe(on_product_create)
@@ -756,3 +758,75 @@ else:
 
 ### Pattern-based Subscriptions
 
+Decorators can be used to setup event handlers for pattern-based subscriptions.
+
+Here is how you would wildcard-subscribe to a topic pattern:
+
+```python
+from autobahn import wamp
+
+@wamp.topic("com.myapp.<country>.<state>.<city>.on_concert")
+def on_concert_pulse(country, state, city, concert):
+   print("Concert {} in {}, {}/{} on {}".format(concert, city, state, country)
+
+try:
+   yield session.subscribe(on_concert_pulse)
+except ApplicationError as err:
+   print("Subscription failed: {}".format(err))
+else:
+   print("Ok, event handler subscribed!")
+```
+
+Above handler would match topics like
+
+ * `com.myapp.us.montana.billings.on_concert`
+ * `com.myapp.us.newmexico.albuquerque.on_concert`
+
+and the event handler parameters `country`, `state` and `city` would be automatically
+bound to the matched components of the topic.
+
+You could publish event processed by above handler like this:
+
+```python
+try:
+   state = "newmexico"
+   city = "albuquerque"
+   yield session.publish("com.myapp.us.{}.{}.on_concert".format(state, city),
+                         "Powerhour with Ali Spagnola")
+except ApplicationError as err:
+   print("Publication failed: {}".format(err))
+else:
+   print("Ok, event published!")
+```
+
+If you are only interested in a subset of events, that would work like
+
+```python
+@wamp.topic("com.myapp.us.montana.<city>.on_concert")
+def on_concert_us_montana_pulse(city, concert):
+   ## only concerts in the US, Montana
+```
+
+Above handler would match topics like
+
+ * `com.myapp.us.montana.billings.on_concert`
+ * `com.myapp.us.montana.helena.on_concert`
+
+but not
+
+ * `com.myapp.us.newmexico.albuquerque.on_concert`
+
+
+Besides wildcard, you can also match by prefix (the variable part being then a suffix):
+
+```python
+@wamp.topic("com.myapp.us.<suffix:path>")
+def on_any_us_event(path, concert):
+   ## handle any U.S. concert
+```
+
+In this case, the event handler parameter `path` would be bound to the complete,
+remaining suffix after removing the matching prefix.
+
+E.g. publishing to `com.myapp.us.newmexico.albuquerque.on_concert` would bind
+`path` to `"newmexico.albuquerque.on_concert"`.
