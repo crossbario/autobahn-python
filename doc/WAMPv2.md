@@ -763,14 +763,17 @@ Patterns can be:
  * prefix-patterns
  * wildcard-patterns
 
+
+#### Wildcard Subscriptions
+
 Here is how you subscribe to a topic wildcard-pattern:
 
 ```python
 from autobahn import wamp
 
 @wamp.topic("com.myapp.<country>.<state>.<city>.on_concert")
-def on_concert_pulse(country, state, city, concert, date):
-   print("Concert {} in {}, {}/{} on {}".format(concert, city, state, country, date)
+def on_concert_pulse(country, state, city, title, date):
+   print("Concert {} in {}, {}/{} on {}".format(title, city, state, country, date)
 
 try:
    yield session.subscribe(on_concert_pulse)
@@ -810,14 +813,14 @@ else:
    print("Ok, event published!")
 ```
 
-The parameters `concert` and `date` in the event handler will be bound from the
+The parameters `title` and `date` in the event handler will be bound from the
 published payload.
 
 If you are only interested in a subset of events, that works like this
 
 ```python
 @wamp.topic("com.myapp.us.montana.<city>.on_concert")
-def on_concert_us_montana_pulse(city, concert, date):
+def on_concert_us_montana_pulse(city, title, date):
    ## only concerts in the US, Montana
 ```
 
@@ -830,13 +833,41 @@ but not
 
  * `com.myapp.us.newmexico.albuquerque.on_concert`
 
+Or
+
+```python
+@wamp.topic("com.myapp.us.<state>.<city>.on_concert")
+def on_concert_us_montana_pulse(state, city, title, date):
+   ## only concerts in the US
+```
+
+Above handler will match topics like
+
+ * `com.myapp.us.montana.billings.on_concert`
+ * `com.myapp.us.montana.helena.on_concert`
+ * `com.myapp.us.newmexico.albuquerque.on_concert`
+
+but not
+
+ * `com.myapp.us.montana.billings.on_challenge`
+ * `com.myapp.de.bavaria.munich.on_concert`
+ * `com.myapp.us.newmexico.albuquerque.citycenter.on_concert`
+
+
+#### Prefix Subscriptions
 
 Besides wildcard, you can also match by prefix (the variable part being then a suffix):
 
 ```python
 @wamp.topic("com.myapp.us.<suffix:path>")
-def on_any_us_event(path, concert, date):
-   ## handle any U.S. concert
+def on_us_event(path, title, date):
+   ## handle any U.S. event ..
+   parts = path.split('.')
+   if parts[-1] == 'on_concert':
+      ## do something with concert
+   elif parts[-1} == 'on_challenge':
+      ## do something with challenge
+   ...
 ```
 
 This will match any of
@@ -854,5 +885,5 @@ It will *not* match topics like
 On matching, the event handler parameter `path` will be bound to the complete,
 remaining suffix after removing the matching prefix.
 
-E.g. publishing to `com.myapp.us.newmexico.albuquerque.on_concert` would bind
-`path` to `"newmexico.albuquerque.on_concert"`.
+E.g. publishing to `com.myapp.us.newmexico.albuquerque.citycenter.on_concert` would bind
+`path` to `"newmexico.albuquerque.citycenter.on_concert"`.
