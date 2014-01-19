@@ -759,8 +759,11 @@ else:
 ### Pattern-based Subscriptions
 
 Decorators can be used to setup event handlers for pattern-based subscriptions.
+Patterns can be:
+ * prefix-patterns
+ * wildcard-patterns
 
-Here is how you would wildcard-subscribe to a topic pattern:
+Here is how you subscribe to a topic wildcard-pattern:
 
 ```python
 from autobahn import wamp
@@ -777,13 +780,14 @@ else:
    print("Ok, event handler subscribed!")
 ```
 
-Above handler would match topics like
+Above handler matches topics like
 
  * `com.myapp.us.montana.billings.on_concert`
  * `com.myapp.us.newmexico.albuquerque.on_concert`
 
-and the event handler parameters `country`, `state` and `city` would be automatically
-bound to the matched components of the topic.
+and the event handler parameters `country`, `state` and `city` will be automatically
+bound to the matched components of the topic upon receiving an event for a topic
+that matches the pattern.
 
 It would *not* match topics like
 
@@ -792,7 +796,7 @@ It would *not* match topics like
  * `com.myapp.us.montana.billings.on_challenge`
  * `com.myapp.us.newmexico.albuquerque.citycenter.on_concert`
 
-You could publish event processed by above handler like this:
+You could publish events to be received and processed by above handler like this:
 
 ```python
 try:
@@ -806,10 +810,10 @@ else:
    print("Ok, event published!")
 ```
 
-The parameters `concert` and `date` in the event handler would be bound from the
+The parameters `concert` and `date` in the event handler will be bound from the
 published payload.
 
-If you are only interested in a subset of events, that would work like
+If you are only interested in a subset of events, that works like this
 
 ```python
 @wamp.topic("com.myapp.us.montana.<city>.on_concert")
@@ -817,7 +821,7 @@ def on_concert_us_montana_pulse(city, concert, date):
    ## only concerts in the US, Montana
 ```
 
-Above handler would match topics like
+Above handler will match topics like
 
  * `com.myapp.us.montana.billings.on_concert`
  * `com.myapp.us.montana.helena.on_concert`
@@ -835,7 +839,7 @@ def on_any_us_event(path, concert, date):
    ## handle any U.S. concert
 ```
 
-This would match any of
+This will match any of
 
  * `com.myapp.us.montana.billings`
  * `com.myapp.us.montana.billings.on_concert`
@@ -843,7 +847,7 @@ This would match any of
  * `com.myapp.us.newmexico.albuquerque.on_concert`
  * `com.myapp.us.newmexico.albuquerque.citycenter.on_concert`
 
-It would *not* match topics like
+It will *not* match topics like
 
  * `com.myapp.de.bavaria.munich.on_concert`
 
