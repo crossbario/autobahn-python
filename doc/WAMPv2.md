@@ -758,8 +758,7 @@ else:
 
 ### Pattern-based Subscriptions
 
-Decorators can be used to setup event handlers for pattern-based subscriptions.
-Patterns can be:
+Decorators can also be used to setup event handlers for pattern-based subscriptions. Patterns can be:
  * prefix-patterns
  * wildcard-patterns
 
@@ -850,8 +849,8 @@ Above handler will match topics like
 but not
 
  * `com.myapp.us.montana.billings.on_challenge`
- * `com.myapp.de.bavaria.munich.on_concert`
  * `com.myapp.us.newmexico.albuquerque.citycenter.on_concert`
+ * `com.myapp.de.bavaria.munich.on_concert`
 
 
 #### Prefix Subscriptions
@@ -865,7 +864,7 @@ def on_us_event(path, title, date):
    parts = path.split('.')
    if parts[-1] == 'on_concert':
       ## do something with concert
-   elif parts[-1} == 'on_challenge':
+   elif parts[-1] == 'on_challenge':
       ## do something with challenge
    ...
 ```
