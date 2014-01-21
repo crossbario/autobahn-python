@@ -44,8 +44,8 @@ __all__ = ['Error',
 import json, types
 from zope.interface import implementer
 
+import autobahn
 from autobahn import util
-from autobahn import wamp
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IMessage
 
@@ -61,7 +61,7 @@ def check_or_raise_uri(value, message):
 
 
 def check_or_raise_id(value, message):
-   if type(value) != int:
+   if type(value) not in [int, long]:
       raise ProtocolError("{}: invalid type {} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
       raise ProtocolError("{}: invalid value {} for ID".format(message, value))
@@ -1793,7 +1793,7 @@ class Hello(Message):
       :type session: int
       """
       for role in roles:
-         assert(isinstance(role, wamp.role.RoleFeatures))
+         assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
       Message.__init__(self)
       self.session = session
       self.roles = roles
@@ -1829,17 +1829,17 @@ class Hello(Message):
          raise ProtocolError("empty 'roles' in 'details' in HELLO")
 
       for role in details_roles:
-         if role not in wamp.role.ROLE_NAME_TO_CLASS:
+         if role not in autobahn.wamp.role.ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
 
          if details_roles[role].has_key('features'):
             details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
 
          else:
-            role_features = wamp.role.ROLE_NAME_TO_CLASS[role]()
+            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]()
 
          roles.append(role_features)
 

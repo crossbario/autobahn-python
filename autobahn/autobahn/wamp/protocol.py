@@ -38,7 +38,7 @@ from autobahn.wamp import serializer
 from autobahn.wamp import exception
 from autobahn.wamp import types
 from autobahn.wamp import options
-from autobahn import wamp
+from autobahn.wamp import role
 
 
 @implementer(IPeer)
@@ -174,146 +174,161 @@ class WampProtocol(Peer):
       """
       self._transport = transport
 
+      self._this_sessionid = util.id()
+      self._peer_sessionid = None
+
+      msg = message.Hello(self._this_sessionid, [role.RoleBrokerFeatures()])
+      self._transport.send(msg)
+
 
    def onMessage(self, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
-      if isinstance(msg, message.Event):
-
-         if msg.subscription in self._subscriptions:
-            handler = self._subscriptions[msg.subscription]
-            try:
-               if msg.kwargs:
-                  if msg.args:
-                     handler(*msg.args, **msg.kwargs)
-                  else:
-                     handler(**msg.kwargs)
-               else:
-                  if msg.args:
-                     handler(*msg.args)
-                  else:
-                     handler()
-            except Exception as e:
-               print("Exception raised in event handler: {}".format(e))
+      if self._peer_sessionid is None:
+         if isinstance(msg, message.Hello):
+            self._peer_sessionid = msg.session
          else:
-            raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
-
-      elif isinstance(msg, message.Published):
-
-         if msg.request in self._publish_reqs:
-            d = self._publish_reqs.pop(msg.request)
-            d.callback(msg.publication)
-         else:
-            raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Subscribed):
-
-         if msg.request in self._subscribe_reqs:
-            d, handler = self._subscribe_reqs.pop(msg.request)
-            self._subscriptions[msg.subscription] = handler
-            d.callback(msg.subscription)
-         else:
-            raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Unsubscribed):
-
-         if msg.request in self._unsubscribe_reqs:
-            d, subscription = self._unsubscribe_reqs.pop(msg.request)
-            if subscription in self._subscriptions:
-               del self._subscriptions[subscription]
-            d.callback(None)
-         else:
-            raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Result):
-
-         if msg.request in self._call_reqs:
-            d = self._call_reqs.pop(msg.request)
-            if msg.kwargs:
-               if msg.args:
-                  res = types.CallResult(*msg.args, **msg.kwargs)
-               else:
-                  res = types.CallResult(**msg.kwargs)
-               d.callback(res)
-            else:
-               if msg.args:
-                  if len(msg.args) > 1:
-                     res = types.CallResult(*msg.args)
-                     d.callback(res)
-                  else:
-                     d.callback(msg.args[0])
-               else:
-                  d.callback(None)
-         else:
-            raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Invocation):
-
-         if msg.registration in self._registrations:
-            endpoint = self._registrations[msg.registration]
-            try:
-               if msg.kwargs:
-                  if msg.args:
-                     res = endpoint(*msg.args, **msg.kwargs)
-                  else:
-                     res = endpoint(**msg.kwargs)
-               else:
-                  if msg.args:
-                     res = endpoint(*msg.args)
-                  else:
-                     res = endpoint()
-               reply = message.Yield(msg.request, args = [res])
-            except Exception as e:
-               reply = self._message_from_exception(msg.request, e)
-            finally:
-               self._transport.send(reply)
-         else:
-            raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
-
-      elif isinstance(msg, message.Registered):
-
-         if msg.request in self._register_reqs:
-            d, endpoint = self._register_reqs.pop(msg.request)
-            self._registrations[msg.registration] = endpoint
-            d.callback(msg.registration)
-         else:
-            raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Unregistered):
-
-         if msg.request in self._unregister_reqs:
-            d, registration = self._unregister_reqs.pop(msg.request)
-            if registration in self._registrations:
-               del self._registrations[registration]
-            d.callback(None)
-         else:
-            raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
-
-      elif isinstance(msg, message.Error):
-
-         d = None
-
-         if msg.request in self._publish_reqs:
-            d = self._publish_reqs.pop(msg.request)
-
-         elif msg.request in self._subscribe_reqs:
-            d, _ = self._subscribe_reqs.pop(msg.request)
-
-         elif msg.request in self._unsubscribe_reqs:
-            d = self._unsubscribe_reqs.pop(msg.request)
-
-         if d:
-            d.errback(self._exception_from_message(msg))
-         else:
-            raise ProtocolError("ERROR received for non-pending request ID {}".format(msg.request))
-
+            pass
+         print "SESSION ESTABLISHED", self._peer_sessionid
       else:
-         ## signal that we did not process the message
-         return False
+         if isinstance(msg, message.Hello):
+            pass
+         elif isinstance(msg, message.Event):
 
-      ## signal that we have processed the message
-      return True
+            if msg.subscription in self._subscriptions:
+               handler = self._subscriptions[msg.subscription]
+               try:
+                  if msg.kwargs:
+                     if msg.args:
+                        handler(*msg.args, **msg.kwargs)
+                     else:
+                        handler(**msg.kwargs)
+                  else:
+                     if msg.args:
+                        handler(*msg.args)
+                     else:
+                        handler()
+               except Exception as e:
+                  print("Exception raised in event handler: {}".format(e))
+            else:
+               raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
+
+         elif isinstance(msg, message.Published):
+
+            if msg.request in self._publish_reqs:
+               d = self._publish_reqs.pop(msg.request)
+               d.callback(msg.publication)
+            else:
+               raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Subscribed):
+
+            if msg.request in self._subscribe_reqs:
+               d, handler = self._subscribe_reqs.pop(msg.request)
+               self._subscriptions[msg.subscription] = handler
+               d.callback(msg.subscription)
+            else:
+               raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Unsubscribed):
+
+            if msg.request in self._unsubscribe_reqs:
+               d, subscription = self._unsubscribe_reqs.pop(msg.request)
+               if subscription in self._subscriptions:
+                  del self._subscriptions[subscription]
+               d.callback(None)
+            else:
+               raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Result):
+
+            if msg.request in self._call_reqs:
+               d = self._call_reqs.pop(msg.request)
+               if msg.kwargs:
+                  if msg.args:
+                     res = types.CallResult(*msg.args, **msg.kwargs)
+                  else:
+                     res = types.CallResult(**msg.kwargs)
+                  d.callback(res)
+               else:
+                  if msg.args:
+                     if len(msg.args) > 1:
+                        res = types.CallResult(*msg.args)
+                        d.callback(res)
+                     else:
+                        d.callback(msg.args[0])
+                  else:
+                     d.callback(None)
+            else:
+               raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Invocation):
+
+            if msg.registration in self._registrations:
+               endpoint = self._registrations[msg.registration]
+               try:
+                  if msg.kwargs:
+                     if msg.args:
+                        res = endpoint(*msg.args, **msg.kwargs)
+                     else:
+                        res = endpoint(**msg.kwargs)
+                  else:
+                     if msg.args:
+                        res = endpoint(*msg.args)
+                     else:
+                        res = endpoint()
+                  reply = message.Yield(msg.request, args = [res])
+               except Exception as e:
+                  reply = self._message_from_exception(msg.request, e)
+               finally:
+                  self._transport.send(reply)
+            else:
+               raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
+
+         elif isinstance(msg, message.Registered):
+
+            if msg.request in self._register_reqs:
+               d, endpoint = self._register_reqs.pop(msg.request)
+               self._registrations[msg.registration] = endpoint
+               d.callback(msg.registration)
+            else:
+               raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Unregistered):
+
+            if msg.request in self._unregister_reqs:
+               d, registration = self._unregister_reqs.pop(msg.request)
+               if registration in self._registrations:
+                  del self._registrations[registration]
+               d.callback(None)
+            else:
+               raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
+
+         elif isinstance(msg, message.Error):
+
+            d = None
+
+            if msg.request in self._publish_reqs:
+               d = self._publish_reqs.pop(msg.request)
+
+            elif msg.request in self._subscribe_reqs:
+               d, _ = self._subscribe_reqs.pop(msg.request)
+
+            elif msg.request in self._unsubscribe_reqs:
+               d = self._unsubscribe_reqs.pop(msg.request)
+
+            if d:
+               d.errback(self._exception_from_message(msg))
+            else:
+               raise ProtocolError("ERROR received for non-pending request ID {}".format(msg.request))
+
+         else:
+            ## signal that we did not process the message
+            return False
+
+         ## signal that we have processed the message
+         return True
 
 
    def onClose(self):

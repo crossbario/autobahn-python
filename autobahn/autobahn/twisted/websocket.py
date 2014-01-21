@@ -36,6 +36,7 @@ from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 from twisted.internet.interfaces import ITransport
 
+import autobahn
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
@@ -529,3 +530,52 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    else:
       listener = reactor.listenTCP(factory.port, factory, backlog, interface)
    return listener
+
+
+
+from autobahn import wamp
+
+class WampServerProtocol(wamp.websocket.WampServerProtocol, WebSocketServerProtocol):
+   pass
+
+
+class WampServerFactory(wamp.websocket.WampServerFactory, WebSocketServerFactory):
+
+   protocol = WampServerProtocol
+
+   def __init__(self, factory, *args, **kwargs):
+
+      if 'serializers' in kwargs:
+         serializers = kwargs['serializers']
+         del kwargs['serializers']
+      else:
+         serializers = None
+
+      wamp.websocket.WampServerFactory.__init__(self, factory, serializers)
+
+      kwargs['protocols'] = self._protocols
+
+      WebSocketServerFactory.__init__(self, *args, **kwargs)
+
+
+class WampClientProtocol(wamp.websocket.WampClientProtocol, WebSocketClientProtocol):
+   pass
+
+
+class WampClientFactory(wamp.websocket.WampClientFactory, WebSocketClientFactory):
+
+   protocol = WampClientProtocol
+
+   def __init__(self, factory, *args, **kwargs):
+
+      if 'serializers' in kwargs:
+         serializers = kwargs['serializers']
+         del kwargs['serializers']
+      else:
+         serializers = None
+
+      wamp.websocket.WampClientFactory.__init__(self, factory, serializers)
+
+      kwargs['protocols'] = self._protocols
+
+      WebSocketClientFactory.__init__(self, *args, **kwargs)

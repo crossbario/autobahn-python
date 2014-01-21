@@ -18,3 +18,9 @@ http1:
 
 test3:
 	PYTHONPATH=../../../autobahn python ./test3.py
+
+test1_server:
+	PYTHONPATH=../../../autobahn python ./test1/server.py
+
+test1_client:
+	PYTHONPATH=../../../autobahn python ./test1/client.py
