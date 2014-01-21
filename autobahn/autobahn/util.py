@@ -160,3 +160,21 @@ class Stopwatch:
       self._started = None
       self._running = False
       return elapsed
+
+
+class EqualityMixin:
+
+   def __eq__(self, other):
+      if not isinstance(other, self.__class__):
+         return False
+      # we only want the actual message data attributes (not eg _serialize)
+      for k in self.__dict__:
+         if not k.startswith('_'):
+            if not self.__dict__[k] == other.__dict__[k]:
+               return False
+      return True
+      #return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
+
+
+   def __ne__(self, other):
+      return not self.__eq__(other)

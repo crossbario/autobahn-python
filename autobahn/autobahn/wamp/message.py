@@ -41,8 +41,11 @@ __all__ = ['Error',
            'Heartbeat']
 
 
+import json, types
 from zope.interface import implementer
 
+from autobahn import util
+from autobahn import wamp
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IMessage
 
@@ -66,7 +69,7 @@ def check_or_raise_id(value, message):
 
 
 
-def check_or_raise_dict(value, message):
+def check_or_raise_extra(value, message):
    if type(value) != dict:
       raise ProtocolError("{}: invalid type {}".format(message, type(value)))
    for k in value.keys():
@@ -76,7 +79,7 @@ def check_or_raise_dict(value, message):
 
 
 
-class Message:
+class Message(util.EqualityMixin):
    """
    WAMP message base class. This is not supposed to be instantiated.
    """
@@ -106,28 +109,6 @@ class Message:
       if not self._serialized.has_key(serializer):
          self._serialized[serializer] = serializer.serialize(self.marshal())
       return self._serialized[serializer]
-
-
-   def __eq__(self, other):
-      """
-      Implements :func:`autobahn.wamp.interfaces.IMessage.__eq__`
-      """
-      if not isinstance(other, self.__class__):
-         return False
-      # we only want the actual message data attributes (not eg _serialize)
-      for k in self.__dict__:
-         if not k.startswith('_'):
-            if not self.__dict__[k] == other.__dict__[k]:
-               return False
-      return True
-      #return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
-
-
-   def __ne__(self, other):
-      """
-      Implements :func:`autobahn.wamp.interfaces.IMessage.__ne__`
-      """
-      return not self.__eq__(other)
 
 
 
@@ -188,7 +169,7 @@ class Error(Message):
          raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in ERROR")
-      details = check_or_raise_dict(wmsg[2], "'details' in ERROR")
+      details = check_or_raise_extra(wmsg[2], "'details' in ERROR")
       error = check_or_raise_uri(wmsg[3], "'error' in ERROR")
 
       args = None
@@ -281,7 +262,7 @@ class Subscribe(Message):
          raise ProtocolError("invalid message length %d for SUBSCRIBE" % len(wmsg))
 
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
-      options = check_or_raise_dict(wmsg[2], "'options' in SUBSCRIBE")
+      options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
       topic = check_or_raise_uri(wmsg[3], "'topic' in SUBSCRIBE")
 
       match = Subscribe.MATCH_EXACT
@@ -589,7 +570,7 @@ class Publish(Message):
          raise ProtocolError("invalid message length {} for PUBLISH".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in PUBLISH")
-      options = check_or_raise_dict(wmsg[2], "'options' in PUBLISH")
+      options = check_or_raise_extra(wmsg[2], "'options' in PUBLISH")
       topic = check_or_raise_uri(wmsg[3], "'topic' in PUBLISH")
 
       args = None
@@ -813,7 +794,7 @@ class Event(Message):
 
       subscription = check_or_raise_id(wmsg[1], "'subscription' in EVENT")
       publication = check_or_raise_id(wmsg[2], "'publication' in EVENT")
-      details = check_or_raise_dict(wmsg[3], "'details' in EVENT")
+      details = check_or_raise_extra(wmsg[3], "'details' in EVENT")
 
       args = None
       if len(wmsg) > 4:
@@ -914,7 +895,7 @@ class Register(Message):
          raise ProtocolError("invalid message length {} for REGISTER".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
-      options = check_or_raise_dict(wmsg[2], "'options' in REGISTER")
+      options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
       procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER")
 
       pkeys = None
@@ -1210,7 +1191,7 @@ class Call(Message):
          raise ProtocolError("invalid message length {} for CALL".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in CALL")
-      options = check_or_raise_dict(wmsg[2], "'options' in CALL")
+      options = check_or_raise_extra(wmsg[2], "'options' in CALL")
       procedure = check_or_raise_uri(wmsg[3], "'procedure' in CALL")
 
       args = None
@@ -1318,7 +1299,7 @@ class Cancel(Message):
          raise ProtocolError("invalid message length {} for CANCEL".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
-      options = check_or_raise_dict(wmsg[2], "'options' in CANCEL")
+      options = check_or_raise_extra(wmsg[2], "'options' in CANCEL")
 
       ## options
       ##
@@ -1417,7 +1398,7 @@ class Result(Message):
          raise ProtocolError("invalid message length {} for RESULT".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in RESULT")
-      details = check_or_raise_dict(wmsg[2], "'details' in RESULT")
+      details = check_or_raise_extra(wmsg[2], "'details' in RESULT")
 
       args = None
       if len(wmsg) > 3:
@@ -1478,8 +1459,8 @@ class Invocation(Message):
 
    Formats:
      * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]`
-     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Arguments|list]`
-     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Arguments|list, ArgumentsKw|dict]`
+     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list]`
+     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]`
    """
 
    MESSAGE_TYPE = 68
@@ -1532,7 +1513,7 @@ class Invocation(Message):
 
       request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
       registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
-      details = check_or_raise_dict(wmsg[3], "'details' in INVOCATION")
+      details = check_or_raise_extra(wmsg[3], "'details' in INVOCATION")
 
       args = None
       if len(wmsg) > 4:
@@ -1638,7 +1619,7 @@ class Interrupt(Message):
          raise ProtocolError("invalid message length {} for INTERRUPT".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
-      options = check_or_raise_dict(wmsg[2], "'options' in INTERRUPT")
+      options = check_or_raise_extra(wmsg[2], "'options' in INTERRUPT")
 
       ## options
       ##
@@ -1736,7 +1717,7 @@ class Yield(Message):
          raise ProtocolError("invalid message length {} for YIELD".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in YIELD")
-      options = check_or_raise_dict(wmsg[2], "'options' in YIELD")
+      options = check_or_raise_extra(wmsg[2], "'options' in YIELD")
 
       args = None
       if len(wmsg) > 3:
@@ -1804,15 +1785,18 @@ class Hello(Message):
    """
 
 
-   def __init__(self, session):
+   def __init__(self, session, roles):
       """
       Message constructor.
 
       :param session: The WAMP session ID the other peer is assigned.
       :type session: int
       """
+      for role in roles:
+         assert(isinstance(role, wamp.role.RoleFeatures))
       Message.__init__(self)
       self.session = session
+      self.roles = roles
 
 
    @classmethod
@@ -1832,9 +1816,34 @@ class Hello(Message):
          raise ProtocolError("invalid message length {} for HELLO".format(len(wmsg)))
 
       session = check_or_raise_id(wmsg[1], "'session' in HELLO")
-      details = check_or_raise_dict(wmsg[2], "'details' in HELLO")
+      details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
 
-      obj = Klass(session)
+      roles = []
+
+      if not details.has_key('roles'):
+         raise ProtocolError("missing mandatory roles attribute in options in HELLO")
+
+      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in HELLO")
+
+      if len(details_roles) == 0:
+         raise ProtocolError("empty 'roles' in 'details' in HELLO")
+
+      for role in details_roles:
+         if role not in wamp.role.ROLE_NAME_TO_CLASS:
+            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
+
+         if details_roles[role].has_key('features'):
+            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+
+            ## FIXME: skip unknown attributes
+            role_features = wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+
+         else:
+            role_features = wamp.role.ROLE_NAME_TO_CLASS[role]()
+
+         roles.append(role_features)
+
+      obj = Klass(session, roles)
 
       return obj
 
@@ -1843,7 +1852,15 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      details = {}
+      details = {'roles': {}}
+      for role in self.roles:
+         details['roles'][role.ROLE] = {}
+         for feature in role.__dict__:
+            if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
+               if not details['roles'][role.ROLE].has_key('features'):
+                  details['roles'][role.ROLE] = {'features': {}}
+               details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
+
       return [Hello.MESSAGE_TYPE, self.session, details]
 
 
@@ -1851,7 +1868,7 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HELLO Message (session = '%s')" % (self.session)
+      return "WAMP HELLO Message (session = {}, roles = {})".format(self.session, self.roles)
 
 
 
@@ -1869,11 +1886,18 @@ class Goodbye(Message):
    """
 
 
-   def __init__(self):
+   def __init__(self, reason = None, message = None):
       """
       Message constructor.
+
+      :param error: Optional WAMP or application error URI for closing reason.
+      :type error: str
+      :param message: Optional human-readable closing message, e.g. for logging purposes.
+      :type message: str
       """
       Message.__init__(self)
+      self.reason = reason
+      self.message = message
 
 
    @classmethod
@@ -1892,9 +1916,23 @@ class Goodbye(Message):
       if len(wmsg) != 2:
          raise ProtocolError("invalid message length {} for GOODBYE".format(len(wmsg)))
 
-      details = check_or_raise_dict(wmsg[1], "'details' in GOODBYE")
+      details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
 
-      obj = Klass()
+      reason = None
+      message = None
+
+      if details.has_key('reason'):
+         reason = check_or_raise_uri(details['reason'], "'reason' detail in GOODBYE")
+
+      if details.has_key('message'):
+
+         details_message = details['message']
+         if type(details_message) not in [str, unicode]:
+            raise ProtocolError("invalid type {} for 'message' detail in GOODBYE".format(type(details_message)))
+
+         message = details_message
+
+      obj = Klass(reason, message)
 
       return obj
 
@@ -1904,6 +1942,11 @@ class Goodbye(Message):
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
       details = {}
+      if self.reason:
+         details['reason'] = self.reason
+      if self.message:
+         details['message'] = self.message
+
       return [Goodbye.MESSAGE_TYPE, details]
 
 
@@ -2006,7 +2049,7 @@ class Heartbeat(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HEARTBEAT Message (incoming {}, outgoing = {}, len(discard) = {})" % (self.incoming, self.outgoing, len(self.discard) if self.discard else None)
+      return "WAMP HEARTBEAT Message (incoming {}, outgoing = {}, len(discard) = {})".format(self.incoming, self.outgoing, len(self.discard) if self.discard else None)
 
 
 

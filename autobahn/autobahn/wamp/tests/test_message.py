@@ -21,8 +21,9 @@ from __future__ import absolute_import
 from twisted.trial import unittest
 #import unittest
 
+from autobahn.wamp import role
 from autobahn.wamp import message
-
+from autobahn.wamp.exception import ProtocolError
 
 
 class TestErrorMessage(unittest.TestCase):
@@ -737,38 +738,107 @@ class TestYieldMessage(unittest.TestCase):
 class TestHelloMessage(unittest.TestCase):
 
    def test_ctor(self):
-      e = message.Hello(123456)
+      e = message.Hello(123456, [role.RoleBrokerFeatures()])
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
       self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[2], {'roles': {'broker': {}}})
+
+      e = message.Hello(123456, [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
+      msg = e.marshal()
+      self.assertEqual(len(msg), 3)
+      self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
+      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[2], {'roles': {'broker': {'features': {'subscriber_blackwhite_listing': True}}}})
 
 
    def test_parse_and_marshal(self):
-      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {}]
+      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {'roles': {'broker': {}}}]
       msg = message.Hello.parse(wmsg)
       self.assertIsInstance(msg, message.Hello)
       self.assertEqual(msg.session, 123456)
+      self.assertEqual(msg.roles, [role.RoleBrokerFeatures()])
       self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {'roles': {'broker': {'features': {'subscriber_blackwhite_listing': True}}}}]
+      msg = message.Hello.parse(wmsg)
+      self.assertIsInstance(msg, message.Hello)
+      self.assertEqual(msg.session, 123456)
+      self.assertEqual(msg.roles, [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
+      self.assertEqual(msg.marshal(), wmsg)
+
+   def test_str(self):
+      e = message.Hello(123456, [role.RoleBrokerFeatures()])
+      self.assertIsInstance(str(e), str)
 
 
 
 class TestGoodbyeMessage(unittest.TestCase):
 
    def test_ctor(self):
+      reason = 'wamp.error.system_shutdown'
+      reason_msg = 'The host is shutting down now.'
+
       e = message.Goodbye()
       msg = e.marshal()
       self.assertEqual(len(msg), 2)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
       self.assertEqual(msg[1], {})
 
+      e = message.Goodbye(reason = reason)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 2)
+      self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
+      self.assertEqual(msg[1], {'reason': reason})
+
+      e = message.Goodbye(reason = reason, message = reason_msg)
+      msg = e.marshal()
+      self.assertEqual(len(msg), 2)
+      self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
+      self.assertEqual(msg[1], {'reason': reason, 'message': reason_msg})
+
 
    def test_parse_and_marshal(self):
+      reason = 'wamp.error.system_shutdown'
+      reason_msg = 'The host is shutting down now.'
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE]
+      self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE, reason]
+      self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': 100}]
+      self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': 100}]
+      self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
+
       wmsg = [message.Goodbye.MESSAGE_TYPE, {}]
       msg = message.Goodbye.parse(wmsg)
       self.assertIsInstance(msg, message.Goodbye)
+      self.assertEqual(msg.reason, None)
+      self.assertEqual(msg.message, None)
       self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': reason}]
+      msg = message.Goodbye.parse(wmsg)
+      self.assertIsInstance(msg, message.Goodbye)
+      self.assertEqual(msg.reason, reason)
+      self.assertEqual(msg.message, None)
+      self.assertEqual(msg.marshal(), wmsg)
+
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': reason, 'message': reason_msg}]
+      msg = message.Goodbye.parse(wmsg)
+      self.assertIsInstance(msg, message.Goodbye)
+      self.assertEqual(msg.reason, reason)
+      self.assertEqual(msg.message, reason_msg)
+      self.assertEqual(msg.marshal(), wmsg)
+
+   def test_str(self):
+      e = message.Goodbye(reason = 'wamp.error.system_shutdown', message = 'The host is shutting down now.')
+      self.assertIsInstance(str(e), str)
 
 
 
@@ -790,7 +860,23 @@ class TestHeartbeatMessage(unittest.TestCase):
       self.assertEqual(msg[2], 456)
       self.assertEqual(msg[3], "discard me")
 
+
    def test_parse_and_marshal(self):
+      wmsg = [message.Heartbeat.MESSAGE_TYPE]
+      self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
+
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 100]
+      self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
+
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, "foo"]
+      self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
+
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, 0]
+      self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
+
+      wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, 100, 100]
+      self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
+
       wmsg = [message.Heartbeat.MESSAGE_TYPE, 123, 456]
       msg = message.Heartbeat.parse(wmsg)
       self.assertIsInstance(msg, message.Heartbeat)
@@ -806,6 +892,10 @@ class TestHeartbeatMessage(unittest.TestCase):
       self.assertEqual(msg.outgoing, 456)
       self.assertEqual(msg.discard, "discard me")      
       self.assertEqual(msg.marshal(), wmsg)
+
+   def test_str(self):
+      e = message.Heartbeat(123, 456, "discard me")
+      self.assertIsInstance(str(e), str)
 
 
 
