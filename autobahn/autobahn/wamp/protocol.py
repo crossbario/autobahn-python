@@ -150,7 +150,7 @@ from autobahn.wamp.types import SessionInfo
 @implementer(ICaller)
 @implementer(ICallee)
 @implementer(IMessageTransportHandler)
-class WampSession(WampBaseSession):
+class WampAppSession(WampBaseSession):
 
    def __init__(self, broker = None, dealer = None):
       WampBaseSession.__init__(self)
@@ -242,6 +242,9 @@ class WampSession(WampBaseSession):
 
             if self._dealer:
                self._dealer.removeSession(self)
+
+            self._my_session_id = None
+            self._peer_session_id = None
 
             self._transport.close()
 
@@ -413,12 +416,28 @@ class WampSession(WampBaseSession):
             raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
 
-
    def onClose(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onClose`
       """
       self._transport = None
+
+      if self._my_session_id:
+
+         ## fire callback and close the transport
+         try:
+            self.onSessionClose()
+         except Exception as e:
+            print e
+
+         if self._broker:
+            self._broker.removeSession(self)
+
+         if self._dealer:
+            self._dealer.removeSession(self)
+
+         self._my_session_id = None
+         self._peer_session_id = None
 
 
    def closeSession(self, reason = None, message = None):
@@ -571,3 +590,66 @@ class WampSession(WampBaseSession):
 
       self._transport.send(msg)
       return d
+
+
+class WampRouterSession(WampAppSession):
+
+   def onSessionOpen(self, info):
+      print "WampRouterSession.onSessionOpen", info.me, info.peer
+
+   def onSessionClose(self, reason, message):
+      print "WampRouterSession.onSessionOpen", reason, message
+
+
+from autobahn import util
+from autobahn.wamp import message
+from autobahn.wamp.types import SessionInfo
+
+from autobahn.wamp.broker import Broker
+from autobahn.wamp.dealer import Dealer
+
+
+
+class WampRouterAppSession:
+
+   def __init__(self, session, broker, dealer):
+      self._broker = broker
+      self._dealer = dealer
+
+      self._session = session
+      self._session._transport = self
+      self._session._my_session_id = util.id()
+      self._session._peer_session_id = util.id()
+      self._broker.addSession(self._session)
+      self._dealer.addSession(self._session)
+      self._session.onSessionOpen(SessionInfo(self._session._my_session_id, self._session._peer_session_id))
+
+   def send(self, msg):
+      if isinstance(msg, message.Publish):
+         self._broker.onPublish(self._session, msg)
+      elif isinstance(msg, message.Subscribe):
+         self._broker.onSubscribe(self._session, msg)
+      elif isinstance(msg, message.Event) or \
+           isinstance(msg, message.Subscribed) or \
+           isinstance(msg, message.Unsubscribed) or \
+           isinstance(msg, message.Registered) or \
+           isinstance(msg, message.Unregistered):
+         try:
+            self._session.onMessage(msg)
+         except Exception as e:
+            print "X"*10, e
+
+
+
+class WampRouterSessionFactory:
+
+   def __init__(self):
+      self._broker = Broker()
+      self._dealer = Dealer()
+      self._app_sessions = []
+
+   def add(self, app_session):
+      self._app_sessions.append(WampRouterAppSession(app_session, self._broker, self._dealer))
+
+   def __call__(self):
+      return WampRouterSession(self._broker, self._dealer)

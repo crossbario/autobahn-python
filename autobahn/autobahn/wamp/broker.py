@@ -172,7 +172,7 @@ class Broker:
       assert(session in self._sessions)
       self._sessions.remove(session)
       for subscriptionid, subscribers in self._subscribers.values():
-         subscribers.discard(proto)
+         subscribers.discard(session)
 
 
    def onPublish(self, session, publish):

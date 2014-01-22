@@ -18,11 +18,11 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp.protocol import WampSession
+from autobahn.wamp.protocol import WampAppSession
 
 from twisted.internet import reactor
 
-class MyAppSession(WampSession):
+class MyAppSession(WampAppSession):
 
    def onSessionOpen(self, info):
       print "MyAppSession.onSessionOpen", info.me, info.peer
@@ -38,7 +38,7 @@ class MyAppSession(WampSession):
       self.subscribe(onevent, 'com.myapp.topic1')
 
       def pub():
-         self.publish('com.myapp.topic1', "hlleo")
+         self.publish('com.myapp.topic1', "Hello from {}".format(self.factory._name))
          reactor.callLater(1, pub)
 
       pub()
@@ -54,8 +54,13 @@ class MyAppSession(WampSession):
 
 class MyAppSessionFactory:
 
+   def __init__(self, name = "unknown"):
+      self._name = name
+
    def __call__(self):
-      return MyAppSession()
+      session = MyAppSession()
+      session.factory = self
+      return session
 
 
 def makeSession():
@@ -74,9 +79,13 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   sessionFactory = MyAppSessionFactory()
+   name = "unknown"
+   if len(sys.argv) > 1:
+      name = sys.argv[1]
 
-   transportFactory = WampWebSocketClientFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   sessionFactory = MyAppSessionFactory(name)
+
+   transportFactory = WampWebSocketClientFactory(sessionFactory, "ws://localhost:9000", debug = False)
    transportFactory.setProtocolOptions(failByDrop = False)
 
    reactor.connectTCP("127.0.0.1", 9000, transportFactory)

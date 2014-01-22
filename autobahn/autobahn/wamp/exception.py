@@ -60,10 +60,14 @@ class ProtocolError(Error):
    """
 
 
+
 class TransportLost(Error):
    """
    Exception raised when transport was lost or is not connected.
    """
+   def __init__(self):
+      Error.__init__(self, "WAMP transport lost")
+
 
 
 class ApplicationError(Error):

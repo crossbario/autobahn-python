@@ -23,4 +23,7 @@ test1_server:
 	PYTHONPATH=../../../autobahn python ./test1/server.py
 
 test1_client:
-	PYTHONPATH=../../../autobahn python ./test1/client.py
+	PYTHONPATH=../../../autobahn python ./test1/client.py foobar1
+
+test1b_client:
+	PYTHONPATH=../../../autobahn python ./test1/client.py foobar2

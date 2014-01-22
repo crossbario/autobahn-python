@@ -18,35 +18,20 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp.protocol import WampSession
-from autobahn.wamp.broker import Broker
-from autobahn.wamp.dealer import Dealer
+from autobahn.wamp.protocol import WampAppSession, \
+                                   WampRouterSessionFactory
 
 
-class MyAppSession(WampSession):
-
-   # def __init__(self, foo = "Foo"):
-   #    self.foo = foo
+class MyAppSession(WampAppSession):
 
    def onSessionOpen(self, info):
-      print "MyAppSession.onSessionOpen", info.me, info.peer
+      print "MyEmbeddedSession.onSessionOpen", info.me, info.peer
 
-   def onSessionClose(self, reason, message):
-      print "MyAppSession.onSessionOpen", reason, message
+      def onevent(*args, **kwargs):
+         print "EVENT", args, kwargs
 
+      self.subscribe(onevent, 'com.myapp.topic1')
 
-class MyAppSessionFactory:
-
-   def __init__(self):
-      self._broker = Broker()
-      self._dealer = Dealer()
-
-   def __call__(self):
-      return MyAppSession(self._broker, self._dealer)
-
-
-def makeSession():
-   return MyAppSession()
 
 
 if __name__ == '__main__':
@@ -60,9 +45,10 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   sessionFactory = MyAppSessionFactory()
+   sessionFactory = WampRouterSessionFactory()
+   sessionFactory.add(MyAppSession())
 
-   transportFactory = WampWebSocketServerFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   transportFactory = WampWebSocketServerFactory(sessionFactory, "ws://localhost:9000", debug = False)
    transportFactory.setProtocolOptions(failByDrop = False)
 
    reactor.listenTCP(9000, transportFactory)
