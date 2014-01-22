@@ -212,8 +212,10 @@ class ISession(Interface):
    Base interface for WAMP sessions.
    """
 
-   def onSessionOpen(me, peer):
+   def onSessionOpen(info):
       """
+      :param info: Session information.
+      :type info: Instance of :class:`autobahn.wamp.types.SessionInfo`.
       """
 
 

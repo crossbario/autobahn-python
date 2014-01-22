@@ -142,6 +142,8 @@ class WampBaseSession:
       return exc
 
 
+from autobahn.wamp.types import SessionInfo
+
 
 @implementer(IPublisher)
 @implementer(ISubscriber)
@@ -150,9 +152,12 @@ class WampBaseSession:
 @implementer(IMessageTransportHandler)
 class WampSession(WampBaseSession):
 
-   def __init__(self):
+   def __init__(self, broker = None, dealer = None):
       WampBaseSession.__init__(self)
       self._transport = None
+
+      self._broker = broker
+      self._dealer = dealer
 
       self._goodbye_sent = False
       self._transport_is_closing = False
@@ -181,7 +186,20 @@ class WampSession(WampBaseSession):
       self._my_session_id = util.id()
       self._peer_session_id = None
 
-      msg = message.Hello(self._my_session_id, [role.RoleBrokerFeatures()])
+      roles = [
+         role.RolePublisherFeatures(),
+         role.RoleSubscriberFeatures(),
+         role.RoleCallerFeatures(),
+         role.RoleCalleeFeatures()
+      ]
+
+      if self._broker:
+         roles.append(role.RoleBrokerFeatures())
+
+      if self._dealer:
+         roles.append(role.RoleDealerFeatures())
+
+      msg = message.Hello(self._my_session_id, roles)
       self._transport.send(msg)
 
 
@@ -189,15 +207,24 @@ class WampSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
-      print "XXX", msg
       if self._peer_session_id is None:
+
          ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
             self._peer_session_id = msg.session
-            self.onSessionOpen(self._my_session_id, self._peer_session_id)
+
+            if self._broker:
+               self._broker.addSession(self)
+
+            if self._dealer:
+               self._dealer.addSession(self)
+
+            self.onSessionOpen(SessionInfo(self._my_session_id, self._peer_session_id))
          else:
-            raise ProtocolError("Received {} message, and session is not yet established".format(message.__class__))
+            raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
+
       else:
+
          if isinstance(msg, message.Hello):
             raise ProtocolError("HELLO message received, while session is already established")
 
@@ -209,7 +236,40 @@ class WampSession(WampBaseSession):
 
             ## fire callback and close the transport
             self.onSessionClose(msg.reason, msg.message)
+
+            if self._broker:
+               self._broker.removeSession(self)
+
+            if self._dealer:
+               self._dealer.removeSession(self)
+
             self._transport.close()
+
+         elif isinstance(msg, message.Subscribe):
+            if self._broker:
+               self._broker.onSubscribe(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Unsubscribe):
+            if self._broker:
+               self._broker.onUnsubscribe(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Publish):
+            if self._broker:
+               self._broker.onPublish(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif self._dealer and \
+              (isinstance(msg, message.Register) or
+               isinstance(msg, message.Unregister) or
+               isinstance(msg, message.Call) or
+               isinstance(msg, message.Cancel) or
+               isinstance(msg, message.Yield)):
+              self._dealer.onMessage(self, msg)
 
          elif isinstance(msg, message.Event):
 
@@ -303,6 +363,10 @@ class WampSession(WampBaseSession):
             else:
                raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
 
+         elif isinstance(msg, message.Interrupt):
+
+            pass ## FIXME
+
          elif isinstance(msg, message.Registered):
 
             if msg.request in self._register_reqs:
@@ -340,12 +404,13 @@ class WampSession(WampBaseSession):
             else:
                raise ProtocolError("ERROR received for non-pending request ID {}".format(msg.request))
 
-         else:
-            ## signal that we did not process the message
-            return False
+         elif isinstance(msg, message.Heartbeat):
 
-         ## signal that we have processed the message
-         return True
+            pass ## FIXME
+
+         else:
+
+            raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
 
 

@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -15,15 +15,6 @@
 ##  limitations under the License.
 ##
 ###############################################################################
-
-
-import inspect, types
-
-from message import WampMessageProvide, \
-                    WampMessageUnprovide, \
-                    WampMessageCallProgress, \
-                    WampMessageCallResult, \
-                    WampMessageCallError
 
 
 def exportRpc(arg = None):
@@ -76,7 +67,7 @@ class RemoteEndpoint(Endpoint):
 
 
 
-class Dealer:
+class DealerOld:
 
    def __init__(self):
       self._protos = set()
@@ -167,3 +158,17 @@ class Dealer:
       self._endpoints[endpoint] = LocalProcedureEndpoint(endpoint, procedure)
       self._announceEndpoint(endpoint)
 
+
+
+class Dealer:
+   def __init__(self):
+      pass
+
+   def addSession(self, session):
+      print "Dealer.addSession", session
+
+   def removeSession(self, session):
+      print "Dealer.removeSession", session
+
+   def onMessage(self, session, msg):
+      print "Dealer.onMessage", msg

@@ -24,18 +24,29 @@ from twisted.internet import reactor
 
 class MyAppSession(WampSession):
 
-   def onSessionOpen(self, me, peer):
-      print "MyAppSession.onSessionOpen", me, peer
+   def onSessionOpen(self, info):
+      print "MyAppSession.onSessionOpen", info.me, info.peer
 
       def add2(a, b):
          return a + b
 
       self.register(add2, 'com.myapp.add2')
 
-      def close():
-         self.closeSession('com.myapp.shutdown_in_progress', 'We are doing maintenance')
+      def onevent(*args, **kwargs):
+         print "EVENT", args, kwargs
 
-      reactor.callLater(2, close)
+      self.subscribe(onevent, 'com.myapp.topic1')
+
+      def pub():
+         self.publish('com.myapp.topic1', "hlleo")
+         reactor.callLater(1, pub)
+
+      pub()
+
+      #def close():
+      #   self.closeSession('com.myapp.shutdown_in_progress', 'We are doing maintenance')
+
+      #reactor.callLater(2, close)
 
    def onSessionClose(self, reason, message):
       print "MyAppSession.onSessionOpen", reason, message

@@ -19,15 +19,17 @@
 from __future__ import absolute_import
 
 from autobahn.wamp.protocol import WampSession
+from autobahn.wamp.broker import Broker
+from autobahn.wamp.dealer import Dealer
 
 
 class MyAppSession(WampSession):
 
-   def __init__(self, foo = "Foo"):
-      self.foo = foo
+   # def __init__(self, foo = "Foo"):
+   #    self.foo = foo
 
-   def onSessionOpen(self, me, peer):
-      print "MyAppSession.onSessionOpen", me, peer
+   def onSessionOpen(self, info):
+      print "MyAppSession.onSessionOpen", info.me, info.peer
 
    def onSessionClose(self, reason, message):
       print "MyAppSession.onSessionOpen", reason, message
@@ -35,8 +37,12 @@ class MyAppSession(WampSession):
 
 class MyAppSessionFactory:
 
+   def __init__(self):
+      self._broker = Broker()
+      self._dealer = Dealer()
+
    def __call__(self):
-      return MyAppSession()
+      return MyAppSession(self._broker, self._dealer)
 
 
 def makeSession():

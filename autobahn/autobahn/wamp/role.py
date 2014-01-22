@@ -127,7 +127,6 @@ class RoleCommonRpcFeatures(RoleFeatures):
                 call_canceling = None,
                 progressive_call_results = None):
       self.caller_identification = caller_identification
-      self.call_trustlevels = call_trustlevels
       self.partitioned_rpc = partitioned_rpc
       self.call_timeout = call_timeout
       self.call_canceling = call_canceling
@@ -177,8 +176,6 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
                 call_trustlevels = None,
                 pattern_based_registration = None,
                 **kwargs):
-      self.callee_blackwhite_listing = callee_blackwhite_listing
-      self.caller_exclusion = caller_exclusion
       self.call_trustlevels = call_trustlevels
       self.pattern_based_registration = pattern_based_registration  
       RoleCommonRpcFeatures.__init__(self, **kwargs)

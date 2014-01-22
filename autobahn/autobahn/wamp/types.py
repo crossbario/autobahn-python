@@ -19,6 +19,14 @@
 from __future__ import absolute_import
 
 
+class SessionInfo:
+
+   def __init__(self, me, peer):
+      self.me = me
+      self.peer = peer
+
+
+
 class Registration:
    """
    """
@@ -93,6 +101,7 @@ class CallResult:
       """
       self.results = results
       self.kwresults = kwresults
+
 
 
 class Invocation:
