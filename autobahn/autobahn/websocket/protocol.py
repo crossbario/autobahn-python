@@ -987,7 +987,7 @@ class WebSocketProtocol:
          else:
             ## perform WebSocket closing handshake
             if self.state != WebSocketProtocol.STATE_CLOSING:
-               self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8"), isReply = False)
+               self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8")[:125], isReply = False)
             else:
                if self.debugCodePaths:
                   self.factory._log("skipping failConnection since connection is already closing")

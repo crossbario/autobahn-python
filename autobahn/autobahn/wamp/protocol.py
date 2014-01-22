@@ -23,7 +23,7 @@ from zope.interface import implementer
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred
 
-from autobahn.wamp.interfaces import IPeer, \
+from autobahn.wamp.interfaces import ISession, \
                                      IPublisher, \
                                      ISubscriber, \
                                      ICaller, \
@@ -31,6 +31,7 @@ from autobahn.wamp.interfaces import IPeer, \
                                      IMessageTransportHandler, \
                                      IMessageTransport
 
+from autobahn import wamp
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
 from autobahn import util
@@ -41,8 +42,8 @@ from autobahn.wamp import options
 from autobahn.wamp import role
 
 
-@implementer(IPeer)
-class Peer:
+@implementer(ISession)
+class WampBaseSession:
 
    def __init__(self):
       self._ecls_to_uri_pat = {}
@@ -51,7 +52,7 @@ class Peer:
 
    def define(self, exception, error = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.IPeer.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
       """
       if error is None:
          assert(hasattr(exception, '_wampuris'))
@@ -147,11 +148,14 @@ class Peer:
 @implementer(ICaller)
 @implementer(ICallee)
 @implementer(IMessageTransportHandler)
-class WampProtocol(Peer):
+class WampSession(WampBaseSession):
 
    def __init__(self):
-      Peer.__init__(self)
+      WampBaseSession.__init__(self)
       self._transport = None
+
+      self._goodbye_sent = False
+      self._transport_is_closing = False
 
       ## outstanding requests
       self._publish_reqs = {}
@@ -174,10 +178,10 @@ class WampProtocol(Peer):
       """
       self._transport = transport
 
-      self._this_sessionid = util.id()
-      self._peer_sessionid = None
+      self._my_session_id = util.id()
+      self._peer_session_id = None
 
-      msg = message.Hello(self._this_sessionid, [role.RoleBrokerFeatures()])
+      msg = message.Hello(self._my_session_id, [role.RoleBrokerFeatures()])
       self._transport.send(msg)
 
 
@@ -186,16 +190,27 @@ class WampProtocol(Peer):
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
       print "XXX", msg
-      if self._peer_sessionid is None:
+      if self._peer_session_id is None:
+         ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
-            self._peer_sessionid = msg.session
-            self.onSessionOpen(self._this_sessionid, self._peer_sessionid)
+            self._peer_session_id = msg.session
+            self.onSessionOpen(self._my_session_id, self._peer_session_id)
          else:
-            pass
-         #print "SESSION ESTABLISHED", self._peer_sessionid
+            raise ProtocolError("Received {} message, and session is not yet established".format(message.__class__))
       else:
          if isinstance(msg, message.Hello):
-            pass
+            raise ProtocolError("HELLO message received, while session is already established")
+
+         elif isinstance(msg, message.Goodbye):
+            if not self._goodbye_sent:
+               ## the peer wants to close: send GOODBYE reply
+               reply = message.Goodbye()
+               self._transport.send(reply)
+
+            ## fire callback and close the transport
+            self.onSessionClose(msg.reason, msg.message)
+            self._transport.close()
+
          elif isinstance(msg, message.Event):
 
             if msg.subscription in self._subscriptions:
@@ -333,11 +348,24 @@ class WampProtocol(Peer):
          return True
 
 
+
    def onClose(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onClose`
       """
       self._transport = None
+
+
+   def closeSession(self, reason = None, message = None):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
+      """
+      if not self._goodbye_sent:
+         msg = wamp.message.Goodbye(reason = reason, message = message)
+         self._transport.send(msg)
+         self._goodbye_sent = True
+      else:
+         raise SessionNotReady("Already requested to close the session")
 
 
    def publish(self, topic, *args, **kwargs):

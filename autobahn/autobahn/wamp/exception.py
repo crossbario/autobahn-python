@@ -38,6 +38,20 @@ class Error(RuntimeError):
 
 
 
+
+class SessionNotReady(Error):
+   """
+   """
+
+
+
+class SerializationError(Error):
+   """
+   Exception raised when the WAMP serializer could not serialize the
+   application payload (args or kwargs for `CALL`, `PUBLISH`, etc).
+   """
+
+
 class ProtocolError(Error):
    """
    Exception raised when WAMP protocol was violated. Protocol errors

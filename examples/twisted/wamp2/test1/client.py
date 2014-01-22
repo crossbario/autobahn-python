@@ -18,20 +18,27 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp.protocol import WampProtocol
+from autobahn.wamp.protocol import WampSession
 
+from twisted.internet import reactor
 
-class MyAppSession(WampProtocol):
+class MyAppSession(WampSession):
 
-   def onSessionOpen(self, session_id, peer_session_id):
-      print "MyAppSession.onSessionOpen", session_id, peer_session_id
+   def onSessionOpen(self, me, peer):
+      print "MyAppSession.onSessionOpen", me, peer
+
       def add2(a, b):
          return a + b
 
       self.register(add2, 'com.myapp.add2')
 
-   def onSessionClose(self):
-      print "MyAppSession.onSessionOpen"
+      def close():
+         self.closeSession('com.myapp.shutdown_in_progress', 'We are doing maintenance')
+
+      reactor.callLater(2, close)
+
+   def onSessionClose(self, reason, message):
+      print "MyAppSession.onSessionOpen", reason, message
 
 
 class MyAppSessionFactory:
@@ -52,13 +59,14 @@ if __name__ == '__main__':
    from twisted.python import log
    from twisted.internet import reactor
 
-   from autobahn.twisted import websocket
+   from autobahn.twisted.websocket import WampWebSocketClientFactory
 
    log.startLogging(sys.stdout)
 
    sessionFactory = MyAppSessionFactory()
 
-   transportFactory = websocket.WampClientFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   transportFactory = WampWebSocketClientFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   transportFactory.setProtocolOptions(failByDrop = False)
 
    reactor.connectTCP("127.0.0.1", 9000, transportFactory)
    reactor.run()

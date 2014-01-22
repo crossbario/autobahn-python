@@ -206,52 +206,28 @@ class IWampBroker(Interface):
       """
 
 
-# class IWampPublishOptions(Interface):
 
-#    excludeMe = Attribute("Exclude me, the publisher, from receiving the event (even though I may be subscribed).")
-
-
-
-class IWampSession(Interface):
+class ISession(Interface):
    """
+   Base interface for WAMP sessions.
    """
 
-   def call(self, *args):
-      """
-      """
-
-   def subscribe(self, topic, handler):
-      """
-      """
-
-   def unsubscribe(self, topic, handler = None):
-      """
-      """
-
-   def publish(self, topic, event,
-               excludeMe = None,
-               exclude = None,
-               eligible = None,
-               discloseMe = None):
-      """
-      """
-
-   def setDealer(self, dealer = None):
-      """
-      """
-
-   def setBroker(self, broker = None):
+   def onSessionOpen(me, peer):
       """
       """
 
 
+   def closeSession(reason = None, message = None):
+      """
+      """
 
-class IPeer(Interface):
-   """
-   Base interface for WAMP peers.
-   """
 
-   def define(self, exception, error = None):
+   def onSessionClose(reason, message):
+      """
+      """
+
+
+   def define(exception, error = None):
       """
       Defines an exception for a WAMP error in the context of this WAMP session.
 
@@ -263,7 +239,8 @@ class IPeer(Interface):
       """
 
 
-class ICaller(IPeer):
+
+class ICaller(ISession):
    """
    Interface for WAMP peers implementing role "Caller".
    """
@@ -294,7 +271,7 @@ class ICaller(IPeer):
 
 
 
-class ICallee(IPeer):
+class ICallee(ISession):
    """
    Interface for WAMP peers implementing role "Callee".
    """
@@ -349,7 +326,7 @@ class ICallee(IPeer):
 
 
 
-class IPublisher(IPeer):
+class IPublisher(ISession):
    """
    Interface for WAMP peers implementing role "Publisher".
    """
@@ -378,7 +355,7 @@ class IPublisher(IPeer):
 
 
 
-class ISubscriber(IPeer):
+class ISubscriber(ISession):
    """
    Interface for WAMP peers implementing role "Subscriber".
    """

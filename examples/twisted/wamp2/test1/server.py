@@ -18,16 +18,19 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp.protocol import WampProtocol
+from autobahn.wamp.protocol import WampSession
 
 
-class MyAppSession(WampProtocol):
+class MyAppSession(WampSession):
 
-   def onSessionOpen(self, session_id, peer_session_id):
-      print "MyAppSession.onSessionOpen", session_id, peer_session_id
+   def __init__(self, foo = "Foo"):
+      self.foo = foo
 
-   def onSessionClose(self):
-      print "MyAppSession.onSessionOpen"
+   def onSessionOpen(self, me, peer):
+      print "MyAppSession.onSessionOpen", me, peer
+
+   def onSessionClose(self, reason, message):
+      print "MyAppSession.onSessionOpen", reason, message
 
 
 class MyAppSessionFactory:
@@ -47,13 +50,14 @@ if __name__ == '__main__':
    from twisted.python import log
    from twisted.internet import reactor
 
-   from autobahn.twisted import websocket
+   from autobahn.twisted.websocket import WampWebSocketServerFactory
 
    log.startLogging(sys.stdout)
 
    sessionFactory = MyAppSessionFactory()
 
-   transportFactory = websocket.WampServerFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   transportFactory = WampWebSocketServerFactory(sessionFactory, "ws://localhost:9000", debug = True)
+   transportFactory.setProtocolOptions(failByDrop = False)
 
    reactor.listenTCP(9000, transportFactory)
    reactor.run()

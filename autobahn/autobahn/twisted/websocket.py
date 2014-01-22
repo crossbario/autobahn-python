@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -535,13 +535,14 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 from autobahn import wamp
 
-class WampServerProtocol(wamp.websocket.WampServerProtocol, WebSocketServerProtocol):
+class WampWebSocketServerProtocol(wamp.websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
    pass
 
 
-class WampServerFactory(wamp.websocket.WampServerFactory, WebSocketServerFactory):
 
-   protocol = WampServerProtocol
+class WampWebSocketServerFactory(wamp.websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+
+   protocol = WampWebSocketServerProtocol
 
    def __init__(self, factory, *args, **kwargs):
 
@@ -551,20 +552,22 @@ class WampServerFactory(wamp.websocket.WampServerFactory, WebSocketServerFactory
       else:
          serializers = None
 
-      wamp.websocket.WampServerFactory.__init__(self, factory, serializers)
+      wamp.websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 
       WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-class WampClientProtocol(wamp.websocket.WampClientProtocol, WebSocketClientProtocol):
+
+class WampWebSocketClientProtocol(wamp.websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
    pass
 
 
-class WampClientFactory(wamp.websocket.WampClientFactory, WebSocketClientFactory):
 
-   protocol = WampClientProtocol
+class WampWebSocketClientFactory(wamp.websocket.WampWebSocketClientFactory, WebSocketClientFactory):
+
+   protocol = WampWebSocketClientProtocol
 
    def __init__(self, factory, *args, **kwargs):
 
@@ -574,7 +577,7 @@ class WampClientFactory(wamp.websocket.WampClientFactory, WebSocketClientFactory
       else:
          serializers = None
 
-      wamp.websocket.WampClientFactory.__init__(self, factory, serializers)
+      wamp.websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 
