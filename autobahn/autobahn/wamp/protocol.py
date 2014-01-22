@@ -185,12 +185,14 @@ class WampProtocol(Peer):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
+      print "XXX", msg
       if self._peer_sessionid is None:
          if isinstance(msg, message.Hello):
             self._peer_sessionid = msg.session
+            self.onSessionOpen(self._this_sessionid, self._peer_sessionid)
          else:
             pass
-         print "SESSION ESTABLISHED", self._peer_sessionid
+         #print "SESSION ESTABLISHED", self._peer_sessionid
       else:
          if isinstance(msg, message.Hello):
             pass

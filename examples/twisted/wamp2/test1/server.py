@@ -23,8 +23,8 @@ from autobahn.wamp.protocol import WampProtocol
 
 class MyAppSession(WampProtocol):
 
-   def onSessionOpen(self):
-      print "MyAppSession.onSessionOpen"
+   def onSessionOpen(self, session_id, peer_session_id):
+      print "MyAppSession.onSessionOpen", session_id, peer_session_id
 
    def onSessionClose(self):
       print "MyAppSession.onSessionOpen"
