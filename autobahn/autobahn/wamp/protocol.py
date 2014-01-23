@@ -207,6 +207,8 @@ class WampAppSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
+      print "WampAppSession.onMessage", msg
+
       if self._peer_session_id is None:
 
          ## the first message MUST be HELLO
@@ -248,6 +250,8 @@ class WampAppSession(WampBaseSession):
 
             self._transport.close()
 
+         ## broker messages
+         ##
          elif isinstance(msg, message.Subscribe):
             if self._broker:
                self._broker.onSubscribe(self, msg)
@@ -266,14 +270,40 @@ class WampAppSession(WampBaseSession):
             else:
                raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
-         elif self._dealer and \
-              (isinstance(msg, message.Register) or
-               isinstance(msg, message.Unregister) or
-               isinstance(msg, message.Call) or
-               isinstance(msg, message.Cancel) or
-               isinstance(msg, message.Yield)):
-              self._dealer.onMessage(self, msg)
+         ## dealer messages
+         ##
+         elif isinstance(msg, message.Register):
+            if self._dealer:
+               self._dealer.onRegister(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
+         elif isinstance(msg, message.Unregister):
+            if self._dealer:
+               self._dealer.onUnregister(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Call):
+            if self._dealer:
+               self._dealer.onCall(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Cancel):
+            if self._dealer:
+               self._dealer.onCancel(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Yield):
+            if self._dealer:
+               self._dealer.onYield(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         ## consumer messages
+         ##
          elif isinstance(msg, message.Event):
 
             if msg.subscription in self._subscriptions:
@@ -625,16 +655,40 @@ class WampRouterAppSession:
       self._session.onSessionOpen(SessionInfo(self._session._my_session_id, self._session._peer_session_id))
 
    def send(self, msg):
+      print "WampRouterAppSession.send", msg
+      ## app-to-broker
+      ##
       if isinstance(msg, message.Publish):
          self._broker.onPublish(self._session, msg)
       elif isinstance(msg, message.Subscribe):
          self._broker.onSubscribe(self._session, msg)
+      elif isinstance(msg, message.Unsubscribe):
+         self._broker.onUnsubscribe(self._session, msg)
+
+      ## app-to-dealer
+      ##
+      elif isinstance(msg, message.Register):
+         self._dealer.onRegister(self._session, msg)
+      elif isinstance(msg, message.Unregister):
+         self._dealer.onUnregister(self._session, msg)
+      elif isinstance(msg, message.Call):
+         self._dealer.onCall(self._session, msg)
+      elif isinstance(msg, message.Cancel):
+         self._dealer.onCancel(self._session, msg)
+      elif isinstance(msg, message.Yield):
+         self._dealer.onYield(self._session, msg)
+
+      ## broker/dealer-to-app
+      ##
       elif isinstance(msg, message.Event) or \
            isinstance(msg, message.Subscribed) or \
            isinstance(msg, message.Unsubscribed) or \
+           isinstance(msg, message.Result) or \
+           isinstance(msg, message.Invocation) or \
            isinstance(msg, message.Registered) or \
            isinstance(msg, message.Unregistered):
          try:
+            print "01"*10
             self._session.onMessage(msg)
          except Exception as e:
             print "X"*10, e

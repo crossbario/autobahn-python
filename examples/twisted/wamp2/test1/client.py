@@ -18,19 +18,24 @@
 
 from __future__ import absolute_import
 
+
 from autobahn.wamp.protocol import WampAppSession
 
 from twisted.internet import reactor
+from twisted.internet.defer import Deferred, inlineCallbacks
+
+
 
 class MyAppSession(WampAppSession):
 
+   @inlineCallbacks
    def onSessionOpen(self, info):
       print "MyAppSession.onSessionOpen", info.me, info.peer
 
       def add2(a, b):
          return a + b
 
-      self.register(add2, 'com.myapp.add2')
+      #self.register(add2, 'com.myapp.add2')
 
       def onevent(*args, **kwargs):
          print "EVENT", args, kwargs
@@ -42,7 +47,16 @@ class MyAppSession(WampAppSession):
 #         self.publish('com.myapp.topic1', "Hello from {}".format(self.factory._name))
          reactor.callLater(1, pub)
 
-      pub()
+      #pub()
+
+      def writeln(*args, **kwargs):
+         print "#"*10, args, kwargs
+
+      #d = self.call('com.myapp.add2', 2, 3)
+      #d.addBoth(writeln)
+
+      res = yield self.call('com.myapp.add2', 2, 3)
+      print("RESULT: {}".format(res))
 
       #def close():
       #   self.closeSession('com.myapp.shutdown_in_progress', 'We are doing maintenance')

@@ -259,7 +259,7 @@ class Subscribe(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
       if len(wmsg) != 4:
-         raise ProtocolError("invalid message length %d for SUBSCRIBE" % len(wmsg))
+         raise ProtocolError("invalid message length {} for SUBSCRIBE".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
       options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
@@ -800,13 +800,13 @@ class Event(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise ProtocolError("invalid type %s for 'args' in EVENT" % type(args))
+            raise ProtocolError("invalid type {} for 'args' in EVENT".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type %s for 'kwargs' in EVENT" % type(kwargs))
+            raise ProtocolError("invalid type {} for 'kwargs' in EVENT".format(type(kwargs)))
 
       publisher = None
 
@@ -1246,7 +1246,7 @@ class Call(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {})" % (self.request, self.procedure, self.args, self.kwargs, self.timeout)
+      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout)
 
 
 
@@ -1337,7 +1337,7 @@ class Cancel(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CANCEL Message (request = {}, mode = '{}'')" % (self.request, self.mode)
+      return "WAMP CANCEL Message (request = {}, mode = '{}'')".format(self.request, self.mode)
 
 
 
@@ -1448,7 +1448,7 @@ class Result(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP RESULT Message (request = {}, args = {}, kwargs = {}, progress = {})" % (self.request, self.args, self.kwargs, self.progress)
+      return "WAMP RESULT Message (request = {}, args = {}, kwargs = {}, progress = {})".format(self.request, self.args, self.kwargs, self.progress)
 
 
 
@@ -1567,7 +1567,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {})" % (self.request, self.registration, self.args, self.kwargs, self.timeout)
+      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout)
 
 
 
@@ -1657,7 +1657,7 @@ class Interrupt(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INTERRUPT Message (request = {}, mode = '{}'')" % (self.request, self.mode)
+      return "WAMP INTERRUPT Message (request = {}, mode = '{}'')".format(self.request, self.mode)
 
 
 
@@ -1682,7 +1682,7 @@ class Yield(Message):
       """
       Message constructor.
 
-      :param request: The WAMP request ID of this request.
+      :param request: The WAMP request ID of the original call.
       :type request: int
       :param args: Positional values for application-defined event payload.
                    Must be serializable using any serializers in use.
@@ -1767,7 +1767,7 @@ class Yield(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP YIELD Message (request = {}, args = {}, kwargs = {}, progress = {})" % (self.request, self.args, self.kwargs, self.progress)
+      return "WAMP YIELD Message (request = {}, args = {}, kwargs = {}, progress = {})".format(self.request, self.args, self.kwargs, self.progress)
 
 
 
@@ -2019,10 +2019,10 @@ class Heartbeat(Message):
       outgoing = wmsg[2]
 
       if type(outgoing) != int:
-         raise ProtocolError("invalid type %s for 'outgoing' in HEARTBEAT".format(type(outgoing)))
+         raise ProtocolError("invalid type {} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
 
       if outgoing <= 0: # must be positive
-         raise ProtocolError("invalid value %d for 'outgoing' in HEARTBEAT".format(outgoing))
+         raise ProtocolError("invalid value {} for 'outgoing' in HEARTBEAT".format(outgoing))
 
       discard = None
       if len(wmsg) > 3:
@@ -2104,23 +2104,23 @@ class RoleChange(Message):
       assert(len(wmsg) > 0 and wmsg[0] == RoleChange.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length %d for WAMP Role-Change message" % len(wmsg))
+         raise ProtocolError("invalid message length {} for WAMP Role-Change message".format(len(wmsg)))
 
       ## op
       ##
       op = wmsg[1]
       if type(op) != int:
-         raise ProtocolError("invalid type %s for 'op' in WAMP Role-Change message" % type(op))
+         raise ProtocolError("invalid type {} for 'op' in WAMP Role-Change message".format(type(op)))
       if op not in [RoleChange.ROLE_CHANGE_OP_ADD, RoleChange.ROLE_CHANGE_OP_REMOVE]:
-         raise ProtocolError("invalid value '%s' for 'op' in WAMP Role-Change message" % op)
+         raise ProtocolError("invalid value '{}' for 'op' in WAMP Role-Change message".format(op))
 
       ## role
       ##
       role = wmsg[2]
       if type(role) not in (str, unicode):
-         raise ProtocolError("invalid type %s for 'role' in WAMP Role-Change message" % type(role))
+         raise ProtocolError("invalid type {} for 'role' in WAMP Role-Change message".format(type(role)))
       if role not in [RoleChange.ROLE_CHANGE_ROLE_BROKER, RoleChange.ROLE_CHANGE_ROLE_DEALER]:
-         raise ProtocolError("invalid value '%s' for 'role' in WAMP Role-Change message" % role)
+         raise ProtocolError("invalid value '{}' for 'role' in WAMP Role-Change message".format(role))
 
       obj = Klass(op, role)
 
@@ -2140,4 +2140,4 @@ class RoleChange(Message):
 
       :returns str -- Human readable representation (eg for logging or debugging purposes).
       """
-      return "WAMP Role-Change Message (op = '%s', role = '%s')" % (RoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)
+      return "WAMP Role-Change Message (op = '{}', role = '{}')".format(RoleChange.ROLE_CHANGE_OP_DESC.get(self.op), self.role)

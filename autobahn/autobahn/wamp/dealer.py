@@ -160,9 +160,15 @@ class DealerOld:
 
 
 
+from autobahn import util
+from autobahn.wamp import message
+
+
 class Dealer:
    def __init__(self):
-      pass
+      self._procs_to_regs = {}
+      self._regs_to_procs = {}
+      self._invocations = {}
 
    def addSession(self, session):
       print "Dealer.addSession", session
@@ -170,5 +176,61 @@ class Dealer:
    def removeSession(self, session):
       print "Dealer.removeSession", session
 
-   def onMessage(self, session, msg):
-      print "Dealer.onMessage", msg
+
+   def onRegister(self, session, register):
+      print "Dealer.onRegister", session , register
+      assert(isinstance(register, message.Register))
+
+      if not register.procedure in self._procs_to_regs:
+         registration_id = util.id()
+         self._procs_to_regs[register.procedure] = (registration_id, session)
+         self._regs_to_procs[registration_id] = register.procedure
+         reply = message.Registered(register.request, registration_id)
+      else:
+         reply = message.Error(call.request, 'wamp.error.procedure_already_exists')
+
+      session._transport.send(reply)
+
+
+   def onUnregister(self, session, unregister):
+      print "Dealer.onUnregister", session , unregister
+      assert(isinstance(unregister, message.Unregister))
+
+      if unregister.registration in self._regs_to_procs:
+         del self._procs_to_regs[self._regs_to_procs[unregister.registration]]
+         del self._regs_to_procs[unregister.registration]
+         reply = message.Unregistered(unregister.request)
+      else:
+         reply = message.Error(unregister.request, 'wamp.error.no_such_registration')
+
+      session._transport.send(reply)
+
+
+   def onCall(self, session, call):
+      print "Dealer.onCall", session , call
+      assert(isinstance(call, message.Call))
+
+      if call.procedure in self._procs_to_regs:
+         registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+         request_id = util.id()
+         invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs)
+         self._invocations[request_id] = (call.request, session)
+         endpoint_session._transport.send(invocation)
+      else:
+         reply = message.Error(call.request, 'wamp.error.no_such_procedure')
+         session._transport.send(reply)
+
+
+   def onCancel(self, session, cancel):
+      print "Dealer.onCancel", session , cancel
+      raise Exception("not implemented")
+
+
+   def onYield(self, session, yield_):
+      print "Dealer.onYield", session , yield_
+      assert(isinstance(yield_, message.Yield))
+
+      if yield_.request in self._invocations:
+         call_request_id, call_session = self._invocations[yield_.request]
+         result_msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs)
+         call_session._transport.send(result_msg)

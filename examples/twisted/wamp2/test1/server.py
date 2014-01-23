@@ -32,6 +32,11 @@ class MyAppSession(WampAppSession):
 
       self.subscribe(onevent, 'com.myapp.topic1')
 
+      def add2(a, b):
+         return a + b
+
+      self.register(add2, 'com.myapp.add2')
+
 
 
 if __name__ == '__main__':
