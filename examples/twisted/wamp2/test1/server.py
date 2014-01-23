@@ -56,10 +56,10 @@ if __name__ == '__main__':
    print("Running on reactor {}".format(reactor))
 
 
-   ## create a WAMP router
+   ## create a WAMP router session factory
    ##
-   from autobahn.wamp.protocol import WampRouterSessionFactory
-   sessionFactory = WampRouterSessionFactory()
+   from autobahn.wamp.protocol import WampRouterFactory
+   session = WampRouterFactory()
 
 
    ## if asked to start the embedded application backend,
@@ -67,20 +67,20 @@ if __name__ == '__main__':
    ##
    if args.backend:
       from app import MyAppBackendSession
-      sessionFactory.add(MyAppBackendSession())
+      session.add(MyAppBackendSession())
 
 
    ## run WAMP over WebSocket
    ##
    from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transportFactory = WampWebSocketServerFactory(sessionFactory, args.wsurl, debug = args.debug)
-   transportFactory.setProtocolOptions(failByDrop = False)
+   transport = WampWebSocketServerFactory(session, args.wsurl, debug = args.debug)
+   transport.setProtocolOptions(failByDrop = False)
 
 
    ## start the WebSocket server from an endpoint
    ##
-   wsserver = serverFromString(reactor, args.websocket)
-   wsserver.listen(transportFactory)
+   server = serverFromString(reactor, args.websocket)
+   server.listen(transport)
 
 
    ## now enter the Twisted reactor loop

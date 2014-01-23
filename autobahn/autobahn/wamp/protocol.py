@@ -701,7 +701,7 @@ class WampRouterAppSession:
 
 
 
-class WampRouterSessionFactory:
+class WampRouterFactory:
 
    def __init__(self):
       self._broker = Broker()
