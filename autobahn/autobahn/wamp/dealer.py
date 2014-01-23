@@ -178,7 +178,7 @@ class Dealer:
 
 
    def onRegister(self, session, register):
-      print "Dealer.onRegister", session , register
+      #print "Dealer.onRegister", session , register
       assert(isinstance(register, message.Register))
 
       if not register.procedure in self._procs_to_regs:
@@ -193,7 +193,7 @@ class Dealer:
 
 
    def onUnregister(self, session, unregister):
-      print "Dealer.onUnregister", session , unregister
+      #print "Dealer.onUnregister", session , unregister
       assert(isinstance(unregister, message.Unregister))
 
       if unregister.registration in self._regs_to_procs:
@@ -207,7 +207,7 @@ class Dealer:
 
 
    def onCall(self, session, call):
-      print "Dealer.onCall", session , call
+      #print "Dealer.onCall", session , call
       assert(isinstance(call, message.Call))
 
       if call.procedure in self._procs_to_regs:
@@ -222,12 +222,12 @@ class Dealer:
 
 
    def onCancel(self, session, cancel):
-      print "Dealer.onCancel", session , cancel
+      #print "Dealer.onCancel", session , cancel
       raise Exception("not implemented")
 
 
    def onYield(self, session, yield_):
-      print "Dealer.onYield", session , yield_
+      #print "Dealer.onYield", session , yield_
       assert(isinstance(yield_, message.Yield))
 
       if yield_.request in self._invocations:

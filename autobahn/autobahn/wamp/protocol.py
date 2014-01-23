@@ -207,8 +207,6 @@ class WampAppSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
-      print "WampAppSession.onMessage", msg
-
       if self._peer_session_id is None:
 
          ## the first message MUST be HELLO
@@ -456,7 +454,7 @@ class WampAppSession(WampBaseSession):
 
          ## fire callback and close the transport
          try:
-            self.onSessionClose()
+            self.onSessionClose(None, None)
          except Exception as e:
             print e
 
@@ -622,6 +620,16 @@ class WampAppSession(WampBaseSession):
       return d
 
 
+
+class WampAppFactory:
+
+   def __call__(self):
+      session = self.session()
+      session.factory = self
+      return session
+
+
+
 class WampRouterSession(WampAppSession):
 
    def onSessionOpen(self, info):
@@ -655,7 +663,6 @@ class WampRouterAppSession:
       self._session.onSessionOpen(SessionInfo(self._session._my_session_id, self._session._peer_session_id))
 
    def send(self, msg):
-      print "WampRouterAppSession.send", msg
       ## app-to-broker
       ##
       if isinstance(msg, message.Publish):
@@ -688,7 +695,6 @@ class WampRouterAppSession:
            isinstance(msg, message.Registered) or \
            isinstance(msg, message.Unregistered):
          try:
-            print "01"*10
             self._session.onMessage(msg)
          except Exception as e:
             print "X"*10, e

@@ -16,108 +16,69 @@
 ##
 ###############################################################################
 
-from __future__ import absolute_import
-
-
-from autobahn.wamp.protocol import WampAppSession
-
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred, inlineCallbacks
-
-
-
-class MyAppSession(WampAppSession):
-
-   @inlineCallbacks
-   def onSessionOpen(self, info):
-      print "MyAppSession.onSessionOpen", info.me, info.peer
-
-      def add2(a, b):
-         return a + b
-
-      #self.register(add2, 'com.myapp.add2')
-
-      def onevent(*args, **kwargs):
-         print "EVENT", args, kwargs
-
-      self.subscribe(onevent, 'com.myapp.topic1')
-
-      def pub():
-         self.publish('com.myapp.topic1', "Hello from")
-#         self.publish('com.myapp.topic1', "Hello from {}".format(self.factory._name))
-         reactor.callLater(1, pub)
-
-      #pub()
-
-      def writeln(*args, **kwargs):
-         print "#"*10, args, kwargs
-
-      #d = self.call('com.myapp.add2', 2, 3)
-      #d.addBoth(writeln)
-
-      res = yield self.call('com.myapp.add2', 2, 3)
-      print("RESULT: {}".format(res))
-
-      #def close():
-      #   self.closeSession('com.myapp.shutdown_in_progress', 'We are doing maintenance')
-
-      #reactor.callLater(2, close)
-
-   def onSessionClose(self, reason, message):
-      print "MyAppSession.onSessionOpen", reason, message
-
-
-class MyAppSessionFactory:
-
-   def __init__(self, name = "unknown"):
-      self._name = name
-
-   def __call__(self):
-      session = MyAppSession()
-      session.factory = self
-      return session
-
-
-def makeSession():
-   return MyAppSession()
-
-
-def makeFactory(klass):
-   def create():
-      return klass()
-   return create
-
-
-class WampAppFactory:
-
-   def __call__(self):
-      session = self.session()
-      session.factory = self
-      return session
-
 
 if __name__ == '__main__':
 
-   import sys
+   import sys, argparse
 
    from twisted.python import log
-   from twisted.internet import reactor
+   from twisted.internet.endpoints import clientFromString
 
-   from autobahn.twisted.websocket import WampWebSocketClientFactory
 
+   ## parse command line arguments
+   ##
+   parser = argparse.ArgumentParser()
+
+   parser.add_argument("-d", "--debug", action = "store_true",
+                       help = "Enable debug output.")
+
+   parser.add_argument("-b", "--backend", action = "store_true",
+                       help = "Start client providing application backend.")
+
+   parser.add_argument("--websocket", default = "tcp:localhost:9000",
+                       help = 'WebSocket client Twisted endpoint descriptor, e.g. "tcp:localhost:9000" or "unix:/tmp/mywebsocket".')
+
+   parser.add_argument("--wsurl", default = "ws://localhost:9000",
+                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
+
+   args = parser.parse_args()
+
+
+   ## start Twisted logging to stdout
+   ##
    log.startLogging(sys.stdout)
 
-   name = "unknown"
-   if len(sys.argv) > 1:
-      name = sys.argv[1]
 
+   ## we use an Autobahn utility to import the "best" available Twisted reactor
+   ##
+   from autobahn.twisted.choosereactor import install_reactor
+   reactor = install_reactor()
+   print("Running on reactor {}".format(reactor))
+
+
+   from autobahn.wamp.protocol import WampAppFactory
    sessionFactory = WampAppFactory()
-   sessionFactory.session = MyAppSession
-#   sessionFactory = makeFactory(MyAppSession)
-#   sessionFactory = MyAppSessionFactory(name)
 
-   transportFactory = WampWebSocketClientFactory(sessionFactory, "ws://localhost:9000", debug = False)
+   if args.backend:
+      from app import MyAppBackendSession
+      sessionFactory.session = MyAppBackendSession
+   else:
+      from app import MyAppFrontendSession
+      sessionFactory.session = MyAppFrontendSession
+
+   ## run WAMP over WebSocket
+   ##
+   from autobahn.twisted.websocket import WampWebSocketClientFactory
+   transportFactory = WampWebSocketClientFactory(sessionFactory, args.wsurl, debug = args.debug)
    transportFactory.setProtocolOptions(failByDrop = False)
 
-   reactor.connectTCP("127.0.0.1", 9000, transportFactory)
+
+   ## start a WebSocket client
+   ##
+   wsclient = clientFromString(reactor, args.websocket)
+   wsclient.connect(transportFactory)
+
+
+   ## now enter the Twisted reactor loop
+   ##
    reactor.run()
