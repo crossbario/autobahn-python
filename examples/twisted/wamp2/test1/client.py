@@ -38,7 +38,8 @@ class MyAppSession(WampAppSession):
       self.subscribe(onevent, 'com.myapp.topic1')
 
       def pub():
-         self.publish('com.myapp.topic1', "Hello from {}".format(self.factory._name))
+         self.publish('com.myapp.topic1', "Hello from")
+#         self.publish('com.myapp.topic1', "Hello from {}".format(self.factory._name))
          reactor.callLater(1, pub)
 
       pub()
@@ -67,6 +68,19 @@ def makeSession():
    return MyAppSession()
 
 
+def makeFactory(klass):
+   def create():
+      return klass()
+   return create
+
+
+class WampAppFactory:
+
+   def __call__(self):
+      session = self.session()
+      session.factory = self
+      return session
+
 
 if __name__ == '__main__':
 
@@ -83,7 +97,10 @@ if __name__ == '__main__':
    if len(sys.argv) > 1:
       name = sys.argv[1]
 
-   sessionFactory = MyAppSessionFactory(name)
+   sessionFactory = WampAppFactory()
+   sessionFactory.session = MyAppSession
+#   sessionFactory = makeFactory(MyAppSession)
+#   sessionFactory = MyAppSessionFactory(name)
 
    transportFactory = WampWebSocketClientFactory(sessionFactory, "ws://localhost:9000", debug = False)
    transportFactory.setProtocolOptions(failByDrop = False)
