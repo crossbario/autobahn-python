@@ -207,15 +207,15 @@ class IWampBroker(Interface):
 
 
 
-class ISession(Interface):
+class IAppSession(Interface):
    """
    Base interface for WAMP sessions.
    """
 
-   def onSessionOpen(info):
+   def onSessionOpen(details):
       """
-      :param info: Session information.
-      :type info: Instance of :class:`autobahn.wamp.types.SessionInfo`.
+      :param details: Session information.
+      :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
       """
 
 
@@ -242,7 +242,7 @@ class ISession(Interface):
 
 
 
-class ICaller(ISession):
+class ICaller(IAppSession):
    """
    Interface for WAMP peers implementing role "Caller".
    """
@@ -273,7 +273,7 @@ class ICaller(ISession):
 
 
 
-class ICallee(ISession):
+class ICallee(IAppSession):
    """
    Interface for WAMP peers implementing role "Callee".
    """
@@ -328,7 +328,7 @@ class ICallee(ISession):
 
 
 
-class IPublisher(ISession):
+class IPublisher(IAppSession):
    """
    Interface for WAMP peers implementing role "Publisher".
    """
@@ -357,7 +357,7 @@ class IPublisher(ISession):
 
 
 
-class ISubscriber(ISession):
+class ISubscriber(IAppSession):
    """
    Interface for WAMP peers implementing role "Subscriber".
    """

@@ -20,29 +20,28 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
-from twisted.internet.defer import Deferred, \
-                                   maybeDeferred
+from twisted.internet.defer import Deferred
 
-from autobahn.wamp.interfaces import ISession, \
+from autobahn.wamp.interfaces import IAppSession, \
                                      IPublisher, \
                                      ISubscriber, \
                                      ICaller, \
                                      ICallee, \
-                                     IMessageTransportHandler, \
-                                     IMessageTransport
+                                     IMessageTransportHandler
 
-from autobahn import wamp
-from autobahn.wamp.exception import ProtocolError
-from autobahn.wamp import message
 from autobahn import util
-from autobahn.wamp import serializer
-from autobahn.wamp import exception
+from autobahn import wamp
+from autobahn.wamp import message
 from autobahn.wamp import types
-from autobahn.wamp import options
 from autobahn.wamp import role
+from autobahn.wamp import exception
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.types import SessionDetails
+from autobahn.wamp.broker import Broker
+from autobahn.wamp.dealer import Dealer
 
 
-@implementer(ISession)
+@implementer(IAppSession)
 class WampBaseSession:
 
    def __init__(self):
@@ -52,7 +51,7 @@ class WampBaseSession:
 
    def define(self, exception, error = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      Implements :func:`autobahn.wamp.interfaces.IAppSession.define`
       """
       if error is None:
          assert(hasattr(exception, '_wampuris'))
@@ -142,9 +141,6 @@ class WampBaseSession:
       return exc
 
 
-from autobahn.wamp.types import SessionInfo
-
-
 @implementer(IPublisher)
 @implementer(ISubscriber)
 @implementer(ICaller)
@@ -219,7 +215,7 @@ class WampAppSession(WampBaseSession):
             if self._dealer:
                self._dealer.addSession(self)
 
-            self.onSessionOpen(SessionInfo(self._my_session_id, self._peer_session_id))
+            self.onSessionOpen(SessionDetails(self._my_session_id, self._peer_session_id))
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
@@ -470,7 +466,7 @@ class WampAppSession(WampBaseSession):
 
    def closeSession(self, reason = None, message = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
+      Implements :func:`autobahn.wamp.interfaces.IAppSession.closeSession`
       """
       if not self._goodbye_sent:
          msg = wamp.message.Goodbye(reason = reason, message = message)
@@ -561,7 +557,11 @@ class WampAppSession(WampBaseSession):
 
       request = util.id()
 
-      d = Deferred()
+      def canceller(_d):
+         msg = message.Cancel(request)
+         self._transport.send(msg)
+
+      d = Deferred(canceller)
       self._call_reqs[request] = d
 
       if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Call):
@@ -630,24 +630,6 @@ class WampAppFactory:
 
 
 
-class WampRouterSession(WampAppSession):
-
-   def onSessionOpen(self, info):
-      print "WampRouterSession.onSessionOpen", info.me, info.peer
-
-   def onSessionClose(self, reason, message):
-      print "WampRouterSession.onSessionOpen", reason, message
-
-
-from autobahn import util
-from autobahn.wamp import message
-from autobahn.wamp.types import SessionInfo
-
-from autobahn.wamp.broker import Broker
-from autobahn.wamp.dealer import Dealer
-
-
-
 class WampRouterAppSession:
 
    def __init__(self, session, broker, dealer):
@@ -660,7 +642,7 @@ class WampRouterAppSession:
       self._session._peer_session_id = util.id()
       self._broker.addSession(self._session)
       self._dealer.addSession(self._session)
-      self._session.onSessionOpen(SessionInfo(self._session._my_session_id, self._session._peer_session_id))
+      self._session.onSessionOpen(SessionDetails(self._session._my_session_id, self._session._peer_session_id))
 
    def send(self, msg):
       ## app-to-broker
@@ -698,6 +680,16 @@ class WampRouterAppSession:
             self._session.onMessage(msg)
          except Exception as e:
             print "X"*10, e
+
+
+
+class WampRouterSession(WampAppSession):
+
+   def onSessionOpen(self, info):
+      print "WampRouterSession.onSessionOpen", info.me, info.peer
+
+   def onSessionClose(self, reason, message):
+      print "WampRouterSession.onSessionOpen", reason, message
 
 
 

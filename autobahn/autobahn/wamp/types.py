@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 
-class SessionInfo:
+class SessionDetails:
 
    def __init__(self, me, peer):
       self.me = me
