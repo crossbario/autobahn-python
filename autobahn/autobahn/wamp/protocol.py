@@ -20,7 +20,7 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, maybeDeferred
 
 from autobahn.wamp.interfaces import IAppSession, \
                                      IPublisher, \
@@ -63,7 +63,7 @@ class WampBaseSession:
          self._uri_to_ecls[error] = exception
 
 
-   def _message_from_exception(self, request, exc):
+   def _message_from_exception(self, request_type, request, exc):
       """
       Create a WAMP error message from an exception.
 
@@ -73,7 +73,7 @@ class WampBaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-         msg = message.Error(request, exc.args[0], args = exc.args[1:], kwargs = exc.kwargs)
+         msg = message.Error(request_type, request, exc.args[0], args = exc.args[1:], kwargs = exc.kwargs)
       else:
          if self._ecls_to_uri_pat.has_key(exc.__class__):
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
@@ -82,11 +82,11 @@ class WampBaseSession:
 
          if hasattr(exc, 'args'):
             if hasattr(exc, 'kwargs'):
-               msg = message.Error(request, error, args = exc.args, kwargs = exc.kwargs)
+               msg = message.Error(request_type, request, error, args = exc.args, kwargs = exc.kwargs)
             else:
-               msg = message.Error(request, error, args = exc.args)
+               msg = message.Error(request_type, request, error, args = exc.args)
          else:
-            msg = message.Error(request, error)
+            msg = message.Error(request_type, request, error)
 
       return msg
 
@@ -172,6 +172,9 @@ class WampAppSession(WampBaseSession):
       ## registrations in place
       self._registrations = {}
 
+      ## incoming invocations
+      self._invocations = {}
+
 
    def onOpen(self, transport):
       """
@@ -203,6 +206,8 @@ class WampAppSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
+      print "***"*10, msg
+
       if self._peer_session_id is None:
 
          ## the first message MUST be HELLO
@@ -369,30 +374,55 @@ class WampAppSession(WampBaseSession):
 
          elif isinstance(msg, message.Invocation):
 
-            if msg.registration in self._registrations:
-               endpoint = self._registrations[msg.registration]
-               try:
+            if msg.request in self._invocations:
+
+               raise ProtocolError("INVOCATION received for request ID {} already invoked".format(msg.request))
+
+            else:
+
+               if msg.registration not in self._registrations:
+
+                  raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
+
+               else:
+                  endpoint = self._registrations[msg.registration]
+
                   if msg.kwargs:
                      if msg.args:
-                        res = endpoint(*msg.args, **msg.kwargs)
+                        d = maybeDeferred(endpoint, *msg.args, **msg.kwargs)
                      else:
-                        res = endpoint(**msg.kwargs)
+                        d = maybeDeferred(endpoint, **msg.kwargs)
                   else:
                      if msg.args:
-                        res = endpoint(*msg.args)
+                        d = maybeDeferred(endpoint, *msg.args)
                      else:
-                        res = endpoint()
-                  reply = message.Yield(msg.request, args = [res])
-               except Exception as e:
-                  reply = self._message_from_exception(msg.request, e)
-               finally:
-                  self._transport.send(reply)
-            else:
-               raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
+                        d = maybeDeferred(endpoint)
+
+                  def success(res):
+                     del self._invocations[msg.request]
+
+                     if isinstance(res, types.CallResult):
+                        reply = message.Yield(msg.request, args = res.results, kwargs = res.kwresults)
+                     else:
+                        reply = message.Yield(msg.request, args = [res])
+                     self._transport.send(reply)
+
+                  def error(err):
+                     del self._invocations[msg.request]
+
+                     reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, err.value)
+                     self._transport.send(reply)
+
+                  d.addCallbacks(success, error)
+
+                  self._invocations[msg.request] = d
 
          elif isinstance(msg, message.Interrupt):
 
-            pass ## FIXME
+            if msg.request not in self._invocations:
+               raise ProtocolError("INTERRUPT received for non-pending invocation {}".format(msg.request))
+            else:
+               self._invocations[msg.request].cancel()
 
          elif isinstance(msg, message.Registered):
 
@@ -415,21 +445,35 @@ class WampAppSession(WampBaseSession):
 
          elif isinstance(msg, message.Error):
 
-            d = None
+            if msg.request_type == message.Invocation.MESSAGE_TYPE:
 
-            if msg.request in self._publish_reqs:
-               d = self._publish_reqs.pop(msg.request)
+               if self._dealer:
+                  self._dealer.onInvocationError(self, msg)
+               else:
+                  raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
-            elif msg.request in self._subscribe_reqs:
-               d, _ = self._subscribe_reqs.pop(msg.request)
-
-            elif msg.request in self._unsubscribe_reqs:
-               d = self._unsubscribe_reqs.pop(msg.request)
-
-            if d:
-               d.errback(self._exception_from_message(msg))
             else:
-               raise ProtocolError("ERROR received for non-pending request ID {}".format(msg.request))
+
+               d = None
+
+               ## ERROR reply to PUBLISH
+               ##
+               if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
+                  d = self._publish_reqs.pop(msg.request)
+
+               elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
+                  d, _ = self._subscribe_reqs.pop(msg.request)
+
+               elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
+                  d = self._unsubscribe_reqs.pop(msg.request)
+
+               elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
+                  d = self._call_reqs.pop(msg.request)
+
+               if d:
+                  d.errback(self._exception_from_message(msg))
+               else:
+                  raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
 
          elif isinstance(msg, message.Heartbeat):
 
@@ -564,7 +608,7 @@ class WampAppSession(WampBaseSession):
       d = Deferred(canceller)
       self._call_reqs[request] = d
 
-      if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Call):
+      if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
          opts = kwargs.pop('options')
          msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.__dict__)
       else:
@@ -666,6 +710,8 @@ class WampRouterAppSession:
          self._dealer.onCancel(self._session, msg)
       elif isinstance(msg, message.Yield):
          self._dealer.onYield(self._session, msg)
+      elif isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE:
+         self._dealer.onInvocationError(self._session, msg)
 
       ## broker/dealer-to-app
       ##
@@ -680,6 +726,9 @@ class WampRouterAppSession:
             self._session.onMessage(msg)
          except Exception as e:
             print "X"*10, e
+
+      else:
+         raise Exception("WampRouterAppSession.send: unhandled message {}".format(msg))
 
 
 

@@ -18,20 +18,10 @@
 
 from __future__ import absolute_import
 
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred, \
-                                   inlineCallbacks, \
-                                   returnValue
+from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.protocol import WampAppSession
-from autobahn.wamp.types import CallOptions, CallResult
-
-
-
-def sleep(delay):
-   d = Deferred()
-   reactor.callLater(delay, d.callback, None)
-   return d
+from autobahn.wamp.types import CallOptions
 
 
 class MyAppBackendSession(WampAppSession):
@@ -41,23 +31,10 @@ class MyAppBackendSession(WampAppSession):
 
    def onSessionOpen(self, info):
 
-      @inlineCallbacks
       def add2(a, b):
-         if a > 5:
-            raise Exception("number too large")
-         else:
-            yield sleep(1)
-            #returnValue(a + b)
-            returnValue(CallResult(a, b, result = a + b))
-
-      def add2a(a, b):
          return a + b
 
       self.register(add2, 'com.myapp.add2')
-
-
-   def onSessionClose(self, reason, message):      
-      reactor.stop()
 
 
 
@@ -69,16 +46,12 @@ class MyAppFrontendSession(WampAppSession):
    @inlineCallbacks
    def onSessionOpen(self, info):
 
-      try:
-         res = yield self.call('com.myapp.add2', 15, 3)
-         #res = yield self.call('com.myapp.add2', 2, 3, options = CallOptions(timeout = 5000))
-      except Exception as e:
-         print("Error: {}".format(e))
-      else:
-         print("Result: {}".format(res))
+      res = yield self.call('com.myapp.add2', 2, 3, options = CallOptions(timeout = 5000))
+      print("Result: {}".format(res))
 
       self.closeSession()
 
 
-   def onSessionClose(self, reason, message):      
+   def onSessionClose(self, reason, message):
+      from twisted.internet import reactor
       reactor.stop()

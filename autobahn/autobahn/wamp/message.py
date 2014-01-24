@@ -129,7 +129,7 @@ class Error(Message):
    """
 
 
-   def __init__(self, request, error, args = None, kwargs = None):
+   def __init__(self, request_type, request, error, args = None, kwargs = None):
       """
       Message constructor.
 
@@ -144,8 +144,8 @@ class Error(Message):
                      Must be serializable using any serializers in use.
       :type kwargs: dict
       """
-      assert(not (kwargs and not args))
       Message.__init__(self)
+      self.request_type = request_type
       self.request = request
       self.error = error
       self.args = args
@@ -165,26 +165,39 @@ class Error(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Klass.MESSAGE_TYPE)
 
-      if len(wmsg) not in (4, 5, 6):
+      if len(wmsg) not in (5, 6, 7):
          raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in ERROR")
-      details = check_or_raise_extra(wmsg[2], "'details' in ERROR")
-      error = check_or_raise_uri(wmsg[3], "'error' in ERROR")
+      request_type = wmsg[1]
+      if type(request_type) != int:
+         raise ProtocolError("invalid type {} for 'request_type' in ERROR".format(request_type))
+
+      if request_type not in [Subscribe.MESSAGE_TYPE,
+                              Unsubscribe.MESSAGE_TYPE,
+                              Publish.MESSAGE_TYPE,
+                              Register.MESSAGE_TYPE,
+                              Unregister.MESSAGE_TYPE,
+                              Call.MESSAGE_TYPE,
+                              Invocation.MESSAGE_TYPE]:
+         raise ProtocolError("invalid value {} for 'request_type' in ERROR".format(request_type))
+
+      request = check_or_raise_id(wmsg[2], "'request' in ERROR")
+      details = check_or_raise_extra(wmsg[3], "'details' in ERROR")
+      error = check_or_raise_uri(wmsg[4], "'error' in ERROR")
 
       args = None
-      if len(wmsg) > 4:
-         args = wmsg[4]
+      if len(wmsg) > 5:
+         args = wmsg[5]
          if type(args) != list:
             raise ProtocolError("invalid type {} for 'args' in ERROR".format(type(args)))
 
       kwargs = None
-      if len(wmsg) > 5:
-         kwargs = wmsg[5]
+      if len(wmsg) > 6:
+         kwargs = wmsg[6]
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in ERROR".format(type(kwargs)))
 
-      obj = Klass(request, error, args = args, kwargs = kwargs)
+      obj = Klass(request_type, request, error, args = args, kwargs = kwargs)
 
       return obj
 
@@ -196,18 +209,18 @@ class Error(Message):
       details = {}
 
       if self.kwargs:
-         return [self.MESSAGE_TYPE, self.request, details, self.error, self.args, self.kwargs]
+         return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args, self.kwargs]
       elif self.args:
-         return [self.MESSAGE_TYPE, self.request, details, self.error, self.args]
+         return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args]
       else:
-         return [self.MESSAGE_TYPE, self.request, details, self.error]
+         return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error]
 
 
    def __str__(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP Error Message (request = {}, error = {}, args = {}, kwargs = {})".format(self.request, self.error, self.args, self.kwargs)
+      return "WAMP Error Message (request_type = {}, request = {}, error = {}, args = {}, kwargs = {})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
 
 
 
@@ -1373,7 +1386,6 @@ class Result(Message):
       :progress: If `True`, this result is a progressive call result, and subsequent
                  results (or a final error) will follow.
       """
-      assert(not (kwargs and not args))
       Message.__init__(self)
       self.request = request
       self.args = args

@@ -76,11 +76,11 @@ class CallOptions:
       assert(discloseMe is None or type(discloseMe) == bool)
       assert(runOn is None or (type(runOn) == str and runOn in ["all", "any", "partition"]))
 
-      self.onProgress = onProgress
+      #self.onProgress = onProgress
       self.timeout = timeout
-      self.discloseMe = discloseMe
-      self.runOn = runOn
-      self.runMode = runMode
+      #self.discloseMe = discloseMe
+      #self.runOn = runOn
+      #self.runMode = runMode
 
 
 
@@ -101,6 +101,9 @@ class CallResult:
       """
       self.results = results
       self.kwresults = kwresults
+
+   def __str__(self):
+      return "CallResult(results = {}, kwresults = {})".format(self.results, self.kwresults)
 
 
 

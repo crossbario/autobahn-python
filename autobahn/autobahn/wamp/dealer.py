@@ -162,6 +162,8 @@ class DealerOld:
 
 from autobahn import util
 from autobahn.wamp import message
+from autobahn.wamp.exception import ProtocolError
+
 
 
 class Dealer:
@@ -207,18 +209,21 @@ class Dealer:
 
 
    def onCall(self, session, call):
-      #print "Dealer.onCall", session , call
+      print "Dealer.onCall", session , call
       assert(isinstance(call, message.Call))
 
-      if call.procedure in self._procs_to_regs:
-         registration_id, endpoint_session = self._procs_to_regs[call.procedure]
-         request_id = util.id()
-         invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs)
-         self._invocations[request_id] = (call.request, session)
-         endpoint_session._transport.send(invocation)
-      else:
-         reply = message.Error(call.request, 'wamp.error.no_such_procedure')
-         session._transport.send(reply)
+      try:
+         if call.procedure in self._procs_to_regs:
+            registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+            request_id = util.id()
+            invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs)
+            self._invocations[request_id] = (call.request, session)
+            endpoint_session._transport.send(invocation)
+         else:
+            reply = message.Error(call.request, 'wamp.error.no_such_procedure')
+            session._transport.send(reply)
+      except Exception as e:
+         print e
 
 
    def onCancel(self, session, cancel):
@@ -227,10 +232,26 @@ class Dealer:
 
 
    def onYield(self, session, yield_):
-      #print "Dealer.onYield", session , yield_
+      print "Dealer.onYield", session , yield_
       assert(isinstance(yield_, message.Yield))
 
       if yield_.request in self._invocations:
          call_request_id, call_session = self._invocations[yield_.request]
-         result_msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs)
-         call_session._transport.send(result_msg)
+         msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs)
+         call_session._transport.send(msg)
+         del self._invocations[yield_.request]
+      else:
+         raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {}".format(yield_.request))
+
+
+   def onInvocationError(self, session, error):
+      print "Dealer.onInvocationError", session , error
+      assert(isinstance(error, message.Error) and error.request_type == message.Invocation.MESSAGE_TYPE)
+
+      if error.request in self._invocations:
+         call_request_id, call_session = self._invocations[error.request]
+         msg = message.Error(message.Call.MESSAGE_TYPE, call_request_id, error.error, args = error.args, kwargs = error.kwargs)
+         call_session._transport.send(msg)
+         del self._invocations[error.request]
+      else:
+         raise ProtocolError("Dealer.onInvocationError(): ERROR received for non-pending request_type {} and request ID {}".format(error.request_type, error.request))
