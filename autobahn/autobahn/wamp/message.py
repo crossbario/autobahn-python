@@ -1570,7 +1570,7 @@ class Invocation(Message):
          if type(detail_receive_progress) != bool:
             raise ProtocolError("invalid type {} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
 
-         timeout = detail_receive_progress
+         receive_progress = detail_receive_progress
 
       obj = Klass(request, registration, args = args, kwargs = kwargs, timeout = timeout, receive_progress = receive_progress)
 

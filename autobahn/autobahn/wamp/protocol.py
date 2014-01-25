@@ -355,9 +355,33 @@ class WampAppSession(WampBaseSession):
             if msg.request in self._call_reqs:
 
                if msg.progress:
-                  pass
+
+                  ## progressive result
+                  ##
+                  _, opts = self._call_reqs[msg.request]
+                  if opts.onProgress:
+                     try:
+                        if msg.kwargs:
+                           if msg.args:
+                              opts.onProgress(*msg.args, **msg.kwargs)
+                           else:
+                              opts.onProgress(**msg.kwargs)
+                        else:
+                           if msg.args:
+                              opts.onProgress(*msg.args)
+                           else:
+                              opts.onProgress()
+                     except Exception as e:
+                        ## silently drop exceptions raised in progressive results handlers
+                        print e
+                  else:
+                     ## silently ignore progressive results
+                     pass
                else:
-                  d = self._call_reqs.pop(msg.request)
+
+                  ## final result
+                  ##
+                  d, opts = self._call_reqs.pop(msg.request)
                   if msg.kwargs:
                      if msg.args:
                         res = types.CallResult(*msg.args, **msg.kwargs)
@@ -489,7 +513,7 @@ class WampAppSession(WampBaseSession):
                   d = self._unsubscribe_reqs.pop(msg.request)
 
                elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
-                  d = self._call_reqs.pop(msg.request)
+                  d, _ = self._call_reqs.pop(msg.request)
 
                if d:
                   d.errback(self._exception_from_message(msg))
@@ -622,18 +646,19 @@ class WampAppSession(WampBaseSession):
 
       request = util.id()
 
-      def canceller(_d):
-         msg = message.Cancel(request)
-         self._transport.send(msg)
-
-      d = Deferred(canceller)
-      self._call_reqs[request] = d
-
       if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
          opts = kwargs.pop('options')
          msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.options)
       else:
+         opts = None
          msg = message.Call(request, procedure, args = args, kwargs = kwargs)
+
+      def canceller(_d):
+         cancel_msg = message.Cancel(request)
+         self._transport.send(cancel_msg)
+
+      d = Deferred(canceller)
+      self._call_reqs[request] = d, opts
 
       self._transport.send(msg)
       return d

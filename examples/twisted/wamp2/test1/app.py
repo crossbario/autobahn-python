@@ -51,7 +51,8 @@ class MyAppBackendSession(WampAppSession):
                for i in range(3):
                   details.progress(i)
                   yield sleep(1)
-            yield sleep(1)
+            else:
+               yield sleep(1)
             #returnValue(a + b)
             returnValue(CallResult(a, b, result = a + b))
 
@@ -74,8 +75,8 @@ class MyAppFrontendSession(WampAppSession):
    @inlineCallbacks
    def onSessionOpen(self, info):
 
-      def onprogress(*args, **kwargs):
-         print "onprogress", args, kwargs
+      def onprogress(i):
+         print "onprogress", i
 
       try:
          #res = yield self.call('com.myapp.add2', 15, 3)
