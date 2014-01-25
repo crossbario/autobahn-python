@@ -17,47 +17,48 @@
 ###############################################################################
 
 from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.util import sleep
 from autobahn.wamp.protocol import WampAppSession
-from autobahn.wamp.types import CallOptions, RegisterOptions
+from autobahn.wamp.types import CallResult
 
 
 
-class ProgressiveBackend(WampAppSession):
+class ComplexBackend(WampAppSession):
    """
-   Application component that produces progressive results.
+   Application component that provides procedures which
+   return complex results.
    """
 
    def onSessionOpen(self, details):
 
-      @inlineCallbacks
-      def longop(n, details = None):
-         if details.progress:
-            for i in range(n):
-               details.progress(i)
-               yield sleep(1)
-         returnValue(n)
+      def add_complex(a, ai, b, bi):
+         return CallResult(c = a + b, ci = ai + bi)
 
-      self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg = 'details'))
+      self.register(add_complex, 'com.myapp.add_complex')
+
+      def split_name(fullname):
+         forename, surname = fullname.split()
+         return CallResult(forename, surname)
+
+      self.register(split_name, 'com.myapp.split_name')
 
 
 
-class ProgressiveFrontend(WampAppSession):
+class ComplexFrontend(WampAppSession):
    """
-   Application component that consumes progressive results.
+   Application component that calls procedures which
+   produce complex results and showing how to access those.
    """
 
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onSessionOpen(self, info):
 
-      def on_progress(i):
-         print("Progress: {}".format(i))
+      res = yield self.call('com.myapp.add_complex', 2, 3, 4, 5)
+      print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
 
-      res = yield self.call('com.myapp.longop', 3, options = CallOptions(onProgress = on_progress))
-
-      print("Final: {}".format(res))
+      res = yield self.call('com.myapp.split_name', 'Homer Simpson')
+      print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
       self.closeSession()
 

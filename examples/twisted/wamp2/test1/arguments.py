@@ -16,8 +16,6 @@
 ##
 ###############################################################################
 
-import datetime
-
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
@@ -27,7 +25,8 @@ from autobahn.wamp.protocol import WampAppSession
 
 class ArgumentsBackend(WampAppSession):
    """
-   A simple time service application component.
+   An application component providing procedures with
+   different kinds of arguments.
    """
 
    def onSessionOpen(self, details):
@@ -57,7 +56,7 @@ class ArgumentsBackend(WampAppSession):
 
 class ArgumentsFrontend(WampAppSession):
    """
-   An application component using the time service.
+   An application component calling the different backend procedures.
    """
 
    @inlineCallbacks

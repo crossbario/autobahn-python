@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+##  Copyright (C) 2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,29 +16,33 @@
 ##
 ###############################################################################
 
-from __future__ import absolute_import
+import math
 
+from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.protocol import WampAppSession
-from autobahn.wamp.types import CallOptions
 
 
-class MyAppBackendSession(WampAppSession):
+
+class ErrorsTestBackend(WampAppSession):
    """
    Example WAMP application backend.
    """
 
-   def onSessionOpen(self, info):
+   def onSessionOpen(self, details):
 
-      def add2(a, b):
-         return a + b
+      def sqrt(x):
+         if x < 0:
+            raise Exception("cannot take sqrt of negative number")
+         else:
+            return math.sqrt(x)
 
-      self.register(add2, 'com.myapp.add2')
+      self.register(sqrt, 'com.myapp.sqrt')
 
 
 
-class MyAppFrontendSession(WampAppSession):
+class ErrorsTestFrontend(WampAppSession):
    """
    Example WAMP application frontend.
    """
@@ -46,12 +50,16 @@ class MyAppFrontendSession(WampAppSession):
    @inlineCallbacks
    def onSessionOpen(self, info):
 
-      res = yield self.call('com.myapp.add2', 2, 3, options = CallOptions(timeout = 5000))
-      print("Result: {}".format(res))
+      for x in [2, 0, -2]:
+         try:
+            res = yield self.call('com.myapp.sqrt', x)
+         except Exception as e:
+            print("Error: {}".format(e))
+         else:
+            print("Result: {}".format(res))
 
       self.closeSession()
 
 
-   def onSessionClose(self, reason, message):
-      from twisted.internet import reactor
+   def onSessionClose(self, details):
       reactor.stop()
