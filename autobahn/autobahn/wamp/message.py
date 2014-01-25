@@ -1162,7 +1162,7 @@ class Call(Message):
    """
 
 
-   def __init__(self, request, procedure, args = None, kwargs = None, timeout = None):
+   def __init__(self, request, procedure, args = None, kwargs = None, timeout = None, receive_progress = None):
       """
       Message constructor.
 
@@ -1185,6 +1185,7 @@ class Call(Message):
       self.args = args
       self.kwargs = kwargs
       self.timeout = timeout
+      self.receive_progress = receive_progress
 
 
    @classmethod
@@ -1219,9 +1220,7 @@ class Call(Message):
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in CALL".format(type(kwargs)))
 
-
       timeout = None
-
       if options.has_key('timeout'):
 
          option_timeout = options['timeout']
@@ -1233,7 +1232,16 @@ class Call(Message):
 
          timeout = option_timeout
 
-      obj = Klass(request, procedure, args = args, kwargs = kwargs, timeout = timeout)
+      receive_progress = None
+      if options.has_key('receive_progress'):
+
+         option_receive_progress = options['receive_progress']
+         if type(option_receive_progress) != bool:
+            raise ProtocolError("invalid type {} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
+
+         receive_progress = option_receive_progress
+
+      obj = Klass(request, procedure, args = args, kwargs = kwargs, timeout = timeout, receive_progress = receive_progress)
 
       return obj
 
@@ -1247,6 +1255,9 @@ class Call(Message):
       if self.timeout is not None:
          options['timeout'] = self.timeout
 
+      if self.receive_progress is not None:
+         options['receive_progress'] = self.receive_progress
+
       if self.kwargs:
          return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
       elif self.args:
@@ -1259,7 +1270,7 @@ class Call(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout)
+      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress)
 
 
 
@@ -1481,7 +1492,7 @@ class Invocation(Message):
    """
 
 
-   def __init__(self, request, registration, args = None, kwargs = None, timeout = None):
+   def __init__(self, request, registration, args = None, kwargs = None, timeout = None, receive_progress = None):
       """
       Message constructor.
 
@@ -1505,6 +1516,7 @@ class Invocation(Message):
       self.args = args
       self.kwargs = kwargs
       self.timeout = timeout
+      self.receive_progress = receive_progress
 
 
    @classmethod
@@ -1539,9 +1551,7 @@ class Invocation(Message):
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in INVOCATION".format(type(kwargs)))
 
-
       timeout = None
-
       if details.has_key('timeout'):
 
          detail_timeout = details['timeout']
@@ -1553,7 +1563,16 @@ class Invocation(Message):
 
          timeout = detail_timeout
 
-      obj = Klass(request, registration, args = args, kwargs = kwargs, timeout = timeout)
+      receive_progress = None
+      if details.has_key('receive_progress'):
+
+         detail_receive_progress = details['receive_progress']
+         if type(detail_receive_progress) != bool:
+            raise ProtocolError("invalid type {} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
+
+         timeout = detail_receive_progress
+
+      obj = Klass(request, registration, args = args, kwargs = kwargs, timeout = timeout, receive_progress = receive_progress)
 
       return obj
 
@@ -1567,6 +1586,9 @@ class Invocation(Message):
       if self.timeout is not None:
          options['timeout'] = self.timeout
 
+      if self.receive_progress is not None:
+         options['receive_progress'] = self.receive_progress
+
       if self.kwargs:
          return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
       elif self.args:
@@ -1579,7 +1601,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout)
+      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress)
 
 
 

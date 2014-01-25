@@ -37,6 +37,16 @@ class Registration:
       self._isActive = True
 
 
+class RegisterOptions:
+   def __init__(self, details = None):
+      """
+      :param details: When invoking the endpoint, provide call details
+                      in this keyword argument to the callable.
+      """
+      assert(type(details) == str)
+      self.details = details
+      self.options = {}
+
 
 class CallOptions:
    """
@@ -76,12 +86,19 @@ class CallOptions:
       assert(discloseMe is None or type(discloseMe) == bool)
       assert(runOn is None or (type(runOn) == str and runOn in ["all", "any", "partition"]))
 
-      #self.onProgress = onProgress
-      self.timeout = timeout
+      self.onProgress = onProgress
+      #self.timeout = timeout
       #self.discloseMe = discloseMe
       #self.runOn = runOn
       #self.runMode = runMode
+      self.options = {'timeout': timeout}
+      if onProgress:
+         self.options['receive_progress'] = True
 
+
+class CallDetails:
+   def __init__(self, progress = None):
+      self.progress = progress
 
 
 class CallResult:

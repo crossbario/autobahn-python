@@ -353,22 +353,26 @@ class WampAppSession(WampBaseSession):
          elif isinstance(msg, message.Result):
 
             if msg.request in self._call_reqs:
-               d = self._call_reqs.pop(msg.request)
-               if msg.kwargs:
-                  if msg.args:
-                     res = types.CallResult(*msg.args, **msg.kwargs)
-                  else:
-                     res = types.CallResult(**msg.kwargs)
-                  d.callback(res)
+
+               if msg.progress:
+                  pass
                else:
-                  if msg.args:
-                     if len(msg.args) > 1:
-                        res = types.CallResult(*msg.args)
-                        d.callback(res)
+                  d = self._call_reqs.pop(msg.request)
+                  if msg.kwargs:
+                     if msg.args:
+                        res = types.CallResult(*msg.args, **msg.kwargs)
                      else:
-                        d.callback(msg.args[0])
+                        res = types.CallResult(**msg.kwargs)
+                     d.callback(res)
                   else:
-                     d.callback(None)
+                     if msg.args:
+                        if len(msg.args) > 1:
+                           res = types.CallResult(*msg.args)
+                           d.callback(res)
+                        else:
+                           d.callback(msg.args[0])
+                     else:
+                        d.callback(None)
             else:
                raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
 
@@ -387,16 +391,28 @@ class WampAppSession(WampBaseSession):
                else:
                   endpoint = self._registrations[msg.registration]
 
+                  if endpoint.details:
+                     if not msg.kwargs:
+                        msg.kwargs = {}
+                     if endpoint.details:
+                        if msg.receive_progress:
+                           def progress(*args, **kwargs):
+                              progress_msg = message.Yield(msg.request, args = args, kwargs = kwargs, progress = True)
+                              self._transport.send(progress_msg)
+                        else:
+                           progress = None
+                        msg.kwargs[endpoint.details] = types.CallDetails(progress)
+
                   if msg.kwargs:
                      if msg.args:
-                        d = maybeDeferred(endpoint, *msg.args, **msg.kwargs)
+                        d = maybeDeferred(endpoint.fn, *msg.args, **msg.kwargs)
                      else:
-                        d = maybeDeferred(endpoint, **msg.kwargs)
+                        d = maybeDeferred(endpoint.fn, **msg.kwargs)
                   else:
                      if msg.args:
-                        d = maybeDeferred(endpoint, *msg.args)
+                        d = maybeDeferred(endpoint.fn, *msg.args)
                      else:
-                        d = maybeDeferred(endpoint)
+                        d = maybeDeferred(endpoint.fn)
 
                   def success(res):
                      del self._invocations[msg.request]
@@ -413,22 +429,27 @@ class WampAppSession(WampBaseSession):
                      reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, err.value)
                      self._transport.send(reply)
 
-                  d.addCallbacks(success, error)
-
                   self._invocations[msg.request] = d
+
+                  d.addCallbacks(success, error)
 
          elif isinstance(msg, message.Interrupt):
 
             if msg.request not in self._invocations:
                raise ProtocolError("INTERRUPT received for non-pending invocation {}".format(msg.request))
             else:
-               self._invocations[msg.request].cancel()
+               try:
+                  self._invocations[msg.request].cancel()
+               except Exception as e:
+                  print "X"*100, e
+               finally:
+                  del self._invocations[msg.request]
 
          elif isinstance(msg, message.Registered):
 
             if msg.request in self._register_reqs:
-               d, endpoint = self._register_reqs.pop(msg.request)
-               self._registrations[msg.registration] = endpoint
+               d, fn, options = self._register_reqs.pop(msg.request)
+               self._registrations[msg.registration] = Endpoint(fn, options.details)
                d.callback(msg.registration)
             else:
                raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
@@ -610,7 +631,7 @@ class WampAppSession(WampBaseSession):
 
       if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
          opts = kwargs.pop('options')
-         msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.__dict__)
+         msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.options)
       else:
          msg = message.Call(request, procedure, args = args, kwargs = kwargs)
 
@@ -624,7 +645,7 @@ class WampAppSession(WampBaseSession):
       """
       assert(callable(endpoint))
       assert(type(procedure) in (str, unicode))
-      assert(options is None or isinstance(options, wamp.options.Register))
+      assert(options is None or isinstance(options, types.RegisterOptions))
 
       if not self._transport:
          raise exception.TransportLost()
@@ -632,10 +653,10 @@ class WampAppSession(WampBaseSession):
       request = util.id()
 
       d = Deferred()
-      self._register_reqs[request] = (d, endpoint)
+      self._register_reqs[request] = (d, endpoint, options)
 
       if options is not None:
-         msg = message.Register(request, procedure, **options.__dict__)
+         msg = message.Register(request, procedure, **options.options)
       else:
          msg = message.Register(request, procedure)
 
@@ -673,6 +694,28 @@ class WampAppFactory:
       return session
 
 
+import inspect
+
+def get_class_default_arg(fn, klass):
+   argspec = inspect.getargspec(fn)
+   print klass, fn, argspec
+   if argspec.defaults:
+      for i in range(len(argspec.defaults)):
+         print argspec.defaults[-i]
+         if argspec.defaults[-i] == klass:
+            return argspec.args[-i]
+   return None
+
+
+class Endpoint:
+
+   def __init__(self, fn, details):
+      self.fn = fn
+      self.details = details
+      #self.details_arg = get_class_default_arg(fn, types.CallDetails)
+
+
+
 
 class WampRouterAppSession:
 
@@ -689,6 +732,8 @@ class WampRouterAppSession:
       self._session.onSessionOpen(SessionDetails(self._session._my_session_id, self._session._peer_session_id))
 
    def send(self, msg):
+      print "WampRouterAppSession.send", msg
+
       ## app-to-broker
       ##
       if isinstance(msg, message.Publish):

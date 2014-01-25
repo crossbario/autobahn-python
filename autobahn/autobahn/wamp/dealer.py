@@ -180,18 +180,22 @@ class Dealer:
 
 
    def onRegister(self, session, register):
-      #print "Dealer.onRegister", session , register
+      print "Dealer.onRegister", session , register
       assert(isinstance(register, message.Register))
 
-      if not register.procedure in self._procs_to_regs:
-         registration_id = util.id()
-         self._procs_to_regs[register.procedure] = (registration_id, session)
-         self._regs_to_procs[registration_id] = register.procedure
-         reply = message.Registered(register.request, registration_id)
-      else:
-         reply = message.Error(call.request, 'wamp.error.procedure_already_exists')
+      try:
 
-      session._transport.send(reply)
+         if not register.procedure in self._procs_to_regs:
+            registration_id = util.id()
+            self._procs_to_regs[register.procedure] = (registration_id, session)
+            self._regs_to_procs[registration_id] = register.procedure
+            reply = message.Registered(register.request, registration_id)
+         else:
+            reply = message.Error(register.request, 'wamp.error.procedure_already_exists')
+
+         session._transport.send(reply)
+      except Exception as e:
+         print ":"*100, e
 
 
    def onUnregister(self, session, unregister):
@@ -216,7 +220,7 @@ class Dealer:
          if call.procedure in self._procs_to_regs:
             registration_id, endpoint_session = self._procs_to_regs[call.procedure]
             request_id = util.id()
-            invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs)
+            invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs, timeout = call.timeout, receive_progress = call.receive_progress)
             self._invocations[request_id] = (call.request, session)
             endpoint_session._transport.send(invocation)
          else:
@@ -237,9 +241,10 @@ class Dealer:
 
       if yield_.request in self._invocations:
          call_request_id, call_session = self._invocations[yield_.request]
-         msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs)
+         msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs, progress = yield_.progress)
          call_session._transport.send(msg)
-         del self._invocations[yield_.request]
+         if not yield_.progress:
+            del self._invocations[yield_.request]
       else:
          raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {}".format(yield_.request))
 

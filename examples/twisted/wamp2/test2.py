@@ -4,7 +4,17 @@
 
 import inspect
 
-def add2(a, b = 3, *args, **kwargs):
+class Foo(object):
+   pass
+
+#from twisted.internet.defer import inlineCallbacks
+
+#@asyncio.coroutine
+import asyncio
+
+#@inlineCallbacks
+@asyncio.coroutine
+def add2(a, b = 3, c = Foo, d = "klj", *args, **kwargs):
    """
    Adds 2 numbers.
 
@@ -16,6 +26,15 @@ def add2(a, b = 3, *args, **kwargs):
    """
    return a + b
 
+def get_class_default_arg(fn, klass):
+   argspec = inspect.getargspec(fn)
+   if argspec and argspec.defaults:
+      for i in range(len(argspec.defaults)):
+         if argspec.defaults[-i] == klass:
+            return argspec.args[-i]
+   return None
 
-print inspect.getargspec(add2)
-print inspect.cleandoc(add2.__doc__)
+print(inspect.signature(add2))
+print(inspect.getargspec(add2))
+print(get_class_default_arg(add2, Foo))
+print(inspect.cleandoc(add2.__doc__))

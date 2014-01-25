@@ -24,7 +24,7 @@ from twisted.internet.defer import Deferred, \
                                    returnValue
 
 from autobahn.wamp.protocol import WampAppSession
-from autobahn.wamp.types import CallOptions, CallResult
+from autobahn.wamp.types import CallOptions, CallResult, RegisterOptions
 
 
 
@@ -42,18 +42,23 @@ class MyAppBackendSession(WampAppSession):
    def onSessionOpen(self, info):
 
       @inlineCallbacks
-      def add2(a, b):
+      def add2(a, b, details = None):
+         print details.progress
          if a > 5:
             raise Exception("number too large")
          else:
+            if details.progress:
+               for i in range(3):
+                  details.progress(i)
+                  yield sleep(1)
             yield sleep(1)
             #returnValue(a + b)
             returnValue(CallResult(a, b, result = a + b))
 
-      def add2a(a, b):
+      def add2b(a, b):
          return a + b
 
-      self.register(add2, 'com.myapp.add2')
+      self.register(add2, 'com.myapp.add2', RegisterOptions(details = 'details'))
 
 
    def onSessionClose(self, reason, message):      
@@ -69,9 +74,12 @@ class MyAppFrontendSession(WampAppSession):
    @inlineCallbacks
    def onSessionOpen(self, info):
 
+      def onprogress(*args, **kwargs):
+         print "onprogress", args, kwargs
+
       try:
-         res = yield self.call('com.myapp.add2', 15, 3)
-         #res = yield self.call('com.myapp.add2', 2, 3, options = CallOptions(timeout = 5000))
+         #res = yield self.call('com.myapp.add2', 15, 3)
+         res = yield self.call('com.myapp.add2', 2, 3, options = CallOptions(timeout = 5000, onProgress = onprogress))
       except Exception as e:
          print("Error: {}".format(e))
       else:
