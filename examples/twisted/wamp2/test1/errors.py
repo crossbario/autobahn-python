@@ -23,7 +23,12 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.protocol import WampAppSession
 from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp import uri
 
+
+@uri.error("com.myapp.error1")
+class AppError1(Exception):
+   pass
 
 
 class ErrorsTestBackend(WampAppSession):
@@ -56,6 +61,12 @@ class ErrorsTestBackend(WampAppSession):
 
       self.register(checkname, 'com.myapp.checkname')
 
+      def compare(a, b):
+         if a < b:
+            raise AppError1(b - a)
+
+      self.register(compare, 'com.myapp.compare')
+
 
 
 class ErrorsTestFrontend(WampAppSession):
@@ -81,6 +92,13 @@ class ErrorsTestFrontend(WampAppSession):
             print("Error: {} {} {} {}".format(e, e.error, e.args, e.kwargs))
          else:
             print("Result: {}".format(res))
+
+      self.define(AppError1)
+
+      try:
+         yield self.call('com.myapp.compare', 3, 17)
+      except AppError1 as e:
+         print("Compare Error: {}".format(e))
 
       self.closeSession()
 

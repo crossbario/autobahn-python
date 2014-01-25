@@ -38,6 +38,8 @@ class ProgressiveBackend(WampAppSession):
             for i in range(n):
                details.progress(i)
                yield sleep(1)
+         else:
+            yield sleep(1 * n)
          returnValue(n)
 
       self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg = 'details'))
