@@ -58,7 +58,7 @@ class WampWebSocketProtocol:
       ## WebSocket connection lost - fire off the WAMP
       ## session close callback
       try:
-         print("WebSocket Transport lost ({}, {}, {})".format(wasClean, code, reason))
+         #print("WebSocket Transport lost ({}, {}, {})".format(wasClean, code, reason))
          self._session.onClose()
       except Exception as e:
          ## silently ignore exceptions raised here ..

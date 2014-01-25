@@ -26,6 +26,11 @@ class SessionDetails:
       self.peer = peer
 
 
+class CloseDetails:
+   def __init__(self, reason = None, message = None):
+      self.reason = reason
+      self.message = message
+
 
 class Registration:
    """
@@ -38,13 +43,13 @@ class Registration:
 
 
 class RegisterOptions:
-   def __init__(self, details = None):
+   def __init__(self, details_arg = None):
       """
-      :param details: When invoking the endpoint, provide call details
-                      in this keyword argument to the callable.
+      :param details_arg: When invoking the endpoint, provide call details
+                               in this keyword argument to the callable.
       """
-      assert(type(details) == str)
-      self.details = details
+      assert(type(details_arg) == str)
+      self.details_arg = details_arg
       self.options = {}
 
 

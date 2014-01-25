@@ -1,17 +1,19 @@
-# WAMP v2 Demo
+# WAMP v2 Demos
 
-## WAMP Router with embedded application backend
+## Running the Demos
+
+### Router with embedded application backend component
 
 Run the WAMP router/dealer on a WebSocket transport server, and start the embedded application backend:
 
-	python server.py --backend
+	server.py --component "timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	python client.py
+	client.py --component "timeservice.TimeServiceFrontend"
 
 
-## WAMP Router with application backend on client
+### Application backend component in client
 
 Run the WAMP router/dealer on a WebSocket transport server:
 
@@ -19,9 +21,16 @@ Run the WAMP router/dealer on a WebSocket transport server:
 
 Run the WAMP application backend over a WebSocket transport client:
 
-	python client.py --backend
+	client.py --component "timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	python client.py
+	client.py --component "timeservice.TimeServiceFrontend"
+
+
+## Available Demos
+
+
+ 1. `timeservice.TimeServiceBackend` and `timeservice.TimeServiceFrontend`
+ 1. `arguments.ArgumentsBackend` and `arguments.ArgumentsFrontend`
 

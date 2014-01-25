@@ -32,13 +32,13 @@ if __name__ == '__main__':
    parser.add_argument("-d", "--debug", action = "store_true",
                        help = "Enable debug output.")
 
-   parser.add_argument("-b", "--backend", action = "store_true",
-                       help = "Start client providing application backend.")
+   parser.add_argument("-c", "--component", type = str,
+                       help = "Start WAMP-WebSocket client with this application component, e.g. 'timeservice.TimeServiceFrontend'")
 
-   parser.add_argument("--websocket", default = "tcp:localhost:9000",
+   parser.add_argument("--websocket", type = str, default = "tcp:localhost:9000",
                        help = 'WebSocket client Twisted endpoint descriptor, e.g. "tcp:localhost:9000" or "unix:/tmp/mywebsocket".')
 
-   parser.add_argument("--wsurl", default = "ws://localhost:9000",
+   parser.add_argument("--wsurl", type = str, default = "ws://localhost:9000",
                        help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
 
    args = parser.parse_args()
@@ -46,14 +46,16 @@ if __name__ == '__main__':
 
    ## start Twisted logging to stdout
    ##
-   log.startLogging(sys.stdout)
+   if args.debug:
+      log.startLogging(sys.stdout)
 
 
    ## we use an Autobahn utility to import the "best" available Twisted reactor
    ##
    from autobahn.twisted.choosereactor import install_reactor
    reactor = install_reactor()
-   print("Running on reactor {}".format(reactor))
+   if args.debug:
+      print("Running on reactor {}".format(reactor))
 
 
    ## create a WAMP application session factory
@@ -62,17 +64,18 @@ if __name__ == '__main__':
    session = WampAppFactory()
 
 
-   ## if asked to start the application backend, create a factory
-   ## for this. otherwise, create a factory for the application frontend
-   if args.backend:
-      from app import MyAppBackendSession
-      session.session = MyAppBackendSession
-   else:
-      from app import MyAppFrontendSession
-      session.session = MyAppFrontendSession
+   ## dynamically load the application component ..
+   ##
+   import importlib
+   mod, klass = args.component.split('.')
+   app = importlib.import_module(mod)
+
+   ## .. and set the session class on the factory
+   ##
+   session.session = getattr(app, klass)
 
 
-   ## run WAMP over WebSocket
+   ## run WAMP-over-WebSocket
    ##
    from autobahn.twisted.websocket import WampWebSocketClientFactory
    transport = WampWebSocketClientFactory(session, args.wsurl, debug = args.debug)

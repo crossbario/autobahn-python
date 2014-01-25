@@ -206,8 +206,6 @@ class WampAppSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
       """
-      print "***"*10, msg
-
       if self._peer_session_id is None:
 
          ## the first message MUST be HELLO
@@ -236,7 +234,7 @@ class WampAppSession(WampBaseSession):
                self._transport.send(reply)
 
             ## fire callback and close the transport
-            self.onSessionClose(msg.reason, msg.message)
+            self.onSessionClose(types.CloseDetails(msg.reason, msg.message))
 
             if self._broker:
                self._broker.removeSession(self)
@@ -415,17 +413,16 @@ class WampAppSession(WampBaseSession):
                else:
                   endpoint = self._registrations[msg.registration]
 
-                  if endpoint.details:
+                  if endpoint.details_arg:
                      if not msg.kwargs:
                         msg.kwargs = {}
-                     if endpoint.details:
-                        if msg.receive_progress:
-                           def progress(*args, **kwargs):
-                              progress_msg = message.Yield(msg.request, args = args, kwargs = kwargs, progress = True)
-                              self._transport.send(progress_msg)
-                        else:
-                           progress = None
-                        msg.kwargs[endpoint.details] = types.CallDetails(progress)
+                     if msg.receive_progress:
+                        def progress(*args, **kwargs):
+                           progress_msg = message.Yield(msg.request, args = args, kwargs = kwargs, progress = True)
+                           self._transport.send(progress_msg)
+                     else:
+                        progress = None
+                     msg.kwargs[endpoint.details_arg] = types.CallDetails(progress)
 
                   if msg.kwargs:
                      if msg.args:
@@ -473,7 +470,10 @@ class WampAppSession(WampBaseSession):
 
             if msg.request in self._register_reqs:
                d, fn, options = self._register_reqs.pop(msg.request)
-               self._registrations[msg.registration] = Endpoint(fn, options.details)
+               if options:
+                  self._registrations[msg.registration] = Endpoint(fn, options.details_arg)
+               else:
+                  self._registrations[msg.registration] = Endpoint(fn)
                d.callback(msg.registration)
             else:
                raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
@@ -539,7 +539,7 @@ class WampAppSession(WampBaseSession):
 
          ## fire callback and close the transport
          try:
-            self.onSessionClose(None, None)
+            self.onSessionClose(types.CloseDetails())
          except Exception as e:
             print e
 
@@ -734,9 +734,9 @@ def get_class_default_arg(fn, klass):
 
 class Endpoint:
 
-   def __init__(self, fn, details):
+   def __init__(self, fn, details_arg = None):
       self.fn = fn
-      self.details = details
+      self.details_arg = details_arg
       #self.details_arg = get_class_default_arg(fn, types.CallDetails)
 
 
@@ -804,11 +804,11 @@ class WampRouterAppSession:
 
 class WampRouterSession(WampAppSession):
 
-   def onSessionOpen(self, info):
-      print "WampRouterSession.onSessionOpen", info.me, info.peer
+   def onSessionOpen(self, details):
+      print "WampRouterSession.onSessionOpen", details.me, details.peer
 
-   def onSessionClose(self, reason, message):
-      print "WampRouterSession.onSessionOpen", reason, message
+   def onSessionClose(self, details):
+      print "WampRouterSession.onSessionOpen", details.reason, details.message
 
 
 

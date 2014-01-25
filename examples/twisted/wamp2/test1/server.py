@@ -32,13 +32,13 @@ if __name__ == '__main__':
    parser.add_argument("-d", "--debug", action = "store_true",
                        help = "Enable debug output.")
 
-   parser.add_argument("-b", "--backend", action = "store_true",
-                       help = "Start router with embedded application backend.")
+   parser.add_argument("-c", "--component", type = str, default = None,
+                       help = "Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
-   parser.add_argument("--websocket", default = "tcp:9000",
+   parser.add_argument("--websocket", type = str, default = "tcp:9000",
                        help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
 
-   parser.add_argument("--wsurl", default = "ws://localhost:9000",
+   parser.add_argument("--wsurl", type = str, default = "ws://localhost:9000",
                        help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
 
    args = parser.parse_args()
@@ -46,14 +46,16 @@ if __name__ == '__main__':
 
    ## start Twisted logging to stdout
    ##
-   log.startLogging(sys.stdout)
+   if args.debug:
+      log.startLogging(sys.stdout)
 
 
    ## we use an Autobahn utility to install the "best" available Twisted reactor
    ##
    from autobahn.twisted.choosereactor import install_reactor
    reactor = install_reactor()
-   print("Running on reactor {}".format(reactor))
+   if args.debug:
+      print("Running on reactor {}".format(reactor))
 
 
    ## create a WAMP router session factory
@@ -62,12 +64,19 @@ if __name__ == '__main__':
    session = WampRouterFactory()
 
 
-   ## if asked to start the embedded application backend,
-   ## add an app WAMP session to the router
+   ## if asked to start an embedded application component ..
    ##
-   if args.backend:
-      from app import MyAppBackendSession
-      session.add(MyAppBackendSession())
+   if args.component:
+      ## dynamically load the application component ..
+      ##
+      import importlib
+      mod, klass = args.component.split('.')
+      app = importlib.import_module(mod)
+      SessionKlass = getattr(app, klass)
+
+      ## .. and create and add an app WAMP session to the router
+      ##
+      session.add(SessionKlass())
 
 
    ## run WAMP over WebSocket

@@ -25,6 +25,9 @@ from twisted.internet.defer import Deferred, \
 
 from autobahn.wamp.protocol import WampAppSession
 from autobahn.wamp.types import CallOptions, CallResult, RegisterOptions
+from autobahn.util import utcnow
+
+import datetime
 
 
 
@@ -39,7 +42,7 @@ class MyAppBackendSession(WampAppSession):
    Example WAMP application backend.
    """
 
-   def onSessionOpen(self, info):
+   def onSessionOpen(self, details):
 
       @inlineCallbacks
       def add2(a, b, details = None):
@@ -59,7 +62,13 @@ class MyAppBackendSession(WampAppSession):
       def add2b(a, b):
          return a + b
 
-      self.register(add2, 'com.myapp.add2', RegisterOptions(details = 'details'))
+      self.register(add2, 'com.myapp.add2', RegisterOptions(details_arg = 'details'))
+
+      def utcnow():
+         now = datetime.datetime.utcnow()
+         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+      self.register(utcnow, 'com.timeservice.now')
 
 
    def onSessionClose(self, reason, message):      
@@ -74,6 +83,9 @@ class MyAppFrontendSession(WampAppSession):
 
    @inlineCallbacks
    def onSessionOpen(self, info):
+
+      now = yield self.call('com.timeservice.now')
+      print("Current time: {}".format(now))
 
       def onprogress(i):
          print "onprogress", i
