@@ -73,7 +73,8 @@ class WampBaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-         msg = message.Error(request_type, request, exc.args[0], args = exc.args[1:], kwargs = exc.kwargs)
+#         msg = message.Error(request_type, request, exc.args[0], args = exc.args[1:], kwargs = exc.kwargs)
+         msg = message.Error(request_type, request, exc.error, args = exc.args, kwargs = exc.kwargs)
       else:
          if self._ecls_to_uri_pat.has_key(exc.__class__):
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri

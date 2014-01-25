@@ -22,6 +22,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.protocol import WampAppSession
+from autobahn.wamp.exception import ApplicationError
 
 
 
@@ -33,12 +34,27 @@ class ErrorsTestBackend(WampAppSession):
    def onSessionOpen(self, details):
 
       def sqrt(x):
-         if x < 0:
-            raise Exception("cannot take sqrt of negative number")
+         if x == 0:
+            raise Exception("don't ask folly questions;)")
          else:
+            ## this also will raise, if x < 0
             return math.sqrt(x)
 
       self.register(sqrt, 'com.myapp.sqrt')
+
+      def checkname(name):
+         if name in ['foo', 'bar']:
+            raise ApplicationError("com.myapp.error.reserved")
+
+         if name.lower() != name.upper():
+            ## forward positional arguments in exceptions
+            raise ApplicationError("com.myapp.error.mixed_case", name.lower(), name.upper())
+
+         if len(name) < 3 or len(name) > 10:
+            ## forward keyword arguments in exceptions 
+            raise ApplicationError("com.myapp.error.invalid_length", min = 3, max = 10)
+
+      self.register(checkname, 'com.myapp.checkname')
 
 
 
@@ -54,7 +70,15 @@ class ErrorsTestFrontend(WampAppSession):
          try:
             res = yield self.call('com.myapp.sqrt', x)
          except Exception as e:
-            print("Error: {}".format(e))
+            print("Error: {} {}".format(e, e.args))
+         else:
+            print("Result: {}".format(res))
+
+      for name in ['foo', 'a', '*'*11, 'Hello']:
+         try:
+            res = yield self.call('com.myapp.checkname', name)
+         except ApplicationError as e:
+            print("Error: {} {} {} {}".format(e, e.error, e.args, e.kwargs))
          else:
             print("Result: {}".format(res))
 
