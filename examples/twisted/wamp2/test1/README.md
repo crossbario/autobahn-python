@@ -32,5 +32,6 @@ Run the WAMP application frontend over a WebSocket transport client:
 
 
  1. `timeservice.TimeServiceBackend` and `timeservice.TimeServiceFrontend`
- 1. `arguments.ArgumentsBackend` and `arguments.ArgumentsFrontend`
+ 2. `arguments.ArgumentsBackend` and `arguments.ArgumentsFrontend`
+ 3. `progress.ProgressiveBackend` and `progress.ProgressiveFrontend` 
 

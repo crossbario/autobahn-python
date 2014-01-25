@@ -16,40 +16,50 @@
 ##
 ###############################################################################
 
-import datetime
+from __future__ import absolute_import
 
 from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks, returnValue
 
+from autobahn.twisted.util import sleep
 from autobahn.wamp.protocol import WampAppSession
+from autobahn.wamp.types import CallOptions, RegisterOptions
 
 
 
-class TimeServiceBackend(WampAppSession):
+class ProgressiveBackend(WampAppSession):
    """
-   A simple time service application component.
+   Application backend component that produces progressive results.
    """
 
    def onSessionOpen(self, details):
 
-      def utcnow():
-         now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+      @inlineCallbacks
+      def longop(n, details = None):
+         if details.progress:
+            for i in range(n):
+               details.progress(i)
+               yield sleep(1)
+         returnValue(n)
 
-      self.register(utcnow, 'com.timeservice.now')
+      self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg = 'details'))
 
 
 
-class TimeServiceFrontend(WampAppSession):
+class ProgressiveFrontend(WampAppSession):
    """
-   An application component using the time service.
+   Application frontend component that consumes progressive results.
    """
 
    @inlineCallbacks
    def onSessionOpen(self, details):
 
-      now = yield self.call('com.timeservice.now')
-      print("Current time from time service: {}".format(now))
+      def on_progress(i):
+         print("Progress: {}".format(i))
+
+      res = yield self.call('com.myapp.longop', 3, options = CallOptions(onProgress = on_progress))
+
+      print("Final: {}".format(res))
 
       self.closeSession()
 
