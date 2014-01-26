@@ -70,8 +70,9 @@ if __name__ == '__main__':
       ## dynamically load the application component ..
       ##
       import importlib
-      mod, klass = args.component.split('.')
-      app = importlib.import_module('component.' + mod)
+      c = args.component.split('.')
+      mod, klass = '.'.join(c[:-1]), c[-1]
+      app = importlib.import_module(mod)
       SessionKlass = getattr(app, klass)
 
       ## .. and create and add an app WAMP session to the router

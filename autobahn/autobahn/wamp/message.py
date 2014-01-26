@@ -250,7 +250,7 @@ class Subscribe(Message):
       :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
       :type topic: str
       :param match: The topic matching method to be used for the subscription.
-      :type match: int
+      :type match: str
       """
       Message.__init__(self)
       self.request = request
@@ -302,7 +302,7 @@ class Subscribe(Message):
       """
       options = {}
 
-      if self.match != Subscribe.MATCH_EXACT:
+      if self.match and self.match != Subscribe.MATCH_EXACT:
          options['match'] = self.match
 
       return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]

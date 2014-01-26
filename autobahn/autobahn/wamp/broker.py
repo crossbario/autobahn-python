@@ -66,7 +66,7 @@ class Broker:
       """
       Publish from downstream consumer session.
       """
-      print "Broker.onPublish", session, publish
+      #print "Broker.onPublish", session, publish
       assert(session in self._sessions)
 
       for broker_session in self._brokers:

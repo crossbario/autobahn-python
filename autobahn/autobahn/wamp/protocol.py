@@ -305,20 +305,28 @@ class WampAppSession(WampBaseSession):
          elif isinstance(msg, message.Event):
 
             if msg.subscription in self._subscriptions:
+
                handler = self._subscriptions[msg.subscription]
+
+               if handler.details_arg:
+                  if not msg.kwargs:
+                     msg.kwargs = {}
+                  msg.kwargs[handler.details_arg] = types.EventDetails(publication = msg.publication)
+
                try:
                   if msg.kwargs:
                      if msg.args:
-                        handler(*msg.args, **msg.kwargs)
+                        handler.fn(*msg.args, **msg.kwargs)
                      else:
-                        handler(**msg.kwargs)
+                        handler.fn(**msg.kwargs)
                   else:
                      if msg.args:
-                        handler(*msg.args)
+                        handler.fn(*msg.args)
                      else:
-                        handler()
+                        handler.fn()
                except Exception as e:
                   print("Exception raised in event handler: {}".format(e))
+
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
 
@@ -333,8 +341,11 @@ class WampAppSession(WampBaseSession):
          elif isinstance(msg, message.Subscribed):
 
             if msg.request in self._subscribe_reqs:
-               d, handler = self._subscribe_reqs.pop(msg.request)
-               self._subscriptions[msg.subscription] = handler
+               d, fn, options = self._subscribe_reqs.pop(msg.request)
+               if options:
+                  self._subscriptions[msg.subscription] = Handler(fn, options.details_arg)
+               else:
+                  self._subscriptions[msg.subscription] = Handler(fn)
                d.callback(msg.subscription)
             else:
                raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
@@ -596,7 +607,7 @@ class WampAppSession(WampBaseSession):
       """
       assert(callable(handler))
       assert(type(topic) in (str, unicode))
-      assert(options is None or isinstance(options, wamp.options.Subscribe))
+      assert(options is None or isinstance(options, types.SubscribeOptions))
 
       if not self._transport:
          raise exception.TransportLost()
@@ -604,10 +615,10 @@ class WampAppSession(WampBaseSession):
       request = util.id()
 
       d = Deferred()
-      self._subscribe_reqs[request] = (d, handler)
+      self._subscribe_reqs[request] = (d, handler, options)
 
       if options is not None:
-         msg = message.Subscribe(request, topic, **options.__dict__)
+         msg = message.Subscribe(request, topic, **options.options)
       else:
          msg = message.Subscribe(request, topic)
 
@@ -720,6 +731,7 @@ class WampAppFactory:
       return session
 
 
+
 import inspect
 
 def get_class_default_arg(fn, klass):
@@ -738,8 +750,13 @@ class Endpoint:
    def __init__(self, fn, details_arg = None):
       self.fn = fn
       self.details_arg = details_arg
-      #self.details_arg = get_class_default_arg(fn, types.CallDetails)
 
+
+class Handler:
+
+   def __init__(self, fn, details_arg = None):
+      self.fn = fn
+      self.details_arg = details_arg
 
 
 
@@ -758,8 +775,6 @@ class WampRouterAppSession:
       self._session.onSessionOpen(SessionDetails(self._session._my_session_id, self._session._peer_session_id))
 
    def send(self, msg):
-      print "WampRouterAppSession.send", msg
-
       ## app-to-broker
       ##
       if isinstance(msg, message.Publish):

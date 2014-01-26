@@ -28,16 +28,22 @@ from autobahn.wamp import uri
 
 @uri.error("com.myapp.error1")
 class AppError1(Exception):
-   pass
+   """
+   An application specific exception that is decorated with a WAMP URI,
+   and hence can be automapped by Autobahn.
+   """
+
 
 
 class ErrorsTestBackend(WampAppSession):
    """
-   Example WAMP application backend.
+   Example WAMP application backend that raised exceptions.
    """
 
    def onSessionOpen(self, details):
 
+      ## raising standard exceptions
+      ##
       def sqrt(x):
          if x == 0:
             raise Exception("don't ask folly questions;)")
@@ -47,6 +53,9 @@ class ErrorsTestBackend(WampAppSession):
 
       self.register(sqrt, 'com.myapp.sqrt')
 
+
+      ## raising WAMP application exceptions
+      ##
       def checkname(name):
          if name in ['foo', 'bar']:
             raise ApplicationError("com.myapp.error.reserved")
@@ -61,6 +70,11 @@ class ErrorsTestBackend(WampAppSession):
 
       self.register(checkname, 'com.myapp.checkname')
 
+
+      ## defining and automapping WAMP application exceptions
+      ## 
+      self.define(AppError1)
+
       def compare(a, b):
          if a < b:
             raise AppError1(b - a)
@@ -71,12 +85,14 @@ class ErrorsTestBackend(WampAppSession):
 
 class ErrorsTestFrontend(WampAppSession):
    """
-   Example WAMP application frontend.
+   Example WAMP application frontend that catches exceptions.
    """
 
    @inlineCallbacks
    def onSessionOpen(self, info):
 
+      ## catching standard exceptions
+      ##
       for x in [2, 0, -2]:
          try:
             res = yield self.call('com.myapp.sqrt', x)
@@ -85,6 +101,9 @@ class ErrorsTestFrontend(WampAppSession):
          else:
             print("Result: {}".format(res))
 
+
+      ## catching WAMP application exceptions
+      ##
       for name in ['foo', 'a', '*'*11, 'Hello']:
          try:
             res = yield self.call('com.myapp.checkname', name)
@@ -93,12 +112,16 @@ class ErrorsTestFrontend(WampAppSession):
          else:
             print("Result: {}".format(res))
 
+
+      ## defining and automapping WAMP application exceptions
+      ## 
       self.define(AppError1)
 
       try:
          yield self.call('com.myapp.compare', 3, 17)
       except AppError1 as e:
          print("Compare Error: {}".format(e))
+
 
       self.closeSession()
 

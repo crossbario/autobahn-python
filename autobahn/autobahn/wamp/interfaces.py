@@ -214,6 +214,8 @@ class IAppSession(Interface):
 
    def onSessionOpen(details):
       """
+      Callback fired when WAMP session has been established.
+
       :param details: Session information.
       :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
       """
@@ -221,11 +223,22 @@ class IAppSession(Interface):
 
    def closeSession(reason = None, message = None):
       """
+      Actively close this WAMP session.
+
+      :param reason: An optional URI for the closing reason.
+      :type reason: str
+      :param message: An optional (human readable) closing message, intended for
+                      logging purposes.
+      :type message: str
       """
 
 
-   def onSessionClose(reason, message):
+   def onSessionClose(details):
       """
+      Callback fired when WAMP session has is closed
+
+      :param details: Close information.
+      :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
       """
 
 

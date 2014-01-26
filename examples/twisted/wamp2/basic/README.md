@@ -6,11 +6,11 @@
 
 Run the WAMP router/dealer on a WebSocket transport server, and start the embedded application backend:
 
-	server.py --component "timeservice.TimeServiceBackend"
+	python server.py --component "timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	client.py --component "timeservice.TimeServiceFrontend"
+	python client.py --component "timeservice.TimeServiceFrontend"
 
 
 ### Application backend component in client
@@ -21,11 +21,11 @@ Run the WAMP router/dealer on a WebSocket transport server:
 
 Run the WAMP application backend over a WebSocket transport client:
 
-	client.py --component "timeservice.TimeServiceBackend"
+	python client.py --component "timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	client.py --component "timeservice.TimeServiceFrontend"
+	python client.py --component "timeservice.TimeServiceFrontend"
 
 
 ## Available Demos

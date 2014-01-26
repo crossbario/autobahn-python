@@ -19,30 +19,122 @@
 from __future__ import absolute_import
 
 
+
 class SessionDetails:
+   """
+   Provides details for a WAMP session, provided in
+   :func:`autobahn.wamp.interfaces.IAppSession.onSessionOpen`.
+   """
 
    def __init__(self, me, peer):
+      """
+      Ctor.
+
+      :param me: WAMP session ID of this session.
+      :type me: int
+      :param peer: WAMP session ID of the peer session.
+      :type peer: int
+      """
       self.me = me
       self.peer = peer
 
 
+
 class CloseDetails:
+   """
+   Provides details on closing of a WAMP session, provided in
+   :func:`autobahn.wamp.interfaces.IAppSession.onSessionClose`.
+   """
+
    def __init__(self, reason = None, message = None):
       self.reason = reason
       self.message = message
 
 
-class Registration:
+
+class SubscribeOptions:
    """
+   Used to provide options for subscribing in
+   :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
    """
-   def __init__(self, id, procedure, endpoint):
-      self._id = id
-      self._procedure = procedure
-      self._endpoint = endpoint
-      self._isActive = True
+
+   def __init__(self, match = None, details_arg = None):
+      """
+      :param match: The topic matching method to be used for the subscription.
+      :type match: str
+      :param details_arg: When invoking the handler, provide event details
+                          in this keyword argument to the callable.
+      :type details_arg: str
+      """
+      assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
+      assert(type(details_arg) == str)
+
+      self.details_arg = details_arg
+      self.options = {'match': match}
+
+
+
+class EventDetails:
+   """
+   Provides details on an event when calling an event handler
+   previously registered.
+   """
+   def __init__(self, publication, publisher = None):
+      """
+      Ctor.
+
+      :param publication: The publication ID of the event (always present).
+      :type publication: int
+      :param publisher: The WAMP session ID of the original publisher of this event.
+      :type publisher: int
+      """
+      self.publication = publication
+      self.publisher = publisher
+
+
+
+class PublishOptions:
+   """
+   Used to provide options for subscribing in
+   :func:`autobahn.wamp.interfaces.IPublisher.publish`.
+   """
+
+   def __init__(self,
+                topic,
+                excludeMe = None,
+                exclude = None,
+                eligible = None,
+                discloseMe = None):
+      """
+      Constructor.
+      
+      :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
+      :type topic: str
+      :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
+                         to Callees. Note that a Dealer, depending on Dealer configuration, might
+                         reject the request, or might disclose the Callee's identity without
+                         a request to do so.
+      :type discloseMe: bool
+      """
+      assert(excludeMe is None or type(excludeMe) == bool)
+      assert(exclude is None or (type(exclude) == list and all(type(x) == int for x in exclude)))
+      assert(eligible is None or (type(eligible) == list and all(type(x) == int for x in eligible)))
+      assert(discloseMe is None or type(discloseMe) == bool)
+
+      self.topic = topic
+      self.excludeMe = excludeMe
+      self.exclude = exclude
+      self.eligible = eligible
+      self.discloseMe = discloseMe
+
 
 
 class RegisterOptions:
+   """
+   Used to provide options for subscribing in
+   :func:`autobahn.wamp.interfaces.ICallee.register`.
+   """
+
    def __init__(self, details_arg = None):
       """
       :param details_arg: When invoking the endpoint, provide call details
@@ -53,10 +145,28 @@ class RegisterOptions:
       self.options = {}
 
 
+
+class CallDetails:
+   """
+   Provides details on a call when an endpoint previously
+   registered is being called.
+   """
+
+   def __init__(self, progress = None):
+      """
+      Ctor.
+
+      :param progress: A callable that will receive progressive call results.
+      :type progress: callable
+      """
+      self.progress = progress
+
+
+
 class CallOptions:
    """
-   Wrapper allowing to specify a remote procedure to be called while providing
-   details on exactly how the call should be performed.
+   Used to provide options for subscribing in
+   :func:`autobahn.wamp.interfaces.ICaller.call`.
    """
 
    def __init__(self,
@@ -101,14 +211,10 @@ class CallOptions:
          self.options['receive_progress'] = True
 
 
-class CallDetails:
-   def __init__(self, progress = None):
-      self.progress = progress
-
 
 class CallResult:
    """
-   Wrapper for WAMP remote procedure call results that contain multiple positional
+   Wrapper for remote procedure call results that contain multiple positional
    return values or keyword return values.
    """
 
@@ -129,6 +235,22 @@ class CallResult:
 
 
 
+
+
+
+
+
+class Registration:
+   """
+   """
+   def __init__(self, id, procedure, endpoint):
+      self._id = id
+      self._procedure = procedure
+      self._endpoint = endpoint
+      self._isActive = True
+
+
+
 class Invocation:
    """
    """
@@ -137,15 +259,6 @@ class Invocation:
 
    def progress(self, *args, **kwargs):
       pass
-
-
-
-class SubscribeOptions:
-   """
-   """
-   def __init__(self, match = None):
-      assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
-      self.match = match
 
 
 
@@ -215,46 +328,5 @@ class Subscription:
 
 
 
-class Publish:
-   """
-   Wrapper allowing to specify a topic to be published to while providing
-   details on exactly how the publishing should be performed.
-   """
 
-   def __init__(self,
-                topic,
-                excludeMe = None,
-                exclude = None,
-                eligible = None,
-                discloseMe = None):
-      """
-      Constructor.
-      
-      :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
-      :type topic: str
-      :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
-                         to Callees. Note that a Dealer, depending on Dealer configuration, might
-                         reject the request, or might disclose the Callee's identity without
-                         a request to do so.
-      :type discloseMe: bool
-      """
-      assert(excludeMe is None or type(excludeMe) == bool)
-      assert(exclude is None or (type(exclude) == list and all(type(x) == int for x in exclude)))
-      assert(eligible is None or (type(eligible) == list and all(type(x) == int for x in eligible)))
-      assert(discloseMe is None or type(discloseMe) == bool)
-
-      self.topic = topic
-      self.excludeMe = excludeMe
-      self.exclude = exclude
-      self.eligible = eligible
-      self.discloseMe = discloseMe
-
-
-
-class Event:
-   def __init__(self, topic, payload, publication, publisher = None):
-      self.topic = topic
-      self.payload = payload
-      self.publication = publication
-      self.publisher = publisher
 
