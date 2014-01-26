@@ -22,7 +22,7 @@ if __name__ == '__main__':
    import sys, argparse
 
    from twisted.python import log
-   from twisted.internet.endpoints import clientFromString
+   from twisted.internet.endpoints import serverFromString
 
 
    ## parse command line arguments
@@ -32,11 +32,11 @@ if __name__ == '__main__':
    parser.add_argument("-d", "--debug", action = "store_true",
                        help = "Enable debug output.")
 
-   parser.add_argument("-c", "--component", type = str,
-                       help = "Start WAMP-WebSocket client with this application component, e.g. 'timeservice.TimeServiceFrontend'")
+   parser.add_argument("-c", "--component", type = str, default = None,
+                       help = "Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
-   parser.add_argument("--websocket", type = str, default = "tcp:localhost:9000",
-                       help = 'WebSocket client Twisted endpoint descriptor, e.g. "tcp:localhost:9000" or "unix:/tmp/mywebsocket".')
+   parser.add_argument("--websocket", type = str, default = "tcp:9000",
+                       help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
 
    parser.add_argument("--wsurl", type = str, default = "ws://localhost:9000",
                        help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
@@ -50,7 +50,7 @@ if __name__ == '__main__':
       log.startLogging(sys.stdout)
 
 
-   ## we use an Autobahn utility to import the "best" available Twisted reactor
+   ## we use an Autobahn utility to install the "best" available Twisted reactor
    ##
    from autobahn.twisted.choosereactor import install_reactor
    reactor = install_reactor()
@@ -58,34 +58,38 @@ if __name__ == '__main__':
       print("Running on reactor {}".format(reactor))
 
 
-   ## create a WAMP application session factory
+   ## create a WAMP router session factory
    ##
-   from autobahn.wamp.protocol import WampAppFactory
-   session = WampAppFactory()
+   from autobahn.wamp.protocol import WampRouterFactory
+   session = WampRouterFactory()
 
 
-   ## dynamically load the application component ..
+   ## if asked to start an embedded application component ..
    ##
-   import importlib
-   mod, klass = args.component.split('.')
-   app = importlib.import_module(mod)
+   if args.component:
+      ## dynamically load the application component ..
+      ##
+      import importlib
+      mod, klass = args.component.split('.')
+      app = importlib.import_module('component.' + mod)
+      SessionKlass = getattr(app, klass)
 
-   ## .. and set the session class on the factory
+      ## .. and create and add an app WAMP session to the router
+      ##
+      session.add(SessionKlass())
+
+
+   ## run WAMP over WebSocket
    ##
-   session.session = getattr(app, klass)
-
-
-   ## run WAMP-over-WebSocket
-   ##
-   from autobahn.twisted.websocket import WampWebSocketClientFactory
-   transport = WampWebSocketClientFactory(session, args.wsurl, debug = args.debug)
+   from autobahn.twisted.websocket import WampWebSocketServerFactory
+   transport = WampWebSocketServerFactory(session, args.wsurl, debug = args.debug)
    transport.setProtocolOptions(failByDrop = False)
 
 
-   ## start a WebSocket client from an endpoint
+   ## start the WebSocket server from an endpoint
    ##
-   client = clientFromString(reactor, args.websocket)
-   client.connect(transport)
+   server = serverFromString(reactor, args.websocket)
+   server.listen(transport)
 
 
    ## now enter the Twisted reactor loop
