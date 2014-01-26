@@ -311,7 +311,7 @@ class WampAppSession(WampBaseSession):
                if handler.details_arg:
                   if not msg.kwargs:
                      msg.kwargs = {}
-                  msg.kwargs[handler.details_arg] = types.EventDetails(publication = msg.publication)
+                  msg.kwargs[handler.details_arg] = types.EventDetails(publication = msg.publication, publisher = msg.publisher)
 
                try:
                   if msg.kwargs:
@@ -333,7 +333,7 @@ class WampAppSession(WampBaseSession):
          elif isinstance(msg, message.Published):
 
             if msg.request in self._publish_reqs:
-               d = self._publish_reqs.pop(msg.request)
+               d, opts = self._publish_reqs.pop(msg.request)
                d.callback(msg.publication)
             else:
                raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
@@ -603,11 +603,14 @@ class WampAppSession(WampBaseSession):
          opts = None
          msg = message.Publish(request, topic, args = args, kwargs = kwargs)
 
-      d = Deferred()
-      self._publish_reqs[request] = d, opts
-
-      self._transport.send(msg)
-      return d
+      if opts and opts.options['acknowledge'] is not None:
+         d = Deferred()
+         self._publish_reqs[request] = d, opts
+         self._transport.send(msg)
+         return d
+      else:
+         self._transport.send(msg)
+         return
 
 
    def subscribe(self, handler, topic = None, options = None):
@@ -811,6 +814,7 @@ class WampRouterAppSession:
       ## broker/dealer-to-app
       ##
       elif isinstance(msg, message.Event) or \
+           isinstance(msg, message.Published) or \
            isinstance(msg, message.Subscribed) or \
            isinstance(msg, message.Unsubscribed) or \
            isinstance(msg, message.Result) or \

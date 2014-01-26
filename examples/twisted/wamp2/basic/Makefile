@@ -50,3 +50,13 @@ client_complexevent_frontend:
 
 client_complexevent_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.complexevent.ComplexEventTestBackend"
+
+
+server_with_pubsuboptions_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.pubsuboptions.PubSubOptionsTestBackend"
+
+client_pubsuboptions_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsuboptions.PubSubOptionsTestFrontend"
+
+client_pubsuboptions_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsuboptions.PubSubOptionsTestBackend"

@@ -79,13 +79,57 @@ class Broker:
          if broker_session != session:
             broker_session._transport.send(publish)
 
-      if self._subscribers.has_key(publish.topic):
+      if self._subscribers.has_key(publish.topic) and self._subscribers[publish.topic]:
+
+         ## initial list of receivers are all subscribers ..
+         ##
          subscription_id, receivers = self._subscribers[publish.topic]
-         if len(receivers) > 0:
-            publication_id = util.id()
-            msg = message.Event(subscription_id, publication_id, args = publish.args, kwargs = publish.kwargs)
-            for session in receivers:
-               session._transport.send(msg)
+
+         ## filter by "eligible" receivers
+         ##
+         if publish.eligible:
+            eligible = []
+            for s in publish.eligible:
+               if s in self._session_id_to_session:
+                  eligible.append(self._session_id_to_session[s])
+            if eligible:
+               receivers = set(eligible) & receivers
+
+         ## remove "excluded" receivers
+         ##
+         if publish.exclude:
+            exclude = []
+            for s in publish.exclude:
+               if s in self._session_id_to_session:
+                  exclude.append(self._session_id_to_session[s])
+            if exclude:
+               receivers = receivers - set(exclude)
+
+      else:
+         receivers = []
+
+      publication_id = util.id()
+
+      ## send publish acknowledge when requested
+      ##
+      if publish.acknowledge:
+         msg = message.Published(publish.request, publication_id)
+         session._transport.send(msg)
+
+      ## if receivers is non-empty, dispatch event ..
+      ##
+      if receivers:
+         if publish.discloseMe:
+            publisher = session._my_session_id
+         else:
+            publisher = None
+         msg = message.Event(subscription_id,
+                             publication_id,
+                             args = publish.args,
+                             kwargs = publish.kwargs,
+                             publisher = publisher)
+         for session in receivers:
+            session._transport.send(msg)
 
 
    def onSubscribe(self, session, subscribe):

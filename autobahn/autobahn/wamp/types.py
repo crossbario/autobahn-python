@@ -100,6 +100,7 @@ class PublishOptions:
    """
 
    def __init__(self,
+                acknowledge = None,
                 excludeMe = None,
                 exclude = None,
                 eligible = None,
@@ -107,6 +108,9 @@ class PublishOptions:
       """
       Constructor.
       
+      :param acknowledge: If True, acknowledge the publication with a success or
+                          error response.
+      :type acknowledge: bool
       :param excludeMe: If True, exclude the publisher from receiving the event, even
                         if he is subscribed (and eligible).
       :type excludeMe: bool
@@ -118,12 +122,14 @@ class PublishOptions:
                          to subscribers.
       :type discloseMe: bool
       """
+      assert(acknowledge is None or type(acknowledge) == bool)
       assert(excludeMe is None or type(excludeMe) == bool)
       assert(exclude is None or (type(exclude) == list and all(type(x) in [int, long] for x in exclude)))
       assert(eligible is None or (type(eligible) == list and all(type(x) in [int, long] for x in eligible)))
       assert(discloseMe is None or type(discloseMe) == bool)
 
       self.options = {
+         'acknowledge': acknowledge,
          'excludeMe': excludeMe,
          'exclude': exclude,
          'eligible': eligible,

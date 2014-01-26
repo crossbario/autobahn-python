@@ -169,7 +169,7 @@ class Error(Message):
          raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
 
       request_type = wmsg[1]
-      if type(request_type) != int:
+      if type(request_type) not in [int, long]:
          raise ProtocolError("invalid type {} for 'request_type' in ERROR".format(request_type))
 
       if request_type not in [Subscribe.MESSAGE_TYPE,
@@ -528,7 +528,16 @@ class Publish(Message):
    """
 
 
-   def __init__(self, request, topic, args = None, kwargs = None, excludeMe = None, exclude = None, eligible = None, discloseMe = None):
+   def __init__(self,
+                request,
+                topic,
+                args = None,
+                kwargs = None,
+                acknowledge = None,
+                excludeMe = None,
+                exclude = None,
+                eligible = None,
+                discloseMe = None):
       """
       Message constructor.
 
@@ -543,6 +552,9 @@ class Publish(Message):
       :param kwargs: Keyword values for application-defined event payload.
                      Must be serializable using any serializers in use.
       :type kwargs: dict
+      :param acknowledge: If True, acknowledge the publication with a success or
+                          error response.
+      :type acknowledge: bool
       :param excludeMe: If True, exclude the publisher from receiving the event, even
                         if he is subscribed (and eligible).
       :type excludeMe: bool
@@ -560,6 +572,7 @@ class Publish(Message):
       self.topic = topic
       self.args = args
       self.kwargs = kwargs
+      self.acknowledge = acknowledge
       self.excludeMe = excludeMe
       self.exclude = exclude
       self.eligible = eligible
@@ -598,10 +611,19 @@ class Publish(Message):
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
+      acknowledge = None
       excludeMe = None
       exclude = None
       eligible = None
       discloseMe = None
+
+      if options.has_key('acknowledge'):
+
+         option_acknowledge = options['acknowledge']
+         if type(option_acknowledge) != bool:
+            raise ProtocolError("invalid type {} for 'acknowledge' option in PUBLISH".format(type(option_acknowledge)))
+
+         acknowledge = option_acknowledge
 
       if options.has_key('excludeme'):
 
@@ -618,7 +640,7 @@ class Publish(Message):
             raise ProtocolError("invalid type {} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
          for sessionId in option_exclude:
-            if type(sessionId) != int:
+            if type(sessionId) not in [int, long]:
                raise ProtocolError("invalid type {} for value in 'exclude' option in PUBLISH".format(type(sessionId)))
 
          exclude = option_exclude
@@ -630,7 +652,7 @@ class Publish(Message):
             raise ProtocolError("invalid type {} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
          for sessionId in option_eligible:
-            if type(sessionId) != int:
+            if type(sessionId) not in [int, long]:
                raise ProtocolError("invalid type {} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
 
          eligible = option_eligible
@@ -643,7 +665,15 @@ class Publish(Message):
 
          discloseMe = option_discloseMe
 
-      obj = Klass(request, topic, args = args, kwargs = kwargs, excludeMe = excludeMe, exclude = exclude, eligible = eligible, discloseMe = discloseMe)
+      obj = Klass(request,
+                  topic,
+                  args = args,
+                  kwargs = kwargs,
+                  acknowledge = acknowledge,
+                  excludeMe = excludeMe,
+                  exclude = exclude,
+                  eligible = eligible,
+                  discloseMe = discloseMe)
 
       return obj
 
@@ -654,6 +684,8 @@ class Publish(Message):
       """
       options = {}
 
+      if self.acknowledge is not None:
+         options['acknowledge'] = self.acknowledge
       if self.excludeMe is not None:
          options['excludeme'] = self.excludeMe
       if self.exclude is not None:
@@ -675,7 +707,7 @@ class Publish(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP PUBLISH Message (request = {}, topic = {}, args = {}, kwargs = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.request, self.topic, self.args, self.kwargs, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+      return "WAMP PUBLISH Message (request = {}, topic = {}, args = {}, kwargs = {}, acknowledge = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
 
 
 
@@ -822,16 +854,19 @@ class Event(Message):
             raise ProtocolError("invalid type {} for 'kwargs' in EVENT".format(type(kwargs)))
 
       publisher = None
-
       if details.has_key('publisher'):
 
          detail_publisher = details['publisher']
-         if type(detail_publisher) != int:
+         if type(detail_publisher) not in [int, long]:
             raise ProtocolError("invalid type {} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
          publisher = detail_publisher
 
-      obj = Klass(subscription, publication, args = args, kwargs = kwargs, publisher = publisher)
+      obj = Klass(subscription,
+                  publication,
+                  args = args,
+                  kwargs = kwargs,
+                  publisher = publisher)
 
       return obj
 
@@ -920,7 +955,7 @@ class Register(Message):
             raise ProtocolError("invalid type {} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
 
          for pk in option_pkeys:
-            if type(pk) != int:
+            if type(pk) not in [int, long]:
                raise ProtocolError("invalid type for value '{}' in 'pkeys' option in REGISTER".format(type(pk)))
 
          pkeys = option_pkeys
@@ -1232,7 +1267,7 @@ class Call(Message):
       if options.has_key('timeout'):
 
          option_timeout = options['timeout']
-         if type(option_timeout) != int:
+         if type(option_timeout) not in [int, long]:
             raise ProtocolError("invalid type {} for 'timeout' option in CALL".format(type(option_timeout)))
 
          if option_timeout < 0:
@@ -1589,7 +1624,7 @@ class Invocation(Message):
       if details.has_key('timeout'):
 
          detail_timeout = details['timeout']
-         if type(detail_timeout) != int:
+         if type(detail_timeout) not in [int, long]:
             raise ProtocolError("invalid type {} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
          if detail_timeout < 0:
@@ -1610,7 +1645,7 @@ class Invocation(Message):
       if details.has_key('caller'):
 
          detail_caller = details['caller']
-         if type(detail_caller) != int:
+         if type(detail_caller) not in [int, long]:
             raise ProtocolError("invalid type {} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
          caller = detail_caller
@@ -2096,7 +2131,7 @@ class Heartbeat(Message):
 
       incoming = wmsg[1]
 
-      if type(incoming) != int:
+      if type(incoming) not in [int, long]:
          raise ProtocolError("invalid type {} for 'incoming' in HEARTBEAT".format(type(incoming)))
 
       if incoming < 0: # must be non-negative
@@ -2104,7 +2139,7 @@ class Heartbeat(Message):
 
       outgoing = wmsg[2]
 
-      if type(outgoing) != int:
+      if type(outgoing) not in [int, long]:
          raise ProtocolError("invalid type {} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
 
       if outgoing <= 0: # must be positive

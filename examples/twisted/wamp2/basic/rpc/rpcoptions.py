@@ -38,8 +38,8 @@ class RpcOptionsBackend(WampAppSession):
          if val < 0:
             self.publish('com.myapp.square_on_nonpositive', val)
          elif val == 0:
-            self.publish('com.myapp.square_on_nonpositive', val, options = PublishOptions(exclude = [details.caller]))
-
+            self.publish('com.myapp.square_on_nonpositive', val, 
+               options = PublishOptions(exclude = [details.caller]))
          return val * val
 
       self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
