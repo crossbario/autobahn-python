@@ -12,6 +12,16 @@ client_timeservice_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "rpc.timeservice.TimeServiceBackend"
 
 
+server_with_rpc_options_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.rpcoptions.RpcOptionsBackend"
+
+client_rpc_options_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.rpcoptions.RpcOptionsFrontend"
+
+client_rpc_options_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.rpcoptions.RpcOptionsBackend"
+
+
 server_with_errors_backend:
 	PYTHONPATH=../../../../autobahn python server.py --component "rpc.errors.ErrorsTestBackend"
 

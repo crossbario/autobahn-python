@@ -100,7 +100,6 @@ class PublishOptions:
    """
 
    def __init__(self,
-                topic,
                 excludeMe = None,
                 exclude = None,
                 eligible = None,
@@ -108,24 +107,28 @@ class PublishOptions:
       """
       Constructor.
       
-      :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
-      :type topic: str
-      :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
-                         to Callees. Note that a Dealer, depending on Dealer configuration, might
-                         reject the request, or might disclose the Callee's identity without
-                         a request to do so.
+      :param excludeMe: If True, exclude the publisher from receiving the event, even
+                        if he is subscribed (and eligible).
+      :type excludeMe: bool
+      :param exclude: List of WAMP session IDs to exclude from receiving this event.
+      :type exclude: list
+      :param eligible: List of WAMP session IDs eligible to receive this event.
+      :type eligible: list
+      :param discloseMe: If True, request to disclose the publisher of this event
+                         to subscribers.
       :type discloseMe: bool
       """
       assert(excludeMe is None or type(excludeMe) == bool)
-      assert(exclude is None or (type(exclude) == list and all(type(x) == int for x in exclude)))
-      assert(eligible is None or (type(eligible) == list and all(type(x) == int for x in eligible)))
+      assert(exclude is None or (type(exclude) == list and all(type(x) in [int, long] for x in exclude)))
+      assert(eligible is None or (type(eligible) == list and all(type(x) in [int, long] for x in eligible)))
       assert(discloseMe is None or type(discloseMe) == bool)
 
-      self.topic = topic
-      self.excludeMe = excludeMe
-      self.exclude = exclude
-      self.eligible = eligible
-      self.discloseMe = discloseMe
+      self.options = {
+         'excludeMe': excludeMe,
+         'exclude': exclude,
+         'eligible': eligible,
+         'discloseMe': discloseMe
+      }
 
 
 
@@ -135,31 +138,37 @@ class RegisterOptions:
    :func:`autobahn.wamp.interfaces.ICallee.register`.
    """
 
-   def __init__(self, details_arg = None):
+   def __init__(self, details_arg = None, pkeys = None):
       """
+      Ctor.
+
       :param details_arg: When invoking the endpoint, provide call details
-                               in this keyword argument to the callable.
+                          in this keyword argument to the callable.
+      :type details_arg: str
       """
       assert(type(details_arg) == str)
       self.details_arg = details_arg
-      self.options = {}
+      self.options = {'pkeys': pkeys}
 
 
 
 class CallDetails:
    """
    Provides details on a call when an endpoint previously
-   registered is being called.
+   registered is being called and opted to receive call details.
    """
 
-   def __init__(self, progress = None):
+   def __init__(self, progress = None, caller = None):
       """
       Ctor.
 
       :param progress: A callable that will receive progressive call results.
       :type progress: callable
+      :param caller: The WAMP session ID of the caller, if the latter is disclosed.
+      :type caller: int
       """
       self.progress = progress
+      self.caller = caller
 
 
 
@@ -201,12 +210,12 @@ class CallOptions:
       assert(discloseMe is None or type(discloseMe) == bool)
       assert(runOn is None or (type(runOn) == str and runOn in ["all", "any", "partition"]))
 
+      self.options = {
+         'timeout': timeout,
+         'discloseMe': discloseMe
+      }
+
       self.onProgress = onProgress
-      #self.timeout = timeout
-      #self.discloseMe = discloseMe
-      #self.runOn = runOn
-      #self.runMode = runMode
-      self.options = {'timeout': timeout}
       if onProgress:
          self.options['receive_progress'] = True
 

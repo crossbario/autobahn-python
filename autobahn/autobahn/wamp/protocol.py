@@ -426,15 +426,23 @@ class WampAppSession(WampBaseSession):
                   endpoint = self._registrations[msg.registration]
 
                   if endpoint.details_arg:
+
                      if not msg.kwargs:
                         msg.kwargs = {}
+
                      if msg.receive_progress:
                         def progress(*args, **kwargs):
                            progress_msg = message.Yield(msg.request, args = args, kwargs = kwargs, progress = True)
                            self._transport.send(progress_msg)
                      else:
                         progress = None
-                     msg.kwargs[endpoint.details_arg] = types.CallDetails(progress)
+
+                     if msg.caller:
+                        caller = msg.caller
+                     else:
+                        caller = None
+
+                     msg.kwargs[endpoint.details_arg] = types.CallDetails(progress, caller = caller)
 
                   if msg.kwargs:
                      if msg.args:
@@ -588,14 +596,15 @@ class WampAppSession(WampBaseSession):
 
       request = util.id()
 
-      d = Deferred()
-      self._publish_reqs[request] = d
-
-      if 'options' in kwargs and isinstance(kwargs['options'], wamp.options.Publish):
+      if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
          opts = kwargs.pop('options')
-         msg = message.Publish(request, topic, args = args, kwargs = kwargs, **opts.__dict__)
+         msg = message.Publish(request, topic, args = args, kwargs = kwargs, **opts.options)
       else:
+         opts = None
          msg = message.Publish(request, topic, args = args, kwargs = kwargs)
+
+      d = Deferred()
+      self._publish_reqs[request] = d, opts
 
       self._transport.send(msg)
       return d

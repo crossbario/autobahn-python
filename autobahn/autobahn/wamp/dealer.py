@@ -191,7 +191,7 @@ class Dealer:
             self._regs_to_procs[registration_id] = register.procedure
             reply = message.Registered(register.request, registration_id)
          else:
-            reply = message.Error(register.request, 'wamp.error.procedure_already_exists')
+            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, 'wamp.error.procedure_already_exists')
 
          session._transport.send(reply)
       except Exception as e:
@@ -207,7 +207,7 @@ class Dealer:
          del self._regs_to_procs[unregister.registration]
          reply = message.Unregistered(unregister.request)
       else:
-         reply = message.Error(unregister.request, 'wamp.error.no_such_registration')
+         reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, 'wamp.error.no_such_registration')
 
       session._transport.send(reply)
 
@@ -219,15 +219,30 @@ class Dealer:
       try:
          if call.procedure in self._procs_to_regs:
             registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+
             request_id = util.id()
-            invocation = message.Invocation(request_id, registration_id, args = call.args, kwargs = call.kwargs, timeout = call.timeout, receive_progress = call.receive_progress)
-            self._invocations[request_id] = (call.request, session)
+
+            if call.discloseMe:
+               caller = session._my_session_id
+            else:
+               caller = None
+
+            invocation = message.Invocation(request_id,
+                                            registration_id,
+                                            args = call.args,
+                                            kwargs = call.kwargs,
+                                            timeout = call.timeout,
+                                            receive_progress = call.receive_progress,
+                                            caller = caller)
+
+            self._invocations[request_id] = (call, session)
             endpoint_session._transport.send(invocation)
          else:
-            reply = message.Error(call.request, 'wamp.error.no_such_procedure')
+            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, 'wamp.error.no_such_procedure')
             session._transport.send(reply)
       except Exception as e:
-         print e
+         print "HERE"*10, e
+         #raise e
 
 
    def onCancel(self, session, cancel):
@@ -240,8 +255,8 @@ class Dealer:
       assert(isinstance(yield_, message.Yield))
 
       if yield_.request in self._invocations:
-         call_request_id, call_session = self._invocations[yield_.request]
-         msg = message.Result(call_request_id, args = yield_.args, kwargs = yield_.kwargs, progress = yield_.progress)
+         call_msg, call_session = self._invocations[yield_.request]
+         msg = message.Result(call_msg.request, args = yield_.args, kwargs = yield_.kwargs, progress = yield_.progress)
          call_session._transport.send(msg)
          if not yield_.progress:
             del self._invocations[yield_.request]
@@ -254,8 +269,8 @@ class Dealer:
       assert(isinstance(error, message.Error) and error.request_type == message.Invocation.MESSAGE_TYPE)
 
       if error.request in self._invocations:
-         call_request_id, call_session = self._invocations[error.request]
-         msg = message.Error(message.Call.MESSAGE_TYPE, call_request_id, error.error, args = error.args, kwargs = error.kwargs)
+         call_msg, call_session = self._invocations[error.request]
+         msg = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, error.error, args = error.args, kwargs = error.kwargs)
          call_session._transport.send(msg)
          del self._invocations[error.request]
       else:

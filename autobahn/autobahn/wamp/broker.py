@@ -27,6 +27,7 @@ class Broker:
       ## FIXME: maintain 2 maps: topic => protos (subscribers), proto => topics
       self._brokers = set()
       self._sessions = set()
+      self._session_id_to_session = {}
       self._subscribers = {}
 
 
@@ -51,13 +52,18 @@ class Broker:
       """
       print "Broker.addSession", session
       assert(session not in self._sessions)
+
       self._sessions.add(session)
+      self._session_id_to_session[session._my_session_id] = session
 
 
    def removeSession(self, session):
       print "Broker.removeSession", session
       assert(session in self._sessions)
+
       self._sessions.remove(session)
+      del self._session_id_to_session[session._my_session_id]
+
       for subscriptionid, subscribers in self._subscribers.values():
          subscribers.discard(session)
 
@@ -66,7 +72,7 @@ class Broker:
       """
       Publish from downstream consumer session.
       """
-      #print "Broker.onPublish", session, publish
+      print "Broker.onPublish", session, publish
       assert(session in self._sessions)
 
       for broker_session in self._brokers:
