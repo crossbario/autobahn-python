@@ -130,6 +130,7 @@ class ISerializer(Interface):
 
       :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
       :type message: obj
+
       :returns: tuple -- A pair `(bytes, isBinary)`.
       """
 
@@ -139,6 +140,7 @@ class ISerializer(Interface):
 
       :param bytes: Byte string from wire.
       :type bytes: bytes
+
       :returns: obj -- An instance that implements :class:`autobahn.wamp.interfaces.IMessage`.
       """
 
@@ -211,43 +213,7 @@ class ITransportHandler(Interface):
 
 
 
-class IDealer(Interface):
-   """
-   """
-
-   def register(self, endpoint, obj):
-      """
-      """
-
-   def registerMethod(self, endpoint, obj, method):
-      """
-      """
-
-   def registerProcedure(self, endpoint, procedure):
-      """
-      """
-
-   def unregister(self, endpoint):
-      """
-      """
-
-
-
-class IBroker(Interface):
-   """
-   """
-
-   def register(self, topic, prefix = False, publish = True, subscribe = True):
-      """
-      """
-
-   def unregister(self, topic):
-      """
-      """
-
-
-
-class IAppSession(Interface):
+class ISession(Interface):
    """
    Base interface for WAMP sessions.
    """
@@ -295,7 +261,7 @@ class IAppSession(Interface):
 
 
 
-class ICaller(IAppSession):
+class ICaller(ISession):
    """
    Interface for WAMP peers implementing role "Caller".
    """
@@ -326,7 +292,7 @@ class ICaller(IAppSession):
 
 
 
-class ICallee(IAppSession):
+class ICallee(ISession):
    """
    Interface for WAMP peers implementing role "Callee".
    """
@@ -381,7 +347,7 @@ class ICallee(IAppSession):
 
 
 
-class IPublisher(IAppSession):
+class IPublisher(ISession):
    """
    Interface for WAMP peers implementing role "Publisher".
    """
@@ -410,7 +376,7 @@ class IPublisher(IAppSession):
 
 
 
-class ISubscriber(IAppSession):
+class ISubscriber(ISession):
    """
    Interface for WAMP peers implementing role "Subscriber".
    """
@@ -470,3 +436,53 @@ class ISubscriber(IAppSession):
                        running under Twisted) or instance(s) of :class:`asyncio.Future`
                        (when running under asyncio).
       """
+
+
+
+class IRouter(Interface):
+   """
+   WAMP router interface. Routers are either Brokers or Dealers.
+   """
+
+   def addSession(session):
+      """
+      Add a WAMP application session to this router.
+
+      :param session: Application session to add.
+      :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
+      """
+
+
+   def removeSession(session):
+      """
+      Remove a WAMP application session from this router.
+
+      :param session: Application session to remove.
+      :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
+      """
+
+
+   def processMessage(session, message):
+      """
+      Process an incoming message on an application session previously
+      added to this router.
+
+      :param session: Application session to remove.
+      :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`     
+      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
+      :type message: obj
+      """
+
+
+
+class IBroker(IRouter):
+   """
+   WAMP broker interface. Brokers are responsible for event routing.
+   """
+
+
+
+class IDealer(IRouter):
+   """
+   WAMP dealer interface. Dealers are responsible for call routing.
+   """

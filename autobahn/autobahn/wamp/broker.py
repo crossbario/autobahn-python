@@ -16,41 +16,37 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+from zope.interface import implementer
 
 from autobahn import util
 from autobahn.wamp import message
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.interfaces import IBroker
 
 
+
+@implementer(IBroker)
 class Broker:
+   """
+   Basic WAMP broker, implements :class:`autobahn.wamp.interfaces.IBroker`.
+   """
 
    def __init__(self):
-      ## FIXME: maintain 2 maps: topic => protos (subscribers), proto => topics
-      self._brokers = set()
+      """
+      Constructor.
+      """
       self._sessions = set()
       self._session_id_to_session = {}
+
       self._subscribers = {}
-
-
-   def addBroker(self, session):
-      """
-      Add upstream broker session.
-      """
-      print "Broker.addBroker", session
-      assert(session not in self._brokers)
-      self._brokers.add(session)
-
-
-   def removeBroker(self, session):
-      print "Broker.removeBroker", session
-      assert(session in self._brokers)
-      self._brokers.remove(session)
 
 
    def addSession(self, session):
       """
-      Add downstream consumer session.
+      Implements :func:`autobahn.wamp.interfaces.IBroker.addSession`
       """
-      print "Broker.addSession", session
       assert(session not in self._sessions)
 
       self._sessions.add(session)
@@ -58,7 +54,9 @@ class Broker:
 
 
    def removeSession(self, session):
-      print "Broker.removeSession", session
+      """
+      Implements :func:`autobahn.wamp.interfaces.IBroker.removeSession`
+      """
       assert(session in self._sessions)
 
       self._sessions.remove(session)
@@ -68,16 +66,26 @@ class Broker:
          subscribers.discard(session)
 
 
-   def onPublish(self, session, publish):
+   def processMessage(self, session, msg):
       """
-      Publish from downstream consumer session.
+      Implements :func:`autobahn.wamp.interfaces.IBroker.processMessage`
       """
-      print "Broker.onPublish", session, publish
       assert(session in self._sessions)
 
-      for broker_session in self._brokers:
-         if broker_session != session:
-            broker_session._transport.send(publish)
+      if isinstance(msg, message.Publish):
+         self._processPublish(session, msg)
+
+      elif isinstance(msg, message.Subscribe):
+         self._processSubscribe(session, msg)
+
+      elif isinstance(msg, message.Unsubscribe):
+         self._processUnsubscribe(session, msg)
+
+      else:
+         raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+
+   def _processPublish(self, session, publish):
 
       if self._subscribers.has_key(publish.topic) and self._subscribers[publish.topic]:
 
@@ -138,9 +146,7 @@ class Broker:
             session._transport.send(msg)
 
 
-   def onSubscribe(self, session, subscribe):
-      print "Broker.onSubscribe", session, subscribe
-      assert(session in self._sessions)
+   def _processSubscribe(self, session, subscribe):
 
       if not self._subscribers.has_key(subscribe.topic):
          subscription_id = util.id()
@@ -155,7 +161,7 @@ class Broker:
       session._transport.send(reply)
 
 
-   def onUnsubscribe(self, session, unsubscribe):
+   def _processUnsubscribe(self, session, unsubscribe):
       assert(session in self._sessions)
 
       # if self._subscribers.has_key(unsubscribe.topic):

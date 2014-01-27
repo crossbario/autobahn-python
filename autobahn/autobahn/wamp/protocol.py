@@ -22,7 +22,7 @@ from zope.interface import implementer
 
 from twisted.internet.defer import Deferred, maybeDeferred
 
-from autobahn.wamp.interfaces import IAppSession, \
+from autobahn.wamp.interfaces import ISession, \
                                      IPublisher, \
                                      ISubscriber, \
                                      ICaller, \
@@ -41,7 +41,7 @@ from autobahn.wamp.broker import Broker
 from autobahn.wamp.dealer import Dealer
 
 
-@implementer(IAppSession)
+@implementer(ISession)
 class WampBaseSession:
 
    def __init__(self):
@@ -51,7 +51,7 @@ class WampBaseSession:
 
    def define(self, exception, error = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.IAppSession.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
       """
       if error is None:
          assert(hasattr(exception, '_wampuris'))
@@ -250,53 +250,23 @@ class WampAppSession(WampBaseSession):
 
          ## broker messages
          ##
-         elif isinstance(msg, message.Subscribe):
+         elif isinstance(msg, message.Publish) or \
+              isinstance(msg, message.Subscribe) or \
+              isinstance(msg, message.Unsubscribe):
             if self._broker:
-               self._broker.onSubscribe(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Unsubscribe):
-            if self._broker:
-               self._broker.onUnsubscribe(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Publish):
-            if self._broker:
-               self._broker.onPublish(self, msg)
+               self._broker.processMessage(self, msg)
             else:
                raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
          ## dealer messages
          ##
-         elif isinstance(msg, message.Register):
+         elif isinstance(msg, message.Register) or \
+              isinstance(msg, message.Unregister) or \
+              isinstance(msg, message.Call) or \
+              isinstance(msg, message.Cancel) or \
+              isinstance(msg, message.Yield):
             if self._dealer:
-               self._dealer.onRegister(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Unregister):
-            if self._dealer:
-               self._dealer.onUnregister(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Call):
-            if self._dealer:
-               self._dealer.onCall(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Cancel):
-            if self._dealer:
-               self._dealer.onCancel(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Yield):
-            if self._dealer:
-               self._dealer.onYield(self, msg)
+               self._dealer.processMessage(self, msg)
             else:
                raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
@@ -513,7 +483,7 @@ class WampAppSession(WampBaseSession):
             if msg.request_type == message.Invocation.MESSAGE_TYPE:
 
                if self._dealer:
-                  self._dealer.onInvocationError(self, msg)
+                  self._dealer.processMessage(self, msg)
                else:
                   raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
@@ -575,7 +545,7 @@ class WampAppSession(WampBaseSession):
 
    def closeSession(self, reason = None, message = None):
       """
-      Implements :func:`autobahn.wamp.interfaces.IAppSession.closeSession`
+      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
       """
       if not self._goodbye_sent:
          msg = wamp.message.Goodbye(reason = reason, message = message)
@@ -789,27 +759,20 @@ class WampRouterAppSession:
    def send(self, msg):
       ## app-to-broker
       ##
-      if isinstance(msg, message.Publish):
-         self._broker.onPublish(self._session, msg)
-      elif isinstance(msg, message.Subscribe):
-         self._broker.onSubscribe(self._session, msg)
-      elif isinstance(msg, message.Unsubscribe):
-         self._broker.onUnsubscribe(self._session, msg)
+      if isinstance(msg, message.Publish) or \
+         isinstance(msg, message.Subscribe) or \
+         isinstance(msg, message.Unsubscribe):
+         self._broker.processMessage(self._session, msg)
 
       ## app-to-dealer
       ##
-      elif isinstance(msg, message.Register):
-         self._dealer.onRegister(self._session, msg)
-      elif isinstance(msg, message.Unregister):
-         self._dealer.onUnregister(self._session, msg)
-      elif isinstance(msg, message.Call):
-         self._dealer.onCall(self._session, msg)
-      elif isinstance(msg, message.Cancel):
-         self._dealer.onCancel(self._session, msg)
-      elif isinstance(msg, message.Yield):
-         self._dealer.onYield(self._session, msg)
-      elif isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE:
-         self._dealer.onInvocationError(self._session, msg)
+      elif isinstance(msg, message.Register) or \
+           isinstance(msg, message.Unregister) or \
+           isinstance(msg, message.Call) or \
+           isinstance(msg, message.Cancel) or \
+           isinstance(msg, message.Yield) or \
+           (isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE):
+         self._dealer.processMessage(self._session, msg)
 
       ## broker/dealer-to-app
       ##

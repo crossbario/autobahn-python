@@ -16,191 +16,97 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
 
-def exportRpc(arg = None):
-   """
-   Decorator for RPC'ed callables.
-   """
-   ## decorator without argument
-   if type(arg) is types.FunctionType:
-      arg._autobahn_rpc_id = arg.__name__
-      return arg
-   ## decorator with argument
-   else:
-      def inner(f):
-         f._autobahn_rpc_id = arg
-         return f
-      return inner
-
-
-
-class Endpoint:
-   pass
-
-
-class LocalMethodEndpoint(Endpoint):
-   def __init__(self, endpoint, obj, method):
-      self.endpoint = endpoint
-      self.obj = obj
-      self.method = method
-
-   def __call__(self, *args):
-      return maybeDeferred(self.method, self.obj, *args)
-
-
-class LocalProcedureEndpoint(Endpoint):
-   def __init__(self, endpoint, proc):
-      self.endpoint = endpoint
-      self.proc = proc
-
-   def __call__(self, *args):
-      return maybeDeferred(self.proc, *args)
-
-
-class RemoteEndpoint(Endpoint):
-   def __init__(self, endpoint, proto):
-      self.endpoint = endpoint
-      self.proto = proto
-
-   def __call__(self, *args):
-      return self.proto.call(self.endpoint, *args)
-
-
-
-class DealerOld:
-
-   def __init__(self):
-      self._protos = set()
-      self._endpoints = {}
-      self._dealers = set()
-
-   def add(self, proto):
-      pass
-
-   def remove(self, proto):
-      pass
-
-   def addDealer(self, proto):
-      print("addDealer")
-      assert(proto not in self._dealers)
-      self._dealers.add(proto)
-
-      for endpoint in self._endpoints:
-         msg = WampMessageProvide(endpoint)
-         bytes, isbinary = proto.factory._serializer.serialize(msg)
-         proto.sendMessage(bytes, isbinary)
-
-
-   def removeDealer(self, proto):
-      assert(proto in self._dealers)
-      self._dealers.remove(proto)
-
-   def onCall(self, proto, call):
-
-      if self._endpoints.has_key(call.endpoint):
-
-         endpoint = self._endpoints[call.endpoint]
-
-         cargs = tuple(call.args)
-
-         def onSuccess(res):
-            msg = WampMessageCallResult(call.callid, res)
-            bytes, isbinary = proto.factory._serializer.serialize(msg)
-            proto.sendMessage(bytes, isbinary)
-
-         def onError(err):
-            print(err)
-
-         d = endpoint(*cargs)
-         d.addCallbacks(onSuccess, onError)
-
-      else:
-         print("FOOOOOOOOOOO")
-
-
-   def onCancelCall(self, proto, call):
-      pass
-
-   def onProvide(self, proto, provide):
-      self._endpoints[provide.endpoint] = RemoteEndpoint(provide.endpoint, proto)
-
-      for dealer_proto in self._dealers:
-         if dealer_proto != proto:
-            bytes, isbinary = dealer_proto.factory._serializer.serialize(provide)
-            dealer_proto.sendMessage(bytes, isbinary)
-
-
-   def onUnprovide(self, proto, unprovide):
-      pass
-
-
-   def _announceEndpoint(self, endpoint):
-      msg = WampMessageProvide(endpoint)
-      for dealer in self._dealers:
-         bytes, isbinary = dealer.factory._serializer.serialize(msg)
-         dealer.sendMessage(bytes, isbinary)
-
-
-   def register(self, endpoint, obj):
-      for k in inspect.getmembers(obj.__class__, inspect.ismethod):
-         if k[1].__dict__.has_key("_autobahn_rpc_id"):
-            fq_endpoint = endpoint + k[1].__dict__["_autobahn_rpc_id"]
-            method = k[1]
-            self.registerMethod(fq_endpoint, obj, method)
-
-
-   def registerMethod(self, endpoint, obj, method):
-      self._endpoints[endpoint] = LocalMethodEndpoint(endpoint, obj, method)
-      self._announceEndpoint(endpoint)
-
-
-   def registerProcedure(self, endpoint, procedure):
-      self._endpoints[endpoint] = LocalProcedureEndpoint(endpoint, procedure)
-      self._announceEndpoint(endpoint)
-
-
+from zope.interface import implementer
 
 from autobahn import util
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.interfaces import IDealer
 
 
 
+@implementer(IDealer)
 class Dealer:
+   """
+   Basic WAMP dealer, implements :class:`autobahn.wamp.interfaces.IDealer`.
+   """
+
    def __init__(self):
+      """
+      Constructor.
+      """
+      self._sessions = set()
+      self._session_id_to_session = {}
+
       self._procs_to_regs = {}
       self._regs_to_procs = {}
       self._invocations = {}
 
+
    def addSession(self, session):
-      print "Dealer.addSession", session
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.addSession`
+      """
+      assert(session not in self._sessions)
+
+      self._sessions.add(session)
+      self._session_id_to_session[session._my_session_id] = session
+
 
    def removeSession(self, session):
-      print "Dealer.removeSession", session
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.removeSession`
+      """
+      assert(session in self._sessions)
+
+      self._sessions.remove(session)
+      del self._session_id_to_session[session._my_session_id]
 
 
-   def onRegister(self, session, register):
-      print "Dealer.onRegister", session , register
-      assert(isinstance(register, message.Register))
+   def processMessage(self, session, msg):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processMessage`
+      """
+      assert(session in self._sessions)
 
-      try:
+      if isinstance(msg, message.Register):
+         self._processRegister(session, msg)
 
-         if not register.procedure in self._procs_to_regs:
-            registration_id = util.id()
-            self._procs_to_regs[register.procedure] = (registration_id, session)
-            self._regs_to_procs[registration_id] = register.procedure
-            reply = message.Registered(register.request, registration_id)
-         else:
-            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, 'wamp.error.procedure_already_exists')
+      elif isinstance(msg, message.Unregister):
+         self._processUnregister(session, msg)
 
-         session._transport.send(reply)
-      except Exception as e:
-         print ":"*100, e
+      elif isinstance(msg, message.Call):
+         self._processCall(session, msg)
+
+      elif isinstance(msg, message.Cancel):
+         self._processCancel(session, msg)
+
+      elif isinstance(msg, message.Yield):
+         self._processYield(session, msg)
+
+      elif isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE:
+         self._processInvocationError(session, msg)
+
+      else:
+         raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
 
-   def onUnregister(self, session, unregister):
-      #print "Dealer.onUnregister", session , unregister
-      assert(isinstance(unregister, message.Unregister))
+   def _processRegister(self, session, register):
+
+      if not register.procedure in self._procs_to_regs:
+         registration_id = util.id()
+         self._procs_to_regs[register.procedure] = (registration_id, session)
+         self._regs_to_procs[registration_id] = register.procedure
+         reply = message.Registered(register.request, registration_id)
+      else:
+         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, 'wamp.error.procedure_already_exists')
+
+      session._transport.send(reply)
+
+
+   def _processUnregister(self, session, unregister):
 
       if unregister.registration in self._regs_to_procs:
          del self._procs_to_regs[self._regs_to_procs[unregister.registration]]
@@ -212,47 +118,39 @@ class Dealer:
       session._transport.send(reply)
 
 
-   def onCall(self, session, call):
-      print "Dealer.onCall", session , call
-      assert(isinstance(call, message.Call))
+   def _processCall(self, session, call):
 
-      try:
-         if call.procedure in self._procs_to_regs:
-            registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+      if call.procedure in self._procs_to_regs:
+         registration_id, endpoint_session = self._procs_to_regs[call.procedure]
 
-            request_id = util.id()
+         request_id = util.id()
 
-            if call.discloseMe:
-               caller = session._my_session_id
-            else:
-               caller = None
-
-            invocation = message.Invocation(request_id,
-                                            registration_id,
-                                            args = call.args,
-                                            kwargs = call.kwargs,
-                                            timeout = call.timeout,
-                                            receive_progress = call.receive_progress,
-                                            caller = caller)
-
-            self._invocations[request_id] = (call, session)
-            endpoint_session._transport.send(invocation)
+         if call.discloseMe:
+            caller = session._my_session_id
          else:
-            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, 'wamp.error.no_such_procedure')
-            session._transport.send(reply)
-      except Exception as e:
-         print "HERE"*10, e
-         #raise e
+            caller = None
+
+         invocation = message.Invocation(request_id,
+                                         registration_id,
+                                         args = call.args,
+                                         kwargs = call.kwargs,
+                                         timeout = call.timeout,
+                                         receive_progress = call.receive_progress,
+                                         caller = caller)
+
+         self._invocations[request_id] = (call, session)
+         endpoint_session._transport.send(invocation)
+      else:
+         reply = message.Error(message.Call.MESSAGE_TYPE, call.request, 'wamp.error.no_such_procedure')
+         session._transport.send(reply)
 
 
-   def onCancel(self, session, cancel):
-      #print "Dealer.onCancel", session , cancel
+   def _processCancel(self, session, cancel):
+
       raise Exception("not implemented")
 
 
-   def onYield(self, session, yield_):
-      print "Dealer.onYield", session , yield_
-      assert(isinstance(yield_, message.Yield))
+   def _processYield(self, session, yield_):
 
       if yield_.request in self._invocations:
          call_msg, call_session = self._invocations[yield_.request]
@@ -264,9 +162,7 @@ class Dealer:
          raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {}".format(yield_.request))
 
 
-   def onInvocationError(self, session, error):
-      print "Dealer.onInvocationError", session , error
-      assert(isinstance(error, message.Error) and error.request_type == message.Invocation.MESSAGE_TYPE)
+   def _processInvocationError(self, session, error):
 
       if error.request in self._invocations:
          call_msg, call_session = self._invocations[error.request]
