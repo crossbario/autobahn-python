@@ -22,7 +22,7 @@ from zope.interface import implementer
 
 from autobahn import util
 from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.exception import ProtocolError, ApplicationError
 from autobahn.wamp.interfaces import IBroker
 
 
@@ -37,19 +37,30 @@ class Broker:
       """
       Constructor.
       """
-      self._sessions = set()
+      ## map: session -> set(subscription)
+      ## needed for removeSession
+      self._session_to_subscriptions = {}
+
+      ## map: session_id -> session
+      ## needed for exclude/eligible
       self._session_id_to_session = {}
 
-      self._subscribers = {}
+      ## map: topic -> (subscription, set(session))
+      ## needed for PUBLISH and SUBSCRIBE
+      self._topic_to_sessions = {}
+
+      ## map: subscription -> (topic, set(session))
+      ## needed for UNSUBSCRIBE
+      self._subscription_to_sessions = {}
 
 
    def addSession(self, session):
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.addSession`
       """
-      assert(session not in self._sessions)
+      assert(session not in self._session_to_subscriptions)
 
-      self._sessions.add(session)
+      self._session_to_subscriptions[session] = set()
       self._session_id_to_session[session._my_session_id] = session
 
 
@@ -57,20 +68,24 @@ class Broker:
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.removeSession`
       """
-      assert(session in self._sessions)
+      assert(session in self._session_to_subscriptions)
 
-      self._sessions.remove(session)
-      del self._session_id_to_session[session._my_session_id]
-
-      for subscriptionid, subscribers in self._subscribers.values():
+      for subscription in self._session_to_subscriptions[session]:
+         topic, subscribers = self._subscription_to_sessions[subscription]
          subscribers.discard(session)
+         if not subscribers:
+            del self._subscription_to_sessions[subscription]
+         _, subscribers = self._topic_to_sessions[topic]
+         subscribers.discard(session)
+         if not subscribers:
+            del self._topic_to_sessions[topic]
 
 
    def processMessage(self, session, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.processMessage`
       """
-      assert(session in self._sessions)
+      assert(session in self._session_to_subscriptions)
 
       if isinstance(msg, message.Publish):
          self._processPublish(session, msg)
@@ -87,11 +102,11 @@ class Broker:
 
    def _processPublish(self, session, publish):
 
-      if self._subscribers.has_key(publish.topic) and self._subscribers[publish.topic]:
+      if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
 
          ## initial list of receivers are all subscribers ..
          ##
-         subscription_id, receivers = self._subscribers[publish.topic]
+         subscription, receivers = self._topic_to_sessions[publish.topic]
 
          ## filter by "eligible" receivers
          ##
@@ -116,18 +131,17 @@ class Broker:
          ## remove publisher
          ##
          if publish.excludeMe is None or not publish.excludeMe:
-            if session in receivers:
-               receivers.remove(session)
+            receivers.discard(session)
 
       else:
          receivers = []
 
-      publication_id = util.id()
+      publication = util.id()
 
       ## send publish acknowledge when requested
       ##
       if publish.acknowledge:
-         msg = message.Published(publish.request, publication_id)
+         msg = message.Published(publish.request, publication)
          session._transport.send(msg)
 
       ## if receivers is non-empty, dispatch event ..
@@ -137,8 +151,8 @@ class Broker:
             publisher = session._my_session_id
          else:
             publisher = None
-         msg = message.Event(subscription_id,
-                             publication_id,
+         msg = message.Event(subscription,
+                             publication,
                              args = publish.args,
                              kwargs = publish.kwargs,
                              publisher = publisher)
@@ -148,22 +162,58 @@ class Broker:
 
    def _processSubscribe(self, session, subscribe):
 
-      if not self._subscribers.has_key(subscribe.topic):
-         subscription_id = util.id()
-         self._subscribers[subscribe.topic] = (subscription_id, set())
+      if True:
 
-      subscription_id, subscribers = self._subscribers[subscribe.topic]
+         if not subscribe.topic in self._topic_to_sessions:
+            subscription = util.id()
+            self._topic_to_sessions[subscribe.topic] = (subscription, set())
 
-      if not session in subscribers:
-         subscribers.add(session)
+         subscription, subscribers = self._topic_to_sessions[subscribe.topic]
 
-      reply = message.Subscribed(subscribe.request, subscription_id)
+         if not session in subscribers:
+            subscribers.add(session)
+
+         if not subscription in self._subscription_to_sessions:
+            self._subscription_to_sessions[subscription] = (subscribe.topic, set())
+
+         _, subscribers = self._subscription_to_sessions[subscription]
+         if not session in subscribers:
+            subscribers.add(session)
+
+         if not subscription in self._session_to_subscriptions[session]:
+            self._session_to_subscriptions[session].add(subscription)
+
+         reply = message.Subscribed(subscribe.request, subscription)
+
+      else:
+         reply = message.Error(message.Subscribe, subscribe.request, ApplicationError.INVALID_TOPIC)
+
       session._transport.send(reply)
 
 
    def _processUnsubscribe(self, session, unsubscribe):
-      assert(session in self._sessions)
 
-      # if self._subscribers.has_key(unsubscribe.topic):
-      #    if proto in self._subscribers[unsubscribe.topic]:
-      #       self._subscribers[unsubscribe.topic].discard(proto)
+      if unsubscribe.subscription in self._subscription_to_sessions:
+
+         topic, subscribers = self._subscription_to_sessions[unsubscribe.subscription]
+
+         subscribers.discard(session)
+
+         if not subscribers:
+            del self._subscription_to_sessions[unsubscribe.subscription]
+
+         _, subscribers = self._topic_to_sessions[topic]
+
+         subscribers.discard(session)
+
+         if not subscribers:
+            del self._topic_to_sessions[topic]
+
+         self._session_to_subscriptions[session].discard(unsubscribe.subscription)
+
+         reply = message.Unsubscribed(unsubscribe.request)
+
+      else:
+         reply = message.Error(message.Unsubscribe, unsubscribe.request, ApplicationError.NO_SUCH_SUBSCRIPTION)
+
+      session._transport.send(reply)

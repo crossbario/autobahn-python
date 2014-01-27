@@ -829,7 +829,7 @@ class WampRouterSession(WampAppSession):
       print "WampRouterSession.onSessionOpen", details.me, details.peer
 
    def onSessionClose(self, details):
-      print "WampRouterSession.onSessionOpen", details.reason, details.message
+      print "WampRouterSession.onSessionClose", details.reason, details.message
 
 
 
