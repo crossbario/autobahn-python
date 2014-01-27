@@ -41,6 +41,23 @@ from autobahn.wamp.broker import Broker
 from autobahn.wamp.dealer import Dealer
 
 
+
+class Endpoint:
+
+   def __init__(self, fn, details_arg = None):
+      self.fn = fn
+      self.details_arg = details_arg
+
+
+class Handler:
+
+   def __init__(self, fn, details_arg = None):
+      self.fn = fn
+      self.details_arg = details_arg
+
+
+
+
 @implementer(ISession)
 class WampBaseSession:
 
@@ -714,82 +731,94 @@ class WampAppFactory:
 
 
 
-import inspect
-
-def get_class_default_arg(fn, klass):
-   argspec = inspect.getargspec(fn)
-   print klass, fn, argspec
-   if argspec.defaults:
-      for i in range(len(argspec.defaults)):
-         print argspec.defaults[-i]
-         if argspec.defaults[-i] == klass:
-            return argspec.args[-i]
-   return None
-
-
-class Endpoint:
-
-   def __init__(self, fn, details_arg = None):
-      self.fn = fn
-      self.details_arg = details_arg
-
-
-class Handler:
-
-   def __init__(self, fn, details_arg = None):
-      self.fn = fn
-      self.details_arg = details_arg
-
-
-
 class WampRouterAppSession:
+   """
+   Wraps an application session to run directly attached to a WAMP router (broker+dealer).
+   """
 
    def __init__(self, session, broker, dealer):
+      """
+      Wrap an application session and add it to the given broker and dealer.
+
+      :param session: Application session to wrap.
+      :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
+      :param broker: The broker to add the app session to.
+      :type broker: An instance that implements :class:`autobahn.wamp.interfaces.IBroker`
+      :param dealer: The dealer to add the app session to.
+      :type dealer: An instance that implements :class:`autobahn.wamp.interfaces.IDealer`
+      """
+
+      ## remember broker/dealer we are wrapping the app session for
+      ##
       self._broker = broker
       self._dealer = dealer
 
+      ## remember wrapped app session
+      ##
       self._session = session
+
+      ## set fake transport on session ("pass-through transport")
+      ##
       self._session._transport = self
+
+      ## fake session ID assignment (normally done in WAMP opening handshake)
       self._session._my_session_id = util.id()
       self._session._peer_session_id = util.id()
+
+      ## add app session to broker and dealer
       self._broker.addSession(self._session)
       self._dealer.addSession(self._session)
+
+      ## fake app session open
+      ##
       self._session.onSessionOpen(SessionDetails(self._session._my_session_id, self._session._peer_session_id))
 
+
    def send(self, msg):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.send`
+      """
       ## app-to-broker
       ##
       if isinstance(msg, message.Publish) or \
          isinstance(msg, message.Subscribe) or \
          isinstance(msg, message.Unsubscribe):
+
+         ## deliver message to broker
+         ##
          self._broker.processMessage(self._session, msg)
 
       ## app-to-dealer
       ##
-      elif isinstance(msg, message.Register) or \
-           isinstance(msg, message.Unregister) or \
-           isinstance(msg, message.Call) or \
-           isinstance(msg, message.Cancel) or \
+      elif isinstance(msg, message.Call) or \
            isinstance(msg, message.Yield) or \
+           isinstance(msg, message.Register) or \
+           isinstance(msg, message.Unregister) or \
+           isinstance(msg, message.Cancel) or \
            (isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE):
+
+         ## deliver message to dealer
+         ##
          self._dealer.processMessage(self._session, msg)
 
       ## broker/dealer-to-app
       ##
       elif isinstance(msg, message.Event) or \
+           isinstance(msg, message.Invocation) or \
+           isinstance(msg, message.Result) or \
            isinstance(msg, message.Published) or \
            isinstance(msg, message.Subscribed) or \
            isinstance(msg, message.Unsubscribed) or \
-           isinstance(msg, message.Result) or \
-           isinstance(msg, message.Invocation) or \
            isinstance(msg, message.Registered) or \
            isinstance(msg, message.Unregistered):
-         try:
-            self._session.onMessage(msg)
-         except Exception as e:
-            print "X"*10, e
+
+         ## deliver message to app session
+         ##
+         self._session.onMessage(msg)
 
       else:
+         ## should not arrive here
+         ##
          raise Exception("WampRouterAppSession.send: unhandled message {}".format(msg))
 
 
