@@ -88,16 +88,16 @@ class Message(util.EqualityMixin):
       """
       Base constructor.
       """
-      self.reset_cache()
-
-
-   def reset_cache(self):
-      """
-      Implements :func:`autobahn.wamp.interfaces.IMessage.reset_cache`
-      """
       ## serialization cache: mapping from ISerializer instances
       ## to serialized bytes
       ##
+      self._serialized = {}
+
+
+   def uncache(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.uncache`
+      """
       self._serialized = {}
 
 
@@ -152,18 +152,19 @@ class Error(Message):
       self.kwargs = kwargs
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == Klass.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE)
 
       if len(wmsg) not in (5, 6, 7):
          raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
@@ -197,7 +198,7 @@ class Error(Message):
          if type(kwargs) != dict:
             raise ProtocolError("invalid type {} for 'kwargs' in ERROR".format(type(kwargs)))
 
-      obj = Klass(request_type, request, error, args = args, kwargs = kwargs)
+      obj = Error(request_type, request, error, args = args, kwargs = kwargs)
 
       return obj
 
@@ -258,13 +259,14 @@ class Subscribe(Message):
       self.match = match
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -291,7 +293,7 @@ class Subscribe(Message):
 
          match = option_match
 
-      obj = Klass(request, topic, match)
+      obj = Subscribe(request, topic, match)
 
       return obj
 
@@ -343,13 +345,14 @@ class Subscribed(Message):
       self.subscription = subscription
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -362,7 +365,7 @@ class Subscribed(Message):
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED")
       subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED")
 
-      obj = Klass(request, subscription)
+      obj = Subscribed(request, subscription)
 
       return obj
 
@@ -410,13 +413,14 @@ class Unsubscribe(Message):
       self.subscription = subscription
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -429,7 +433,7 @@ class Unsubscribe(Message):
       request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBE")
       subscription = check_or_raise_id(wmsg[2], "'subscription' in UNSUBSCRIBE")
 
-      obj = Klass(request, subscription)
+      obj = Unsubscribe(request, subscription)
 
       return obj
 
@@ -473,13 +477,14 @@ class Unsubscribed(Message):
       self.request = request
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -491,7 +496,7 @@ class Unsubscribed(Message):
 
       request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED")
 
-      obj = Klass(request)
+      obj = Unsubscribed(request)
 
       return obj
 
@@ -526,7 +531,6 @@ class Publish(Message):
    """
    The WAMP message code for this type of message.
    """
-
 
    def __init__(self,
                 request,
@@ -579,13 +583,14 @@ class Publish(Message):
       self.discloseMe = discloseMe
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -665,15 +670,15 @@ class Publish(Message):
 
          discloseMe = option_discloseMe
 
-      obj = Klass(request,
-                  topic,
-                  args = args,
-                  kwargs = kwargs,
-                  acknowledge = acknowledge,
-                  excludeMe = excludeMe,
-                  exclude = exclude,
-                  eligible = eligible,
-                  discloseMe = discloseMe)
+      obj = Publish(request,
+                    topic,
+                    args = args,
+                    kwargs = kwargs,
+                    acknowledge = acknowledge,
+                    excludeMe = excludeMe,
+                    exclude = exclude,
+                    eligible = eligible,
+                    discloseMe = discloseMe)
 
       return obj
 
@@ -738,13 +743,14 @@ class Published(Message):
       self.publication = publication
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -757,7 +763,7 @@ class Published(Message):
       request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
       publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
 
-      obj = Klass(request, publication)
+      obj = Published(request, publication)
 
       return obj
 
@@ -821,13 +827,14 @@ class Event(Message):
       self.publisher = publisher
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -862,7 +869,7 @@ class Event(Message):
 
          publisher = detail_publisher
 
-      obj = Klass(subscription,
+      obj = Event(subscription,
                   publication,
                   args = args,
                   kwargs = kwargs,
@@ -926,13 +933,14 @@ class Register(Message):
       self.pkeys = pkeys
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -960,7 +968,7 @@ class Register(Message):
 
          pkeys = option_pkeys
 
-      obj = Klass(request, procedure, pkeys = pkeys)
+      obj = Register(request, procedure, pkeys = pkeys)
 
       return obj
 
@@ -1012,13 +1020,14 @@ class Registered(Message):
       self.registration = registration
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1031,7 +1040,7 @@ class Registered(Message):
       request = check_or_raise_id(wmsg[1], "'request' in REGISTERED")
       registration = check_or_raise_id(wmsg[2], "'registration' in REGISTERED")
 
-      obj = Klass(request, registration)
+      obj = Registered(request, registration)
 
       return obj
 
@@ -1079,13 +1088,14 @@ class Unregister(Message):
       self.registration = registration
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1098,7 +1108,7 @@ class Unregister(Message):
       request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
       registration = check_or_raise_id(wmsg[2], "'registration' in UNREGISTER")
 
-      obj = Klass(request, registration)
+      obj = Unregister(request, registration)
 
       return obj
 
@@ -1142,13 +1152,14 @@ class Unregistered(Message):
       self.request = request
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1160,7 +1171,7 @@ class Unregistered(Message):
 
       request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
 
-      obj = Klass(request)
+      obj = Unregistered(request)
 
       return obj
 
@@ -1196,7 +1207,6 @@ class Call(Message):
    The WAMP message code for this type of message.
    """
 
-
    def __init__(self,
                 request,
                 procedure,
@@ -1231,13 +1241,14 @@ class Call(Message):
       self.discloseMe = discloseMe
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1293,13 +1304,13 @@ class Call(Message):
 
          discloseMe = option_discloseMe
 
-      obj = Klass(request,
-                  procedure,
-                  args = args,
-                  kwargs = kwargs,
-                  timeout = timeout,
-                  receive_progress = receive_progress,
-                  discloseMe = discloseMe)
+      obj = Call(request,
+                 procedure,
+                 args = args,
+                 kwargs = kwargs,
+                 timeout = timeout,
+                 receive_progress = receive_progress,
+                 discloseMe = discloseMe)
 
       return obj
 
@@ -1367,13 +1378,14 @@ class Cancel(Message):
       self.mode = mode
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1401,7 +1413,7 @@ class Cancel(Message):
 
          mode = option_mode
 
-      obj = Klass(request, mode = mode)
+      obj = Cancel(request, mode = mode)
 
       return obj
 
@@ -1442,7 +1454,6 @@ class Result(Message):
    The WAMP message code for this type of message.
    """
 
-
    def __init__(self, request, args = None, kwargs = None, progress = None):
       """
       Message constructor.
@@ -1465,13 +1476,14 @@ class Result(Message):
       self.progress = progress
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1506,7 +1518,7 @@ class Result(Message):
 
          progress = detail_progress
 
-      obj = Klass(request, args = args, kwargs = kwargs, progress = progress)
+      obj = Result(request, args = args, kwargs = kwargs, progress = progress)
 
       return obj
 
@@ -1588,13 +1600,14 @@ class Invocation(Message):
       self.caller = caller
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1650,13 +1663,13 @@ class Invocation(Message):
 
          caller = detail_caller
 
-      obj = Klass(request,
-                  registration,
-                  args = args,
-                  kwargs = kwargs,
-                  timeout = timeout,
-                  receive_progress = receive_progress,
-                  caller = caller)
+      obj = Invocation(request,
+                       registration,
+                       args = args,
+                       kwargs = kwargs,
+                       timeout = timeout,
+                       receive_progress = receive_progress,
+                       caller = caller)
 
       return obj
 
@@ -1723,13 +1736,14 @@ class Interrupt(Message):
       self.mode = mode
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1757,7 +1771,7 @@ class Interrupt(Message):
 
          mode = option_mode
 
-      obj = Klass(request, mode = mode)
+      obj = Interrupt(request, mode = mode)
 
       return obj
 
@@ -1821,13 +1835,14 @@ class Yield(Message):
       self.progress = progress
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1862,7 +1877,7 @@ class Yield(Message):
 
          progress = option_progress
 
-      obj = Klass(request, args = args, kwargs = kwargs, progress = progress)
+      obj = Yield(request, args = args, kwargs = kwargs, progress = progress)
 
       return obj
 
@@ -1920,13 +1935,14 @@ class Hello(Message):
       self.roles = roles
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -1964,7 +1980,7 @@ class Hello(Message):
 
          roles.append(role_features)
 
-      obj = Klass(session, roles)
+      obj = Hello(session, roles)
 
       return obj
 
@@ -2021,13 +2037,14 @@ class Goodbye(Message):
       self.message = message
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -2053,7 +2070,7 @@ class Goodbye(Message):
 
          message = details_message
 
-      obj = Klass(reason, message)
+      obj = Goodbye(reason, message)
 
       return obj
 
@@ -2113,13 +2130,14 @@ class Heartbeat(Message):
       self.discard = discard
 
 
-   @classmethod
-   def parse(Klass, wmsg):
+   @staticmethod
+   def parse(wmsg):
       """
       Verifies and parses an unserialized raw message into an actual WAMP message instance.
 
       :param wmsg: The unserialized raw message.
       :type wmsg: list
+
       :returns obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
@@ -2151,7 +2169,7 @@ class Heartbeat(Message):
          if type(discard) not in (str, unicode):
             raise ProtocolError("invalid type {} for 'discard' in HEARTBEAT".format(type(discard)))
 
-      obj = Klass(incoming, outgoing, discard = discard)
+      obj = Heartbeat(incoming, outgoing, discard = discard)
 
       return obj
 

@@ -27,7 +27,7 @@ from autobahn.wamp.interfaces import IAppSession, \
                                      ISubscriber, \
                                      ICaller, \
                                      ICallee, \
-                                     IMessageTransportHandler
+                                     ITransportHandler
 
 from autobahn import util
 from autobahn import wamp
@@ -146,7 +146,7 @@ class WampBaseSession:
 @implementer(ISubscriber)
 @implementer(ICaller)
 @implementer(ICallee)
-@implementer(IMessageTransportHandler)
+@implementer(ITransportHandler)
 class WampAppSession(WampBaseSession):
 
    def __init__(self, broker = None, dealer = None):
@@ -179,7 +179,7 @@ class WampAppSession(WampBaseSession):
 
    def onOpen(self, transport):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onOpen`
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
       """
       self._transport = transport
 
@@ -205,7 +205,7 @@ class WampAppSession(WampBaseSession):
 
    def onMessage(self, msg):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onMessage`
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
       """
       if self._peer_session_id is None:
 
@@ -549,9 +549,9 @@ class WampAppSession(WampBaseSession):
             raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
 
-   def onClose(self):
+   def onClose(self, wasClean):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransportHandler.onClose`
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
       """
       self._transport = None
 

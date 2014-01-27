@@ -29,19 +29,22 @@ from zope.interface import implementer
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
-from autobahn.wamp.interfaces import IMessageTransport, ISerializer
+from autobahn.wamp.interfaces import ITransport, ISerializer
 from autobahn.wamp.serializer import JsonSerializer, MsgPackSerializer
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 
 
-@implementer(IMessageTransport)
+@implementer(ITransport)
 class WampWebSocketProtocol:
    """
    Base class for WAMP-over-WebSocket transport mixins.
    """
 
    def onOpen(self):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
+      """
       ## WebSocket connection established - now let the
       ## user WAMP session factory create a new WAMP session ..
       self._session = self.factory._factory()
@@ -54,18 +57,26 @@ class WampWebSocketProtocol:
          reason = "WAMP Internal Error ({})".format(e)
          self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
+
    def onClose(self, wasClean, code, reason):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
+      """
       ## WebSocket connection lost - fire off the WAMP
       ## session close callback
       try:
          #print("WebSocket Transport lost ({}, {}, {})".format(wasClean, code, reason))
-         self._session.onClose()
+         self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
          pass
       self._session = None
 
+
    def onMessage(self, bytes, isBinary):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
+      """
       try:
          msg = self._serializer.unserialize(bytes, isBinary)
          self._session.onMessage(msg)
@@ -78,9 +89,10 @@ class WampWebSocketProtocol:
          reason = "WAMP Internal Error ({})".format(e)
          self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
+
    def send(self, msg):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransport.send`
+      Implements :func:`autobahn.wamp.interfaces.ITransport.send`
       """
       if self.isOpen():
          try:
@@ -93,24 +105,27 @@ class WampWebSocketProtocol:
       else:
          raise TransportLost()
 
+
    def isOpen(self):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransport.isOpen`
+      Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
       """
       return self._session is not None
 
+
    def close(self):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransport.close`
+      Implements :func:`autobahn.wamp.interfaces.ITransport.close`
       """
       if self.isOpen():
          self.sendClose(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
       else:
          raise TransportLost()
 
+
    def abort(self):
       """
-      Implements :func:`autobahn.wamp.interfaces.IMessageTransport.abort`
+      Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
       """
       if self.isOpen():
          self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY, reason = reason)
@@ -138,6 +153,9 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
    """
 
    def onConnect(self, request):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
+      """
       headers = {}
       for subprotocol in request.protocols:
          version, serializerId = parseSubprotocolIdentifier(subprotocol)
@@ -155,6 +173,9 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
    """
 
    def onConnect(self, response):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
+      """
       if response.protocol not in self.factory.protocols:
          raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
 
@@ -171,7 +192,7 @@ class WampWebSocketFactory:
    def __init__(self, factory, serializers = None):
       """
       :param factory: A callable that produces instances that implement
-                      :class:`autobahn.wamp.interfaces.IMessageTransportHandler`
+                      :class:`autobahn.wamp.interfaces.ITransportHandler`
       :type factory: callable
       :param serializers: A list of WAMP serializers to use (or None for default
                           serializers). Serializers must implement

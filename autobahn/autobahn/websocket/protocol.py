@@ -70,9 +70,9 @@ from zope.interface import implementer
 
 from autobahn import __version__
 
-from autobahn.interfaces import IWebSocketChannel, \
-                                IWebSocketChannelFrameApi, \
-                                IWebSocketChannelStreamingApi
+from autobahn.websocket.interfaces import IWebSocketChannel, \
+                                          IWebSocketChannelFrameApi, \
+                                          IWebSocketChannelStreamingApi
 
 from autobahn.util import Stopwatch
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -482,9 +482,9 @@ class WebSocketProtocol:
 
    This class implements:
 
-     * :class:`autobahn.interfaces.IWebSocketChannel`
-     * :class:`autobahn.interfaces.IWebSocketChannelFrameApi`
-     * :class:`autobahn.interfaces.IWebSocketChannelStreamingApi`
+     * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
+     * :class:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi`
+     * :class:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi`
    """
 
    SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
@@ -659,7 +659,7 @@ class WebSocketProtocol:
 
    def onOpen(self):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onOpen`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
       """
       if self.debugCodePaths:
          self.factory._log("WebSocketProtocol.onOpen")
@@ -667,7 +667,7 @@ class WebSocketProtocol:
 
    def onMessageBegin(self, isBinary):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageBegin`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageBegin`
       """
       self.message_is_binary = isBinary
       self.message_data = []
@@ -676,7 +676,7 @@ class WebSocketProtocol:
 
    def onMessageFrameBegin(self, length):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameBegin`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameBegin`
       """
       self.frame_length = length
       self.frame_data = []
@@ -692,7 +692,7 @@ class WebSocketProtocol:
 
    def onMessageFrameData(self, payload):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameData`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameData`
       """
       if not self.failedByMe:
          if self.websocket_version == 0:
@@ -707,7 +707,7 @@ class WebSocketProtocol:
 
    def onMessageFrameEnd(self):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrameEnd`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameEnd`
       """
       if not self.failedByMe:
          self._onMessageFrame(self.frame_data)
@@ -717,7 +717,7 @@ class WebSocketProtocol:
 
    def onMessageFrame(self, payload):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageFrame`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
       """
       if not self.failedByMe:
          self.message_data.extend(payload)
@@ -725,7 +725,7 @@ class WebSocketProtocol:
 
    def onMessageEnd(self):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessageEnd`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageEnd`
       """
       if not self.failedByMe:
          payload = b''.join(self.message_data)
@@ -738,7 +738,7 @@ class WebSocketProtocol:
 
    def onMessage(self, payload, isBinary):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onMessage`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onMessage")
@@ -746,7 +746,7 @@ class WebSocketProtocol:
 
    def onPing(self, payload):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onPing`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPing")
@@ -756,7 +756,7 @@ class WebSocketProtocol:
 
    def onPong(self, payload):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onPong`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
       """
       if self.debug:
          self.factory._log("WebSocketProtocol.onPong")
@@ -764,7 +764,7 @@ class WebSocketProtocol:
 
    def onClose(self, wasClean, code, reason):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.onClose`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
       """
       if self.debugCodePaths:
          s = "WebSocketProtocol.onClose:\n"
@@ -1421,7 +1421,7 @@ class WebSocketProtocol:
 
    def sendPreparedMessage(self, preparedMsg):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPreparedMessage`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
       """
       if self.websocket_version != 0:
          if self._perMessageCompress is None or preparedMsg.doNotCompress:
@@ -2032,7 +2032,7 @@ class WebSocketProtocol:
 
    def sendPing(self, payload = None):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPing`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2049,7 +2049,7 @@ class WebSocketProtocol:
 
    def sendPong(self, payload = None):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendPong`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPong`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2118,7 +2118,7 @@ class WebSocketProtocol:
 
    def sendClose(self, code = None, reason = None):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendClose`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
       """
       if code is not None:
          if type(code) != int:
@@ -2144,7 +2144,7 @@ class WebSocketProtocol:
 
    def beginMessage(self, isBinary = False, doNotCompress = False):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.beginMessage`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.beginMessage`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2177,7 +2177,7 @@ class WebSocketProtocol:
 
    def beginMessageFrame(self, length):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.beginMessageFrame`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.beginMessageFrame`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2268,7 +2268,7 @@ class WebSocketProtocol:
 
    def sendMessageFrameData(self, payload, sync = False):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessageFrameData`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrameData`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2323,7 +2323,7 @@ class WebSocketProtocol:
 
    def endMessage(self):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.endMessage`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.endMessage`
       """
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
@@ -2349,7 +2349,7 @@ class WebSocketProtocol:
 
    def sendMessageFrame(self, payload, sync = False):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessageFrame`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrame`
       """
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
@@ -2372,7 +2372,7 @@ class WebSocketProtocol:
                    sync = False,
                    doNotCompress = False):
       """
-      Implements :func:`autobahn.interfaces.IWebSocketChannel.sendMessage`
+      Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
       """
       assert(type(payload) == bytes)
 

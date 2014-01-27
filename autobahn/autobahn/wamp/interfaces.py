@@ -22,11 +22,14 @@ from zope.interface import Interface, Attribute
 
 class IObjectSerializer(Interface):
    """
-   Raw object serialization and unserialization.
+   Raw Python object serialization and unserialization. Object serializers are
+   used by classes implementing WAMP serializers, that is instances of
+   :class:`autobahn.wamp.interfaces.ISerializer`.
    """
 
    BINARY = Attribute("""Flag to indicate if serializer requires a binary clean
-      transport (or if UTF8 transparency is sufficient).""")
+      transport or if UTF8 transparency is sufficient.""")
+
 
    def serialize(obj):
       """
@@ -35,7 +38,7 @@ class IObjectSerializer(Interface):
       :param obj: Object to serialize.
       :type obj: Any serializable type.
 
-      :returns str -- Serialized byte string.
+      :returns: str -- Serialized byte string.
       """
 
    def unserialize(bytes):
@@ -45,7 +48,7 @@ class IObjectSerializer(Interface):
       :param bytes: Object to serialize.
       :type bytes: Any serializable type.
 
-      :returns obj -- Any type that can be unserialized.
+      :returns: obj -- Any type that can be unserialized.
       """
 
 
@@ -62,19 +65,31 @@ class IMessage(Interface):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
 
-      :returns list -- The serialized raw message.
+      :returns: list -- The serialized raw message.
+      """
+
+   def parse(wmsg):
+      """
+      Factory method that parses a unserialized raw message (as returned byte
+      :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
+      of this class.
+
+      :returns: obj -- An instance of this class. 
       """
    
    def serialize(serializer):
       """
-      Serialize this object into a wire level bytestring representation.
+      Serialize this object into a wire level bytestring representation and cache
+      the resulting bytestring. If the cache already contains an entry for the given
+      serializer, return the cached representation directly.
 
       :param serializer: The wire level serializer to use.
       :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
-      :returns bytes -- The serialized bytes.
+
+      :returns: bytes -- The serialized bytes.
       """
 
-   def reset_cache():
+   def uncache():
       """
       Resets the serialization cache.
       """
@@ -87,14 +102,14 @@ class IMessage(Interface):
 
    def __ne__(other):
       """
-      Message inequality: just the negate of message equality.
+      Message inequality (just the negate of message equality).
       """
 
    def __str__():
       """
       Returns text representation of this message.
 
-      :returns str -- Human readable representation (e.g. for logging or debugging purposes).
+      :returns: str -- Human readable representation (e.g. for logging or debugging purposes).
       """
 
 
@@ -115,7 +130,7 @@ class ISerializer(Interface):
 
       :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
       :type message: obj
-      :returns tuple -- A pair `(bytes, isBinary)`.
+      :returns: tuple -- A pair `(bytes, isBinary)`.
       """
 
    def unserialize(bytes, isBinary):
@@ -124,39 +139,58 @@ class ISerializer(Interface):
 
       :param bytes: Byte string from wire.
       :type bytes: bytes
-      :returns obj -- An instance that implements :class:`autobahn.wamp.interfaces.IMessage`.
+      :returns: obj -- An instance that implements :class:`autobahn.wamp.interfaces.IMessage`.
       """
 
 
 
-class IMessageTransport(Interface):
+class ITransport(Interface):
+   """
+   A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
+   message-based channel.
+   """
 
    def send(message):
       """
+      Send a WAMP message over the transport to the peer. If the transport is
+      not open, this raises :class:`autobahn.wamp.exception.TransportLost`.
+
+      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
+      :type message: obj      
       """
 
    def isOpen():
       """
+      Check if the transport is open for messaging.
+
+      :returns: bool -- `True`, if the transport is open.
       """
 
    def close():
       """
+      Close the transport regularily. The transport will perform any
+      closing handshake if applicable. This should be used for any
+      application initiated closing.
       """
 
    def abort():
       """
+      Abort the transport abruptly. The transport will be destroyed as
+      fast as possible, and without playing nice to the peer. This should
+      only be used in case of fatal errors, protocol violations or possible
+      detected attacks.
       """
 
 
 
-class IMessageTransportHandler(Interface):
+class ITransportHandler(Interface):
 
    def onOpen(transport):
       """
-      Called fired when transport is open.
+      Callback fired when transport is open.
 
-      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-      :type message: obj      
+      :param transport: An instance that implements :class:`autobahn.wamp.interfaces.ITransport`
+      :type transport: obj      
       """
 
    def onMessage(message):
@@ -167,8 +201,12 @@ class IMessageTransportHandler(Interface):
       :type message: obj
       """
 
-   def onClose():
+   def onClose(wasClean):
       """
+      Callback fired when the transport has been closed.
+
+      :param wasClean: Indicates if the transport has been closed regularily.
+      :type wasClean: bool
       """
 
 
