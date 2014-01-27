@@ -16,9 +16,8 @@
 ##
 ###############################################################################
 
-
-import zope
 from zope.interface import Interface, Attribute
+
 
 
 class IObjectSerializer(Interface):
@@ -48,6 +47,7 @@ class IObjectSerializer(Interface):
 
       :returns obj -- Any type that can be unserialized.
       """
+
 
 
 class IMessage(Interface):
@@ -98,6 +98,7 @@ class IMessage(Interface):
       """
 
 
+
 class ISerializer(Interface):
    """
    WAMP message serialization and unserialization.
@@ -128,7 +129,6 @@ class ISerializer(Interface):
 
 
 
-
 class IMessageTransport(Interface):
 
    def send(message):
@@ -146,6 +146,7 @@ class IMessageTransport(Interface):
    def abort():
       """
       """
+
 
 
 class IMessageTransportHandler(Interface):
@@ -172,7 +173,7 @@ class IMessageTransportHandler(Interface):
 
 
 
-class IWampDealer(Interface):
+class IDealer(Interface):
    """
    """
 
@@ -193,7 +194,8 @@ class IWampDealer(Interface):
       """
 
 
-class IWampBroker(Interface):
+
+class IBroker(Interface):
    """
    """
 

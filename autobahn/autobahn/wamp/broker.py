@@ -105,6 +105,12 @@ class Broker:
             if exclude:
                receivers = receivers - set(exclude)
 
+         ## remove publisher
+         ##
+         if publish.excludeMe is None or not publish.excludeMe:
+            if session in receivers:
+               receivers.remove(session)
+
       else:
          receivers = []
 
