@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -17,11 +17,16 @@
 ###############################################################################
 
 import sys
+
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
+
 from autobahn.twisted.websocket import connectWS
-from autobahn.wamp import WampClientFactory, WampClientProtocol
+
+from autobahn.wamp1.protocol import WampClientFactory, \
+                                    WampClientProtocol
+
 
 
 class SimpleClientProtocol(WampClientProtocol):

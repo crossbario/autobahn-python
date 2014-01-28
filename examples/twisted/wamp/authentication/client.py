@@ -23,7 +23,10 @@ from twisted.python import log
 from twisted.internet import reactor
 
 from autobahn.twisted.websocket import connectWS
-from autobahn.wamp import WampClientFactory, WampCraClientProtocol
+
+from autobahn.wamp1.protocol import WampClientFactory, \
+                                    WampCraClientProtocol
+
 
 
 class MyClientProtocol(WampCraClientProtocol):

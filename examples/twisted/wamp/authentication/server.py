@@ -25,11 +25,14 @@ from twisted.web.static import File
 
 from autobahn.twisted.websocket import listenWS
 
-from autobahn.wamp1 import wamp
+from autobahn.wamp1.protocol import exportRpc, \
+                                    WampCraProtocol, \
+                                    WampCraServerProtocol, \
+                                    WampServerFactory
 
 
 
-class MyServerProtocol(wamp.WampCraServerProtocol):
+class MyServerProtocol(WampCraServerProtocol):
    """
    Authenticating WAMP server using WAMP-Challenge-Response-Authentication ("WAMP-CRA").
    """
@@ -45,7 +48,7 @@ class MyServerProtocol(wamp.WampCraServerProtocol):
 
    ## secrets by authkey
    ##
-   SECRETS = {'foobar': wamp.WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
+   SECRETS = {'foobar': WampCraProtocol.deriveKey('secret', AUTHEXTRA)}
 
    print "Auth Extra/Secrets"
    print AUTHEXTRA
@@ -72,7 +75,7 @@ class MyServerProtocol(wamp.WampCraServerProtocol):
       self.clientAuthAllowAnonymous = True
 
       ## call base class method
-      wamp.WampCraServerProtocol.onSessionOpen(self)
+      WampCraServerProtocol.onSessionOpen(self)
 
 
    def getAuthPermissions(self, authKey, authExtra):
@@ -110,7 +113,7 @@ class MyServerProtocol(wamp.WampCraServerProtocol):
                              [MyServerProtocol.hello])
 
 
-   @wamp.exportRpc("hello")
+   @exportRpc("hello")
    def hello(self, name):
       return "Hello back %s!" % name
 
@@ -124,7 +127,7 @@ if __name__ == '__main__':
    else:
       debug = False
 
-   factory = wamp.WampServerFactory("ws://localhost:9000", debugWamp = debug)
+   factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
    factory.protocol = MyServerProtocol
    listenWS(factory)
 

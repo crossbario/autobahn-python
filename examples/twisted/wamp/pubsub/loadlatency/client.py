@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 import time, sys, argparse
 
-from autobahn.choosereactor import install_reactor
+from autobahn.twisted.choosereactor import install_reactor
 install_reactor()
 
 from twisted.python import log
@@ -26,8 +26,12 @@ from twisted.internet import reactor
 from twisted.internet.defer import Deferred, DeferredList
 
 import autobahn
+
 from autobahn.twisted.websocket import connectWS
-from autobahn.wamp import WampClientFactory, WampClientProtocol, WampCraClientProtocol
+
+from autobahn.wamp1.protocol import WampClientFactory, \
+                                    WampClientProtocol, \
+                                    WampCraClientProtocol
 
 
 
@@ -314,5 +318,5 @@ if __name__ == '__main__':
    print reactor.__class__
    print autobahn.utf8validator.Utf8Validator
    print autobahn.xormasker.XorMaskerNull
-   print autobahn.wamp.json_lib
+   print autobahn.wamp1.protocol.json_lib
    reactor.run()

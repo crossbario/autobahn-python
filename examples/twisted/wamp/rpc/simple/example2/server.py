@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -24,9 +24,9 @@ from twisted.web.server import Site
 from twisted.web.static import File
 
 from autobahn.twisted.websocket import listenWS
-from autobahn.wamp import exportRpc, \
-                          WampServerFactory, \
-                          WampServerProtocol
+from autobahn.wamp1.protocol import exportRpc, \
+                                    WampServerFactory, \
+                                    WampServerProtocol
 
 
 class Calc:

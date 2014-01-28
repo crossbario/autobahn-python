@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -24,13 +24,12 @@ from twisted.web.server import Site
 from twisted.web.static import File
 
 from autobahn.twisted.websocket import listenWS
+from autobahn.twisted.resource import WebSocketResource, \
+                                      HTTPChannelHixie76Aware
 
-from autobahn.resource import WebSocketResource, \
-                              HTTPChannelHixie76Aware
-
-from autobahn.wamp import exportRpc, \
-                          WampServerFactory, \
-                          WampServerProtocol
+from autobahn.wamp1.protocol import exportRpc, \
+                                    WampServerFactory, \
+                                    WampServerProtocol
 
 
 class KeyValue:
@@ -66,6 +65,7 @@ class KeyValue:
       return self.store.keys()
 
 
+
 class KeyValueServerProtocol(WampServerProtocol):
    """
    Demonstrates creating a server with Autobahn WebSockets that provides
@@ -78,16 +78,18 @@ class KeyValueServerProtocol(WampServerProtocol):
       self.registerForRpc(self.factory.keyvalue, "http://example.com/simple/keyvalue#")
 
 
+
 class KeyValueServerFactory(WampServerFactory):
 
    protocol = KeyValueServerProtocol
 
-   def __init__(self, url, debugWamp = False):
-      WampServerFactory.__init__(self, url, debugWamp = debugWamp)
+   def __init__(self, url, debug = False, debugWamp = False):
+      WampServerFactory.__init__(self, url, debug = debug, debugWamp = debugWamp)
 
       ## the key-value store resides on the factory object, since it is to
       ## be shared among all client connections
       self.keyvalue = KeyValue("keyvalue.dat")
+
 
 
 if __name__ == '__main__':
@@ -100,7 +102,7 @@ if __name__ == '__main__':
 
    port = 8080
 
-   factory = KeyValueServerFactory("ws://localhost:%d" % port, debugWamp = debug)
+   factory = KeyValueServerFactory("ws://localhost:%d" % port, debug = debug, debugWamp = debug)
    factory.setProtocolOptions(allowHixie76 = True)
    ## need to start manually, see https://github.com/tavendo/AutobahnPython/issues/133
    factory.startFactory()
