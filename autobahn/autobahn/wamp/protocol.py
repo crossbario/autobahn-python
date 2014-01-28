@@ -31,11 +31,12 @@ from autobahn.wamp.interfaces import ISession, \
 
 from autobahn import util
 from autobahn import wamp
+from autobahn.wamp import uri
 from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.exception import ProtocolError, SessionNotReady
 from autobahn.wamp.types import SessionDetails
 from autobahn.wamp.broker import Broker
 from autobahn.wamp.dealer import Dealer
@@ -49,12 +50,12 @@ class Endpoint:
       self.details_arg = details_arg
 
 
+
 class Handler:
 
    def __init__(self, fn, details_arg = None):
       self.fn = fn
       self.details_arg = details_arg
-
 
 
 
@@ -76,7 +77,7 @@ class WampBaseSession:
          self._uri_to_ecls[exception._wampuris[0].uri()] = exception
       else:
          assert(not hasattr(exception, '_wampuris'))
-         self._ecls_to_uri_pat[exception] = [Pattern(error, Pattern.URI_TARGET_HANDLER)]
+         self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
          self._uri_to_ecls[error] = exception
 
 
@@ -90,7 +91,6 @@ class WampBaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-#         msg = message.Error(request_type, request, exc.args[0], args = exc.args[1:], kwargs = exc.kwargs)
          msg = message.Error(request_type, request, exc.error, args = exc.args, kwargs = exc.kwargs)
       else:
          if self._ecls_to_uri_pat.has_key(exc.__class__):
