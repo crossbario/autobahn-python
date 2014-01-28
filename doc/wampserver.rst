@@ -1,8 +1,8 @@
 Server
 ======
 
-The classes :class:`autobahn.wamp.WampServerProtocol` and
-:class:`autobahn.wamp.WampServerFactory` are the base classes
+The classes :class:`autobahn.wamp1.protocol.WampServerProtocol` and
+:class:`autobahn.wamp1.protocol.WampServerFactory` are the base classes
 you derive from to implement WAMP servers.
 
 
@@ -10,7 +10,7 @@ you derive from to implement WAMP servers.
 Factory
 -------
 
-.. autoclass:: autobahn.wamp.WampServerFactory
+.. autoclass:: autobahn.wamp1.protocol.WampServerFactory
    :members: dispatch,
              sessionIdsToProtos,
              protosToSessionIds,
@@ -21,7 +21,7 @@ Factory
 Protocol
 --------
 
-.. autoclass:: autobahn.wamp.WampServerProtocol
+.. autoclass:: autobahn.wamp1.protocol.WampServerProtocol
    :members: onSessionOpen,
              dispatch,
              registerForRpc,
@@ -35,7 +35,7 @@ Protocol
              registerHandlerForPub
 
 
-.. autoclass:: autobahn.wamp.WampCraServerProtocol
+.. autoclass:: autobahn.wamp1.protocol.WampCraServerProtocol
    :members: clientAuthTimeout,
              clientAuthAllowAnonymous,
              getAuthSecret,

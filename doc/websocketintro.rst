@@ -60,7 +60,7 @@ Interface Definition
 
 The basic API has the following interface definition:
 
-.. autointerface:: autobahn.interfaces.IWebSocketChannel
+.. autointerface:: autobahn.websocket.interfaces.IWebSocketChannel
    :members:
 
 
@@ -108,7 +108,7 @@ API for frame-based processing is implemented in:
 
 and has the following definition:
 
-.. autointerface:: autobahn.interfaces.IWebSocketChannelFrameApi
+.. autointerface:: autobahn.websocket.interfaces.IWebSocketChannelFrameApi
    :members:
 
 
@@ -129,5 +129,5 @@ API for streaming processing is implemented in:
 
 and has the following definition:
 
-.. autointerface:: autobahn.interfaces.IWebSocketChannelStreamingApi
+.. autointerface:: autobahn.websocket.interfaces.IWebSocketChannelStreamingApi
    :members:

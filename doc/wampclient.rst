@@ -1,8 +1,8 @@
 Client
 ======
 
-The classes :class:`autobahn.wamp.WampClientProtocol` and
-:class:`autobahn.wamp.WampClientFactory` are the base classes
+The classes :class:`autobahn.wamp1.protocol.WampClientProtocol` and
+:class:`autobahn.wamp1.protocol.WampClientFactory` are the base classes
 you derive from to implement WAMP clients.
 
 
@@ -10,7 +10,7 @@ you derive from to implement WAMP clients.
 Factory
 -------
 
-.. autoclass:: autobahn.wamp.WampClientFactory
+.. autoclass:: autobahn.wamp1.protocol.WampClientFactory
    :members: startFactory,
              stopFactory
 
@@ -19,7 +19,7 @@ Factory
 Protocol
 --------
 
-.. autoclass:: autobahn.wamp.WampClientProtocol
+.. autoclass:: autobahn.wamp1.protocol.WampClientProtocol
    :members: onSessionOpen,
              prefix,
              call,
@@ -28,5 +28,5 @@ Protocol
              unsubscribe
 
 
-.. autoclass:: autobahn.wamp.WampCraClientProtocol
+.. autoclass:: autobahn.wamp1.protocol.WampCraClientProtocol
    :members: authenticate
