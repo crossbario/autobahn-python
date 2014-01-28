@@ -61,6 +61,13 @@ class Handler:
 
 @implementer(ISession)
 class WampBaseSession:
+   """
+   WAMP application session base class.
+
+   This class implements:
+
+     * :class:`autobahn.wamp.interfaces.ISession`
+   """
 
    def __init__(self):
       self._ecls_to_uri_pat = {}
@@ -165,8 +172,22 @@ class WampBaseSession:
 @implementer(ICallee)
 @implementer(ITransportHandler)
 class WampAppSession(WampBaseSession):
+   """
+   WAMP application session.
+
+   This class implements:
+
+     * :class:`autobahn.wamp.interfaces.IPublisher`
+     * :class:`autobahn.wamp.interfaces.ISubscriber`
+     * :class:`autobahn.wamp.interfaces.ICaller`
+     * :class:`autobahn.wamp.interfaces.ICallee`
+     * :class:`autobahn.wamp.interfaces.ITransportHandler`
+   """
 
    def __init__(self, broker = None, dealer = None):
+      """
+      Constructor.
+      """
       WampBaseSession.__init__(self)
       self._transport = None
 
@@ -560,6 +581,18 @@ class WampAppSession(WampBaseSession):
          self._peer_session_id = None
 
 
+   def onSessionOpen(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionOpen`
+      """
+
+
+   def onSessionClose(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionClose`
+      """
+
+
    def closeSession(self, reason = None, message = None):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
@@ -723,8 +756,22 @@ class WampAppSession(WampBaseSession):
 
 
 class WampAppFactory:
+   """
+   WAMP application session factory.
+   """
+
+   session = WampAppSession
+   """
+   WAMP application session class to be used in this factory.
+   """
 
    def __call__(self):
+      """
+      Creates a new WAMP application session.
+
+      :returns: -- An instance of the WAMP application session class as
+                   given by `self.session`.
+      """
       session = self.session()
       session.factory = self
       return session
@@ -824,24 +871,49 @@ class WampRouterAppSession:
 
 
 class WampRouterSession(WampAppSession):
-
-   def onSessionOpen(self, details):
-      print "WampRouterSession.onSessionOpen", details.me, details.peer
-
-   def onSessionClose(self, details):
-      print "WampRouterSession.onSessionClose", details.reason, details.message
+   """
+   WAMP router session.
+   """
 
 
 
 class WampRouterFactory:
+   """
+   WAMP router session factory.
+   """
+
+   session = WampRouterSession
+   """
+   WAMP router session class to be used in this factory.
+   """
+
 
    def __init__(self):
+      """
+      Constructor.
+      """
       self._broker = Broker()
       self._dealer = Dealer()
       self._app_sessions = []
 
-   def add(self, app_session):
-      self._app_sessions.append(WampRouterAppSession(app_session, self._broker, self._dealer))
+
+   def add(self, session):
+      """
+      Adds a WAMP application session to run directly in this router.
+
+      :param: session: A WAMP application session.
+      :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
+      """
+      self._app_sessions.append(WampRouterAppSession(session, self._broker, self._dealer))
+
 
    def __call__(self):
-      return WampRouterSession(self._broker, self._dealer)
+      """
+      Creates a new WAMP router session.
+
+      :returns: -- An instance of the WAMP router session class as
+                   given by `self.session`.
+      """
+      session = self.session(self._broker, self._dealer)
+      session.factory = session
+      return session

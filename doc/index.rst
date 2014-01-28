@@ -6,7 +6,8 @@ Autobahn|Python Reference
    :maxdepth: 3
 
    websockettoc
-   wamptoc
+   wamp1toc
+   wamp2
 
 
 * :ref:`genindex`
