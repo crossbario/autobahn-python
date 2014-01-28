@@ -155,11 +155,24 @@ or
 
      from autobahn.asyncio.websocket import WebSocketServerProtocol 
 
-Two more small changes (also see the [interface definition](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/autobahn/interfaces.py) now available):
+Two more small changes (also see the [interface definition](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/autobahn/websocket/interfaces.py) now available):
 
  1. `WebSocketProtocol.sendMessage`: renaming of parameter `binary` to `isBinary` (for consistency with `onMessage`)
  2. `ConnectionRequest` no longer provides `peerstr`, but only `peer`, and the latter is a plain, descriptive string (this was needed since we now support both Twisted and asyncio, and also non-TCP transports)
 
+## Upgrading from Autobahn < 0.8.0
+
+Starting with release 0.8.0, **Autobahn**|Python now supports WAMPv2. This required changing module naming for WAMPv1 (Twisted), e.g.
+
+Autobahn|Python **< 0.8.0**:
+
+     from autobahn.wamp import WampServerFactory
+
+Autobahn|Python **>= 0.8.0**:
+
+     from autobahn.wamp1.protocol import WampServerFactory
+
+> Note that WAMPv1 will be deprecated with the 0.9.0 release.
 
 ## Performance
 
