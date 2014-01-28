@@ -3,22 +3,22 @@
 This folder contains complete working code examples that demonstrate [WAMP v1](http://wamp.ws) programming with **Autobahn**|Python on [Twisted](http://www.twistedmatrix.com/):
 
  * Publish & Subscribe
-   1. [Basic PubSub 1](simple/example1)
-   1. [Basic PubSub 2](simple/example2)
-   1. [Custom PubSub Handlers](custom)
-   1. [Profiling PubSub](loadlatency)
+   1. [Basic PubSub 1](pubsub/simple/example1)
+   1. [Basic PubSub 2](pubsub/simple/example2)
+   1. [Custom PubSub Handlers](pubsub/custom)
+   1. [Profiling PubSub](pubsub/loadlatency)
  * Remote Procedure Calls
-   1. [Basic RPCs 1](simple/example1)
-   1. [Basic RPCs 2](simple/example1)
-   1. [Decimal Calculator](calculator)
-   1. [A Key-Value Store](keyvalue)
-   1. [Symmetric RPCs](symmetric)
-   1. [Profiling RPCs](profile)
+   1. [Basic RPCs 1](rpc/simple/example1)
+   1. [Basic RPCs 2](rpc/simple/example1)
+   1. [Decimal Calculator](rpc/calculator)
+   1. [A Key-Value Store](rpc/keyvalue)
+   1. [Symmetric RPCs](rpc/symmetric)
+   1. [Profiling RPCs](rpc/profile)
  * Authentication
    1. [Authenticating via WAMP-CRA](authentication)
 
 and
 
- 1. [A WAMP-DBus Bridge](dbus)
- 1. [A directory watcher](dirwatch)
- 1. [Serial/Arduino-to-WAMP Bridge](serial2ws)
+ 1. [A WAMP-DBus Bridge](apps/dbus)
+ 1. [A directory watcher](apps/dirwatch)
+ 1. [Serial/Arduino-to-WAMP Bridge](apps/serial2ws)
