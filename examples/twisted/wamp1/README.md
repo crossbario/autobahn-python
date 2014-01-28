@@ -10,15 +10,15 @@ This folder contains complete working code examples that demonstrate [WAMP v1](h
  * Remote Procedure Calls
    1. [Basic RPCs 1](rpc/simple/example1)
    1. [Basic RPCs 2](rpc/simple/example1)
-   1. [Decimal Calculator](rpc/calculator)
-   1. [A Key-Value Store](rpc/keyvalue)
    1. [Symmetric RPCs](rpc/symmetric)
    1. [Profiling RPCs](rpc/profile)
  * Authentication
    1. [Authenticating via WAMP-CRA](authentication)
 
-and
+and small apps
 
+ 1. [Decimal Calculator](apps/calculator)
+ 1. [A Key-Value Store](apps/keyvalue)
  1. [A WAMP-DBus Bridge](apps/dbus)
  1. [A directory watcher](apps/dirwatch)
  1. [Serial/Arduino-to-WAMP Bridge](apps/serial2ws)
