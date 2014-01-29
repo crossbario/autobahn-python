@@ -48,8 +48,12 @@ class TimeServiceFrontend(WampAppSession):
    @inlineCallbacks
    def onSessionOpen(self, details):
 
-      now = yield self.call('com.timeservice.now')
-      print("Current time from time service: {}".format(now))
+      try:
+         now = yield self.call('com.timeservice.now')
+      except Exception as e:
+         print("Error: {}".format(e))
+      else:
+         print("Current time from time service: {}".format(now))
 
       self.closeSession()
 

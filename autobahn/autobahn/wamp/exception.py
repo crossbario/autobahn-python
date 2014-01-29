@@ -19,8 +19,7 @@
 
 from __future__ import absolute_import
 
-from autobahn import wamp
-
+from autobahn.wamp import error
 
 
 class Error(RuntimeError):
@@ -107,14 +106,14 @@ class ApplicationError(Error):
 
 #class GenericException(Exception)
 
-@wamp.error("wamp.error.not_authorized")
+@error("wamp.error.not_authorized")
 class NotAuthorized(Exception):
    """
    Not authorized to perform the respective action.
    """
 
 
-@wamp.error("wamp.error.invalid_topic")
+@error("wamp.error.invalid_topic")
 class InvalidTopic(Exception):
    """
    The topic to publish or subscribe to is invalid.

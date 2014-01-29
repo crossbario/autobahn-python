@@ -169,7 +169,7 @@ else:
    HAS_TWISTED = True
 
 
-if False and HAS_TWISTED:
+if HAS_TWISTED:
    # Make Twisted regenerate the dropin.cache, if possible. This is necessary
    # because in a site-wide install, dropin.cache cannot be rewritten by
    # normal users.

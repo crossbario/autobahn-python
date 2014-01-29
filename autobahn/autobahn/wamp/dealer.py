@@ -37,11 +37,21 @@ class Dealer:
       """
       Constructor.
       """
-      self._sessions = set()
+      ## map: session -> set(registration)
+      ## needed for removeSession
+      self._session_to_registrations = {}
+
+      ## map: session_id -> session
+      ## needed for exclude/eligible
       self._session_id_to_session = {}
 
+      ## map: procedure -> (registration, session)
       self._procs_to_regs = {}
+
+      ## map: registration -> procedure
       self._regs_to_procs = {}
+
+      ## pending callee invocation requests
       self._invocations = {}
 
 
@@ -49,9 +59,9 @@ class Dealer:
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.addSession`
       """
-      assert(session not in self._sessions)
+      assert(session not in self._session_to_registrations)
 
-      self._sessions.add(session)
+      self._session_to_registrations[session] = set()
       self._session_id_to_session[session._my_session_id] = session
 
 
@@ -59,9 +69,13 @@ class Dealer:
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.removeSession`
       """
-      assert(session in self._sessions)
+      assert(session in self._session_to_registrations)
 
-      self._sessions.remove(session)
+      for registration in self._session_to_registrations[session]:
+         del self._procs_to_regs[self._regs_to_procs[registration]]
+         del self._regs_to_procs[registration]
+
+      del self._session_to_registrations[session]
       del self._session_id_to_session[session._my_session_id]
 
 
@@ -69,7 +83,7 @@ class Dealer:
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.processMessage`
       """
-      assert(session in self._sessions)
+      assert(session in self._session_to_registrations)
 
       if isinstance(msg, message.Register):
          self._processRegister(session, msg)
@@ -99,6 +113,9 @@ class Dealer:
          registration_id = util.id()
          self._procs_to_regs[register.procedure] = (registration_id, session)
          self._regs_to_procs[registration_id] = register.procedure
+
+         self._session_to_registrations[session].add(registration_id)
+
          reply = message.Registered(register.request, registration_id)
       else:
          reply = message.Error(message.Register.MESSAGE_TYPE, register.request, 'wamp.error.procedure_already_exists')
@@ -111,6 +128,9 @@ class Dealer:
       if unregister.registration in self._regs_to_procs:
          del self._procs_to_regs[self._regs_to_procs[unregister.registration]]
          del self._regs_to_procs[unregister.registration]
+
+         self._session_to_registrations[session].discard(unregister.registration)
+
          reply = message.Unregistered(unregister.request)
       else:
          reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, 'wamp.error.no_such_registration')

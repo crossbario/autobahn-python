@@ -36,7 +36,7 @@ from twisted.internet.defer import maybeDeferred
 from twisted.python import log
 from twisted.internet.interfaces import ITransport
 
-import autobahn
+from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
@@ -533,12 +533,12 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 
 
-class WampWebSocketServerProtocol(autobahn.wamp.websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
+class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
    pass
 
 
 
-class WampWebSocketServerFactory(autobahn.wamp.websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
 
    protocol = WampWebSocketServerProtocol
 
@@ -550,7 +550,7 @@ class WampWebSocketServerFactory(autobahn.wamp.websocket.WampWebSocketServerFact
       else:
          serializers = None
 
-      autobahn.wamp.websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
+      websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 
@@ -558,12 +558,12 @@ class WampWebSocketServerFactory(autobahn.wamp.websocket.WampWebSocketServerFact
 
 
 
-class WampWebSocketClientProtocol(autobahn.wamp.websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
+class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
    pass
 
 
 
-class WampWebSocketClientFactory(autobahn.wamp.websocket.WampWebSocketClientFactory, WebSocketClientFactory):
+class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
 
    protocol = WampWebSocketClientProtocol
 
@@ -575,7 +575,7 @@ class WampWebSocketClientFactory(autobahn.wamp.websocket.WampWebSocketClientFact
       else:
          serializers = None
 
-      autobahn.wamp.websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
+      websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 

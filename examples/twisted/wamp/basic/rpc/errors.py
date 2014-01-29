@@ -21,12 +21,12 @@ import math
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn import wamp
 from autobahn.wamp.protocol import WampAppSession
 from autobahn.wamp.exception import ApplicationError
-from autobahn.wamp import uri
 
 
-@uri.error("com.myapp.error1")
+@wamp.error("com.myapp.error1")
 class AppError1(Exception):
    """
    An application specific exception that is decorated with a WAMP URI,
