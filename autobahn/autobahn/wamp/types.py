@@ -67,7 +67,7 @@ class SubscribeOptions:
       :type details_arg: str
       """
       assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
-      assert(type(details_arg) == str)
+      assert(details_arg is None or type(details_arg) == str)
 
       self.details_arg = details_arg
       self.options = {'match': match}
@@ -152,7 +152,7 @@ class RegisterOptions:
                           in this keyword argument to the callable.
       :type details_arg: str
       """
-      assert(type(details_arg) == str)
+      assert(details_arg is None or type(details_arg) == str)
       self.details_arg = details_arg
       self.options = {'pkeys': pkeys}
 

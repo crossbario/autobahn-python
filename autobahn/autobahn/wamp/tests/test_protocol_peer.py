@@ -31,7 +31,7 @@ from autobahn.wamp import protocol
 class TestPeerExceptions(unittest.TestCase):
 
    def test_exception_from_message(self):
-      session = protocol.Peer()
+      session = protocol.WampBaseSession()
 
       @wamp.error("com.myapp.error1")
       class AppError1(Exception):
@@ -46,33 +46,33 @@ class TestPeerExceptions(unittest.TestCase):
 
       ## map defined errors to user exceptions
       ##
-      emsg = message.Error(123456, 'com.myapp.error1')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, AppError1)
       self.assertEqual(exc.args, ())
 
-      emsg = message.Error(123456, 'com.myapp.error2')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error2')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, AppError2)
       self.assertEqual(exc.args, ())
 
       ## map undefined error to (generic) exception
       ##
-      emsg = message.Error(123456, 'com.myapp.error3')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
       self.assertEqual(exc.error, 'com.myapp.error3')
       self.assertEqual(exc.args, ())
       self.assertEqual(exc.kwargs, {})
 
-      emsg = message.Error(123456, 'com.myapp.error3', args = [1, 2, 'hello'])
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args = [1, 2, 'hello'])
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
       self.assertEqual(exc.error, 'com.myapp.error3')
       self.assertEqual(exc.args, (1, 2, 'hello'))
       self.assertEqual(exc.kwargs, {})
 
-      emsg = message.Error(123456, 'com.myapp.error3', args = [1, 2, 'hello'], kwargs = {'foo': 23, 'bar': 'baz'})
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args = [1, 2, 'hello'], kwargs = {'foo': 23, 'bar': 'baz'})
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
       self.assertEqual(exc.error, 'com.myapp.error3')
@@ -81,7 +81,7 @@ class TestPeerExceptions(unittest.TestCase):
       
 
    def test_message_from_exception(self):
-      session = protocol.Peer()
+      session = protocol.WampBaseSession()
 
       @wamp.error("com.myapp.error1")
       class AppError1(Exception):
@@ -95,9 +95,9 @@ class TestPeerExceptions(unittest.TestCase):
       session.define(AppError2)
 
       exc = AppError1()
-      msg = session._message_from_exception(123456, exc)
+      msg = session._message_from_exception(message.Call.MESSAGE_TYPE, 123456, exc)
 
-      self.assertEqual(msg.marshal(), [message.Error.MESSAGE_TYPE, 123456, {}, "com.myapp.error1"])
+      self.assertEqual(msg.marshal(), [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, "com.myapp.error1"])
 
 
 if __name__ == '__main__':

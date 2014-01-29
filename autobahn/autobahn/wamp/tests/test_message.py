@@ -29,38 +29,42 @@ from autobahn.wamp.exception import ProtocolError
 class TestErrorMessage(unittest.TestCase):
 
    def test_ctor(self):
-      e = message.Error(123456, 'com.myapp.error1')
+      e = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1')
       msg = e.marshal()
-      self.assertEqual(len(msg), 4)
+      self.assertEqual(len(msg), 5)
       self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
-      self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], {})
-      self.assertEqual(msg[3], 'com.myapp.error1')
+      self.assertEqual(msg[1], message.Call.MESSAGE_TYPE)
+      self.assertEqual(msg[2], 123456)
+      self.assertEqual(msg[3], {})
+      self.assertEqual(msg[4], 'com.myapp.error1')
 
-      e = message.Error(123456, 'com.myapp.error1', args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
+      e = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1', args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
       msg = e.marshal()
-      self.assertEqual(len(msg), 6)
+      self.assertEqual(len(msg), 7)
       self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
-      self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], {})
-      self.assertEqual(msg[3], 'com.myapp.error1')
-      self.assertEqual(msg[4], [1, 2, 3])
-      self.assertEqual(msg[5], {'foo': 23, 'bar': 'hello'})
+      self.assertEqual(msg[1], message.Call.MESSAGE_TYPE)
+      self.assertEqual(msg[2], 123456)
+      self.assertEqual(msg[3], {})
+      self.assertEqual(msg[4], 'com.myapp.error1')
+      self.assertEqual(msg[5], [1, 2, 3])
+      self.assertEqual(msg[6], {'foo': 23, 'bar': 'hello'})
 
 
    def test_parse_and_marshal(self):
-      wmsg = [message.Error.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1']
+      wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1']
       msg = message.Error.parse(wmsg)
       self.assertIsInstance(msg, message.Error)
+      self.assertEqual(msg.request_type, message.Call.MESSAGE_TYPE)
       self.assertEqual(msg.request, 123456)
       self.assertEqual(msg.error, 'com.myapp.error1')
       self.assertEqual(msg.args, None)
       self.assertEqual(msg.kwargs, None)
       self.assertEqual(msg.marshal(), wmsg)
 
-      wmsg = [message.Error.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
+      wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, 'com.myapp.error1', [1, 2, 3], {'foo': 23, 'bar': 'hello'}]
       msg = message.Error.parse(wmsg)
       self.assertIsInstance(msg, message.Error)
+      self.assertEqual(msg.request_type, message.Call.MESSAGE_TYPE)
       self.assertEqual(msg.request, 123456)
       self.assertEqual(msg.error, 'com.myapp.error1')
       self.assertEqual(msg.args, [1, 2, 3])

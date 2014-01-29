@@ -26,6 +26,7 @@ __all__= ['WampServerProtocol',
 
 from zope.interface import implementer
 
+import autobahn
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 

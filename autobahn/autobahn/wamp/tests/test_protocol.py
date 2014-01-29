@@ -26,21 +26,32 @@ from autobahn import wamp
 from autobahn.wamp import message
 from autobahn.wamp import serializer
 from autobahn.wamp import protocol
+from autobahn.wamp import role
 from autobahn import util
 from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidTopic
-from autobahn.wamp import options
 from autobahn.wamp import types
 
 
 class MockTransport:
 
    def __init__(self, handler):
-      self._handler = handler
-      self._handler.onOpen(self)
-      self._serializer = serializer.JsonSerializer()
       self._log = False
+      self._handler = handler
+      self._serializer = serializer.JsonSerializer()
       self._registrations = {}
       self._invocations = {}
+
+      self._handler.onOpen(self)
+
+      self._my_session_id = util.id()
+
+      roles = [
+         role.RoleBrokerFeatures(),
+         role.RoleDealerFeatures()
+      ]
+
+      msg = message.Hello(self._my_session_id, roles)
+      self._handler.onMessage(msg)
 
    def send(self, msg):
       if self._log:
@@ -51,11 +62,12 @@ class MockTransport:
 
       if isinstance(msg, message.Publish):
          if msg.topic.startswith('com.myapp'):
-            reply = message.Published(msg.request, util.id())
+            if msg.acknowledge:
+               reply = message.Published(msg.request, util.id())
          elif len(msg.topic) == 0:
-            reply = message.Error(msg.request, 'wamp.error.invalid_topic')
+            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.invalid_topic')
          else:
-            reply = message.Error(msg.request, 'wamp.error.not_authorized')
+            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.not_authorized')
 
       elif isinstance(msg, message.Call):
          if msg.procedure == 'com.myapp.procedure1':
@@ -71,7 +83,7 @@ class MockTransport:
             self._invocations[request] = msg.request
             reply = message.Invocation(request, registration, args = msg.args, kwargs = msg.kwargs)
          else:
-            reply = message.Error(msg.request, 'wamp.error.no_such_procedure')
+            reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, 'wamp.error.no_such_procedure')
 
       elif isinstance(msg, message.Yield):
          if self._invocations.has_key(msg.request):
@@ -113,49 +125,74 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1')
-      self.assertTrue(type(publication) in (int, long))
+      self.assertEqual(publication, None)
 
       publication = yield handler.publish('com.myapp.topic1', 1, 2, 3)
-      self.assertTrue(type(publication) in (int, long))
+      self.assertEqual(publication, None)
 
       publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello')
+      self.assertEqual(publication, None)
+
+      publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(excludeMe = False))
+      self.assertEqual(publication, None)
+
+      publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(excludeMe = False, exclude = [100, 200, 300]))
+      self.assertEqual(publication, None)
+
+
+   @inlineCallbacks
+   def test_publish_acknowledged(self):
+      handler = protocol.WampAppSession()
+      transport = MockTransport(handler)
+
+      publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(acknowledge = True))
       self.assertTrue(type(publication) in (int, long))
 
-      publication = yield handler.publish('com.myapp.topic1', options = options.Publish(excludeMe = False))
+      publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, options = types.PublishOptions(acknowledge = True))
       self.assertTrue(type(publication) in (int, long))
 
-      publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = options.Publish(excludeMe = False, exclude = [100, 200, 300]))
+      publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(acknowledge = True))
+      self.assertTrue(type(publication) in (int, long))
+
+      publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(excludeMe = False, acknowledge = True))
+      self.assertTrue(type(publication) in (int, long))
+
+      publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(excludeMe = False, exclude = [100, 200, 300], acknowledge = True))
       self.assertTrue(type(publication) in (int, long))
 
 
    @inlineCallbacks
    def test_publish_undefined_exception(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
-      yield self.assertFailure(handler.publish('de.myapp.topic1'), ApplicationError)
-      yield self.assertFailure(handler.publish(''), ApplicationError)
+      options = types.PublishOptions(acknowledge = True)
+
+      yield self.assertFailure(handler.publish('de.myapp.topic1', options = options), ApplicationError)
+      yield self.assertFailure(handler.publish('', options = options), ApplicationError)
 
 
    @inlineCallbacks
    def test_publish_defined_exception(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
+      options = types.PublishOptions(acknowledge = True)
+
       handler.define(NotAuthorized)
-      yield self.assertFailure(handler.publish('de.myapp.topic1'), NotAuthorized)
+      yield self.assertFailure(handler.publish('de.myapp.topic1', options = options), NotAuthorized)
 
       handler.define(InvalidTopic)
-      yield self.assertFailure(handler.publish(''), InvalidTopic)
+      yield self.assertFailure(handler.publish('', options = options), InvalidTopic)
 
 
    @inlineCallbacks
    def test_call(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure1')
@@ -167,16 +204,16 @@ class TestPublisher(unittest.TestCase):
       res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello')
       self.assertEqual(res, 100)
 
-      res = yield handler.call('com.myapp.procedure1', options = options.Call(timeout = 10000))
+      res = yield handler.call('com.myapp.procedure1', options = types.CallOptions(timeout = 10000))
       self.assertEqual(res, 100)
 
-      res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello', options = options.Call(timeout = 10000))
+      res = yield handler.call('com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello', options = types.CallOptions(timeout = 10000))
       self.assertEqual(res, 100)
 
 
    @inlineCallbacks
    def test_call_with_complex_result(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure2')
@@ -192,7 +229,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_subscribe(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -201,13 +238,13 @@ class TestPublisher(unittest.TestCase):
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
       self.assertTrue(type(subscription) in (int, long))
 
-      subscription = yield handler.subscribe(on_event, 'com.myapp.topic1', options = options.Subscribe(match = 'wildcard'))
+      subscription = yield handler.subscribe(on_event, 'com.myapp.topic1', options = types.SubscribeOptions(match = 'wildcard'))
       self.assertTrue(type(subscription) in (int, long))
 
 
    @inlineCallbacks
    def test_unsubscribe(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -219,7 +256,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_register(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -228,13 +265,13 @@ class TestPublisher(unittest.TestCase):
       registration = yield handler.register(on_call, 'com.myapp.procedure1')
       self.assertTrue(type(registration) in (int, long))
 
-      registration = yield handler.register(on_call, 'com.myapp.procedure1', options = options.Register(pkeys = [0, 1, 2]))
+      registration = yield handler.register(on_call, 'com.myapp.procedure1', options = types.RegisterOptions(pkeys = [0, 1, 2]))
       self.assertTrue(type(registration) in (int, long))
 
 
    @inlineCallbacks
    def test_unregister(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -246,7 +283,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_invoke(self):
-      handler = protocol.WampProtocol()
+      handler = protocol.WampAppSession()
       transport = MockTransport(handler)
 
       def myproc1():

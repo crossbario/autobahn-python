@@ -23,12 +23,13 @@ from twisted.trial import unittest
 
 from autobahn import wamp
 from autobahn.wamp import message
+from autobahn.wamp import role
 from autobahn.wamp import serializer
 
 
 def generate_test_messages():
    return [
-      message.Hello(123456),
+      message.Hello(123456, [role.RoleBrokerFeatures()]),
       message.Goodbye(),
       message.Heartbeat(123, 456),
       message.Yield(123456),
@@ -64,8 +65,8 @@ def generate_test_messages():
       message.Subscribed(123456, 789123),
       message.Subscribe(123456, 'com.myapp.topic1'),
       message.Subscribe(123456, 'com.myapp.topic1', match = message.Subscribe.MATCH_PREFIX),
-      message.Error(123456, 'com.myapp.error1'),
-      message.Error(123456, 'com.myapp.error1', args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
+      message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1'),
+      message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1', args = [1, 2, 3], kwargs = {'foo': 23, 'bar': 'hello'})
    ]
 
 
@@ -108,7 +109,7 @@ class TestSerializer(unittest.TestCase):
 
             ## and after resetting the serialization cache, message
             ## serialization is gone
-            msg.reset_cache()
+            msg.uncache()
             self.assertFalse(serializer._serializer in msg._serialized)
 
 

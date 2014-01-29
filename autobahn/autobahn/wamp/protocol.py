@@ -532,7 +532,7 @@ class WampAppSession(WampBaseSession):
                ## ERROR reply to PUBLISH
                ##
                if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
-                  d = self._publish_reqs.pop(msg.request)
+                  d, _ = self._publish_reqs.pop(msg.request)
 
                elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
                   d, _ = self._subscribe_reqs.pop(msg.request)
@@ -623,7 +623,7 @@ class WampAppSession(WampBaseSession):
          opts = None
          msg = message.Publish(request, topic, args = args, kwargs = kwargs)
 
-      if opts and opts.options['acknowledge'] is not None:
+      if opts and opts.options['acknowledge'] == True:
          d = Deferred()
          self._publish_reqs[request] = d, opts
          self._transport.send(msg)

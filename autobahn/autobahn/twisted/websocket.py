@@ -533,14 +533,12 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 
 
-from autobahn import wamp
-
-class WampWebSocketServerProtocol(wamp.websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
+class WampWebSocketServerProtocol(autobahn.wamp.websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
    pass
 
 
 
-class WampWebSocketServerFactory(wamp.websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+class WampWebSocketServerFactory(autobahn.wamp.websocket.WampWebSocketServerFactory, WebSocketServerFactory):
 
    protocol = WampWebSocketServerProtocol
 
@@ -552,7 +550,7 @@ class WampWebSocketServerFactory(wamp.websocket.WampWebSocketServerFactory, WebS
       else:
          serializers = None
 
-      wamp.websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
+      autobahn.wamp.websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 
@@ -560,12 +558,12 @@ class WampWebSocketServerFactory(wamp.websocket.WampWebSocketServerFactory, WebS
 
 
 
-class WampWebSocketClientProtocol(wamp.websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
+class WampWebSocketClientProtocol(autobahn.wamp.websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
    pass
 
 
 
-class WampWebSocketClientFactory(wamp.websocket.WampWebSocketClientFactory, WebSocketClientFactory):
+class WampWebSocketClientFactory(autobahn.wamp.websocket.WampWebSocketClientFactory, WebSocketClientFactory):
 
    protocol = WampWebSocketClientProtocol
 
@@ -577,7 +575,7 @@ class WampWebSocketClientFactory(wamp.websocket.WampWebSocketClientFactory, WebS
       else:
          serializers = None
 
-      wamp.websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
+      autobahn.wamp.websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
 
       kwargs['protocols'] = self._protocols
 

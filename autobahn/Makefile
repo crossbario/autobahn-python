@@ -4,6 +4,7 @@ all:
 	@echo "   clean            Cleanup"
 	@echo "   install          Local install"
 	@echo "   publish          Clean build, register and publish to PyPi"
+	@echo "   test             Run unit tests"
 	@echo ""
 
 install:
@@ -24,9 +25,12 @@ publish: clean
 	python3 setup.py sdist upload
 
 test:
-#	trial.py autobahn.wamp.tests
+	trial.py autobahn.wamp.tests
+#	trial.py autobahn.wamp.tests.test_interfaces
+#	trial.py autobahn.wamp.tests.test_message
 #	trial.py autobahn.wamp.tests.test_protocol
-	trial.py autobahn.wamp.tests.test_message
+#	trial.py autobahn.wamp.tests.test_protocol_peer
+#	trial.py autobahn.wamp.tests.test_serializer
 #	trial.py autobahn.wamp.tests.test_uri_pattern
 
 testp:

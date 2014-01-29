@@ -118,9 +118,9 @@ class Error(Message):
    A WAMP `ERROR` message.
 
    Formats:
-     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri]`
-     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]`
-     * `[ERROR, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
+     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]`
+     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]`
+     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
    MESSAGE_TYPE = 4
@@ -133,6 +133,8 @@ class Error(Message):
       """
       Message constructor.
 
+      :param request_type: The WAMP message type code for the original request.
+      :type request_type: int
       :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occured for.
       :type request: int
       :param error: The WAMP or application error URI for the error that occured.
