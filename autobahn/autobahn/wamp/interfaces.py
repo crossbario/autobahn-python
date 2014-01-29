@@ -477,12 +477,25 @@ class IRouter(Interface):
 
 class IBroker(IRouter):
    """
-   WAMP broker interface. Brokers are responsible for event routing.
+   WAMP broker interface. Brokers are responsible for event routing and
+   must process the following WAMP messages in :func:`autobahn.wamp.interfaces.IRouter.processMessage`:
+
+    * :class:`autobahn.wamp.message.Publish`
+    * :class:`autobahn.wamp.message.Subscribe`
+    * :class:`autobahn.wamp.message.Unsubscribe`
    """
 
 
 
 class IDealer(IRouter):
    """
-   WAMP dealer interface. Dealers are responsible for call routing.
+   WAMP dealer interface. Dealers are responsible for call routing and
+   must process the following WAMP messages in :func:`autobahn.wamp.interfaces.IRouter.processMessage`:
+
+    * :class:`autobahn.wamp.message.Register`
+    * :class:`autobahn.wamp.message.Unregister`
+    * :class:`autobahn.wamp.message.Call`
+    * :class:`autobahn.wamp.message.Cancel`
+    * :class:`autobahn.wamp.message.Yield`
+    * :class:`autobahn.wamp.message.Error`
    """

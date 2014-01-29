@@ -1,6 +1,11 @@
 # Autobahn|Python Changelog
 
-## v0.7.4
+## v0.8.0
+ * new: complete WAMP v2 protocol implementation and API layer
+ * new: basic WAMP v2 router implementation
+ * existing WAMP v1 implementation renamed
+
+ ## v0.7.4
  * fix WebSocket server HTML status page
  * fix close reason string handling
  * new "slowsquare" example
@@ -19,7 +24,6 @@
 ## v0.7.0
  * asyncio support
  * Python 3 support
- * initial support for WAMPv2
  * support WebSocket (and WAMP) over Twisted stream endpoints
  * support Twisted stream endpoints over WebSocket
  * twistd stream endpoint forwarding plugin
