@@ -67,6 +67,13 @@ Demonstrates calling remote procedures that produce progressive results.
  * `rpc.progress.ProgressiveBackend`
  * `rpc.progress.ProgressiveFrontend` 
 
+#### RPC Options
+
+Using options with RPC.
+
+ * `rpc.rpcoptions.RpcOptionsBackend`
+ * `rpc.rpcoptions.RpcOptionsFrontend` 
+
 
 ### Publish & Subscribe
 
@@ -77,12 +84,16 @@ Demonstrates basic publish and subscribe.
  * `pubsub.pubsub.PubSubTestBackend`
  * `pubsub.pubsub.PubSubTestFrontend`
 
+#### Complex Events
+
 Demonstrates publish and subscribe with complex events.
 
  * `pubsub.complex.ComplexEventTestBackend`
  * `pubsub.complex.ComplexEventTestFrontend`
 
-Demonstrates basic publish and subscribe.
+#### PubSub Options
+
+Using options with PubSub.
 
  * `pubsub.pubsuboptions.PubSubOptionsTestBackend`
  * `pubsub.pubsuboptions.PubSubOptionsTestFrontend`
