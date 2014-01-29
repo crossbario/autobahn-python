@@ -6,11 +6,11 @@
 
 Run the WAMP router/dealer on a WebSocket transport server, and start the embedded application backend:
 
-	python server.py --component "timeservice.TimeServiceBackend"
+	python server.py --component "rpc.timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	python client.py --component "timeservice.TimeServiceFrontend"
+	python client.py --component "rpc.timeservice.TimeServiceFrontend"
 
 
 ### Application backend component in client
@@ -21,46 +21,68 @@ Run the WAMP router/dealer on a WebSocket transport server:
 
 Run the WAMP application backend over a WebSocket transport client:
 
-	python client.py --component "timeservice.TimeServiceBackend"
+	python client.py --component "rpc.timeservice.TimeServiceBackend"
 
 Run the WAMP application frontend over a WebSocket transport client:
 
-	python client.py --component "timeservice.TimeServiceFrontend"
+	python client.py --component "rpc.timeservice.TimeServiceFrontend"
 
 
 ## Available Demos
 
-### Time Service
+### Remote Procedure Calls
+
+#### Time Service
 
 A trivial time service - demonstrates basic remote procedure feature.
 
- * `timeservice.TimeServiceBackend`
+ * `rpc.timeservice.TimeServiceBackend`
  * `timeservice.TimeServiceFrontend`
 
-### Procedure Arguments
+#### Procedure Arguments
 
 Demonstrates all variants of call arguments.
 
- * `arguments.ArgumentsBackend`
- * `arguments.ArgumentsFrontend`
+ * `rpc.arguments.ArgumentsBackend`
+ * `rpc.arguments.ArgumentsFrontend`
 
-### Complex Results
+#### Complex Results
 
 Demonstrates complex call results (call results with more than one positional or keyword results).
 
- * `complex.ComplexBackend`
- * `complex.ComplexFrontend` 
+ * `rpc.complex.ComplexBackend`
+ * `rpc.complex.ComplexFrontend` 
 
-### Handling Errors
+#### Handling Errors
 
 Demonstrates error raising and catching over remote procedures.
 
- * `errors.ErrorsTestBackend`
- * `errors.ErrorsTestFrontend` 
+ * `rpc.errors.ErrorsTestBackend`
+ * `rpc.errors.ErrorsTestFrontend` 
 
-### Progressive Results
+#### Progressive Results
 
 Demonstrates calling remote procedures that produce progressive results.
 
- * `progress.ProgressiveBackend`
- * `progress.ProgressiveFrontend` 
+ * `rpc.progress.ProgressiveBackend`
+ * `rpc.progress.ProgressiveFrontend` 
+
+
+### Publish & Subscribe
+
+#### Time Service
+
+Demonstrates basic publish and subscribe.
+
+ * `pubsub.pubsub.PubSubTestBackend`
+ * `pubsub.pubsub.PubSubTestFrontend`
+
+Demonstrates publish and subscribe with complex events.
+
+ * `pubsub.complex.ComplexEventTestBackend`
+ * `pubsub.complex.ComplexEventTestFrontend`
+
+Demonstrates basic publish and subscribe.
+
+ * `pubsub.pubsuboptions.PubSubOptionsTestBackend`
+ * `pubsub.pubsuboptions.PubSubOptionsTestFrontend`
