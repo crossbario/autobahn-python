@@ -1,8 +1,25 @@
 # WAMP v2 Demos
 
+The examples in this folder serve to illustrate
+
+* basic WAMP features applications can use
+* deployment flexibility provided by Autobahn
+
+WAMP on Autobahn allows to run application components in different deployment configurations:
+
 ![Application Code Deployment Options](app_code_depl_options.png)
 
 ## Running the Demos
+
+All demos below use the same two example application containers:
+
+ * [A WAMP/WebSocket server container](server.py)
+ * [A WAMP/WebSocket client container](client.py)
+
+The application code (the demos) is separate from above.
+
+This allows to run all demos in different deployment configuration, as illustrated above.
+
 
 ### Router with embedded application backend component
 
@@ -39,7 +56,7 @@ Run the WAMP application frontend over a WebSocket transport client:
 A trivial time service - demonstrates basic remote procedure feature.
 
  * `rpc.timeservice.TimeServiceBackend`
- * `timeservice.TimeServiceFrontend`
+ * `rpc.timeservice.TimeServiceFrontend`
 
 #### Procedure Arguments
 
@@ -99,3 +116,10 @@ Using options with PubSub.
 
  * `pubsub.pubsuboptions.PubSubOptionsTestBackend`
  * `pubsub.pubsuboptions.PubSubOptionsTestFrontend`
+
+#### Unsubscribing
+
+Shows how to unsubscribe.
+
+ * `pubsub.unsubscribe.UnsubscribeTestBackend`
+ * `pubsub.unsubscribe.UnsubscribeTestFrontend`
