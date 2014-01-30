@@ -138,10 +138,8 @@ Protocol
              closeSession,
              publish,
              subscribe,
-             unsubscribe,
              call,
-             register,
-             unregister
+             register
 
 
 .. autoclass:: autobahn.wamp.protocol.WampAppFactory

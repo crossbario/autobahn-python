@@ -61,7 +61,7 @@ if __name__ == '__main__':
    ## create a WAMP router session factory
    ##
    from autobahn.twisted.wamp import WampRouterFactory
-   session = WampRouterFactory()
+   session_factory = WampRouterFactory()
 
 
    ## if asked to start an embedded application component ..
@@ -77,20 +77,20 @@ if __name__ == '__main__':
 
       ## .. and create and add an app WAMP session to the router
       ##
-      session.add(SessionKlass())
+      session_factory.add(SessionKlass())
 
 
    ## run WAMP over WebSocket
    ##
    from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transport = WampWebSocketServerFactory(session, args.wsurl, debug = args.debug)
-   transport.setProtocolOptions(failByDrop = False)
+   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = args.debug)
+   transport_factory.setProtocolOptions(failByDrop = False)
 
 
    ## start the WebSocket server from an endpoint
    ##
    server = serverFromString(reactor, args.websocket)
-   server.listen(transport)
+   server.listen(transport_factory)
 
 
    ## now enter the Twisted reactor loop

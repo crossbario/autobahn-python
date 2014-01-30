@@ -21,8 +21,8 @@ clean:
 	find . -name "*__pycache__" -type d -exec rm -rf {} \;
 
 publish: clean
-	python3 setup.py register
-	python3 setup.py sdist upload
+	python setup.py register
+	python setup.py sdist upload
 
 test:
 	trial.py autobahn.wamp.tests
@@ -31,10 +31,3 @@ test:
 #	trial.py autobahn.wamp.tests.test_protocol_peer
 #	trial.py autobahn.wamp.tests.test_serializer
 #	trial.py autobahn.wamp.tests.test_uri_pattern
-
-testp:
-	python -m autobahn/wamp/tests/test_protocol.py
-#	python -m autobahn.wamp.tests.test_protocol
-#	python -m autobahn.wamp.tests.test_message
-#	python autobahn/wamp/tests/test_message.py
-#	python autobahn/wamp2/tests/test_uri_pattern.py
