@@ -19,13 +19,12 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.util import sleep
 from autobahn.wamp.protocol import WampAppSession
-from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
+from autobahn.twisted.util import sleep
 
 
 
-class PubSubOptionsTestBackend(WampAppSession):
+class UnsubscribeTestBackend(WampAppSession):
    """
    An application component that publishes an event every second.
    """
@@ -35,33 +34,46 @@ class PubSubOptionsTestBackend(WampAppSession):
 
       counter = 0
       while True:
-         publication = yield self.publish('com.myapp.topic1', counter,
-               options = PublishOptions(acknowledge = True, discloseMe = True))
-         print("Event published with publication ID {}".format(publication.id))
+         self.publish('com.myapp.topic1', counter)
          counter += 1
          yield sleep(1)
 
 
 
-class PubSubOptionsTestFrontend(WampAppSession):
+class UnsubscribeTestFrontend(WampAppSession):
    """
-   An application component that subscribes and receives events,
-   and stop after having received 5 events.
+   An application component that subscribes and receives events.
+   After receiving 5 events, it unsubscribes, sleeps and then
+   resubscribes for another run. Then it stops.
    """
+
+   @inlineCallbacks
+   def test(self):
+
+      self.received = 0
+
+      @inlineCallbacks
+      def on_event(i):
+         print("Got event: {}".format(i))
+         self.received += 1
+         if self.received > 5:
+            self.runs += 1
+            if self.runs > 1:
+               self.closeSession()
+            else:
+               yield self.subscription.unsubscribe()
+               print("Unsubscribed .. continue in 2s ..")
+               reactor.callLater(2, self.test)
+
+      self.subscription = yield self.subscribe(on_event, 'com.myapp.topic1')
+      print("Subscribed with subscription ID {}".format(self.subscription.id))
+
 
    @inlineCallbacks
    def onSessionOpen(self, details):
 
-      self.received = 0
-
-      def on_event(i, details = None):
-         print("Got event, publication ID {}, publisher {}: {}".format(details.publication, details.publisher, i))
-         self.received += 1
-         if self.received > 5:
-            self.closeSession()
-
-      yield self.subscribe(on_event, 'com.myapp.topic1',
-                              options = SubscribeOptions(details_arg = 'details'))
+      self.runs = 0
+      yield self.test()
 
 
    def onSessionClose(self, details):

@@ -105,6 +105,23 @@ Router
 Protocol
 --------
 
+.. autoclass:: autobahn.wamp.protocol.Publication
+   :show-inheritance:
+   :members: __init__
+
+
+.. autoclass:: autobahn.wamp.protocol.Subscription
+   :show-inheritance:
+   :members: __init__,
+             unsubscribe
+
+
+.. autoclass:: autobahn.wamp.protocol.Registration
+   :show-inheritance:
+   :members: __init__,
+             unregister
+
+
 .. autoclass:: autobahn.wamp.protocol.WampBaseSession
    :show-inheritance:
    :members: define

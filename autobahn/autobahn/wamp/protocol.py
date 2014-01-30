@@ -23,9 +23,12 @@ from zope.interface import implementer
 from twisted.internet.defer import Deferred, maybeDeferred
 
 from autobahn.wamp.interfaces import ISession, \
+                                     IPublication, \
                                      IPublisher, \
+                                     ISubscription, \
                                      ISubscriber, \
                                      ICaller, \
+                                     IRegistration, \
                                      ICallee, \
                                      ITransportHandler
 
@@ -44,6 +47,8 @@ from autobahn.wamp.dealer import Dealer
 
 
 class Endpoint:
+   """
+   """
 
    def __init__(self, fn, details_arg = None):
       self.fn = fn
@@ -52,10 +57,61 @@ class Endpoint:
 
 
 class Handler:
+   """
+   """
 
    def __init__(self, fn, details_arg = None):
       self.fn = fn
       self.details_arg = details_arg
+
+
+
+@implementer(IPublication)
+class Publication:
+   """
+   Object representing a publication.
+   This class implements :class:`autobahn.wamp.interfaces.IPublication`.
+   """
+   def __init__(self, id):
+      self.id = id
+
+
+
+@implementer(ISubscription)
+class Subscription:
+   """
+   Object representing a subscription.
+   This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
+   """
+   def __init__(self, session, id):
+      self._session = session
+      self.active = True
+      self.id = id
+
+   def unsubscribe(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
+      """
+      return self._session._unsubscribe(self)
+
+
+
+@implementer(IRegistration)
+class Registration:
+   """
+   Object representing a registration.
+   This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
+   """
+   def __init__(self, session, id):
+      self._session = session
+      self.active = True
+      self.id = id
+
+   def unregister(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IRegistration.unregister`
+      """
+      return self._session._unregister(self)
 
 
 
@@ -342,7 +398,8 @@ class WampAppSession(WampBaseSession):
 
             if msg.request in self._publish_reqs:
                d, opts = self._publish_reqs.pop(msg.request)
-               d.callback(msg.publication)
+               p = Publication(msg.publication)
+               d.callback(p)
             else:
                raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
 
@@ -354,7 +411,8 @@ class WampAppSession(WampBaseSession):
                   self._subscriptions[msg.subscription] = Handler(fn, options.details_arg)
                else:
                   self._subscriptions[msg.subscription] = Handler(fn)
-               d.callback(msg.subscription)
+               s = Subscription(self, msg.subscription)
+               d.callback(s)
             else:
                raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
 
@@ -362,8 +420,9 @@ class WampAppSession(WampBaseSession):
 
             if msg.request in self._unsubscribe_reqs:
                d, subscription = self._unsubscribe_reqs.pop(msg.request)
-               if subscription in self._subscriptions:
-                  del self._subscriptions[subscription]
+               if subscription.id in self._subscriptions:
+                  del self._subscriptions[subscription.id]
+               subscription.active = False
                d.callback(None)
             else:
                raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
@@ -502,7 +561,8 @@ class WampAppSession(WampBaseSession):
                   self._registrations[msg.registration] = Endpoint(fn, options.details_arg)
                else:
                   self._registrations[msg.registration] = Endpoint(fn)
-               d.callback(msg.registration)
+               r = Registration(self, msg.registration)
+               d.callback(r)
             else:
                raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
 
@@ -510,8 +570,9 @@ class WampAppSession(WampBaseSession):
 
             if msg.request in self._unregister_reqs:
                d, registration = self._unregister_reqs.pop(msg.request)
-               if registration in self._registrations:
-                  del self._registrations[registration]
+               if registration.id in self._registrations:
+                  del self._registrations[registration.id]
+               registration.active = False
                d.callback(None)
             else:
                raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
@@ -658,12 +719,13 @@ class WampAppSession(WampBaseSession):
       return d
 
 
-   def unsubscribe(self, subscription):
+   def _unsubscribe(self, subscription):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISubscriber.unsubscribe`
+      Called from :meth:`autobahn.wamp.protocol.Subscription.unsubscribe`
       """
-      assert(type(subscription) in [int, long])
-      assert(subscription in self._subscriptions)
+      assert(isinstance(subscription, Subscription))
+      assert(subscription.active)
+      assert(subscription.id in self._subscriptions)
 
       if not self._transport:
          raise exception.TransportLost()
@@ -673,7 +735,7 @@ class WampAppSession(WampBaseSession):
       d = Deferred()
       self._unsubscribe_reqs[request] = (d, subscription)
 
-      msg = message.Unsubscribe(request, subscription)
+      msg = message.Unsubscribe(request, subscription.id)
 
       self._transport.send(msg)
       return d
@@ -733,12 +795,13 @@ class WampAppSession(WampBaseSession):
       return d
 
 
-   def unregister(self, registration):
+   def _unregister(self, registration):
       """
-      Implements :func:`autobahn.wamp.interfaces.ICallee.unregister`
+      Called from :meth:`autobahn.wamp.protocol.Registration.unregister`
       """
-      assert(type(registration) in [int, long])
-      assert(registration in self._registrations)
+      assert(isinstance(registration, Registration))
+      assert(registration.active)
+      assert(registration.id in self._registrations)
 
       if not self._transport:
          raise exception.TransportLost()
@@ -748,7 +811,7 @@ class WampAppSession(WampBaseSession):
       d = Deferred()
       self._unregister_reqs[request] = (d, registration)
 
-      msg = message.Unregister(request, registration)
+      msg = message.Unregister(request, registration.id)
 
       self._transport.send(msg)
       return d

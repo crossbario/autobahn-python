@@ -292,6 +292,39 @@ class ICaller(ISession):
 
 
 
+class IRegistration(Interface):
+   """
+   Represents a registration.
+   """
+   id = Attribute("The WAMP registration ID for this registration.")
+
+   active = Attribute("Flag indicating if registration is active.")
+
+   def unregister():
+      """
+      Unregister this registration that was previously created from
+      :func:`autobahn.wamp.interfaces.ICallee.register`.
+
+      After a registration has been unregistered, calls won't get routed
+      to the endpoint any more.
+
+      This will return a deferred/future, that when resolved signals
+      successful unregistration.
+
+      If the unregistration fails, the returned deferred/future will be rejected
+      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
+
+      :param registration: The registration to unregister from.
+      :type registration: An instance of :class:`autobahn.wamp.types.Registration`
+                          that was previously registered.
+
+      :returns: obj -- A deferred/future for the unregistration -
+                       an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
+                       or an instance of :class:`asyncio.Future` (when running under asyncio).
+      """
+
+
+
 class ICallee(ISession):
    """
    Interface for WAMP peers implementing role "Callee".
@@ -323,27 +356,12 @@ class ICallee(ISession):
       """
 
 
-   def unregister(registration):
-      """
-      Unregister the endpoint registration that was previously registered.
 
-      After a registration has been unregistered, calls won't get routed
-      to the endpoint any more.
+class IPublication(Interface):
+   """
+   """
+   id = Attribute("The WAMP publication ID for this publication.")
 
-      This will return a deferred/future, that when resolved signals
-      successful unregistration.
-
-      If the unregistration fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
-
-      :param registration: The registration to unregister from.
-      :type registration: An instance of :class:`autobahn.wamp.types.Registration`
-                          that was previously registered.
-
-      :returns: obj -- A deferred/future for the unregistration -
-                       an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
-                       or an instance of :class:`asyncio.Future` (when running under asyncio).
-      """
 
 
 
@@ -356,20 +374,57 @@ class IPublisher(ISession):
       """
       Publish an event to a topic.
 
-      This will return a deferred/future, that when resolved provides the publication ID
-      for the published event.
+      If `kwargs` contains an `options` keyword argument that is an instance of
+      :class:`autobahn.wamp.types.PublishOptions`, this will provide
+      specific options for the publish to perform.
 
-      If the publication fails, the returned deferred/future will be rejected with an instance
-      of :class:`autobahn.wamp.error.ApplicationError`.
+      If publication acknowledgement is requested via `options.acknowledgement == True`,
+      this function returns a Deferred/Future:
+
+        - if the publication succeeds the Deferred/Future will resolve to an object
+          that implements :class:`autobahn.wamp.interfaces.IPublication`.
+
+        - if the publication fails the Deferred/Future will reject with an instance
+          of :class:`autobahn.error.RuntimeError`.
 
       :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
       :type topic: str
-      :param payload: The payload for the event to be published.
-      :type payload: obj
-      :param options: Options for publishing.
-      :type options: None or an instance of :class:`autobahn.wamp.types.PublishOptions`
+      :param args: Arbitrary application payload for the event (positional arguments).
+      :type args: list
+      :param kwargs: Arbitrary application payload for the event (keyword arguments).
+      :type kwargs: dict
 
-      :returns: obj -- A deferred/future for the publication -
+      :returns: obj -- `None` for non-acknowledged publications or,
+                       for non-acknowledged publications, an instance of
+                       :class:`twisted.internet.defer.Deferred` (when running under Twisted)
+                       or an instance of :class:`asyncio.Future` (when running under asyncio).
+      """
+
+
+
+class ISubscription(Interface):
+   """
+   Represents a subscription.
+   """
+   id = Attribute("The WAMP subscription ID for this subscription.")
+
+   active = Attribute("Flag indicating if subscription is active.")
+
+   def unsubscribe():
+      """
+      Unsubscribe this subscription that was previously created from
+      :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+
+      After a subscription has been unsubscribed, events won't get
+      routed to the handler anymore.
+
+      This will return a deferred/future, that when resolved signals
+      successful unsubscription.
+
+      If the unsubscription fails, the returned deferred/future will be rejected
+      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
+
+      :returns: obj -- A deferred/future for the unsubscription -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
                        or an instance of :class:`asyncio.Future` (when running under asyncio).
       """
@@ -389,9 +444,12 @@ class ISubscriber(ISession):
       then `topic` must be provided and an instance of
       :class:`twisted.internet.defer.Deferred` (when running on Twisted) or an instance
       of :class:`asyncio.Future` (when running on asyncio) is returned.
-      If the subscription succeeds the Deferred/Future will resolve to an instance
-      of :class:`autobahn.wamp.types.Subscription`. If the subscription fails the
-      Deferred/Future will reject with an instance of :class:`autobahn.error.RuntimeError`.
+
+      If the subscription succeeds the Deferred/Future will resolve to an object
+      that implements :class:`autobahn.wamp.interfaces.ISubscription`.
+
+      If the subscription fails the Deferred/Future will reject with an instance
+      of :class:`autobahn.error.RuntimeError`.
 
       If `handler` is an object, then each of the object's methods that are decorated
       with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
@@ -407,31 +465,6 @@ class ISubscriber(ISession):
       :type options: An instance of :class:`autobahn.wamp.types.SubscribeOptions`.
 
       :returns: obj -- A (list of) Deferred(s)/Future(s) for the subscription(s) -
-                       instance(s) of :class:`twisted.internet.defer.Deferred` (when
-                       running under Twisted) or instance(s) of :class:`asyncio.Future`
-                       (when running under asyncio).
-      """
-
-
-   def unsubscribe(subscription):
-      """
-      Unsubscribe a subscription that was previously created with
-      :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
-
-      After a subscription has been unsubscribed, watchers won't get notified
-      any more, and you cannot use the subscription anymore.
-
-      This will return a deferred/future, that when resolved signales
-      successful unsubscription.
-
-      If the unsubscription fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
-
-      :param subscription: The subscription to unscribe from.
-      :type subscription: An instance of :class:`autobahn.wamp.types.Subscription`
-                          that was previously subscribed.
-
-      :returns: obj -- A (list of) Deferred(s)/Future(s) for the unsubscription(s) -
                        instance(s) of :class:`twisted.internet.defer.Deferred` (when
                        running under Twisted) or instance(s) of :class:`asyncio.Future`
                        (when running under asyncio).

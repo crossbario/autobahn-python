@@ -150,19 +150,19 @@ class TestPublisher(unittest.TestCase):
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(acknowledge = True))
-      self.assertTrue(type(publication) in (int, long))
+      self.assertTrue(type(publication.id) in (int, long))
 
       publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, options = types.PublishOptions(acknowledge = True))
-      self.assertTrue(type(publication) in (int, long))
+      self.assertTrue(type(publication.id) in (int, long))
 
       publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(acknowledge = True))
-      self.assertTrue(type(publication) in (int, long))
+      self.assertTrue(type(publication.id) in (int, long))
 
       publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(excludeMe = False, acknowledge = True))
-      self.assertTrue(type(publication) in (int, long))
+      self.assertTrue(type(publication.id) in (int, long))
 
       publication = yield handler.publish('com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(excludeMe = False, exclude = [100, 200, 300], acknowledge = True))
-      self.assertTrue(type(publication) in (int, long))
+      self.assertTrue(type(publication.id) in (int, long))
 
 
    @inlineCallbacks
@@ -236,10 +236,10 @@ class TestPublisher(unittest.TestCase):
          print "got event"
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
-      self.assertTrue(type(subscription) in (int, long))
+      self.assertTrue(type(subscription.id) in (int, long))
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1', options = types.SubscribeOptions(match = 'wildcard'))
-      self.assertTrue(type(subscription) in (int, long))
+      self.assertTrue(type(subscription.id) in (int, long))
 
 
    @inlineCallbacks
@@ -251,7 +251,7 @@ class TestPublisher(unittest.TestCase):
          print "got event"
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
-      yield handler.unsubscribe(subscription)
+      yield subscription.unsubscribe()
 
 
    @inlineCallbacks
@@ -263,10 +263,10 @@ class TestPublisher(unittest.TestCase):
          print "got call"
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1')
-      self.assertTrue(type(registration) in (int, long))
+      self.assertTrue(type(registration.id) in (int, long))
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1', options = types.RegisterOptions(pkeys = [0, 1, 2]))
-      self.assertTrue(type(registration) in (int, long))
+      self.assertTrue(type(registration.id) in (int, long))
 
 
    @inlineCallbacks
@@ -278,7 +278,7 @@ class TestPublisher(unittest.TestCase):
          print "got call"
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1')
-      yield handler.unregister(registration)
+      yield registration.unregister()
 
 
    @inlineCallbacks

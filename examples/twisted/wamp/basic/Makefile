@@ -49,6 +49,11 @@ all:
 	@echo "   client_pubsub_options_frontend"
 	@echo "   client_pubsub_options_backend"
 	@echo ""
+	@echo "PubSub Unsubscribe:"
+	@echo "   server_with_pubsub_unsubscribe_backend"
+	@echo "   client_pubsub_unsubscribe_frontend"
+	@echo "   client_pubsub_unsubscribe_backend"
+	@echo ""
 
 
 server:
@@ -143,3 +148,13 @@ client_pubsub_options_frontend:
 
 client_pubsub_options_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsuboptions.PubSubOptionsTestBackend"
+
+
+server_with_pubsub_unsubscribe_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.unsubscribe.UnsubscribeTestBackend"
+
+client_pubsub_unsubscribe_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.UnsubscribeTestFrontend"
+
+client_pubsub_unsubscribe_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.UnsubscribeTestBackend"
