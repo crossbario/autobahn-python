@@ -1,9 +1,11 @@
-# WAMP v2 Demos
+# WAMP Demos
 
-The examples in this folder serve to illustrate
+The examples in this folder serve to illustrate **WAMP version 2**:
 
-* basic WAMP features applications can use
-* deployment flexibility provided by Autobahn
+* RPC and PubSub features for application use
+* example application components and containers
+
+# WAMP v2 Deployment Configurations
 
 WAMP on Autobahn allows to run application components in different deployment configurations:
 
@@ -11,38 +13,35 @@ WAMP on Autobahn allows to run application components in different deployment co
 
 ## Running the Demos
 
-All demos below use the same two example application containers:
+All demos use the same two example application routers to host the application components for a demo:
 
  * [A WAMP/WebSocket server container](server.py)
  * [A WAMP/WebSocket client container](client.py)
 
-The application code (the demos) is separate from above.
-
-This allows to run all demos in different deployment configuration, as illustrated above.
-
+The application components of the demos are separate from the example application routres, and each application component demonstrates a different RPC or PubSub feature.
 
 ### Router with embedded application backend component
 
-Run the WAMP router/dealer on a WebSocket transport server, and start the embedded application backend:
+Run the example application router on a WebSocket transport server and start a demo "backend" application component inside the router:
 
 	python server.py --component "rpc.timeservice.TimeServiceBackend"
 
-Run the WAMP application frontend over a WebSocket transport client:
+Run the demo "frontend" application component over a WebSocket transport client:
 
 	python client.py --component "rpc.timeservice.TimeServiceFrontend"
 
 
 ### Application backend component in client
 
-Run the WAMP router/dealer on a WebSocket transport server:
+Run the example application router on a WebSocket transport server:
 
 	python server.py
 
-Run the WAMP application backend over a WebSocket transport client:
+Run the demo "backend" application component over a WebSocket transport client:
 
 	python client.py --component "rpc.timeservice.TimeServiceBackend"
 
-Run the WAMP application frontend over a WebSocket transport client:
+Run the demo "frontend" application component over a WebSocket transport client:
 
 	python client.py --component "rpc.timeservice.TimeServiceFrontend"
 
