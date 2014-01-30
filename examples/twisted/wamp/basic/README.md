@@ -7,7 +7,7 @@ The examples in this folder serve to illustrate **[WAMP version 2](https://githu
 
 # Application Component Deployment
 
-**[WAMP v2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)** on [**Autobahn**|Python](http://autobahn.ws/) allows to run application components in different deployment configurations:
+**[WAMP v2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)** on [**Autobahn**|Python](http://autobahn.ws/) allows to run application components in different deployment configurations without any changes to application code:
 
 ![Application Code Deployment Options](app_code_depl_options.png)
 
