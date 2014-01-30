@@ -1,6 +1,6 @@
 # WAMP Demos
 
-The examples in this folder serve to illustrate **WAMP version 2**:
+The examples in this folder serve to illustrate **[WAMP version 2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)**:
 
 * RPC and PubSub features for application use
 * example application components and containers
