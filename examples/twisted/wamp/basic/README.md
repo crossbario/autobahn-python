@@ -1,5 +1,7 @@
 # WAMP v2 Demos
 
+![Application Code Deployment Options](app_code_depl_options.png)
+
 ## Running the Demos
 
 ### Router with embedded application backend component
