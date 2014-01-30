@@ -19,9 +19,9 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-from autobahn.twisted.util import sleep
-from autobahn.wamp.protocol import WampAppSession
 from autobahn.wamp.types import CallOptions, RegisterOptions
+from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import WampAppSession
 
 
 

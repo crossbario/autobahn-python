@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
    ## create a WAMP router session factory
    ##
-   from autobahn.wamp.protocol import WampRouterFactory
+   from autobahn.twisted.wamp import WampRouterFactory
    session = WampRouterFactory()
 
 

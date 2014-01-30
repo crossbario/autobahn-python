@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
    ## create a WAMP application session factory
    ##
-   from autobahn.wamp.protocol import WampAppFactory
+   from autobahn.twisted.wamp import WampAppFactory
    session = WampAppFactory()
 
 
