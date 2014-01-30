@@ -1,13 +1,13 @@
-# WAMP Demos
+# WAMP v2 Examples
 
-The examples in this folder serve to illustrate **[WAMP version 2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)**:
+The examples in this folder serve to illustrate **[WAMP version 2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)** on [**Autobahn**|Python](http://autobahn.ws/):
 
-* RPC and PubSub features for application use
-* example application components and containers
+* WAMP **RPC** and **PubSub** features for application use
+* example WAMP **application components** and **routers**
 
-# WAMP v2 Deployment Configurations
+# Application Component Deployment
 
-WAMP on Autobahn allows to run application components in different deployment configurations:
+**[WAMP v2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)** on [**Autobahn**|Python](http://autobahn.ws/) allows to run application components in different deployment configurations:
 
 ![Application Code Deployment Options](app_code_depl_options.png)
 
