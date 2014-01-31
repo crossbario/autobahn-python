@@ -31,7 +31,6 @@ from autobahn.websocket import protocol
 from autobahn.websocket import http
 
 from autobahn.wamp.interfaces import ITransport, ISerializer
-from autobahn.wamp.serializer import JsonSerializer, MsgPackSerializer
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 
@@ -204,7 +203,24 @@ class WampWebSocketFactory:
       self._factory = factory
 
       if serializers is None:
-         serializers = [MsgPackSerializer(), JsonSerializer()]
+         serializers = []
+
+         ## try MsgPack WAMP serializer
+         try:
+            from autobahn.wamp.serializer import MsgPackSerializer
+            serializers.append(MsgPackSerializer())
+         except:
+            pass
+
+         ## try JSON WAMP serializer
+         try:
+            from autobahn.wamp.serializer import JsonSerializer
+            serializers.append(JsonSerializer())
+         except:
+            pass
+
+         if not serializers:
+            raise Exception("could not import any WAMP serializers")
 
       self._serializers = {}
       for ser in serializers:
