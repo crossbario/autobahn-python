@@ -151,6 +151,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
    """
    Mixin for WAMP-over-WebSocket server transports.
    """
+   strict = False
 
    def onConnect(self, request):
       """
@@ -163,7 +164,12 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
             self._serializer = self.factory._serializers[serializerId]
             return subprotocol, headers
 
-      raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
+      if self.strict:
+         raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
+      else:
+         ## assume wamp.2.json
+         self._serializer = self.factory._serializers['json']
+         return None, headers
 
 
 
