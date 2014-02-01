@@ -151,7 +151,8 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
    """
    Mixin for WAMP-over-WebSocket server transports.
    """
-   strict = False
+
+   STRICT_PROTOCOL_NEGOTIATION = True
 
    def onConnect(self, request):
       """
@@ -164,7 +165,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
             self._serializer = self.factory._serializers[serializerId]
             return subprotocol, headers
 
-      if self.strict:
+      if self.STRICT_PROTOCOL_NEGOTIATION:
          raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
       else:
          ## assume wamp.2.json
@@ -178,14 +179,21 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
    Mixin for WAMP-over-WebSocket client transports.
    """
 
+   STRICT_PROTOCOL_NEGOTIATION = True
+
    def onConnect(self, response):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
       """
       if response.protocol not in self.factory.protocols:
-         raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
-
-      version, serializerId = parseSubprotocolIdentifier(response.protocol)
+         if self.STRICT_PROTOCOL_NEGOTIATION:
+            raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
+         else:
+            ## assume wamp.2.json
+            serializerId = 'json'
+      else:
+         version, serializerId = parseSubprotocolIdentifier(response.protocol)
+      
       self._serializer = self.factory._serializers[serializerId]
 
 
