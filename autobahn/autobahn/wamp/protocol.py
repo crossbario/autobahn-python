@@ -579,6 +579,8 @@ class WampAppSession(WampBaseSession):
 
          elif isinstance(msg, message.Error):
 
+            ## Router/Dealer ERROR replies
+            ##
             if msg.request_type == message.Invocation.MESSAGE_TYPE:
 
                if self._dealer:
@@ -586,6 +588,8 @@ class WampAppSession(WampBaseSession):
                else:
                   raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
+            ## Consumer ERROR replies
+            ##
             else:
 
                d = None
@@ -593,16 +597,32 @@ class WampAppSession(WampBaseSession):
                ## ERROR reply to PUBLISH
                ##
                if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
-                  d, _ = self._publish_reqs.pop(msg.request)
+                  d = self._publish_reqs.pop(msg.request)[0]
 
+               ## ERROR reply to SUBSCRIBE
+               ##
                elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
-                  d, _ = self._subscribe_reqs.pop(msg.request)
+                  d = self._subscribe_reqs.pop(msg.request)[0]
 
+               ## ERROR reply to UNSUBSCRIBE
+               ##
                elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
-                  d = self._unsubscribe_reqs.pop(msg.request)
+                  d = self._unsubscribe_reqs.pop(msg.request)[0]
 
+               ## ERROR reply to REGISTER
+               ##
+               elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
+                  d = self._register_reqs.pop(msg.request)[0]
+
+               ## ERROR reply to UNREGISTER
+               ##
+               elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
+                  d = self._unregister_reqs.pop(msg.request)[0]
+
+               ## ERROR reply to CALL
+               ##
                elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
-                  d, _ = self._call_reqs.pop(msg.request)
+                  d = self._call_reqs.pop(msg.request)[0]
 
                if d:
                   d.errback(self._exception_from_message(msg))
