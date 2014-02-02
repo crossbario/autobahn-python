@@ -532,3 +532,43 @@ class IDealer(IRouter):
     * :class:`autobahn.wamp.message.Yield`
     * :class:`autobahn.wamp.message.Error`
    """
+
+
+##
+## completely decouple transports and routers:
+##  - multiple WAMP sessions over different transports attached to same router
+##  - multiple WAMP sessions over a single transport attached to different routers
+##
+class ISessionN(Interface):
+
+   def send(message):
+      """
+      """
+
+
+class IRouterFactory(Interface):
+
+   def get(realm):
+      """
+      Get router for given realm.
+      """
+
+
+class IRouterN(Interface):
+
+   realm = Attribute("The WAMP realm this router handles.")
+
+   def attach(session):
+      """
+      Attach a WAMP application session to this router.
+      """
+
+   def detach(session):
+      """
+      Detach a WAMP application session from this router.
+      """
+
+   def process(session, message):
+      """
+      Process a WAMP message received on the given session.
+      """
