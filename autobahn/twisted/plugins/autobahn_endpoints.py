@@ -60,6 +60,10 @@ def _parseOptions(options):
 
       opts['autoFragmentSize'] = value
 
+   if 'subprotocol' in options:
+      value = options['subprotocol'].lower().strip()
+      opts['subprotocol'] = value
+
    if 'debug' in options:
       value = options['debug'].lower().strip()
       if value == 'true':
