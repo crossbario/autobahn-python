@@ -194,7 +194,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
       """
       In addition to all arguments to the constructor of
       :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-      you can supply a `reactor` keyword argument to specify the 
+      you can supply a `reactor` keyword argument to specify the
       Twisted reactor to be used.
       """
       ## lazy import to avoid reactor install upon module import
@@ -224,7 +224,7 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
       """
       In addition to all arguments to the constructor of
       :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-      you can supply a `reactor` keyword argument to specify the 
+      you can supply a `reactor` keyword argument to specify the
       Twisted reactor to be used.
       """
       ## lazy import to avoid reactor install upon module import
@@ -251,12 +251,13 @@ class WrappingWebSocketAdapter:
    This follows "websockify" (https://github.com/kanaka/websockify)
    and should be compatible with that.
 
-   It uses WebSocket subprotocol negotiation and 2 subprotocols:
-     - binary
+   It uses WebSocket subprotocol negotiation and 2+ subprotocols:
+     - binary (or a compatible subprotocol)
      - base64
 
    Octets are either transmitted as the payload of WebSocket binary
-   messages when using the 'binary' subprotocol, or encoded with Base64
+   messages when using the 'binary' subprotocol (or an alternative
+   binary compatible subprotocol), or encoded with Base64
    and then transmitted as the payload of WebSocket text messages when
    using the 'base64' subprotocol.
    """
@@ -268,15 +269,15 @@ class WrappingWebSocketAdapter:
       if isinstance(requestOrResponse, protocol.ConnectionRequest):
          request = requestOrResponse
          for p in request.protocols:
-            if p in ['binary', 'base64']:
-               self._binaryMode = (p == 'binary')
+            if p in self.factory._subprotocols:
+               self._binaryMode = (p != 'base64')
                return p
-         raise http.HttpException(http.NOT_ACCEPTABLE[0], "this server only speaks 'binary' and 'base64' WebSocket subprotocols")
+         raise http.HttpException(http.NOT_ACCEPTABLE[0], "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
       elif isinstance(requestOrResponse, protocol.ConnectionResponse):
          response = requestOrResponse
-         if response.protocol not in ['binary', 'base64']:
-            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks 'binary' and 'base64' WebSocket subprotocols")
-         self._binaryMode = (response.protocol == 'binary')
+         if response.protocol not in self.factory._subprotocols:
+            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+         self._binaryMode = (response.protocol != 'base64')
       else:
          ## should not arrive here
          raise Exception("logic error")
@@ -345,6 +346,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
                 reactor = None,
                 enableCompression = True,
                 autoFragmentSize = 0,
+                subprotocol = None,
                 debug = False):
       """
       Constructor.
@@ -355,11 +357,14 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
       :type url: str
       """
       self._factory = factory
+      self._subprotocols = ['binary', 'base64']
+      if subprotocol:
+          self._subprotocols.append(subprotocol)
 
       WebSocketServerFactory.__init__(self,
          url = url,
          reactor = reactor,
-         protocols = ['binary', 'base64'],
+         protocols = self._subprotocols,
          debug = debug)
 
       ## automatically fragment outgoing traffic into WebSocket frames
@@ -412,6 +417,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
                 reactor = None,
                 enableCompression = True,
                 autoFragmentSize = 0,
+                subprotocol = None,
                 debug = False):
       """
       Constructor.
@@ -422,11 +428,14 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
       :type url: str
       """
       self._factory = factory
+      self._subprotocols = ['binary', 'base64']
+      if subprotocol:
+          self._subprotocols.append(subprotocol)
 
       WebSocketClientFactory.__init__(self,
          url = url,
          reactor = reactor,
-         protocols = ['binary', 'base64'],
+         protocols = self._subprotocols,
          debug = debug)
 
       ## automatically fragment outgoing traffic into WebSocket frames

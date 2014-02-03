@@ -1,24 +1,24 @@
 # Stream-based Endpoints over WebSocket
 
-**Autobahn**|Python provides facilities to wrap existing stream-based Twisted factories and protocols with WebSocket. 
+**Autobahn**|Python provides facilities to wrap existing stream-based Twisted factories and protocols with WebSocket.
 That means, you can run any stream-based protocol *over* WebSocket without any modification to the existing protocol and factory.
 
-Why would you want to do that? For example, to create a VNC, SSH, IRC, IMAP or other client for some existing protocol that runs on browsers, and connects to an *unmodified* server.
+Why would you want to do that? For example, to create a VNC, SSH, IRC, IMAP, MQTT or other client for some existing protocol that runs on browsers, and connects to an *unmodified* server.
 
 > This example is about running any stream-based Twisted endpoint over WebSocket.
 > **Autobahn**|Python also supports running WebSocket over any stream-based Twisted endpoint. Please see [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_endpoints).
-> 
+>
 
 ## WebSocket Transport Scheme
 
-**Autobahn**|Python follows the transport scheme established by [websockify](https://github.com/kanaka/websockify): a WebSocket subprotocol is negotiated, either `binary` or `base64`.
+**Autobahn**|Python follows the transport scheme established by [websockify](https://github.com/kanaka/websockify): a WebSocket subprotocol is negotiated, either `binary` or `base64`. Alternative binary compatible subprotocols may also be specified, such as the MQTT `mqttv3.1` protocol, by using the `subprotocol` endpoint descriptor.
 
 With the `binary` WebSocket subprotocol, any data is simply sent as payload of WebSocket binary messages. With the `base64` WebSocket subprotocol, any data is first Base64 encoded before being sent as the payload of WebSocket text messages.
 
 Since **Autobahn**|Python implements WebSocket compression, traffic is automatically compressed ("permessage-deflate"). This can be turned off if you want.
 
 > Currently the only browser with support for WebSocket compression is Chrome 32+.
-> 
+>
 
 ## Wrapping Factories and Protocols
 
@@ -94,6 +94,10 @@ Included in this directory is a Terminal client written in JavaScript (this code
 Open `telnet.html` in your browser, provide the server IP and port (the one running `twistd`) and press connect.
 
 As soon as the Process support for endpoints in Twisted is fully here, the forwarder will allow you to expose any program over WebSocket, by forwarding the program's `stdin` and `stdout`.
+
+Another example is to forward create a WebSocket proxy in front of a MQTT broker. This makes use of the optional `subprotocol` input that allows the mqttv3.1 binary subprotocol to be accepted along with the default `binary` and `base64` subprotocols.
+
+	twistd -n endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000:subprotocol=mqttv3.1" --dest_endpoint="tcp:127.0.0.1:1883"
 
 Essentially, these features are equivalent of what the following two projects provide:
 
