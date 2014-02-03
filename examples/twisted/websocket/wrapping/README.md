@@ -95,7 +95,7 @@ Open `telnet.html` in your browser, provide the server IP and port (the one runn
 
 As soon as the Process support for endpoints in Twisted is fully here, the forwarder will allow you to expose any program over WebSocket, by forwarding the program's `stdin` and `stdout`.
 
-Another example is to forward create a WebSocket proxy in front of a MQTT broker. This makes use of the optional `subprotocol` input that allows the mqttv3.1 binary subprotocol to be accepted along with the default `binary` and `base64` subprotocols.
+Another example is to create a WebSocket proxy in front of a MQTT broker. This makes use of the optional `subprotocol` input that allows the `mqttv3.1` binary compatible subprotocol to be accepted along with the default `binary` and `base64` subprotocols.
 
 	twistd -n endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000:subprotocol=mqttv3.1" --dest_endpoint="tcp:127.0.0.1:1883"
 
