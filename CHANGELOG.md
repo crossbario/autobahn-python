@@ -1,5 +1,9 @@
 # Autobahn|Python Changelog
 
+## v0.8.1
+ * support explicit (binary) subprotocol name for wrapping WebSocket factory 
+ * fix dependency on MsgPack
+
 ## v0.8.0
  * new: complete WAMP v2 protocol implementation and API layer
  * new: basic WAMP v2 router implementation
