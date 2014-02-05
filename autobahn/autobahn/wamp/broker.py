@@ -61,7 +61,7 @@ class Broker:
       assert(session not in self._session_to_subscriptions)
 
       self._session_to_subscriptions[session] = set()
-      self._session_id_to_session[session._my_session_id] = session
+      self._session_id_to_session[session._session_id] = session
 
 
    def removeSession(self, session):
@@ -148,7 +148,7 @@ class Broker:
       ##
       if receivers:
          if publish.discloseMe:
-            publisher = session._my_session_id
+            publisher = session._session_id
          else:
             publisher = None
          msg = message.Event(subscription,

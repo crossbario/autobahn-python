@@ -239,16 +239,14 @@ class WampAppSession(WampBaseSession):
      * :class:`autobahn.wamp.interfaces.ICallee`
      * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
+   realm = "anonymous"
 
-   def __init__(self, broker = None, dealer = None):
+   def __init__(self):
       """
       Constructor.
       """
       WampBaseSession.__init__(self)
       self._transport = None
-
-      self._broker = broker
-      self._dealer = dealer
 
       self._goodbye_sent = False
       self._transport_is_closing = False
@@ -276,9 +274,7 @@ class WampAppSession(WampBaseSession):
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
       """
       self._transport = transport
-
-      self._my_session_id = util.id()
-      self._peer_session_id = None
+      self._session_id = None
 
       roles = [
          role.RolePublisherFeatures(),
@@ -287,13 +283,7 @@ class WampAppSession(WampBaseSession):
          role.RoleCalleeFeatures()
       ]
 
-      if self._broker:
-         roles.append(role.RoleBrokerFeatures())
-
-      if self._dealer:
-         roles.append(role.RoleDealerFeatures())
-
-      msg = message.Hello(self._my_session_id, roles)
+      msg = message.Hello(self.realm, roles)
       self._transport.send(msg)
 
 
@@ -301,28 +291,19 @@ class WampAppSession(WampBaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
       """
-      if self._peer_session_id is None:
+      if self._session_id is None:
 
-         ## the first message MUST be HELLO
-         if isinstance(msg, message.Hello):
-            self._peer_session_id = msg.session
+         ## the first message MUST be WELCOME
+         if isinstance(msg, message.Welcome):
+            self._session_id = msg.session
 
-            if self._broker:
-               self._broker.addSession(self)
-
-            if self._dealer:
-               self._dealer.addSession(self)
-
-            self.onSessionOpen(SessionDetails(self._my_session_id, self._peer_session_id))
+            self.onSessionOpen(SessionDetails(self._session_id))
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
       else:
 
-         if isinstance(msg, message.Hello):
-            raise ProtocolError("HELLO message received, while session is already established")
-
-         elif isinstance(msg, message.Goodbye):
+         if isinstance(msg, message.Goodbye):
             if not self._goodbye_sent:
                ## the peer wants to close: send GOODBYE reply
                reply = message.Goodbye()
@@ -331,38 +312,9 @@ class WampAppSession(WampBaseSession):
             ## fire callback and close the transport
             self.onSessionClose(types.CloseDetails(msg.reason, msg.message))
 
-            if self._broker:
-               self._broker.removeSession(self)
-
-            if self._dealer:
-               self._dealer.removeSession(self)
-
-            self._my_session_id = None
-            self._peer_session_id = None
+            self._session_id = None
 
             self._transport.close()
-
-         ## broker messages
-         ##
-         elif isinstance(msg, message.Publish) or \
-              isinstance(msg, message.Subscribe) or \
-              isinstance(msg, message.Unsubscribe):
-            if self._broker:
-               self._broker.processMessage(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         ## dealer messages
-         ##
-         elif isinstance(msg, message.Register) or \
-              isinstance(msg, message.Unregister) or \
-              isinstance(msg, message.Call) or \
-              isinstance(msg, message.Cancel) or \
-              isinstance(msg, message.Yield):
-            if self._dealer:
-               self._dealer.processMessage(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
          ## consumer messages
          ##
@@ -579,55 +531,42 @@ class WampAppSession(WampBaseSession):
 
          elif isinstance(msg, message.Error):
 
-            ## Router/Dealer ERROR replies
-            ##
-            if msg.request_type == message.Invocation.MESSAGE_TYPE:
+            d = None
 
-               if self._dealer:
-                  self._dealer.processMessage(self, msg)
-               else:
-                  raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-            ## Consumer ERROR replies
+            ## ERROR reply to PUBLISH
             ##
+            if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
+               d = self._publish_reqs.pop(msg.request)[0]
+
+            ## ERROR reply to SUBSCRIBE
+            ##
+            elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
+               d = self._subscribe_reqs.pop(msg.request)[0]
+
+            ## ERROR reply to UNSUBSCRIBE
+            ##
+            elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
+               d = self._unsubscribe_reqs.pop(msg.request)[0]
+
+            ## ERROR reply to REGISTER
+            ##
+            elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
+               d = self._register_reqs.pop(msg.request)[0]
+
+            ## ERROR reply to UNREGISTER
+            ##
+            elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
+               d = self._unregister_reqs.pop(msg.request)[0]
+
+            ## ERROR reply to CALL
+            ##
+            elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
+               d = self._call_reqs.pop(msg.request)[0]
+
+            if d:
+               d.errback(self._exception_from_message(msg))
             else:
-
-               d = None
-
-               ## ERROR reply to PUBLISH
-               ##
-               if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
-                  d = self._publish_reqs.pop(msg.request)[0]
-
-               ## ERROR reply to SUBSCRIBE
-               ##
-               elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
-                  d = self._subscribe_reqs.pop(msg.request)[0]
-
-               ## ERROR reply to UNSUBSCRIBE
-               ##
-               elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
-                  d = self._unsubscribe_reqs.pop(msg.request)[0]
-
-               ## ERROR reply to REGISTER
-               ##
-               elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
-                  d = self._register_reqs.pop(msg.request)[0]
-
-               ## ERROR reply to UNREGISTER
-               ##
-               elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
-                  d = self._unregister_reqs.pop(msg.request)[0]
-
-               ## ERROR reply to CALL
-               ##
-               elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
-                  d = self._call_reqs.pop(msg.request)[0]
-
-               if d:
-                  d.errback(self._exception_from_message(msg))
-               else:
-                  raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
+               raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
 
          elif isinstance(msg, message.Heartbeat):
 
@@ -644,7 +583,7 @@ class WampAppSession(WampBaseSession):
       """
       self._transport = None
 
-      if self._my_session_id:
+      if self._session_id:
 
          ## fire callback and close the transport
          try:
@@ -652,14 +591,7 @@ class WampAppSession(WampBaseSession):
          except Exception as e:
             print e
 
-         if self._broker:
-            self._broker.removeSession(self)
-
-         if self._dealer:
-            self._dealer.removeSession(self)
-
-         self._my_session_id = None
-         self._peer_session_id = None
+         self._session_id = None
 
 
    def onSessionOpen(self, details):
@@ -892,8 +824,7 @@ class WampRouterAppSession:
       self._session._transport = self
 
       ## fake session ID assignment (normally done in WAMP opening handshake)
-      self._session._my_session_id = util.id()
-      self._session._peer_session_id = util.id()
+      self._session._session_id = util.id()
 
       ## add app session to broker and dealer
       self._broker.addSession(self._session)
@@ -901,7 +832,7 @@ class WampRouterAppSession:
 
       ## fake app session open
       ##
-      self._session.onSessionOpen(SessionDetails(self._session._my_session_id, self._session._peer_session_id))
+      self._session.onSessionOpen(SessionDetails(self._session._session_id))
 
 
    def send(self, msg):
@@ -953,10 +884,181 @@ class WampRouterAppSession:
 
 
 
-class WampRouterSession(WampAppSession):
+@implementer(ITransportHandler)
+class WampRouterSession(WampBaseSession):
    """
    WAMP router session.
+
+   This class implements:
+
+     * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
+
+   def __init__(self, broker = None, dealer = None):
+      """
+      Constructor.
+      """
+      WampBaseSession.__init__(self)
+      self._transport = None
+
+      self._broker = broker
+      self._dealer = dealer
+
+      self._goodbye_sent = False
+      self._transport_is_closing = False
+
+
+   def onOpen(self, transport):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
+      """
+      self._transport = transport
+      self._session_id = None
+
+
+   def onMessage(self, msg):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
+      """
+      if self._session_id is None:
+
+         ## the first message MUST be HELLO
+         if isinstance(msg, message.Hello):
+
+            self._session_id = util.id()
+
+            roles = []
+
+            if self._broker:
+               self._broker.addSession(self)
+               roles.append(role.RoleBrokerFeatures())
+
+            if self._dealer:
+               self._dealer.addSession(self)
+               roles.append(role.RoleDealerFeatures())
+
+            msg = message.Welcome(self._session_id, roles)
+            self._transport.send(msg)
+
+            self.onSessionOpen(SessionDetails(self._session_id))
+         else:
+            raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
+
+      else:
+
+         if isinstance(msg, message.Hello):
+            raise ProtocolError("HELLO message received, while session is already established")
+
+         elif isinstance(msg, message.Goodbye):
+            if not self._goodbye_sent:
+               ## the peer wants to close: send GOODBYE reply
+               reply = message.Goodbye()
+               self._transport.send(reply)
+
+            ## fire callback and close the transport
+            self.onSessionClose(types.CloseDetails(msg.reason, msg.message))
+
+            if self._broker:
+               self._broker.removeSession(self)
+
+            if self._dealer:
+               self._dealer.removeSession(self)
+
+            self._session_id = None
+
+            self._transport.close()
+
+         ## broker messages
+         ##
+         elif isinstance(msg, message.Publish) or \
+              isinstance(msg, message.Subscribe) or \
+              isinstance(msg, message.Unsubscribe):
+            if self._broker:
+               self._broker.processMessage(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         ## dealer messages
+         ##
+         elif isinstance(msg, message.Register) or \
+              isinstance(msg, message.Unregister) or \
+              isinstance(msg, message.Call) or \
+              isinstance(msg, message.Cancel) or \
+              isinstance(msg, message.Yield):
+            if self._dealer:
+               self._dealer.processMessage(self, msg)
+            else:
+               raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+         elif isinstance(msg, message.Error):
+
+            ## Router/Dealer ERROR replies
+            ##
+            if msg.request_type == message.Invocation.MESSAGE_TYPE:
+
+               if self._dealer:
+                  self._dealer.processMessage(self, msg)
+               else:
+                  raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+            else:
+
+               raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
+
+         elif isinstance(msg, message.Heartbeat):
+
+            pass ## FIXME
+
+         else:
+
+            raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+
+   def onClose(self, wasClean):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
+      """
+      self._transport = None
+
+      if self._session_id:
+
+         ## fire callback and close the transport
+         try:
+            self.onSessionClose(types.CloseDetails())
+         except Exception as e:
+            print e
+
+         if self._broker:
+            self._broker.removeSession(self)
+
+         if self._dealer:
+            self._dealer.removeSession(self)
+
+         self._session_id = None
+
+
+   def onSessionOpen(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionOpen`
+      """
+
+
+   def onSessionClose(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionClose`
+      """
+
+
+   def closeSession(self, reason = None, message = None):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
+      """
+      if not self._goodbye_sent:
+         msg = wamp.message.Goodbye(reason = reason, message = message)
+         self._transport.send(msg)
+         self._goodbye_sent = True
+      else:
+         raise SessionNotReady("Already requested to close the session")
 
 
 

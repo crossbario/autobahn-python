@@ -38,6 +38,7 @@ class Serializer:
 
    MESSAGE_TYPE_MAP = {
       message.Hello.MESSAGE_TYPE:           message.Hello,
+      message.Welcome.MESSAGE_TYPE:         message.Welcome,
       message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
       message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
       message.Error.MESSAGE_TYPE:           message.Error,

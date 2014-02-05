@@ -62,7 +62,7 @@ class Dealer:
       assert(session not in self._session_to_registrations)
 
       self._session_to_registrations[session] = set()
-      self._session_id_to_session[session._my_session_id] = session
+      self._session_id_to_session[session._session_id] = session
 
 
    def removeSession(self, session):
@@ -76,7 +76,7 @@ class Dealer:
          del self._regs_to_procs[registration]
 
       del self._session_to_registrations[session]
-      del self._session_id_to_session[session._my_session_id]
+      del self._session_id_to_session[session._session_id]
 
 
    def processMessage(self, session, msg):
@@ -146,7 +146,7 @@ class Dealer:
          request_id = util.id()
 
          if call.discloseMe:
-            caller = session._my_session_id
+            caller = session._session_id
          else:
             caller = None
 

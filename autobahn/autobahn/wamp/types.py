@@ -26,17 +26,14 @@ class SessionDetails:
    :func:`autobahn.wamp.interfaces.IAppSession.onSessionOpen`.
    """
 
-   def __init__(self, me, peer):
+   def __init__(self, session):
       """
       Ctor.
 
-      :param me: WAMP session ID of this session.
-      :type me: int
-      :param peer: WAMP session ID of the peer session.
-      :type peer: int
+      :param session: WAMP session ID of this session.
+      :type session: int
       """
-      self.me = me
-      self.peer = peer
+      self.session = session
 
 
 

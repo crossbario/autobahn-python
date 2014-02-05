@@ -37,11 +37,13 @@ __all__ = ['Error',
            'Interrupt',
            'Yield',
            'Hello',
+           'Welcome',
+           'Challenge',
+           'Authenticate',
            'Goodbye',
            'Heartbeat']
 
 
-import json, types
 from zope.interface import implementer
 
 import autobahn
@@ -123,7 +125,7 @@ class Error(Message):
      * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
    """
 
-   MESSAGE_TYPE = 4
+   MESSAGE_TYPE = 7
    """
    The WAMP message code for this type of message.
    """
@@ -1914,10 +1916,112 @@ class Hello(Message):
    """
    A WAMP `HELLO` message.
 
-   Format: `[HELLO, Session|id, Details|dict]`
+   Format: `[HELLO, Realm|uri, Details|dict]`
    """
 
    MESSAGE_TYPE = 1
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, realm, roles):
+      """
+      Message constructor.
+
+      :param session: The WAMP session ID the other peer is assigned.
+      :type realm: str
+      """
+      for role in roles:
+         assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
+      Message.__init__(self)
+      self.realm = realm
+      self.roles = roles
+
+
+   @staticmethod
+   def parse(wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for HELLO".format(len(wmsg)))
+
+      realm = check_or_raise_uri(wmsg[1], "'realm' in HELLO")
+      details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
+
+      roles = []
+
+      if not details.has_key('roles'):
+         raise ProtocolError("missing mandatory roles attribute in options in HELLO")
+
+      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in HELLO")
+
+      if len(details_roles) == 0:
+         raise ProtocolError("empty 'roles' in 'details' in HELLO")
+
+      for role in details_roles:
+         if role not in autobahn.wamp.role.ROLE_NAME_TO_CLASS:
+            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
+
+         if details_roles[role].has_key('features'):
+            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+
+            ## FIXME: skip unknown attributes
+            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+
+         else:
+            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]()
+
+         roles.append(role_features)
+
+      obj = Hello(realm, roles)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+      """
+      details = {'roles': {}}
+      for role in self.roles:
+         details['roles'][role.ROLE] = {}
+         for feature in role.__dict__:
+            if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
+               if not details['roles'][role.ROLE].has_key('features'):
+                  details['roles'][role.ROLE] = {'features': {}}
+               details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
+
+      return [Hello.MESSAGE_TYPE, self.realm, details]
+
+
+   def __str__(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+      """
+      return "WAMP HELLO Message (realm = {}, roles = {})".format(self.realm, self.roles)
+
+
+
+@implementer(IMessage)
+class Welcome(Message):
+   """
+   A WAMP `WELCOME` message.
+
+   Format: `[WELCOME, Session|id, Details|dict]`
+   """
+
+   MESSAGE_TYPE = 2
    """
    The WAMP message code for this type of message.
    """
@@ -1949,30 +2053,30 @@ class Hello(Message):
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
-      assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
+      assert(len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for HELLO".format(len(wmsg)))
+         raise ProtocolError("invalid message length {} for WELCOME".format(len(wmsg)))
 
-      session = check_or_raise_id(wmsg[1], "'session' in HELLO")
-      details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
+      session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
+      details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
       roles = []
 
       if not details.has_key('roles'):
-         raise ProtocolError("missing mandatory roles attribute in options in HELLO")
+         raise ProtocolError("missing mandatory roles attribute in options in WELCOME")
 
-      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in HELLO")
+      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in WELCOME")
 
       if len(details_roles) == 0:
-         raise ProtocolError("empty 'roles' in 'details' in HELLO")
+         raise ProtocolError("empty 'roles' in 'details' in WELCOME")
 
       for role in details_roles:
          if role not in autobahn.wamp.role.ROLE_NAME_TO_CLASS:
-            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
+            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
          if details_roles[role].has_key('features'):
-            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
             role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
@@ -1982,7 +2086,7 @@ class Hello(Message):
 
          roles.append(role_features)
 
-      obj = Hello(session, roles)
+      obj = Welcome(session, roles)
 
       return obj
 
@@ -2000,14 +2104,14 @@ class Hello(Message):
                   details['roles'][role.ROLE] = {'features': {}}
                details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
 
-      return [Hello.MESSAGE_TYPE, self.session, details]
+      return [Welcome.MESSAGE_TYPE, self.session, details]
 
 
    def __str__(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HELLO Message (session = {}, roles = {})".format(self.session, self.roles)
+      return "WAMP WELCOME Message (session = {}, roles = {})".format(self.session, self.roles)
 
 
 
@@ -2019,7 +2123,7 @@ class Goodbye(Message):
    Format: `[GOODBYE, Details|dict]`
    """
 
-   MESSAGE_TYPE = 2
+   MESSAGE_TYPE = 5
    """
    The WAMP message code for this type of message.
    """
@@ -2109,7 +2213,7 @@ class Heartbeat(Message):
      * `[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]`
    """
 
-   MESSAGE_TYPE = 3
+   MESSAGE_TYPE = 6
    """
    The WAMP message code for this type of message.
    """
