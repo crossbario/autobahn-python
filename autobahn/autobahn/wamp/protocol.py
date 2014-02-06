@@ -41,8 +41,7 @@ from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ProtocolError, SessionNotReady
 from autobahn.wamp.types import SessionDetails
-from autobahn.wamp.broker import Broker
-from autobahn.wamp.dealer import Dealer
+from autobahn.wamp.router import Router, RouterFactory
 
 
 
@@ -248,6 +247,7 @@ class WampAppSession(WampBaseSession):
       WampBaseSession.__init__(self)
       self._transport = None
 
+      self._session_id = None
       self._goodbye_sent = False
       self._transport_is_closing = False
 
@@ -275,6 +275,14 @@ class WampAppSession(WampBaseSession):
       """
       self._transport = transport
       self._session_id = None
+      self.onConnect()
+
+
+   def join(self, realm):
+      if self._session_id:
+         raise Exception("already joined")
+
+      self._goodbye_sent = False
 
       roles = [
          role.RolePublisherFeatures(),
@@ -283,8 +291,15 @@ class WampAppSession(WampBaseSession):
          role.RoleCalleeFeatures()
       ]
 
-      msg = message.Hello(self.realm, roles)
+      msg = message.Hello(realm, roles)
       self._transport.send(msg)
+
+
+   def disconnect(self):
+      if self._transport:
+         self._transport.close()
+      else:
+         raise Exception("transport disconnected")
 
 
    def onMessage(self, msg):
@@ -297,7 +312,7 @@ class WampAppSession(WampBaseSession):
          if isinstance(msg, message.Welcome):
             self._session_id = msg.session
 
-            self.onSessionOpen(SessionDetails(self._session_id))
+            self.onJoin(SessionDetails(self._session_id))
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
@@ -309,12 +324,10 @@ class WampAppSession(WampBaseSession):
                reply = message.Goodbye()
                self._transport.send(reply)
 
-            ## fire callback and close the transport
-            self.onSessionClose(types.CloseDetails(msg.reason, msg.message))
-
             self._session_id = None
 
-            self._transport.close()
+            ## fire callback and close the transport
+            self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
          ## consumer messages
          ##
@@ -501,7 +514,7 @@ class WampAppSession(WampBaseSession):
                try:
                   self._invocations[msg.request].cancel()
                except Exception as e:
-                  print "X"*100, e
+                  print "could not cancel"
                finally:
                   del self._invocations[msg.request]
 
@@ -587,30 +600,37 @@ class WampAppSession(WampBaseSession):
 
          ## fire callback and close the transport
          try:
-            self.onSessionClose(types.CloseDetails())
+            self.onLeave(types.CloseDetails())
          except Exception as e:
             print e
 
          self._session_id = None
 
-
-   def onSessionOpen(self, details):
-      """
-      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionOpen`
-      """
+      self.onDisconnect()
 
 
-   def onSessionClose(self, details):
+   def onJoin(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionClose`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
       """
 
 
-   def closeSession(self, reason = None, message = None):
+   def onLeave(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
       """
+
+
+   def leave(self, reason = None, message = None):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.leave`
+      """
+      if not self._session_id:
+         raise Exception("not joined")
+
       if not self._goodbye_sent:
+         if not reason:
+            reason = "wamp.close.normal"
          msg = wamp.message.Goodbye(reason = reason, message = message)
          self._transport.send(msg)
          self._goodbye_sent = True
@@ -798,7 +818,7 @@ class WampRouterAppSession:
    Wraps an application session to run directly attached to a WAMP router (broker+dealer).
    """
 
-   def __init__(self, session, broker, dealer):
+   def __init__(self, session, routerFactory):
       """
       Wrap an application session and add it to the given broker and dealer.
 
@@ -810,10 +830,10 @@ class WampRouterAppSession:
       :type dealer: An instance that implements :class:`autobahn.wamp.interfaces.IDealer`
       """
 
-      ## remember broker/dealer we are wrapping the app session for
+      ## remember router we are wrapping the app session for
       ##
-      self._broker = broker
-      self._dealer = dealer
+      self._routerFactory = routerFactory
+      self._router = None
 
       ## remember wrapped app session
       ##
@@ -823,46 +843,45 @@ class WampRouterAppSession:
       ##
       self._session._transport = self
 
-      ## fake session ID assignment (normally done in WAMP opening handshake)
-      self._session._session_id = util.id()
-
-      ## add app session to broker and dealer
-      self._broker.addSession(self._session)
-      self._dealer.addSession(self._session)
-
-      ## fake app session open
-      ##
-      self._session.onSessionOpen(SessionDetails(self._session._session_id))
+      self._session.onConnect()
 
 
    def send(self, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransport.send`
       """
-      ## app-to-broker
+      if isinstance(msg, message.Hello):
+
+         self._router = self._routerFactory.get(msg.realm)
+
+         ## fake session ID assignment (normally done in WAMP opening handshake)
+         self._session._session_id = util.id()
+
+         ## add app session to router
+         self._router.addSession(self._session)
+
+         ## fake app session open
+         ##
+         self._session.onJoin(SessionDetails(self._session._session_id))
+
+
+      ## app-to-router
       ##
-      if isinstance(msg, message.Publish) or \
+      elif isinstance(msg, message.Publish) or \
          isinstance(msg, message.Subscribe) or \
-         isinstance(msg, message.Unsubscribe):
+         isinstance(msg, message.Unsubscribe) or \
+         isinstance(msg, message.Call) or \
+         isinstance(msg, message.Yield) or \
+         isinstance(msg, message.Register) or \
+         isinstance(msg, message.Unregister) or \
+         isinstance(msg, message.Cancel) or \
+         (isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE):
 
-         ## deliver message to broker
+         ## deliver message to router
          ##
-         self._broker.processMessage(self._session, msg)
+         self._router.processMessage(self._session, msg)
 
-      ## app-to-dealer
-      ##
-      elif isinstance(msg, message.Call) or \
-           isinstance(msg, message.Yield) or \
-           isinstance(msg, message.Register) or \
-           isinstance(msg, message.Unregister) or \
-           isinstance(msg, message.Cancel) or \
-           (isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE):
-
-         ## deliver message to dealer
-         ##
-         self._dealer.processMessage(self._session, msg)
-
-      ## broker/dealer-to-app
+      ## router-to-app
       ##
       elif isinstance(msg, message.Event) or \
            isinstance(msg, message.Invocation) or \
@@ -894,15 +913,15 @@ class WampRouterSession(WampBaseSession):
      * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
 
-   def __init__(self, broker = None, dealer = None):
+   def __init__(self, routerFactory):
       """
       Constructor.
       """
       WampBaseSession.__init__(self)
       self._transport = None
 
-      self._broker = broker
-      self._dealer = dealer
+      self._router_factory = routerFactory
+      self._router = None
 
       self._goodbye_sent = False
       self._transport_is_closing = False
@@ -926,21 +945,24 @@ class WampRouterSession(WampBaseSession):
          if isinstance(msg, message.Hello):
 
             self._session_id = util.id()
+            self._goodbye_sent = False
+
+            self._router = self._router_factory.get(msg.realm)
+            if not self._router:
+               raise Exception("no such realm")
 
             roles = []
 
-            if self._broker:
-               self._broker.addSession(self)
-               roles.append(role.RoleBrokerFeatures())
+            self._router.addSession(self)
 
-            if self._dealer:
-               self._dealer.addSession(self)
-               roles.append(role.RoleDealerFeatures())
+            roles.append(role.RoleBrokerFeatures())
+            roles.append(role.RoleDealerFeatures())
 
             msg = message.Welcome(self._session_id, roles)
             self._transport.send(msg)
 
-            self.onSessionOpen(SessionDetails(self._session_id))
+
+            self.onJoin(SessionDetails(self._session_id))
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
@@ -956,54 +978,13 @@ class WampRouterSession(WampBaseSession):
                self._transport.send(reply)
 
             ## fire callback and close the transport
-            self.onSessionClose(types.CloseDetails(msg.reason, msg.message))
+            self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
-            if self._broker:
-               self._broker.removeSession(self)
-
-            if self._dealer:
-               self._dealer.removeSession(self)
+            self._router.removeSession(self)
 
             self._session_id = None
 
-            self._transport.close()
-
-         ## broker messages
-         ##
-         elif isinstance(msg, message.Publish) or \
-              isinstance(msg, message.Subscribe) or \
-              isinstance(msg, message.Unsubscribe):
-            if self._broker:
-               self._broker.processMessage(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         ## dealer messages
-         ##
-         elif isinstance(msg, message.Register) or \
-              isinstance(msg, message.Unregister) or \
-              isinstance(msg, message.Call) or \
-              isinstance(msg, message.Cancel) or \
-              isinstance(msg, message.Yield):
-            if self._dealer:
-               self._dealer.processMessage(self, msg)
-            else:
-               raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-         elif isinstance(msg, message.Error):
-
-            ## Router/Dealer ERROR replies
-            ##
-            if msg.request_type == message.Invocation.MESSAGE_TYPE:
-
-               if self._dealer:
-                  self._dealer.processMessage(self, msg)
-               else:
-                  raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-            else:
-
-               raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
+            #self._transport.close()
 
          elif isinstance(msg, message.Heartbeat):
 
@@ -1011,7 +992,7 @@ class WampRouterSession(WampBaseSession):
 
          else:
 
-            raise ProtocolError("Unexpected message {}".format(msg.__class__))
+            self._router.processMessage(self, msg)
 
 
    def onClose(self, wasClean):
@@ -1024,34 +1005,30 @@ class WampRouterSession(WampBaseSession):
 
          ## fire callback and close the transport
          try:
-            self.onSessionClose(types.CloseDetails())
+            self.onLeave(types.CloseDetails())
          except Exception as e:
             print e
 
-         if self._broker:
-            self._broker.removeSession(self)
-
-         if self._dealer:
-            self._dealer.removeSession(self)
+         self._router.removeSession(self)
 
          self._session_id = None
 
 
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionOpen`
-      """
-
-
-   def onSessionClose(self, details):
-      """
-      Implements :func:`autobahn.wamp.interfaces.ISession.onSessionClose`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
       """
 
 
-   def closeSession(self, reason = None, message = None):
+   def onLeave(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.closeSession`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
+      """
+
+
+   def leave(self, reason = None, message = None):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.leave`
       """
       if not self._goodbye_sent:
          msg = wamp.message.Goodbye(reason = reason, message = message)
@@ -1062,7 +1039,7 @@ class WampRouterSession(WampBaseSession):
 
 
 
-class WampRouterFactory:
+class WampRouterSessionFactory:
    """
    WAMP router session factory.
    """
@@ -1073,12 +1050,11 @@ class WampRouterFactory:
    """
 
 
-   def __init__(self):
+   def __init__(self, routerFactory):
       """
       Constructor.
       """
-      self._broker = Broker()
-      self._dealer = Dealer()
+      self._routerFactory = routerFactory
       self._app_sessions = []
 
 
@@ -1089,7 +1065,8 @@ class WampRouterFactory:
       :param: session: A WAMP application session.
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
-      self._app_sessions.append(WampRouterAppSession(session, self._broker, self._dealer))
+      #router = self._routerFactory.get(session.realm)
+      self._app_sessions.append(WampRouterAppSession(session, self._routerFactory))
 
 
    def __call__(self):
@@ -1099,6 +1076,27 @@ class WampRouterFactory:
       :returns: -- An instance of the WAMP router session class as
                    given by `self.session`.
       """
-      session = self.session(self._broker, self._dealer)
+      session = self.session(self._routerFactory)
       session.factory = session
       return session
+
+
+
+class WampRouterN:
+   pass
+
+
+
+#@implementer(IRouterFactory)
+class WampRouterFactoryN:
+
+   def __init__(self):
+      self._brokers = {}
+      self._dealers = {}
+
+   def getBroker(self, realm):
+      return self._brokers.get(realm, None)
+
+   def getDealer(self, realm):
+      return self._brokers.get(realm, None)
+      

@@ -59,6 +59,7 @@ class Dealer:
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.addSession`
       """
+      print "autobahn.wamp.interfaces.IDealer.addSession"
       assert(session not in self._session_to_registrations)
 
       self._session_to_registrations[session] = set()
@@ -69,6 +70,7 @@ class Dealer:
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.removeSession`
       """
+      print "autobahn.wamp.interfaces.IDealer.removeSession"
       assert(session in self._session_to_registrations)
 
       for registration in self._session_to_registrations[session]:
@@ -79,35 +81,9 @@ class Dealer:
       del self._session_id_to_session[session._session_id]
 
 
-   def processMessage(self, session, msg):
-      """
-      Implements :func:`autobahn.wamp.interfaces.IDealer.processMessage`
-      """
-      assert(session in self._session_to_registrations)
-
-      if isinstance(msg, message.Register):
-         self._processRegister(session, msg)
-
-      elif isinstance(msg, message.Unregister):
-         self._processUnregister(session, msg)
-
-      elif isinstance(msg, message.Call):
-         self._processCall(session, msg)
-
-      elif isinstance(msg, message.Cancel):
-         self._processCancel(session, msg)
-
-      elif isinstance(msg, message.Yield):
-         self._processYield(session, msg)
-
-      elif isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE:
-         self._processInvocationError(session, msg)
-
-      else:
-         raise ProtocolError("Unexpected message {}".format(msg.__class__))
-
-
    def _processRegister(self, session, register):
+
+      assert(session in self._session_to_registrations)
 
       if not register.procedure in self._procs_to_regs:
          registration_id = util.id()
@@ -125,6 +101,8 @@ class Dealer:
 
    def _processUnregister(self, session, unregister):
 
+      assert(session in self._session_to_registrations)
+
       if unregister.registration in self._regs_to_procs:
          del self._procs_to_regs[self._regs_to_procs[unregister.registration]]
          del self._regs_to_procs[unregister.registration]
@@ -139,6 +117,8 @@ class Dealer:
 
 
    def _processCall(self, session, call):
+
+      assert(session in self._session_to_registrations)
 
       if call.procedure in self._procs_to_regs:
          registration_id, endpoint_session = self._procs_to_regs[call.procedure]
@@ -167,10 +147,14 @@ class Dealer:
 
    def _processCancel(self, session, cancel):
 
+      assert(session in self._session_to_registrations)
+
       raise Exception("not implemented")
 
 
    def _processYield(self, session, yield_):
+
+      assert(session in self._session_to_registrations)
 
       if yield_.request in self._invocations:
          call_msg, call_session = self._invocations[yield_.request]
@@ -183,6 +167,8 @@ class Dealer:
 
 
    def _processInvocationError(self, session, error):
+
+      assert(session in self._session_to_registrations)
 
       if error.request in self._invocations:
          call_msg, call_session = self._invocations[error.request]

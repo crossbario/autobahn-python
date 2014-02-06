@@ -44,7 +44,7 @@ class WampRouterSession(protocol.WampRouterSession):
    """
 
 
-class WampRouterFactory(protocol.WampRouterFactory):
+class WampRouterSessionFactory(protocol.WampRouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """

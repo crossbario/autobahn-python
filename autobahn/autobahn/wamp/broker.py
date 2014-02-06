@@ -58,6 +58,7 @@ class Broker:
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.addSession`
       """
+      print "autobahn.wamp.interfaces.IBroker.addSession"
       assert(session not in self._session_to_subscriptions)
 
       self._session_to_subscriptions[session] = set()
@@ -68,6 +69,7 @@ class Broker:
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.removeSession`
       """
+      print "autobahn.wamp.interfaces.IBroker.removeSession"
       assert(session in self._session_to_subscriptions)
 
       for subscription in self._session_to_subscriptions[session]:
@@ -80,27 +82,13 @@ class Broker:
          if not subscribers:
             del self._topic_to_sessions[topic]
 
-
-   def processMessage(self, session, msg):
-      """
-      Implements :func:`autobahn.wamp.interfaces.IBroker.processMessage`
-      """
-      assert(session in self._session_to_subscriptions)
-
-      if isinstance(msg, message.Publish):
-         self._processPublish(session, msg)
-
-      elif isinstance(msg, message.Subscribe):
-         self._processSubscribe(session, msg)
-
-      elif isinstance(msg, message.Unsubscribe):
-         self._processUnsubscribe(session, msg)
-
-      else:
-         raise ProtocolError("Unexpected message {}".format(msg.__class__))
+      del self._session_to_subscriptions[session]
+      del self._session_id_to_session[session._session_id]
 
 
    def _processPublish(self, session, publish):
+
+      assert(session in self._session_to_subscriptions)
 
       if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
 
@@ -162,6 +150,8 @@ class Broker:
 
    def _processSubscribe(self, session, subscribe):
 
+      assert(session in self._session_to_subscriptions)
+
       if True:
 
          if not subscribe.topic in self._topic_to_sessions:
@@ -192,6 +182,8 @@ class Broker:
 
 
    def _processUnsubscribe(self, session, unsubscribe):
+
+      assert(session in self._session_to_subscriptions)
 
       if unsubscribe.subscription in self._subscription_to_sessions:
 

@@ -30,7 +30,11 @@ class TimeServiceBackend(WampAppSession):
    A simple time service application component.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       def utcnow():
          now = datetime.datetime.utcnow()
@@ -45,8 +49,17 @@ class TimeServiceFrontend(WampAppSession):
    An application component using the time service.
    """
 
+   def __init__(self):
+      WampAppSession.__init__(self)
+      self.count = 0
+
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
+      print "JOINED"
 
       try:
          now = yield self.call('com.timeservice.now')
@@ -55,8 +68,16 @@ class TimeServiceFrontend(WampAppSession):
       else:
          print("Current time from time service: {}".format(now))
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.count += 1
+      if self.count < 3:
+         self.join("realm1")
+      else:
+         self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

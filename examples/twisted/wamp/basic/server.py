@@ -60,8 +60,10 @@ if __name__ == '__main__':
 
    ## create a WAMP router session factory
    ##
-   from autobahn.twisted.wamp import WampRouterFactory
-   session_factory = WampRouterFactory()
+   from autobahn.wamp.router import RouterFactory
+   router_factory = RouterFactory()
+   from autobahn.twisted.wamp import WampRouterSessionFactory
+   session_factory = WampRouterSessionFactory(router_factory)
 
 
    ## if asked to start an embedded application component ..
