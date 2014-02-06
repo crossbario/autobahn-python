@@ -41,7 +41,6 @@ from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ProtocolError, SessionNotReady
 from autobahn.wamp.types import SessionDetails
-from autobahn.wamp.router import Router, RouterFactory
 
 
 
@@ -71,8 +70,8 @@ class Publication:
    Object representing a publication.
    This class implements :class:`autobahn.wamp.interfaces.IPublication`.
    """
-   def __init__(self, id):
-      self.id = id
+   def __init__(self, publicationId):
+      self.id = publicationId
 
 
 
@@ -82,10 +81,10 @@ class Subscription:
    Object representing a subscription.
    This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
    """
-   def __init__(self, session, id):
+   def __init__(self, session, subscriptionId):
       self._session = session
       self.active = True
-      self.id = id
+      self.id = subscriptionId
 
    def unsubscribe(self):
       """
@@ -101,10 +100,10 @@ class Registration:
    Object representing a registration.
    This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
    """
-   def __init__(self, session, id):
+   def __init__(self, session, registrationId):
       self._session = session
       self.active = True
-      self.id = id
+      self.id = registrationId
 
    def unregister(self):
       """
@@ -153,7 +152,7 @@ class WampBaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-         msg = message.Error(request_type, request, exc.error, args = exc.args, kwargs = exc.kwargs)
+         msg = message.Error(request_type, request, exc.error, args = list(exc.args), kwargs = exc.kwargs)
       else:
          if self._ecls_to_uri_pat.has_key(exc.__class__):
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
@@ -621,7 +620,7 @@ class WampAppSession(WampBaseSession):
       """
 
 
-   def leave(self, reason = None, message = None):
+   def leave(self, reason = None, log_message = None):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.leave`
       """
@@ -631,7 +630,7 @@ class WampAppSession(WampBaseSession):
       if not self._goodbye_sent:
          if not reason:
             reason = "wamp.close.normal"
-         msg = wamp.message.Goodbye(reason = reason, message = message)
+         msg = wamp.message.Goodbye(reason = reason, message = log_message)
          self._transport.send(msg)
          self._goodbye_sent = True
       else:
@@ -824,10 +823,8 @@ class WampRouterAppSession:
 
       :param session: Application session to wrap.
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
-      :param broker: The broker to add the app session to.
-      :type broker: An instance that implements :class:`autobahn.wamp.interfaces.IBroker`
-      :param dealer: The dealer to add the app session to.
-      :type dealer: An instance that implements :class:`autobahn.wamp.interfaces.IDealer`
+      :param routerFactory: The router factory to associate this session with.
+      :type routerFactory: An instance that implements :class:`autobahn.wamp.interfaces.IRouterFactory`
       """
 
       ## remember router we are wrapping the app session for

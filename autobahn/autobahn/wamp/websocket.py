@@ -26,11 +26,10 @@ __all__= ['WampServerProtocol',
 
 from zope.interface import implementer
 
-import autobahn
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
-from autobahn.wamp.interfaces import ITransport, ISerializer
+from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 
@@ -73,12 +72,12 @@ class WampWebSocketProtocol:
       self._session = None
 
 
-   def onMessage(self, bytes, isBinary):
+   def onMessage(self, payload, isBinary):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
       """
       try:
-         msg = self._serializer.unserialize(bytes, isBinary)
+         msg = self._serializer.unserialize(payload, isBinary)
          self._session.onMessage(msg)
 
       except ProtocolError as e:
@@ -128,7 +127,7 @@ class WampWebSocketProtocol:
       Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
       """
       if self.isOpen():
-         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY, reason = reason)
+         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY)
       else:
          raise TransportLost()
 
@@ -223,14 +222,14 @@ class WampWebSocketFactory:
          try:
             from autobahn.wamp.serializer import MsgPackSerializer
             serializers.append(MsgPackSerializer())
-         except:
+         except ImportError:
             pass
 
          ## try JSON WAMP serializer
          try:
             from autobahn.wamp.serializer import JsonSerializer
             serializers.append(JsonSerializer())
-         except:
+         except ImportError:
             pass
 
          if not serializers:

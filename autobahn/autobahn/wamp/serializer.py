@@ -77,14 +77,14 @@ class Serializer:
       self._serializer = serializer
 
 
-   def serialize(self, message):
+   def serialize(self, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
       """
-      return message.serialize(self._serializer), self._serializer.BINARY
+      return msg.serialize(self._serializer), self._serializer.BINARY
 
 
-   def unserialize(self, bytes, isBinary):
+   def unserialize(self, payload, isBinary):
       """
       Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
       """
@@ -92,7 +92,7 @@ class Serializer:
          raise ProtocolError("invalid serialization of WAMP message (binary {}, but expected {})".format(isBinary, self._serializer.BINARY))
 
       try:
-         raw_msg = self._serializer.unserialize(bytes)
+         raw_msg = self._serializer.unserialize(payload)
       except Exception as e:
          raise ProtocolError("invalid serialization of WAMP message ({})".format(e))
 
@@ -105,7 +105,7 @@ class Serializer:
       message_type = raw_msg[0]
 
       if type(message_type) != int:
-         raise ProtocolError("invalid type {} for WAMP message type".fornat(type(message_type)))
+         raise ProtocolError("invalid type {} for WAMP message type".format(type(message_type)))
 
       Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
@@ -135,11 +135,11 @@ class JsonObjectSerializer:
       return json.dumps(obj, separators = (',',':'))
 
 
-   def unserialize(self, bytes):
+   def unserialize(self, payload):
       """
       Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
       """
-      return json.loads(bytes)
+      return json.loads(payload)
 
 
 
@@ -158,7 +158,7 @@ class JsonSerializer(Serializer):
 ##
 try:
    import msgpack
-except:
+except ImportError:
    pass
 else:
    @implementer(IObjectSerializer)
@@ -173,11 +173,11 @@ else:
          return msgpack.packb(obj, use_bin_type = True)
 
 
-      def unserialize(self, bytes):
+      def unserialize(self, payload):
          """
          Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
          """
-         return msgpack.unpackb(bytes, encoding = 'utf-8')
+         return msgpack.unpackb(payload, encoding = 'utf-8')
 
    __all__.append('MsgPackObjectSerializer')
 

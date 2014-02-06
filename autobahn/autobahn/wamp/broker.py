@@ -22,7 +22,7 @@ from zope.interface import implementer
 
 from autobahn import util
 from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError, ApplicationError
+from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.interfaces import IBroker
 
 
@@ -122,7 +122,7 @@ class Broker:
             receivers.discard(session)
 
       else:
-         receivers = []
+         subscription, receivers = None, []
 
       publication = util.id()
 
@@ -176,7 +176,7 @@ class Broker:
          reply = message.Subscribed(subscribe.request, subscription)
 
       else:
-         reply = message.Error(message.Subscribe, subscribe.request, ApplicationError.INVALID_TOPIC)
+         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_TOPIC)
 
       session._transport.send(reply)
 
@@ -206,6 +206,6 @@ class Broker:
          reply = message.Unsubscribed(unsubscribe.request)
 
       else:
-         reply = message.Error(message.Unsubscribe, unsubscribe.request, ApplicationError.NO_SUCH_SUBSCRIPTION)
+         reply = message.Error(message.Unsubscribe.MESSAGE_TYPE, unsubscribe.request, ApplicationError.NO_SUCH_SUBSCRIPTION)
 
       session._transport.send(reply)

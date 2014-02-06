@@ -185,13 +185,10 @@ class CallOptions:
                 onProgress = None,
                 timeout = None,
                 discloseMe = None,
-                runOn = None,
-                runMode = None):
+                runOn = None):
       """
       Constructor.
 
-      :param procedure: The URI of the remote procedure to be called, e.g. "com.myapp.hello".
-      :type procedure: str
       :param onProgress: A callback that will be called when the remote endpoint
                          called yields interim call progress results.
       :type onProgress: a callable

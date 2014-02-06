@@ -670,7 +670,7 @@ class Publish(Message):
 
          option_discloseMe = options['discloseme']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'discloseme' option in PUBLISH".format(type(option_identifyMe)))
+            raise ProtocolError("invalid type {} for 'discloseme' option in PUBLISH".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1016,8 +1016,8 @@ class Registered(Message):
 
       :param request: The request ID of the original `REGISTER` request.
       :type request: int
-      :param subscription: The registration ID for the registered procedure (or procedure pattern).
-      :type subscription: int
+      :param registration: The registration ID for the registered procedure (or procedure pattern).
+      :type registration: int
       """
       Message.__init__(self)
       self.request = request
@@ -1224,8 +1224,8 @@ class Call(Message):
 
       :param request: The WAMP request ID of this request.
       :type request: int
-      :param topic: The WAMP or application URI of the procedure which should be called.
-      :type topic: str
+      :param procedure: The WAMP or application URI of the procedure which should be called.
+      :type procedure: str
       :param args: Positional values for application-defined call arguments.
                    Must be serializable using any serializers in use.
       :type args: list
@@ -1304,7 +1304,7 @@ class Call(Message):
 
          option_discloseMe = options['discloseme']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'discloseme' option in CALL".format(type(option_identifyMe)))
+            raise ProtocolError("invalid type {} for 'discloseme' option in CALL".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1929,8 +1929,10 @@ class Hello(Message):
       """
       Message constructor.
 
-      :param session: The WAMP session ID the other peer is assigned.
+      :param realm: The URI of the WAMP realm to join.
       :type realm: str
+      :param roles: The WAMP roles to announce.
+      :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
       """
       for role in roles:
          assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
@@ -2271,8 +2273,8 @@ class Goodbye(Message):
       """
       Message constructor.
 
-      :param error: Optional WAMP or application error URI for closing reason.
-      :type error: str
+      :param reason: Optional WAMP or application error URI for closing reason.
+      :type reason: str
       :param message: Optional human-readable closing message, e.g. for logging purposes.
       :type message: str
       """

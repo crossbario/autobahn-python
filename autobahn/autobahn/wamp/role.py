@@ -30,10 +30,13 @@ __all__ = ['RoleFeatures',
 
 import json, types
 from autobahn import util
-
+from autobahn.wamp.exception import ProtocolError
 
 
 class RoleFeatures(util.EqualityMixin):
+
+   ROLE = None
+
    def __str__(self):
       return json.dumps(self.__dict__)
 

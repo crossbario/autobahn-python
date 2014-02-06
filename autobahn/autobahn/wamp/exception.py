@@ -84,16 +84,16 @@ class ApplicationError(Error):
    NO_SUCH_PROCEDURE          = "wamp.error.no_such_procedure"
    CANCELED                   = "wamp.error.canceled"
 
-   def __init__(self, error, *args, **kwargs):
+   def __init__(self, errorUri, *args, **kwargs):
       """
       Constructor.
 
-      :param error: The URI of the error that occurred, e.g. "wamp.error.not_authorized".
-      :type error: str
+      :param errorUri: The URI of the error that occurred, e.g. "wamp.error.not_authorized".
+      :type errorUri: str
       """
       Exception.__init__(self, *args)
       self.kwargs = kwargs
-      self.error = error
+      self.error = errorUri
       # if reason:
       #    Error.__init__(self, "application error with URI '{}' - '{}'".format(error, reason))
       # else:
@@ -125,16 +125,16 @@ class CallError(ApplicationError):
    Remote procedure call errors. 
    """
 
-   def __init__(self, error, problem):
+   def __init__(self, errorUri, problem):
       """
       Constructor.
 
-      :param error: The URI of the error that occurred, e.g. "com.myapp.error.no_such_user".
-      :type error: str
+      :param errorUri: The URI of the error that occurred, e.g. "com.myapp.error.no_such_user".
+      :type errorUri: str
       :param problem: Any application-level details for the error that occurred.
       :type problem: obj
       """
-      ApplicationError.__init__(self, error)
+      ApplicationError.__init__(self, errorUri)
       self.problem = problem
 
 

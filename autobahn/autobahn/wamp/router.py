@@ -20,17 +20,15 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
-from autobahn import util
 from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError, ApplicationError
-
-#from autobahn.wamp.interfaces import IRouter
-
+from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.broker import Broker
 from autobahn.wamp.dealer import Dealer
+from autobahn.wamp.interfaces import IRouter
 
 
-#@implementer(IRouter)
+
+@implementer(IRouter)
 class Router:
    """
    Basic WAMP router.

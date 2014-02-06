@@ -26,12 +26,9 @@ from twisted.web.resource import Resource, NoResource
 from twisted.web import http
 from twisted.web.server import NOT_DONE_YET
 
-
 from autobahn.util import newid
 
 from protocol import WampProtocol, parseSubprotocolIdentifier
-
-
 
 
 class WampHttpResourceSessionSend(Resource):

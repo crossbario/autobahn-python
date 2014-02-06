@@ -12,3 +12,4 @@ dropin.cache
 *.tar.gz
 _trial_temp
 _trial_temp*
+.idea
