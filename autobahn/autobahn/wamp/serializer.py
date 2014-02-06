@@ -39,6 +39,8 @@ class Serializer:
    MESSAGE_TYPE_MAP = {
       message.Hello.MESSAGE_TYPE:           message.Hello,
       message.Welcome.MESSAGE_TYPE:         message.Welcome,
+      message.Challenge.MESSAGE_TYPE:       message.Challenge,
+      message.Authenticate.MESSAGE_TYPE:    message.Authenticate,
       message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
       message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
       message.Error.MESSAGE_TYPE:           message.Error,
@@ -58,7 +60,7 @@ class Serializer:
       message.Unregistered.MESSAGE_TYPE:    message.Unregistered,
       message.Invocation.MESSAGE_TYPE:      message.Invocation,
       message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
-      message.Yield.MESSAGE_TYPE:           message.Yield,
+      message.Yield.MESSAGE_TYPE:           message.Yield
    }
    """
    Mapping of WAMP message type codes to WAMP message classes.

@@ -2116,11 +2116,149 @@ class Welcome(Message):
 
 
 @implementer(IMessage)
+class Challenge(Message):
+   """
+   A WAMP `CHALLENGE` message.
+
+   Format: `[CHALLENGE, Challenge|string, Extra|dict]`
+   """
+
+   MESSAGE_TYPE = 3
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, challenge):
+      """
+      Message constructor.
+
+      :param challenge: The authentication challenge that must be signed.
+      :type challenge: str
+      """
+      Message.__init__(self)
+      self.challenge = challenge
+
+
+   @staticmethod
+   def parse(wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Challenge.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for CHALLENGE".format(len(wmsg)))
+
+      challenge = wmsg[1]
+      if type(challenge) != str:
+         raise ProtocolError("invalid type {} for 'challenge' in CHALLENGE".format(type(challenge)))
+
+      extra = check_or_raise_extra(wmsg[2], "'extra' in CHALLENGE")
+
+      obj = Challenge(challenge)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+      """
+      extra = {}
+      return [Challenge.MESSAGE_TYPE, self.challenge, extra]
+
+
+   def __str__(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+      """
+      return "WAMP CHALLENGE Message (challenge = {})".format(self.challenge)
+
+
+
+@implementer(IMessage)
+class Authenticate(Message):
+   """
+   A WAMP `AUTHENTICATE` message.
+
+   Format: `[AUTHENTICATE, Signature|string, Extra|dict]`
+   """
+
+   MESSAGE_TYPE = 4
+   """
+   The WAMP message code for this type of message.
+   """
+
+
+   def __init__(self, signature):
+      """
+      Message constructor.
+
+      :param signature: The signature for the authentication challenge.
+      :type signature: str
+      """
+      Message.__init__(self)
+      self.signature = signature
+
+
+   @staticmethod
+   def parse(wmsg):
+      """
+      Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+      :param wmsg: The unserialized raw message.
+      :type wmsg: list
+
+      :returns obj -- An instance of this class.
+      """
+      ## this should already be verified by WampSerializer.unserialize
+      ##
+      assert(len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE)
+
+      if len(wmsg) != 3:
+         raise ProtocolError("invalid message length {} for AUTHENTICATE".format(len(wmsg)))
+
+      signature = wmsg[1]
+      if type(signature) != str:
+         raise ProtocolError("invalid type {} for 'signature' in AUTHENTICATE".format(type(signature)))
+
+      extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
+
+      obj = Authenticate(signature)
+
+      return obj
+
+   
+   def marshal(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+      """
+      extra = {}
+      return [Authenticate.MESSAGE_TYPE, self.signature, extra]
+
+
+   def __str__(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+      """
+      return "WAMP AUTHENTICATE Message (signature = {})".format(self.signature)
+
+
+
+@implementer(IMessage)
 class Goodbye(Message):
    """
    A WAMP `GOODBYE` message.
 
-   Format: `[GOODBYE, Details|dict]`
+   Format: `[GOODBYE, Reason|uri, Details|dict]`
    """
 
    MESSAGE_TYPE = 5
@@ -2129,7 +2267,7 @@ class Goodbye(Message):
    """
 
 
-   def __init__(self, reason = None, message = None):
+   def __init__(self, reason = "wamp.goodbye.normal", message = None):
       """
       Message constructor.
 
@@ -2157,16 +2295,13 @@ class Goodbye(Message):
       ##
       assert(len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE)
 
-      if len(wmsg) != 2:
+      if len(wmsg) != 3:
          raise ProtocolError("invalid message length {} for GOODBYE".format(len(wmsg)))
 
-      details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
+      reason = check_or_raise_uri(wmsg[1], "'reason' in GOODBYE")
+      details = check_or_raise_extra(wmsg[2], "'details' in GOODBYE")
 
-      reason = None
       message = None
-
-      if details.has_key('reason'):
-         reason = check_or_raise_uri(details['reason'], "'reason' detail in GOODBYE")
 
       if details.has_key('message'):
 
@@ -2186,12 +2321,10 @@ class Goodbye(Message):
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
       details = {}
-      if self.reason:
-         details['reason'] = self.reason
       if self.message:
          details['message'] = self.message
 
-      return [Goodbye.MESSAGE_TYPE, details]
+      return [Goodbye.MESSAGE_TYPE, self.reason, details]
 
 
    def __str__(self):
