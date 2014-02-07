@@ -19,17 +19,21 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ArgumentsBackend(WampAppSession):
+class ArgumentsBackend(ApplicationSession):
    """
    An application component providing procedures with
    different kinds of arguments.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       def ping():
          return
@@ -54,13 +58,17 @@ class ArgumentsBackend(WampAppSession):
 
 
 
-class ArgumentsFrontend(WampAppSession):
+class ArgumentsFrontend(ApplicationSession):
    """
    An application component calling the different backend procedures.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, info):
+   def onJoin(self, details):
 
       yield self.call('com.arguments.ping')
       print("Pinged!")
@@ -98,8 +106,12 @@ class ArgumentsFrontend(WampAppSession):
       arglengths = yield self.call('com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
       print("Arglen 3: {}".format(arglengths))
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

@@ -122,3 +122,13 @@ Shows how to unsubscribe.
 
  * `pubsub.unsubscribe.UnsubscribeTestBackend`
  * `pubsub.unsubscribe.UnsubscribeTestFrontend`
+
+
+### Session
+
+#### Series of Sessions
+
+Demonstrates how multiple sessions can exist during the lifetime of the underlying transport.
+
+ * `session.series.SeriesTestBackend`
+ * `session.series.SeriesTestFrontend`

@@ -16,60 +16,74 @@
 ##
 ###############################################################################
 
+import datetime
+
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class PubSubTestBackend(ApplicationSession):
+class SeriesTestBackend(ApplicationSession):
    """
-   An application component that publishes an event every second.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   @inlineCallbacks
-   def onJoin(self, details):
-      counter = 0
-      while True:
-         self.publish('com.myapp.topic1', counter)
-         counter += 1
-         yield sleep(1)
-
-
-
-class PubSubTestFrontend(ApplicationSession):
-   """
-   An application component that subscribes and receives events,
-   and stop after having received 5 events.
+   A simple time service application component.
    """
 
    def onConnect(self):
       self.join("realm1")
 
 
-   @inlineCallbacks
    def onJoin(self, details):
 
-      self.received = 0
+      def utcnow():
+         now = datetime.datetime.utcnow()
+         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-      def on_event(i):
-         print("Got event: {}".format(i))
-         self.received += 1
-         if self.received > 5:
-            self.leave()
+      self.register(utcnow, 'com.timeservice.now')
 
-      yield self.subscribe(on_event, 'com.myapp.topic1')
+
+
+class SeriesTestFrontend(ApplicationSession):
+   """
+   An application component using the time service
+   during 3 subsequent WAMP sessions, while the
+   underlying transport continues to exist.
+   """
+
+   def __init__(self):
+      ApplicationSession.__init__(self)
+      self.count = 0
+
+
+   def onConnect(self):
+      print("Transport connected.")
+      self.join("realm1")
+
+
+   @inlineCallbacks
+   def onJoin(self, details):
+      print("Realm joined (WAMP session started).")
+
+      try:
+         now = yield self.call('com.timeservice.now')
+      except Exception as e:
+         print("Error: {}".format(e))
+      else:
+         print("Current time from time service: {}".format(now))
+
+      self.leave()
 
 
    def onLeave(self, details):
-      self.disconnect()
+      print("Realm left (WAMP session ended).")
+      self.count += 1
+      if self.count < 3:
+         self.join("realm1")
+      else:
+         self.disconnect()
 
 
    def onDisconnect(self):
+      print("Transport disconnected.")
       reactor.stop()

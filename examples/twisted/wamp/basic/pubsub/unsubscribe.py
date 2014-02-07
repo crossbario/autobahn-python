@@ -20,17 +20,21 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class UnsubscribeTestBackend(WampAppSession):
+class UnsubscribeTestBackend(ApplicationSession):
    """
    An application component that publishes an event every second.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       counter = 0
       while True:
@@ -40,7 +44,7 @@ class UnsubscribeTestBackend(WampAppSession):
 
 
 
-class UnsubscribeTestFrontend(WampAppSession):
+class UnsubscribeTestFrontend(ApplicationSession):
    """
    An application component that subscribes and receives events.
    After receiving 5 events, it unsubscribes, sleeps and then
@@ -59,7 +63,7 @@ class UnsubscribeTestFrontend(WampAppSession):
          if self.received > 5:
             self.runs += 1
             if self.runs > 1:
-               self.closeSession()
+               self.leave()
             else:
                yield self.subscription.unsubscribe()
                print("Unsubscribed .. continue in 2s ..")
@@ -69,12 +73,20 @@ class UnsubscribeTestFrontend(WampAppSession):
       print("Subscribed with subscription ID {}".format(self.subscription.id))
 
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       self.runs = 0
       yield self.test()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

@@ -20,17 +20,21 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import CallResult
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ComplexBackend(WampAppSession):
+class ComplexBackend(ApplicationSession):
    """
    Application component that provides procedures which
    return complex results.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       def add_complex(a, ai, b, bi):
          return CallResult(c = a + b, ci = ai + bi)
@@ -45,14 +49,18 @@ class ComplexBackend(WampAppSession):
 
 
 
-class ComplexFrontend(WampAppSession):
+class ComplexFrontend(ApplicationSession):
    """
    Application component that calls procedures which
    produce complex results and showing how to access those.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, info):
+   def onJoin(self, details):
 
       res = yield self.call('com.myapp.add_complex', 2, 3, 4, 5)
       print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
@@ -60,8 +68,12 @@ class ComplexFrontend(WampAppSession):
       res = yield self.call('com.myapp.split_name', 'Homer Simpson')
       print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

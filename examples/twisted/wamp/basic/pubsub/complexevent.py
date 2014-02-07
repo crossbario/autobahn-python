@@ -23,18 +23,22 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import SubscribeOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ComplexEventTestBackend(WampAppSession):
+class ComplexEventTestBackend(ApplicationSession):
    """
    An application component that publishes events with no payload
    and with complex payloads every second.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       counter = 0
       while True:
@@ -48,14 +52,18 @@ class ComplexEventTestBackend(WampAppSession):
 
 
 
-class ComplexEventTestFrontend(WampAppSession):
+class ComplexEventTestFrontend(ApplicationSession):
    """
    An application component that subscribes and receives events
    of no payload and of complex payload, and stops after 5 seconds.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       self.received = 0
 
@@ -71,8 +79,12 @@ class ComplexEventTestFrontend(WampAppSession):
       yield self.subscribe(on_topic2, 'com.myapp.topic2')
 
 
-      reactor.callLater(5, self.closeSession)
+      reactor.callLater(5, self.leave)
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

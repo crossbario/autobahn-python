@@ -21,18 +21,21 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class PubSubOptionsTestBackend(WampAppSession):
+class PubSubOptionsTestBackend(ApplicationSession):
    """
    An application component that publishes an event every second.
    """
 
-   @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
 
+
+   @inlineCallbacks
+   def onJoin(self, details):
       counter = 0
       while True:
          publication = yield self.publish('com.myapp.topic1', counter,
@@ -43,14 +46,18 @@ class PubSubOptionsTestBackend(WampAppSession):
 
 
 
-class PubSubOptionsTestFrontend(WampAppSession):
+class PubSubOptionsTestFrontend(ApplicationSession):
    """
    An application component that subscribes and receives events,
    and stop after having received 5 events.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       self.received = 0
 
@@ -58,11 +65,15 @@ class PubSubOptionsTestFrontend(WampAppSession):
          print("Got event, publication ID {}, publisher {}: {}".format(details.publication, details.publisher, i))
          self.received += 1
          if self.received > 5:
-            self.closeSession()
+            self.leave()
 
       yield self.subscribe(on_event, 'com.myapp.topic1',
                               options = SubscribeOptions(details_arg = 'details'))
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

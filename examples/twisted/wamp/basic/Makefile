@@ -54,6 +54,11 @@ all:
 	@echo "   client_pubsub_unsubscribe_frontend"
 	@echo "   client_pubsub_unsubscribe_backend"
 	@echo ""
+	@echo "Session Series:"
+	@echo "   server_with_session_series_backend"
+	@echo "   client_session_series_frontend"
+	@echo "   client_session_series_backend"
+	@echo ""
 
 
 server:
@@ -158,3 +163,13 @@ client_pubsub_unsubscribe_frontend:
 
 client_pubsub_unsubscribe_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.UnsubscribeTestBackend"
+
+
+server_with_session_series_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "session.series.SeriesTestBackend"
+
+client_session_series_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "session.series.SeriesTestFrontend"
+
+client_session_series_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "session.series.SeriesTestBackend"

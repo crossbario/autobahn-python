@@ -21,16 +21,20 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 from autobahn.wamp.types import CallOptions, RegisterOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ProgressiveBackend(WampAppSession):
+class ProgressiveBackend(ApplicationSession):
    """
    Application component that produces progressive results.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       @inlineCallbacks
       def longop(n, details = None):
@@ -46,13 +50,17 @@ class ProgressiveBackend(WampAppSession):
 
 
 
-class ProgressiveFrontend(WampAppSession):
+class ProgressiveFrontend(ApplicationSession):
    """
    Application component that consumes progressive results.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, details):
+   def onJoin(self, details):
 
       def on_progress(i):
          print("Progress: {}".format(i))
@@ -61,8 +69,12 @@ class ProgressiveFrontend(WampAppSession):
 
       print("Final: {}".format(res))
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

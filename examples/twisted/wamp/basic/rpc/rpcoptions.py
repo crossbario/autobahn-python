@@ -20,17 +20,21 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class RpcOptionsBackend(WampAppSession):
+class RpcOptionsBackend(ApplicationSession):
    """
    An application component providing procedures with
    different kinds of arguments.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       def square(val, details = None):
          print("square called from: {}".format(details.caller))
@@ -46,13 +50,17 @@ class RpcOptionsBackend(WampAppSession):
 
 
 
-class RpcOptionsFrontend(WampAppSession):
+class RpcOptionsFrontend(ApplicationSession):
    """
    An application component calling the different backend procedures.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, info):
+   def onJoin(self, details):
 
       def on_event(val):
          print("Someone requested to square non-negative: {}".format(val))
@@ -63,8 +71,12 @@ class RpcOptionsFrontend(WampAppSession):
          res = yield self.call('com.myapp.square', val, options = CallOptions(discloseMe = True))
          print("Squared {} = {}".format(val, res))
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()

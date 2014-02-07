@@ -49,18 +49,12 @@ class TimeServiceFrontend(ApplicationSession):
    An application component using the time service.
    """
 
-   def __init__(self):
-      ApplicationSession.__init__(self)
-      self.count = 0
-
    def onConnect(self):
       self.join("realm1")
 
 
    @inlineCallbacks
    def onJoin(self, details):
-      print "JOINED"
-
       try:
          now = yield self.call('com.timeservice.now')
       except Exception as e:
@@ -72,11 +66,7 @@ class TimeServiceFrontend(ApplicationSession):
 
 
    def onLeave(self, details):
-      self.count += 1
-      if self.count < 3:
-         self.join("realm1")
-      else:
-         self.disconnect()
+      self.disconnect()
 
 
    def onDisconnect(self):

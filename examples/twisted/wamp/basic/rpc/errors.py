@@ -23,7 +23,7 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
@@ -36,12 +36,16 @@ class AppError1(Exception):
 
 
 
-class ErrorsTestBackend(WampAppSession):
+class ErrorsTestBackend(ApplicationSession):
    """
    Example WAMP application backend that raised exceptions.
    """
 
-   def onSessionOpen(self, details):
+   def onConnect(self):
+      self.join("realm1")
+
+
+   def onJoin(self, details):
 
       ## raising standard exceptions
       ##
@@ -84,13 +88,17 @@ class ErrorsTestBackend(WampAppSession):
 
 
 
-class ErrorsTestFrontend(WampAppSession):
+class ErrorsTestFrontend(ApplicationSession):
    """
    Example WAMP application frontend that catches exceptions.
    """
 
+   def onConnect(self):
+      self.join("realm1")
+
+
    @inlineCallbacks
-   def onSessionOpen(self, info):
+   def onJoin(self, details):
 
       ## catching standard exceptions
       ##
@@ -124,8 +132,12 @@ class ErrorsTestFrontend(WampAppSession):
          print("Compare Error: {}".format(e))
 
 
-      self.closeSession()
+      self.leave()
 
 
-   def onSessionClose(self, details):
+   def onLeave(self, details):
+      self.disconnect()
+
+
+   def onDisconnect(self):
       reactor.stop()
