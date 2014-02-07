@@ -33,10 +33,12 @@ class Dealer:
    Basic WAMP dealer, implements :class:`autobahn.wamp.interfaces.IDealer`.
    """
 
-   def __init__(self):
+   def __init__(self, realm):
       """
       Constructor.
       """
+      self.realm = realm
+
       ## map: session -> set(registration)
       ## needed for removeSession
       self._session_to_registrations = {}
@@ -55,22 +57,20 @@ class Dealer:
       self._invocations = {}
 
 
-   def addSession(self, session):
+   def attach(self, session):
       """
-      Implements :func:`autobahn.wamp.interfaces.IDealer.addSession`
+      Implements :func:`autobahn.wamp.interfaces.IDealer.attach`
       """
-      print "autobahn.wamp.interfaces.IDealer.addSession"
       assert(session not in self._session_to_registrations)
 
       self._session_to_registrations[session] = set()
       self._session_id_to_session[session._session_id] = session
 
 
-   def removeSession(self, session):
+   def detach(self, session):
       """
-      Implements :func:`autobahn.wamp.interfaces.IDealer.removeSession`
+      Implements :func:`autobahn.wamp.interfaces.IDealer.detach`
       """
-      print "autobahn.wamp.interfaces.IDealer.removeSession"
       assert(session in self._session_to_registrations)
 
       for registration in self._session_to_registrations[session]:
@@ -81,8 +81,10 @@ class Dealer:
       del self._session_id_to_session[session._session_id]
 
 
-   def _processRegister(self, session, register):
-
+   def processRegister(self, session, register):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processRegister`
+      """
       assert(session in self._session_to_registrations)
 
       if not register.procedure in self._procs_to_regs:
@@ -99,8 +101,10 @@ class Dealer:
       session._transport.send(reply)
 
 
-   def _processUnregister(self, session, unregister):
-
+   def processUnregister(self, session, unregister):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processUnregister`
+      """
       assert(session in self._session_to_registrations)
 
       if unregister.registration in self._regs_to_procs:
@@ -116,8 +120,10 @@ class Dealer:
       session._transport.send(reply)
 
 
-   def _processCall(self, session, call):
-
+   def processCall(self, session, call):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processCall`
+      """
       assert(session in self._session_to_registrations)
 
       if call.procedure in self._procs_to_regs:
@@ -145,15 +151,19 @@ class Dealer:
          session._transport.send(reply)
 
 
-   def _processCancel(self, session, cancel):
-
+   def processCancel(self, session, cancel):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processCancel`
+      """
       assert(session in self._session_to_registrations)
 
       raise Exception("not implemented")
 
 
-   def _processYield(self, session, yield_):
-
+   def processYield(self, session, yield_):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processYield`
+      """
       assert(session in self._session_to_registrations)
 
       if yield_.request in self._invocations:
@@ -166,8 +176,10 @@ class Dealer:
          raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {}".format(yield_.request))
 
 
-   def _processInvocationError(self, session, error):
-
+   def processInvocationError(self, session, error):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IDealer.processInvocationError`
+      """
       assert(session in self._session_to_registrations)
 
       if error.request in self._invocations:

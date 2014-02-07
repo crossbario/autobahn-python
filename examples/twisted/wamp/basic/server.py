@@ -81,7 +81,8 @@ if __name__ == '__main__':
       app = importlib.import_module(mod)
       SessionKlass = getattr(app, klass)
 
-      ## .. and create and add an app WAMP session to the router
+      ## .. and create and add an WAMP application session to
+      ## run next to the router
       ##
       session_factory.add(SessionKlass())
 

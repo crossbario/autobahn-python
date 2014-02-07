@@ -33,10 +33,12 @@ class Broker:
    Basic WAMP broker, implements :class:`autobahn.wamp.interfaces.IBroker`.
    """
 
-   def __init__(self):
+   def __init__(self, realm):
       """
       Constructor.
       """
+      self.realm = realm
+
       ## map: session -> set(subscription)
       ## needed for removeSession
       self._session_to_subscriptions = {}
@@ -54,22 +56,20 @@ class Broker:
       self._subscription_to_sessions = {}
 
 
-   def addSession(self, session):
+   def attach(self, session):
       """
-      Implements :func:`autobahn.wamp.interfaces.IBroker.addSession`
+      Implements :func:`autobahn.wamp.interfaces.IBroker.attach`
       """
-      print "autobahn.wamp.interfaces.IBroker.addSession"
       assert(session not in self._session_to_subscriptions)
 
       self._session_to_subscriptions[session] = set()
       self._session_id_to_session[session._session_id] = session
 
 
-   def removeSession(self, session):
+   def detach(self, session):
       """
-      Implements :func:`autobahn.wamp.interfaces.IBroker.removeSession`
+      Implements :func:`autobahn.wamp.interfaces.IBroker.detach`
       """
-      print "autobahn.wamp.interfaces.IBroker.removeSession"
       assert(session in self._session_to_subscriptions)
 
       for subscription in self._session_to_subscriptions[session]:
@@ -86,8 +86,10 @@ class Broker:
       del self._session_id_to_session[session._session_id]
 
 
-   def _processPublish(self, session, publish):
-
+   def processPublish(self, session, publish):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IBroker.processPublish`
+      """
       assert(session in self._session_to_subscriptions)
 
       if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
@@ -148,8 +150,10 @@ class Broker:
             session._transport.send(msg)
 
 
-   def _processSubscribe(self, session, subscribe):
-
+   def processSubscribe(self, session, subscribe):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IBroker.processSubscribe`
+      """
       assert(session in self._session_to_subscriptions)
 
       if True:
@@ -181,8 +185,10 @@ class Broker:
       session._transport.send(reply)
 
 
-   def _processUnsubscribe(self, session, unsubscribe):
-
+   def processUnsubscribe(self, session, unsubscribe):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IBroker.processUnsubscribe`
+      """
       assert(session in self._session_to_subscriptions)
 
       if unsubscribe.subscription in self._subscription_to_sessions:

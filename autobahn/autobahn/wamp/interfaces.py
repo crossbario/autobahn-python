@@ -218,7 +218,12 @@ class ISession(Interface):
    Base interface for WAMP sessions.
    """
 
-   def onSessionOpen(details):
+   def onConnect():
+      """
+      Callback fired when transport has been established.
+      """
+
+   def onJoin(details):
       """
       Callback fired when WAMP session has been established.
 
@@ -227,7 +232,7 @@ class ISession(Interface):
       """
 
 
-   def closeSession(reason = None, message = None):
+   def leave(reason = None, message = None):
       """
       Actively close this WAMP session.
 
@@ -239,12 +244,16 @@ class ISession(Interface):
       """
 
 
-   def onSessionClose(details):
+   def onLeave(details):
       """
       Callback fired when WAMP session has is closed
 
       :param details: Close information.
       :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
+      """
+
+   def onDisconnect():
+      """
       """
 
 
@@ -364,7 +373,6 @@ class IPublication(Interface):
 
 
 
-
 class IPublisher(ISession):
    """
    Interface for WAMP peers implementing role "Publisher".
@@ -472,33 +480,34 @@ class ISubscriber(ISession):
 
 
 
-class IRouter(Interface):
-   """
-   WAMP router interface. Routers are either Brokers or Dealers.
-   """
+class IRouterBase(Interface):
 
-   def addSession(session):
+   factory = Attribute("The router factory this router was created from.")
+   realm = Attribute("The WAMP realm this router handles.")
+
+   def attach(session):
       """
-      Add a WAMP application session to this router.
+      Attach a WAMP application session to this router.
 
       :param session: Application session to add.
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
       """
 
-
-   def removeSession(session):
+   def detach(session):
       """
-      Remove a WAMP application session from this router.
+      Detach a WAMP application session from this router.
 
       :param session: Application session to remove.
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
       """
 
 
-   def processMessage(session, message):
+
+class IRouter(IRouterBase):
+
+   def process(session, message):
       """
-      Process an incoming message on an application session previously
-      added to this router.
+      Process a WAMP message received on the given session.
 
       :param session: Application session to remove.
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`     
@@ -508,67 +517,57 @@ class IRouter(Interface):
 
 
 
-class IBroker(IRouter):
+class IBroker(IRouterBase):
    """
-   WAMP broker interface. Brokers are responsible for event routing and
-   must process the following WAMP messages in :func:`autobahn.wamp.interfaces.IRouter.processMessage`:
-
-    * :class:`autobahn.wamp.message.Publish`
-    * :class:`autobahn.wamp.message.Subscribe`
-    * :class:`autobahn.wamp.message.Unsubscribe`
+   WAMP broker interface. Brokers are responsible for event routing
    """
-
-
-
-class IDealer(IRouter):
-   """
-   WAMP dealer interface. Dealers are responsible for call routing and
-   must process the following WAMP messages in :func:`autobahn.wamp.interfaces.IRouter.processMessage`:
-
-    * :class:`autobahn.wamp.message.Register`
-    * :class:`autobahn.wamp.message.Unregister`
-    * :class:`autobahn.wamp.message.Call`
-    * :class:`autobahn.wamp.message.Cancel`
-    * :class:`autobahn.wamp.message.Yield`
-    * :class:`autobahn.wamp.message.Error`
-   """
-
-
-##
-## completely decouple transports and routers:
-##  - multiple WAMP sessions over different transports attached to same router
-##  - multiple WAMP sessions over a single transport attached to different routers
-##
-class ISessionN(Interface):
-
-   def send(message):
+   def processPublish(self, session, publish):
       """
       """
+
+   def processSubscribe(self, session, subscribe):
+      """
+      """
+
+   def processUnsubscribe(self, session, unsubscribe):
+      """
+      """
+
+
+
+class IDealer(IRouterBase):
+   """
+   WAMP dealer interface. Dealers are responsible for call routing.
+   """
+   def processRegister(session, register):
+      """
+      """
+
+   def processUnregister(session, unregister):
+      """
+      """
+
+   def processCall(session, call):
+      """
+      """
+
+   def processCancel(session, cancel):
+      """
+      """
+
+   def processYield(session, yield_):
+      """
+      """
+
+   def processInvocationError(session, error):
+      """
+      """
+
 
 
 class IRouterFactory(Interface):
 
    def get(realm):
       """
-      Get router for given realm.
-      """
-
-
-class IRouterN(Interface):
-
-   realm = Attribute("The WAMP realm this router handles.")
-
-   def attach(session):
-      """
-      Attach a WAMP application session to this router.
-      """
-
-   def detach(session):
-      """
-      Detach a WAMP application session from this router.
-      """
-
-   def process(session, message):
-      """
-      Process a WAMP message received on the given session.
+      Get router for responsible for given realm.
       """

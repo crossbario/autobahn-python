@@ -856,7 +856,7 @@ class RouterApplicationSession:
          self._session._session_id = util.id()
 
          ## add app session to router
-         self._router.addSession(self._session)
+         self._router.attach(self._session)
 
          ## fake app session open
          ##
@@ -877,7 +877,7 @@ class RouterApplicationSession:
 
          ## deliver message to router
          ##
-         self._router.processMessage(self._session, msg)
+         self._router.process(self._session, msg)
 
       ## router-to-app
       ##
@@ -951,7 +951,7 @@ class RouterSession(BaseSession):
 
             roles = []
 
-            self._router.addSession(self)
+            self._router.attach(self)
 
             roles.append(role.RoleBrokerFeatures())
             roles.append(role.RoleDealerFeatures())
@@ -978,7 +978,7 @@ class RouterSession(BaseSession):
             ## fire callback and close the transport
             self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
-            self._router.removeSession(self)
+            self._router.detach(self)
 
             self._session_id = None
 
@@ -990,7 +990,7 @@ class RouterSession(BaseSession):
 
          else:
 
-            self._router.processMessage(self, msg)
+            self._router.process(self, msg)
 
 
    def onClose(self, wasClean):
@@ -1007,7 +1007,7 @@ class RouterSession(BaseSession):
          except Exception as e:
             print e
 
-         self._router.removeSession(self)
+         self._router.detach(self)
 
          self._session_id = None
 

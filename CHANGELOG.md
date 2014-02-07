@@ -1,6 +1,9 @@
 # Autobahn|Python Changelog
 
 ## v0.8.1
+ * WAMP v2 basic router (broker + dealer) implementation
+ * WAMP v2 example set
+ * WAMP v2: decouple transports, sessions and routers
  * support explicit (binary) subprotocol name for wrapping WebSocket factory 
  * fix dependency on MsgPack
 
@@ -9,7 +12,7 @@
  * new: basic WAMP v2 router implementation
  * existing WAMP v1 implementation renamed
 
- ## v0.7.4
+## v0.7.4
  * fix WebSocket server HTML status page
  * fix close reason string handling
  * new "slowsquare" example
