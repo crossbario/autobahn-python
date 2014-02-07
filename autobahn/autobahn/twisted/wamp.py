@@ -18,33 +18,33 @@
 
 from __future__ import absolute_import
 
-__all__ = ['WampAppSession',
-           'WampAppFactory',
-           'WampRouterSession',
-           'WampRouterFactory']
+__all__ = ['ApplicationSession',
+           'ApplicationSessionFactory',
+           'RouterSession',
+           'RouterSessionFactory']
 
 from autobahn.wamp import protocol
 
 
-class WampAppSession(protocol.WampAppSession):
+class ApplicationSession(protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
    """
 
 
-class WampAppFactory(protocol.WampAppFactory):
+class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for Twisted-based applications.
    """
 
 
-class WampRouterSession(protocol.WampRouterSession):
+class RouterSession(protocol.RouterSession):
    """
    WAMP router session for Twisted-based applications.
    """
 
 
-class WampRouterSessionFactory(protocol.WampRouterSessionFactory):
+class RouterSessionFactory(protocol.RouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """

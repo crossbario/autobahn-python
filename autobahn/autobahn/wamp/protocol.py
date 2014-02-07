@@ -114,9 +114,9 @@ class Registration:
 
 
 @implementer(ISession)
-class WampBaseSession:
+class BaseSession:
    """
-   WAMP application session base class.
+   WAMP session base class.
 
    This class implements:
 
@@ -220,14 +220,15 @@ class WampBaseSession:
       return exc
 
 
+
 @implementer(IPublisher)
 @implementer(ISubscriber)
 @implementer(ICaller)
 @implementer(ICallee)
 @implementer(ITransportHandler)
-class WampAppSession(WampBaseSession):
+class ApplicationSession(BaseSession):
    """
-   WAMP application session.
+   WAMP endpoint session.
 
    This class implements:
 
@@ -243,7 +244,7 @@ class WampAppSession(WampBaseSession):
       """
       Constructor.
       """
-      WampBaseSession.__init__(self)
+      BaseSession.__init__(self)
       self._transport = None
 
       self._session_id = None
@@ -789,12 +790,12 @@ class WampAppSession(WampBaseSession):
 
 
 
-class WampAppFactory:
+class ApplicationSessionFactory:
    """
-   WAMP application session factory.
+   WAMP endpoint session factory.
    """
 
-   session = WampAppSession
+   session = ApplicationSession
    """
    WAMP application session class to be used in this factory.
    """
@@ -812,7 +813,7 @@ class WampAppFactory:
 
 
 
-class WampRouterAppSession:
+class RouterApplicationSession:
    """
    Wraps an application session to run directly attached to a WAMP router (broker+dealer).
    """
@@ -901,7 +902,7 @@ class WampRouterAppSession:
 
 
 @implementer(ITransportHandler)
-class WampRouterSession(WampBaseSession):
+class RouterSession(BaseSession):
    """
    WAMP router session.
 
@@ -914,7 +915,7 @@ class WampRouterSession(WampBaseSession):
       """
       Constructor.
       """
-      WampBaseSession.__init__(self)
+      BaseSession.__init__(self)
       self._transport = None
 
       self._router_factory = routerFactory
@@ -1036,12 +1037,12 @@ class WampRouterSession(WampBaseSession):
 
 
 
-class WampRouterSessionFactory:
+class RouterSessionFactory:
    """
    WAMP router session factory.
    """
 
-   session = WampRouterSession
+   session = RouterSession
    """
    WAMP router session class to be used in this factory.
    """
@@ -1063,7 +1064,7 @@ class WampRouterSessionFactory:
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
       #router = self._routerFactory.get(session.realm)
-      self._app_sessions.append(WampRouterAppSession(session, self._routerFactory))
+      self._app_sessions.append(RouterApplicationSession(session, self._routerFactory))
 
 
    def __call__(self):
@@ -1076,24 +1077,3 @@ class WampRouterSessionFactory:
       session = self.session(self._routerFactory)
       session.factory = session
       return session
-
-
-
-class WampRouterN:
-   pass
-
-
-
-#@implementer(IRouterFactory)
-class WampRouterFactoryN:
-
-   def __init__(self):
-      self._brokers = {}
-      self._dealers = {}
-
-   def getBroker(self, realm):
-      return self._brokers.get(realm, None)
-
-   def getDealer(self, realm):
-      return self._brokers.get(realm, None)
-      

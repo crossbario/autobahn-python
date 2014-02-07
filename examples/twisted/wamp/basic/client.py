@@ -60,8 +60,8 @@ if __name__ == '__main__':
 
    ## create a WAMP application session factory
    ##
-   from autobahn.twisted.wamp import WampAppFactory
-   session_factory = WampAppFactory()
+   from autobahn.twisted.wamp import ApplicationSessionFactory
+   session_factory = ApplicationSessionFactory()
 
 
    ## dynamically load the application component ..
@@ -76,7 +76,7 @@ if __name__ == '__main__':
    session_factory.session = getattr(app, klass)
 
 
-   ## run WAMP-over-WebSocket
+   ## create a WAMP-over-WebSocket transport client factory
    ##
    from autobahn.twisted.websocket import WampWebSocketClientFactory
    transport_factory = WampWebSocketClientFactory(session_factory, args.wsurl, debug = args.debug)

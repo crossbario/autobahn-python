@@ -58,12 +58,16 @@ if __name__ == '__main__':
       print("Running on reactor {}".format(reactor))
 
 
-   ## create a WAMP router session factory
+   ## create a WAMP router factory
    ##
    from autobahn.wamp.router import RouterFactory
    router_factory = RouterFactory()
-   from autobahn.twisted.wamp import WampRouterSessionFactory
-   session_factory = WampRouterSessionFactory(router_factory)
+
+
+   ## create a WAMP router session factory
+   ##
+   from autobahn.twisted.wamp import RouterSessionFactory
+   session_factory = RouterSessionFactory(router_factory)
 
 
    ## if asked to start an embedded application component ..
@@ -82,7 +86,7 @@ if __name__ == '__main__':
       session_factory.add(SessionKlass())
 
 
-   ## run WAMP over WebSocket
+   ## create a WAMP-over-WebSocket transport server factory
    ##
    from autobahn.twisted.websocket import WampWebSocketServerFactory
    transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = args.debug)

@@ -21,11 +21,11 @@ import datetime
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.wamp import WampAppSession
+from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class TimeServiceBackend(WampAppSession):
+class TimeServiceBackend(ApplicationSession):
    """
    A simple time service application component.
    """
@@ -44,13 +44,13 @@ class TimeServiceBackend(WampAppSession):
 
 
 
-class TimeServiceFrontend(WampAppSession):
+class TimeServiceFrontend(ApplicationSession):
    """
    An application component using the time service.
    """
 
    def __init__(self):
-      WampAppSession.__init__(self)
+      ApplicationSession.__init__(self)
       self.count = 0
 
    def onConnect(self):
