@@ -3800,7 +3800,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
       request += "\x0d\x0a"
 
-      self.sendData(request.encode('utf8'))
+      self.http_request_data = request.encode('utf8')
+      self.sendData(self.http_request_data)
+
       if request_body:
          ## Write HTTP request body for Hixie-76
          self.sendData(request_body)
