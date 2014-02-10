@@ -2268,8 +2268,13 @@ class Goodbye(Message):
    The WAMP message code for this type of message.
    """
 
+   DEFAULT_REASON = "wamp.goodbye.normal"
+   """
+   Default WAMP closing reason.
+   """
 
-   def __init__(self, reason = "wamp.goodbye.normal", message = None):
+
+   def __init__(self, reason = DEFAULT_REASON, message = None):
       """
       Message constructor.
 

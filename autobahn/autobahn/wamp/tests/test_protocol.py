@@ -50,7 +50,7 @@ class MockTransport:
          role.RoleDealerFeatures()
       ]
 
-      msg = message.Hello(self._my_session_id, roles)
+      msg = message.Welcome(self._my_session_id, roles)
       self._handler.onMessage(msg)
 
    def send(self, msg):
@@ -125,7 +125,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1')
@@ -146,7 +146,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish_acknowledged(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(acknowledge = True))
@@ -167,7 +167,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish_undefined_exception(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       options = types.PublishOptions(acknowledge = True)
@@ -178,7 +178,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish_defined_exception(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       options = types.PublishOptions(acknowledge = True)
@@ -192,7 +192,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_call(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure1')
@@ -213,7 +213,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_call_with_complex_result(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure2')
@@ -229,7 +229,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_subscribe(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -244,7 +244,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_unsubscribe(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -256,7 +256,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_register(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -271,7 +271,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_unregister(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -283,7 +283,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_invoke(self):
-      handler = protocol.WampAppSession()
+      handler = protocol.ApplicationSession()
       transport = MockTransport(handler)
 
       def myproc1():

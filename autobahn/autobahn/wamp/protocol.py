@@ -128,6 +128,30 @@ class BaseSession:
       self._uri_to_ecls = {}
 
 
+   def onConnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      """
+
+
+   def onJoin(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      """
+
+
+   def onLeave(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      """
+
+
+   def onDisconnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      """
+
+
    def define(self, exception, error = None):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.define`

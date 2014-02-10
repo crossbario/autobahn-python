@@ -742,38 +742,38 @@ class TestYieldMessage(unittest.TestCase):
 class TestHelloMessage(unittest.TestCase):
 
    def test_ctor(self):
-      e = message.Hello(123456, [role.RoleBrokerFeatures()])
+      e = message.Hello("realm1", [role.RoleBrokerFeatures()])
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
-      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[1], "realm1")
       self.assertEqual(msg[2], {'roles': {'broker': {}}})
 
-      e = message.Hello(123456, [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
+      e = message.Hello("realm1", [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
-      self.assertEqual(msg[1], 123456)
+      self.assertEqual(msg[1], "realm1")
       self.assertEqual(msg[2], {'roles': {'broker': {'features': {'subscriber_blackwhite_listing': True}}}})
 
 
    def test_parse_and_marshal(self):
-      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {'roles': {'broker': {}}}]
+      wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'broker': {}}}]
       msg = message.Hello.parse(wmsg)
       self.assertIsInstance(msg, message.Hello)
-      self.assertEqual(msg.session, 123456)
+      self.assertEqual(msg.realm, "realm1")
       self.assertEqual(msg.roles, [role.RoleBrokerFeatures()])
       self.assertEqual(msg.marshal(), wmsg)
 
-      wmsg = [message.Hello.MESSAGE_TYPE, 123456, {'roles': {'broker': {'features': {'subscriber_blackwhite_listing': True}}}}]
+      wmsg = [message.Hello.MESSAGE_TYPE, "realm1", {'roles': {'broker': {'features': {'subscriber_blackwhite_listing': True}}}}]
       msg = message.Hello.parse(wmsg)
       self.assertIsInstance(msg, message.Hello)
-      self.assertEqual(msg.session, 123456)
+      self.assertEqual(msg.realm, "realm1")
       self.assertEqual(msg.roles, [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
       self.assertEqual(msg.marshal(), wmsg)
 
    def test_str(self):
-      e = message.Hello(123456, [role.RoleBrokerFeatures()])
+      e = message.Hello("realm1", [role.RoleBrokerFeatures()])
       self.assertIsInstance(str(e), str)
 
 
@@ -786,21 +786,24 @@ class TestGoodbyeMessage(unittest.TestCase):
 
       e = message.Goodbye()
       msg = e.marshal()
-      self.assertEqual(len(msg), 2)
+      self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], {})
+      self.assertEqual(msg[1], message.Goodbye.DEFAULT_REASON)
+      self.assertEqual(msg[2], {})
 
       e = message.Goodbye(reason = reason)
       msg = e.marshal()
-      self.assertEqual(len(msg), 2)
+      self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], {'reason': reason})
+      self.assertEqual(msg[1], reason)
+      self.assertEqual(msg[2], {})
 
       e = message.Goodbye(reason = reason, message = reason_msg)
       msg = e.marshal()
-      self.assertEqual(len(msg), 2)
+      self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], {'reason': reason, 'message': reason_msg})
+      self.assertEqual(msg[1], reason)
+      self.assertEqual(msg[2], {'message': reason_msg})
 
 
    def test_parse_and_marshal(self):
@@ -813,27 +816,17 @@ class TestGoodbyeMessage(unittest.TestCase):
       wmsg = [message.Goodbye.MESSAGE_TYPE, reason]
       self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': 100}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {'message': 100}]
       self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': 100}]
-      self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
-
-      wmsg = [message.Goodbye.MESSAGE_TYPE, {}]
-      msg = message.Goodbye.parse(wmsg)
-      self.assertIsInstance(msg, message.Goodbye)
-      self.assertEqual(msg.reason, None)
-      self.assertEqual(msg.message, None)
-      self.assertEqual(msg.marshal(), wmsg)
-
-      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': reason}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {}]
       msg = message.Goodbye.parse(wmsg)
       self.assertIsInstance(msg, message.Goodbye)
       self.assertEqual(msg.reason, reason)
       self.assertEqual(msg.message, None)
       self.assertEqual(msg.marshal(), wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, {'reason': reason, 'message': reason_msg}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {'message': reason_msg}]
       msg = message.Goodbye.parse(wmsg)
       self.assertIsInstance(msg, message.Goodbye)
       self.assertEqual(msg.reason, reason)

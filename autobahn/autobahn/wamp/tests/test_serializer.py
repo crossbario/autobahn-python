@@ -29,7 +29,7 @@ from autobahn.wamp import serializer
 
 def generate_test_messages():
    return [
-      message.Hello(123456, [role.RoleBrokerFeatures()]),
+      message.Hello("realm1", [role.RoleBrokerFeatures()]),
       message.Goodbye(),
       message.Heartbeat(123, 456),
       message.Yield(123456),

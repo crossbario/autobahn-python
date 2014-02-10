@@ -31,7 +31,7 @@ from autobahn.wamp import protocol
 class TestPeerExceptions(unittest.TestCase):
 
    def test_exception_from_message(self):
-      session = protocol.WampBaseSession()
+      session = protocol.BaseSession()
 
       @wamp.error("com.myapp.error1")
       class AppError1(Exception):
@@ -81,7 +81,7 @@ class TestPeerExceptions(unittest.TestCase):
       
 
    def test_message_from_exception(self):
-      session = protocol.WampBaseSession()
+      session = protocol.BaseSession()
 
       @wamp.error("com.myapp.error1")
       class AppError1(Exception):
