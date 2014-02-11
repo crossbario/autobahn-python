@@ -24,7 +24,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class RpcOptionsBackend(ApplicationSession):
+class Component(ApplicationSession):
    """
    An application component providing procedures with
    different kinds of arguments.
@@ -50,36 +50,3 @@ class RpcOptionsBackend(ApplicationSession):
          return val * val
 
       self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
-
-
-
-class RpcOptionsFrontend(ApplicationSession):
-   """
-   An application component calling the different backend procedures.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   @inlineCallbacks
-   def onJoin(self, details):
-
-      def on_event(val):
-         print("Someone requested to square non-positive: {}".format(val))
-
-      yield self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
-
-      for val in [2, 0, -2]:
-         res = yield self.call('com.myapp.square', val, options = CallOptions(discloseMe = True))
-         print("Squared {} = {}".format(val, res))
-
-      self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
-
-
-   def onDisconnect(self):
-      reactor.stop()

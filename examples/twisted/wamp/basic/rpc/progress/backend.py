@@ -25,7 +25,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ProgressiveBackend(ApplicationSession):
+class Component(ApplicationSession):
    """
    Application component that produces progressive results.
    """
@@ -47,34 +47,3 @@ class ProgressiveBackend(ApplicationSession):
          returnValue(n)
 
       self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg = 'details'))
-
-
-
-class ProgressiveFrontend(ApplicationSession):
-   """
-   Application component that consumes progressive results.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   @inlineCallbacks
-   def onJoin(self, details):
-
-      def on_progress(i):
-         print("Progress: {}".format(i))
-
-      res = yield self.call('com.myapp.longop', 3, options = CallOptions(onProgress = on_progress))
-
-      print("Final: {}".format(res))
-
-      self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
-
-
-   def onDisconnect(self):
-      reactor.stop()

@@ -66,110 +66,110 @@ server:
 
 
 server_with_rpc_timeservice_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.timeservice.TimeServiceBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.timeservice.backend.Component"
 
 client_rpc_timeservice_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.timeservice.TimeServiceFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.timeservice.frontend.Component"
 
 client_rpc_timeservice_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.timeservice.TimeServiceBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.timeservice.backend.Component"
 
 
 server_with_rpc_arguments_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.arguments.ArgumentsBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.arguments.backend.Component"
 
 client_rpc_arguments_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.arguments.ArgumentsFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.arguments.frontend.Component"
 
 client_rpc_arguments_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.arguments.ArgumentsBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.arguments.backend.Component"
 
 
 server_with_rpc_options_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.rpcoptions.RpcOptionsBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.options.backend.Component"
 
 client_rpc_options_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.rpcoptions.RpcOptionsFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.options.frontend.Component"
 
 client_rpc_options_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.rpcoptions.RpcOptionsBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.options.backend.Component"
 
 
 server_with_rpc_errors_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.errors.ErrorsTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.errors.backend.Component"
 
 client_rpc_errors_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.errors.ErrorsTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.errors.frontend.Component"
 
 client_rpc_errors_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.errors.ErrorsTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.errors.backend.Component"
 
 
 server_with_rpc_complex_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.complex.ComplexBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.complex.backend.Component"
 
 client_rpc_complex_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.complex.ComplexFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.complex.frontend.Component"
 
 client_rpc_complex_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.complex.ComplexBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.complex.backend.Component"
 
 
 server_with_rpc_progress_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "rpc.progress.ProgressiveBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.progress.backend.Component"
 
 client_rpc_progress_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.progress.ProgressiveFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.progress.frontend.Component"
 
 client_rpc_progress_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "rpc.progress.ProgressiveBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.progress.backend.Component"
 
 
 server_with_pubsub_basic_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.pubsub.PubSubTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.basic.backend.Component"
 
 client_pubsub_basic_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsub.PubSubTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.basic.frontend.Component"
 
 client_pubsub_basic_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsub.PubSubTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.basic.backend.Component"
 
 
 server_with_pubsub_complex_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.complexevent.ComplexEventTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.complex.backend.Component"
 
 client_pubsub_complex_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.complexevent.ComplexEventTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.complex.frontend.Component"
 
 client_pubsub_complex_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.complexevent.ComplexEventTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.complex.backend.Component"
 
 
 server_with_pubsub_options_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.pubsuboptions.PubSubOptionsTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.options.backend.Component"
 
 client_pubsub_options_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsuboptions.PubSubOptionsTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.options.frontend.Component"
 
 client_pubsub_options_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.pubsuboptions.PubSubOptionsTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.options.backend.Component"
 
 
 server_with_pubsub_unsubscribe_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.unsubscribe.UnsubscribeTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.unsubscribe.backend.Component"
 
 client_pubsub_unsubscribe_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.UnsubscribeTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.frontend.Component"
 
 client_pubsub_unsubscribe_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.UnsubscribeTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.backend.Component"
 
 
 server_with_session_series_backend:
-	PYTHONPATH=../../../../autobahn python server.py --component "session.series.SeriesTestBackend"
+	PYTHONPATH=../../../../autobahn python server.py --component "session.series.backend.Component"
 
 client_session_series_frontend:
-	PYTHONPATH=../../../../autobahn python client.py --component "session.series.SeriesTestFrontend"
+	PYTHONPATH=../../../../autobahn python client.py --component "session.series.frontend.Component"
 
 client_session_series_backend:
-	PYTHONPATH=../../../../autobahn python client.py --component "session.series.SeriesTestBackend"
+	PYTHONPATH=../../../../autobahn python client.py --component "session.series.backend.Component"

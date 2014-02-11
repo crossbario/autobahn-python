@@ -36,7 +36,7 @@ class AppError1(Exception):
 
 
 
-class ErrorsTestBackend(ApplicationSession):
+class Component(ApplicationSession):
    """
    Example WAMP application backend that raised exceptions.
    """
@@ -85,59 +85,3 @@ class ErrorsTestBackend(ApplicationSession):
             raise AppError1(b - a)
 
       self.register(compare, 'com.myapp.compare')
-
-
-
-class ErrorsTestFrontend(ApplicationSession):
-   """
-   Example WAMP application frontend that catches exceptions.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   @inlineCallbacks
-   def onJoin(self, details):
-
-      ## catching standard exceptions
-      ##
-      for x in [2, 0, -2]:
-         try:
-            res = yield self.call('com.myapp.sqrt', x)
-         except Exception as e:
-            print("Error: {} {}".format(e, e.args))
-         else:
-            print("Result: {}".format(res))
-
-
-      ## catching WAMP application exceptions
-      ##
-      for name in ['foo', 'a', '*'*11, 'Hello']:
-         try:
-            res = yield self.call('com.myapp.checkname', name)
-         except ApplicationError as e:
-            print("Error: {} {} {} {}".format(e, e.error, e.args, e.kwargs))
-         else:
-            print("Result: {}".format(res))
-
-
-      ## defining and automapping WAMP application exceptions
-      ## 
-      self.define(AppError1)
-
-      try:
-         yield self.call('com.myapp.compare', 3, 17)
-      except AppError1 as e:
-         print("Compare Error: {}".format(e))
-
-
-      self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
-
-
-   def onDisconnect(self):
-      reactor.stop()

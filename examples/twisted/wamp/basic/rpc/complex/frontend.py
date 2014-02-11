@@ -24,32 +24,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ComplexBackend(ApplicationSession):
-   """
-   Application component that provides procedures which
-   return complex results.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   def onJoin(self, details):
-
-      def add_complex(a, ai, b, bi):
-         return CallResult(c = a + b, ci = ai + bi)
-
-      self.register(add_complex, 'com.myapp.add_complex')
-
-      def split_name(fullname):
-         forename, surname = fullname.split()
-         return CallResult(forename, surname)
-
-      self.register(split_name, 'com.myapp.split_name')
-
-
-
-class ComplexFrontend(ApplicationSession):
+class Component(ApplicationSession):
    """
    Application component that calls procedures which
    produce complex results and showing how to access those.

@@ -16,37 +16,17 @@
 ##
 ###############################################################################
 
-import datetime
-
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
 from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class TimeServiceBackend(ApplicationSession):
+class Component(ApplicationSession):
    """
-   A simple time service application component.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   def onJoin(self, details):
-
-      def utcnow():
-         now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-      self.register(utcnow, 'com.timeservice.now')
-
-
-
-class TimeServiceFrontend(ApplicationSession):
-   """
-   An application component using the time service.
+   An application component calling the different backend procedures.
    """
 
    def onConnect(self):
@@ -55,12 +35,15 @@ class TimeServiceFrontend(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
-      try:
-         now = yield self.call('com.timeservice.now')
-      except Exception as e:
-         print("Error: {}".format(e))
-      else:
-         print("Current time from time service: {}".format(now))
+
+      def on_event(val):
+         print("Someone requested to square non-positive: {}".format(val))
+
+      yield self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
+
+      for val in [2, 0, -2]:
+         res = yield self.call('com.myapp.square', val, options = CallOptions(discloseMe = True))
+         print("Squared {} = {}".format(val, res))
 
       self.leave()
 

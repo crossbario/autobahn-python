@@ -27,7 +27,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ComplexEventTestBackend(ApplicationSession):
+class Component(ApplicationSession):
    """
    An application component that publishes events with no payload
    and with complex payloads every second.
@@ -49,42 +49,3 @@ class ComplexEventTestBackend(ApplicationSession):
 
          counter += 1
          yield sleep(1)
-
-
-
-class ComplexEventTestFrontend(ApplicationSession):
-   """
-   An application component that subscribes and receives events
-   of no payload and of complex payload, and stops after 5 seconds.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   @inlineCallbacks
-   def onJoin(self, details):
-
-      self.received = 0
-
-      def on_heartbeat(details = None):
-         print("Got heartbeat (publication ID {})".format(details.publication))
-
-      yield self.subscribe(on_heartbeat, 'com.myapp.heartbeat', options = SubscribeOptions(details_arg = 'details'))
-
-
-      def on_topic2(a, b, c = None, d = None):
-         print("Got event: {} {} {} {}".format(a, b, c, d))
-
-      yield self.subscribe(on_topic2, 'com.myapp.topic2')
-
-
-      reactor.callLater(5, self.leave)
-
-
-   def onLeave(self, details):
-      self.disconnect()
-
-
-   def onDisconnect(self):
-      reactor.stop()

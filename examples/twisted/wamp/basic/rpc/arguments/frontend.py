@@ -23,42 +23,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 
-class ArgumentsBackend(ApplicationSession):
-   """
-   An application component providing procedures with
-   different kinds of arguments.
-   """
-
-   def onConnect(self):
-      self.join("realm1")
-
-
-   def onJoin(self, details):
-
-      def ping():
-         return
-
-      def add2(a, b):
-         return a + b
-
-      def stars(nick = "somebody", stars = 0):
-         return "{} starred {}x".format(nick, stars)
-
-      def orders(product, limit = 5):
-         return ["Product {}".format(i) for i in range(50)][:limit]
-
-      def arglen(*args, **kwargs):
-         return [len(args), len(kwargs)]
-
-      self.register(ping, 'com.arguments.ping')
-      self.register(add2, 'com.arguments.add2')
-      self.register(stars, 'com.arguments.stars')
-      self.register(orders, 'com.arguments.orders')
-      self.register(arglen, 'com.arguments.arglen')
-
-
-
-class ArgumentsFrontend(ApplicationSession):
+class Component(ApplicationSession):
    """
    An application component calling the different backend procedures.
    """
