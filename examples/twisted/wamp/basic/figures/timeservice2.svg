@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="625.10577"
+   height="387.94122"
+   id="svg3125"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="timeservice2.svg">
+  <defs
+     id="defs3127" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.35"
+     inkscape:cx="362.5529"
+     inkscape:cy="262.54204"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     fit-margin-top="10"
+     fit-margin-left="10"
+     fit-margin-bottom="10"
+     fit-margin-right="10"
+     inkscape:window-width="505"
+     inkscape:window-height="453"
+     inkscape:window-x="200"
+     inkscape:window-y="528"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata3130">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Ebene 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(12.552898,-406.963)">
+    <g
+       id="g3137"
+       transform="translate(-4.4289523,415.08695)"
+       inkscape:export-filename="C:\Users\oberstet\Desktop\timeservice2.png"
+       inkscape:export-xdpi="90"
+       inkscape:export-ydpi="90">
+      <path
+         id="path3139"
+         d="m 20.792939,68.08515 0,97.71118 567.272021,0 0,-97.71118 -567.272021,0 z"
+         style="fill:#0070c0;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3141"
+         d="m 20.792939,165.79633 567.272021,0 0,-97.71118 -567.272021,0 0,97.71118 z"
+         style="fill:none;stroke:#ffffff;stroke-width:0.3908447px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3143"
+         style="font-size:30.01687431px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="116.31539"
+         x="183.85336"
+         xml:space="preserve">Autobahn</text>
+      <text
+         id="text3145"
+         style="font-size:30.01687431px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="116.31539"
+         x="323.9321"
+         xml:space="preserve">|</text>
+      <text
+         id="text3147"
+         style="font-size:30.01687431px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="116.31539"
+         x="331.43631"
+         xml:space="preserve">Python</text>
+      <text
+         id="text3149"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="140.07875"
+         x="207.61671"
+         xml:space="preserve">Base Application Router</text>
+      <path
+         id="path3151"
+         d="m 370.59896,369.03558 c 13.05421,0 23.68519,-10.5528 23.68519,-23.60702 l 0,0 0,-96.46047 c 0,-13.05422 -10.63098,-23.60703 -23.68519,-23.60703 l -132.34002,0 c -13.05421,0 -23.60702,10.55281 -23.60702,23.60703 l 0,0 0,96.46047 c 0,13.05422 10.55281,23.60702 23.60702,23.60702 l 0,0 132.34002,0 z"
+         style="fill:#a6a6a6;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3153"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="350.19687"
+         x="271.40256"
+         xml:space="preserve">Browser</text>
+      <path
+         id="path3155"
+         d="m 232.63078,243.33992 0,86.22035 143.67451,0 0,-86.22035 -143.67451,0 z"
+         style="fill:#0070c0;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3157"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="258.89554"
+         xml:space="preserve">Autobahn</text>
+      <text
+         id="text3159"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="328.93491"
+         xml:space="preserve">|</text>
+      <text
+         id="text3161"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="332.68701"
+         xml:space="preserve">JS</text>
+      <path
+         id="path3163"
+         d="m 250.53146,282.81524 0,46.74503 107.79498,0 0,-46.74503 -107.79498,0 z"
+         style="fill:#688037;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3165"
+         d="m 250.53146,329.56027 107.79498,0 0,-46.74503 -107.79498,0 0,46.74503 z"
+         style="fill:none;stroke:#ffffff;stroke-width:0.3908447px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3167"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="301.41946"
+         x="260.14624"
+         xml:space="preserve">Time Service</text>
+      <text
+         id="text3169"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="320.17999"
+         x="271.40256"
+         xml:space="preserve">Frontend</text>
+      <path
+         id="path3171"
+         d="m 304.46804,167.90689 0,57.45417"
+         style="fill:none;stroke:#262626;stroke-width:5.23731899px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3173"
+         d="m 583.37483,369.03558 c 13.05421,0 23.60702,-10.5528 23.60702,-23.60702 l 0,0 0,-96.46047 c 0,-13.05422 -10.55281,-23.60703 -23.60702,-23.60703 l -132.41819,0 c -13.05422,0 -23.60703,10.55281 -23.60703,23.60703 l 0,0 0,96.46047 c 0,13.05422 10.55281,23.60702 23.60703,23.60702 l 0,0 132.41819,0 z"
+         style="fill:#a6a6a6;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3175"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="350.19687"
+         x="486.5235"
+         xml:space="preserve">NodeJS</text>
+      <path
+         id="path3177"
+         d="m 445.32847,243.33992 0,86.22035 143.67452,0 0,-86.22035 -143.67452,0 z"
+         style="fill:#0070c0;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3179"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="471.51508"
+         xml:space="preserve">Autobahn</text>
+      <text
+         id="text3181"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="541.55444"
+         xml:space="preserve">|</text>
+      <text
+         id="text3183"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="270.15186"
+         x="545.30658"
+         xml:space="preserve">JS</text>
+      <path
+         id="path3185"
+         d="m 463.30733,282.81524 0,46.74503 107.7168,0 0,-46.74503 -107.7168,0 z"
+         style="fill:#775e97;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3187"
+         d="m 463.30733,329.56027 107.7168,0 0,-46.74503 -107.7168,0 0,46.74503 z"
+         style="fill:none;stroke:#ffffff;stroke-width:0.3908447px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3189"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="301.41946"
+         x="472.76578"
+         xml:space="preserve">Time Service</text>
+      <text
+         id="text3191"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="320.17999"
+         x="485.2728"
+         xml:space="preserve">Backend</text>
+      <path
+         id="path3193"
+         d="m 517.16573,167.90689 0,57.45417"
+         style="fill:none;stroke:#262626;stroke-width:5.23731899px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3195"
+         d="m 157.90127,369.81727 c 13.05421,0 23.60702,-10.55281 23.60702,-23.60702 l 0,0 0,-96.46048 c 0,-13.05421 -10.55281,-23.60702 -23.60702,-23.60702 l 0,0 -132.340025,0 c -13.054214,0 -23.6851904,10.55281 -23.6851904,23.60702 l 0,96.46048 c 0,13.05421 10.6309764,23.60702 23.6851904,23.60702 l 0,0 132.340025,0 z"
+         style="fill:#a6a6a6;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3197"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="351.44757"
+         x="30.016874"
+         xml:space="preserve">Python</text>
+      <text
+         id="text3199"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="351.44757"
+         x="86.298515"
+         xml:space="preserve">/</text>
+      <text
+         id="text3201"
+         style="font-size:16.25914001px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="351.44757"
+         x="91.301323"
+         xml:space="preserve">Twisted</text>
+      <path
+         id="path3203"
+         d="m 19.854912,244.12161 0,86.22035 143.752688,0 0,-86.22035 -143.752688,0 z"
+         style="fill:#0070c0;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3205"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="271.40256"
+         x="31.267576"
+         xml:space="preserve">Autobahn</text>
+      <text
+         id="text3207"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="271.40256"
+         x="101.30695"
+         xml:space="preserve">|</text>
+      <text
+         id="text3209"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="271.40256"
+         x="105.05906"
+         xml:space="preserve">Python</text>
+      <path
+         id="path3211"
+         d="m 37.833769,283.59693 0,46.74503 107.794971,0 0,-46.74503 -107.794971,0 z"
+         style="fill:#688037;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3213"
+         d="m 37.833769,330.34196 107.794971,0 0,-46.74503 -107.794971,0 0,46.74503 z"
+         style="fill:none;stroke:#ffffff;stroke-width:0.3908447px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3215"
+         style="font-size:15.00843716px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="302.67014"
+         x="47.526718"
+         xml:space="preserve">Time Service</text>
+      <text
+         id="text3217"
+         style="font-size:15.00843716px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="320.17999"
+         x="58.783047"
+         xml:space="preserve">Frontend</text>
+      <path
+         id="path3219"
+         d="m 91.692171,168.68858 0,57.45417"
+         style="fill:none;stroke:#262626;stroke-width:5.23731899px;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1;stroke-dasharray:none"
+         inkscape:connector-curvature="0" />
+      <path
+         id="path3221"
+         d="m 1.8760546,25.561245 c 0,-13.054214 10.6309764,-23.6851904 23.6851904,-23.6851904 13.054213,0 23.60702,10.6309764 23.60702,23.6851904 0,0 0,0 0,0 0,13.054213 -10.552807,23.60702 -23.60702,23.60702 -13.054214,0 -23.6851904,-10.552807 -23.6851904,-23.60702"
+         style="fill:#f28226;fill-opacity:1;fill-rule:evenodd;stroke:none"
+         inkscape:connector-curvature="0" />
+      <text
+         id="text3223"
+         style="font-size:30.01687431px;font-style:normal;font-weight:bold;text-align:start;text-anchor:start;fill:#ffffff;font-family:Arial"
+         y="35.019688"
+         x="17.509844"
+         xml:space="preserve">2</text>
+    </g>
+  </g>
+</svg>

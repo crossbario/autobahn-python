@@ -9,7 +9,7 @@ The examples in this folder serve to illustrate **[WAMP version 2](https://githu
 
 **[WAMP v2](https://github.com/tavendo/WAMP/blob/master/spec/README.md)** on [**Autobahn**|Python](http://autobahn.ws/) allows to run application components in different deployment configurations without any changes to application code:
 
-![Application Code Deployment Options](app_code_depl_options.png)
+![Application Code Deployment Options](figures/app_code_depl_options.png)
 
 ## Running the Demos
 
@@ -162,3 +162,21 @@ To run the backend in NodeJS, run the plain router
 and then start the backend:
 
 	node rpc/timeservice_backend.js
+
+### Deployment Options
+
+Application frontend in browser, application backend in browser:
+
+![Application Code Deployment Options](figures/timeservice1.png)
+
+Application frontend in browser, application backend in NodeJS:
+
+![Application Code Deployment Options](figures/timeservice2.png)
+
+Application frontend in browser, application backend in Python:
+
+![Application Code Deployment Options](figures/timeservice3.png)
+
+Application frontend in browser, application backend in Python (Router embedded):
+
+![Application Code Deployment Options](figures/timeservice4.png)
