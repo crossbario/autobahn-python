@@ -42,8 +42,11 @@ class RpcOptionsBackend(ApplicationSession):
          if val < 0:
             self.publish('com.myapp.square_on_nonpositive', val)
          elif val == 0:
-            self.publish('com.myapp.square_on_nonpositive', val, 
-               options = PublishOptions(exclude = [details.caller]))
+            if details.caller:
+               options = PublishOptions(exclude = [details.caller])
+            else:
+               options = None
+               self.publish('com.myapp.square_on_nonpositive', val, options = options)
          return val * val
 
       self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
@@ -63,7 +66,7 @@ class RpcOptionsFrontend(ApplicationSession):
    def onJoin(self, details):
 
       def on_event(val):
-         print("Someone requested to square non-negative: {}".format(val))
+         print("Someone requested to square non-positive: {}".format(val))
 
       yield self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
 

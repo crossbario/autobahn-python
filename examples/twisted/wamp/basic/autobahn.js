@@ -754,7 +754,9 @@ var Session = function (socket, options) {
             // FIXME: asynch functions
 
             //var res = fn.apply(this, msg[4]);
-            var res = fn.call(this, msg[4], msg[5]);
+            var args = msg[4] || [];
+            var kwargs = msg[5] || {};
+            var res = fn.call(this, args, kwargs, details);
 
             // construct YIELD message
             //
