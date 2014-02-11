@@ -132,3 +132,33 @@ Demonstrates how multiple sessions can exist during the lifetime of the underlyi
 
  * `session.series.SeriesTestBackend`
  * `session.series.SeriesTestFrontend`
+
+
+## AutobahnJS-based Demos
+
+In addition, the demo front- and backends are available as AutobahnJS-based versions to run in browsers and NodeJS.
+
+For example, run the example application router on a WebSocket transport server and start a demo "backend" application component inside the router:
+
+	python server.py --component "rpc.timeservice.TimeServiceBackend"
+
+Then, open the JavaScript frontend in a browser:
+
+    rpc/timeservice_frontend.html
+
+To run the frontend from NodeJS, install AutobahnJS
+
+	npm install autobahn
+	npm install when
+
+and then
+
+	node rpc/timeservice_frontend.js
+
+To run the backend in NodeJS, run the plain router
+
+	python server.py
+
+and then start the backend:
+
+	node rpc/timeservice_backend.js

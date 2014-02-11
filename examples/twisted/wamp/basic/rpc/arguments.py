@@ -79,14 +79,14 @@ class ArgumentsFrontend(ApplicationSession):
       starred = yield self.call('com.arguments.stars')
       print("Starred 1: {}".format(starred))
 
-      starred = yield self.call('com.arguments.stars', nick = 'Hoomer')
+      starred = yield self.call('com.arguments.stars', nick = 'Homer')
       print("Starred 2: {}".format(starred))
 
       starred = yield self.call('com.arguments.stars', stars = 5)
       print("Starred 3: {}".format(starred))
 
-      starred = yield self.call('com.arguments.stars', nick = 'Hoomer', stars = 5)
-      print("Starred 3: {}".format(starred))
+      starred = yield self.call('com.arguments.stars', nick = 'Homer', stars = 5)
+      print("Starred 4: {}".format(starred))
 
       orders = yield self.call('com.arguments.orders', 'coffee')
       print("Orders 1: {}".format(orders))
