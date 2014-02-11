@@ -1,5 +1,11 @@
-var autobahn = require('autobahn');
-var when = require('when');
+try {
+   var autobahn = require('autobahn');
+   var when = require('when');
+} catch (e) {
+   // When running in browser, AutobahnJS will
+   // be included without a module system
+   var when = autobahn.when;
+}
 
 var connection = new autobahn.Connection({
    url: 'ws://127.0.0.1:9000/',

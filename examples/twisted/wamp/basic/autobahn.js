@@ -71,6 +71,7 @@ process.chdir = function (dir) {
 var session = _dereq_('./session.js');
 var websocket = _dereq_('./websocket.js');
 var connection = _dereq_('./connection.js');
+var when = _dereq_('when');
 
 exports.version = '?.?.?';
 
@@ -84,8 +85,9 @@ exports.Error = session.Error;
 exports.Subscription = session.Subscription;
 exports.Registration = session.Registration;
 exports.Publication = session.Publication;
+exports.when = when;
 
-},{"./connection.js":3,"./session.js":4,"./websocket.js":5}],3:[function(_dereq_,module,exports){
+},{"./connection.js":3,"./session.js":4,"./websocket.js":5,"when":6}],3:[function(_dereq_,module,exports){
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  AutobahnJS - http://autobahn.ws, http://wamp.ws
@@ -749,17 +751,31 @@ var Session = function (socket, options) {
 
          try {
 
-            var res = fn.apply(this, msg[4]);
+            // FIXME: asynch functions
+
+            //var res = fn.apply(this, msg[4]);
+            var res = fn.call(this, msg[4], msg[5]);
 
             // construct YIELD message
             //
             var reply = [MSG_TYPE.YIELD, request];
             if (false) {
-               //msg.push(options);
+               //msg.push(options); // FIXME
             } else {
                reply.push({});
             }
-            reply.push([res]);
+
+            if (res instanceof Result) {
+               var kwargs_len = Object.keys(res.kwargs).length;
+               if (res.args.length || kwargs_len) {
+                  reply.push(res.args);
+                  if (kwargs_len) {
+                     reply.push(res.kwargs);
+                  }
+               }
+            } else {
+               reply.push([res]);
+            }
 
             // send WAMP message
             //

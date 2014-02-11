@@ -12,13 +12,25 @@ var connection = new autobahn.Connection({
 
 connection.onopen = function (session) {
 
-   function utcnow() {
+   function add_complex(args, kwargs) {
       console.log("Someone is calling me;)");
-      now = new Date();
-      return now.toISOString();
+      return new autobahn.Result([], {c: args[0] + args[2], ci: args[1] + args[3]});
    }
 
-   session.register(utcnow, 'com.timeservice.now').then(
+   session.register(add_complex, 'com.myapp.add_complex').then(
+      function (registration) {
+         console.log("Procedure registered:", registration.id);
+      },
+      function (error) {
+         console.log("Registration failed:", error);
+      }
+   );
+
+   function split_name(args) {
+      return new autobahn.Result(args[0].split(" "));
+   }
+
+   session.register(split_name, 'com.myapp.split_name').then(
       function (registration) {
          console.log("Procedure registered:", registration.id);
       },
