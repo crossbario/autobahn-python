@@ -72,6 +72,7 @@ var session = _dereq_('./session.js');
 var websocket = _dereq_('./websocket.js');
 var connection = _dereq_('./connection.js');
 var when = _dereq_('when');
+var fn = _dereq_("when/function");
 
 exports.version = '?.?.?';
 
@@ -86,8 +87,9 @@ exports.Subscription = session.Subscription;
 exports.Registration = session.Registration;
 exports.Publication = session.Publication;
 exports.when = when;
+exports.fn = fn;
 
-},{"./connection.js":3,"./session.js":4,"./websocket.js":5,"when":6}],3:[function(_dereq_,module,exports){
+},{"./connection.js":3,"./session.js":4,"./websocket.js":5,"when":7,"when/function":6}],3:[function(_dereq_,module,exports){
 ///////////////////////////////////////////////////////////////////////////////
 //
 //  AutobahnJS - http://autobahn.ws, http://wamp.ws
@@ -203,12 +205,22 @@ transport.close();
 
 
 var when = _dereq_('when');
+var when_fn = _dereq_("when/function");
 var websocket = _dereq_('./websocket.js');
 
 
 function newid() {
    return Math.floor(Math.random() * 9007199254740992);
 }
+
+
+var CallDetails = function (caller, progress) {
+
+   var self = this;
+
+   self.caller = caller;
+   self.progress = progress;
+};
 
 
 var Result = function (args, kwargs) {
@@ -741,51 +753,86 @@ var Session = function (socket, options) {
       //
       // process INVOCATION message
       //
+      // [INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]
+      //
       var request = msg[1];
       var registration = msg[2];
+
       var details = msg[3];
+      // receive_progress
+      // timeout
+      // caller
 
       if (registration in self._registrations) {
 
-         var fn = self._registrations[registration];
+         var fun = self._registrations[registration];
 
-         try {
+         var args = msg[4] || [];
+         var kwargs = msg[5] || {};
 
-            // FIXME: asynch functions
+         // create progress function for invocation
+         //
+         var progress = null;
+         if (details.receive_progress) {
 
-            //var res = fn.apply(this, msg[4]);
-            var args = msg[4] || [];
-            var kwargs = msg[5] || {};
-            var res = fn.call(this, args, kwargs, details);
+            progress = function (args, kwargs) {
+               var progress_msg = [MSG_TYPE.YIELD, request, {progress: true}];
 
-            // construct YIELD message
-            //
-            var reply = [MSG_TYPE.YIELD, request];
-            if (false) {
-               //msg.push(options); // FIXME
-            } else {
-               reply.push({});
-            }
+               args = args || [];
+               kwargs = kwargs || {};
 
-            if (res instanceof Result) {
-               var kwargs_len = Object.keys(res.kwargs).length;
-               if (res.args.length || kwargs_len) {
-                  reply.push(res.args);
+               var kwargs_len = Object.keys(kwargs).length;
+               if (args.length || kwargs_len) {
+                  progress_msg.push(args);
                   if (kwargs_len) {
-                     reply.push(res.kwargs);
+                     progress_msg.push(kwargs);
                   }
                }
-            } else {
-               reply.push([res]);
+               self._send_wamp(progress_msg);
             }
+         };
 
-            // send WAMP message
-            //
-            self._send_wamp(reply);
+         var cd = new CallDetails(details.caller, progress);
 
-         } catch (e) {
-            console.log("Exception raised in procedure endpoint", e);
-         }
+         when_fn.call(fun, args, kwargs, cd).then(
+
+            function (res) {
+               // construct YIELD message
+               //
+               var reply = [MSG_TYPE.YIELD, request];
+               if (false) {
+                  //msg.push(options); // FIXME
+               } else {
+                  reply.push({});
+               }
+
+               if (res instanceof Result) {
+                  var kwargs_len = Object.keys(res.kwargs).length;
+                  if (res.args.length || kwargs_len) {
+                     reply.push(res.args);
+                     if (kwargs_len) {
+                        reply.push(res.kwargs);
+                     }
+                  }
+               } else {
+                  reply.push([res]);
+               }
+
+               // send WAMP message
+               //
+               self._send_wamp(reply);
+            },
+
+            function (err) {
+               // construct ERROR message
+               // [ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]
+               var reply = [MSG_TYPE.ERROR, MSG_TYPE.INVOCATION, request, {}, "wamp.error"];
+
+               // send WAMP message
+               //
+               self._send_wamp(reply);
+            }
+         );
 
       } else {
          self._protocol_violation("INVOCATION received for non-registered registration ID " + request);
@@ -1134,7 +1181,7 @@ exports.Subscription = Subscription;
 exports.Registration = Registration;
 exports.Publication = Publication;
 
-},{"./websocket.js":5,"when":6}],5:[function(_dereq_,module,exports){
+},{"./websocket.js":5,"when":7,"when/function":6}],5:[function(_dereq_,module,exports){
 (function (global){///////////////////////////////////////////////////////////////////////////////
 //
 //  AutobahnJS - http://autobahn.ws, http://wamp.ws
@@ -1323,7 +1370,221 @@ _WebSocket.prototype.create = function () {
 
 exports.WebSocket = _WebSocket;
 }).call(this,typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"ws":7}],6:[function(_dereq_,module,exports){
+},{"ws":8}],6:[function(_dereq_,module,exports){
+/** @license MIT License (c) copyright 2013 original author or authors */
+
+/**
+ * function.js
+ *
+ * Collection of helper functions for wrapping and executing 'traditional'
+ * synchronous functions in a promise interface.
+ *
+ * @author brian@hovercraftstudios.com
+ * @contributor renato.riccieri@gmail.com
+ */
+
+(function(define) {
+define(function(_dereq_) {
+
+	var when, slice;
+
+	when = _dereq_('./when');
+	slice = [].slice;
+
+	return {
+		apply: apply,
+		call: call,
+		lift: lift,
+		bind: lift, // DEPRECATED alias for lift
+		compose: compose
+	};
+
+	/**
+	 * Takes a function and an optional array of arguments (that might be promises),
+	 * and calls the function. The return value is a promise whose resolution
+	 * depends on the value returned by the function.
+	 *
+	 * @example
+	 *    function onlySmallNumbers(n) {
+	 *		if(n < 10) {
+	 *			return n + 10;
+	 *		} else {
+	 *			throw new Error("Calculation failed");
+	 *		}
+	 *	}
+	 *
+	 * // Logs '15'
+	 * func.apply(onlySmallNumbers, [5]).then(console.log, console.error);
+	 *
+	 * // Logs 'Calculation failed'
+	 * func.apply(onlySmallNumbers, [15]).then(console.log, console.error);
+	 *
+	 * @param {function} func function to be called
+	 * @param {Array} [args] array of arguments to func
+	 * @returns {Promise} promise for the return value of func
+	 */
+	function apply(func, promisedArgs) {
+		return _apply(func, this, promisedArgs);
+	}
+
+	/**
+	 * Apply helper that allows specifying thisArg
+	 * @private
+	 */
+	function _apply(func, thisArg, promisedArgs) {
+		return when.all(promisedArgs || [], function(args) {
+			return func.apply(thisArg, args);
+		});
+	}
+	/**
+	 * Has the same behavior that {@link apply} has, with the difference that the
+	 * arguments to the function are provided individually, while {@link apply} accepts
+	 * a single array.
+	 *
+	 * @example
+	 *    function sumSmallNumbers(x, y) {
+	 *		var result = x + y;
+	 *		if(result < 10) {
+	 *			return result;
+	 *		} else {
+	 *			throw new Error("Calculation failed");
+	 *		}
+	 *	}
+	 *
+	 * // Logs '5'
+	 * func.apply(sumSmallNumbers, 2, 3).then(console.log, console.error);
+	 *
+	 * // Logs 'Calculation failed'
+	 * func.apply(sumSmallNumbers, 5, 10).then(console.log, console.error);
+	 *
+	 * @param {function} func function to be called
+	 * @param {...*} [args] arguments that will be forwarded to the function
+	 * @returns {Promise} promise for the return value of func
+	 */
+	function call(func /*, args... */) {
+		return _apply(func, this, slice.call(arguments, 1));
+	}
+
+	/**
+	 * Takes a 'regular' function and returns a version of that function that
+	 * returns a promise instead of a plain value, and handles thrown errors by
+	 * returning a rejected promise. Also accepts a list of arguments to be
+	 * prepended to the new function, as does Function.prototype.bind.
+	 *
+	 * The resulting function is promise-aware, in the sense that it accepts
+	 * promise arguments, and waits for their resolution.
+	 *
+	 * @example
+	 *    function mayThrowError(n) {
+	 *		if(n % 2 === 1) { // Normally this wouldn't be so deterministic :)
+	 *			throw new Error("I don't like odd numbers");
+	 *		} else {
+	 *			return n;
+	 *		}
+	 *	}
+	 *
+	 *    var lifted = fn.lift(mayThrowError);
+	 *
+	 *    // Logs "I don't like odd numbers"
+	 *    lifted(1).then(console.log, console.error);
+	 *
+	 *    // Logs '6'
+	 *    lifted(6).then(console.log, console.error);
+	 *
+	 * @example
+	 *    function sumTwoNumbers(x, y) {
+	 *		return x + y;
+	 *	}
+	 *
+	 *    var sumWithFive = fn.lifted(sumTwoNumbers, 5);
+	 *
+	 *    // Logs '15'
+	 *    sumWithFive(10).then(console.log, console.error);
+	 *
+	 *    @param {Function} func function to be bound
+	 *    @param {...*} [args] arguments to be prepended for the new function
+	 *    @returns {Function} a promise-returning function
+	 */
+	function lift(func /*, args... */) {
+		var args = slice.call(arguments, 1);
+		return function() {
+			return _apply(func, this, args.concat(slice.call(arguments)));
+		};
+	}
+
+	/**
+	 * Composes multiple functions by piping their return values. It is
+	 * transparent to whether the functions return 'regular' values or promises:
+	 * the piped argument is always a resolved value. If one of the functions
+	 * throws or returns a rejected promise, the composed promise will be also
+	 * rejected.
+	 *
+	 * The arguments (or promises to arguments) given to the returned function (if
+	 * any), are passed directly to the first function on the 'pipeline'.
+	 *
+	 * @example
+	 *    function getHowMuchWeWillDestroy(parameter) {
+	 *		// Makes some calculations to find out which items the modification the user
+	 *		// wants will destroy. Returns a number
+	 *	}
+	 *
+	 *    function getUserConfirmation(itemsCount) {
+	 *		// Return a resolved promise if the user confirms the destruction,
+	 *		// and rejects it otherwise
+	 *	}
+	 *
+	 *    function saveModifications() {
+	 *		// Makes ajax to save modifications on the server, returning a
+	 *		// promise.
+	 *	}
+	 *
+	 *    function showNotification() {
+	 *		// Notifies that the modification was successful
+	 *	}
+	 *
+	 *    // Composes the whole process into one function that returns a promise
+	 *    var wholeProcess = func.compose(getHowMuchWeWillDestroy,
+	 *                                   getUserConfirmation,
+	 *                                   saveModifications,
+	 *                                   showNotification);
+	 *
+	 *    // Which is equivalent to
+	 *    var wholeProcess = function(parameter) {
+	 *		return fn.call(getHowMuchWeWillDestroy, parameter)
+	 *			.then(getUserConfirmation)
+	 *			.then(saveModifications)
+	 *			.then(showNotification);
+	 *	}
+	 *
+	 * @param {Function} f the function to which the arguments will be passed
+	 * @param {...Function} [funcs] functions that will be composed, in order
+	 * @returns {Function} a promise-returning composition of the functions
+	 */
+	function compose(f /*, funcs... */) {
+		var funcs = slice.call(arguments, 1);
+
+		return function() {
+			var thisArg, args, firstPromise;
+
+			thisArg = this;
+			args = slice.call(arguments);
+			firstPromise = _apply(f, thisArg, args);
+
+			return when.reduce(funcs, function(arg, func) {
+				return func.call(thisArg, arg);
+			}, firstPromise);
+		};
+	}
+});
+
+})(
+	typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(_dereq_); }
+	// Boilerplate for AMD and Node
+);
+
+
+
+},{"./when":7}],7:[function(_dereq_,module,exports){
 (function (process){/** @license MIT License (c) copyright 2011-2013 original author or authors */
 
 /**
@@ -2261,7 +2522,7 @@ define(function (_dereq_) {
 });
 })(typeof define === 'function' && define.amd ? define : function (factory) { module.exports = factory(_dereq_); });
 }).call(this,_dereq_("c:\\Users\\oberstet\\AppData\\Roaming\\npm\\node_modules\\browserify\\node_modules\\insert-module-globals\\node_modules\\process\\browser.js"))
-},{"c:\\Users\\oberstet\\AppData\\Roaming\\npm\\node_modules\\browserify\\node_modules\\insert-module-globals\\node_modules\\process\\browser.js":1}],7:[function(_dereq_,module,exports){
+},{"c:\\Users\\oberstet\\AppData\\Roaming\\npm\\node_modules\\browserify\\node_modules\\insert-module-globals\\node_modules\\process\\browser.js":1}],8:[function(_dereq_,module,exports){
 
 /**
  * Module dependencies.
