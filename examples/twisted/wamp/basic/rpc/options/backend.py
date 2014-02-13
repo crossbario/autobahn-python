@@ -46,7 +46,7 @@ class Component(ApplicationSession):
                options = PublishOptions(exclude = [details.caller])
             else:
                options = None
-               self.publish('com.myapp.square_on_nonpositive', val, options = options)
+            self.publish('com.myapp.square_on_nonpositive', val, options = options)
          return val * val
 
       self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
