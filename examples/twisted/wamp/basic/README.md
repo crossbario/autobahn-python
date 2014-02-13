@@ -24,11 +24,11 @@ The application components of the demos are separate from the example applicatio
 
 Run the example application router on a WebSocket transport server and start a demo "backend" application component inside the router:
 
-	python server.py --component "rpc.timeservice.TimeServiceBackend"
+	python server.py --component "rpc.timeservice.backend.Component"
 
 Run the demo "frontend" application component over a WebSocket transport client:
 
-	python client.py --component "rpc.timeservice.TimeServiceFrontend"
+	python client.py --component "rpc.timeservice.frontend.Component"
 
 
 ### Application backend component in client
@@ -39,11 +39,11 @@ Run the example application router on a WebSocket transport server:
 
 Run the demo "backend" application component over a WebSocket transport client:
 
-	python client.py --component "rpc.timeservice.TimeServiceBackend"
+	python client.py --component "rpc.timeservice.backend.Component"
 
 Run the demo "frontend" application component over a WebSocket transport client:
 
-	python client.py --component "rpc.timeservice.TimeServiceFrontend"
+	python client.py --component "rpc.timeservice.frontend.Component"
 
 
 ## Available Demos
@@ -54,43 +54,50 @@ Run the demo "frontend" application component over a WebSocket transport client:
 
 A trivial time service - demonstrates basic remote procedure feature.
 
- * `rpc.timeservice.TimeServiceBackend`
- * `rpc.timeservice.TimeServiceFrontend`
+ * `rpc.timeservice.backend.Component`
+ * `rpc.timeservice.frontend.Component`
 
-#### Procedure Arguments
+#### Slow Square
+
+Demonstrates procedures which return promises and return asynchronously.
+
+ * `rpc.slowsquare.backend.Component`
+ * `rpc.slowsquare.frontend.Component`
+
+#### Arguments
 
 Demonstrates all variants of call arguments.
 
- * `rpc.arguments.ArgumentsBackend`
- * `rpc.arguments.ArgumentsFrontend`
+ * `rpc.arguments.backend.Component`
+ * `rpc.arguments.frontend.Component`
 
-#### Complex Results
+#### Complex Result
 
 Demonstrates complex call results (call results with more than one positional or keyword results).
 
- * `rpc.complex.ComplexBackend`
- * `rpc.complex.ComplexFrontend` 
+ * `rpc.complex.backend.Component`
+ * `rpc.complex.frontend.Component` 
 
-#### Handling Errors
+#### Errors
 
 Demonstrates error raising and catching over remote procedures.
 
- * `rpc.errors.ErrorsTestBackend`
- * `rpc.errors.ErrorsTestFrontend` 
+ * `rpc.errors.backend.Component`
+ * `rpc.errors.frontend.Component` 
 
 #### Progressive Results
 
 Demonstrates calling remote procedures that produce progressive results.
 
- * `rpc.progress.ProgressiveBackend`
- * `rpc.progress.ProgressiveFrontend` 
+ * `rpc.progress.backend.Component`
+ * `rpc.progress.frontend.Component` 
 
-#### RPC Options
+#### Options
 
 Using options with RPC.
 
- * `rpc.rpcoptions.RpcOptionsBackend`
- * `rpc.rpcoptions.RpcOptionsFrontend` 
+ * `rpc.options.backend.Component`
+ * `rpc.options.backend.Component` 
 
 
 ### Publish & Subscribe
@@ -99,39 +106,39 @@ Using options with RPC.
 
 Demonstrates basic publish and subscribe.
 
- * `pubsub.pubsub.PubSubTestBackend`
- * `pubsub.pubsub.PubSubTestFrontend`
+ * `pubsub.basic.backend.Component`
+ * `pubsub.basic.frontend.Component`
 
 #### Complex Events
 
 Demonstrates publish and subscribe with complex events.
 
- * `pubsub.complex.ComplexEventTestBackend`
- * `pubsub.complex.ComplexEventTestFrontend`
+ * `pubsub.complex.backend.Component`
+ * `pubsub.complex.frontend.Component`
 
-#### PubSub Options
+#### Options
 
 Using options with PubSub.
 
- * `pubsub.pubsuboptions.PubSubOptionsTestBackend`
- * `pubsub.pubsuboptions.PubSubOptionsTestFrontend`
+ * `pubsub.options.backend.Component`
+ * `pubsub.options.frontend.Component`
 
 #### Unsubscribing
 
 Shows how to unsubscribe.
 
- * `pubsub.unsubscribe.UnsubscribeTestBackend`
- * `pubsub.unsubscribe.UnsubscribeTestFrontend`
+ * `pubsub.unsubscribe.backend.Component`
+ * `pubsub.unsubscribe.frontend.Component`
 
 
 ### Session
 
-#### Series of Sessions
+#### Session Series
 
 Demonstrates how multiple sessions can exist during the lifetime of the underlying transport.
 
- * `session.series.SeriesTestBackend`
- * `session.series.SeriesTestFrontend`
+ * `session.series.backend.Component`
+ * `session.series.frontend.Component`
 
 
 ## AutobahnJS-based Demos
@@ -140,7 +147,7 @@ In addition, the demo front- and backends are available as AutobahnJS-based vers
 
 For example, run the example application router on a WebSocket transport server and start a demo "backend" application component inside the router:
 
-	python server.py --component "rpc.timeservice.TimeServiceBackend"
+	python server.py --component "rpc.timeservice.backend.Component"
 
 Then, open the JavaScript frontend in a browser:
 
