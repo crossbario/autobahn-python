@@ -912,7 +912,8 @@ class RouterApplicationSession:
            isinstance(msg, message.Subscribed) or \
            isinstance(msg, message.Unsubscribed) or \
            isinstance(msg, message.Registered) or \
-           isinstance(msg, message.Unregistered):
+           isinstance(msg, message.Unregistered) or \
+          (isinstance(msg, message.Error) and msg.request_type == message.Call.MESSAGE_TYPE):
 
          ## deliver message to app session
          ##
