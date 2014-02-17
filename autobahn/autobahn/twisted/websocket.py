@@ -53,12 +53,17 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
    def connectionMade(self):
       ## the peer we are connected to
-      peer = self.transport.getPeer()
       try:
-         self.peer = "%s:%d" % (peer.host, peer.port)
+         peer = self.transport.getPeer()
       except:
-         ## eg Unix Domain sockets don't have host/port
-         self.peer = str(peer)
+         ## ProcessProtocols lack getPeer()
+         self.peer = "?"
+      else:
+         try:
+            self.peer = "%s:%d" % (peer.host, peer.port)
+         except:
+            ## eg Unix Domain sockets don't have host/port
+            self.peer = str(peer)
 
       self._connectionMade()
 
@@ -79,7 +84,8 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
 
    def _closeConnection(self, abort = False):
-      if abort:
+      if abort and hasattr(self.transport, 'abortConnection'):
+         ## ProcessProtocol lacks abortConnection()
          self.transport.abortConnection()
       else:
          self.transport.loseConnection()
