@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2012-2013 Tavendo GmbH
+##  Copyright (C) 2012-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -166,7 +166,7 @@ class WebSocketResource(object):
       ## which we will do a 2nd time), but it's totally non-invasive to our
       ## code. Maybe improve this.
       ##
-      data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.path)
+      data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.uri)
       for h in request.requestHeaders.getAllRawHeaders():
          data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
       data += "\x0d\x0a"
