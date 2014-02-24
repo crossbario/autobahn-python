@@ -23,7 +23,7 @@ from zope.interface import implementer
 from autobahn import util
 from autobahn.wamp import role
 from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.exception import ProtocolError, ApplicationError
 from autobahn.wamp.interfaces import IDealer
 
 from autobahn.wamp.message import _URI_PAT_STRICT
