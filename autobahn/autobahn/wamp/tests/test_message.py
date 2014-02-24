@@ -788,22 +788,22 @@ class TestGoodbyeMessage(unittest.TestCase):
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], message.Goodbye.DEFAULT_REASON)
-      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[1], {})
+      self.assertEqual(msg[2], message.Goodbye.DEFAULT_REASON)
 
       e = message.Goodbye(reason = reason)
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], reason)
-      self.assertEqual(msg[2], {})
+      self.assertEqual(msg[1], {})
+      self.assertEqual(msg[2], reason)
 
       e = message.Goodbye(reason = reason, message = reason_msg)
       msg = e.marshal()
       self.assertEqual(len(msg), 3)
       self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
-      self.assertEqual(msg[1], reason)
-      self.assertEqual(msg[2], {'message': reason_msg})
+      self.assertEqual(msg[1], {'message': reason_msg})
+      self.assertEqual(msg[2], reason)
 
 
    def test_parse_and_marshal(self):
@@ -816,17 +816,17 @@ class TestGoodbyeMessage(unittest.TestCase):
       wmsg = [message.Goodbye.MESSAGE_TYPE, reason]
       self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {'message': 100}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': 100}, reason]
       self.assertRaises(ProtocolError, message.Goodbye.parse, wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {}, reason]
       msg = message.Goodbye.parse(wmsg)
       self.assertIsInstance(msg, message.Goodbye)
       self.assertEqual(msg.reason, reason)
       self.assertEqual(msg.message, None)
       self.assertEqual(msg.marshal(), wmsg)
 
-      wmsg = [message.Goodbye.MESSAGE_TYPE, reason, {'message': reason_msg}]
+      wmsg = [message.Goodbye.MESSAGE_TYPE, {'message': reason_msg}, reason]
       msg = message.Goodbye.parse(wmsg)
       self.assertIsInstance(msg, message.Goodbye)
       self.assertEqual(msg.reason, reason)
