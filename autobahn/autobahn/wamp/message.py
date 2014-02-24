@@ -961,11 +961,11 @@ class Publish(Message):
 
          acknowledge = option_acknowledge
 
-      if options.has_key('excludeme'):
+      if options.has_key('exclude_me'):
 
-         option_excludeMe = options['excludeme']
+         option_excludeMe = options['exclude_me']
          if type(option_excludeMe) != bool:
-            raise ProtocolError("invalid type {} for 'excludeme' option in PUBLISH".format(type(option_excludeMe)))
+            raise ProtocolError("invalid type {} for 'exclude_me' option in PUBLISH".format(type(option_excludeMe)))
 
          excludeMe = option_excludeMe
 
@@ -993,11 +993,11 @@ class Publish(Message):
 
          eligible = option_eligible
 
-      if options.has_key('discloseme'):
+      if options.has_key('disclose_me'):
 
-         option_discloseMe = options['discloseme']
+         option_discloseMe = options['disclose_me']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'discloseme' option in PUBLISH".format(type(option_discloseMe)))
+            raise ProtocolError("invalid type {} for 'disclose_me' option in PUBLISH".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1023,13 +1023,13 @@ class Publish(Message):
       if self.acknowledge is not None:
          options['acknowledge'] = self.acknowledge
       if self.excludeMe is not None:
-         options['excludeme'] = self.excludeMe
+         options['exclude_me'] = self.excludeMe
       if self.exclude is not None:
          options['exclude'] = self.exclude
       if self.eligible is not None:
          options['eligible'] = self.eligible
       if self.discloseMe is not None:
-         options['discloseme'] = self.discloseMe
+         options['disclose_me'] = self.discloseMe
 
       if self.kwargs:
          return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args, self.kwargs]
@@ -1630,11 +1630,11 @@ class Call(Message):
          receive_progress = option_receive_progress
 
       discloseMe = None
-      if options.has_key('discloseme'):
+      if options.has_key('disclose_me'):
 
-         option_discloseMe = options['discloseme']
+         option_discloseMe = options['disclose_me']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'discloseme' option in CALL".format(type(option_discloseMe)))
+            raise ProtocolError("invalid type {} for 'disclose_me' option in CALL".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1662,7 +1662,7 @@ class Call(Message):
          options['receive_progress'] = self.receive_progress
 
       if self.discloseMe is not None:
-         options['discloseme'] = self.discloseMe
+         options['disclose_me'] = self.discloseMe
 
       if self.kwargs:
          return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]

@@ -199,7 +199,7 @@ class TestPublishMessage(unittest.TestCase):
       self.assertEqual(len(msg), 4)
       self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
       self.assertEqual(msg[1], 123456)
-      self.assertEqual(msg[2], {'excludeme': False, 'discloseme': True, 'exclude': [300], 'eligible': [100, 200, 300]})
+      self.assertEqual(msg[2], {'exclude_me': False, 'disclose_me': True, 'exclude': [300], 'eligible': [100, 200, 300]})
       self.assertEqual(msg[3], 'com.myapp.topic1')
 
 
@@ -230,7 +230,7 @@ class TestPublishMessage(unittest.TestCase):
       self.assertEqual(msg.discloseMe, None)
       self.assertEqual(msg.marshal(), wmsg)
 
-      wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'excludeme': False, 'discloseme': True, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
+      wmsg = [message.Publish.MESSAGE_TYPE, 123456, {'exclude_me': False, 'disclose_me': True, 'exclude': [300], 'eligible': [100, 200, 300]}, 'com.myapp.topic1']
       msg = message.Publish.parse(wmsg)
       self.assertIsInstance(msg, message.Publish)
       self.assertEqual(msg.request, 123456)
