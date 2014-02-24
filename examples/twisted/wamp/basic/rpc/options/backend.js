@@ -27,7 +27,7 @@ connection.onopen = function (session) {
       return args[0] * args[0]
    }
 
-   session.register(square, 'com.myapp.square').then(
+   session.register('com.myapp.square', square).then(
       function (registration) {
          console.log("Procedure registered:", registration.id);
       },

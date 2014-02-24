@@ -17,7 +17,7 @@ connection.onopen = function (session) {
       return new autobahn.Result([], {c: args[0] + args[2], ci: args[1] + args[3]});
    }
 
-   session.register(add_complex, 'com.myapp.add_complex').then(
+   session.register('com.myapp.add_complex', add_complex).then(
       function (registration) {
          console.log("Procedure registered:", registration.id);
       },
@@ -30,7 +30,7 @@ connection.onopen = function (session) {
       return new autobahn.Result(args[0].split(" "));
    }
 
-   session.register(split_name, 'com.myapp.split_name').then(
+   session.register('com.myapp.split_name', split_name).then(
       function (registration) {
          console.log("Procedure registered:", registration.id);
       },

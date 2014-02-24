@@ -41,11 +41,11 @@ connection.onopen = function (session) {
       return [args.length, Object.keys(kwargs).length];
    }
 
-   session.register(ping, 'com.arguments.ping')
-   session.register(add2, 'com.arguments.add2')
-   session.register(stars, 'com.arguments.stars')
-   session.register(orders, 'com.arguments.orders')
-   session.register(arglen, 'com.arguments.arglen')
+   session.register('com.arguments.ping', ping)
+   session.register('com.arguments.add2', add2)
+   session.register('com.arguments.stars', stars)
+   session.register('com.arguments.orders', orders)
+   session.register('com.arguments.arglen', arglen)
 };
 
 connection.open();

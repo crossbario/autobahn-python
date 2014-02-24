@@ -25,7 +25,7 @@ connection.onopen = function (session) {
       return res;
    }
 
-   session.register(sqrt, 'com.myapp.sqrt');
+   session.register('com.myapp.sqrt', sqrt);
 };
 
 connection.open();

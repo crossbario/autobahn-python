@@ -18,7 +18,7 @@ connection.onopen = function (session) {
       return now.toISOString();
    }
 
-   session.register(utcnow, 'com.timeservice.now').then(
+   session.register('com.timeservice.now', utcnow).then(
       function (registration) {
          console.log("Procedure registered:", registration.id);
       },

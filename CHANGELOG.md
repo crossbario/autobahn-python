@@ -1,5 +1,9 @@
 # Autobahn|Python Changelog
 
+## v0.8.2
+ * compatibility with latest WAMP v2 spec ("RC-2, 2014/02/22")
+ * various smaller fixes
+
 ## v0.8.1
  * WAMP v2 basic router (broker + dealer) implementation
  * WAMP v2 example set

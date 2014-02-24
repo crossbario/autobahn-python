@@ -20,7 +20,7 @@ connection.onopen = function (session) {
       return x * x;
    }
 
-   session.register(square, 'com.math.square');
+   session.register('com.math.square', square);
 
 
    // simulates a "slow" function or a function that
@@ -39,7 +39,7 @@ connection.onopen = function (session) {
       return d.promise;
    }
 
-   session.register(slowsquare, 'com.math.slowsquare');
+   session.register('com.math.slowsquare', slowsquare);
 };
 
 connection.open();

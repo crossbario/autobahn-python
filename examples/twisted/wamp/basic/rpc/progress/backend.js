@@ -42,7 +42,7 @@ connection.onopen = function (session) {
       return d.promise;
    }
 
-   session.register(longop, 'com.myapp.longop');
+   session.register('com.myapp.longop', longop);
 };
 
 connection.open();
