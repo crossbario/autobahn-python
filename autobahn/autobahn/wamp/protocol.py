@@ -982,16 +982,9 @@ class RouterSession(BaseSession):
             if not self._router:
                raise Exception("no such realm")
 
-            roles = []
-
-            self._router.attach(self)
-
-            roles.append(role.RoleBrokerFeatures())
-            roles.append(role.RoleDealerFeatures())
-
+            roles = self._router.attach(self)
             msg = message.Welcome(self._session_id, roles)
             self._transport.send(msg)
-
 
             self.onJoin(SessionDetails(self._session_id))
          else:

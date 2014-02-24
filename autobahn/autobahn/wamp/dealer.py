@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from zope.interface import implementer
 
 from autobahn import util
+from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IDealer
@@ -60,6 +61,9 @@ class Dealer:
 
       ## check all procedure URIs with strict rules
       self._option_uri_strict = True
+
+      ## supported features from "WAMP Advanced Profile"
+      self._role_features = role.RoleDealerFeatures(caller_identification = True, progressive_call_results = True)
 
 
    def attach(self, session):

@@ -20,12 +20,12 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
+from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.broker import Broker
 from autobahn.wamp.dealer import Dealer
 from autobahn.wamp.interfaces import IRouter, IRouterFactory
-
 
 
 @implementer(IRouter)
@@ -51,6 +51,8 @@ class Router:
       self._broker.attach(session)
       self._dealer.attach(session)
       self._attached += 1
+
+      return [self._broker._role_features, self._dealer._role_features]
 
 
    def detach(self, session):

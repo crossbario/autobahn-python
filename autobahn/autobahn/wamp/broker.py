@@ -21,6 +21,7 @@ from __future__ import absolute_import
 from zope.interface import implementer
 
 from autobahn import util
+from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.interfaces import IBroker
@@ -59,6 +60,9 @@ class Broker:
 
       ## check all topic URIs with strict rules
       self._option_uri_strict = True
+
+      ## supported features from "WAMP Advanced Profile"
+      self._role_features = role.RoleBrokerFeatures(publisher_identification = True, subscriber_blackwhite_listing = True, publisher_exclusion = True)
 
 
    def attach(self, session):
