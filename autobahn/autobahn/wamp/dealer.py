@@ -25,6 +25,8 @@ from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IDealer
 
+from autobahn.wamp.message import _URI_PAT_STRICT
+
 
 
 @implementer(IDealer)
@@ -55,6 +57,9 @@ class Dealer:
 
       ## pending callee invocation requests
       self._invocations = {}
+
+      ## check all procedure URIs with strict rules
+      self._option_uri_strict = True
 
 
    def attach(self, session):
@@ -87,16 +92,24 @@ class Dealer:
       """
       assert(session in self._session_to_registrations)
 
-      if not register.procedure in self._procs_to_regs:
-         registration_id = util.id()
-         self._procs_to_regs[register.procedure] = (registration_id, session)
-         self._regs_to_procs[registration_id] = register.procedure
+      ## check topic URI
+      ##
+      if self._option_uri_strict and not _URI_PAT_STRICT.match(register.procedure):
 
-         self._session_to_registrations[session].add(registration_id)
+         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI)
 
-         reply = message.Registered(register.request, registration_id)
       else:
-         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, 'wamp.error.procedure_already_exists')
+
+         if not register.procedure in self._procs_to_regs:
+            registration_id = util.id()
+            self._procs_to_regs[register.procedure] = (registration_id, session)
+            self._regs_to_procs[registration_id] = register.procedure
+
+            self._session_to_registrations[session].add(registration_id)
+
+            reply = message.Registered(register.request, registration_id)
+         else:
+            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS)
 
       session._transport.send(reply)
 
@@ -115,7 +128,7 @@ class Dealer:
 
          reply = message.Unregistered(unregister.request)
       else:
-         reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, 'wamp.error.no_such_registration')
+         reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, ApplicationError.NO_SUCH_REGISTRATION)
 
       session._transport.send(reply)
 
@@ -126,29 +139,38 @@ class Dealer:
       """
       assert(session in self._session_to_registrations)
 
-      if call.procedure in self._procs_to_regs:
-         registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+      ## check topic URI
+      ##
+      if self._option_uri_strict and not _URI_PAT_STRICT.match(call.procedure):
 
-         request_id = util.id()
-
-         if call.discloseMe:
-            caller = session._session_id
-         else:
-            caller = None
-
-         invocation = message.Invocation(request_id,
-                                         registration_id,
-                                         args = call.args,
-                                         kwargs = call.kwargs,
-                                         timeout = call.timeout,
-                                         receive_progress = call.receive_progress,
-                                         caller = caller)
-
-         self._invocations[request_id] = (call, session)
-         endpoint_session._transport.send(invocation)
-      else:
-         reply = message.Error(message.Call.MESSAGE_TYPE, call.request, 'wamp.error.no_such_procedure')
+         reply = message.Error(message.Register.MESSAGE_TYPE, call.request, ApplicationError.INVALID_URI)
          session._transport.send(reply)
+
+      else:
+
+         if call.procedure in self._procs_to_regs:
+            registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+
+            request_id = util.id()
+
+            if call.discloseMe:
+               caller = session._session_id
+            else:
+               caller = None
+
+            invocation = message.Invocation(request_id,
+                                            registration_id,
+                                            args = call.args,
+                                            kwargs = call.kwargs,
+                                            timeout = call.timeout,
+                                            receive_progress = call.receive_progress,
+                                            caller = caller)
+
+            self._invocations[request_id] = (call, session)
+            endpoint_session._transport.send(invocation)
+         else:
+            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE)
+            session._transport.send(reply)
 
 
    def processCancel(self, session, cancel):

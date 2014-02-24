@@ -44,6 +44,8 @@ __all__ = ['Error',
            'Heartbeat']
 
 
+import re
+
 from zope.interface import implementer
 
 import autobahn
@@ -52,11 +54,17 @@ from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IMessage
 
 
+## strict
+_URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,}|\.)$")
+
+## loose
+_URI_PAT_LOOSE = re.compile(r"^([^\s\.#]*\.)*[^\s\.#]*$")
+
 
 def check_or_raise_uri(value, message):
    if type(value) not in [str, unicode]:
       raise ProtocolError("{}: invalid type {} for URI".format(message, type(value)))
-   if len(value) == 0:
+   if not _URI_PAT_LOOSE.match(value):
       raise ProtocolError("{}: invalid value '{}' for URI".format(message, value))
    return value
 

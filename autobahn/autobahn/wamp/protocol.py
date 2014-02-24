@@ -890,14 +890,15 @@ class RouterApplicationSession:
       ## app-to-router
       ##
       elif isinstance(msg, message.Publish) or \
-         isinstance(msg, message.Subscribe) or \
-         isinstance(msg, message.Unsubscribe) or \
-         isinstance(msg, message.Call) or \
-         isinstance(msg, message.Yield) or \
-         isinstance(msg, message.Register) or \
-         isinstance(msg, message.Unregister) or \
-         isinstance(msg, message.Cancel) or \
-         (isinstance(msg, message.Error) and msg.request_type == message.Invocation.MESSAGE_TYPE):
+           isinstance(msg, message.Subscribe) or \
+           isinstance(msg, message.Unsubscribe) or \
+           isinstance(msg, message.Call) or \
+           isinstance(msg, message.Yield) or \
+           isinstance(msg, message.Register) or \
+           isinstance(msg, message.Unregister) or \
+           isinstance(msg, message.Cancel) or \
+          (isinstance(msg, message.Error) and
+               msg.request_type == message.Invocation.MESSAGE_TYPE):
 
          ## deliver message to router
          ##
@@ -913,7 +914,14 @@ class RouterApplicationSession:
            isinstance(msg, message.Unsubscribed) or \
            isinstance(msg, message.Registered) or \
            isinstance(msg, message.Unregistered) or \
-          (isinstance(msg, message.Error) and msg.request_type == message.Call.MESSAGE_TYPE):
+          (isinstance(msg, message.Error) and (
+               msg.request_type == message.Call.MESSAGE_TYPE or
+               msg.request_type == message.Cancel.MESSAGE_TYPE or
+               msg.request_type == message.Register.MESSAGE_TYPE or
+               msg.request_type == message.Unregister.MESSAGE_TYPE or
+               msg.request_type == message.Publish.MESSAGE_TYPE or
+               msg.request_type == message.Subscribe.MESSAGE_TYPE or
+               msg.request_type == message.Unsubscribe.MESSAGE_TYPE)):
 
          ## deliver message to app session
          ##
@@ -922,7 +930,7 @@ class RouterApplicationSession:
       else:
          ## should not arrive here
          ##
-         raise Exception("WampRouterAppSession.send: unhandled message {}".format(msg))
+         raise Exception("RouterApplicationSession.send: unhandled message {}".format(msg))
 
 
 

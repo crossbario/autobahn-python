@@ -26,6 +26,8 @@ __all__= ['WampServerProtocol',
 
 from zope.interface import implementer
 
+from twisted.python import log
+
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
@@ -40,21 +42,25 @@ class WampWebSocketProtocol:
    Base class for WAMP-over-WebSocket transport mixins.
    """
 
+   def _bailout(self, code, reason):
+      if self.debug:
+         log.msg("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
+      self.failConnection(code, reason)
+
+
    def onOpen(self):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
       """
-      ## WebSocket connection established - now let the
-      ## user WAMP session factory create a new WAMP session ..
-      self._session = self.factory._factory()
-
-      ## and fire off WAMP session open callback
+      ## WebSocket connection established. Now let the user WAMP session factory
+      ## create a new WAMP session and fire off session open callback.
       try:
+         self._session = self.factory._factory()
          self._session.onOpen(self)
       except Exception as e:
          ## Exceptions raised in onOpen are fatal ..
          reason = "WAMP Internal Error ({})".format(e)
-         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
+         self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
 
    def onClose(self, wasClean, code, reason):
@@ -64,7 +70,8 @@ class WampWebSocketProtocol:
       ## WebSocket connection lost - fire off the WAMP
       ## session close callback
       try:
-#         print("WebSocket Transport lost ({}, {}, {})".format(wasClean, code, reason))
+         if self.debug:
+            log.msg("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
@@ -82,11 +89,11 @@ class WampWebSocketProtocol:
 
       except ProtocolError as e:
          reason = "WAMP Protocol Error ({})".format(e)
-         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason = reason)
+         self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason = reason)
 
       except Exception as e:
          reason = "WAMP Internal Error ({})".format(e)
-         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
+         self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
 
    def send(self, msg):
@@ -127,7 +134,7 @@ class WampWebSocketProtocol:
       Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
       """
       if self.isOpen():
-         self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY)
+         self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY)
       else:
          raise TransportLost()
 

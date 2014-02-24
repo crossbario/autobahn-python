@@ -25,6 +25,8 @@ from autobahn.wamp import message
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.interfaces import IBroker
 
+from autobahn.wamp.message import _URI_PAT_STRICT
+
 
 
 @implementer(IBroker)
@@ -54,6 +56,9 @@ class Broker:
       ## map: subscription -> (topic, set(session))
       ## needed for UNSUBSCRIBE
       self._subscription_to_sessions = {}
+
+      ## check all topic URIs with strict rules
+      self._option_uri_strict = True
 
 
    def attach(self, session):
@@ -91,6 +96,17 @@ class Broker:
       Implements :func:`autobahn.wamp.interfaces.IBroker.processPublish`
       """
       assert(session in self._session_to_subscriptions)
+
+      ## check topic URI
+      ##
+      if self._option_uri_strict and not _URI_PAT_STRICT.match(publish.topic):
+
+         if publish.acknowledge:
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_URI)
+            session._transport.send(reply)
+
+         return
+
 
       if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
 
@@ -156,7 +172,13 @@ class Broker:
       """
       assert(session in self._session_to_subscriptions)
 
-      if True:
+      ## check topic URI
+      ##
+      if self._option_uri_strict and not _URI_PAT_STRICT.match(subscribe.topic):
+
+         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_URI)
+
+      else:
 
          if not subscribe.topic in self._topic_to_sessions:
             subscription = util.id()
@@ -178,9 +200,6 @@ class Broker:
             self._session_to_subscriptions[session].add(subscription)
 
          reply = message.Subscribed(subscribe.request, subscription)
-
-      else:
-         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_TOPIC)
 
       session._transport.send(reply)
 
