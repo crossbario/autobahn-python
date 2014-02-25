@@ -1,5 +1,8 @@
 # Autobahn|Python Changelog
 
+## v0.8.3
+ * fix bug with closing router app sessions
+
 ## v0.8.2
  * compatibility with latest WAMP v2 spec ("RC-2, 2014/02/22")
  * various smaller fixes
