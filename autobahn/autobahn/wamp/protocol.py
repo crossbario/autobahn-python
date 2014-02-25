@@ -868,6 +868,26 @@ class RouterApplicationSession:
       self._session.onConnect()
 
 
+   def isOpen(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
+      """
+
+
+   def close(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.close`
+      """
+      if self._router:
+         self._router.detach(self._session)
+
+
+   def abort(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
+      """
+
+
    def send(self, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransport.send`
@@ -1079,7 +1099,7 @@ class RouterSessionFactory:
       Constructor.
       """
       self._routerFactory = routerFactory
-      self._app_sessions = []
+      self._app_sessions = {}
 
 
    def add(self, session):
@@ -1090,7 +1110,17 @@ class RouterSessionFactory:
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
       #router = self._routerFactory.get(session.realm)
-      self._app_sessions.append(RouterApplicationSession(session, self._routerFactory))
+      self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory)
+
+
+   def remove(self, session):
+      """
+      Removes a WAMP application session running directly in this router.
+      """
+      if session in self._app_sessions:
+         self._app_sessions[session]._session.disconnect()
+         del self._app_sessions[session]
+
 
 
    def __call__(self):
