@@ -33,8 +33,13 @@ class Component(ApplicationSession):
    and with complex payloads every second.
    """
 
+   def __init__(self, realm = "realm1"):
+      ApplicationSession.__init__(self)
+      self._realm = realm
+
+
    def onConnect(self):
-      self.join("realm1")
+      self.join(self._realm)
 
 
    @inlineCallbacks
