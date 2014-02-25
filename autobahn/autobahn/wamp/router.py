@@ -20,6 +20,8 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
+from twisted.python import log
+
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
@@ -114,8 +116,9 @@ class RouterFactory:
    This class implements :class:`autobahn.wamp.interfaces.IRouterFactory`.
    """
 
-   def __init__(self):
+   def __init__(self, debug = False):
       self._routers = {}
+      self.debug = debug
 
 
    def get(self, realm):
@@ -124,11 +127,13 @@ class RouterFactory:
       """
       if not realm in self._routers:
          self._routers[realm] = Router(self, realm)
-         print("Router created for realm '{}'".format(realm))
+         if self.debug:
+            log.msg("Router created for realm '{}'".format(realm))
       return self._routers[realm]
 
 
    def onLastDetach(self, router):
       assert(router.realm in self._routers)
       del self._routers[router.realm]
-      print("Router destroyed for realm '{}'".format(router.realm))
+      if self.debug:
+         log.msg("Router destroyed for realm '{}'".format(router.realm))
