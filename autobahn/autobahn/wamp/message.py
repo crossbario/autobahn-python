@@ -56,10 +56,11 @@ from autobahn.wamp.interfaces import IMessage
 
 
 ## strict URI check
-_URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,}|\.)$")
+_URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,})?$")
 
 ## loose URI check
-_URI_PAT_LOOSE = re.compile(r"^([^\s\.#]*\.)*[^\s\.#]*$")
+_URI_PAT_LOOSE = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
+
 
 
 
