@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
+from twisted.python import log
 from twisted.internet.defer import Deferred, maybeDeferred
 
 from autobahn.wamp.interfaces import ISession, \
@@ -124,6 +125,7 @@ class BaseSession:
    """
 
    def __init__(self):
+      self.debug = False
       self._ecls_to_uri_pat = {}
       self._uri_to_ecls = {}
 
@@ -378,7 +380,7 @@ class ApplicationSession(BaseSession):
                      else:
                         handler.fn()
                except Exception as e:
-                  print("Exception raised in event handler: {}".format(e))
+                  log.msg("Exception raised in event handler: {}".format(e))
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
@@ -439,7 +441,8 @@ class ApplicationSession(BaseSession):
                               opts.onProgress()
                      except Exception as e:
                         ## silently drop exceptions raised in progressive results handlers
-                        print e
+                        if self.debug:
+                           log.msg("Exception raised in progressive results handler: {}".format(e))
                   else:
                      ## silently ignore progressive results
                      pass
@@ -538,7 +541,8 @@ class ApplicationSession(BaseSession):
                try:
                   self._invocations[msg.request].cancel()
                except Exception as e:
-                  print "could not cancel"
+                  if self.debug:
+                     log.msg("could not cancel call {}".format(msg.request))
                finally:
                   del self._invocations[msg.request]
 
@@ -626,7 +630,8 @@ class ApplicationSession(BaseSession):
          try:
             self.onLeave(types.CloseDetails())
          except Exception as e:
-            print e
+            if self.debug:
+               log.msg("exception raised in onLeave callback: {}".format(e))
 
          self._session_id = None
 
@@ -1051,7 +1056,8 @@ class RouterSession(BaseSession):
          try:
             self.onLeave(types.CloseDetails())
          except Exception as e:
-            print e
+            if self.debug:
+               log.msg("exception raised in onLeave callback: {}".format(e))
 
          self._router.detach(self)
 
