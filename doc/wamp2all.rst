@@ -1,0 +1,165 @@
+WAMP v2
+=======
+
+Interfaces
+----------
+
+.. autointerface:: autobahn.wamp.interfaces.IObjectSerializer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IMessage
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ISerializer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ITransport
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ITransportHandler
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterBase
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouter
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IBroker
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IDealer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterFactory
+   :members:
+
+
+Errors
+------
+
+.. autoclass:: autobahn.wamp.exception.Error
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.SessionNotReady
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.ProtocolError
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.TransportLost
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.ApplicationError
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.NotAuthorized
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.InvalidTopic
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.CallError
+   :show-inheritance:
+   :members: __init__
+
+.. autoclass:: autobahn.wamp.exception.CanceledError
+   :show-inheritance:
+   :members: __init__
+
+
+Router
+------
+
+.. autoclass:: autobahn.wamp.broker.Broker
+   :show-inheritance:
+   :members: __init__,
+             attach,
+             detach,
+             processPublish,
+             processSubscribe,
+             processUnsubscribe
+
+.. autoclass:: autobahn.wamp.dealer.Dealer
+   :show-inheritance:
+   :members: __init__,
+             attach,
+             detach,
+             processRegister,
+             processUnregister,
+             processCall,
+             processCancel,
+             processYield,
+             processInvocationError
+
+
+Protocol
+--------
+
+.. autoclass:: autobahn.wamp.protocol.Publication
+   :show-inheritance:
+   :members: __init__
+
+
+.. autoclass:: autobahn.wamp.protocol.Subscription
+   :show-inheritance:
+   :members: __init__,
+             unsubscribe
+
+
+.. autoclass:: autobahn.wamp.protocol.Registration
+   :show-inheritance:
+   :members: __init__,
+             unregister
+
+
+.. autoclass:: autobahn.wamp.protocol.BaseSession
+   :show-inheritance:
+   :members: onConnect,
+             onJoin,
+             onLeave,
+             onDisconnect,
+             define
+
+
+.. autoclass:: autobahn.wamp.protocol.ApplicationSession
+   :show-inheritance:
+   :members: __init__,
+             join,
+             leave,
+             disconnect,
+             publish,
+             subscribe,
+             call,
+             register
+
+
+.. autoclass:: autobahn.wamp.protocol.ApplicationSessionFactory
+   :show-inheritance:
+   :members: __call__
+
+
+.. autoclass:: autobahn.wamp.protocol.RouterApplicationSession
+   :show-inheritance:
+   :members: __init__,
+             send
+
+
+.. autoclass:: autobahn.wamp.protocol.RouterSession
+   :show-inheritance:
+
+
+.. autoclass:: autobahn.wamp.protocol.RouterSessionFactory
+   :show-inheritance:
+   :members: __init__,
+             add,
+             remove,
+             __call__
+

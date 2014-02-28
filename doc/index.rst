@@ -8,6 +8,7 @@ Autobahn|Python Reference
    websockettoc
    wamp1toc
    wamp2
+   wamp2all
 
 
 * :ref:`genindex`

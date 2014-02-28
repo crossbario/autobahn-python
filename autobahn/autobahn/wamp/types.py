@@ -177,8 +177,7 @@ class CallDetails:
 
 class CallOptions:
    """
-   Used to provide options for subscribing in
-   :func:`autobahn.wamp.interfaces.ICaller.call`.
+   Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
    """
 
    def __init__(self,

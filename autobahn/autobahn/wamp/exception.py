@@ -126,16 +126,16 @@ class CallError(ApplicationError):
    Remote procedure call errors. 
    """
 
-   def __init__(self, errorUri, problem):
+   def __init__(self, error, problem):
       """
       Constructor.
 
-      :param errorUri: The URI of the error that occurred, e.g. "com.myapp.error.no_such_user".
-      :type errorUri: str
+      :param error: The URI of the error that occurred, e.g. "com.myapp.error.no_such_user".
+      :type error: str
       :param problem: Any application-level details for the error that occurred.
       :type problem: obj
       """
-      ApplicationError.__init__(self, errorUri)
+      ApplicationError.__init__(self, error)
       self.problem = problem
 
 

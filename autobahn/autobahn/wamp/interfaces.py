@@ -220,12 +220,12 @@ class ISession(Interface):
 
    def onConnect():
       """
-      Callback fired when transport has been established.
+      Callback fired when the transport this session will run over has been established.
       """
 
    def join(realm):
       """
-      Attach the session to the given realm.
+      Attach the session to the given realm. A session is open as soon as it is attached to a realm.
       """
 
    def onJoin(details):
@@ -265,15 +265,14 @@ class ISession(Interface):
       Callback fired when underlying transport has been closed.
       """
 
-
    def define(exception, error = None):
       """
       Defines an exception for a WAMP error in the context of this WAMP session.
 
       :param exception: The exception class to define an error mapping for.
-      :type exception: A class that derives of `Exception`.
+      :type exception: A class that derives of ``Exception``.
       :param error: The URI (or URI pattern) the exception class should be mapped for.
-                    Iff the `exception` class is decorated, this must be `None`.
+                    Iff the ``exception`` class is decorated, this must be ``None``.
       :type error: str
       """
 
@@ -281,29 +280,37 @@ class ISession(Interface):
 
 class ICaller(ISession):
    """
-   Interface for WAMP peers implementing role "Caller".
+   Interface for WAMP peers implementing role *Caller*.
    """
 
    def call(procedure, *args, **kwargs):
       """
       Call a remote procedure.
 
-      This will return a deferred/future, that when resolved, provides the actual result.
+      This will return a Deferred/Future, that when resolved, provides the actual result.
+
       If the result is a single positional return value, it'll be returned "as-is". If the
       result contains multiple positional return values or keyword return values,
       the result is wrapped in an instance of :class:`autobahn.wamp.types.CallResult`.
 
-      If the call fails, the returned deferred/future will be rejected with an instance
-      of :class:`autobahn.wamp.error.CallError`.
+      If the call fails, the returned Deferred/Future will be rejected with an instance
+      of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      If the Caller and Dealer implementations support cancelling of calls, the call may
-      be canceled by canceling the returned deferred/future.
+      If the *Caller* and *Dealer* implementations support cancelling of calls, the call may
+      be canceled by canceling the returned Deferred/Future.
 
-      :param procedure: The URI of the remote procedure to be called, e.g. "com.myapp.hello" or
-                        a procedure object specifying details on the call to be performed.
-      :type procedure: str or an instance of :class:`autobahn.wamp.types.Call`
+      If ``kwargs`` contains an ``options`` keyword argument that is an instance of
+      :class:`autobahn.wamp.types.CallOptions`, this will provide
+      specific options for the call to perform.
 
-      :returns: obj -- A deferred/future for the call -
+      :param procedure: The URI of the remote procedure to be called, e.g. `com.myapp.hello`.
+      :type procedure: str
+      :param args: Any positional arguments for the call.
+      :type args: list
+      :param kwargs: Any keyword arguments for the call.
+      :type kwargs: dict
+
+      :returns: obj -- A Deferred/Future for the call result -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted) or
                        an instance of :class:`asyncio.Future` (when running under asyncio).
       """
@@ -312,7 +319,7 @@ class ICaller(ISession):
 
 class IRegistration(Interface):
    """
-   Represents a registration.
+   Represents a registration of an endpoint.
    """
    id = Attribute("The WAMP registration ID for this registration.")
 
@@ -326,17 +333,13 @@ class IRegistration(Interface):
       After a registration has been unregistered, calls won't get routed
       to the endpoint any more.
 
-      This will return a deferred/future, that when resolved signals
+      This will return a Deferred/Future, that when resolved signals
       successful unregistration.
 
-      If the unregistration fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
+      If the unregistration fails, the returned Deferred/Future will be rejected
+      with an instance of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      :param registration: The registration to unregister from.
-      :type registration: An instance of :class:`autobahn.wamp.types.Registration`
-                          that was previously registered.
-
-      :returns: obj -- A deferred/future for the unregistration -
+      :returns: obj -- A Deferred/Future for the unregistration -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
                        or an instance of :class:`asyncio.Future` (when running under asyncio).
       """
@@ -345,38 +348,49 @@ class IRegistration(Interface):
 
 class ICallee(ISession):
    """
-   Interface for WAMP peers implementing role "Callee".
+   Interface for WAMP peers implementing role *Callee*.
    """
 
    def register(endpoint, procedure = None, options = None):
       """
-      Register an endpoint on a procedure to (subsequently) receive calls
+      Register an endpoint for a procedure to (subsequently) receive calls
       calling that procedure.
 
-      This will return a deferred/future, that when resolved provides
-      an instance of :class:`autobahn.wamp.types.Registration`.
+      If ``endpoint`` is a callable (function, method or object that implements ``__call__``),
+      then `procedure` must be provided and an instance of
+      :class:`twisted.internet.defer.Deferred` (when running on Twisted) or an instance
+      of :class:`asyncio.Future` (when running on asyncio) is returned.
 
-      If the registration fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
+      If the registration succeeds the Deferred/Future will resolve to an object
+      that implements :class:`autobahn.wamp.interfaces.Registration`.
 
-      :param procedure: The URI (or URI pattern) of the procedure to register for,
-                        e.g. "com.myapp.myprocedure1".
-      :type procedure: str
-      :param endpoint: The endpoint called under the procedure.
+      If the registration fails the Deferred/Future will reject with an instance
+      of :class:`autobahn.wamp.exception.ApplicationError`.
+
+      If ``endpoint`` is an object, then each of the object's methods that are decorated
+      with :func:`autobahn.wamp.procedure` are registered as procedure endpoints, and a list of
+      Deferreds/Futures is returned that each resolves or rejects as above.
+
+      :param endpoint: The endpoint or endpoint object called under the procedure.
       :type endpoint: callable
+      :param procedure: When `endpoint` is a single event handler, the URI (or URI pattern)
+                    of the procedure to register for. When ``endpoint`` is an endpoint
+                    object, this value is ignored (and should be ``None``).
+      :type procedure: str
       :param options: Options for registering.
       :type options: An instance of :class:`autobahn.wamp.types.RegisterOptions`.
 
-      :returns: obj -- A deferred/future for the registration -
-                       an instance of :class:`twisted.internet.defer.Deferred`
-                       (when running under Twisted) or an instance of
-                       :class:`asyncio.Future` (when running under asyncio).
+      :returns: obj -- A (list of) Deferred(s)/Future(s) for the registration(s) -
+                       instance(s) of :class:`twisted.internet.defer.Deferred` (when
+                       running under Twisted) or instance(s) of :class:`asyncio.Future`
+                       (when running under asyncio).
       """
 
 
 
 class IPublication(Interface):
    """
+   Represents a publication of an event. This is used with acknowledged publications.
    """
    id = Attribute("The WAMP publication ID for this publication.")
 
@@ -384,18 +398,18 @@ class IPublication(Interface):
 
 class IPublisher(ISession):
    """
-   Interface for WAMP peers implementing role "Publisher".
+   Interface for WAMP peers implementing role *Publisher*.
    """
 
    def publish(topic, *args, **kwargs):
       """
       Publish an event to a topic.
 
-      If `kwargs` contains an `options` keyword argument that is an instance of
+      If ``kwargs`` contains an ``options`` keyword argument that is an instance of
       :class:`autobahn.wamp.types.PublishOptions`, this will provide
       specific options for the publish to perform.
 
-      If publication acknowledgement is requested via `options.acknowledgement == True`,
+      If publication acknowledgement is requested via ``options.acknowledge == True``,
       this function returns a Deferred/Future:
 
         - if the publication succeeds the Deferred/Future will resolve to an object
@@ -404,7 +418,7 @@ class IPublisher(ISession):
         - if the publication fails the Deferred/Future will reject with an instance
           of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
+      :param topic: The URI of the topic to publish to, e.g. `com.myapp.mytopic1`.
       :type topic: str
       :param args: Arbitrary application payload for the event (positional arguments).
       :type args: list
@@ -412,7 +426,7 @@ class IPublisher(ISession):
       :type kwargs: dict
 
       :returns: obj -- `None` for non-acknowledged publications or,
-                       for non-acknowledged publications, an instance of
+                       for acknowledged publications, an instance of
                        :class:`twisted.internet.defer.Deferred` (when running under Twisted)
                        or an instance of :class:`asyncio.Future` (when running under asyncio).
       """
@@ -421,7 +435,7 @@ class IPublisher(ISession):
 
 class ISubscription(Interface):
    """
-   Represents a subscription.
+   Represents a subscription to a topic.
    """
    id = Attribute("The WAMP subscription ID for this subscription.")
 
@@ -435,13 +449,13 @@ class ISubscription(Interface):
       After a subscription has been unsubscribed, events won't get
       routed to the handler anymore.
 
-      This will return a deferred/future, that when resolved signals
+      This will return a Deferred/Future, that when resolved signals
       successful unsubscription.
 
-      If the unsubscription fails, the returned deferred/future will be rejected
-      with an instance of :class:`autobahn.wamp.error.ApplicationError`.
+      If the unsubscription fails, the returned Deferred/Future will be rejected
+      with an instance of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      :returns: obj -- A deferred/future for the unsubscription -
+      :returns: obj -- A Deferred/Future for the unsubscription -
                        an instance of :class:`twisted.internet.defer.Deferred` (when running under Twisted)
                        or an instance of :class:`asyncio.Future` (when running under asyncio).
       """
@@ -450,14 +464,14 @@ class ISubscription(Interface):
 
 class ISubscriber(ISession):
    """
-   Interface for WAMP peers implementing the *Subscriber* role.
+   Interface for WAMP peers implementing role *Subscriber*.
    """
 
    def subscribe(handler, topic = None, options = None):
       """
       Subscribe to a topic and subsequently receive events published to that topic.
 
-      If ``handler`` is a callable (function, method or object that implements `__call__`),
+      If ``handler`` is a callable (function, method or object that implements ``__call__``),
       then `topic` must be provided and an instance of
       :class:`twisted.internet.defer.Deferred` (when running on Twisted) or an instance
       of :class:`asyncio.Future` (when running on asyncio) is returned.
@@ -468,7 +482,7 @@ class ISubscriber(ISession):
       If the subscription fails the Deferred/Future will reject with an instance
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      If `handler` is an object, then each of the object's methods that are decorated
+      If ``handler`` is an object, then each of the object's methods that are decorated
       with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
       Deferreds/Futures is returned that each resolves or rejects as above.
 
