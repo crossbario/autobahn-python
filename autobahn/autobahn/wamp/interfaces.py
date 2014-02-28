@@ -223,6 +223,11 @@ class ISession(Interface):
       Callback fired when transport has been established.
       """
 
+   def join(realm):
+      """
+      Attach the session to the given realm.
+      """
+
    def onJoin(details):
       """
       Callback fired when WAMP session has been established.
@@ -230,7 +235,6 @@ class ISession(Interface):
       :param details: Session information.
       :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
       """
-
 
    def leave(reason = None, message = None):
       """
@@ -243,7 +247,6 @@ class ISession(Interface):
       :type message: str
       """
 
-
    def onLeave(details):
       """
       Callback fired when WAMP session has is closed
@@ -252,8 +255,14 @@ class ISession(Interface):
       :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
       """
 
+   def disconnect():
+      """
+      Close the underlying transport.
+      """
+
    def onDisconnect():
       """
+      Callback fired when underlying transport has been closed.
       """
 
 

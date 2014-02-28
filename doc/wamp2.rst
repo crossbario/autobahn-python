@@ -25,13 +25,25 @@ Interfaces
 .. autointerface:: autobahn.wamp.interfaces.ICaller
    :members:
 
+.. autointerface:: autobahn.wamp.interfaces.IRegistration
+   :members:
+
 .. autointerface:: autobahn.wamp.interfaces.ICallee
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IPublication
    :members:
 
 .. autointerface:: autobahn.wamp.interfaces.IPublisher
    :members:
 
+.. autointerface:: autobahn.wamp.interfaces.ISubscription
+   :members:
+
 .. autointerface:: autobahn.wamp.interfaces.ISubscriber
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterBase
    :members:
 
 .. autointerface:: autobahn.wamp.interfaces.IRouter
@@ -41,6 +53,9 @@ Interfaces
    :members:
 
 .. autointerface:: autobahn.wamp.interfaces.IDealer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterFactory
    :members:
 
 
@@ -90,16 +105,23 @@ Router
 .. autoclass:: autobahn.wamp.broker.Broker
    :show-inheritance:
    :members: __init__,
-             addSession,
-             removeSession,
-             processMessage
+             attach,
+             detach,
+             processPublish,
+             processSubscribe,
+             processUnsubscribe
 
 .. autoclass:: autobahn.wamp.dealer.Dealer
    :show-inheritance:
    :members: __init__,
-             addSession,
-             removeSession,
-             processMessage
+             attach,
+             detach,
+             processRegister,
+             processUnregister,
+             processCall,
+             processCancel,
+             processYield,
+             processInvocationError
 
 
 Protocol
@@ -122,45 +144,47 @@ Protocol
              unregister
 
 
-.. autoclass:: autobahn.wamp.protocol.WampBaseSession
+.. autoclass:: autobahn.wamp.protocol.BaseSession
    :show-inheritance:
-   :members: define
+   :members: onConnect,
+             onJoin,
+             onLeave,
+             onDisconnect,
+             define
 
 
-.. autoclass:: autobahn.wamp.protocol.WampAppSession
+.. autoclass:: autobahn.wamp.protocol.ApplicationSession
    :show-inheritance:
    :members: __init__,
-             onOpen,
-             onMessage,
-             onClose,
-             onSessionOpen,
-             onSessionClose,
-             closeSession,
+             join,
+             leave,
+             disconnect,
              publish,
              subscribe,
              call,
              register
 
 
-.. autoclass:: autobahn.wamp.protocol.WampAppFactory
+.. autoclass:: autobahn.wamp.protocol.ApplicationSessionFactory
    :show-inheritance:
    :members: __call__
 
 
-.. autoclass:: autobahn.wamp.protocol.WampRouterAppSession
+.. autoclass:: autobahn.wamp.protocol.RouterApplicationSession
    :show-inheritance:
    :members: __init__,
              send
 
 
-.. autoclass:: autobahn.wamp.protocol.WampRouterSession
+.. autoclass:: autobahn.wamp.protocol.RouterSession
    :show-inheritance:
 
 
-.. autoclass:: autobahn.wamp.protocol.WampRouterFactory
+.. autoclass:: autobahn.wamp.protocol.RouterSessionFactory
    :show-inheritance:
    :members: __init__,
              add,
+             remove,
              __call__
 
 

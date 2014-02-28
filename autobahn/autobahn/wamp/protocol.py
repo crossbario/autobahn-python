@@ -125,6 +125,9 @@ class BaseSession:
    """
 
    def __init__(self):
+      """
+      Ctor.
+      """
       self.debug = False
       self._ecls_to_uri_pat = {}
       self._uri_to_ecls = {}
@@ -132,25 +135,25 @@ class BaseSession:
 
    def onConnect(self):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
       """
 
 
    def onJoin(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
       """
 
 
    def onLeave(self, details):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
       """
 
 
    def onDisconnect(self):
       """
-      Implements :func:`autobahn.wamp.interfaces.ISession.define`
+      Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
       """
 
 
@@ -305,6 +308,9 @@ class ApplicationSession(BaseSession):
 
 
    def join(self, realm):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.join`
+      """
       if self._session_id:
          raise Exception("already joined")
 
@@ -322,6 +328,9 @@ class ApplicationSession(BaseSession):
 
 
    def disconnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.disconnect`
+      """
       if self._transport:
          self._transport.close()
       else:
