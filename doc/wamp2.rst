@@ -1,6 +1,16 @@
 WAMP v2
 =======
 
+Decorators
+----------
+
+.. autofunction:: autobahn.wamp.procedure
+
+.. autofunction:: autobahn.wamp.topic
+
+.. autofunction:: autobahn.wamp.error
+
+
 Interfaces
 ----------
 

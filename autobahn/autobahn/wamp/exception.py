@@ -88,20 +88,17 @@ class ApplicationError(Error):
    NO_SUCH_PROCEDURE          = "wamp.error.no_such_procedure"
    CANCELED                   = "wamp.error.canceled"
 
-   def __init__(self, errorUri, *args, **kwargs):
+   def __init__(self, error, *args, **kwargs):
       """
       Constructor.
 
-      :param errorUri: The URI of the error that occurred, e.g. "wamp.error.not_authorized".
-      :type errorUri: str
+      :param error: The URI of the error that occurred, e.g. `wamp.error.not_authorized`.
+      :type error: str
       """
       Exception.__init__(self, *args)
       self.kwargs = kwargs
-      self.error = errorUri
-      # if reason:
-      #    Error.__init__(self, "application error with URI '{}' - '{}'".format(error, reason))
-      # else:
-      #    Error.__init__(self, "application error with URI '{}'".format(error))
+      self.error = error
+
 
    def __str__(self):
       return "ApplicationError({})".format(self.error)

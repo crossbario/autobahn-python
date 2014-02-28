@@ -402,7 +402,7 @@ class IPublisher(ISession):
           that implements :class:`autobahn.wamp.interfaces.IPublication`.
 
         - if the publication fails the Deferred/Future will reject with an instance
-          of :class:`autobahn.error.RuntimeError`.
+          of :class:`autobahn.wamp.exception.ApplicationError`.
 
       :param topic: The URI of the topic to publish to, e.g. "com.myapp.mytopic1".
       :type topic: str
@@ -450,14 +450,14 @@ class ISubscription(Interface):
 
 class ISubscriber(ISession):
    """
-   Interface for WAMP peers implementing role "Subscriber".
+   Interface for WAMP peers implementing the *Subscriber* role.
    """
 
    def subscribe(handler, topic = None, options = None):
       """
       Subscribe to a topic and subsequently receive events published to that topic.
 
-      If `handler` is a callable (function, method or object that implements `__call__`),
+      If ``handler`` is a callable (function, method or object that implements `__call__`),
       then `topic` must be provided and an instance of
       :class:`twisted.internet.defer.Deferred` (when running on Twisted) or an instance
       of :class:`asyncio.Future` (when running on asyncio) is returned.
@@ -466,7 +466,7 @@ class ISubscriber(ISession):
       that implements :class:`autobahn.wamp.interfaces.ISubscription`.
 
       If the subscription fails the Deferred/Future will reject with an instance
-      of :class:`autobahn.error.RuntimeError`.
+      of :class:`autobahn.wamp.exception.ApplicationError`.
 
       If `handler` is an object, then each of the object's methods that are decorated
       with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
