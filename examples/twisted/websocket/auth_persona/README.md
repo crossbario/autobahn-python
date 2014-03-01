@@ -1,7 +1,14 @@
 WebSocket Authentication with Mozilla Persona
 =============================================
 
-This is a variant of a basic WebSocket Echo server that is running as a *Twisted Web Resource*.
+This example shows how to authenticate WebSocket connections using [Mozilla Persona](http://www.mozilla.org/en-US/persona/) and HTTP Cookies.
+
+This example works with purely static Web pages and WebSocket only.
+
+References:
+
+* [Mozilla Persona Developer Site](https://developer.mozilla.org/en-US/Persona)
+
 
 Running
 -------
@@ -15,9 +22,3 @@ and open
     http://localhost:8080/
 
 in your browser.
-
-To activate debug output on the server, start it
-
-    python server.py debug
-
-This will show up all WebSocket messages exchanged between clients and server.

@@ -136,8 +136,9 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             ## and now wants to verify the authentication and login.
             assertion = msg.get('assertion')
 
-            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            body = urllib.urlencode({'audience': 'http://192.168.1.130:8080/', 'assertion': assertion})
+            ## To verify the authentication, we need to send a HTTP/POST
+            ## to Mozilla Persona. When successful, Persona will send us
+            ## back something like:
 
             # {
             #    "audience": "http://192.168.1.130:8080/",
@@ -146,6 +147,9 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             #    "email": "tobias.oberstein@gmail.com",
             #    "status": "okay"
             # }
+
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            body = urllib.urlencode({'audience': 'http://192.168.1.130:8080/', 'assertion': assertion})
 
             from twisted.web.client import getPage
             d = getPage(url = "https://verifier.login.persona.org/verify",
@@ -192,8 +196,6 @@ class PersonaServerProtocol(WebSocketServerProtocol):
                msg = json.dumps({'cmd': 'LOGGED_OUT'})
                for proto in self.factory._cookies[self._cbtid]['connections']:
                   proto.sendMessage(msg)
-
-               #self.sendClose()
 
          else:
             log.msg("unknown command {}".format(msg))
