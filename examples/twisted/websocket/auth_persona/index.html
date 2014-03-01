@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+   </head>
+   <body>
+      <h1>WebSocket Authentication with Mozilla Persona</h1>
+      <div id="user">not logged in</div>
+      <button id="signin">Sign in</button>
+      <button id="signout">Sign out</button>
+
+      <script src="https://login.persona.org/include.js"></script>
+      <script>
+         var currentUser = null;
+         var sock = null;
+
+         var signinLink = document.getElementById('signin');
+         signinLink.onclick = function() {
+            navigator.id.request();
+         };
+         
+         var signoutLink = document.getElementById('signout');
+         signoutLink.onclick = function() {
+            navigator.id.logout();
+         };
+
+         var userLabel = document.getElementById('user');
+
+         function watchPersona() {
+            navigator.id.watch({
+              loggedInUser: currentUser,
+              onlogin: function (assertion) {
+                // A user has logged in! Here you need to:
+                // 1. Send the assertion to your backend for verification and to create a session.
+                // 2. Update your UI.
+                if (sock) {
+                  sock.send(JSON.stringify({cmd: 'AUTHENTICATE', assertion: assertion}))
+                }
+              },
+              onlogout: function() {
+                // A user has logged out! Here you need to:
+                // Tear down the user's session by redirecting the user or making a call to your backend.
+                // Also, make sure loggedInUser will get set to null on the next page load.
+                // (That's a literal JavaScript null. Not false, 0, or undefined. null.)
+                console.log("onlogout");
+                if (sock) {
+                  sock.send(JSON.stringify({cmd: 'LOGOUT'}))
+                }                
+              }
+            });            
+         }
+
+         var wsuri;
+         if (window.location.protocol === "file:") {
+            wsuri = "ws://127.0.0.1:8080/ws";
+         } else {
+            wsuri = "ws://" + window.location.hostname + ":8080/ws";
+         }
+
+         if ("WebSocket" in window) {
+            sock = new WebSocket(wsuri);
+         } else if ("MozWebSocket" in window) {
+            sock = new MozWebSocket(wsuri);
+         } else {
+            console.log("Browser does not support WebSocket!");
+         }
+
+         if (sock) {
+            sock.onopen = function() {
+               console.log("Connected to " + wsuri);
+            }
+
+            sock.onclose = function(e) {
+               console.log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+               sock = null;
+            }
+
+            sock.onmessage = function (e) {
+               msg = JSON.parse(e.data);
+               if (msg.cmd === 'AUTHENTICATED') {
+
+                  userLabel.innerHTML = 'Authenticated as ' + msg.email;
+                  signinLink.disabled = true;
+                  signoutLink.disabled = false;
+
+                  currentUser = msg.email;
+                  watchPersona();
+
+               } else if (msg.cmd === 'AUTHENTICATION_REQUIRED') {
+
+                  userLabel.innerHTML = 'not logged in';
+                  signinLink.disabled = false;
+                  signoutLink.disabled = true;
+
+                  watchPersona();
+
+               } else if (msg.cmd === 'LOGGED_OUT') {
+
+                  window.location.reload();
+                  
+               } else {
+                  console.log("unknown command", msg);
+               }
+            }
+         }
+      </script>
+   </body>
+</html>
