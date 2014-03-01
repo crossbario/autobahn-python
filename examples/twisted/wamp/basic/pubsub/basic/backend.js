@@ -15,6 +15,7 @@ connection.onopen = function (session) {
    var counter = 0;
 
    setInterval(function () {
+      console.log("publishing to topic 'com.myapp.topic1': " + counter);
       session.publish('com.myapp.topic1', [counter]);
       counter += 1;
    }, 1000);
