@@ -1,14 +1,46 @@
 <!DOCTYPE html>
 <html>
+   <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+   </head>
    <body>
-      <h1>RPC Time Service Frontend</h1>
+      <h1>Authenticated WAMP with Mozilla Persona</h1>
       <p>Open JavaScript console to watch output.</p>
 <!--      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script> -->
+      <div id="user">not logged in</div>
+      <button id="signin">Sign in</button>
+      <button id="signout">Sign out</button>
+
+      <script src="https://login.persona.org/include.js"></script>
       <script src="autobahn.js"></script>
       <script>
-         function onchallenge (challenge, extra) {
-            console.log("onchallenge", challenge, extra);
-            return "my awesome signature";
+         var signinLink = document.getElementById('signin');
+         signinLink.onclick = function() {
+            navigator.id.request();
+         };
+         signinLink.disabled = true;
+         
+         var signoutLink = document.getElementById('signout');
+         signoutLink.onclick = function() {
+            navigator.id.logout();
+         };
+         signoutLink.disabled = true;
+
+         var userLabel = document.getElementById('user');
+
+
+         var currentUser = null;
+
+         function onchallenge (session, method, extra) {
+            if (method === "mozilla-persona") {
+
+               userLabel.innerHTML = 'not logged in';
+               signinLink.disabled = false;
+               return autobahn.auth_persona(session, currentUser);
+
+            } else {
+               console.log("don't know how to authentication using " + method);
+            }
          }
 
          var connection = new autobahn.Connection({
@@ -17,7 +49,14 @@
             onchallenge: onchallenge
          });
 
-         connection.onopen = function (session) {
+         connection.onopen = function (session, details) {
+
+            userLabel.innerHTML = 'Authenticated as ' + details.authid;
+            signinLink.disabled = true;
+            signoutLink.disabled = false;
+
+            currentUser = details.authid;
+            autobahn.auth_persona(session, currentUser);
 
             session.call('com.timeservice.now').then(
                function (now) {

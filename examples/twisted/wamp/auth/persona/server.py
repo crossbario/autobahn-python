@@ -47,6 +47,7 @@ class TimeService(ApplicationSession):
 
 from twisted.python import log
 from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
+from twisted.internet.defer import Deferred
 
 import json
 import urllib
@@ -110,22 +111,83 @@ class ServerProtocol(WampWebSocketServerProtocol):
 
 
 from autobahn.wamp.protocol import RouterSession
+from autobahn.wamp import types
+
 
 class MyRouterSession(RouterSession):
 
    def onOpen(self, transport):
       RouterSession.onOpen(self, transport)
-      print "onOpne"
-      print self._transport._authenticated
+      print "transport authenticated: {}".format(self._transport._authenticated)
 
-   def onHello(self, realm):
-      print "onHello"
-      return self._transport._authenticated is not None
-      return True
 
-   def onAuthenticate(self, signature):
-      print "onAuthenticate"
-      return True
+   def onHello(self, realm, details):
+      print "onHello: {} {}".format(realm, details)
+      if self._transport._authenticated is not None:
+         return types.Accept(authid = self._transport._authenticated)
+      else:
+         return types.Challenge("mozilla-persona")
+      return accept
+
+
+   def onAuthenticate(self, signature, extra):
+      print "onAuthenticate: {} {}".format(signature, extra)
+
+      dres = Deferred()
+
+      ## The client did it's Mozilla Persona authentication thing
+      ## and now wants to verify the authentication and login.
+      assertion = signature
+      audience = 'http://localhost:8080/'
+
+      ## To verify the authentication, we need to send a HTTP/POST
+      ## to Mozilla Persona. When successful, Persona will send us
+      ## back something like:
+
+      # {
+      #    "audience": "http://192.168.1.130:8080/",
+      #    "expires": 1393681951257,
+      #    "issuer": "gmail.login.persona.org",
+      #    "email": "tobias.oberstein@gmail.com",
+      #    "status": "okay"
+      # }
+
+      headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+      body = urllib.urlencode({'audience': audience, 'assertion': assertion})
+
+      from twisted.web.client import getPage
+      d = getPage(url = "https://verifier.login.persona.org/verify",
+                  method = 'POST',
+                  postdata = body,
+                  headers = headers)
+
+      log.msg("Authentication request sent.")
+
+      def done(res):
+         res = json.loads(res)
+         try:
+            if res['status'] == 'okay':
+               ## Mozilla Persona successfully authenticated the user
+
+               ## remember the user's email address. this marks the cookie as
+               ## authenticated
+               self._transport.factory._cookies[self._transport._cbtid]['authenticated'] = res['email']
+
+               log.msg("Authenticated user {}".format(res['email']))
+               dres.callback(types.Accept(authid = res['email']))
+            else:
+               log.msg("Authentication failed!")
+               dres.callback(types.Deny())
+         except Exception as e:
+            print "ERRR", e
+
+      def error(err):
+         log.msg("Authentication request failed: {}".format(err.value))
+         dres.callback(types.Deny())
+
+      d.addCallbacks(done, error)
+
+      return dres
 
 
 if __name__ == '__main__':

@@ -1001,11 +1001,11 @@ class RouterSession(BaseSession):
       self._session_id = None
 
 
-   def onHello(self, realm):
+   def onHello(self, realm, details):
       return True
 
 
-   def onAuthenticate(self, signature):
+   def onAuthenticate(self, signature, extra):
       return True
 
 
@@ -1015,47 +1015,74 @@ class RouterSession(BaseSession):
       """
       if self._session_id is None:
 
+         def welcome(realm, authid = None):
+            print realm, type(authid), authid
+            self._session_id = util.id()
+            self._goodbye_sent = False
+
+            self._router = self._router_factory.get(realm)
+            if not self._router:
+               raise Exception("no such realm")
+
+            roles = self._router.attach(self)
+            msg = message.Welcome(self._session_id, roles, authid)
+            self._transport.send(msg)
+
+            self.onJoin(SessionDetails(self._session_id))
+
          ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
 
-            if self.onHello(msg.realm):
+            self._realm = msg.realm
 
-               self._session_id = util.id()
-               self._goodbye_sent = False
+            d = maybeDeferred(self.onHello, self._realm, {})
 
-               self._router = self._router_factory.get(msg.realm)
-               if not self._router:
-                  raise Exception("no such realm")
+            def success(res):
+               msg = None
 
-               roles = self._router.attach(self)
-               msg = message.Welcome(self._session_id, roles)
-               self._transport.send(msg)
+               if isinstance(res, types.Accept):
+                  welcome(self._realm, res.authid)
 
-               self.onJoin(SessionDetails(self._session_id))
+               elif isinstance(res, types.Challenge):
+                  msg = message.Challenge(res.method, res.extra)
 
-            else:
+               elif isinstance(res, types.Deny):
+                  msg = message.Abort(res.reason, res.message)
 
-               self._realm = msg.realm
+               else:
+                  pass
 
-               msg = message.Challenge("something")
-               self._transport.send(msg)
+               if msg:
+                  self._transport.send(msg)
+
+            def failed(err):
+               log.msg(err.value)
+
+            d.addCallbacks(success, failed)
 
          elif isinstance(msg, message.Authenticate):
 
-            if self.onAuthenticate(msg.signature):
+            d = maybeDeferred(self.onAuthenticate, msg.signature, {})
 
-               self._session_id = util.id()
-               self._goodbye_sent = False
+            def success(res):
+               msg = None
 
-               self._router = self._router_factory.get(self._realm)
-               if not self._router:
-                  raise Exception("no such realm")
+               if isinstance(res, types.Accept):
+                  welcome(self._realm, res.authid)
 
-               roles = self._router.attach(self)
-               msg = message.Welcome(self._session_id, roles)
-               self._transport.send(msg)
+               elif isinstance(res, types.Deny):
+                  msg = message.Abort(res.reason, res.message)
 
-               self.onJoin(SessionDetails(self._session_id))
+               else:
+                  pass
+
+               if msg:
+                  self._transport.send(msg)
+
+            def failed(err):
+               log.msg(err.value)
+
+            d.addCallbacks(success, failed)
 
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))

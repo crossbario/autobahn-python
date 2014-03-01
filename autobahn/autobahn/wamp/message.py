@@ -243,7 +243,7 @@ class Welcome(Message):
    """
 
 
-   def __init__(self, session, roles):
+   def __init__(self, session, roles, authid = None):
       """
       Message constructor.
 
@@ -255,6 +255,7 @@ class Welcome(Message):
       Message.__init__(self)
       self.session = session
       self.roles = roles
+      self.authid = authid
 
 
    @staticmethod
@@ -277,6 +278,7 @@ class Welcome(Message):
       session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
       details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
+      authid = details.get('authid', None)
       roles = []
 
       if not details.has_key('roles'):
@@ -302,7 +304,7 @@ class Welcome(Message):
 
          roles.append(role_features)
 
-      obj = Welcome(session, roles)
+      obj = Welcome(session, roles, authid)
 
       return obj
 
@@ -311,7 +313,13 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      details = {'roles': {}}
+      details = {
+         'roles': {}
+      }
+
+      if self.authid:
+         details['authid'] = self.authid
+
       for role in self.roles:
          details['roles'][role.ROLE] = {}
          for feature in role.__dict__:
@@ -327,7 +335,7 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP WELCOME Message (session = {}, roles = {})".format(self.session, self.roles)
+      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {})".format(self.session, self.roles, self.authid)
 
 
 
@@ -417,7 +425,7 @@ class Challenge(Message):
    """
    A WAMP `CHALLENGE` message.
 
-   Format: `[CHALLENGE, Challenge|string, Extra|dict]`
+   Format: `[CHALLENGE, Method|string, Extra|dict]`
    """
 
    MESSAGE_TYPE = 4
@@ -426,15 +434,18 @@ class Challenge(Message):
    """
 
 
-   def __init__(self, challenge):
+   def __init__(self, method, extra = {}):
       """
       Message constructor.
 
-      :param challenge: The authentication challenge that must be signed.
-      :type challenge: str
+      :param method: The authentication method.
+      :type method: str
+      :param extra: Authentication method specific information.
+      :type extra: dict
       """
       Message.__init__(self)
-      self.challenge = challenge
+      self.method = method
+      self.extra = extra
 
 
    @staticmethod
@@ -454,13 +465,13 @@ class Challenge(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {} for CHALLENGE".format(len(wmsg)))
 
-      challenge = wmsg[1]
-      if type(challenge) != str:
-         raise ProtocolError("invalid type {} for 'challenge' in CHALLENGE".format(type(challenge)))
+      method = wmsg[1]
+      if type(method) != str:
+         raise ProtocolError("invalid type {} for 'method' in CHALLENGE".format(type(method)))
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in CHALLENGE")
 
-      obj = Challenge(challenge)
+      obj = Challenge(method, extra)
 
       return obj
 
@@ -469,15 +480,14 @@ class Challenge(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      extra = {}
-      return [Challenge.MESSAGE_TYPE, self.challenge, extra]
+      return [Challenge.MESSAGE_TYPE, self.method, self.extra or {}]
 
 
    def __str__(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CHALLENGE Message (challenge = {})".format(self.challenge)
+      return "WAMP CHALLENGE Message (method = {}, extra = {})".format(self.method, self.extra)
 
 
 

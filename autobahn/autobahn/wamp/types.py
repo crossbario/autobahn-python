@@ -19,6 +19,23 @@
 from __future__ import absolute_import
 
 
+class HelloReturn:
+   pass
+
+class Accept(HelloReturn):
+   def __init__(self, authid = None):
+      self.authid = authid
+
+class Deny(HelloReturn):
+   def __init__(self, reason = "wamp.error.noth_authorized", message = None):
+      self.reason = reason
+      self.message = message
+
+class Challenge(HelloReturn):
+   def __init__(self, method, extra = {}):
+      self.method = method
+      self.extra = extra
+
 
 class SessionDetails:
    """
