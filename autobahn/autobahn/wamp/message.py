@@ -524,7 +524,7 @@ class Authenticate(Message):
          raise ProtocolError("invalid message length {} for AUTHENTICATE".format(len(wmsg)))
 
       signature = wmsg[1]
-      if type(signature) != str:
+      if type(signature) not in [str, unicode]:
          raise ProtocolError("invalid type {} for 'signature' in AUTHENTICATE".format(type(signature)))
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")

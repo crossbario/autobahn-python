@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+   <body>
+      <h1>RPC Time Service Frontend</h1>
+      <p>Open JavaScript console to watch output.</p>
+<!--      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script> -->
+      <script src="autobahn.js"></script>
+      <script>
+         function onchallenge (challenge, extra) {
+            console.log("onchallenge", challenge, extra);
+            return "my awesome signature";
+         }
+
+         var connection = new autobahn.Connection({
+            url: 'ws://127.0.0.1:8080/ws',
+            realm: 'realm1',
+            onchallenge: onchallenge
+         });
+
+         connection.onopen = function (session) {
+
+            session.call('com.timeservice.now').then(
+               function (now) {
+                  console.log("Current time:", now);
+                  connection.close();
+               },
+               function (error) {
+                  console.log("Call failed:", error);
+                  connection.close();
+               }
+            );
+         };
+
+         connection.open();
+      </script>
+   </body>
+</html>

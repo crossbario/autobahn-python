@@ -987,6 +987,7 @@ class RouterSession(BaseSession):
 
       self._router_factory = routerFactory
       self._router = None
+      self._realm = None
 
       self._goodbye_sent = False
       self._transport_is_closing = False
@@ -1000,6 +1001,14 @@ class RouterSession(BaseSession):
       self._session_id = None
 
 
+   def onHello(self, realm):
+      return True
+
+
+   def onAuthenticate(self, signature):
+      return True
+
+
    def onMessage(self, msg):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -1009,18 +1018,45 @@ class RouterSession(BaseSession):
          ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
 
-            self._session_id = util.id()
-            self._goodbye_sent = False
+            if self.onHello(msg.realm):
 
-            self._router = self._router_factory.get(msg.realm)
-            if not self._router:
-               raise Exception("no such realm")
+               self._session_id = util.id()
+               self._goodbye_sent = False
 
-            roles = self._router.attach(self)
-            msg = message.Welcome(self._session_id, roles)
-            self._transport.send(msg)
+               self._router = self._router_factory.get(msg.realm)
+               if not self._router:
+                  raise Exception("no such realm")
 
-            self.onJoin(SessionDetails(self._session_id))
+               roles = self._router.attach(self)
+               msg = message.Welcome(self._session_id, roles)
+               self._transport.send(msg)
+
+               self.onJoin(SessionDetails(self._session_id))
+
+            else:
+
+               self._realm = msg.realm
+
+               msg = message.Challenge("something")
+               self._transport.send(msg)
+
+         elif isinstance(msg, message.Authenticate):
+
+            if self.onAuthenticate(msg.signature):
+
+               self._session_id = util.id()
+               self._goodbye_sent = False
+
+               self._router = self._router_factory.get(self._realm)
+               if not self._router:
+                  raise Exception("no such realm")
+
+               roles = self._router.attach(self)
+               msg = message.Welcome(self._session_id, roles)
+               self._transport.send(msg)
+
+               self.onJoin(SessionDetails(self._session_id))
+
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
