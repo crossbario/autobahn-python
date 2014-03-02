@@ -59,6 +59,8 @@ from autobahn.websocket import http
 
 class ServerProtocol(WampWebSocketServerProtocol):
 
+   ## authid -> cookie -> set(connection)
+
    def onConnect(self, request):
       protocol, headers = WampWebSocketServerProtocol.onConnect(self, request)
 
