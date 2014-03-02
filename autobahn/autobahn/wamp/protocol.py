@@ -1002,11 +1002,11 @@ class RouterSession(BaseSession):
 
 
    def onHello(self, realm, details):
-      return True
+      return types.Accept()
 
 
    def onAuthenticate(self, signature, extra):
-      return True
+      return types.Accept()
 
 
    def onMessage(self, msg):
