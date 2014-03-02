@@ -132,6 +132,14 @@ class MyRouterSession(RouterSession):
       return accept
 
 
+   def onLeave(self, details):
+      if details.reason == "wamp.close.logout":
+         cookie = self._transport.factory._cookies[self._transport._cbtid]
+         cookie['authenticated'] = None
+         for proto in cookie['connections']:
+            proto.sendClose()
+
+
    def onAuthenticate(self, signature, extra):
       print "onAuthenticate: {} {}".format(signature, extra)
 
