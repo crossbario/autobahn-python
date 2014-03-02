@@ -6,13 +6,18 @@
    <body>
       <h1>Authenticated WAMP with Mozilla Persona</h1>
       <p>Open JavaScript console to watch output.</p>
-<!--      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script> -->
-      <div id="user">not logged in</div>
+
+      <h2>Login</h2>
+      <div id="user">Not logged in.</div>
       <button id="signin">Sign in</button>
       <button id="signout">Sign out</button>
 
+      <h2>RPC Result</h2>
+      <div id="result">No result yet.</div>
+
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
       <script src="https://login.persona.org/include.js"></script>
-      <script src="autobahn.js"></script>
+
       <script>
          var signinLink = document.getElementById('signin');
          signinLink.onclick = function() {
@@ -27,14 +32,14 @@
          signoutLink.disabled = true;
 
          var userLabel = document.getElementById('user');
-
+         var result = document.getElementById('result');
 
          var currentUser = null;
 
          function onchallenge (session, method, extra) {
             if (method === "mozilla-persona") {
 
-               userLabel.innerHTML = 'not logged in';
+               userLabel.innerHTML = 'Please sign in ...';
                signinLink.disabled = false;
                return autobahn.auth_persona(session, currentUser);
 
@@ -51,7 +56,7 @@
 
          connection.onopen = function (session, details) {
 
-            userLabel.innerHTML = 'Authenticated as ' + details.authid;
+            userLabel.innerHTML = 'Authenticated: ' + details.authid;
             signinLink.disabled = true;
             signoutLink.disabled = false;
 
@@ -60,12 +65,10 @@
 
             session.call('com.timeservice.now').then(
                function (now) {
-                  console.log("Current time:", now);
-                  connection.close();
+                  result.innerHTML = now;
                },
                function (error) {
-                  console.log("Call failed:", error);
-                  connection.close();
+                  result.innerHTML = error;
                }
             );
          };
