@@ -69,11 +69,11 @@ def id():
    return random.randint(0, 9007199254740992)
 
 
-def newid():
+def newid(len = 16):
    """
    Generate a new random object ID.
    """
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in xrange(16)])
+   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in xrange(len)])
 
 
 
