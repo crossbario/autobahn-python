@@ -27,7 +27,7 @@ class Accept(HelloReturn):
       self.authid = authid
 
 class Deny(HelloReturn):
-   def __init__(self, reason = "wamp.error.noth_authorized", message = None):
+   def __init__(self, reason = "wamp.error.not_authorized", message = None):
       self.reason = reason
       self.message = message
 

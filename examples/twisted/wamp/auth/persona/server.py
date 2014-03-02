@@ -149,6 +149,7 @@ class MyRouterSession(RouterSession):
       ## and now wants to verify the authentication and login.
       assertion = signature
       audience = 'http://localhost:8080/'
+      audience = 'http://192.168.1.130:8080/'
 
       ## To verify the authentication, we need to send a HTTP/POST
       ## to Mozilla Persona. When successful, Persona will send us

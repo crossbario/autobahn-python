@@ -14,10 +14,8 @@
 
       <h2>RPC Result</h2>
       <div id="result">No result yet.</div>
+
       <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
-<!--
-      <script src="autobahn.js"></script>
--->      
       <script src="https://login.persona.org/include.js"></script>
 
       <script>
@@ -37,15 +35,13 @@
          var result = document.getElementById('result');
 
          var currentUser = null;
-         var cu = {};
-         cu.currentUser = null;
 
          function onchallenge (session, method, extra) {
             if (method === "mozilla-persona") {
 
                userLabel.innerHTML = 'Please sign in ...';
                signinLink.disabled = false;
-               return autobahn.auth_persona(session, cu.currentUser);
+               return autobahn.auth_persona(session, currentUser);
 
             } else {
                console.log("don't know how to authentication using " + method);
@@ -65,7 +61,7 @@
             signoutLink.disabled = false;
 
             currentUser = details.authid;
-            autobahn.auth_persona(session, cu.currentUser);
+            autobahn.auth_persona(session, currentUser);
 
             session.call('com.timeservice.now').then(
                function (now) {
@@ -78,7 +74,6 @@
          };
 
          connection.onclose = function () {
-            console.log("onclose");
             window.location.reload();
          }
 
