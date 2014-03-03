@@ -3379,19 +3379,23 @@ class WebSocketServerFactory(WebSocketFactory):
       if url is not None:
          ## parse WebSocket URI into components
          (isSecure, host, port, resource, path, params) = parseWsUrl(url)
-         if path != "/":
-            raise Exception("path specified for server WebSocket URL")
          if len(params) > 0:
             raise Exception("query parameters specified for server WebSocket URL")
          self.url = url
          self.isSecure = isSecure
          self.host = host
          self.port = port
+         self.resource = resource
+         self.path = path
+         self.params = params
       else:
          self.url = None
          self.isSecure = None
          self.host = None
          self.port = None
+         self.resource = None
+         self.path = None
+         self.params = None
 
       self.protocols = protocols
       self.server = server
