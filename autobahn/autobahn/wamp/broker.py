@@ -111,7 +111,6 @@ class Broker:
 
          return
 
-
       if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
 
          ## initial list of receivers are all subscribers ..
@@ -141,7 +140,10 @@ class Broker:
          ## remove publisher
          ##
          if publish.excludeMe is None or not publish.excludeMe:
-            receivers.discard(session)
+         #   receivers.discard(session) # bad: this would modify our actual subscriber list
+            me_also = False
+         else:
+            me_also = True
 
       else:
          subscription, receivers = None, []
@@ -166,8 +168,9 @@ class Broker:
                              args = publish.args,
                              kwargs = publish.kwargs,
                              publisher = publisher)
-         for session in receivers:
-            session._transport.send(msg)
+         for receiver in receivers:
+            if me_also or receiver != session:
+               receiver._transport.send(msg)
 
 
    def processSubscribe(self, session, subscribe):
