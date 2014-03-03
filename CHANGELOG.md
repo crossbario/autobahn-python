@@ -1,5 +1,11 @@
 # Autobahn|Python Changelog
 
+## v0.8.4
+ * initial support for WAMP v2 authentication
+ * various fixes/improvements to WAMP v2 implementation
+ * new example: WebSocket auth. with Mozilla Persona
+ * polish up documentation
+
 ## v0.8.3
  * fix bug with closing router app sessions
 
