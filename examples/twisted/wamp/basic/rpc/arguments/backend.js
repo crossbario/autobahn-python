@@ -1,8 +1,10 @@
 try {
    var autobahn = require('autobahn');
+   var when = require('when');
 } catch (e) {
-   // when running in browser, AutobahnJS will
+   // When running in browser, AutobahnJS will
    // be included without a module system
+   var when = autobahn.when;
 }
 
 var connection = new autobahn.Connection({
@@ -41,11 +43,21 @@ connection.onopen = function (session) {
       return [args.length, Object.keys(kwargs).length];
    }
 
-   session.register('com.arguments.ping', ping)
-   session.register('com.arguments.add2', add2)
-   session.register('com.arguments.stars', stars)
-   session.register('com.arguments.orders', orders)
-   session.register('com.arguments.arglen', arglen)
+   var dl = [];
+
+   dl.push(session.register('com.arguments.ping', ping));
+   dl.push(session.register('com.arguments.add2', add2));
+   dl.push(session.register('com.arguments.stars', stars));
+   dl.push(session.register('com.arguments.orders', orders));
+   dl.push(session.register('com.arguments.arglen', arglen));
+
+   when.all(dl).then(
+      function () {
+         console.log("All registered.");
+      },
+      function () {
+         console.log("Registration failed!", arguments);
+      });  
 };
 
 connection.open();

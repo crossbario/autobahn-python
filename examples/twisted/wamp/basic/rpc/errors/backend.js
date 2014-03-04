@@ -25,7 +25,14 @@ connection.onopen = function (session) {
       return res;
    }
 
-   session.register('com.myapp.sqrt', sqrt);
+   session.register('com.myapp.sqrt', sqrt).then(
+      function (registration) {
+         console.log("Procedure registered:", registration.id);
+      },
+      function (error) {
+         console.log("Registration failed:", error);
+      }
+   );
 };
 
 connection.open();

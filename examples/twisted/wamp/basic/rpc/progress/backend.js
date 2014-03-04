@@ -42,7 +42,14 @@ connection.onopen = function (session) {
       return d.promise;
    }
 
-   session.register('com.myapp.longop', longop);
+   session.register('com.myapp.longop', longop).then(
+      function (registration) {
+         console.log("Procedure registered:", registration.id);
+      },
+      function (error) {
+         console.log("Registration failed:", error);
+      }
+   );
 };
 
 connection.open();

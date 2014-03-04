@@ -39,7 +39,14 @@ connection.onopen = function (session) {
       return d.promise;
    }
 
-   session.register('com.math.slowsquare', slowsquare);
+   session.register('com.math.slowsquare', slowsquare).then(
+      function (registration) {
+         console.log("Procedure registered:", registration.id);
+      },
+      function (error) {
+         console.log("Registration failed:", error);
+      }
+   );
 };
 
 connection.open();

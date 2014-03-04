@@ -18,7 +18,7 @@ connection.onopen = function (session) {
       console.log("Someone requested to square non-negative:", val);
    }
 
-   session.subscribe(on_event, 'com.myapp.square_on_nonpositive');
+   session.subscribe('com.myapp.square_on_nonpositive', on_event);
 
    var dl = [];
 
@@ -35,10 +35,15 @@ connection.onopen = function (session) {
       ));
    }
 
-   when.all(dl).then(function () {
-      console.log("All finished.");
-      connection.close();
-   });
+   when.all(dl).then(
+      function () {
+         console.log("All finished.");
+         connection.close();
+      },
+      function () {
+         console.log("Error", arguments);
+         connection.close();
+      });
 };
 
 connection.open();

@@ -27,7 +27,7 @@ connection.onopen = function (session) {
       }
    }
 
-   session.subscribe(on_event, 'com.myapp.topic1');
+   session.subscribe('com.myapp.topic1', on_event);
 };
 
 connection.open();

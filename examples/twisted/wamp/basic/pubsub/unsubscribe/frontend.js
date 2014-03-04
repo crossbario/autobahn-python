@@ -35,7 +35,7 @@ connection.onopen = function (session) {
          }
       }
 
-      session.subscribe(on_event, 'com.myapp.topic1').then(
+      session.subscribe('com.myapp.topic1', on_event).then(
          function (subscription) {
             sub = subscription;
             console.log("Subscribed with subscription ID " + subscription.id);

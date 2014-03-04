@@ -25,6 +25,8 @@ connection.onopen = function (session) {
       session.publish('com.myapp.topic2', [randint(0, 100), 23], {c: "Hello", d: obj});
 
       counter += 1;
+
+      console.log("events published");
    }, 1000);
 };
 
