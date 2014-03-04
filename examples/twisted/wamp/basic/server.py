@@ -35,11 +35,11 @@ if __name__ == '__main__':
    parser.add_argument("-c", "--component", type = str, default = None,
                        help = "Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
-   parser.add_argument("--websocket", type = str, default = "tcp:9000",
-                       help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
+   parser.add_argument("--websocket", type = str, default = "tcp:8080",
+                       help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:8080" or "unix:/tmp/mywebsocket".')
 
-   parser.add_argument("--wsurl", type = str, default = "ws://localhost:9000",
-                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
+   parser.add_argument("--wsurl", type = str, default = "ws://localhost:8080/ws",
+                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:8080/ws".')
 
    args = parser.parse_args()
 
