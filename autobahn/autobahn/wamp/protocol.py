@@ -1016,7 +1016,6 @@ class RouterSession(BaseSession):
       if self._session_id is None:
 
          def welcome(realm, authid = None):
-            print realm, type(authid), authid
             self._session_id = util.id()
             self._goodbye_sent = False
 
