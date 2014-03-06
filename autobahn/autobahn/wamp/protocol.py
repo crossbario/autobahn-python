@@ -18,10 +18,12 @@
 
 from __future__ import absolute_import
 
+import inspect
+
 from zope.interface import implementer
 
 from twisted.python import log
-from twisted.internet.defer import Deferred, maybeDeferred
+from twisted.internet.defer import Deferred, maybeDeferred, DeferredList
 
 from autobahn.wamp.interfaces import ISession, \
                                      IPublication, \
@@ -49,7 +51,8 @@ class Endpoint:
    """
    """
 
-   def __init__(self, fn, details_arg = None):
+   def __init__(self, obj, fn, details_arg = None):
+      self.obj = obj
       self.fn = fn
       self.details_arg = details_arg
 
@@ -512,16 +515,28 @@ class ApplicationSession(BaseSession):
 
                      msg.kwargs[endpoint.details_arg] = types.CallDetails(progress, caller = caller)
 
-                  if msg.kwargs:
-                     if msg.args:
-                        d = maybeDeferred(endpoint.fn, *msg.args, **msg.kwargs)
+                  if endpoint.obj:
+                     if msg.kwargs:
+                        if msg.args:
+                           d = maybeDeferred(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
+                        else:
+                           d = maybeDeferred(endpoint.fn, endpoint.obj, **msg.kwargs)
                      else:
-                        d = maybeDeferred(endpoint.fn, **msg.kwargs)
+                        if msg.args:
+                           d = maybeDeferred(endpoint.fn, endpoint.obj, *msg.args)
+                        else:
+                           d = maybeDeferred(endpoint.fn, endpoint.obj)
                   else:
-                     if msg.args:
-                        d = maybeDeferred(endpoint.fn, *msg.args)
+                     if msg.kwargs:
+                        if msg.args:
+                           d = maybeDeferred(endpoint.fn, *msg.args, **msg.kwargs)
+                        else:
+                           d = maybeDeferred(endpoint.fn, **msg.kwargs)
                      else:
-                        d = maybeDeferred(endpoint.fn)
+                        if msg.args:
+                           d = maybeDeferred(endpoint.fn, *msg.args)
+                        else:
+                           d = maybeDeferred(endpoint.fn)
 
                   def success(res):
                      del self._invocations[msg.request]
@@ -558,11 +573,11 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Registered):
 
             if msg.request in self._register_reqs:
-               d, fn, options = self._register_reqs.pop(msg.request)
+               d, obj, fn, options = self._register_reqs.pop(msg.request)
                if options:
-                  self._registrations[msg.registration] = Endpoint(fn, options.details_arg)
+                  self._registrations[msg.registration] = Endpoint(obj, fn, options.details_arg)
                else:
-                  self._registrations[msg.registration] = Endpoint(fn)
+                  self._registrations[msg.registration] = Endpoint(obj, fn)
                r = Registration(self, msg.registration)
                d.callback(r)
             else:
@@ -784,25 +799,44 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ICallee.register`
       """
-      assert(callable(endpoint))
-      assert(type(procedure) in (str, unicode))
+      assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
+      assert(procedure is None or type(procedure) in (str, unicode))
       assert(options is None or isinstance(options, types.RegisterOptions))
 
       if not self._transport:
          raise exception.TransportLost()
 
-      request = util.id()
+      def _register(obj, endpoint, procedure, options):
+         request = util.id()
 
-      d = Deferred()
-      self._register_reqs[request] = (d, endpoint, options)
+         d = Deferred()
+         self._register_reqs[request] = (d, obj, endpoint, options)
 
-      if options is not None:
-         msg = message.Register(request, procedure, **options.options)
+         if options is not None:
+            msg = message.Register(request, procedure, **options.options)
+         else:
+            msg = message.Register(request, procedure)
+
+         self._transport.send(msg)
+         return d
+
+      if callable(endpoint):
+         ## register a single callable
+         ##
+         return _register(None, endpoint, procedure, options)
+
       else:
-         msg = message.Register(request, procedure)
-
-      self._transport.send(msg)
-      return d
+         ## register all methods on an object
+         ## decorated with "wamp.procedure"
+         ##
+         dl = []
+         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
+            proc = k[1]
+            if "_wampuris" in proc.__dict__:
+               pat = proc.__dict__["_wampuris"][0]
+               uri = pat.uri()
+               dl.append(_register(endpoint, proc, uri, options))
+         return DeferredList(dl)
 
 
    def _unregister(self, registration):
