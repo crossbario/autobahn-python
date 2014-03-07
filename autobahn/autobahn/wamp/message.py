@@ -912,7 +912,6 @@ class Publish(Message):
                          to subscribers.
       :type discloseMe: bool
       """
-      assert(not (kwargs and not args))
       Message.__init__(self)
       self.request = request
       self.topic = topic
@@ -1451,7 +1450,6 @@ class Event(Message):
       :param publisher: If present, the WAMP session ID of the publisher of this event.
       :type publisher: str
       """
-      assert(not (kwargs and not args))
       Message.__init__(self)
       self.subscription = subscription
       self.publication = publication
