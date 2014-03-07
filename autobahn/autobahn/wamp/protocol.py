@@ -381,16 +381,29 @@ class ApplicationSession(BaseSession):
                   msg.kwargs[handler.details_arg] = types.EventDetails(publication = msg.publication, publisher = msg.publisher)
 
                try:
-                  if msg.kwargs:
-                     if msg.args:
-                        handler.fn(*msg.args, **msg.kwargs)
+                  if handler.obj:
+                     if msg.kwargs:
+                        if msg.args:
+                           handler.fn(handler.obj, *msg.args, **msg.kwargs)
+                        else:
+                           handler.fn(handler.obj, **msg.kwargs)
                      else:
-                        handler.fn(**msg.kwargs)
+                        if msg.args:
+                           handler.fn(handler.obj, *msg.args)
+                        else:
+                           handler.fn(handler.obj)
                   else:
-                     if msg.args:
-                        handler.fn(*msg.args)
+                     if msg.kwargs:
+                        if msg.args:
+                           handler.fn(*msg.args, **msg.kwargs)
+                        else:
+                           handler.fn(**msg.kwargs)
                      else:
-                        handler.fn()
+                        if msg.args:
+                           handler.fn(*msg.args)
+                        else:
+                           handler.fn()
+
                except Exception as e:
                   log.msg("Exception raised in event handler: {}".format(e))
 
@@ -409,11 +422,11 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Subscribed):
 
             if msg.request in self._subscribe_reqs:
-               d, fn, options = self._subscribe_reqs.pop(msg.request)
+               d, obj, fn, options = self._subscribe_reqs.pop(msg.request)
                if options:
-                  self._subscriptions[msg.subscription] = Handler(fn, options.details_arg)
+                  self._subscriptions[msg.subscription] = Handler(obj, fn, options.details_arg)
                else:
-                  self._subscriptions[msg.subscription] = Handler(fn)
+                  self._subscriptions[msg.subscription] = Handler(obj, fn)
                s = Subscription(self, msg.subscription)
                d.callback(s)
             else:
@@ -723,25 +736,45 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
       """
-      assert(callable(handler))
-      assert(type(topic) in (str, unicode))
+      assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
+      assert(topic is None or type(topic) in (str, unicode))
       assert(options is None or isinstance(options, types.SubscribeOptions))
 
       if not self._transport:
          raise exception.TransportLost()
 
-      request = util.id()
+      def _subscribe(obj, handler, topic, options):
+         request = util.id()
 
-      d = Deferred()
-      self._subscribe_reqs[request] = (d, handler, options)
+         d = Deferred()
+         self._subscribe_reqs[request] = (d, obj, handler, options)
 
-      if options is not None:
-         msg = message.Subscribe(request, topic, **options.options)
+         if options is not None:
+            msg = message.Subscribe(request, topic, **options.options)
+         else:
+            msg = message.Subscribe(request, topic)
+
+         self._transport.send(msg)
+         return d
+
+      if callable(handler):
+         ## register a single handler
+         ##
+         return _register(None, endpoint, procedure, options)
+
       else:
-         msg = message.Subscribe(request, topic)
-
-      self._transport.send(msg)
-      return d
+         ## register all methods on an object
+         ## decorated with "wamp.topic"
+         ##
+         dl = []
+         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
+            proc = k[1]
+            if "_wampuris" in proc.__dict__:
+               pat = proc.__dict__["_wampuris"][0]
+               if pat.is_handler():
+                  uri = pat.uri()
+                  dl.append(_subscribe(handler, proc, uri, options))
+         return DeferredList(dl, consumeErrors = True)
 
 
    def _unsubscribe(self, subscription):
@@ -834,9 +867,10 @@ class ApplicationSession(BaseSession):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]
-               uri = pat.uri()
-               dl.append(_register(endpoint, proc, uri, options))
-         return DeferredList(dl)
+               if pat.is_endpoint():
+                  uri = pat.uri()
+                  dl.append(_register(endpoint, proc, uri, options))
+         return DeferredList(dl, consumeErrors = True)
 
 
    def _unregister(self, registration):
