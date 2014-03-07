@@ -39,6 +39,11 @@ all:
 	@echo "   client_rpc_progress_frontend"
 	@echo "   client_rpc_progress_backend"
 	@echo ""
+	@echo "RPC Decorators:"
+	@echo "   server_with_rpc_decorators_backend"
+	@echo "   client_rpc_decorators_frontend"
+	@echo "   client_rpc_decorators_backend"
+	@echo ""
 	@echo "PubSub Basic:"
 	@echo "   server_with_pubsub_basic_backend"
 	@echo "   client_pubsub_basic_frontend"
@@ -138,6 +143,16 @@ client_rpc_progress_frontend:
 
 client_rpc_progress_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "rpc.progress.backend.Component"
+
+
+server_with_rpc_decorators_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "rpc.decorators.backend.Component"
+
+client_rpc_decorators_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.decorators.frontend.Component"
+
+client_rpc_decorators_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "rpc.decorators.backend.Component"
 
 
 server_with_pubsub_basic_backend:
