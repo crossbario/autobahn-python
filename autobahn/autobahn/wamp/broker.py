@@ -139,14 +139,14 @@ class Broker:
 
          ## remove publisher
          ##
-         if publish.excludeMe is None or not publish.excludeMe:
+         if publish.excludeMe is None or publish.excludeMe:
          #   receivers.discard(session) # bad: this would modify our actual subscriber list
             me_also = False
          else:
             me_also = True
 
       else:
-         subscription, receivers = None, []
+         subscription, receivers, me_also = None, [], False
 
       publication = util.id()
 
