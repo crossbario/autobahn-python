@@ -22,19 +22,27 @@ from __future__ import absolute_import
 class HelloReturn:
    pass
 
+
+
 class Accept(HelloReturn):
-   def __init__(self, authid = None):
+   def __init__(self, authid = None, authrole = None):
       self.authid = authid
+      self.authrole = authrole
+
+
 
 class Deny(HelloReturn):
    def __init__(self, reason = "wamp.error.not_authorized", message = None):
       self.reason = reason
       self.message = message
 
+
+
 class Challenge(HelloReturn):
    def __init__(self, method, extra = {}):
       self.method = method
       self.extra = extra
+
 
 
 class SessionDetails:
@@ -154,11 +162,11 @@ class PublishOptions:
 
 class RegisterOptions:
    """
-   Used to provide options for subscribing in
+   Used to provide options for registering in
    :func:`autobahn.wamp.interfaces.ICallee.register`.
    """
 
-   def __init__(self, details_arg = None, pkeys = None):
+   def __init__(self, details_arg = None, pkeys = None, discloseCaller = None):
       """
       Ctor.
 
@@ -168,7 +176,10 @@ class RegisterOptions:
       """
       assert(details_arg is None or type(details_arg) == str)
       self.details_arg = details_arg
-      self.options = {'pkeys': pkeys}
+      self.options = {
+         'pkeys': pkeys,
+         'discloseCaller': discloseCaller
+      }
 
 
 
@@ -178,7 +189,7 @@ class CallDetails:
    registered is being called and opted to receive call details.
    """
 
-   def __init__(self, progress = None, caller = None):
+   def __init__(self, progress = None, caller = None, authid = None, authrole = None):
       """
       Ctor.
 
@@ -186,9 +197,18 @@ class CallDetails:
       :type progress: callable
       :param caller: The WAMP session ID of the caller, if the latter is disclosed.
       :type caller: int
+      :param authid: The authentication ID of the caller.
+      :type authid: str
+      :param authrole: The authentication role of the caller.
+      :type authrole: str
       """
       self.progress = progress
       self.caller = caller
+      self.authid = authid
+      self.authrole = authrole
+
+   def __str__(self):
+      return "CallDetails(progress = {}, caller = {}, authid = {}, authrole = {})".format(self.progress, self.caller, self.authid, self.authrole)
 
 
 

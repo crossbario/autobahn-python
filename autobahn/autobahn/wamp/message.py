@@ -243,7 +243,7 @@ class Welcome(Message):
    """
 
 
-   def __init__(self, session, roles, authid = None):
+   def __init__(self, session, roles, authid = None, authrole = None):
       """
       Message constructor.
 
@@ -256,6 +256,7 @@ class Welcome(Message):
       self.session = session
       self.roles = roles
       self.authid = authid
+      self.authrole = authrole
 
 
    @staticmethod
@@ -279,6 +280,8 @@ class Welcome(Message):
       details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
       authid = details.get('authid', None)
+      authrole = details.get('authrole', None)
+
       roles = []
 
       if not details.has_key('roles'):
@@ -304,7 +307,7 @@ class Welcome(Message):
 
          roles.append(role_features)
 
-      obj = Welcome(session, roles, authid)
+      obj = Welcome(session, roles, authid, authrole)
 
       return obj
 
@@ -319,6 +322,9 @@ class Welcome(Message):
 
       if self.authid:
          details['authid'] = self.authid
+
+      if self.authrole:
+         details['authrole'] = self.authrole
 
       for role in self.roles:
          details['roles'][role.ROLE] = {}
@@ -335,7 +341,7 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {})".format(self.session, self.roles, self.authid)
+      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {})".format(self.session, self.roles, self.authid, self.authrole)
 
 
 
@@ -1904,7 +1910,7 @@ class Register(Message):
    The WAMP message code for this type of message.
    """
 
-   def __init__(self, request, procedure, pkeys = None):
+   def __init__(self, request, procedure, pkeys = None, discloseCaller = None):
       """
       Message constructor.
 
@@ -1919,6 +1925,7 @@ class Register(Message):
       self.request = request
       self.procedure = procedure
       self.pkeys = pkeys
+      self.discloseCaller = discloseCaller
 
 
    @staticmethod
@@ -1943,6 +1950,7 @@ class Register(Message):
       procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER")
 
       pkeys = None
+      discloseCaller = None
 
       if options.has_key('pkeys'):
 
@@ -1956,7 +1964,16 @@ class Register(Message):
 
          pkeys = option_pkeys
 
-      obj = Register(request, procedure, pkeys = pkeys)
+
+      if options.has_key('disclose_caller'):
+
+         option_discloseCaller = options['disclose_caller']
+         if type(option_discloseCaller) != bool:
+            raise ProtocolError("invalid type {} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
+
+         discloseCaller = option_discloseCaller
+
+      obj = Register(request, procedure, pkeys = pkeys, discloseCaller = discloseCaller)
 
       return obj
 
@@ -1970,6 +1987,9 @@ class Register(Message):
       if self.pkeys is not None:
          options['pkeys'] = self.pkeys
 
+      if self.discloseCaller is not None:
+         options['disclose_caller'] = self.discloseCaller
+
       return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 
 
@@ -1977,7 +1997,7 @@ class Register(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP REGISTER Message (request = {}, procedure = {}, pkeys = {})".format(self.request, self.procedure, self.pkeys)
+      return "WAMP REGISTER Message (request = {}, procedure = {}, pkeys = {}, discloseCaller = {})".format(self.request, self.procedure, self.pkeys, self.discloseCaller)
 
 
 
@@ -2203,7 +2223,9 @@ class Invocation(Message):
                 kwargs = None,
                 timeout = None,
                 receive_progress = None,
-                caller = None):
+                caller = None,
+                authid = None,
+                authrole = None):
       """
       Message constructor.
 
@@ -2229,6 +2251,8 @@ class Invocation(Message):
       self.timeout = timeout
       self.receive_progress = receive_progress
       self.caller = caller
+      self.authid = authid
+      self.authrole = authrole
 
 
    @staticmethod
@@ -2294,13 +2318,33 @@ class Invocation(Message):
 
          caller = detail_caller
 
+      authid = None
+      if details.has_key('authid'):
+
+         detail_authid = details['authid']
+         if type(detail_authid) not in [str, unicode]:
+            raise ProtocolError("invalid type {} for 'authid' detail in INVOCATION".format(type(detail_authid)))
+
+         authid = detail_authid
+
+      authrole = None
+      if details.has_key('authrole'):
+
+         detail_authrole = details['authrole']
+         if type(detail_authrole) not in [str, unicode]:
+            raise ProtocolError("invalid type {} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
+
+         authrole = detail_authrole
+
       obj = Invocation(request,
                        registration,
                        args = args,
                        kwargs = kwargs,
                        timeout = timeout,
                        receive_progress = receive_progress,
-                       caller = caller)
+                       caller = caller,
+                       authid = authid,
+                       authrole = authrole)
 
       return obj
 
@@ -2320,6 +2364,12 @@ class Invocation(Message):
       if self.caller is not None:
          options['caller'] = self.caller
 
+      if self.authid is not None:
+         options['authid'] = self.authid
+
+      if self.authrole is not None:
+         options['authrole'] = self.authrole
+
       if self.kwargs:
          return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
       elif self.args:
@@ -2332,7 +2382,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, caller = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller)
+      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, caller = {}, authid = {}, authrole = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole)
 
 
 

@@ -51,10 +51,10 @@ class Endpoint:
    """
    """
 
-   def __init__(self, obj, fn, details_arg = None):
+   def __init__(self, obj, fn, options = None):
       self.obj = obj
       self.fn = fn
-      self.details_arg = details_arg
+      self.options = options
 
 
 
@@ -510,7 +510,7 @@ class ApplicationSession(BaseSession):
                else:
                   endpoint = self._registrations[msg.registration]
 
-                  if endpoint.details_arg:
+                  if endpoint.options and endpoint.options.details_arg:
 
                      if not msg.kwargs:
                         msg.kwargs = {}
@@ -522,12 +522,7 @@ class ApplicationSession(BaseSession):
                      else:
                         progress = None
 
-                     if msg.caller:
-                        caller = msg.caller
-                     else:
-                        caller = None
-
-                     msg.kwargs[endpoint.details_arg] = types.CallDetails(progress, caller = caller)
+                     msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller, authid = msg.authid, authrole = msg.authrole)
 
                   if endpoint.obj:
                      if msg.kwargs:
@@ -589,7 +584,7 @@ class ApplicationSession(BaseSession):
             if msg.request in self._register_reqs:
                d, obj, fn, options = self._register_reqs.pop(msg.request)
                if options:
-                  self._registrations[msg.registration] = Endpoint(obj, fn, options.details_arg)
+                  self._registrations[msg.registration] = Endpoint(obj, fn, options)
                else:
                   self._registrations[msg.registration] = Endpoint(obj, fn)
                r = Registration(self, msg.registration)
@@ -1068,6 +1063,8 @@ class RouterSession(BaseSession):
       """
       self._transport = transport
       self._session_id = None
+      self._authid = None
+      self._authrole = None
 
 
    def onHello(self, realm, details):
@@ -1084,7 +1081,7 @@ class RouterSession(BaseSession):
       """
       if self._session_id is None:
 
-         def welcome(realm, authid = None):
+         def welcome(realm, authid = None, authrole = None):
             self._session_id = util.id()
             self._goodbye_sent = False
 
@@ -1093,8 +1090,11 @@ class RouterSession(BaseSession):
                raise Exception("no such realm")
 
             roles = self._router.attach(self)
-            msg = message.Welcome(self._session_id, roles, authid)
+            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole)
             self._transport.send(msg)
+
+            self._authid = authid
+            self._authrole = authrole
 
             self.onJoin(SessionDetails(self._session_id))
 
@@ -1109,7 +1109,7 @@ class RouterSession(BaseSession):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid)
+                  welcome(self._realm, res.authid, res.authrole)
 
                elif isinstance(res, types.Challenge):
                   msg = message.Challenge(res.method, res.extra)
@@ -1136,7 +1136,7 @@ class RouterSession(BaseSession):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid)
+                  welcome(self._realm, res.authid, res.authrole)
 
                elif isinstance(res, types.Deny):
                   msg = message.Abort(res.reason, res.message)

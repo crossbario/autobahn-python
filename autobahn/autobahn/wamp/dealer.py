@@ -106,7 +106,7 @@ class Dealer:
 
          if not register.procedure in self._procs_to_regs:
             registration_id = util.id()
-            self._procs_to_regs[register.procedure] = (registration_id, session)
+            self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller)
             self._regs_to_procs[registration_id] = register.procedure
 
             self._session_to_registrations[session].add(registration_id)
@@ -153,14 +153,18 @@ class Dealer:
       else:
 
          if call.procedure in self._procs_to_regs:
-            registration_id, endpoint_session = self._procs_to_regs[call.procedure]
+            registration_id, endpoint_session, discloseCaller = self._procs_to_regs[call.procedure]
 
             request_id = util.id()
 
-            if call.discloseMe:
+            if discloseCaller or call.discloseMe:
                caller = session._session_id
+               authid = session._authid
+               authrole = session._authrole
             else:
                caller = None
+               authid = None
+               authrole = None
 
             invocation = message.Invocation(request_id,
                                             registration_id,
@@ -168,7 +172,9 @@ class Dealer:
                                             kwargs = call.kwargs,
                                             timeout = call.timeout,
                                             receive_progress = call.receive_progress,
-                                            caller = caller)
+                                            caller = caller,
+                                            authid = authid,
+                                            authrole = authrole)
 
             self._invocations[request_id] = (call, session)
             endpoint_session._transport.send(invocation)
