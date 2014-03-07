@@ -64,6 +64,11 @@ all:
 	@echo "   client_pubsub_unsubscribe_frontend"
 	@echo "   client_pubsub_unsubscribe_backend"
 	@echo ""
+	@echo "PubSub Decorators:"
+	@echo "   server_with_pubsub_decorators_backend"
+	@echo "   client_pubsub_decorators_frontend"
+	@echo "   client_pubsub_decorators_backend"
+	@echo ""
 	@echo "Session Series:"
 	@echo "   server_with_session_series_backend"
 	@echo "   client_session_series_frontend"
@@ -193,6 +198,16 @@ client_pubsub_unsubscribe_frontend:
 
 client_pubsub_unsubscribe_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.unsubscribe.backend.Component"
+
+
+server_with_pubsub_decorators_backend:
+	PYTHONPATH=../../../../autobahn python server.py --component "pubsub.decorators.backend.Component"
+
+client_pubsub_decorators_frontend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.decorators.frontend.Component"
+
+client_pubsub_decorators_backend:
+	PYTHONPATH=../../../../autobahn python client.py --component "pubsub.decorators.backend.Component"
 
 
 server_with_session_series_backend:

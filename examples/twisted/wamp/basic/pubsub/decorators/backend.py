@@ -19,13 +19,14 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 
 
 
 class Component(ApplicationSession):
    """
-   An application component calling the different backend procedures.
+   An application component that publishes an event every second.
    """
 
    def __init__(self, realm = "realm1"):
@@ -39,24 +40,9 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
-
-      procs = ['com.mathservice.add2',
-               'com.mathservice.mul2',
-               'com.mathservice.div2']
-
-      try:
-         for proc in procs:
-            res = yield self.call(proc, 2, 3)
-            print("{}: {}".format(proc, res))
-      except Exception as e:
-         print("Something went wrong: {}".format(e))
-
-      self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
-
-
-   def onDisconnect(self):
-      reactor.stop()
+      counter = 0
+      while True:
+         self.publish('com.myapp.topic1', counter)
+         self.publish('com.myapp.topic2', "Hello world.")
+         counter += 1
+         yield sleep(1)

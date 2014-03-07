@@ -18,10 +18,11 @@
 
 import datetime
 
+from twisted.internet.defer import inlineCallbacks
+
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
 
-from twisted.internet.defer import inlineCallbacks
 
 
 class Component(ApplicationSession):
@@ -44,12 +45,14 @@ class Component(ApplicationSession):
       ## register all methods on this object decorated with "@wamp.procedure"
       ## as a RPC endpoint
       ##
-      regs = yield self.register(self)
-      for r in regs:
-         if r[0]:
-            print("Ok, registered procedure with registration ID {}".format(r[1].id))
+      results = yield self.register(self)
+      for success, res in results:
+         if success:
+            ## res is an Registration instance
+            print("Ok, registered procedure with registration ID {}".format(res.id))
          else:
-            print("Failed to register procedure: {}".format(r[1].value))
+            ## res is an Failure instance
+            print("Failed to register procedure: {}".format(res.value))
 
 
    @wamp.procedure('com.mathservice.add2')

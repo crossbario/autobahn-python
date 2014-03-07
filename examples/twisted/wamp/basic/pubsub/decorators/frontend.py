@@ -19,18 +19,21 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
 
 
 
 class Component(ApplicationSession):
    """
-   An application component calling the different backend procedures.
+   An application component that subscribes and receives events,
+   and stop after having received 5 events.
    """
 
    def __init__(self, realm = "realm1"):
       ApplicationSession.__init__(self)
       self._realm = realm
+      self.received = 0
 
 
    def onConnect(self):
@@ -40,18 +43,30 @@ class Component(ApplicationSession):
    @inlineCallbacks
    def onJoin(self, details):
 
-      procs = ['com.mathservice.add2',
-               'com.mathservice.mul2',
-               'com.mathservice.div2']
+      ## subscribe all methods on this object decorated with "@wamp.topic"
+      ## as PubSub event handlers
+      ##
+      results = yield self.subscribe(self)
+      for success, res in results:
+         if success:
+            ## res is an Subscription instance
+            print("Ok, subscribed handler with subscription ID {}".format(res.id))
+         else:
+            ## res is an Failure instance
+            print("Failed to subscribe handler: {}".format(res.value))
 
-      try:
-         for proc in procs:
-            res = yield self.call(proc, 2, 3)
-            print("{}: {}".format(proc, res))
-      except Exception as e:
-         print("Something went wrong: {}".format(e))
 
-      self.leave()
+   @wamp.topic('com.myapp.topic1')
+   def onEvent1(self, i):
+      print("Got event on topic1: {}".format(i))
+      self.received += 1
+      if self.received > 5:
+         self.leave()
+
+
+   @wamp.topic('com.myapp.topic2')
+   def onEvent2(self, msg):
+      print("Got event on topic2: {}".format(msg))
 
 
    def onLeave(self, details):
