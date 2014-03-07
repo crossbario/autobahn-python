@@ -41,10 +41,17 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+
+      def on_event(i):
+         print("Got event: {}".format(i))
+
+      yield self.subscribe(on_event, 'com.myapp.topic1')
+
+
       counter = 0
       while True:
          publication = yield self.publish('com.myapp.topic1', counter,
-               options = PublishOptions(acknowledge = True, discloseMe = True))
+               options = PublishOptions(acknowledge = True, discloseMe = True, excludeMe = False))
          print("Event published with publication ID {}".format(publication.id))
          counter += 1
          yield sleep(1)

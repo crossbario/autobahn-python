@@ -1,5 +1,10 @@
 # Autobahn|Python Changelog
 
+## v0.8.5
+ * support endpoint/handler decorators
+ * new examples for endpoint/handler deorators
+ * fix excludeMe pubsub option
+
 ## v0.8.4
  * initial support for WAMP v2 authentication
  * various fixes/improvements to WAMP v2 implementation
