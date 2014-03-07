@@ -62,7 +62,8 @@ class Handler:
    """
    """
 
-   def __init__(self, fn, details_arg = None):
+   def __init__(self, obj, fn, details_arg = None):
+      self.obj = obj
       self.fn = fn
       self.details_arg = details_arg
 
@@ -760,14 +761,14 @@ class ApplicationSession(BaseSession):
       if callable(handler):
          ## register a single handler
          ##
-         return _register(None, endpoint, procedure, options)
+         return _subscribe(None, handler, topic, options)
 
       else:
          ## register all methods on an object
          ## decorated with "wamp.topic"
          ##
          dl = []
-         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
+         for k in inspect.getmembers(handler.__class__, inspect.ismethod):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]
