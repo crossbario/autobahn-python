@@ -59,14 +59,21 @@ class SessionDetails:
    :func:`autobahn.wamp.interfaces.IAppSession.onSessionOpen`.
    """
 
-   def __init__(self, session):
+   def __init__(self, realm, session, authid = None, authrole = None, authmethod = None):
       """
       Ctor.
 
       :param session: WAMP session ID of this session.
       :type session: int
       """
+      self.realm = realm
       self.session = session
+      self.authid = authid
+      self.authrole = authrole
+      self.authmethod = authmethod
+
+   def __str__(self):
+      return "SessionDetails(realm = {}, session = {}, authid = {}, authrole = {}, authmethod = {})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
 
 
 

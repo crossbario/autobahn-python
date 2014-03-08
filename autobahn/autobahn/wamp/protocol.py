@@ -308,6 +308,7 @@ class ApplicationSession(BaseSession):
       """
       self._transport = transport
       self._session_id = None
+      self._realm = None
       self.onConnect()
 
 
@@ -328,6 +329,7 @@ class ApplicationSession(BaseSession):
       ]
 
       msg = message.Hello(realm, roles)
+      self._realm = realm
       self._transport.send(msg)
 
 
@@ -351,7 +353,7 @@ class ApplicationSession(BaseSession):
          if isinstance(msg, message.Welcome):
             self._session_id = msg.session
 
-            self.onJoin(SessionDetails(self._session_id))
+            self.onJoin(SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod))
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
@@ -982,7 +984,7 @@ class RouterApplicationSession:
 
          ## fake app session open
          ##
-         self._session.onJoin(SessionDetails(self._session._session_id))
+         self._session.onJoin(SessionDetails(self._session._realm, self._session._session_id))
 
 
       ## app-to-router
@@ -1062,6 +1064,8 @@ class RouterSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
       """
       self._transport = transport
+
+      self._realm = None
       self._session_id = None
 
       ## session authentication information
@@ -1093,15 +1097,16 @@ class RouterSession(BaseSession):
             if not self._router:
                raise Exception("no such realm")
 
-            roles = self._router.attach(self)
-            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole, authmethod = authmethod)
-            self._transport.send(msg)
-
             self._authid = authid
             self._authrole = authrole
             self._authmethod = authmethod
 
-            self.onJoin(SessionDetails(self._session_id))
+            roles = self._router.attach(self)
+
+            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole, authmethod = authmethod)
+            self._transport.send(msg)
+
+            self.onJoin(SessionDetails(self._realm, self._session_id, self._authid, self._authrole, self._authmethod))
 
          ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
