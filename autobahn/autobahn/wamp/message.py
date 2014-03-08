@@ -139,7 +139,7 @@ class Hello(Message):
    """
 
 
-   def __init__(self, realm, roles):
+   def __init__(self, realm, roles, authmethods = None):
       """
       Message constructor.
 
@@ -153,6 +153,7 @@ class Hello(Message):
       Message.__init__(self)
       self.realm = realm
       self.roles = roles
+      self.authmethods = authmethods
 
 
    @staticmethod
@@ -200,7 +201,19 @@ class Hello(Message):
 
          roles.append(role_features)
 
-      obj = Hello(realm, roles)
+      authmethods = None
+      if 'authmethods' in details:
+         details_authmethods = details['authmethods']
+         if type(details_authmethods) != list:
+            raise ProtocolError("invalid type {} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
+
+         for auth_method in details_authmethods:
+            if type(auth_method) not in [str, unicode]:
+               raise ProtocolError("invalid type {} for item in 'authmethods' detail in HELLO".format(type(auth_method)))
+
+         authmethods = details_authmethods
+
+      obj = Hello(realm, roles, authmethods)
 
       return obj
 
@@ -218,6 +231,9 @@ class Hello(Message):
                   details['roles'][role.ROLE] = {'features': {}}
                details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
 
+      if self.authmethods:
+         details['authmethods'] = self.authmethods
+
       return [Hello.MESSAGE_TYPE, self.realm, details]
 
 
@@ -225,7 +241,7 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HELLO Message (realm = {}, roles = {})".format(self.realm, self.roles)
+      return "WAMP HELLO Message (realm = {}, roles = {}, authmethods = {})".format(self.realm, self.roles, self.authmethods)
 
 
 
@@ -243,7 +259,7 @@ class Welcome(Message):
    """
 
 
-   def __init__(self, session, roles, authid = None, authrole = None):
+   def __init__(self, session, roles, authid = None, authrole = None, authmethod = None):
       """
       Message constructor.
 
@@ -257,6 +273,7 @@ class Welcome(Message):
       self.roles = roles
       self.authid = authid
       self.authrole = authrole
+      self.authmethod = authmethod
 
 
    @staticmethod
@@ -281,6 +298,7 @@ class Welcome(Message):
 
       authid = details.get('authid', None)
       authrole = details.get('authrole', None)
+      authmethod = details.get('authmethod', None)
 
       roles = []
 
@@ -307,7 +325,7 @@ class Welcome(Message):
 
          roles.append(role_features)
 
-      obj = Welcome(session, roles, authid, authrole)
+      obj = Welcome(session, roles, authid, authrole, authmethod)
 
       return obj
 
@@ -326,6 +344,9 @@ class Welcome(Message):
       if self.authrole:
          details['authrole'] = self.authrole
 
+      if self.authrole:
+         details['authmethod'] = self.authmethod
+
       for role in self.roles:
          details['roles'][role.ROLE] = {}
          for feature in role.__dict__:
@@ -341,7 +362,7 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {})".format(self.session, self.roles, self.authid, self.authrole)
+      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {}, authmethod = {})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod)
 
 
 
@@ -2225,7 +2246,8 @@ class Invocation(Message):
                 receive_progress = None,
                 caller = None,
                 authid = None,
-                authrole = None):
+                authrole = None,
+                authmethod = None):
       """
       Message constructor.
 
@@ -2253,6 +2275,7 @@ class Invocation(Message):
       self.caller = caller
       self.authid = authid
       self.authrole = authrole
+      self.authmethod = authmethod
 
 
    @staticmethod
@@ -2336,6 +2359,15 @@ class Invocation(Message):
 
          authrole = detail_authrole
 
+      authmethod = None
+      if details.has_key('authmethod'):
+
+         detail_authmethod = details['authmethod']
+         if type(detail_authrole) not in [str, unicode]:
+            raise ProtocolError("invalid type {} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
+
+         authmethod = detail_authmethod
+
       obj = Invocation(request,
                        registration,
                        args = args,
@@ -2344,7 +2376,8 @@ class Invocation(Message):
                        receive_progress = receive_progress,
                        caller = caller,
                        authid = authid,
-                       authrole = authrole)
+                       authrole = authrole,
+                       authmethod = authmethod)
 
       return obj
 
@@ -2370,6 +2403,9 @@ class Invocation(Message):
       if self.authrole is not None:
          options['authrole'] = self.authrole
 
+      if self.authmethod is not None:
+         options['authmethod'] = self.authmethod
+
       if self.kwargs:
          return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
       elif self.args:
@@ -2382,7 +2418,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, caller = {}, authid = {}, authrole = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole)
+      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, caller = {}, authid = {}, authrole = {}, authmethod = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole, self.authmethod)
 
 
 

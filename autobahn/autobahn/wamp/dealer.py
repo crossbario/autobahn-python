@@ -161,10 +161,12 @@ class Dealer:
                caller = session._session_id
                authid = session._authid
                authrole = session._authrole
+               authmethod = session._authmethod
             else:
                caller = None
                authid = None
                authrole = None
+               authmethod = None
 
             invocation = message.Invocation(request_id,
                                             registration_id,
@@ -174,7 +176,8 @@ class Dealer:
                                             receive_progress = call.receive_progress,
                                             caller = caller,
                                             authid = authid,
-                                            authrole = authrole)
+                                            authrole = authrole,
+                                            authmethod = authmethod)
 
             self._invocations[request_id] = (call, session)
             endpoint_session._transport.send(invocation)

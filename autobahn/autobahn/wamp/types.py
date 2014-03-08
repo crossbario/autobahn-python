@@ -25,9 +25,10 @@ class HelloReturn:
 
 
 class Accept(HelloReturn):
-   def __init__(self, authid = None, authrole = None):
+   def __init__(self, authid = None, authrole = None, authmethod = None):
       self.authid = authid
       self.authrole = authrole
+      self.authmethod = authmethod
 
 
 
@@ -42,6 +43,13 @@ class Challenge(HelloReturn):
    def __init__(self, method, extra = {}):
       self.method = method
       self.extra = extra
+
+
+
+class HelloDetails:
+   def __init__(self, roles = None, authmethods = None):
+      self.roles = roles
+      self.authmethods = authmethods
 
 
 
@@ -189,7 +197,7 @@ class CallDetails:
    registered is being called and opted to receive call details.
    """
 
-   def __init__(self, progress = None, caller = None, authid = None, authrole = None):
+   def __init__(self, progress = None, caller = None, authid = None, authrole = None, authmethod = None):
       """
       Ctor.
 
@@ -206,9 +214,10 @@ class CallDetails:
       self.caller = caller
       self.authid = authid
       self.authrole = authrole
+      self.authmethod = authmethod
 
    def __str__(self):
-      return "CallDetails(progress = {}, caller = {}, authid = {}, authrole = {})".format(self.progress, self.caller, self.authid, self.authrole)
+      return "CallDetails(progress = {}, caller = {}, authid = {}, authrole = {}, authmethod = {})".format(self.progress, self.caller, self.authid, self.authrole, self.authmethod)
 
 
 

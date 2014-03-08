@@ -522,7 +522,7 @@ class ApplicationSession(BaseSession):
                      else:
                         progress = None
 
-                     msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller, authid = msg.authid, authrole = msg.authrole)
+                     msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller, authid = msg.authid, authrole = msg.authrole, authmethod = msg.authmethod)
 
                   if endpoint.obj:
                      if msg.kwargs:
@@ -1063,8 +1063,12 @@ class RouterSession(BaseSession):
       """
       self._transport = transport
       self._session_id = None
+
+      ## session authentication information
+      ##
       self._authid = None
       self._authrole = None
+      self._authmethod = None
 
 
    def onHello(self, realm, details):
@@ -1081,7 +1085,7 @@ class RouterSession(BaseSession):
       """
       if self._session_id is None:
 
-         def welcome(realm, authid = None, authrole = None):
+         def welcome(realm, authid = None, authrole = None, authmethod = None):
             self._session_id = util.id()
             self._goodbye_sent = False
 
@@ -1090,11 +1094,12 @@ class RouterSession(BaseSession):
                raise Exception("no such realm")
 
             roles = self._router.attach(self)
-            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole)
+            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole, authmethod = authmethod)
             self._transport.send(msg)
 
             self._authid = authid
             self._authrole = authrole
+            self._authmethod = authmethod
 
             self.onJoin(SessionDetails(self._session_id))
 
@@ -1103,13 +1108,15 @@ class RouterSession(BaseSession):
 
             self._realm = msg.realm
 
-            d = maybeDeferred(self.onHello, self._realm, {})
+            details = types.HelloDetails(msg.roles, msg.authmethods)
+
+            d = maybeDeferred(self.onHello, self._realm, details)
 
             def success(res):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid, res.authrole)
+                  welcome(self._realm, res.authid, res.authrole, res.authmethod)
 
                elif isinstance(res, types.Challenge):
                   msg = message.Challenge(res.method, res.extra)
@@ -1136,7 +1143,7 @@ class RouterSession(BaseSession):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid, res.authrole)
+                  welcome(self._realm, res.authid, res.authrole, res.authmethod)
 
                elif isinstance(res, types.Deny):
                   msg = message.Abort(res.reason, res.message)
@@ -1202,6 +1209,10 @@ class RouterSession(BaseSession):
          self._router.detach(self)
 
          self._session_id = None
+
+      self._authid = None
+      self._authrole = None
+      self._authmethod = None
 
 
    def onJoin(self, details):
