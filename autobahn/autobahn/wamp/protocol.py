@@ -279,6 +279,8 @@ class ApplicationSession(BaseSession):
       """
       BaseSession.__init__(self)
       self._transport = None
+      self._session_id = None
+      self._realm = None
 
       self._session_id = None
       self._goodbye_sent = False
@@ -307,8 +309,6 @@ class ApplicationSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
       """
       self._transport = transport
-      self._session_id = None
-      self._realm = None
       self.onConnect()
 
 
