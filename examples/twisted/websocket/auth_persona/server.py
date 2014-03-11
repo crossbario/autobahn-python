@@ -26,6 +26,7 @@ from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
 
+import autobahn
 from autobahn.util import newid, utcnow
 from autobahn.websocket import http
 
@@ -135,6 +136,7 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             ## The client did it's Mozilla Persona authentication thing
             ## and now wants to verify the authentication and login.
             assertion = msg.get('assertion')
+            audience = msg.get('audience');
 
             ## To verify the authentication, we need to send a HTTP/POST
             ## to Mozilla Persona. When successful, Persona will send us
@@ -149,7 +151,7 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             # }
 
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            body = urllib.urlencode({'audience': 'http://192.168.1.130:8080/', 'assertion': assertion})
+            body = urllib.urlencode({'audience': audience, 'assertion': assertion})
 
             from twisted.web.client import getPage
             d = getPage(url = "https://verifier.login.persona.org/verify",
@@ -175,13 +177,13 @@ class PersonaServerProtocol(WebSocketServerProtocol):
 
                   log.msg("Authenticated user {}".format(res['email']))
                else:
-                  log.msg("Authentication failed!")
-                  self.sendMessage(json.dumps({'cmd': 'AUTHENTICATION_FAILED'}))
+                  log.msg("Authentication failed: {}".format(res.get('reason')))
+                  self.sendMessage(json.dumps({'cmd': 'AUTHENTICATION_FAILED', 'reason': res.get('reason')}))
                   self.sendClose()
 
             def error(err):
                log.msg("Authentication request failed: {}".format(err.value))
-               self.sendMessage(json.dumps({'cmd': 'AUTHENTICATION_FAILED'}))
+               self.sendMessage(json.dumps({'cmd': 'AUTHENTICATION_FAILED', 'reason': str(err.value)}))
                self.sendClose()
 
             d.addCallbacks(done, error)
@@ -221,6 +223,8 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
+   print("Running Autobahn|Python {}".format(autobahn.version))
+
    ## our WebSocket server factory
    factory = PersonaServerFactory("ws://localhost:8080")
 
@@ -233,6 +237,8 @@ if __name__ == '__main__':
 
    ## run both under one Twisted Web Site
    site = Site(root)
+   site.log = lambda _: None # disable any logging
+   
    reactor.listenTCP(8080, site)
 
    reactor.run()

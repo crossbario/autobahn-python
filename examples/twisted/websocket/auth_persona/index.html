@@ -15,6 +15,17 @@
          var currentUser = null;
          var sock = null;
 
+         var wsuri;
+         var persona_audience = null;
+         if (window.location.protocol === "file:") {
+            wsuri = "ws://127.0.0.1:8080/ws";
+            persona_audience = "127.0.0.1";
+         } else {
+            wsuri = "ws://" + window.location.hostname + ":8080/ws";
+            persona_audience = window.location.hostname;
+         }
+
+
          var signinLink = document.getElementById('signin');
          signinLink.onclick = function() {
             navigator.id.request();
@@ -37,7 +48,7 @@
                   // 1. Send the assertion to your backend for verification and to create a session.
                   // 2. Update your UI.
                   if (sock) {
-                     sock.send(JSON.stringify({cmd: 'AUTHENTICATE', assertion: assertion}))
+                     sock.send(JSON.stringify({cmd: 'AUTHENTICATE', audience: persona_audience, assertion: assertion}))
                   }
                },
                onlogout: function() {
@@ -50,13 +61,6 @@
                   }
                }
             });            
-         }
-
-         var wsuri;
-         if (window.location.protocol === "file:") {
-            wsuri = "ws://127.0.0.1:8080/ws";
-         } else {
-            wsuri = "ws://" + window.location.hostname + ":8080/ws";
          }
 
          if ("WebSocket" in window) {
@@ -78,7 +82,9 @@
             }
 
             sock.onmessage = function (e) {
+
                msg = JSON.parse(e.data);
+
                if (msg.cmd === 'AUTHENTICATED') {
 
                   userLabel.innerHTML = 'Authenticated as ' + msg.email;
@@ -91,6 +97,14 @@
                } else if (msg.cmd === 'AUTHENTICATION_REQUIRED') {
 
                   userLabel.innerHTML = 'not logged in';
+                  signinLink.disabled = false;
+                  signoutLink.disabled = true;
+
+                  watchPersona();
+
+               } else if (msg.cmd === 'AUTHENTICATION_FAILED') {
+
+                  userLabel.innerHTML = 'Authentication failed: ' + msg.reason;
                   signinLink.disabled = false;
                   signoutLink.disabled = true;
 
