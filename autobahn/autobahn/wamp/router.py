@@ -137,7 +137,7 @@ class RouterFactory:
       """
       self._routers = {}
       self.debug = debug
-      self._options = options or RouterOptions()
+      self._options = options or types.RouterOptions()
 
 
    def get(self, realm):
