@@ -24,7 +24,7 @@ class RouterOptions:
    URI_CHECK_STRICT = "strict"
 
    def __init__(self, uri_check = None):
-      self.uri_check = uri_check or RouterOptions.URI_CHECK_LOOSE
+      self.uri_check = uri_check or RouterOptions.URI_CHECK_STRICT
 
 
 

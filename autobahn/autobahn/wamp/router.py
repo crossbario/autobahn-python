@@ -128,9 +128,16 @@ class RouterFactory:
    This class implements :class:`autobahn.wamp.interfaces.IRouterFactory`.
    """
 
-   def __init__(self, debug = False):
+   def __init__(self, options = None, debug = False):
+      """
+      Ctor.
+
+      :param options: Default router options.
+      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.      
+      """
       self._routers = {}
       self.debug = debug
+      self._options = options or RouterOptions()
 
 
    def get(self, realm):
@@ -138,7 +145,7 @@ class RouterFactory:
       Implements :func:`autobahn.wamp.interfaces.IRouterFactory.get`
       """
       if not realm in self._routers:
-         self._routers[realm] = Router(self, realm)
+         self._routers[realm] = Router(self, realm, self._options)
          if self.debug:
             log.msg("Router created for realm '{}'".format(realm))
       return self._routers[realm]
