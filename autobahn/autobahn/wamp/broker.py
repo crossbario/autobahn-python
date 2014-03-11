@@ -21,12 +21,13 @@ from __future__ import absolute_import
 from zope.interface import implementer
 
 from autobahn import util
+from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.interfaces import IBroker
 
-from autobahn.wamp.message import _URI_PAT_STRICT
+from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_EMPTY
 
 
 
@@ -36,11 +37,17 @@ class Broker:
    Basic WAMP broker, implements :class:`autobahn.wamp.interfaces.IBroker`.
    """
 
-   def __init__(self, realm):
+   def __init__(self, realm, options = None):
       """
       Constructor.
+
+      :param realm: The realm this broker is working for.
+      :type realm: str
+      :param options: Router options.
+      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
       self.realm = realm
+      self._options = options or types.RouterOptions()
 
       ## map: session -> set(subscription)
       ## needed for removeSession
@@ -59,7 +66,7 @@ class Broker:
       self._subscription_to_sessions = {}
 
       ## check all topic URIs with strict rules
-      self._option_uri_strict = True
+      self._option_uri_strict = self._options.uri_check == types.RouterOptions.URI_CHECK_STRICT
 
       ## supported features from "WAMP Advanced Profile"
       self._role_features = role.RoleBrokerFeatures(publisher_identification = True, subscriber_blackwhite_listing = True, publisher_exclusion = True)
@@ -103,10 +110,11 @@ class Broker:
 
       ## check topic URI
       ##
-      if self._option_uri_strict and not _URI_PAT_STRICT.match(publish.topic):
+      if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(publish.topic)) or \
+         (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(publish.topic)):
 
          if publish.acknowledge:
-            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_URI)
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_URI, ["publish with invalid topic URI '{}'".format(publish.topic)])
             session._transport.send(reply)
 
          return
@@ -181,9 +189,10 @@ class Broker:
 
       ## check topic URI
       ##
-      if self._option_uri_strict and not _URI_PAT_STRICT.match(subscribe.topic):
+      if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(subscribe.topic)) or \
+         (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(subscribe.topic)):
 
-         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_URI)
+         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_URI, ["subscribe for invalid topic URI '{}'".format(subscribe.topic)])
 
       else:
 

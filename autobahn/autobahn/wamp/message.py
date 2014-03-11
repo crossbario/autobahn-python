@@ -55,12 +55,18 @@ from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IMessage
 
 
-## strict URI check
+## strict URI check allowing empty URI components
 _URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,})?$")
 
-## loose URI check
+## loose URI check allowing empty URI components
 _URI_PAT_LOOSE = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
 
+
+## strict URI check disallowing empty URI components
+_URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]{2,}\.)*([0-9a-z_]{2,})?$")
+
+## loose URI check disallowing empty URI components
+_URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)?$")
 
 
 

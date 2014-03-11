@@ -21,12 +21,13 @@ from __future__ import absolute_import
 from zope.interface import implementer
 
 from autobahn import util
+from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError, ApplicationError
 from autobahn.wamp.interfaces import IDealer
 
-from autobahn.wamp.message import _URI_PAT_STRICT
+from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_EMPTY
 
 
 
@@ -36,11 +37,17 @@ class Dealer:
    Basic WAMP dealer, implements :class:`autobahn.wamp.interfaces.IDealer`.
    """
 
-   def __init__(self, realm):
+   def __init__(self, realm, options):
       """
       Constructor.
+
+      :param realm: The realm this dealer is working for.
+      :type realm: str
+      :param options: Router options.
+      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
       self.realm = realm
+      self._options = options or types.RouterOptions()
 
       ## map: session -> set(registration)
       ## needed for removeSession
@@ -60,7 +67,7 @@ class Dealer:
       self._invocations = {}
 
       ## check all procedure URIs with strict rules
-      self._option_uri_strict = True
+      self._option_uri_strict = self._options.uri_check == types.RouterOptions.URI_CHECK_STRICT
 
       ## supported features from "WAMP Advanced Profile"
       self._role_features = role.RoleDealerFeatures(caller_identification = True, progressive_call_results = True)
@@ -96,11 +103,14 @@ class Dealer:
       """
       assert(session in self._session_to_registrations)
 
-      ## check topic URI
+      ## check procedure URI
       ##
-      if self._option_uri_strict and not _URI_PAT_STRICT.match(register.procedure):
+      if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(register.procedure)) or \
+         (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(register.procedure)):
 
-         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI)
+         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI, ["register for invalid procedure URI '{}'".format(register.procedure)])
+
+         print "X"*100, reply
 
       else:
 
@@ -143,11 +153,12 @@ class Dealer:
       """
       assert(session in self._session_to_registrations)
 
-      ## check topic URI
+      ## check procedure URI
       ##
-      if self._option_uri_strict and not _URI_PAT_STRICT.match(call.procedure):
+      if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(call.procedure)) or \
+         (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(call.procedure)):
 
-         reply = message.Error(message.Register.MESSAGE_TYPE, call.request, ApplicationError.INVALID_URI)
+         reply = message.Error(message.Register.MESSAGE_TYPE, call.request, ApplicationError.INVALID_URI, ["call with invalid procedure URI '{}'".format(call.procedure)])
          session._transport.send(reply)
 
       else:

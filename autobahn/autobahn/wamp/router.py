@@ -22,6 +22,7 @@ from zope.interface import implementer
 
 from twisted.python import log
 
+from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
@@ -38,11 +39,22 @@ class Router:
    This class implements :class:`autobahn.wamp.interfaces.IRouter`.
    """
 
-   def __init__(self, factory, realm):
+   def __init__(self, factory, realm, options = None):
+      """
+      Ctor.
+
+      :param factory: The router factory this router was created by.
+      :type factory: Object that implements :class:`autobahn.wamp.interfaces.IRouterFactory`..
+      :param realm: The realm this router is working for.
+      :type realm: str
+      :param options: Router options.
+      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
+      """
       self.factory = factory
       self.realm = realm
-      self._broker = Broker(realm)
-      self._dealer = Dealer(realm)
+      self._options = options or types.RouterOptions()
+      self._broker = Broker(realm, self._options)
+      self._dealer = Dealer(realm, self._options)
       self._attached = 0
 
 
