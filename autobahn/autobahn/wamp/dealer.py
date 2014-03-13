@@ -110,8 +110,6 @@ class Dealer:
 
          reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI, ["register for invalid procedure URI '{}'".format(register.procedure)])
 
-         print "X"*100, reply
-
       else:
 
          if not register.procedure in self._procs_to_regs:
@@ -123,7 +121,7 @@ class Dealer:
 
             reply = message.Registered(register.request, registration_id)
          else:
-            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS)
+            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure URI '{}'".format(register.procedure)])
 
       session._transport.send(reply)
 
@@ -193,7 +191,7 @@ class Dealer:
             self._invocations[request_id] = (call, session)
             endpoint_session._transport.send(invocation)
          else:
-            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE)
+            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{}' registered".format(call.procedure)])
             session._transport.send(reply)
 
 
