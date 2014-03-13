@@ -15,7 +15,7 @@ var connection = new autobahn.Connection({
 connection.onopen = function (session) {
 
    function on_event(val) {
-      console.log("Someone requested to square non-negative:", val);
+      console.log("Someone requested to square non-positive:", val);
    }
 
    session.subscribe('com.myapp.square_on_nonpositive', on_event);
@@ -25,7 +25,7 @@ connection.onopen = function (session) {
    var vals = [2, 0, -2];
    for (var i = 0; i < vals.length; ++i) {
 
-      dl.push(session.call('com.myapp.square', [vals[i]], {}, {discloseme: true}).then(
+      dl.push(session.call('com.myapp.square', [vals[i]], {}, {disclose_me: true}).then(
          function (res) {
             console.log("Squared", res);
          },
@@ -38,11 +38,9 @@ connection.onopen = function (session) {
    when.all(dl).then(
       function () {
          console.log("All finished.");
-         connection.close();
       },
       function () {
          console.log("Error", arguments);
-         connection.close();
       });
 };
 

@@ -14,10 +14,11 @@ connection.onopen = function (session) {
 
    function square(args, kwargs, details) {
       console.log("Someone is calling me;)", details);
+
       var val = args[0];
       if (val < 0) {
          session.publish('com.myapp.square_on_nonpositive', [val]);
-      } else {
+      } else if (val === 0) {
          var options = {};
          if (details && details.caller) {
             options = {exclude: [details.caller]};
