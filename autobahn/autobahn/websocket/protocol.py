@@ -978,19 +978,21 @@ class WebSocketProtocol:
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
             self.factory._log("Failing connection : %s - %s" % (code, reason))
+
          self.failedByMe = True
-         if self.failByDrop:
+
+         ## if asked to fail-by-drop OR already closing, we fail by dropping TCP
+         ##
+         if self.failByDrop or self.state == WebSocketProtocol.STATE_CLOSING:
             ## brutally drop the TCP connection
             self.wasClean = False
             self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
             self.dropConnection(abort = True)
+
          else:
             ## perform WebSocket closing handshake
-            if self.state != WebSocketProtocol.STATE_CLOSING:
-               self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8")[:125-2], isReply = False)
-            else:
-               if self.debugCodePaths:
-                  self.factory._log("skipping failConnection since connection is already closing")
+            self.sendCloseFrame(code = code, reasonUtf8 = reason.encode("UTF-8")[:125-2], isReply = False)
+
       else:
          if self.debugCodePaths:
             self.factory._log("skipping failConnection since connection is already closed")
