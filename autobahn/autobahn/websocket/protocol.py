@@ -2774,21 +2774,30 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          if not 'host' in self.http_headers:
             return self.failHandshake("HTTP Host header missing in opening handshake request")
+
          if http_headers_cnt["host"] > 1:
             return self.failHandshake("HTTP Host header appears more than once in opening handshake request")
+
          self.http_request_host = self.http_headers["host"].strip()
+
          if self.http_request_host.find(":") >= 0:
             (h, p) = self.http_request_host.split(":")
             try:
                port = int(str(p.strip()))
             except:
                return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
-            if port != self.factory.externalPort:
-               return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
             self.http_request_host = h
+
+            ## do port checking only if externalPort or URL was set
+            if self.factory.externalPort:
+               if port != self.factory.externalPort:
+                  return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
+
          else:
-            if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
-               return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
+            ## do port checking only if externalPort or URL was set
+            if self.factory.externalPort:
+               if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
+                  return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
 
          ## Upgrade
          ##
@@ -3318,11 +3327,9 @@ class WebSocketServerFactory(WebSocketFactory):
       """
       Create instance of WebSocket server factory.
 
-      Note that you MUST provide URL either here or using
-      :meth:`autobahn.websocket.protocol.WebSocketServerFactory.setSessionParameters`
-      *before* the factory is started.
-
       :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
+                  For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+                  This will use an implicit URL of `ws://localhost`.
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
@@ -3371,6 +3378,8 @@ class WebSocketServerFactory(WebSocketFactory):
       Set WebSocket session parameters.
 
       :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
+                  For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+                  This will use an implicit URL of `ws://localhost`.
       :type url: str
       :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
       :type protocols: list of strings
@@ -3381,31 +3390,28 @@ class WebSocketServerFactory(WebSocketFactory):
       :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
       :type externalPort: int
       """
-      if url is not None:
-         ## parse WebSocket URI into components
-         (isSecure, host, port, resource, path, params) = parseWsUrl(url)
-         if len(params) > 0:
-            raise Exception("query parameters specified for server WebSocket URL")
-         self.url = url
-         self.isSecure = isSecure
-         self.host = host
-         self.port = port
-         self.resource = resource
-         self.path = path
-         self.params = params
-      else:
-         self.url = None
-         self.isSecure = None
-         self.host = None
-         self.port = None
-         self.resource = None
-         self.path = None
-         self.params = None
+      ## parse WebSocket URI into components
+      (isSecure, host, port, resource, path, params) = parseWsUrl(url or "ws://localhost")
+      if len(params) > 0:
+         raise Exception("query parameters specified for server WebSocket URL")
+      self.url = url
+      self.isSecure = isSecure
+      self.host = host
+      self.port = port
+      self.resource = resource
+      self.path = path
+      self.params = params
 
       self.protocols = protocols
       self.server = server
       self.headers = headers
-      self.externalPort = externalPort if externalPort is not None else self.port
+
+      if externalPort
+         self.externalPort = externalPort
+      elif url:
+         self.externalPort = self.port
+      else:
+         self.externalPort = None
 
 
    def resetProtocolOptions(self):
