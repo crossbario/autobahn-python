@@ -4074,7 +4074,9 @@ class WebSocketClientFactory(WebSocketFactory):
       :meth:`autobahn.websocket.WebSocketClientFactory.setSessionParameters`
       *before* the factory is started.
 
-      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath`.
+      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
+                  For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+                  This will use an implicit URL of `ws://localhost`.
       :type url: str
       :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
       :type origin: str
@@ -4121,7 +4123,9 @@ class WebSocketClientFactory(WebSocketFactory):
       """
       Set WebSocket session parameters.
 
-      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath`.
+      :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
+                  For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+                  This will use an implicit URL of `ws://localhost`.
       :type url: str
       :param origin: The origin to be sent in opening handshake.
       :type origin: str
@@ -4132,24 +4136,15 @@ class WebSocketClientFactory(WebSocketFactory):
       :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
       :type headers: dict
       """
-      if url is not None:
-         ## parse WebSocket URI into components
-         (isSecure, host, port, resource, path, params) = parseWsUrl(url)
-         self.url = url
-         self.isSecure = isSecure
-         self.host = host
-         self.port = port
-         self.resource = resource
-         self.path = path
-         self.params = params
-      else:
-         self.url = None
-         self.isSecure = None
-         self.host = None
-         self.port = None
-         self.resource = None
-         self.path = None
-         self.params = None
+      ## parse WebSocket URI into components
+      (isSecure, host, port, resource, path, params) = parseWsUrl(url or "ws://localhost")
+      self.url = url
+      self.isSecure = isSecure
+      self.host = host
+      self.port = port
+      self.resource = resource
+      self.path = path
+      self.params = params
 
       self.origin = origin
       self.protocols = protocols
