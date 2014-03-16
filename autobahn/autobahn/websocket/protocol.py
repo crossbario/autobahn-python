@@ -978,15 +978,14 @@ class WebSocketProtocol:
       if self.state != WebSocketProtocol.STATE_CLOSED:
          if self.debugCodePaths:
             self.factory._log("Failing connection : %s - %s" % (code, reason))
-
          self.failedByMe = True
-
+         
+         
          if self.failByDrop:
             ## brutally drop the TCP connection
             self.wasClean = False
             self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
             self.dropConnection(abort = True)
-
          else:
             if self.state != WebSocketProtocol.STATE_CLOSING:
                ## perform WebSocket closing handshake
@@ -995,7 +994,6 @@ class WebSocketProtocol:
                ## already performing closing handshake .. we now drop the TCP
                ## (this can happen e.g. if we encounter a 2nd protocol violation during closing HS)
                self.dropConnection(abort = False)
-
       else:
          if self.debugCodePaths:
             self.factory._log("skipping failConnection since connection is already closed")
@@ -2777,18 +2775,20 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if http_headers_cnt["host"] > 1:
             return self.failHandshake("HTTP Host header appears more than once in opening handshake request")
          self.http_request_host = self.http_headers["host"].strip()
-         if self.http_request_host.find(":") >= 0:
-            (h, p) = self.http_request_host.split(":")
-            try:
-               port = int(str(p.strip()))
-            except:
-               return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
-            if port != self.factory.externalPort:
-               return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
-            self.http_request_host = h
-         else:
-            if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
-               return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
+         
+         if self.factory.externalPort is not None:    # if we were told of an external (NAT'd port) 
+            if self.http_request_host.find(":") >= 0: # that we expect to be run on, enforce it.
+               (h, p) = self.http_request_host.split(":")
+               try:
+                  port = int(str(p.strip()))
+               except:
+                  return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
+               if port != self.factory.externalPort:
+                  return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
+               self.http_request_host = h
+            else:
+               if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
+                  return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
 
          ## Upgrade
          ##
@@ -3106,7 +3106,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if self.debugCodePaths:
             self.factory._log('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
 
-         if (self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80):
+         if (self.factory.isSecure and (self.factory.externalPort is not None and self.factory.externalPort != 443)) or ((not self.factory.isSecure) and (self.factory.externalPort is not None and self.factory.externalPort != 80)):
             if self.debugCodePaths:
                self.factory._log('factory running on non-default port')
             response_port = ':' + str(self.factory.externalPort)
