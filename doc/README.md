@@ -8,8 +8,10 @@ The documentation is generated automatically from the Python source file via [Sp
 
 To generate the documentation yourself, you will need to install Sphinx:
 
-	easy_install sphinx
-   easy_install repoze.sphinx.autointerface
+	pip install sphinx
+   pip install sphinx_rtd_theme
+   pip install sphinxcontrib-spelling
+   pip install repoze.sphinx.autointerface
 
 and then
 
@@ -26,5 +28,5 @@ To adjust the AutobahnPython version printed in the documentation, edit
 
 for
 
-	version = '0.5'
-	release = '0.5.2'
+	version = '0.8'
+	release = '0.8.5'
