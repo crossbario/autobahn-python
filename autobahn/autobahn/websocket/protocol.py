@@ -138,8 +138,10 @@ def parseWsUrl(url):
    :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
    """
    parsed = urlparse.urlparse(url)
+   if not parsed.hostname or parsed.hostname == "":
+      raise Exception("invalid WebSocket URL: missing hostname")
    if parsed.scheme not in ["ws", "wss"]:
-      raise Exception("invalid WebSocket scheme '%s'" % parsed.scheme)
+      raise Exception("invalid WebSocket URL: bogus protocol scheme '%s'" % parsed.scheme)
    if parsed.port is None or parsed.port == "":
       if parsed.scheme == "ws":
          port = 80
@@ -2786,18 +2788,25 @@ class WebSocketServerProtocol(WebSocketProtocol):
                port = int(str(p.strip()))
             except:
                return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
-            self.http_request_host = h
 
             ## do port checking only if externalPort or URL was set
             if self.factory.externalPort:
                if port != self.factory.externalPort:
                   return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
+            else:
+               if self.debugCodePaths:
+                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
+
+            self.http_request_host = h
 
          else:
             ## do port checking only if externalPort or URL was set
             if self.factory.externalPort:
                if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
                   return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
+            else:
+               if self.debugCodePaths:
+                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
 
          ## Upgrade
          ##
@@ -3115,7 +3124,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          if self.debugCodePaths:
             self.factory._log('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
 
-         if (self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80):
+         if self.factory.externalPort and ((self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80)):
             if self.debugCodePaths:
                self.factory._log('factory running on non-default port')
             response_port = ':' + str(self.factory.externalPort)
@@ -3406,7 +3415,7 @@ class WebSocketServerFactory(WebSocketFactory):
       self.server = server
       self.headers = headers
 
-      if externalPort
+      if externalPort:
          self.externalPort = externalPort
       elif url:
          self.externalPort = self.port
