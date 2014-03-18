@@ -1,4 +1,6 @@
 .. _Autobahn: http://autobahn.ws
+.. _AutobahnJS: http://autobahn.ws/js
+.. _AutobahnPython: **Autobahn**\|Python
 .. _WebSocket: http://tools.ietf.org/html/rfc6455
 .. _RFC6455: http://tools.ietf.org/html/rfc6455
 .. _WAMP: http://wamp.ws/
@@ -11,25 +13,31 @@
 .. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
 .. _AutobahnTestsuite: http://autobahn.ws/testsuite
 
+.. |ab| replace:: **Autobahn**\|Python
 
-Autobahn|Python Reference
-=========================
+
+|ab| Reference
+==============
 
 Release v\ |version|. (:ref:`Changelog`)
 
 
-**Autobahn** Python is a subproject of `Autobahn`_ and provides open-source implementations of
+|ab| is a subproject of `Autobahn`_ and provides open-source implementations of
 
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
 
-in Python running on `Twisted`_ and `asyncio`_.
+in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
-WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on top of WebSocket. 
-
-You can use **Autobahn**|Python to create clients and servers in Python speaking just plain WebSocket or WAMP:
+WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_. 
 
 
+Show my some code
+-----------------
+
+Using |ab| you can create both clients and servers in Python speaking just plain WebSocket or WAMP.
+
+For example, here is a WebSocket server:
 
 .. code-block:: python
 
@@ -53,13 +61,57 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
       def onClose(self, wasClean, code, reason):
          print("WebSocket connection closed: {}".format(reason))
 
+Complete example code:
 
+* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
+* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
+
+
+And here is a WAMP application component:
+
+
+.. code-block:: python
+
+   class MyComponent(ApplicationSession):
+
+      def onConnect(self):
+         self.join("realm1")
+
+
+      @inlineCallbacks
+      def onJoin(self, details):
+
+         # 1) subscribe to a topic
+         def onevent(msg):
+            print("Got event: {}".format(msg))
+
+         yield self.subscribe(onevent, 'com.myapp.hello')
+
+         # 2) publish an event
+         self.publish('com.myapp.hello', 'Hello, world!')
+
+         # 3) register a procedure for remoting
+         def add2(x, y):
+            return x + y
+
+         self.register(add2, 'com.myapp.add2');
+
+         # 4) call a remote procedure
+         res = yield self.call('com.myapp.add2', 2, 3)
+         print("Got result: {}".format(res))
+
+
+.. note::
+
+   * WAMP application components can be run in servers and clients without any modification to your component class.
+
+   * While |ab| supports both `Twisted`_ and `asyncio`_ for WebSocket code, WAMP is currently only supported on Twisted.
+
+   * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
 
 
 Features
 --------
-
-You can use **Autobahn**|Python to create clients and servers in Python speaking just plain WebSocket or WAMP:
 
 * framework for `WebSocket`_ / `WAMP`_ clients and servers
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
@@ -77,9 +129,21 @@ You can use **Autobahn**|Python to create clients and servers in Python speaking
 
 Get it now
 ----------
+
+Install from the Python package index:
+
 ::
 
     $ pip install -U autobahn
+
+
+Check the installation:
+
+.. doctest::
+
+   >>> from autobahn import __version__
+   >>> print __version__
+   0.8.5
 
 
 Contents
@@ -92,6 +156,8 @@ Contents
    wamp1toc
    wamp2
    wamp2all
+   wampprogramming
+   changelog
 
 
 * :ref:`genindex`

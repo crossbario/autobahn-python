@@ -26,7 +26,7 @@ env = Environment(tools = ['default', 'taschenmesser'],
                   toolpath = [taschenmesser],
                   ENV = os.environ)
 
-DOCSDIR = '_html'
+DOCSDIR = '_build'
 S3DIR = '_upload'
 
 ##
