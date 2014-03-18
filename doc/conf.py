@@ -50,7 +50,8 @@ if spelling is not None:
    extensions.append('sphinxcontrib.spelling')
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+#templates_path = ['_templates']
+templates_path = ['templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -131,6 +132,7 @@ else:
 #html_theme_options = {}
 
 html_theme_options = {
+'analytics_id': 'sdfsfsdf'
 #  'footertextcolor': '#ccc',
 #  'sidebarbgcolor': '#111',
 #  'sidebartextcolor': '#ccc',

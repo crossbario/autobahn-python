@@ -19,6 +19,10 @@ This will create the documentation under
 	_html
 
 
+## Custom Page Content
+
+To add custom page content to the generated pages, modify `templates/layout.html`.
+
 ## Publishing
 
 > Note: this section is only relevant for administrators of the [Autobahn web site](http://autobahn.ws/).
