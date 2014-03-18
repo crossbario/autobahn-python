@@ -1,32 +1,40 @@
-AutobahnPython API Reference
-============================
+# Autobahn|Python Documentation
 
-The AutobahnPython API reference is available [online](http://autobahn.ws/python/reference).
+The **Autobahn**|Python reference documentation is generated using [Sphinx](http://sphinx.pocoo.org/) and available [online](http://autobahn.ws/python/reference).
 
-
-The documentation is generated automatically from the Python source file via [Sphinx](http://sphinx.pocoo.org/).
-
-To generate the documentation yourself, you will need to install Sphinx:
+To generate the documentation yourself you will need to have **Autobahn**|Python installed locally plus install Sphinx:
 
 	pip install sphinx
-   pip install sphinx_rtd_theme
-   pip install sphinxcontrib-spelling
-   pip install repoze.sphinx.autointerface
+    pip install sphinx_rtd_theme
+    pip install sphinxcontrib-spelling
+    pip install repoze.sphinx.autointerface
 
 and then
 
 	cd doc
-	make html
+	sphinx-build -b html . _html
 
 This will create the documentation under
 
-	_build/html
+	_html
 
-To adjust the AutobahnPython version printed in the documentation, edit
 
-	conf.py
+## Publishing
 
-for
+> Note: this section is only relevant for administrators of the [Autobahn web site](http://autobahn.ws/).
 
-	version = '0.8'
-	release = '0.8.5'
+To publish to the Autobahn web site ([here](http://autobahn.ws/python/reference/)), you will need [SCons](http://scons.org/) and [Taschenmesser](https://pypi.python.org/pypi/taschenmesser).
+
+Then do
+
+	scons
+
+to build the docs and
+
+	scons publish
+
+to build and publish the docs and
+
+	scons -uc
+
+to cleanup.

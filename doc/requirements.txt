@@ -1,5 +1,0 @@
-twisted>=13.2.0
-asyncio>=0.2.1
-python-snappy>=0.5
-lz4>=0.2.1
-msgpack-python>=0.4.0

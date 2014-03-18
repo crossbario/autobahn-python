@@ -13,3 +13,6 @@ dropin.cache
 _trial_temp
 _trial_temp*
 .idea
+.sconsign.dblite
+_html
+_upload
