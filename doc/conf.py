@@ -51,7 +51,7 @@ if spelling is not None:
 
 # Add any paths that contain templates here, relative to this directory.
 #templates_path = ['_templates']
-templates_path = ['templates']
+templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
@@ -64,7 +64,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Autobahn'
-copyright = u'2011-2014 Tavendo GmbH'
+copyright = u'2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -108,7 +108,9 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+#pygments_style = 'sphinx'
+pygments_style = 'flask_theme_support.FlaskyStyle'
+
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -119,12 +121,17 @@ pygments_style = 'sphinx'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-if sphinx_rtd_theme:
-   html_theme = "sphinx_rtd_theme"
-   html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+if False:
+   if sphinx_rtd_theme:
+      html_theme = "sphinx_rtd_theme"
+      html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+   else:
+      #html_theme = "default"
+      html_theme = 'sphinxdoc'
 else:
-   #html_theme = "default"
-   html_theme = 'sphinxdoc'
+   sys.path.append(os.path.abspath('_themes'))
+   html_theme_path = ['_themes']
+   html_theme = 'kr'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -132,7 +139,6 @@ else:
 #html_theme_options = {}
 
 html_theme_options = {
-'analytics_id': 'sdfsfsdf'
 #  'footertextcolor': '#ccc',
 #  'sidebarbgcolor': '#111',
 #  'sidebartextcolor': '#ccc',
@@ -174,7 +180,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = ['_static']
+html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -185,7 +191,11 @@ html_theme_options = {
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+html_sidebars = {
+    'index':    ['side-primary.html', 'searchbox.html'],
+    '**':       ['side-secondary.html', 'localtoc.html',
+                 'relations.html', 'searchbox.html']
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
