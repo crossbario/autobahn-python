@@ -70,7 +70,7 @@ To install from sources, clone the repo
 checkout a tagged release
 
 	cd AutobahnPython
-	git checkout v0.7.2
+	git checkout v0.8.5
 
 and install
 
