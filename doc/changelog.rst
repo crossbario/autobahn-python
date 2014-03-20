@@ -3,6 +3,12 @@
 Changelog
 =========
 
+0.8.6
+-----
+ * started reworking docs
+ * allow factories to operate without WS URL
+ * fix behavior on 2nd protocol violation
+
 0.8.5
 -----
  * support WAMP endpoint/handler decorators
