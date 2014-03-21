@@ -6,8 +6,8 @@ Start a WAMP router:
 
 	python ../../server.py
 
-Start the backend component:
+Start the backend component (which will run inside a client connecting to the router):
 
-	python backend.py
+	python client.py
 
 Open `frontend.html` in your browser.
