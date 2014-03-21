@@ -218,3 +218,7 @@ client_session_series_frontend:
 
 client_session_series_backend:
 	PYTHONPATH=../../../../autobahn python client.py --component "session.series.backend.Component"
+
+
+client_session_fromoutside_backend:
+	PYTHONPATH=../../../../autobahn python session/fromoutside/backend.py
