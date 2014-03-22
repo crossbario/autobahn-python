@@ -171,12 +171,21 @@ else:
    class MsgPackObjectSerializer:
 
       BINARY = True
+      """
+      Flag that indicates whether this serializer needs a binary clean transport.
+      """
+
+      ENABLE_V5 = True
+      """
+      Enable version 5 of the MsgPack specification (which differentiates
+      between strings and binary).
+      """
 
       def serialize(self, obj):
          """
          Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
          """
-         return msgpack.packb(obj, use_bin_type = True)
+         return msgpack.packb(obj, use_bin_type = self.ENABLE_V5)
 
 
       def unserialize(self, payload):

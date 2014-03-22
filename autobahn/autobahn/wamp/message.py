@@ -27,7 +27,7 @@ __all__ = ['Hello',
            'Heartbeat'
            'Error',
            'Publish',
-           'Published',          
+           'Published',
            'Subscribe',
            'Subscribed',
            'Unsubscribe',
@@ -53,6 +53,7 @@ import autobahn
 from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp.interfaces import IMessage
+from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 
 ## strict URI check allowing empty URI components
@@ -193,17 +194,19 @@ class Hello(Message):
          raise ProtocolError("empty 'roles' in 'details' in HELLO")
 
       for role in details_roles:
-         if role not in autobahn.wamp.role.ROLE_NAME_TO_CLASS:
+         if role not in ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
 
-         if details_roles[role].has_key('features'):
-            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+         details_role = check_or_raise_extra(details_roles[role], "role '{}' in 'roles' in 'details' in HELLO".format(role))
+
+         if details_role.has_key('features'):
+            details_role_features = check_or_raise_extra(details_role['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+            role_features = ROLE_NAME_TO_CLASS[role](**details_role['features'])
 
          else:
-            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]()
+            role_features = ROLE_NAME_TO_CLASS[role]()
 
          roles.append(role_features)
 
@@ -223,7 +226,7 @@ class Hello(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -317,17 +320,17 @@ class Welcome(Message):
          raise ProtocolError("empty 'roles' in 'details' in WELCOME")
 
       for role in details_roles:
-         if role not in autobahn.wamp.role.ROLE_NAME_TO_CLASS:
+         if role not in ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
          if details_roles[role].has_key('features'):
             details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+            role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
 
          else:
-            role_features = autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]()
+            role_features = ROLE_NAME_TO_CLASS[role]()
 
          roles.append(role_features)
 
@@ -335,7 +338,7 @@ class Welcome(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -433,7 +436,7 @@ class Abort(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -508,7 +511,7 @@ class Challenge(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -576,7 +579,7 @@ class Authenticate(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -660,7 +663,7 @@ class Goodbye(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -757,7 +760,7 @@ class Heartbeat(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -868,7 +871,7 @@ class Error(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1056,7 +1059,7 @@ class Publish(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1141,7 +1144,7 @@ class Published(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1229,7 +1232,7 @@ class Subscribe(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1301,7 +1304,7 @@ class Subscribed(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1369,7 +1372,7 @@ class Unsubscribe(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1432,7 +1435,7 @@ class Unsubscribed(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1541,7 +1544,7 @@ class Event(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1690,7 +1693,7 @@ class Call(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1793,7 +1796,7 @@ class Cancel(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1898,7 +1901,7 @@ class Result(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2004,7 +2007,7 @@ class Register(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2079,7 +2082,7 @@ class Registered(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2147,7 +2150,7 @@ class Unregister(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2210,7 +2213,7 @@ class Unregistered(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2387,7 +2390,7 @@ class Invocation(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2498,7 +2501,7 @@ class Interrupt(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2604,7 +2607,7 @@ class Yield(Message):
 
       return obj
 
-   
+
    def marshal(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
