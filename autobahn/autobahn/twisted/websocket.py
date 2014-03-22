@@ -25,7 +25,12 @@ __all__ = ['WebSocketServerProtocol',
            'WrappingWebSocketServerFactory',
            'WrappingWebSocketClientFactory',
            'listenWS',
-           'connectWS']
+           'connectWS',
+           'WampWebSocketServerProtocol',
+           'WampWebSocketServerFactory',
+           'WampWebSocketClientProtocol',
+           'WampWebSocketClientFactory']
+
 
 from base64 import b64encode, b64decode
 
