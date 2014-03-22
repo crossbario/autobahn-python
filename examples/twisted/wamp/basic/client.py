@@ -86,7 +86,7 @@ if __name__ == '__main__':
 
    elif args.transport in ['rawsocket-json', 'rawsocket-msgpack']:
 
-      ## create a WAMP-over-RawSocket transport server factory
+      ## create a WAMP-over-RawSocket transport client factory
       ##
       if args.transport == 'rawsocket-msgpack':
          from autobahn.wamp.serializer import MsgPackSerializer
@@ -101,7 +101,7 @@ if __name__ == '__main__':
       transport_factory = WampRawSocketClientFactory(session_factory, serializer, debug = args.debug)
 
 
-   ## start a WebSocket client from an endpoint
+   ## start the client from an endpoint
    ##
    client = clientFromString(reactor, args.endpoint)
    client.connect(transport_factory)

@@ -115,7 +115,7 @@ if __name__ == '__main__':
       raise Exception("should not arrive here")
 
 
-   ## start the WebSocket server from an endpoint
+   ## start the server from an endpoint
    ##
    server = serverFromString(reactor, args.endpoint)
    server.listen(transport_factory)
