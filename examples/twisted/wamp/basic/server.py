@@ -33,13 +33,13 @@ if __name__ == '__main__':
                        help = "Enable debug output.")
 
    parser.add_argument("-c", "--component", type = str, default = None,
-                       help = "Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
+                       help = "Start WAMP server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
-   parser.add_argument("--websocket", type = str, default = "tcp:8080",
-                       help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:8080" or "unix:/tmp/mywebsocket".')
+   parser.add_argument("--endpoint", type = str, default = "tcp:8080",
+                       help = 'Twisted server endpoint descriptor, e.g. "tcp:8080" or "unix:/tmp/mywebsocket".')
 
-   parser.add_argument("--wsurl", type = str, default = "ws://localhost:8080/ws",
-                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:8080/ws".')
+   parser.add_argument("--transport", choices = ['websocket', 'rawsocket-json', 'rawsocket-msgpack'], default = "websocket",
+                       help = 'WAMP transport type')
 
    args = parser.parse_args()
 
@@ -87,16 +87,37 @@ if __name__ == '__main__':
       session_factory.add(SessionKlass())
 
 
-   ## create a WAMP-over-WebSocket transport server factory
-   ##
-   from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = args.debug)
-   transport_factory.setProtocolOptions(failByDrop = False)
+   if args.transport == "websocket":
+
+      ## create a WAMP-over-WebSocket transport server factory
+      ##
+      from autobahn.twisted.websocket import WampWebSocketServerFactory
+      transport_factory = WampWebSocketServerFactory(session_factory, debug = args.debug)
+      transport_factory.setProtocolOptions(failByDrop = False)
+
+   elif args.transport in ['rawsocket-json', 'rawsocket-msgpack']:
+
+      ## create a WAMP-over-RawSocket transport server factory
+      ##
+      if args.transport == 'rawsocket-msgpack':
+         from autobahn.wamp.serializer import MsgPackSerializer
+         serializer = MsgPackSerializer()
+      elif args.transport == 'rawsocket-json':
+         from autobahn.wamp.serializer import JsonSerializer
+         serializer = JsonSerializer()
+      else:
+         raise Exception("should not arrive here")
+
+      from autobahn.twisted.rawsocket import WampRawSocketServerFactory
+      transport_factory = WampRawSocketServerFactory(session_factory, serializer, debug = args.debug)
+
+   else:
+      raise Exception("should not arrive here")
 
 
    ## start the WebSocket server from an endpoint
    ##
-   server = serverFromString(reactor, args.websocket)
+   server = serverFromString(reactor, args.endpoint)
    server.listen(transport_factory)
 
 
