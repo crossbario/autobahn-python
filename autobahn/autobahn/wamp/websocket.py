@@ -19,10 +19,10 @@
 from __future__ import absolute_import
 
 
-__all__= ['WampServerProtocol',
-          'WampClientProtocol',
-          'WampServerFactory',
-          'WampClientFactory']
+__all__= ['WampWebSocketServerProtocol',
+          'WampWebSocketClientProtocol',
+          'WampWebSocketServerFactory',
+          'WampWebSocketClientFactory']
 
 from zope.interface import implementer
 
