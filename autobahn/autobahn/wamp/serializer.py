@@ -89,12 +89,13 @@ class Serializer:
       return msg.serialize(self._serializer), self._serializer.BINARY
 
 
-   def unserialize(self, payload, isBinary):
+   def unserialize(self, payload, isBinary = None):
       """
       Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
       """
-      if isBinary != self._serializer.BINARY:
-         raise ProtocolError("invalid serialization of WAMP message (binary {}, but expected {})".format(isBinary, self._serializer.BINARY))
+      if isBinary is not None:
+         if isBinary != self._serializer.BINARY:
+            raise ProtocolError("invalid serialization of WAMP message (binary {}, but expected {})".format(isBinary, self._serializer.BINARY))
 
       try:
          raw_msg = self._serializer.unserialize(payload)
