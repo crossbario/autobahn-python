@@ -1,5 +1,3 @@
-.. |ab| replace:: **Autobahn**\|Python
-
 Programming with WAMP
 =====================
 
@@ -8,11 +6,15 @@ This document gives an introduction for programming with WAMP in Python using |a
 We will cover:
 
 1. Remote Procedure Calls
+
  * Calling Procedures
- * Registering Endpoints 
+ * Registering Endpoints
+
 2. Publish & Subscribe
+
  * Publishing Events
  * Subscribing to Topics
+
 
 And we will cover programming using
 
@@ -39,7 +41,7 @@ Twisted Deferreds
 
 Write me.
 
- 
+
 Asyncio Futures
 ...............
 
@@ -140,7 +142,7 @@ The same call using plain Twisted Deferreds would look like:
    d.addCallback(print)
 
 > Note: This use of `print` relies on `print` being a real function in Python 3. If you are on Python 2, you need to do `from __future__ import print_function` at the very beginning of your Python source file.
-> 
+>
 
 Here are a couple of more idioms using Twisted `Deferreds`.
 
@@ -310,7 +312,7 @@ The direct asyncio equivalent of above would be:
    yield from asyncio.gather(*fl)
 
 > Note: Part of the verbosity stems from the fact that, different from Twisted's `addCallback`, asyncio's `add_done_callback` sadly does not take and forward `args` and `kwargs` to the callback added.
-> 
+>
 
 However, there is a better way, if we restructure the code a litte:
 
@@ -375,7 +377,7 @@ Using Twisted Deferreds (`twisted.internet.defer.Deferred`):
 
    def success(res):
       print("Result: {}".format(res))
-      
+
    def failed(failure):
       err = failure.value
       print("Error: {}".format(err))

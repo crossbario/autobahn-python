@@ -154,4 +154,5 @@ Check the installation:
    wamp2all
    wampprogramming
    changelog
+   table_of_contents
 
