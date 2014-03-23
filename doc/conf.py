@@ -192,9 +192,9 @@ html_static_path = ['_static']
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-    'index':    ['side-primary.html', 'searchbox.html'],
-    '**':       ['side-secondary.html', 'localtoc.html',
-                 'relations.html', 'searchbox.html']
+    # 'index':    ['side-primary.html', 'searchbox.html'],
+    '**':       ['side-secondary.html', 'stay_informed.html', 'sidetoc.html',
+                 'previous_next.html', 'searchbox.html' ]
 }
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -283,3 +283,14 @@ autodoc_member_order = 'bysource'
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None}
+
+rst_epilog = """
+.. |ab| replace:: **Autobahn**\|Python
+"""
+
+rst_prolog = """
+.. container:: topnav
+
+   :doc:`Overview <index>`   :doc:`websockettoc`  :doc:`wamp1toc`   :doc:`WAMP v2 - 1 <wamp2>`  :doc:`WAMPv2 - 2 <wamp2all>` :doc:`Programming <wampprogramming>`
+
+"""

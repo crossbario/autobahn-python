@@ -1,0 +1,25 @@
+
+<ul>
+
+   {%- if prev %}
+   <li>
+      <h4>
+         Previous:
+         <a href="{{ prev.link|e }}" title="{{ _('previous chapter')}}">
+            {{ prev.title }}
+         </a>
+      </h4>
+   </li>
+   {%- endif %}
+   {%- if next %}
+   <li>
+      <h4>
+        Next:
+         <a href="{{ next.link|e }}" title="{{ _('next chapter')}}">
+            {{ next.title }}
+         </a>
+      </h4>
+   </li>
+   {%- endif %}
+
+</ul>

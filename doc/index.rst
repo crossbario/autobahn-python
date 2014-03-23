@@ -13,8 +13,6 @@
 .. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
 .. _AutobahnTestsuite: http://autobahn.ws/testsuite
 
-.. |ab| replace:: **Autobahn**\|Python
-
 
 |ab| Reference
 ==============
@@ -29,10 +27,10 @@ Release v\ |version|. (:ref:`Changelog`)
 
 in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
-WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_. 
+WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_.
 
 
-Show my some code
+Show me some code
 -----------------
 
 Using |ab| you can create both clients and servers in Python speaking just plain WebSocket or WAMP.
@@ -146,11 +144,9 @@ Check the installation:
    0.8.5
 
 
-Contents
-========
-
 .. toctree::
    :maxdepth: 3
+   :hidden:
 
    websockettoc
    wamp1toc
@@ -159,6 +155,3 @@ Contents
    wampprogramming
    changelog
 
-
-* :ref:`genindex`
-* :ref:`search`
