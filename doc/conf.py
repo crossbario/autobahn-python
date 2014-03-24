@@ -109,7 +109,12 @@ exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 #pygments_style = 'sphinx'
-pygments_style = 'flask_theme_support.FlaskyStyle'
+# pygments_style = 'flask_theme_support.FlaskyStyle'
+# pygments_style = 'pastie'
+# pygments_style = 'monokai'
+# pygments_style = 'colorful'
+pygments_style = 'trac'
+
 
 
 # A list of ignored prefixes for module index sorting.
@@ -291,7 +296,7 @@ rst_epilog = """
 rst_prolog = """
 .. container:: topnav
 
-   :doc:`Overview <index>` :doc:`Examples <examples>`  :doc:`websockettoc`  :doc:`WAMP v2 Reference <wamp2>` :doc:`WAMP v2 Programming <wampprogramming>`  :doc:`WAMP v1 <wamp1toc>`
+   :doc:`Overview <index>` :doc:`installation` :doc:`Examples <examples>`  :doc:`WebSocket <websocketprogramming>`  :doc:`WAMP <wampprogramming>` :doc:`Reference <reference>` :doc:`TOC <table_of_contents>`
 
 """
 

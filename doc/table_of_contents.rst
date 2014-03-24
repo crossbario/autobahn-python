@@ -7,10 +7,11 @@ Table of Contents
    :maxdepth: 3
 
    index
-   websockettoc
-   wamp1toc
-   wamp2
-   wamp2all
+   installation
+   examples
+   websocketprogramming
    wampprogramming
+   reference
    changelog
+   self
 

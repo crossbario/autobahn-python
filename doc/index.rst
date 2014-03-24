@@ -12,6 +12,8 @@
 .. _WAMPv1: http://wamp.ws/spec/wamp1/
 .. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
 .. _AutobahnTestsuite: http://autobahn.ws/testsuite
+.. _trollius: https://pypi.python.org/pypi/trollius/
+.. _tulip: https://pypi.python.org/pypi/asyncio/
 
 
 |ab| Reference
@@ -28,8 +30,6 @@ Release v\ |version|. (:ref:`Changelog`)
 in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
 WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_.
-
-.. note:: Currently, only WebSocket is implemented on both `Twisted`_ and `asyncio`_. WAMP is currently only implemented on `Twisted`_. WAMP on `asyncio`_ is planned, but we can't guarantee a specific timeframe.
 
 
 Show me some code
@@ -133,24 +133,33 @@ Features
 * Open-source (Apache 2 `license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
 
 
-Get it now
-----------
+Python support
+--------------
 
-Install from the Python package index:
+Support for |ab| on Twisted and asyncio is as follows:
 
-::
++---------------+-----------+---------+---------------------------------+
+| Python        | Twisted   | asyncio | Notes                           |
++---------------+-----------+---------+---------------------------------+
+| CPython 2.6   | yes       | yes     | asyncio support via `trollius`_ |
++---------------+-----------+---------+---------------------------------+
+| CPython 2.7   | yes       | yes     | asyncio support via `trollius`_ |
++---------------+-----------+---------+---------------------------------+
+| CPython 3.3   | yes       | yes     | asyncio support via `tulip`_    |
++---------------+-----------+---------+---------------------------------+
+| CPython 3.4+  | yes       | yes     | asyncio in the standard library |
++---------------+-----------+---------+---------------------------------+
+| PyPy 2.2+     | yes       | yes     | asyncio support via `trollius`_ |
++---------------+-----------+---------+---------------------------------+
+| Jython 2.7+   | yes       | ?       | Issues: `1`_, `2`_              |
++---------------+-----------+---------+---------------------------------+
 
-    $ pip install -U autobahn
+.. _1: http://twistedmatrix.com/trac/ticket/3413
+.. _2: http://twistedmatrix.com/trac/ticket/6746
 
+**WebSocket** - implemented on both `Twisted`_ and `asyncio`_
 
-Check the installation:
-
-.. doctest::
-
-   >>> from autobahn import __version__
-   >>> print __version__
-   0.8.5
-
+**WAMP** - currently only implented on `Twisted`_
 
 Where to go from here
 ---------------------
@@ -169,10 +178,11 @@ Where to go from here
    :maxdepth: 3
    :hidden:
 
-   websockettoc
-   wamp2
+   installation
+   examples
+   websocketprogramming
    wampprogramming
-   wamp1toc
+   reference
    changelog
    table_of_contents
 
