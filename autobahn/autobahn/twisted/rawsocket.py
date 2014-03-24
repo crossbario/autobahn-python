@@ -123,7 +123,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
       Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
       """
       if self.isOpen():
-         self.transport.abortConnection()
+         if hasattr(self.transport, 'abortConnection'):
+            ## ProcessProtocol lacks abortConnection()
+            self.transport.abortConnection()
+         else:
+            self.transport.loseConnection()
       else:
          raise TransportLost()
 
