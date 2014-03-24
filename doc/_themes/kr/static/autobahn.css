@@ -4,6 +4,7 @@ div.topnav.container {
    padding: 0.4em 0.5em;
    margin: 0 0 0.8em;
    text-align: center;
+   line-height: 1.7em;
 }
 
 div.topnav.container > a {

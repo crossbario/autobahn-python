@@ -1,8 +1,5 @@
-WAMP v2
-=======
-
-Interfaces
-----------
+Other Interfaces
+================
 
 .. autointerface:: autobahn.wamp.interfaces.IObjectSerializer
    :members:
@@ -36,7 +33,7 @@ Interfaces
 
 
 Errors
-------
+======
 
 .. autoclass:: autobahn.wamp.exception.Error
    :show-inheritance:
@@ -76,7 +73,7 @@ Errors
 
 
 Router
-------
+======
 
 .. autoclass:: autobahn.wamp.broker.Broker
    :show-inheritance:
@@ -101,7 +98,7 @@ Router
 
 
 Protocol
---------
+========
 
 .. autoclass:: autobahn.wamp.protocol.Publication
    :show-inheritance:

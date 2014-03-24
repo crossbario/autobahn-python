@@ -291,6 +291,8 @@ rst_epilog = """
 rst_prolog = """
 .. container:: topnav
 
-   :doc:`Overview <index>`   :doc:`websockettoc`  :doc:`wamp1toc`   :doc:`WAMP v2 - 1 <wamp2>`  :doc:`WAMPv2 - 2 <wamp2all>` :doc:`Programming <wampprogramming>`
+   :doc:`Overview <index>` :doc:`Examples <examples>`  :doc:`websockettoc`  :doc:`WAMP v2 Reference <wamp2>` :doc:`WAMP v2 Programming <wampprogramming>`  :doc:`WAMP v1 <wamp1toc>`
 
 """
+
+# changed
