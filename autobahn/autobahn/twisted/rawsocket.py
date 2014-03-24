@@ -34,7 +34,7 @@ from twisted.internet.error import ConnectionDone
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
-
+import binascii
 
 
 @implementer(ITransport)
@@ -70,8 +70,12 @@ class WampRawSocketProtocol(Int32StringReceiver):
 
 
    def stringReceived(self, payload):
-      try:
-         msg = self.factory._serializer.unserialize(payload,)
+      if self.factory.debug:
+         log.msg("RX octets: {}".format(binascii.hexlify(payload)))
+      try:         
+         msg = self.factory._serializer.unserialize(payload)
+         if self.factory.debug:
+            log.msg("RX WAMP message: {}".format(msg))
          self._session.onMessage(msg)
 
       except ProtocolError as e:
@@ -90,13 +94,17 @@ class WampRawSocketProtocol(Int32StringReceiver):
       Implements :func:`autobahn.wamp.interfaces.ITransport.send`
       """
       if self.isOpen():
+         if self.factory.debug:
+            log.msg("TX WAMP message: {}".format(msg))
          try:
             bytes, _ = self.factory._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
             raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
-         else:
+         else:            
             self.sendString(bytes)
+            if self.factory.debug:
+               log.msg("TX octets: {}".format(binascii.hexlify(bytes)))
       else:
          raise TransportLost()
 
