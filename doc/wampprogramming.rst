@@ -446,7 +446,8 @@ Call a procedure, but automatically timeout the call after given time:
 .. code-block:: python
 
    try:
-      total = yield session.call("com.myapp.longop", options = CallOptions(timeout = 10))
+      total = yield session.call("com.myapp.longop",
+                              options = CallOptions(timeout = 10))
    except TimeoutError:
       print("Giving up.")
    except Exception as err:
@@ -462,7 +463,8 @@ Call a remote procedure which produces interim, progressive results:
    def deletedSoFar(n):
       print("{} items deleted so far ..".format(n))
 
-   total = yield session.call("com.myapp.log.delete", options = CallOptions(onProgress = deletedSoFar))
+   total = yield session.call("com.myapp.log.delete",
+                              options = CallOptions(onProgress = deletedSoFar))
    print("{} items deleted in total.".format(total))
 
 Distributed calls
@@ -474,13 +476,15 @@ Distributed calls
 
 .. code-block:: python
 
-   yield session.call("com.myapp.pageview.log", page = "http://www.myapp.com/page1.html",
-   						options = CallOptions(runAt = "any"))
+   yield session.call("com.myapp.pageview.log",
+                        page = "http://www.myapp.com/page1.html",
+   						   options = CallOptions(runAt = "any"))
 
 .. code-block:: python
 
-   result = yield session.call("com.myapp.order.place", order = {...},
-   								options = CallOptions(runAt = "partition", pkey = 2391))
+   result = yield session.call("com.myapp.order.place",
+                            order = {...},
+   								 options = CallOptions(runAt = "partition", pkey = 2391))
 
 Registering endpoints
 ---------------------
@@ -695,7 +699,7 @@ Pattern-based registrations
       session.publish("com.myapp.task.{}.on_delete".format(taskId))
 
    yield session.register("com.myapp.task..delete", deleteTask,
-   					   options = RegisterOptions(match = "wildcard"))
+   					options = RegisterOptions(match = "wildcard"))
 
 This endpoint can now be called
 
@@ -717,7 +721,7 @@ Registering via decorators:
       session.publish("com.myapp.task.{}.on_delete".format(taskId))
 
    yield session.register(deleteTask,
-   					   options = RegisterOptions(match = "wildcard"))
+   				options = RegisterOptions(match = "wildcard"))
 
 .. code-block:: python
 

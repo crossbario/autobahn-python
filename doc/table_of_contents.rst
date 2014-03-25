@@ -14,5 +14,5 @@ Table of Contents
    reference
    changelog
    wamp1toc
-   self
+
 

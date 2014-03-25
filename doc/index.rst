@@ -33,7 +33,7 @@ WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.c
 
 WAMP is ideal for distributed, multi-client and server applications, such as multi-user database-drive business applications, sensor networks (IoT), instant messaging or MMOGs (massively multi-player online games) .
 
-WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for mutliple languages, WAMP applications can be polyglott. Application components can be implemented in a language and run on a device which best fit the particular use case.
+WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for multiple languages, WAMP applications can be polyglott. Application components can be implemented in a language and run on a device which best fit the particular use case.
 
 
 Show me some code
