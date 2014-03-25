@@ -247,7 +247,7 @@ htmlhelp_basename = 'AutobahnPython'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Autobahn.tex', u'Autobahn Documentation',
+  ('index', 'AutobahnPython.tex', u'Autobahn Python Documentation',
    u'Tavendo GmbH', 'manual'),
 ]
 
@@ -280,7 +280,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'autobahn', u'Autobahn Documentation',
+    ('index', 'autobahnpython', u'Autobahn Python Documentation',
      [u'Tavendo GmbH'], 1)
 ]
 
