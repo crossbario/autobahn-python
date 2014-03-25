@@ -21,6 +21,23 @@ And we will cover programming using
 * `Twisted Deferreds <https://twistedmatrix.com/documents/current/core/howto/defer.html) and [Asyncio Futures](http://docs.python.org/3.4/library/asyncio-task.html#future>`_
 * `Twisted inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`_ and `Asyncio Coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`_
 
+
+Upgrading from Autobahn < 0.8.0
+-------------------------------
+
+Starting with release 0.8.0, |ab| now supports WAMPv2. This required changing module naming for WAMPv1 (Twisted), e.g.
+
+|ab| **< 0.8.0**:
+
+     from autobahn.wamp import WampServerFactory
+
+|ab| **>= 0.8.0**:
+
+     from autobahn.wamp1.protocol import WampServerFactory
+
+.. note:: WAMPv1 will be deprecated with the 0.9.0 release.
+
+
 Introduction
 ------------
 

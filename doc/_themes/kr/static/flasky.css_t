@@ -336,7 +336,7 @@ ul, ol {
 }
 
 pre {
-    background: #F3F3F3;
+    background: #f3f3f3;
     padding: 15px 15px;
     margin: 15px -15px;
     line-height: 1.3em;

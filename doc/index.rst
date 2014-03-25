@@ -31,6 +31,10 @@ in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
 WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_.
 
+WAMP is ideal for distributed, multi-client and server applications, such as multi-user database-drive business applications, sensor networks (IoT), instant messaging or MMOGs (massively multi-player online games) .
+
+WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for mutliple languages, WAMP applications can be polyglott. Application components can be implemented in a language and run on a device which best fit the particular use case.
+
 
 Show me some code
 -----------------
@@ -164,15 +168,14 @@ Support for |ab| on Twisted and asyncio is as follows:
 Where to go from here
 ---------------------
 
-:doc:`websockettoc` explains all you need to know about using |ab| as a WebSocket library, and includes a full reference for the relevant parts of the API.
+:doc:`examples` lists code examples covering a broader range of uses cases and advanced WAMP features.
 
-:doc:`wamp2` is the API reference for the WAMP v2 implementation contained in |ab|.
+:doc:`websocketprogramming` explains all you need to know about using |ab| as a WebSocket library, and includes a full reference for the relevant parts of the API.
 
 :doc:`wampprogramming` gives an introduction for programming with WAMP (v2) in Python using |ab|.
 
-:doc:`wamp1toc` contains the API reference for the WAMP v1 implementation in |ab|.
+:doc:`reference` contains the full API reference for both WebSocket and WAMP.
 
-:doc:`examples` lists code examples covering a broader range of uses cases and advanced WAMP features.
 
 .. toctree::
    :maxdepth: 3
@@ -185,5 +188,4 @@ Where to go from here
    reference
    changelog
    table_of_contents
-
 

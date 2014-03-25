@@ -6,7 +6,8 @@ dl dd {
    margin: 0 0 12px 24px;
 }
 
-dl > dt {
+dl.class > dt,
+dl.interface > dt {
    display: inline-block;
    margin: 6px 0;
    font-size: 90%;
@@ -18,6 +19,14 @@ dl > dt {
    position: relative;
 }
 
+/* remove formatting for genindex */
+.indextable dt {
+   margin: 0;
+   font-size: 1em;
+   background: transparent;
+   border: none;
+}
+
 dl.method > dt {
    margin-bottom: 6px;
    border: none;
@@ -26,13 +35,18 @@ dl.method > dt {
    color: gray;
 }
 
+.class em,
 .interface em,
-.method em {
-   font-size: 1em;
+.method em,
+cite {
+   font-size: 1.1em;
 }
 
-.class span.pre,
+/*.class span.pre,
 .method span.pre {
    background-color: #eee;
    border: 1px solid #e1e4e5;
 }
+*/
+
+

@@ -109,11 +109,11 @@ exclude_patterns = ['_build']
 
 # The name of the Pygments (syntax highlighting) style to use.
 #pygments_style = 'sphinx'
-# pygments_style = 'flask_theme_support.FlaskyStyle'
+pygments_style = 'flask_theme_support.FlaskyStyle'
 # pygments_style = 'pastie'
 # pygments_style = 'monokai'
 # pygments_style = 'colorful'
-pygments_style = 'trac'
+# pygments_style = 'trac'
 
 
 

@@ -13,5 +13,6 @@ Table of Contents
    wampprogramming
    reference
    changelog
+   wamp1toc
    self
 

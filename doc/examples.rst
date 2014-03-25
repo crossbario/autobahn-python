@@ -10,6 +10,8 @@ Read, run, and modify as you like!
 
 .. note:: Most examples provide HTML clients and/or JavaScript versions of the Python code. JavaScript code for WAMP v2 runs both in the browser and in Node.js.
 
+.. _websocket_examples:
+
 WebSocket
 ---------
 

@@ -1,5 +1,8 @@
-Core Interfaces
+WAMP Interfaces
 ===============
+
+Core Interfaces
+---------------
 
 WAMP application components are implemented by deriving from the class :class:`autobahn.wamp.protocol.ApplicationSession`. This class implements the following core interfaces for WAMP application programming:
 
@@ -13,7 +16,7 @@ WAMP application components are implemented by deriving from the class :class:`a
 
 
 Sessions
---------
+++++++++
 
 Base interface for WAMP sessions of any role:
 
@@ -44,7 +47,7 @@ When a WAMP session is to be closed, this object can provide closing details:
 
 
 Callers
--------
++++++++
 
 
 Calling
@@ -79,7 +82,7 @@ If a call result contains multiple positional result value and/or the call resul
 
 
 Callees
--------
++++++++
 
 Registering
 ^^^^^^^^^^^
@@ -118,7 +121,7 @@ Call Details
 
 
 Subscribers
------------
++++++++++++
 
 Subscribing
 ^^^^^^^^^^^
@@ -154,7 +157,7 @@ Event Details
 
 
 Publishers
-----------
+++++++++++
 
 Publishing
 ^^^^^^^^^^
@@ -182,7 +185,7 @@ Publish Options
 
 
 Decorators
-----------
+++++++++++
 
 .. autofunction:: autobahn.wamp.procedure
 
@@ -190,3 +193,37 @@ Decorators
 
 .. autofunction:: autobahn.wamp.error
 
+
+
+Other Interfaces
+----------------
+
+.. autointerface:: autobahn.wamp.interfaces.IObjectSerializer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IMessage
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ISerializer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ITransport
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.ITransportHandler
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterBase
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouter
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IBroker
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IDealer
+   :members:
+
+.. autointerface:: autobahn.wamp.interfaces.IRouterFactory
+   :members:

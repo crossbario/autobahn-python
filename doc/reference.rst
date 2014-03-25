@@ -1,11 +1,14 @@
 API Reference
 =============
 
+.. _websocket_reference:
+
 WebSocket
 ---------
 
 .. toctree::
    :maxdepth: 3
+
    websocketintro
    websocketbase
    websocketclient
@@ -22,7 +25,11 @@ WAMP
 ----
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
 
    wamp2interfaces
-   wamp2all
+   wamp2errors
+   wamp2router
+   wamp2protocol
+
+
