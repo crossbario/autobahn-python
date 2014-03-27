@@ -53,29 +53,24 @@ class MyBackendComponent(ApplicationSession):
 
 if __name__ == '__main__':
 
+   ## 0) start logging to console
    log.startLogging(sys.stdout)
-
 
    ## 1) create a WAMP router factory
    router_factory = RouterFactory()
 
-
    ## 2) create a WAMP router session factory
    session_factory = RouterSessionFactory(router_factory)
-
 
    ## 3) Optionally, add embedded WAMP application sessions to the router
    session_factory.add(MyBackendComponent())
 
-
    ## 4) create a WAMP-over-WebSocket transport server factory
    transport_factory = WampWebSocketServerFactory(session_factory, debug = False)
-
 
    ## 5) start the server from a Twisted endpoint
    server = serverFromString(reactor, "tcp:8080")
    server.listen(transport_factory)
-
 
    ## 6) now enter the Twisted reactor loop
    reactor.run()

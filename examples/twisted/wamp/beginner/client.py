@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+##  Copyright (C) 2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -56,22 +56,19 @@ class MyFrontendComponent(ApplicationSession):
 
 if __name__ == '__main__':
 
+   ## 0) start logging to console
    log.startLogging(sys.stdout)
-
 
    ## 1) create a WAMP application session factory
    session_factory = ApplicationSessionFactory()
    session_factory.session = MyFrontendComponent
 
-
    ## 2) create a WAMP-over-WebSocket transport client factory
    transport_factory = WampWebSocketClientFactory(session_factory, debug = False)
-
 
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")
    client.connect(transport_factory)
-
 
    ## 4) now enter the Twisted reactor loop
    reactor.run()
