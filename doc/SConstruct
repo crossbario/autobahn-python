@@ -43,7 +43,7 @@ Default(docs)
 ##
 env['S3_RELPATH'] = DOCSDIR
 env['S3_BUCKET'] = 'autobahn.ws'
-env['S3_BUCKET_PREFIX'] = 'python/reference/' # note the trailing slash!
+env['S3_BUCKET_PREFIX'] = 'python/' # note the trailing slash!
 env['S3_OBJECT_ACL'] = 'public-read'
 
 
