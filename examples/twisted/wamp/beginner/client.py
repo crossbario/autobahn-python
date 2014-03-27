@@ -31,6 +31,10 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 class MyFrontendComponent(ApplicationSession):
+   """
+   Application code goes here. This is an example component
+   that calls a remote procedure, and then stops the world.
+   """
 
    def onConnect(self):
       self.join("realm1")
@@ -70,9 +74,11 @@ if __name__ == '__main__':
    ## 2) create a WAMP-over-WebSocket transport client factory
    transport_factory = WampWebSocketClientFactory(session_factory, False)
 
+
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")
    client.connect(transport_factory)
+
 
    ## 4) now enter the Twisted reactor loop
    reactor.run()

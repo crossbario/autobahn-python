@@ -33,6 +33,11 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 class MyBackendComponent(ApplicationSession):
+   """
+   Application code goes here. This is an example component
+   that provides a simple procedure which can be called
+   remotely from any WAMP peer.
+   """
 
    def onConnect(self):
       self.join("realm1")
@@ -76,6 +81,7 @@ if __name__ == '__main__':
    ## 5) start the server from a Twisted endpoint
    server = serverFromString(reactor, "tcp:8080")
    server.listen(transport_factory)
+
 
    ## 6) now enter the Twisted reactor loop
    reactor.run()
