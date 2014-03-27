@@ -23,22 +23,18 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 
+from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.wamp import ApplicationSessionFactory
 from autobahn.twisted.websocket import WampWebSocketClientFactory
-
-from autobahn.twisted.wamp import ApplicationSession
-
 
 
 class MyFrontendComponent(ApplicationSession):
    """
-   Application code goes here. This is an example component
-   that calls a remote procedure, and then stops the world.
+   Application code goes here. This is an example component that calls
+   a remote procedure on a WAMP peer, and then stops the world.
    """
-
    def onConnect(self):
       self.join("realm1")
-
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -51,14 +47,11 @@ class MyFrontendComponent(ApplicationSession):
 
       self.leave()
 
-
    def onLeave(self, details):
       self.disconnect()
 
-
    def onDisconnect(self):
       reactor.stop()
-
 
 
 if __name__ == '__main__':
@@ -72,7 +65,7 @@ if __name__ == '__main__':
 
 
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = WampWebSocketClientFactory(session_factory, False)
+   transport_factory = WampWebSocketClientFactory(session_factory, debug = False)
 
 
    ## 3) start the client from a Twisted endpoint

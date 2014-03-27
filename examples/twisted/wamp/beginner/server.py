@@ -25,23 +25,18 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import serverFromString
 
 from autobahn.wamp.router import RouterFactory
+from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.wamp import RouterSessionFactory
 from autobahn.twisted.websocket import WampWebSocketServerFactory
-
-from autobahn.twisted.wamp import ApplicationSession
-
 
 
 class MyBackendComponent(ApplicationSession):
    """
-   Application code goes here. This is an example component
-   that provides a simple procedure which can be called
-   remotely from any WAMP peer.
+   Application code goes here. This is an example component that provides
+   a simple procedure which can be called remotely from any WAMP peer.
    """
-
    def onConnect(self):
       self.join("realm1")
-
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -54,7 +49,6 @@ class MyBackendComponent(ApplicationSession):
       yield self.register(utcnow, 'com.timeservice.now')
 
       print("Procedure registered!")
-
 
 
 if __name__ == '__main__':
@@ -70,7 +64,7 @@ if __name__ == '__main__':
    session_factory = RouterSessionFactory(router_factory)
 
 
-   ## 3) Optionally, add an embedded WAMP application session to the router
+   ## 3) Optionally, add embedded WAMP application sessions to the router
    session_factory.add(MyBackendComponent())
 
 
