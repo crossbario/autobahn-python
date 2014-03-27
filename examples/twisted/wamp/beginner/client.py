@@ -31,13 +31,17 @@ from autobahn.twisted.websocket import WampWebSocketClientFactory
 class MyFrontendComponent(ApplicationSession):
    """
    Application code goes here. This is an example component that calls
-   a remote procedure on a WAMP peer, and then stops the world.
+   a remote procedure on a WAMP peer, subscribes to a topic to receive
+   events, and then stops the world after some events.
    """
    def onConnect(self):
       self.join("realm1")
 
    @inlineCallbacks
    def onJoin(self, details):
+
+      ## call a remote procedure
+      ##
       try:
          now = yield self.call('com.timeservice.now')
       except Exception as e:
@@ -45,7 +49,17 @@ class MyFrontendComponent(ApplicationSession):
       else:
          print("Current time from time service: {}".format(now))
 
-      self.leave()
+      ## subscribe to a topic
+      ##
+      self.received = 0
+
+      def on_event(i):
+         print("Got event: {}".format(i))
+         self.received += 1
+         if self.received > 5:
+            self.leave()
+
+      yield self.subscribe(on_event, 'com.myapp.topic1')
 
    def onLeave(self, details):
       self.disconnect()

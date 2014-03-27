@@ -25,6 +25,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import serverFromString
 
 from autobahn.wamp.router import RouterFactory
+from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.wamp import RouterSessionFactory
 from autobahn.twisted.websocket import WampWebSocketServerFactory
@@ -34,6 +35,7 @@ class MyBackendComponent(ApplicationSession):
    """
    Application code goes here. This is an example component that provides
    a simple procedure which can be called remotely from any WAMP peer.
+   It also publishes an event every second to some topic.
    """
    def onConnect(self):
       self.join("realm1")
@@ -41,6 +43,8 @@ class MyBackendComponent(ApplicationSession):
    @inlineCallbacks
    def onJoin(self, details):
 
+      ## register a procedure for remote calling
+      ##
       def utcnow():
          print("Someone is calling me;)")
          now = datetime.datetime.utcnow()
@@ -48,7 +52,14 @@ class MyBackendComponent(ApplicationSession):
 
       yield self.register(utcnow, 'com.timeservice.now')
 
-      print("Procedure registered!")
+      ## publish events to a topic
+      ##
+      counter = 0
+      while True:
+         self.publish('com.myapp.topic1', counter)
+         print("Published event.")
+         counter += 1
+         yield sleep(1)
 
 
 if __name__ == '__main__':
