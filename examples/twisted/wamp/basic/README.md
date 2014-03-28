@@ -50,11 +50,15 @@ Run the demo "frontend" application component over a WebSocket transport client:
 
 To start a server accepting WAMP connections on TCP port 8080 using a **rawsocket** transport with MsgPack serialization:
 
-   python server.py --debug --endpoint "tcp:8080" --transport "rawsocket-msgpack" --compont "rpc.timeservice.backend.Component"
+```shell
+python server.py --debug --endpoint "tcp:8080" --transport "rawsocket-msgpack" --compont "rpc.timeservice.backend.Component"
+```
 
 To start a client connecting to this server:
 
-   python client.py --endpoint "tcp:127.0.0.1:8080" --transport "rawsocket-msgpack" --component "rpc.timeservice.frontend.Component"
+```shell
+python client.py --endpoint "tcp:127.0.0.1:8080" --transport "rawsocket-msgpack" --component "rpc.timeservice.frontend.Component"
+```
 
 
 ## Available Demos
