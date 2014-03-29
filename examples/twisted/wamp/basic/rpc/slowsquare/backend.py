@@ -48,8 +48,8 @@ class Component(ApplicationSession):
 
 
       @inlineCallbacks
-      def slowsquare(x):
-         yield sleep(1)
+      def slowsquare(x, delay = 1):
+         yield sleep(delay)
          returnValue(x * x)
 
       self.register(slowsquare, 'com.math.slowsquare')
