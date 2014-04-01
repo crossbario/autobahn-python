@@ -3,6 +3,10 @@
 Changelog
 =========
 
+0.8.7
+-----
+ * maintenance release
+
 0.8.6
 -----
  * started reworking docs
