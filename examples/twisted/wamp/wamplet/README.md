@@ -2,13 +2,25 @@ This folder contains a minimal skeleton of a **WAMPlet** application component.
 
 Get started by copying this folder and it's contents and begin by modifying a working base line.
 
+## Plugin Development
+
 All the interesting bits with our application component are in [here](wamplet1/component1.py).
 
-For development, just run that file
+For development, start a locally running WAMP router, e.g. **Crossbar**.io:
+
+```shell
+cd $HOME
+crossbar init
+crossbar start
+```
+
+and in a second terminal run the file containing the application component:
 
 ```shell
 python wamplet1/component1.py
 ```
+
+## Plugin Installation and Distribution
 
 For installation as a local plugin in your Python package directory
 
@@ -16,7 +28,9 @@ For installation as a local plugin in your Python package directory
 python setup.py install
 ```
 
-This will also leave you an **.egg** file with your plugin package as a redistributable egg file.
+Installation of the plugin allows **Crossbar**.io to find your plugin even if no explicit Python paths are configured.
+
+Above will also leave you an **.egg** file with your plugin packaged up as a redistributable egg file.
 
 To make that work, the [Setup file](setup.py) contains an item
 
