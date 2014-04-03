@@ -18,6 +18,8 @@
 
 import datetime
 
+from twisted.internet.defer import inlineCallbacks
+
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -26,16 +28,14 @@ class Component1(ApplicationSession):
    """
    A simple time service application component.
    """
-
    def __init__(self, config):
       ApplicationSession.__init__(self)
       self.config = config
 
-
    def onConnect(self):
       self.join(self.config.realm)
 
-
+   @inlineCallbacks
    def onJoin(self, details):
 
       ## register a function that can be called remotely
@@ -44,7 +44,14 @@ class Component1(ApplicationSession):
          now = datetime.datetime.utcnow()
          return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-      self.register(utcnow, 'com.timeservice.now')
+      reg = yield self.register(utcnow, 'com.timeservice.now')
+      print("Procedure registered with ID {}".format(reg.id))
+
+   def onLeave(self, details):
+      self.disconnect()
+
+   def onDisconnect(self):
+      reactor.stop()
 
 
 

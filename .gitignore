@@ -16,3 +16,8 @@ _trial_temp*
 .sconsign.dblite
 _html
 _upload
+build
+egg-info
+egg\-info
+egg
+.egg*
