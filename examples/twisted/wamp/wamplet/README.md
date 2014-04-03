@@ -4,7 +4,21 @@ Get started by copying this folder and it's contents and begin by modifying a wo
 
 All the interesting bits with our application component are in [here](wamplet1/component1.py).
 
-The [Setup file](setup.py) contains and entry
+For development, just run that file
+
+```shell
+python wamplet1/component1.py
+```
+
+For installation as a local plugin in your Python package directory
+
+```shell
+python setup.py install
+```
+
+This will also leave you an **.egg** file with your plugin package as a redistributable egg file.
+
+To make that work, the [Setup file](setup.py) contains an item
 
 ```python
    entry_points = {
