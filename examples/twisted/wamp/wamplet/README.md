@@ -1,8 +1,10 @@
 This folder contains a minimal skeleton of a **WAMPlet** application component.
 
+A **WAMPlet** can be thought of a reusable application component that can be deployed dynamically as needed.
+
 Get started by copying this folder and it's contents and begin by modifying a working base line.
 
-## Plugin Development
+## WAMPlet Development
 
 All the interesting bits with our application component are in [here](wamplet1/component1.py).
 
@@ -20,19 +22,19 @@ and in a second terminal run the file containing the application component:
 python wamplet1/component1.py
 ```
 
-## Plugin Installation and Distribution
+## WAMPlet Installation and Distribution
 
-For installation as a local plugin in your Python package directory
+For installation as a local WAMPlet in your Python package directory
 
 ```shell
 python setup.py install
 ```
 
-Installation of the plugin allows **Crossbar**.io to find your plugin even if no explicit Python paths are configured.
+Installation of the WAMPlet allows **Crossbar**.io to find your WAMPlet even if no explicit Python paths are configured.
 
-Above will also leave you an **.egg** file with your plugin packaged up as a redistributable egg file.
+Above will also leave you an **.egg** file with your WAMPlet packaged up as a redistributable egg file that can be installed on other hosts. You can even publish your WAMPlet on the [Python Package Index](https://pypi.python.org).
 
-To make that work, the [Setup file](setup.py) contains an item
+To make *automatic WAMPlet discovery* work, the [Setup file](setup.py) contains an item
 
 ```python
    entry_points = {
