@@ -56,14 +56,14 @@ class Component1(ApplicationSession):
 
 
 def make(config):
-   """
-   This component factory creates instances of the
-   application component to run.
-
-   The function will get called either during development
-   using the ApplicationRunner below, or as  a plugin running
-   hosted in a WAMPlet container such as a Crossbar.io worker.
-   """
+   ##
+   ## This component factory creates instances of the
+   ## application component to run.
+   ## 
+   ## The function will get called either during development
+   ## using the ApplicationRunner below, or as  a plugin running
+   ## hosted in a WAMPlet container such as a Crossbar.io worker.
+   ##
    return Component1(config)
 
 
