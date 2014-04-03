@@ -22,6 +22,7 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.wamp import ApplicationSession
 
+from calculator import Calculator
 
 
 class Component1(ApplicationSession):
@@ -46,6 +47,19 @@ class Component1(ApplicationSession):
 
       reg = yield self.register(utcnow, 'com.timeservice.now')
       print("Procedure registered with ID {}".format(reg.id))
+
+      ## create an application object that exposes methods for remoting
+      ##
+      self.calculator = Calculator()
+
+      ## register all methods on the "calculator" decorated with "@wamp.procedure"
+      ##
+      results = yield self.register(self.calculator)
+      for success, res in results:
+         if success:
+            print("Ok, registered procedure with registration ID {}".format(res.id))
+         else:
+            print("Failed to register procedure: {}".format(res.value))
 
    def onLeave(self, details):
       self.disconnect()
