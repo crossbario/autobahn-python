@@ -35,3 +35,52 @@ span.pre {
    border: 1px solid #e1e4e5;
    padding: 0 3px;
 }
+
+
+/* sidebar formatting */
+
+.sidebar_block {
+   border-top: 1px solid #D6D6D6;
+   padding-top: 5px;
+}
+
+.stay_informed {
+   background-color: #eee;
+   padding: 0.5em 0.5em .05em 1em;
+}
+
+div.sphinxsidebarwrapper div.stay_informed h4 {
+   /*font-size: 20px;*/
+}
+
+.side_toc {
+
+}
+
+.side_toc h4 {
+
+}
+
+.side_toc h3 {
+
+}
+
+.prev_next {
+
+}
+
+.prev_next li:nth-of-type(2) {
+   padding-top: 10px;
+}
+
+.prev_next li > p {
+   font-size: 14px;
+   padding: 0 0 0 1em;
+   margin: 0;
+   line-height: 21px;
+}
+
+.prev_next li >  p:first-of-type {
+   font-size: 20px;
+   padding: 0;
+}

@@ -29,7 +29,14 @@ Release v\ |version|. (:ref:`Changelog`)
 
 in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
-WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ and WAMP adds `asynchronous Remote Procedure Calls and Publish & Subscribe on top of WebSocket <http://wamp.ws/why/>`_.
+WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_.
+
+WAMP implements `two messaging patterns on top of WebSocket <http://wamp.ws/why/>`_:
+
+ * **Publish & Subscribe**: *Publishers* publish events to a topic, and *subscribers* to the topic receive these events. A *router* brokers these events.
+ * **Remote Procedure Calls**: A *callee* registers a remote procedure with a *router*. A *caller* makes a call for that procedure to the *router*. The *router* deals the call to the *callee* and returns the result to the *caller*.
+
+Basic *router* functionality is provided by |ab|.
 
 WAMP is ideal for distributed, multi-client and server applications, such as multi-user database-drive business applications, sensor networks (IoT), instant messaging or MMOGs (massively multi-player online games) .
 
@@ -77,8 +84,7 @@ Complete example code:
 WAMP
 ++++
 
-A sample WAMP application component:
-
+A sample WAMP application component implementing all client roles:
 
 .. code-block:: python
 
@@ -111,6 +117,14 @@ A sample WAMP application component:
          print("Got result: {}".format(res))
 
 
+Complete example code:
+
+ * `server <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`_ which provides a remote procedure enpoint and publishes to a topic
+ * `client <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`_ lient which calls the procedure and subscribes to the topic
+
+There are many more examples showing options and advanced features, listed on the :doc:`example overview page <examples>`.
+
+
 .. note::
 
    * WAMP application components can be run in servers and clients without any modification to your component class.
@@ -118,6 +132,7 @@ A sample WAMP application component:
    * While |ab| supports both `Twisted`_ and `asyncio`_ for WebSocket code, WAMP is currently only supported on Twisted.
 
    * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
+
 
 
 Features

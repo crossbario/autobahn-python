@@ -21,6 +21,64 @@ It is ideal for distributed, multi-client and server applications, such as multi
 
 WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for multiple languages, WAMP applications can be polyglott. Application components can be implemented in a language and run on a device which best fit the particular use case.
 
+## Show me some code
+
+A simple WebSocket echo server:
+
+```python
+class MyServerProtocol(WebSocketServerProtocol):
+
+   def onConnect(self, request):
+      print("Client connecting: {}".format(request.peer))
+
+   def onOpen(self):
+      print("WebSocket connection open.")
+
+   def onMessage(self, payload, isBinary):
+      if isBinary:
+         print("Binary message received: {} bytes".format(len(payload)))
+      else:
+         print("Text message received: {}".format(payload.decode('utf8')))
+
+      ## echo back message verbatim
+      self.sendMessage(payload, isBinary)
+
+   def onClose(self, wasClean, code, reason):
+      print("WebSocket connection closed: {}".format(reason))
+```
+
+... and a sample WAMP application component:
+
+```python
+
+class MyComponent(ApplicationSession):
+
+   def onConnect(self):
+      self.join("realm1")
+
+
+   @inlineCallbacks
+   def onJoin(self, details):
+
+      # 1) subscribe to a topic
+      def onevent(msg):
+         print("Got event: {}".format(msg))
+
+      yield self.subscribe(onevent, 'com.myapp.hello')
+
+      # 2) publish an event
+      self.publish('com.myapp.hello', 'Hello, world!')
+
+      # 3) register a procedure for remoting
+      def add2(x, y):
+         return x + y
+
+      self.register(add2, 'com.myapp.add2');
+
+      # 4) call a remote procedure
+      res = yield self.call('com.myapp.add2', 2, 3)
+      print("Got result: {}".format(res))
+```
 
 ## Features
 
@@ -42,11 +100,11 @@ WAMP enables application architectures with application code distributed freely 
 
 For more information, take a look at the [project documentation](http://autobahn.ws/python). This provides:
 
-* [installation instructions](http://autobahn.ws/python/installation)
-* [a list of all examples in this repo](http://autobahn.ws/python/examples)
-* [an introduction to WebSocket programming](http://autobahn.ws/python/websocketprogramming)
-* [an introduction to WAMP programming](http://autobahn.ws/python/wampprogramming)
-* [a full API reference](http://autobahn.ws/python/reference)
+* [installation instructions](http://autobahn.ws/python/installation.html)
+* [a list of all examples in this repo](http://autobahn.ws/python/examples.html)
+* [an introduction to WebSocket programming](http://autobahn.ws/python/websocketprogramming.html)
+* [an introduction to WAMP programming](http://autobahn.ws/python/wampprogramming.html)
+* [a full API reference](http://autobahn.ws/python/reference.html)
 
 
 ## Get in touch
