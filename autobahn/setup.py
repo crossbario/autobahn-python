@@ -80,6 +80,7 @@ else:
 ##
 packages = ['autobahn',
             'autobahn.wamp',
+            'autobahn.wamp.tests',
             'autobahn.websocket',
             'autobahn.asyncio',
             'autobahn.twisted',

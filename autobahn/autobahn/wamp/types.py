@@ -19,6 +19,12 @@
 from __future__ import absolute_import
 
 
+class ComponentConfig:
+   def __init__(self, realm = None):
+      self.realm = realm
+
+
+
 class RouterOptions:
    URI_CHECK_LOOSE = "loose"
    URI_CHECK_STRICT = "strict"

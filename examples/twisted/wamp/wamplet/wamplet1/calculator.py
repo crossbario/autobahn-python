@@ -16,40 +16,27 @@
 ##
 ###############################################################################
 
-from twisted.internet.defer import Deferred, \
-                                   inlineCallbacks, \
-                                   returnValue
-
-from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.util import sleep
+from autobahn import wamp
 
 
-
-class Component(ApplicationSession):
+class Calculator(object):
    """
-   A math service application component.
+   An application component registering RPC endpoints using decorators.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
+   @wamp.procedure('com.mathservice.add2')
+   def add2(self, x, y):
+      return x + y
 
 
-   def onConnect(self):
-      self.join(self._realm)
+   @wamp.procedure('com.mathservice.mul2')
+   def mul2(self, x, y):
+      return x * y
 
 
-   def onJoin(self, details):
-
-      def square(x):
-         return x * x
-
-      self.register(square, 'com.math.square')
-
-
-      @inlineCallbacks
-      def slowsquare(x, delay = 1):
-         yield sleep(delay)
-         returnValue(x * x)
-
-      self.register(slowsquare, 'com.math.slowsquare')
+   @wamp.procedure('com.mathservice.div2')
+   def square(self, x, y):
+      if y:
+         return float(x) / float(y)
+      else:
+         return 0
