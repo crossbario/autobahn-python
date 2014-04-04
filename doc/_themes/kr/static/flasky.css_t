@@ -392,7 +392,7 @@ a:hover tt {
 @media screen and (max-width: 600px) {
 
     div.sphinxsidebar {
-    	display: none;
+      display: none;
     }
 
     div.document {
@@ -401,37 +401,37 @@ a:hover tt {
     }
 
     div.documentwrapper {
-    	margin-left: 0;
-    	margin-top: 0;
-    	margin-right: 0;
-    	margin-bottom: 0;
+      margin-left: 0;
+      margin-top: 0;
+      margin-right: 0;
+      margin-bottom: 0;
     }
 
     div.bodywrapper {
-    	margin-top: 0;
-    	margin-right: 0;
-    	margin-bottom: 0;
-    	margin-left: 0;
+      margin-top: 0;
+      margin-right: 0;
+      margin-bottom: 0;
+      margin-left: 0;
     }
 
     ul {
-    	margin-left: 0;
+      margin-left: 0;
     }
 
     .document {
-    	width: auto;
+      width: auto;
     }
 
     .footer {
-    	width: auto;
+      width: auto;
     }
 
     .bodywrapper {
-    	margin: 0;
+      margin: 0;
     }
 
     .footer {
-    	width: auto;
+      width: auto;
     }
 
     .github {
