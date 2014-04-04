@@ -25,10 +25,10 @@ from autobahn.twisted.wamp import ApplicationSession
 from calculator import Calculator
 
 
+## WAMP application component with our app code.
+##
 class Component1(ApplicationSession):
-   """
-   A simple time service application component.
-   """
+
    def __init__(self, config):
       ApplicationSession.__init__(self)
       self.config = config
@@ -78,7 +78,11 @@ def make(config):
    ## using the ApplicationRunner below, or as  a plugin running
    ## hosted in a WAMPlet container such as a Crossbar.io worker.
    ##
-   return Component1(config)
+   if config:
+      return Component1(config)
+   else:
+      return {'label': 'Awesome WAMPlet 1',
+              'description': 'This is just a test WAMPlet that provides some procedures to call.'}
 
 
 

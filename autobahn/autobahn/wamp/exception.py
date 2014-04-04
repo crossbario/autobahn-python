@@ -101,7 +101,7 @@ class ApplicationError(Error):
 
 
    def __str__(self):
-      return "ApplicationError({})".format(self.error)
+      return "ApplicationError({}, {} {})".format(self.error, list(self.args), self.kwargs)
 
 
 

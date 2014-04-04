@@ -20,8 +20,9 @@ from __future__ import absolute_import
 
 
 class ComponentConfig:
-   def __init__(self, realm = None):
+   def __init__(self, realm = None, extra = None):
       self.realm = realm
+      self.extra = extra
 
 
 
