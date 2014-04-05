@@ -85,8 +85,9 @@ class VoteGameBackend(ApplicationSession):
          raise ApplicationError("com.votegame.error.no_such_item", "no item '{}' to vote on".format(item))
 
       def run(txn):
+         ## FIXME: make the following into 1 (atomic) SQL statement
+         ## => does SQLite feature "UPDATE .. RETURNING"?
          txn.execute("UPDATE votes SET count = count + 1 WHERE item = ?", [item])         
-
          txn.execute("SELECT count FROM votes WHERE item = ?", [item])
          count = int(txn.fetchone()[0])
 
@@ -149,26 +150,18 @@ def make(config):
 if __name__ == '__main__':
    from autobahn.twisted.wamp import ApplicationRunner
 
-   config = {
-      "router": {
-         "type": "websocket",
-         "endpoint": {
-            "type": "tcp",
-            "host": "localhost",
-            "port": 8080
-         },
-         "url": "ws://localhost:8080/ws",
-         "realm": "realm1"
-      },
-      "extra": {
-         "dbfile": "votegame.db",
-         "items": ["banana", "lemon", "grapefruit"]
-      }
+   extra = {
+      "dbfile": "votegame.db",
+      "items": ["banana", "lemon", "grapefruit"]
    }
 
    ## test drive the component during development ..
-   runner = ApplicationRunner(config,
+   runner = ApplicationRunner(endpoint = "tcp:127.0.0.1:8080",
+      url = "ws://localhost:8080/ws",
+      realm = "realm1",
+      extra = extra,
       debug = False,       ## low-level WebSocket debugging
       debug_wamp = False,  ## WAMP protocol-level debugging
       debug_app = True)    ## app-level debugging
+
    runner.run(make)

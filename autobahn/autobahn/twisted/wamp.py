@@ -62,32 +62,16 @@ from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 class ApplicationRunner:
 
-   def __init__(self, config, debug = False, debug_wamp = False, debug_app = False):
-      self.config = config
+   def __init__(self, endpoint, url, realm, extra = {}, debug = False,
+      debug_wamp = False, debug_app = False):
+      self.endpoint = endpoint
+      self.url = url
+      self.realm = realm
+      self.extra = extra
       self.debug = debug
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
       self.make = None
-
-      ep_config = config['router']
-
-      ## generate Twisted endpoint descriptor from config
-      if 'endpoint' in ep_config:
-         ep = ep_config['endpoint']
-         if 'type' in ep and ep['type'] in ['tcp']:
-            if ep['type'] == 'tcp':
-               if 'host' in ep and 'port' in ep:
-                  host = ep['host']
-                  port = int(ep['port'])
-                  self.endpoint = "tcp:{}:{}".format(host, port)
-               else:
-                  raise Exception("missing host or port in TCP endpoint configuration")
-            else:
-               raise Exception("logic error")
-         else:
-            raise Exception("missing or invalid endpoint type")
-      else:
-         raise Exception("missing endpoint configuration")
 
 
    def run(self, make):
@@ -99,10 +83,7 @@ class ApplicationRunner:
 
       ## 1) factory for use ApplicationSession
       def create():
-         extra = self.config.get('extra', {})
-         realm = self.config['router']['realm']
-         cfg = ComponentConfig(realm, extra)
-
+         cfg = ComponentConfig(self.realm, self.extra)
          try:
             session = make(cfg)
          except Exception as e:
@@ -115,10 +96,8 @@ class ApplicationRunner:
          return session
 
       ## 2) create a WAMP-over-WebSocket transport client factory
-      transport_factory = WampWebSocketClientFactory(create,
-         url = self.config['router'].get('url', None),
-         debug = self.debug,
-         debug_wamp = self.debug_wamp)
+      transport_factory = WampWebSocketClientFactory(create, url = self.url,
+         debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## 3) start the client from a Twisted endpoint
       client = clientFromString(reactor, self.endpoint)
