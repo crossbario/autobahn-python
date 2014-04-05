@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+   <body>
+      <h1>IRC Bot Test Frontend</h1>
+      <p>Open JavaScript console to watch output.</p>
+      <script>AUTOBAHN_DEBUG = true;</script>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
+
+      <button onclick="start_bot()">Start Bot</button>
+      <button onclick="stop_bot(1)">Stop Bot 1</button>
+
+      <script>
+         var connection = new autobahn.Connection({
+            url: 'ws://127.0.0.1:8080/ws',
+            realm: 'realm1'}
+         );
+
+         connection.onopen = function (session) {
+
+            session.subscribe('com.myapp.on_privmsg', function (args) {
+               console.log(args);
+            });
+         };
+
+         connection.open();
+
+         function start_bot() {
+            if (connection.session) {
+               connection.session.call("com.myapp.start_bot",
+                  ["bot23", ["autobahn"]]).then(
+                     connection.session.log,
+                     connection.session.log);
+            } else {
+               console.log("no connection");
+            }
+         }
+
+         function stop_bot(id) {
+            if (connection.session) {
+               connection.session.call("com.myapp.stop_bot",
+                  [id]).then(
+                     connection.session.log,
+                     connection.session.log);
+            } else {
+               console.log("no connection");
+            }
+         }
+      </script>
+   </body>
+</html>
