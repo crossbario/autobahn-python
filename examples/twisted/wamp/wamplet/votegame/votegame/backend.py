@@ -34,9 +34,6 @@ from autobahn.wamp.types import PublishOptions
 ##
 class VoteGameBackend(ApplicationSession):
 
-   DBFILE = "votegame.db"
-   ITEMS = ['banana', 'lemon', 'grapefruit']
-
    def __init__(self, config):
       ApplicationSession.__init__(self)
       self.config = config
@@ -44,10 +41,10 @@ class VoteGameBackend(ApplicationSession):
 
 
    def init_db(self):
-      if not os.path.isfile(self.DBFILE):
+      if not os.path.isfile(self.config.extra['dbfile']):
          log.msg("Initializing database ..")
 
-         db = sqlite3.connect(self.DBFILE)
+         db = sqlite3.connect(self.config.extra['dbfile'])
          cur = db.cursor()
 
          cur.execute("""
@@ -57,7 +54,7 @@ class VoteGameBackend(ApplicationSession):
                         PRIMARY KEY (item))
                      """)
 
-         for item in self.ITEMS:
+         for item in self.config.extra['items']:
             cur.execute("INSERT INTO votes (item, count) VALUES (?, ?)", [item, 0])
          db.commit()
 
@@ -67,7 +64,7 @@ class VoteGameBackend(ApplicationSession):
       else:
          log.msg("Database already exists.")
 
-      self.db = adbapi.ConnectionPool('sqlite3', self.DBFILE, check_same_thread = False)
+      self.db = adbapi.ConnectionPool('sqlite3', self.config.extra['dbfile'], check_same_thread = False)
       log.msg("Database opened.")
 
 
@@ -84,7 +81,7 @@ class VoteGameBackend(ApplicationSession):
 
    @wamp.procedure("com.votegame.vote")
    def vote(self, item):
-      if not item in self.ITEMS:
+      if not item in self.config.extra['items']:
          raise ApplicationError("com.votegame.error.no_such_item", "no item '{}' to vote on".format(item))
 
       def run(txn):
@@ -162,6 +159,10 @@ if __name__ == '__main__':
          },
          "url": "ws://localhost:8080/ws",
          "realm": "realm1"
+      },
+      "extra": {
+         "dbfile": "votegame.db",
+         "items": ["banana", "lemon", "grapefruit"]
       }
    }
 

@@ -99,16 +99,20 @@ class ApplicationRunner:
 
       ## 1) factory for use ApplicationSession
       def create():
-         cfg = ComponentConfig(realm = self.config['router']['realm'])
+         extra = self.config.get('extra', {})
+         realm = self.config['router']['realm']
+         cfg = ComponentConfig(realm, extra)
+
          try:
-            c = make(cfg)
-            c.debug_app = self.debug_app
+            session = make(cfg)
          except Exception as e:
             ## the app component could not be created .. fatal
             #print(traceback.format_exc())
             log.err()
             reactor.stop()
-         return c
+
+         session.debug_app = self.debug_app
+         return session
 
       ## 2) create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create,
