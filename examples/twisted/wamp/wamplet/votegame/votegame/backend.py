@@ -119,6 +119,8 @@ class VoteGameBackend(ApplicationSession):
       except Exception as e:
          print("Failed to register procedures: {}".format(e))
 
+      print("VoteGame Backend ready!")
+
 
    def onLeave(self, details):
       self.disconnect()
