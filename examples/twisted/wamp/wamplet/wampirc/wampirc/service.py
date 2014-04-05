@@ -18,32 +18,31 @@
 
 from __future__ import absolute_import
 
-import datetime
-
 from twisted.internet.defer import inlineCallbacks
-
+from twisted.internet.endpoints import clientFromString
 from twisted.words.protocols import irc
 
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn.wamp.exception import ApplicationError
 
-from twisted.internet.endpoints import clientFromString
-
 from wampirc.client import IRCClientFactory
 
 
 class Bot:
+   """
+   Tracks currently running bot instances.
+   """
    def __init__(self, id, factory, client):
       self.id = id
       self.factory = factory
       self.client = client
 
 
-
-## WAMP application component with our app code.
-##
 class IRCComponent(ApplicationSession):
+   """
+   IRC bot services component.
+   """
 
    def __init__(self, config):
       ApplicationSession.__init__(self)
@@ -51,14 +50,10 @@ class IRCComponent(ApplicationSession):
       self._bots = {}
       self._bot_no = 0
 
-   def onConnect(self):
-      self.join(self.config.realm)
-
    @wamp.procedure('com.myapp.start_bot')
    def start_bot(self, nick, channels):
       self._bot_no += 1
       id = self._bot_no
-
       factory = IRCClientFactory(self, nick, channels)
 
       from twisted.internet import reactor
@@ -68,8 +63,8 @@ class IRCComponent(ApplicationSession):
       def onconnect(res):
          self._bots[id] = Bot(id, factory, client)
          return id
-
       d.addCallback(onconnect)
+
       return d
 
    @wamp.procedure('com.myapp.stop_bot')
@@ -83,18 +78,11 @@ class IRCComponent(ApplicationSession):
       else:
          raise ApplicationError('com.myapp.error.no_such_bot')
 
+   def onConnect(self):
+      self.join(self.config.realm)
+
    @inlineCallbacks
    def onJoin(self, details):
-
-      ## register a function that can be called remotely
-      ##
-      def utcnow():
-         now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-      reg = yield self.register(utcnow, 'com.timeservice.now')
-      print("Procedure registered with ID {}".format(reg.id))
-
       try:
          regs = yield self.register(self)
          print("Ok, registered {} procedures.".format(len(regs)))
