@@ -69,6 +69,7 @@ class IRCComponent(ApplicationSession):
          self._bots[id] = Bot(id, factory, client)
          return id
 
+      d.addCallback(onconnect)
       return d
 
    @wamp.procedure('com.myapp.stop_bot')

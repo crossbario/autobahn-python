@@ -8,7 +8,7 @@ setup(
    packages = find_packages(),
    entry_points = {
       'autobahn.twisted.wamplet': [
-         'bot = wampirc.bot:make'
+         'bot = wampirc.service:make'
       ],
    },
    zip_safe=False,

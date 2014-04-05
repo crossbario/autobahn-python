@@ -33,7 +33,9 @@ class IRCClientProtocol(irc.IRCClient):
       print "lost", reason
 
    def signedOn(self):
+      print "signedon"
       for channel in self.channels:
+         print "joining", channel
          self.join(channel)
 
    def joined(self, channel):
@@ -53,19 +55,23 @@ class IRCClientFactory(protocol.ClientFactory):
 
    def __init__(self, session, nickname, channels):
       self.session = session
+      self.proto = None
       self.nickname = str(nickname)
       self.channels = [str(c) for c in channels]
 
    def buildProtocol(self, addr):
-      p = IRCClientProtocol()
-      p.factory = self
-      p.nickname = self.nickname
-      p.channels = self.channels
-      return p
+      assert(not self.proto)
+      self.proto = IRCClientProtocol()
+      self.proto.factory = self
+      self.proto.nickname = self.nickname
+      self.proto.channels = self.channels
+      return self.proto
 
    def clientConnectionLost(self, connector, reason):
-      connector.connect()
+      #connector.connect()
+      self.proto = None
 
    def clientConnectionFailed(self, connector, reason):
-      from twisted.internet import reactor
-      reactor.stop()
+      #from twisted.internet import reactor
+      #reactor.stop()
+      self.proto = None
