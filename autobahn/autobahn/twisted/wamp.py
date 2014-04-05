@@ -51,6 +51,7 @@ class RouterSessionFactory(protocol.RouterSessionFactory):
 
 
 import sys
+import traceback
 
 from twisted.python import log
 from autobahn.wamp.types import ComponentConfig
@@ -61,8 +62,11 @@ from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 class ApplicationRunner:
 
-   def __init__(self, config):
+   def __init__(self, config, debug = False, debug_wamp = False, debug_app = False):
       self.config = config
+      self.debug = debug
+      self.debug_wamp = debug_wamp
+      self.debug_app = debug_app
       self.make = None
 
       ep_config = config['router']
@@ -87,21 +91,32 @@ class ApplicationRunner:
 
 
    def run(self, make):
-      ## 0) start logging to console
-      log.startLogging(sys.stdout)
+      from twisted.internet import reactor
 
+      ## 0) start logging to console
+      if self.debug or self.debug_wamp or self.debug_app:
+         log.startLogging(sys.stdout)
+
+      ## 1) factory for use ApplicationSession
       def create():
          cfg = ComponentConfig(realm = self.config['router']['realm'])
-         c = make(cfg)
+         try:
+            c = make(cfg)
+            c.debug_app = self.debug_app
+         except Exception as e:
+            ## the app component could not be created .. fatal
+            #print(traceback.format_exc())
+            log.err()
+            reactor.stop()
          return c
 
       ## 2) create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create,
          url = self.config['router'].get('url', None),
-         debug = self.config.get('debug', False))
+         debug = self.debug,
+         debug_wamp = self.debug_wamp)
 
       ## 3) start the client from a Twisted endpoint
-      from twisted.internet import reactor
       client = clientFromString(reactor, self.endpoint)
       client.connect(transport_factory)
 

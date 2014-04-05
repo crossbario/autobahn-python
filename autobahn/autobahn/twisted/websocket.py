@@ -570,7 +570,13 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
       else:
          serializers = None
 
-      websocket.WampWebSocketServerFactory.__init__(self, factory, serializers)
+      if 'debug_wamp' in kwargs:
+         debug_wamp = kwargs['debug_wamp']
+         del kwargs['debug_wamp']
+      else:
+         debug_wamp = False
+
+      websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
 
       kwargs['protocols'] = self._protocols
 
@@ -595,7 +601,13 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
       else:
          serializers = None
 
-      websocket.WampWebSocketClientFactory.__init__(self, factory, serializers)
+      if 'debug_wamp' in kwargs:
+         debug_wamp = kwargs['debug_wamp']
+         del kwargs['debug_wamp']
+      else:
+         debug_wamp = False
+
+      websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
 
       kwargs['protocols'] = self._protocols
 

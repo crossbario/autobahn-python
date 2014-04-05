@@ -43,7 +43,7 @@ class WampWebSocketProtocol:
    """
 
    def _bailout(self, code, reason):
-      if self.debug:
+      if self.factory.debug_wamp:
          log.msg("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
       self.failConnection(code, reason)
 
@@ -70,7 +70,7 @@ class WampWebSocketProtocol:
       ## WebSocket connection lost - fire off the WAMP
       ## session close callback
       try:
-         if self.debug:
+         if self.factory.debug_wamp:
             log.msg("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
       except Exception as e:
@@ -85,6 +85,8 @@ class WampWebSocketProtocol:
       """
       try:
          msg = self._serializer.unserialize(payload, isBinary)
+         if self.factory.debug_wamp:
+            log.msg("RX {}".format(msg))
          self._session.onMessage(msg)
 
       except ProtocolError as e:
@@ -102,6 +104,8 @@ class WampWebSocketProtocol:
       """
       if self.isOpen():
          try:
+            if self.factory.debug_wamp:
+               log.msg("TX {}".format(msg))
             bytes, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
@@ -209,7 +213,7 @@ class WampWebSocketFactory:
    Base class for WAMP-over-WebSocket transport factory mixins.
    """
 
-   def __init__(self, factory, serializers = None):
+   def __init__(self, factory, serializers = None, debug_wamp = False):
       """
       :param factory: A callable that produces instances that implement
                       :class:`autobahn.wamp.interfaces.ITransportHandler`
@@ -221,6 +225,8 @@ class WampWebSocketFactory:
       """
       assert(callable(factory))
       self._factory = factory
+
+      self.debug_wamp = debug_wamp
 
       if serializers is None:
          serializers = []

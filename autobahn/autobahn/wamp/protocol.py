@@ -51,9 +51,10 @@ class Endpoint:
    """
    """
 
-   def __init__(self, obj, fn, options = None):
+   def __init__(self, obj, fn, procedure, options = None):
       self.obj = obj
       self.fn = fn
+      self.procedure = procedure
       self.options = options
 
 
@@ -62,9 +63,10 @@ class Handler:
    """
    """
 
-   def __init__(self, obj, fn, details_arg = None):
+   def __init__(self, obj, fn, topic, details_arg = None):
       self.obj = obj
       self.fn = fn
+      self.topic = topic
       self.details_arg = details_arg
 
 
@@ -303,6 +305,8 @@ class ApplicationSession(BaseSession):
       ## incoming invocations
       self._invocations = {}
 
+      self.debug_app = False
+
 
    def onOpen(self, transport):
       """
@@ -408,7 +412,9 @@ class ApplicationSession(BaseSession):
                            handler.fn()
 
                except Exception as e:
-                  log.msg("Exception raised in event handler: {}".format(e))
+                  if self.debug_app:
+                     log.msg("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
+                     log.err(err)
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
@@ -425,11 +431,11 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Subscribed):
 
             if msg.request in self._subscribe_reqs:
-               d, obj, fn, options = self._subscribe_reqs.pop(msg.request)
+               d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
                if options:
-                  self._subscriptions[msg.subscription] = Handler(obj, fn, options.details_arg)
+                  self._subscriptions[msg.subscription] = Handler(obj, fn, topic, options.details_arg)
                else:
-                  self._subscriptions[msg.subscription] = Handler(obj, fn)
+                  self._subscriptions[msg.subscription] = Handler(obj, fn, topic)
                s = Subscription(self, msg.subscription)
                d.callback(s)
             else:
@@ -559,6 +565,9 @@ class ApplicationSession(BaseSession):
                      self._transport.send(reply)
 
                   def error(err):
+                     if self.debug_app:
+                        log.msg("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
+                        log.err(err)
                      del self._invocations[msg.request]
 
                      reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, err.value)
@@ -584,11 +593,8 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Registered):
 
             if msg.request in self._register_reqs:
-               d, obj, fn, options = self._register_reqs.pop(msg.request)
-               if options:
-                  self._registrations[msg.registration] = Endpoint(obj, fn, options)
-               else:
-                  self._registrations[msg.registration] = Endpoint(obj, fn)
+               d, obj, fn, procedure, options = self._register_reqs.pop(msg.request)
+               self._registrations[msg.registration] = Endpoint(obj, fn, procedure, options)
                r = Registration(self, msg.registration)
                d.callback(r)
             else:
@@ -745,7 +751,7 @@ class ApplicationSession(BaseSession):
          request = util.id()
 
          d = Deferred()
-         self._subscribe_reqs[request] = (d, obj, handler, options)
+         self._subscribe_reqs[request] = (d, obj, handler, topic, options)
 
          if options is not None:
             msg = message.Subscribe(request, topic, **options.options)
@@ -841,7 +847,7 @@ class ApplicationSession(BaseSession):
          request = util.id()
 
          d = Deferred()
-         self._register_reqs[request] = (d, obj, endpoint, options)
+         self._register_reqs[request] = (d, obj, endpoint, procedure, options)
 
          if options is not None:
             msg = message.Register(request, procedure, **options.options)
