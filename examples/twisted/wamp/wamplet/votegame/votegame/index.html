@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+   <body>
+      <h1>Votes Frontend</h1>
+      <p>Open JavaScript console to watch output.</p>
+      <script>AUTOBAHN_DEBUG = true;</script>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
+
+      <button onclick="vote('banana')">Banana</button>
+      <button onclick="vote('lemon')">Lemon</button>
+      <button onclick="vote('grapefruit')">Grapefruit</button>
+
+      <script>
+         var connection = new autobahn.Connection({
+            url: 'ws://127.0.0.1:8080/ws',
+            realm: 'realm1'}
+         );
+
+         connection.onopen = function (session) {
+
+            session.subscribe('com.votegame.onvote', function (args) {
+               console.log("new votes for " + args[0] + " : " + args[1]);
+            });
+
+            session.call('com.votegame.get_votes').then(
+               function (votes) {
+                  console.log("Current votes:", votes);
+               },
+               session.log
+            );
+         };
+
+         connection.open();
+
+         function vote(item) {
+            if (connection.session) {
+               connection.session.call('com.votegame.vote', [item]).then(
+                  function (count) {
+                     console.log("Ok, voted for " + item + " : " + count);
+                  },
+                  connection.session.log
+               );
+            } else {
+               console.log("can't vote: no connection");
+            }
+         }
+      </script>
+   </body>
+</html>
