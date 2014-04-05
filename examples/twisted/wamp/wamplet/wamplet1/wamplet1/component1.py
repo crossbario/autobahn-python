@@ -81,6 +81,7 @@ def make(config):
    if config:
       return Component1(config)
    else:
+      ## if no config given, return a description of this WAMPlet ..
       return {'label': 'Awesome WAMPlet 1',
               'description': 'This is just a test WAMPlet that provides some procedures to call.'}
 
@@ -103,5 +104,8 @@ if __name__ == '__main__':
    }
 
    ## test drive the component during development ..
-   runner = ApplicationRunner(config)
+   runner = ApplicationRunner(config,
+      debug = False,       ## low-level WebSocket debugging
+      debug_wamp = False,  ## WAMP protocol-level debugging
+      debug_app = True)    ## app-level debugging
    runner.run(make)

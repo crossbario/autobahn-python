@@ -141,6 +141,7 @@ def make(config):
    if config:
       return VoteGameBackend(config)
    else:
+      ## if no config given, return a description of this WAMPlet ..
       return {'label': 'VoteGame Service WAMPlet',
               'description': 'This is the backend WAMP application component of VoteGame.'}
 
