@@ -1,5 +1,8 @@
-test:
-	PYTHONPATH="." python wampirc/bot.py
+all:
+	@echo "Targets: run, install, clean"
+
+run:
+	PYTHONPATH="." python wampirc/service.py
 	
 install:
 	python setup.py install
