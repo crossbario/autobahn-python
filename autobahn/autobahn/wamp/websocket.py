@@ -26,8 +26,6 @@ __all__= ['WampWebSocketServerProtocol',
 
 from zope.interface import implementer
 
-from twisted.python import log
-
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
@@ -46,7 +44,7 @@ class WampWebSocketProtocol:
 
    def _bailout(self, code, reason):
       if self.factory.debug_wamp:
-         log.msg("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
+         print("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
       self.failConnection(code, reason)
 
 
@@ -75,7 +73,7 @@ class WampWebSocketProtocol:
       ## session close callback
       try:
          if self.factory.debug_wamp:
-            log.msg("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
+            print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
@@ -91,7 +89,7 @@ class WampWebSocketProtocol:
       try:
          msg = self._serializer.unserialize(payload, isBinary)
          if self.factory.debug_wamp:
-            log.msg("RX {}".format(msg))
+            print("RX {}".format(msg))
          self._session.onMessage(msg)
 
       except ProtocolError as e:
@@ -114,7 +112,7 @@ class WampWebSocketProtocol:
       if self.isOpen():
          try:
             if self.factory.debug_wamp:
-               log.msg("TX {}".format(msg))
+               print("TX {}".format(msg))
             bytes, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..

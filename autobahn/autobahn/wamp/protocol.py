@@ -23,8 +23,6 @@ import six
 
 from zope.interface import implementer
 
-from twisted.python import log
-
 from autobahn.wamp.interfaces import ISession, \
                                      IPublication, \
                                      IPublisher, \
@@ -426,7 +424,7 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     log.msg("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
+                     print("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
                      log.err(err)
 
             else:
@@ -489,7 +487,7 @@ class ApplicationSession(BaseSession):
                      except Exception as e:
                         ## silently drop exceptions raised in progressive results handlers
                         if self.debug:
-                           log.msg("Exception raised in progressive results handler: {}".format(e))
+                           print("Exception raised in progressive results handler: {}".format(e))
                   else:
                      ## silently ignore progressive results
                      pass
@@ -579,7 +577,7 @@ class ApplicationSession(BaseSession):
 
                   def error(err):
                      if self.debug_app:
-                        log.msg("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
+                        print("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
                         log.err(err)
                      del self._invocations[msg.request]
 
@@ -603,7 +601,7 @@ class ApplicationSession(BaseSession):
                   self._invocations[msg.request].cancel()
                except Exception as e:
                   if self.debug:
-                     log.msg("could not cancel call {}".format(msg.request))
+                     print("could not cancel call {}".format(msg.request))
                finally:
                   del self._invocations[msg.request]
 
@@ -689,7 +687,7 @@ class ApplicationSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               log.msg("exception raised in onLeave callback: {}".format(e))
+               print("exception raised in onLeave callback: {}".format(e))
 
          self._session_id = None
 
@@ -1183,7 +1181,7 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               log.msg(err.value)
+               print(err.value)
 
             self._add_future_callbacks(d, success, failed)
 
@@ -1207,7 +1205,7 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               log.msg(err.value)
+               print(err.value)
 
             self._add_future_callbacks(d, success, failed)
 
@@ -1256,7 +1254,7 @@ class RouterSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               log.msg("exception raised in onLeave callback: {}".format(e))
+               print("exception raised in onLeave callback: {}".format(e))
 
          self._router.detach(self)
 

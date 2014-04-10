@@ -20,8 +20,6 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
-from twisted.python import log
-
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
@@ -147,7 +145,7 @@ class RouterFactory:
       if not realm in self._routers:
          self._routers[realm] = Router(self, realm, self._options)
          if self.debug:
-            log.msg("Router created for realm '{}'".format(realm))
+            print("Router created for realm '{}'".format(realm))
       return self._routers[realm]
 
 
@@ -155,4 +153,4 @@ class RouterFactory:
       assert(router.realm in self._routers)
       del self._routers[router.realm]
       if self.debug:
-         log.msg("Router destroyed for realm '{}'".format(router.realm))
+         print("Router destroyed for realm '{}'".format(router.realm))
