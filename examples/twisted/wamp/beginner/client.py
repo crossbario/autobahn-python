@@ -23,12 +23,10 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 
-from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.wamp import ApplicationSessionFactory
-from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.twisted import wamp, websocket
 
 
-class MyFrontendComponent(ApplicationSession):
+class MyFrontendComponent(wamp.ApplicationSession):
    """
    Application code goes here. This is an example component that calls
    a remote procedure on a WAMP peer, subscribes to a topic to receive
@@ -74,11 +72,13 @@ if __name__ == '__main__':
    log.startLogging(sys.stdout)
 
    ## 1) create a WAMP application session factory
-   session_factory = ApplicationSessionFactory()
+   session_factory = wamp.ApplicationSessionFactory()
    session_factory.session = MyFrontendComponent
 
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = WampWebSocketClientFactory(session_factory, debug = True, debug_wamp = True)
+   transport_factory = websocket.WampWebSocketClientFactory(session_factory, \
+                                                            debug = False, \
+                                                            debug_wamp = False)
 
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")

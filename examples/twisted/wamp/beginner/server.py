@@ -17,6 +17,7 @@
 ###############################################################################
 
 import sys
+import six
 import datetime
 
 from twisted.python import log
@@ -24,14 +25,13 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import serverFromString
 
-from autobahn.wamp.router import RouterFactory
+from autobahn.wamp import router
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.wamp import RouterSessionFactory
-from autobahn.twisted.websocket import WampWebSocketServerFactory
+from autobahn.twisted import wamp, websocket
 
 
-class MyBackendComponent(ApplicationSession):
+
+class MyBackendComponent(wamp.ApplicationSession):
    """
    Application code goes here. This is an example component that provides
    a simple procedure which can be called remotely from any WAMP peer.
@@ -48,7 +48,7 @@ class MyBackendComponent(ApplicationSession):
       def utcnow():
          print("Someone is calling me;)")
          now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+         return six.u(now.strftime("%Y-%m-%dT%H:%M:%SZ"))
 
       yield self.register(utcnow, u'com.timeservice.now')
 
@@ -68,16 +68,18 @@ if __name__ == '__main__':
    log.startLogging(sys.stdout)
 
    ## 1) create a WAMP router factory
-   router_factory = RouterFactory()
+   router_factory = router.RouterFactory()
 
    ## 2) create a WAMP router session factory
-   session_factory = RouterSessionFactory(router_factory)
+   session_factory = wamp.RouterSessionFactory(router_factory)
 
    ## 3) Optionally, add embedded WAMP application sessions to the router
    session_factory.add(MyBackendComponent())
 
    ## 4) create a WAMP-over-WebSocket transport server factory
-   transport_factory = WampWebSocketServerFactory(session_factory, debug = False, debug_wamp = True)
+   transport_factory = websocket.WampWebSocketServerFactory(session_factory, \
+                                                            debug = False, \
+                                                            debug_wamp = False)
 
    ## 5) start the server from a Twisted endpoint
    server = serverFromString(reactor, "tcp:8080")

@@ -17,10 +17,11 @@
 ###############################################################################
 
 import sys
+import six
 import datetime
 import asyncio
 
-from autobahn.wamp import router, serializer
+from autobahn.wamp import router
 from autobahn.asyncio import wamp, websocket
 
 
@@ -41,7 +42,7 @@ class MyBackendComponent(wamp.ApplicationSession):
       def utcnow():
          print("Someone is calling me;)")
          now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+         return six.u(now.strftime("%Y-%m-%dT%H:%M:%SZ"))
 
       reg = yield from self.register(utcnow, u'com.timeservice.now')
       print("Registered procedure: {}".format(reg.id))
@@ -58,8 +59,6 @@ class MyBackendComponent(wamp.ApplicationSession):
 
 if __name__ == '__main__':
 
-   import asyncio
-
    ## 1) create a WAMP router factory
    router_factory = router.RouterFactory()
 
@@ -71,9 +70,8 @@ if __name__ == '__main__':
 
    ## 4) create a WAMP-over-WebSocket transport server factory
    transport_factory = websocket.WampWebSocketServerFactory(session_factory,
-                                                            serializers = [serializer.JsonSerializer()],
-                                                            debug = True,
-                                                            debug_wamp = True)
+                                                            debug = False,
+                                                            debug_wamp = False)
 
    ## 5) start the server
    loop = asyncio.get_event_loop()
