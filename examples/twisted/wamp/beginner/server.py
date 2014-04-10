@@ -50,7 +50,8 @@ class MyBackendComponent(wamp.ApplicationSession):
          now = datetime.datetime.utcnow()
          return six.u(now.strftime("%Y-%m-%dT%H:%M:%SZ"))
 
-      yield self.register(utcnow, u'com.timeservice.now')
+      reg = yield self.register(utcnow, u'com.timeservice.now')
+      print("Registered procedure with ID {}".format(reg.id))
 
       ## publish events to a topic
       ##

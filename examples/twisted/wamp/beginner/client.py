@@ -57,7 +57,8 @@ class MyFrontendComponent(wamp.ApplicationSession):
          if self.received > 5:
             self.leave()
 
-      yield self.subscribe(on_event, u'com.myapp.topic1')
+      sub = yield self.subscribe(on_event, u'com.myapp.topic1')
+      print("Subscribed with subscription ID {}".format(sub.id))
 
    def onLeave(self, details):
       self.disconnect()
