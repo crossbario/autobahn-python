@@ -36,37 +36,37 @@ class TestUris(unittest.TestCase):
       pass
 
    def test_invalid_uris(self):
-      for u in ["",
-                "123",
-                "com.myapp.<product:foo>.update",
-                "com.myapp.<123:int>.update",
-                "com.myapp.<:product>.update",
-                "com.myapp.<product:>.update",
-                "com.myapp.<int:>.update",
+      for u in [u"",
+                u"123",
+                u"com.myapp.<product:foo>.update",
+                u"com.myapp.<123:int>.update",
+                u"com.myapp.<:product>.update",
+                u"com.myapp.<product:>.update",
+                u"com.myapp.<int:>.update",
                 ]:
          self.assertRaises(Exception, Pattern, u, Pattern.URI_TARGET_ENDPOINT)
 
    def test_valid_uris(self):
-      for u in ["com.myapp.proc1",
-                "com.myapp.<product:int>.update",
+      for u in [u"com.myapp.proc1",
+                u"com.myapp.<product:int>.update",
                 ]:
          p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)
          self.assertIsInstance(p, Pattern)
 
    def test_parse_uris(self):
       tests = [
-         ("com.myapp.<product:int>.update", [
-            ("com.myapp.0.update", {'product': 0}),
-            ("com.myapp.123456.update", {'product': 123456}),
-            ("com.myapp.aaa.update", None),
-            ("com.myapp..update", None),
-            ("com.myapp.0.delete", None),
+         (u"com.myapp.<product:int>.update", [
+            (u"com.myapp.0.update", {u'product': 0}),
+            (u"com.myapp.123456.update", {u'product': 123456}),
+            (u"com.myapp.aaa.update", None),
+            (u"com.myapp..update", None),
+            (u"com.myapp.0.delete", None),
             ]
          ),
-         ("com.myapp.<product:string>.update", [
-            ("com.myapp.box.update", {'product': 'box'}),
-            ("com.myapp.123456.update", {'product': '123456'}),
-            ("com.myapp..update", None),
+         (u"com.myapp.<product:string>.update", [
+            (u"com.myapp.box.update", {u'product': u'box'}),
+            (u"com.myapp.123456.update", {u'product': u'123456'}),
+            (u"com.myapp..update", None),
             ]
          )
       ]
@@ -483,9 +483,9 @@ class TestDecoratorsAdvanced(unittest.TestCase):
       ## an URI to be provided
       self.assertRaises(Exception, session.define, AppError)
 
-      session.define(AppError, "com.myapp.error")
+      session.define(AppError, u"com.myapp.error")
 
-      exc = session.map_error("com.myapp.error")
+      exc = session.map_error(u"com.myapp.error")
       self.assertIsInstance(exc, AppError)
 
 

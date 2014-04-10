@@ -31,6 +31,8 @@ from autobahn import util
 from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidTopic
 from autobahn.wamp import types
 
+from autobahn.twisted.wamp import ApplicationSession
+
 
 class MockTransport:
 
@@ -61,29 +63,29 @@ class MockTransport:
       reply = None
 
       if isinstance(msg, message.Publish):
-         if msg.topic.startswith('com.myapp'):
+         if msg.topic.startswith(u'com.myapp'):
             if msg.acknowledge:
                reply = message.Published(msg.request, util.id())
          elif len(msg.topic) == 0:
-            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.invalid_topic')
+            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.invalid_topic')
          else:
-            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, 'wamp.error.not_authorized')
+            reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.not_authorized')
 
       elif isinstance(msg, message.Call):
-         if msg.procedure == 'com.myapp.procedure1':
+         if msg.procedure == u'com.myapp.procedure1':
             reply = message.Result(msg.request, args = [100])
-         elif msg.procedure == 'com.myapp.procedure2':
+         elif msg.procedure == u'com.myapp.procedure2':
             reply = message.Result(msg.request, args = [1, 2, 3])
-         elif msg.procedure == 'com.myapp.procedure3':
-            reply = message.Result(msg.request, args = [1, 2, 3], kwargs = {'foo':'bar', 'baz': 23})
+         elif msg.procedure == u'com.myapp.procedure3':
+            reply = message.Result(msg.request, args = [1, 2, 3], kwargs = {u'foo': u'bar', u'baz': 23})
 
-         elif msg.procedure.startswith('com.myapp.myproc'):
+         elif msg.procedure.startswith(u'com.myapp.myproc'):
             registration = self._registrations[msg.procedure]
             request = util.id()
             self._invocations[request] = msg.request
             reply = message.Invocation(request, registration, args = msg.args, kwargs = msg.kwargs)
          else:
-            reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, 'wamp.error.no_such_procedure')
+            reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, u'wamp.error.no_such_procedure')
 
       elif isinstance(msg, message.Yield):
          if self._invocations.has_key(msg.request):
@@ -95,7 +97,7 @@ class MockTransport:
 
       elif isinstance(msg, message.Unsubscribe):
          reply = message.Unsubscribed(msg.request)
-         
+
       elif isinstance(msg, message.Register):
          registration = util.id()
          self._registrations[msg.procedure] = registration
@@ -103,7 +105,7 @@ class MockTransport:
 
       elif isinstance(msg, message.Unregister):
          reply = message.Unregistered(msg.request)
-         
+
       if reply:
          if self._log:
             bytes, isbinary = self._serializer.serialize(reply)
@@ -125,7 +127,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1')
@@ -146,7 +148,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish_acknowledged(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(acknowledge = True))
@@ -167,32 +169,32 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_publish_undefined_exception(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       options = types.PublishOptions(acknowledge = True)
 
-      yield self.assertFailure(handler.publish('de.myapp.topic1', options = options), ApplicationError)
-      yield self.assertFailure(handler.publish('', options = options), ApplicationError)
+      yield self.assertFailure(handler.publish(u'de.myapp.topic1', options = options), ApplicationError)
+      yield self.assertFailure(handler.publish(u'', options = options), ApplicationError)
 
 
    @inlineCallbacks
    def test_publish_defined_exception(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       options = types.PublishOptions(acknowledge = True)
 
       handler.define(NotAuthorized)
-      yield self.assertFailure(handler.publish('de.myapp.topic1', options = options), NotAuthorized)
+      yield self.assertFailure(handler.publish(u'de.myapp.topic1', options = options), NotAuthorized)
 
       handler.define(InvalidTopic)
-      yield self.assertFailure(handler.publish('', options = options), InvalidTopic)
+      yield self.assertFailure(handler.publish(u'', options = options), InvalidTopic)
 
 
    @inlineCallbacks
    def test_call(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure1')
@@ -213,7 +215,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_call_with_complex_result(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       res = yield handler.call('com.myapp.procedure2')
@@ -229,7 +231,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_subscribe(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -244,7 +246,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_unsubscribe(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
@@ -256,7 +258,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_register(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -271,7 +273,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_unregister(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
@@ -283,7 +285,7 @@ class TestPublisher(unittest.TestCase):
 
    @inlineCallbacks
    def test_invoke(self):
-      handler = protocol.ApplicationSession()
+      handler = ApplicationSession()
       transport = MockTransport(handler)
 
       def myproc1():

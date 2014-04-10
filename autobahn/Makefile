@@ -25,9 +25,9 @@ publish: clean
 	python setup.py sdist upload
 
 test:
-	trial.py autobahn.wamp.tests
-#	trial.py autobahn.wamp.tests.test_message
-#	trial.py autobahn.wamp.tests.test_protocol
-#	trial.py autobahn.wamp.tests.test_protocol_peer
-#	trial.py autobahn.wamp.tests.test_serializer
-#	trial.py autobahn.wamp.tests.test_uri_pattern
+	trial autobahn.wamp.tests
+#	trial autobahn.wamp.tests.test_message
+#	trial autobahn.wamp.tests.test_protocol
+#	trial autobahn.wamp.tests.test_protocol_peer
+#	trial autobahn.wamp.tests.test_serializer
+#	trial autobahn.wamp.tests.test_uri_pattern

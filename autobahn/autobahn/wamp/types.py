@@ -125,7 +125,7 @@ class SubscribeOptions:
       assert(details_arg is None or type(details_arg) == str)
 
       self.details_arg = details_arg
-      self.options = {'match': match}
+      self.options = {'match': six.u(match)}
 
 
 
@@ -276,7 +276,7 @@ class CallOptions:
       :type runOn: str
       """
       assert(onProgress is None or callable(onProgress))
-      assert(timeout is None or (type(timeout) in six.integer_types + [float] and timeout > 0))
+      assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
       assert(discloseMe is None or type(discloseMe) == bool)
       assert(runOn is None or (type(runOn) == six.text_type and runOn in [u"all", u"any", u"partition"]))
 

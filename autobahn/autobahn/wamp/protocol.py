@@ -942,8 +942,6 @@ class ApplicationSessionFactory:
       return session
 
 
-import asyncio
-
 
 class RouterApplicationSession:
    """

@@ -46,39 +46,39 @@ class TestPeerExceptions(unittest.TestCase):
 
       ## map defined errors to user exceptions
       ##
-      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error1')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, AppError1)
       self.assertEqual(exc.args, ())
 
-      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error2')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error2')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, AppError2)
       self.assertEqual(exc.args, ())
 
       ## map undefined error to (generic) exception
       ##
-      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3')
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3')
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
-      self.assertEqual(exc.error, 'com.myapp.error3')
+      self.assertEqual(exc.error, u'com.myapp.error3')
       self.assertEqual(exc.args, ())
       self.assertEqual(exc.kwargs, {})
 
-      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args = [1, 2, 'hello'])
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3', args = [1, 2, u'hello'])
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
-      self.assertEqual(exc.error, 'com.myapp.error3')
-      self.assertEqual(exc.args, (1, 2, 'hello'))
+      self.assertEqual(exc.error, u'com.myapp.error3')
+      self.assertEqual(exc.args, (1, 2, u'hello'))
       self.assertEqual(exc.kwargs, {})
 
-      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, 'com.myapp.error3', args = [1, 2, 'hello'], kwargs = {'foo': 23, 'bar': 'baz'})
+      emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3', args = [1, 2, u'hello'], kwargs = {u'foo': 23, u'bar': u'baz'})
       exc = session._exception_from_message(emsg)
       self.assertIsInstance(exc, exception.ApplicationError)
-      self.assertEqual(exc.error, 'com.myapp.error3')
-      self.assertEqual(exc.args, (1, 2, 'hello'))
-      self.assertEqual(exc.kwargs, {'foo': 23, 'bar': 'baz'})
-      
+      self.assertEqual(exc.error, u'com.myapp.error3')
+      self.assertEqual(exc.args, (1, 2, u'hello'))
+      self.assertEqual(exc.kwargs, {u'foo': 23, u'bar': u'baz'})
+
 
    def test_message_from_exception(self):
       session = protocol.BaseSession()
