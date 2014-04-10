@@ -18,10 +18,9 @@
 
 import datetime
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -32,22 +31,17 @@ class Component(ApplicationSession):
    underlying transport continues to exist.
    """
 
-   def __init__(self):
-      ApplicationSession.__init__(self)
+   def __init__(self, config):
+      ApplicationSession.__init__(self, config)
       self.count = 0
 
 
-   def onConnect(self):
-      print("Transport connected.")
-      self.join("realm1")
-
-
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
       print("Realm joined (WAMP session started).")
 
       try:
-         now = yield self.call('com.timeservice.now')
+         now = yield from self.call('com.timeservice.now')
       except Exception as e:
          print("Error: {}".format(e))
       else:
@@ -67,4 +61,4 @@ class Component(ApplicationSession):
 
    def onDisconnect(self):
       print("Transport disconnected.")
-      reactor.stop()
+      asyncio.get_event_loop().stop()

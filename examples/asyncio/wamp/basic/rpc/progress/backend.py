@@ -28,15 +28,6 @@ class Component(ApplicationSession):
    Application component that produces progressive results.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    def onJoin(self, details):
 
       @asyncio.coroutine

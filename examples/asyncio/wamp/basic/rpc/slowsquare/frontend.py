@@ -29,10 +29,6 @@ class Component(ApplicationSession):
    An application component using the time service.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -52,10 +48,6 @@ class Component(ApplicationSession):
       yield from asyncio.gather(d1, d2)
       print("All finished.")
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

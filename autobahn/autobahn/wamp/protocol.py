@@ -273,13 +273,14 @@ class ApplicationSession(BaseSession):
      * :class:`autobahn.wamp.interfaces.ICallee`
      * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
-   realm = "anonymous"
 
-   def __init__(self):
+   def __init__(self, config = types.ComponentConfig(u"anonymous")):
       """
       Constructor.
       """
       BaseSession.__init__(self)
+      self.config = config
+
       self._transport = None
       self._session_id = None
       self._realm = None
@@ -316,11 +317,18 @@ class ApplicationSession(BaseSession):
       self.onConnect()
 
 
+   def onConnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
+      """
+      self.join(six.u(self.config.realm))
+
+
    def join(self, realm):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.join`
       """
-      if six.PY2 and type(realm) == str:
+      if True or six.PY2 and type(realm) == str:
          realm = six.u(realm)
 
       if self._session_id:
@@ -698,6 +706,7 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
       """
+      self.disconnect()
 
 
    def leave(self, reason = None, log_message = None):
@@ -930,6 +939,16 @@ class ApplicationSessionFactory:
    WAMP application session class to be used in this factory.
    """
 
+   def __init__(self, config = types.ComponentConfig(u"anonymous")):
+      """
+      Ctor.
+
+      :param config: The default component configuration.
+      :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
+      """
+      self.config = config
+
+
    def __call__(self):
       """
       Creates a new WAMP application session.
@@ -937,7 +956,7 @@ class ApplicationSessionFactory:
       :returns: -- An instance of the WAMP application session class as
                    given by `self.session`.
       """
-      session = self.session()
+      session = self.session(self.config)
       session.factory = self
       return session
 

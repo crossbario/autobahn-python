@@ -29,10 +29,6 @@ class Component(ApplicationSession):
    and stop after having received 5 events.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -46,10 +42,6 @@ class Component(ApplicationSession):
 
       yield from self.subscribe(on_event, 'com.myapp.topic1',
          options = SubscribeOptions(details_arg = 'details'))
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

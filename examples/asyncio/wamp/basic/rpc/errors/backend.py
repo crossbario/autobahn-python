@@ -40,15 +40,6 @@ class Component(ApplicationSession):
    Example WAMP application backend that raised exceptions.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    def onJoin(self, details):
 
       ## raising standard exceptions

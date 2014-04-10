@@ -29,15 +29,6 @@ class Component(ApplicationSession):
    return complex results.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    def onJoin(self, details):
 
       def add_complex(a, ai, b, bi):

@@ -40,10 +40,6 @@ class Component(ApplicationSession):
    Example WAMP application frontend that catches exceptions.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -80,10 +76,6 @@ class Component(ApplicationSession):
 
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

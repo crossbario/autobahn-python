@@ -28,10 +28,6 @@ class Component(ApplicationSession):
    An application component calling the different backend procedures.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -45,10 +41,6 @@ class Component(ApplicationSession):
          print("Squared {} = {}".format(val, res))
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

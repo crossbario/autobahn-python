@@ -23,7 +23,7 @@ import six
 
 class ComponentConfig:
    def __init__(self, realm = None, extra = None):
-      self.realm = realm
+      self.realm = six.u(realm)
       self.extra = extra
 
 

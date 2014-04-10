@@ -31,10 +31,6 @@ class Component(ApplicationSession):
    of no payload and of complex payload, and stops after 5 seconds.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -53,10 +49,6 @@ class Component(ApplicationSession):
 
 
       asyncio.get_event_loop().call_later(5, self.leave)
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

@@ -54,19 +54,11 @@ class Component(ApplicationSession):
       print("Subscribed with subscription ID {}".format(self.subscription.id))
 
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
       self.runs = 0
       yield from self.test()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

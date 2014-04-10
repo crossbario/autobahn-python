@@ -28,10 +28,6 @@ class Component(ApplicationSession):
    Application component that consumes progressive results.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -43,10 +39,6 @@ class Component(ApplicationSession):
       print("Final: {}".format(res))
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

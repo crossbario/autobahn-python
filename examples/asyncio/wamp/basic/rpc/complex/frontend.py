@@ -29,10 +29,6 @@ class Component(ApplicationSession):
    produce complex results and showing how to access those.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -43,10 +39,6 @@ class Component(ApplicationSession):
       print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

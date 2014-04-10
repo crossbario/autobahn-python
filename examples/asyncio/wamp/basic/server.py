@@ -70,7 +70,8 @@ if __name__ == '__main__':
       ## .. and create and add an WAMP application session to
       ## run next to the router
       ##
-      session_factory.add(SessionKlass())
+      from autobahn.wamp import types
+      session_factory.add(SessionKlass(types.ComponentConfig(realm = u"realm1")))
 
 
    if args.transport == "websocket":

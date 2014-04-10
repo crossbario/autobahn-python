@@ -50,7 +50,8 @@ if __name__ == '__main__':
    ## create a WAMP application session factory
    ##
    from autobahn.asyncio.wamp import ApplicationSessionFactory
-   session_factory = ApplicationSessionFactory()
+   from autobahn.wamp import types
+   session_factory = ApplicationSessionFactory(types.ComponentConfig(realm = u"realm1"))
 
 
    ## dynamically load the application component ..

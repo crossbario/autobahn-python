@@ -18,10 +18,7 @@
 
 import datetime
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
-
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -29,15 +26,6 @@ class Component(ApplicationSession):
    """
    A simple time service application component.
    """
-
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
 
    def onJoin(self, details):
 

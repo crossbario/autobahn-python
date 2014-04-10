@@ -27,15 +27,6 @@ class Component(ApplicationSession):
    An application component calling the different backend procedures.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    @asyncio.coroutine
    def onJoin(self, details):
 
@@ -51,10 +42,6 @@ class Component(ApplicationSession):
          print("Something went wrong: {}".format(e))
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):
