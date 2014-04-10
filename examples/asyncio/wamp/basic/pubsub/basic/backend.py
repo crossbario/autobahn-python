@@ -16,11 +16,9 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -38,10 +36,10 @@ class Component(ApplicationSession):
       self.join(self._realm)
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
       counter = 0
       while True:
          self.publish('com.myapp.topic1', counter)
          counter += 1
-         yield sleep(1)
+         yield from asyncio.sleep(1)

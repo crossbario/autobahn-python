@@ -16,11 +16,9 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -31,12 +29,12 @@ class Component(ApplicationSession):
    resubscribes for another run. Then it stops.
    """
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def test(self):
 
       self.received = 0
 
-      @inlineCallbacks
+      #@asyncio.coroutine
       def on_event(i):
          print("Got event: {}".format(i))
          self.received += 1
@@ -45,11 +43,14 @@ class Component(ApplicationSession):
             if self.runs > 1:
                self.leave()
             else:
-               yield self.subscription.unsubscribe()
+               self.subscription.unsubscribe()
+               #yield from self.subscription.unsubscribe()
                print("Unsubscribed .. continue in 2s ..")
-               reactor.callLater(2, self.test)
 
-      self.subscription = yield self.subscribe(on_event, 'com.myapp.topic1')
+               ## FIXME
+               asyncio.get_event_loop().call_later(2, self.test)
+
+      self.subscription = yield from self.subscribe(on_event, 'com.myapp.topic1')
       print("Subscribed with subscription ID {}".format(self.subscription.id))
 
 
@@ -57,11 +58,11 @@ class Component(ApplicationSession):
       self.join("realm1")
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       self.runs = 0
-      yield self.test()
+      yield from self.test()
 
 
    def onLeave(self, details):
@@ -69,4 +70,4 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
-      reactor.stop()
+      asyncio.get_event_loop().stop()

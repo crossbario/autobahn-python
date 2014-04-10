@@ -18,12 +18,10 @@
 
 import random
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -37,7 +35,7 @@ class Component(ApplicationSession):
       self.join("realm1")
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       self.received = 0
@@ -45,16 +43,16 @@ class Component(ApplicationSession):
       def on_heartbeat(details = None):
          print("Got heartbeat (publication ID {})".format(details.publication))
 
-      yield self.subscribe(on_heartbeat, 'com.myapp.heartbeat', options = SubscribeOptions(details_arg = 'details'))
+      yield from self.subscribe(on_heartbeat, 'com.myapp.heartbeat', options = SubscribeOptions(details_arg = 'details'))
 
 
       def on_topic2(a, b, c = None, d = None):
          print("Got event: {} {} {} {}".format(a, b, c, d))
 
-      yield self.subscribe(on_topic2, 'com.myapp.topic2')
+      yield from self.subscribe(on_topic2, 'com.myapp.topic2')
 
 
-      reactor.callLater(5, self.leave)
+      asyncio.get_event_loop().call_later(5, self.leave)
 
 
    def onLeave(self, details):
@@ -62,4 +60,4 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
-      reactor.stop()
+      asyncio.get_event_loop().stop()

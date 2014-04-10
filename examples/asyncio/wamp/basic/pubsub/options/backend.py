@@ -16,12 +16,10 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
 from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -39,19 +37,19 @@ class Component(ApplicationSession):
       self.join(self._realm)
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       def on_event(i):
          print("Got event: {}".format(i))
 
-      yield self.subscribe(on_event, 'com.myapp.topic1')
+      yield from self.subscribe(on_event, 'com.myapp.topic1')
 
 
       counter = 0
       while True:
-         publication = yield self.publish('com.myapp.topic1', counter,
+         publication = yield from self.publish('com.myapp.topic1', counter,
                options = PublishOptions(acknowledge = True, discloseMe = True, excludeMe = False))
          print("Event published with publication ID {}".format(publication.id))
          counter += 1
-         yield sleep(1)
+         yield from asyncio.sleep(1)

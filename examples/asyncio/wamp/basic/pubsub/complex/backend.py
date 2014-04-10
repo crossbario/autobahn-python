@@ -18,12 +18,10 @@
 
 import random
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -42,7 +40,7 @@ class Component(ApplicationSession):
       self.join(self._realm)
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       counter = 0
@@ -53,4 +51,4 @@ class Component(ApplicationSession):
          self.publish('com.myapp.topic2', random.randint(0, 100), 23, c = "Hello", d = obj)
 
          counter += 1
-         yield sleep(1)
+         yield from asyncio.sleep(1)

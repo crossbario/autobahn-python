@@ -16,11 +16,10 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
+import asyncio
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession
 
 
 
@@ -40,20 +39,20 @@ class Component(ApplicationSession):
       self.join(self._realm)
 
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       ## subscribe all methods on this object decorated with "@wamp.topic"
       ## as PubSub event handlers
       ##
-      results = yield self.subscribe(self)
-      for success, res in results:
-         if success:
+      results = yield from self.subscribe(self)
+      for res in results:
+         if isinstance(res, wamp.protocol.Subscription):
             ## res is an Subscription instance
             print("Ok, subscribed handler with subscription ID {}".format(res.id))
          else:
             ## res is an Failure instance
-            print("Failed to subscribe handler: {}".format(res.value))
+            print("Failed to subscribe handler: {}".format(res))
 
 
    @wamp.topic('com.myapp.topic1')
@@ -74,4 +73,4 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
-      reactor.stop()
+      asyncio.get_event_loop().stop()

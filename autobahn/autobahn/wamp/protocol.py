@@ -784,7 +784,8 @@ class ApplicationSession(BaseSession):
          ## decorated with "wamp.topic"
          ##
          dl = []
-         for k in inspect.getmembers(handler.__class__, inspect.ismethod):
+         for k in inspect.getmembers(handler.__class__, inspect.isfunction):
+#         for k in inspect.getmembers(handler.__class__, inspect.ismethod):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]
