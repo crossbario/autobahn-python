@@ -189,7 +189,7 @@ class BaseSession:
       if isinstance(exc, exception.ApplicationError):
          msg = message.Error(request_type, request, six.u(exc.error), args = list(exc.args), kwargs = exc.kwargs)
       else:
-         if self._ecls_to_uri_pat.has_key(exc.__class__):
+         if exc.__class__ in self._ecls_to_uri_pat:
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
          else:
             error = u"wamp.error.runtime_error"
@@ -219,7 +219,7 @@ class BaseSession:
 
       exc = None
 
-      if self._uri_to_ecls.has_key(msg.error):
+      if msg.error in self._uri_to_ecls:
          ecls = self._uri_to_ecls[msg.error]
          try:
             ## the following might fail, eg. TypeError when
@@ -575,7 +575,11 @@ class ApplicationSession(BaseSession):
                         log.err(err)
                      del self._invocations[msg.request]
 
-                     reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, err.value)
+                     if hasattr(err, 'value'):
+                        exc = err.value
+                     else:
+                        exc = err
+                     reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc)
                      self._transport.send(reply)
 
                   self._invocations[msg.request] = d
@@ -881,7 +885,8 @@ class ApplicationSession(BaseSession):
          ## decorated with "wamp.procedure"
          ##
          dl = []
-         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
+#         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
+         for k in inspect.getmembers(endpoint.__class__, inspect.isfunction):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]

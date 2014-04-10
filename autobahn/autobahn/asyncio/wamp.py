@@ -72,7 +72,7 @@ class FutureMixin:
       return future.add_done_callback(done)
 
    def _gather_futures(self, futures, consume_exceptions = True):
-      return asyncio.gather(futures, return_exception = consume_exceptions)
+      return asyncio.gather(*futures, return_exceptions = consume_exceptions)
 
 
 

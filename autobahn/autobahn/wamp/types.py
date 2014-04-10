@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 
 class ComponentConfig:
    def __init__(self, realm = None, extra = None):
@@ -49,7 +51,7 @@ class Accept(HelloReturn):
 
 
 class Deny(HelloReturn):
-   def __init__(self, reason = "wamp.error.not_authorized", message = None):
+   def __init__(self, reason = u"wamp.error.not_authorized", message = None):
       self.reason = reason
       self.message = message
 
@@ -160,7 +162,7 @@ class PublishOptions:
                 discloseMe = None):
       """
       Constructor.
-      
+
       :param acknowledge: If True, acknowledge the publication with a success or
                           error response.
       :type acknowledge: bool
@@ -177,8 +179,8 @@ class PublishOptions:
       """
       assert(acknowledge is None or type(acknowledge) == bool)
       assert(excludeMe is None or type(excludeMe) == bool)
-      assert(exclude is None or (type(exclude) == list and all(type(x) in [int, long] for x in exclude)))
-      assert(eligible is None or (type(eligible) == list and all(type(x) in [int, long] for x in eligible)))
+      assert(exclude is None or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))
+      assert(eligible is None or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
       assert(discloseMe is None or type(discloseMe) == bool)
 
       self.options = {
@@ -205,7 +207,7 @@ class RegisterOptions:
                           in this keyword argument to the callable.
       :type details_arg: str
       """
-      assert(details_arg is None or type(details_arg) == str)
+      assert(details_arg is None or type(details_arg) == six.text_type)
       self.details_arg = details_arg
       self.options = {
          'pkeys': pkeys,
@@ -274,9 +276,9 @@ class CallOptions:
       :type runOn: str
       """
       assert(onProgress is None or callable(onProgress))
-      assert(timeout is None or (type(timeout) in [int, float] and timeout > 0))
+      assert(timeout is None or (type(timeout) in six.integer_types + [float] and timeout > 0))
       assert(discloseMe is None or type(discloseMe) == bool)
-      assert(runOn is None or (type(runOn) == str and runOn in ["all", "any", "partition"]))
+      assert(runOn is None or (type(runOn) == six.text_type and runOn in [u"all", u"any", u"partition"]))
 
       self.options = {
          'timeout': timeout,
