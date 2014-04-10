@@ -319,9 +319,9 @@ class Welcome(Message):
       session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
       details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
 
-      authid = details.get('authid', None)
-      authrole = details.get('authrole', None)
-      authmethod = details.get('authmethod', None)
+      authid = details.get(u'authid', None)
+      authrole = details.get(u'authrole', None)
+      authmethod = details.get(u'authmethod', None)
 
       roles = []
 
@@ -460,7 +460,7 @@ class Abort(Message):
       """
       details = {}
       if self.message:
-         details['message'] = self.message
+         details[u'message'] = self.message
 
       return [Abort.MESSAGE_TYPE, details, self.reason]
 
@@ -695,7 +695,7 @@ class Goodbye(Message):
       """
       details = {}
       if self.message:
-         details['message'] = self.message
+         details[u'message'] = self.message
 
       return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
@@ -989,8 +989,8 @@ class Publish(Message):
       assert(kwargs is None or type(kwargs) == dict)
       assert(acknowledge is None or type(acknowledge) == bool)
       assert(excludeMe is None or type(excludeMe) == bool)
-      assert(exclude is None or type(exclude) == bool)
-      assert(eligible is None or type(eligible) == bool)
+      assert(exclude is None or type(exclude) == list)
+      assert(eligible is None or type(eligible) == list)
       assert(discloseMe is None or type(discloseMe) == bool)
 
       Message.__init__(self)
@@ -1112,15 +1112,15 @@ class Publish(Message):
       options = {}
 
       if self.acknowledge is not None:
-         options['acknowledge'] = self.acknowledge
+         options[u'acknowledge'] = self.acknowledge
       if self.excludeMe is not None:
-         options['exclude_me'] = self.excludeMe
+         options[u'exclude_me'] = self.excludeMe
       if self.exclude is not None:
-         options['exclude'] = self.exclude
+         options[u'exclude'] = self.exclude
       if self.eligible is not None:
-         options['eligible'] = self.eligible
+         options[u'eligible'] = self.eligible
       if self.discloseMe is not None:
-         options['disclose_me'] = self.discloseMe
+         options[u'disclose_me'] = self.discloseMe
 
       if self.kwargs:
          return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args, self.kwargs]
@@ -1619,7 +1619,7 @@ class Event(Message):
       details = {}
 
       if self.publisher is not None:
-         details['publisher'] = self.publisher
+         details[u'publisher'] = self.publisher
 
       if self.kwargs:
          return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args, self.kwargs]
@@ -1776,13 +1776,13 @@ class Call(Message):
       options = {}
 
       if self.timeout is not None:
-         options['timeout'] = self.timeout
+         options[u'timeout'] = self.timeout
 
       if self.receive_progress is not None:
-         options['receive_progress'] = self.receive_progress
+         options[u'receive_progress'] = self.receive_progress
 
       if self.discloseMe is not None:
-         options['disclose_me'] = self.discloseMe
+         options[u'disclose_me'] = self.discloseMe
 
       if self.kwargs:
          return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
@@ -1883,7 +1883,7 @@ class Cancel(Message):
       options = {}
 
       if self.mode is not None:
-         options['mode'] = self.mode
+         options[u'mode'] = self.mode
 
       return [Cancel.MESSAGE_TYPE, self.request, options]
 
@@ -1994,7 +1994,7 @@ class Result(Message):
       details = {}
 
       if self.progress is not None:
-         details['progress'] = self.progress
+         details[u'progress'] = self.progress
 
       if self.kwargs:
          return [Result.MESSAGE_TYPE, self.request, details, self.args, self.kwargs]
@@ -2510,22 +2510,22 @@ class Invocation(Message):
       options = {}
 
       if self.timeout is not None:
-         options['timeout'] = self.timeout
+         options[u'timeout'] = self.timeout
 
       if self.receive_progress is not None:
-         options['receive_progress'] = self.receive_progress
+         options[u'receive_progress'] = self.receive_progress
 
       if self.caller is not None:
-         options['caller'] = self.caller
+         options[u'caller'] = self.caller
 
       if self.authid is not None:
-         options['authid'] = self.authid
+         options[u'authid'] = self.authid
 
       if self.authrole is not None:
-         options['authrole'] = self.authrole
+         options[u'authrole'] = self.authrole
 
       if self.authmethod is not None:
-         options['authmethod'] = self.authmethod
+         options[u'authmethod'] = self.authmethod
 
       if self.kwargs:
          return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
