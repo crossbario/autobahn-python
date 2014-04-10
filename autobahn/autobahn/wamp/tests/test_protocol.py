@@ -233,7 +233,7 @@ class TestPublisher(unittest.TestCase):
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
-         print "got event"
+         print("got event", args, kwargs)
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
       self.assertTrue(type(subscription.id) in (int, long))
@@ -248,7 +248,7 @@ class TestPublisher(unittest.TestCase):
       transport = MockTransport(handler)
 
       def on_event(*args, **kwargs):
-         print "got event"
+         print("got event", args, kwargs)
 
       subscription = yield handler.subscribe(on_event, 'com.myapp.topic1')
       yield subscription.unsubscribe()
@@ -260,7 +260,7 @@ class TestPublisher(unittest.TestCase):
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
-         print "got call"
+         print("got call", args, kwargs)
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1')
       self.assertTrue(type(registration.id) in (int, long))
@@ -275,7 +275,7 @@ class TestPublisher(unittest.TestCase):
       transport = MockTransport(handler)
 
       def on_call(*args, **kwargs):
-         print "got call"
+         print("got call", args, kwargs)
 
       registration = yield handler.register(on_call, 'com.myapp.procedure1')
       yield registration.unregister()
