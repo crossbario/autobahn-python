@@ -17,33 +17,27 @@
 ###############################################################################
 
 import sys
+import asyncio
 
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import clientFromString
-
-from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.wamp import ApplicationSessionFactory
-from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.asyncio import wamp, websocket
 
 
-class MyFrontendComponent(ApplicationSession):
+class MyFrontendComponent(wamp.ApplicationSession):
    """
    Application code goes here. This is an example component that calls
    a remote procedure on a WAMP peer, subscribes to a topic to receive
    events, and then stops the world after some events.
    """
    def onConnect(self):
-      self.join("realm1")
+      self.join(u"realm1")
 
-   @inlineCallbacks
+   @asyncio.coroutine
    def onJoin(self, details):
 
       ## call a remote procedure
       ##
       try:
-         now = yield self.call(u'com.timeservice.now')
+         now = yield from self.call(u'com.timeservice.now')
       except Exception as e:
          print("Error: {}".format(e))
       else:
@@ -59,30 +53,29 @@ class MyFrontendComponent(ApplicationSession):
          if self.received > 5:
             self.leave()
 
-      yield self.subscribe(on_event, u'com.myapp.topic1')
+      yield from self.subscribe(on_event, u'com.myapp.topic1')
 
    def onLeave(self, details):
       self.disconnect()
 
    def onDisconnect(self):
-      reactor.stop()
+      asyncio.get_event_loop().stop()
 
 
 if __name__ == '__main__':
 
-   ## 0) start logging to console
-   log.startLogging(sys.stdout)
-
    ## 1) create a WAMP application session factory
-   session_factory = ApplicationSessionFactory()
+   session_factory = wamp.ApplicationSessionFactory()
    session_factory.session = MyFrontendComponent
 
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = WampWebSocketClientFactory(session_factory, debug = False, debug_wamp = True)
+   transport_factory = websocket.WampWebSocketClientFactory(session_factory, debug = False, debug_wamp = True)
 
-   ## 3) start the client from a Twisted endpoint
-   client = clientFromString(reactor, "tcp:127.0.0.1:8080")
-   client.connect(transport_factory)
+   ## 3) start the client
+   loop = asyncio.get_event_loop()
+   coro = loop.create_connection(transport_factory, '127.0.0.1', 8080)
+   loop.run_until_complete(coro)
 
-   ## 4) now enter the Twisted reactor loop
-   reactor.run()
+   ## 4) now enter the asyncio event loop
+   loop.run_forever()
+   loop.close()

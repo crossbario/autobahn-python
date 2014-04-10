@@ -78,7 +78,7 @@ if __name__ == '__main__':
    session_factory.session = MyFrontendComponent
 
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = WampWebSocketClientFactory(session_factory, debug = False, debug_wamp = True)
+   transport_factory = WampWebSocketClientFactory(session_factory, debug = True, debug_wamp = True)
 
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")

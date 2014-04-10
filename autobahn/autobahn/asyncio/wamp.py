@@ -37,27 +37,9 @@ class FutureMixin:
    """
 
    def _create_future(self):
-      print("FutureMixin._create_future")
       return Future()
 
-   def _as_future2(self, fun, *args, **kwargs):
-      print("FutureMixin._as_future")
-      try:
-         res = fun(*args, **kwargs)
-      except Exception as e:
-         f = Future()
-         f.set_exception(e)
-         return f
-      else:
-         if isinstance(res, Future) or iscoroutine(res):
-            return res
-         else:
-            f = Future()
-            f.set_result(res)
-            return f
-
    def _as_future(self, fun, *args, **kwargs):
-      print("FutureMixin._as_future")
       try:
          res = fun(*args, **kwargs)
       except Exception as e:
@@ -75,15 +57,12 @@ class FutureMixin:
             return f
 
    def _resolve_future(self, future, value):
-      print("FutureMixin._resolve_future")
       future.set_result(value)
 
    def _reject_future(self, future, value):
-      print("FutureMixin._reject_future")
       future.set_exception(value)
 
    def _add_future_callbacks(self, future, callback, errback):
-      print("FutureMixin._add_future_callbacks")
       def done(f):
          try:
             res = f.result()
@@ -93,8 +72,7 @@ class FutureMixin:
       return future.add_done_callback(done)
 
    def _gather_futures(self, futures, consume_exceptions = True):
-      print("FutureMixin._gather_futures")
-      return asyncio.gather(futures, return_exception = consume_exceptions)      
+      return asyncio.gather(futures, return_exception = consume_exceptions)
 
 
 

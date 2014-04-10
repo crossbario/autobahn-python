@@ -357,7 +357,9 @@ class ApplicationSession(BaseSession):
          if isinstance(msg, message.Welcome):
             self._session_id = msg.session
 
-            self.onJoin(SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod))
+            details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
+            self._as_future(self.onJoin, details)
+            #self.onJoin(details)
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
 
@@ -995,6 +997,7 @@ class RouterApplicationSession:
          ##
          details = SessionDetails(self._session._realm, self._session._session_id)
          self._session._as_future(self._session.onJoin, details)
+         #self._session.onJoin(details)
 
 
       ## app-to-router

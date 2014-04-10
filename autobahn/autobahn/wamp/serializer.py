@@ -22,6 +22,7 @@ __all__ = ['Serializer',
            'JsonObjectSerializer',
            'JsonSerializer']
 
+import six
 from zope.interface import implementer
 
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
@@ -138,14 +139,21 @@ class JsonObjectSerializer:
       """
       Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
       """
-      return json.dumps(obj, separators = (',',':'))
+      s = json.dumps(obj, separators = (',',':'))
+      if six.PY3:
+         return s.encode('utf8')
+      else:
+         return s
 
 
    def unserialize(self, payload):
       """
       Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
       """
-      return json.loads(payload)
+      if six.PY3:
+         return json.loads(payload.decode('utf8'))
+      else:
+         return json.loads(payload)
 
 
 
