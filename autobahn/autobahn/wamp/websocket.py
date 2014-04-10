@@ -34,6 +34,8 @@ from autobahn.websocket import http
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
+import traceback
+
 
 
 @implementer(ITransport)
@@ -58,6 +60,8 @@ class WampWebSocketProtocol:
          self._session = self.factory._factory()
          self._session.onOpen(self)
       except Exception as e:
+         if self.factory.debug_wamp:
+            traceback.print_exc()
          ## Exceptions raised in onOpen are fatal ..
          reason = "WAMP Internal Error ({})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
@@ -75,7 +79,8 @@ class WampWebSocketProtocol:
          self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
-         pass
+         if self.factory.debug_wamp:
+            traceback.print_exc()
       self._session = None
 
 
@@ -90,10 +95,14 @@ class WampWebSocketProtocol:
          self._session.onMessage(msg)
 
       except ProtocolError as e:
+         if self.factory.debug_wamp:
+            traceback.print_exc()
          reason = "WAMP Protocol Error ({})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason = reason)
 
       except Exception as e:
+         if self.factory.debug_wamp:
+            traceback.print_exc()
          reason = "WAMP Internal Error ({})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 

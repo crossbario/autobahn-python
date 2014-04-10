@@ -29,46 +29,46 @@ class Component(ApplicationSession):
    """
 
    def onConnect(self):
-      self.join("realm1")
+      self.join(u"realm1")
 
 
    @inlineCallbacks
    def onJoin(self, details):
 
-      yield self.call('com.arguments.ping')
+      yield self.call(u'com.arguments.ping')
       print("Pinged!")
 
-      res = yield self.call('com.arguments.add2', 2, 3)
+      res = yield self.call(u'com.arguments.add2', 2, 3)
       print("Add2: {}".format(res))
 
-      starred = yield self.call('com.arguments.stars')
+      starred = yield self.call(u'com.arguments.stars')
       print("Starred 1: {}".format(starred))
 
-      starred = yield self.call('com.arguments.stars', nick = 'Homer')
+      starred = yield self.call(u'com.arguments.stars', nick = u'Homer')
       print("Starred 2: {}".format(starred))
 
-      starred = yield self.call('com.arguments.stars', stars = 5)
+      starred = yield self.call(u'com.arguments.stars', stars = 5)
       print("Starred 3: {}".format(starred))
 
-      starred = yield self.call('com.arguments.stars', nick = 'Homer', stars = 5)
+      starred = yield self.call(u'com.arguments.stars', nick = u'Homer', stars = 5)
       print("Starred 4: {}".format(starred))
 
-      orders = yield self.call('com.arguments.orders', 'coffee')
+      orders = yield self.call(u'com.arguments.orders', u'coffee')
       print("Orders 1: {}".format(orders))
 
-      orders = yield self.call('com.arguments.orders', 'coffee', limit = 10)
+      orders = yield self.call(u'com.arguments.orders', u'coffee', limit = 10)
       print("Orders 2: {}".format(orders))
 
-      arglengths = yield self.call('com.arguments.arglen')
+      arglengths = yield self.call(u'com.arguments.arglen')
       print("Arglen 1: {}".format(arglengths))
 
-      arglengths = yield self.call('com.arguments.arglen', 1, 2, 3)
+      arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3)
       print("Arglen 1: {}".format(arglengths))
 
-      arglengths = yield self.call('com.arguments.arglen', a = 1, b = 2, c = 3)
+      arglengths = yield self.call(u'com.arguments.arglen', a = 1, b = 2, c = 3)
       print("Arglen 2: {}".format(arglengths))
 
-      arglengths = yield self.call('com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
+      arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
       print("Arglen 3: {}".format(arglengths))
 
       self.leave()

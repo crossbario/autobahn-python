@@ -46,6 +46,7 @@ __all__ = ['Hello',
 
 
 import re
+import six
 
 from zope.interface import implementer
 
@@ -72,7 +73,7 @@ _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)?$")
 
 
 def check_or_raise_uri(value, message):
-   if type(value) not in [str, unicode]:
+   if type(value) != six.text_type:
       raise ProtocolError("{}: invalid type {} for URI".format(message, type(value)))
    if not _URI_PAT_LOOSE.match(value):
       raise ProtocolError("{}: invalid value '{}' for URI".format(message, value))
@@ -81,7 +82,7 @@ def check_or_raise_uri(value, message):
 
 
 def check_or_raise_id(value, message):
-   if type(value) not in [int, long]:
+   if type(value) not in six.integer_types:
       raise ProtocolError("{}: invalid type {} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
       raise ProtocolError("{}: invalid value {} for ID".format(message, value))
@@ -93,8 +94,8 @@ def check_or_raise_extra(value, message):
    if type(value) != dict:
       raise ProtocolError("{}: invalid type {}".format(message, type(value)))
    for k in value.keys():
-      if type(k) not in (str, unicode):
-         raise ProtocolError("{}: invalid type {} for key '{}'".format(type(k), k))
+      if type(k) != six.text_type:
+         raise ProtocolError("{}: invalid type {} for key '{}'".format(message, type(k), k))
    return value
 
 
@@ -155,8 +156,15 @@ class Hello(Message):
       :param roles: The WAMP roles to announce.
       :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
       """
+      assert(type(realm) == six.text_type)
+      assert(type(roles) == list)
       for role in roles:
          assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
+      if authmethods:
+         assert(type(authmethods) == list)
+         for authmethod in authmethods:
+            assert(type(authmethod) == six.text_type)
+
       Message.__init__(self)
       self.realm = realm
       self.roles = roles
@@ -211,13 +219,13 @@ class Hello(Message):
          roles.append(role_features)
 
       authmethods = None
-      if 'authmethods' in details:
-         details_authmethods = details['authmethods']
+      if u'authmethods' in details:
+         details_authmethods = details[u'authmethods']
          if type(details_authmethods) != list:
             raise ProtocolError("invalid type {} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
 
          for auth_method in details_authmethods:
-            if type(auth_method) not in [str, unicode]:
+            if type(auth_method) != six.text_type:
                raise ProtocolError("invalid type {} for item in 'authmethods' detail in HELLO".format(type(auth_method)))
 
          authmethods = details_authmethods
@@ -231,17 +239,17 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      details = {'roles': {}}
+      details = {u'roles': {}}
       for role in self.roles:
-         details['roles'][role.ROLE] = {}
+         details[u'roles'][role.ROLE] = {}
          for feature in role.__dict__:
             if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-               if not details['roles'][role.ROLE].has_key('features'):
-                  details['roles'][role.ROLE] = {'features': {}}
-               details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
+               if not details[u'roles'][role.ROLE].has_key(u'features'):
+                  details[u'roles'][role.ROLE] = {u'features': {}}
+               details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
       if self.authmethods:
-         details['authmethods'] = self.authmethods
+         details[u'authmethods'] = self.authmethods
 
       return [Hello.MESSAGE_TYPE, self.realm, details]
 
@@ -275,8 +283,14 @@ class Welcome(Message):
       :param session: The WAMP session ID the other peer is assigned.
       :type session: int
       """
+      assert(type(session) in six.integer_types)
+      assert(type(roles) == list)
       for role in roles:
          assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
+      assert(authid is None or type(authid) == six.text_type)
+      assert(authrole is None or type(authrole) == six.text_type)
+      assert(authmethod is None or type(authmethod) == six.text_type)
+
       Message.__init__(self)
       self.session = session
       self.roles = roles
@@ -344,25 +358,25 @@ class Welcome(Message):
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
       details = {
-         'roles': {}
+         u'roles': {}
       }
 
       if self.authid:
-         details['authid'] = self.authid
+         details[u'authid'] = self.authid
 
       if self.authrole:
-         details['authrole'] = self.authrole
+         details[u'authrole'] = self.authrole
 
       if self.authrole:
-         details['authmethod'] = self.authmethod
+         details[u'authmethod'] = self.authmethod
 
       for role in self.roles:
-         details['roles'][role.ROLE] = {}
+         details[u'roles'][role.ROLE] = {}
          for feature in role.__dict__:
             if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-               if not details['roles'][role.ROLE].has_key('features'):
-                  details['roles'][role.ROLE] = {'features': {}}
-               details['roles'][role.ROLE]['features'][feature] = getattr(role, feature)
+               if not details[u'roles'][role.ROLE].has_key(u'features'):
+                  details[u'roles'][role.ROLE] = {u'features': {}}
+               details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
       return [Welcome.MESSAGE_TYPE, self.session, details]
 
@@ -397,6 +411,9 @@ class Abort(Message):
       :param message: Optional human-readable closing message, e.g. for logging purposes.
       :type message: str
       """
+      assert(type(reason) == six.text_type)
+      assert(message is None or type(message) == six.text_type)
+
       Message.__init__(self)
       self.reason = reason
       self.message = message
@@ -427,7 +444,7 @@ class Abort(Message):
       if details.has_key('message'):
 
          details_message = details['message']
-         if type(details_message) not in [str, unicode]:
+         if type(details_message) != six.text_type:
             raise ProtocolError("invalid type {} for 'message' detail in ABORT".format(type(details_message)))
 
          message = details_message
@@ -479,6 +496,9 @@ class Challenge(Message):
       :param extra: Authentication method specific information.
       :type extra: dict
       """
+      assert(type(method) == six.text_type)
+      assert(type(extra) == dict)
+
       Message.__init__(self)
       self.method = method
       self.extra = extra
@@ -516,7 +536,7 @@ class Challenge(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      return [Challenge.MESSAGE_TYPE, self.method, self.extra or {}]
+      return [Challenge.MESSAGE_TYPE, self.method, self.extra]
 
 
    def __str__(self):
@@ -548,6 +568,8 @@ class Authenticate(Message):
       :param signature: The signature for the authentication challenge.
       :type signature: str
       """
+      assert(type(signature) == six.text_type)
+
       Message.__init__(self)
       self.signature = signature
 
@@ -570,7 +592,7 @@ class Authenticate(Message):
          raise ProtocolError("invalid message length {} for AUTHENTICATE".format(len(wmsg)))
 
       signature = wmsg[1]
-      if type(signature) not in [str, unicode]:
+      if type(signature) != six.text_type:
          raise ProtocolError("invalid type {} for 'signature' in AUTHENTICATE".format(type(signature)))
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
@@ -609,7 +631,7 @@ class Goodbye(Message):
    The WAMP message code for this type of message.
    """
 
-   DEFAULT_REASON = "wamp.goodbye.normal"
+   DEFAULT_REASON = u"wamp.goodbye.normal"
    """
    Default WAMP closing reason.
    """
@@ -624,6 +646,9 @@ class Goodbye(Message):
       :param message: Optional human-readable closing message, e.g. for logging purposes.
       :type message: str
       """
+      assert(type(reason) == six.text_type)
+      assert(message is None or type(message) == six.text_type)
+
       Message.__init__(self)
       self.reason = reason
       self.message = message
@@ -654,7 +679,7 @@ class Goodbye(Message):
       if details.has_key('message'):
 
          details_message = details['message']
-         if type(details_message) not in [str, unicode]:
+         if type(details_message) != six.text_type:
             raise ProtocolError("invalid type {} for 'message' detail in GOODBYE".format(type(details_message)))
 
          message = details_message
@@ -711,6 +736,10 @@ class Heartbeat(Message):
       :param discard: Optional data that is discared by peer.
       :type discard: str
       """
+      assert(type(incoming) in six.integer_types)
+      assert(type(outgoing) in six.integer_types)
+      assert(discard is None or type(discard) == six.text_type)
+
       Message.__init__(self)
       self.incoming = incoming
       self.outgoing = outgoing
@@ -736,7 +765,7 @@ class Heartbeat(Message):
 
       incoming = wmsg[1]
 
-      if type(incoming) not in [int, long]:
+      if type(incoming) not in six.integer_types:
          raise ProtocolError("invalid type {} for 'incoming' in HEARTBEAT".format(type(incoming)))
 
       if incoming < 0: # must be non-negative
@@ -744,7 +773,7 @@ class Heartbeat(Message):
 
       outgoing = wmsg[2]
 
-      if type(outgoing) not in [int, long]:
+      if type(outgoing) not in six.integer_types:
          raise ProtocolError("invalid type {} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
 
       if outgoing <= 0: # must be positive
@@ -753,7 +782,7 @@ class Heartbeat(Message):
       discard = None
       if len(wmsg) > 3:
          discard = wmsg[3]
-         if type(discard) not in (str, unicode):
+         if type(discard) != six.text_type:
             raise ProtocolError("invalid type {} for 'discard' in HEARTBEAT".format(type(discard)))
 
       obj = Heartbeat(incoming, outgoing, discard = discard)
@@ -813,6 +842,12 @@ class Error(Message):
                      Must be serializable using any serializers in use.
       :type kwargs: dict
       """
+      assert(type(request_type) in six.integer_types)
+      assert(type(request) in six.integer_types)
+      assert(type(error) == six.text_type)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+
       Message.__init__(self)
       self.request_type = request_type
       self.request = request
@@ -839,7 +874,7 @@ class Error(Message):
          raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
 
       request_type = wmsg[1]
-      if type(request_type) not in [int, long]:
+      if type(request_type) not in six.integer_types:
          raise ProtocolError("invalid type {} for 'request_type' in ERROR".format(request_type))
 
       if request_type not in [Subscribe.MESSAGE_TYPE,
@@ -948,6 +983,16 @@ class Publish(Message):
                          to subscribers.
       :type discloseMe: bool
       """
+      assert(type(request) in six.integer_types)
+      assert(type(topic) == six.text_type)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(acknowledge is None or type(acknowledge) == bool)
+      assert(excludeMe is None or type(excludeMe) == bool)
+      assert(exclude is None or type(exclude) == bool)
+      assert(eligible is None or type(eligible) == bool)
+      assert(discloseMe is None or type(discloseMe) == bool)
+
       Message.__init__(self)
       self.request = request
       self.topic = topic
@@ -1022,7 +1067,7 @@ class Publish(Message):
             raise ProtocolError("invalid type {} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
          for sessionId in option_exclude:
-            if type(sessionId) not in [int, long]:
+            if type(sessionId) not in six.integer_types:
                raise ProtocolError("invalid type {} for value in 'exclude' option in PUBLISH".format(type(sessionId)))
 
          exclude = option_exclude
@@ -1034,7 +1079,7 @@ class Publish(Message):
             raise ProtocolError("invalid type {} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
          for sessionId in option_eligible:
-            if type(sessionId) not in [int, long]:
+            if type(sessionId) not in six.integer_types:
                raise ProtocolError("invalid type {} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
 
          eligible = option_eligible
@@ -1115,6 +1160,9 @@ class Published(Message):
       :param publication: The publication ID for the published event.
       :type publication: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(publication) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
       self.publication = publication
@@ -1173,9 +1221,9 @@ class Subscribe(Message):
    The WAMP message code for this type of message.
    """
 
-   MATCH_EXACT = 'exact'
-   MATCH_PREFIX = 'prefix'
-   MATCH_WILDCARD = 'wildcard'
+   MATCH_EXACT = u'exact'
+   MATCH_PREFIX = u'prefix'
+   MATCH_WILDCARD = u'wildcard'
 
    def __init__(self, request, topic, match = MATCH_EXACT):
       """
@@ -1188,6 +1236,11 @@ class Subscribe(Message):
       :param match: The topic matching method to be used for the subscription.
       :type match: str
       """
+      assert(type(request) in six.integer_types)
+      assert(type(topic) == six.text_type)
+      assert(match is None or type(match) == six.text_type)
+      assert(match is None or match in [self.MATCH_EXACT, self.MATCH_PREFIX, self.MATCH_WILDCARD])
+
       Message.__init__(self)
       self.request = request
       self.topic = topic
@@ -1220,7 +1273,7 @@ class Subscribe(Message):
       if options.has_key('match'):
 
          option_match = options['match']
-         if type(option_match) not in [str, unicode]:
+         if type(option_match) != six.text_type:
             raise ProtocolError("invalid type {} for 'match' option in SUBSCRIBE".format(type(option_match)))
 
          if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
@@ -1275,6 +1328,9 @@ class Subscribed(Message):
       :param subscription: The subscription ID for the subscribed topic (or topic pattern).
       :type subscription: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(subscription) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
       self.subscription = subscription
@@ -1343,6 +1399,9 @@ class Unsubscribe(Message):
       :param subscription: The subscription ID for the subscription to unsubscribe from.
       :type subscription: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(subscription) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
       self.subscription = subscription
@@ -1408,6 +1467,8 @@ class Unsubscribed(Message):
       :param request: The request ID of the original `UNSUBSCRIBE` request.
       :type request: int
       """
+      assert(type(request) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
 
@@ -1486,6 +1547,12 @@ class Event(Message):
       :param publisher: If present, the WAMP session ID of the publisher of this event.
       :type publisher: str
       """
+      assert(type(subscription) in six.integer_types)
+      assert(type(publication) == six.text_type)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(publisher is None or type(publisher) in six.integer_types)
+
       Message.__init__(self)
       self.subscription = subscription
       self.publication = publication
@@ -1531,7 +1598,7 @@ class Event(Message):
       if details.has_key('publisher'):
 
          detail_publisher = details['publisher']
-         if type(detail_publisher) not in [int, long]:
+         if type(detail_publisher) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
          publisher = detail_publisher
@@ -1610,6 +1677,14 @@ class Call(Message):
                       the call after this ms.
       :type timeout: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(procedure) == six.text_type)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(timeout is None or type(timeout) in six.integer_types)
+      assert(receive_progress is None or type(receive_progress) == bool)
+      assert(discloseMe is None or type(discloseMe) == bool)
+
       Message.__init__(self)
       self.request = request
       self.procedure = procedure
@@ -1657,7 +1732,7 @@ class Call(Message):
       if options.has_key('timeout'):
 
          option_timeout = options['timeout']
-         if type(option_timeout) not in [int, long]:
+         if type(option_timeout) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'timeout' option in CALL".format(type(option_timeout)))
 
          if option_timeout < 0:
@@ -1738,9 +1813,9 @@ class Cancel(Message):
    The WAMP message code for this type of message.
    """
 
-   SKIP = 'skip'
-   ABORT = 'abort'
-   KILL = 'kill'
+   SKIP = u'skip'
+   ABORT = u'abort'
+   KILL = u'kill'
 
 
    def __init__(self, request, mode = None):
@@ -1749,9 +1824,13 @@ class Cancel(Message):
 
       :param request: The WAMP request ID of the original `CALL` to cancel.
       :type request: int
-      :param mode: Specifies how to cancel the call (skip, abort or kill).
+      :param mode: Specifies how to cancel the call (`"skip"`, `"abort"` or `"kill"`).
       :type mode: str
       """
+      assert(type(request) in six.integer_types)
+      assert(mode is None or type(mode) == six.text_type)
+      assert(mode is None or mode in [self.SKIP, self.ABORT, self.KILL])
+
       Message.__init__(self)
       self.request = request
       self.mode = mode
@@ -1784,7 +1863,7 @@ class Cancel(Message):
       if options.has_key('mode'):
 
          option_mode = options['mode']
-         if type(option_mode) not in (str, unicode):
+         if type(option_mode) != six.text_type:
             raise ProtocolError("invalid type {} for 'mode' option in CANCEL".format(type(option_mode)))
 
          if option_mode not in [Cancel.SKIP, Cancel.ABORT, Cancel.KILL]:
@@ -1845,9 +1924,15 @@ class Result(Message):
       :param kwargs: Keyword values for application-defined event payload.
                      Must be serializable using any serializers in use.
       :type kwargs: dict
-      :progress: If `True`, this result is a progressive call result, and subsequent
-                 results (or a final error) will follow.
+      :param progress: If `True`, this result is a progressive call result, and subsequent
+                       results (or a final error) will follow.
+      :type progress: bool
       """
+      assert(type(request) in six.integer_types)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(progress is None or type(progress) == bool)
+
       Message.__init__(self)
       self.request = request
       self.args = args
@@ -1951,6 +2036,14 @@ class Register(Message):
       :param pkeys: The endpoint can work for this list of application partition keys.
       :type pkeys: list
       """
+      assert(type(request) in six.integer_types)
+      assert(type(procedure) == six.text_type)
+      assert(pkeys is None or type(pkeys) == list)
+      if pkeys:
+         for k in pkeys:
+            assert(type(k) in six.integer_types)
+      assert(discloseCaller is None or type(discloseCaller) == bool)
+
       Message.__init__(self)
       self.request = request
       self.procedure = procedure
@@ -1989,7 +2082,7 @@ class Register(Message):
             raise ProtocolError("invalid type {} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
 
          for pk in option_pkeys:
-            if type(pk) not in [int, long]:
+            if type(pk) not in six.integer_types:
                raise ProtocolError("invalid type for value '{}' in 'pkeys' option in REGISTER".format(type(pk)))
 
          pkeys = option_pkeys
@@ -2053,6 +2146,9 @@ class Registered(Message):
       :param registration: The registration ID for the registered procedure (or procedure pattern).
       :type registration: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(registration) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
       self.registration = registration
@@ -2121,6 +2217,9 @@ class Unregister(Message):
       :param registration: The registration ID for the registration to unregister.
       :type registration: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(registration) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
       self.registration = registration
@@ -2186,6 +2285,8 @@ class Unregistered(Message):
       :param request: The request ID of the original `UNREGISTER` request.
       :type request: int
       """
+      assert(type(request) in six.integer_types)
+
       Message.__init__(self)
       self.request = request
 
@@ -2274,6 +2375,17 @@ class Invocation(Message):
                       the invocation after this ms.
       :type timeout: int
       """
+      assert(type(request) in six.integer_types)
+      assert(type(registration) in six.integer_types)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(timeout is None or type(timeout) in six.integer_types)
+      assert(receive_progress is None or type(receive_progress) == bool)
+      assert(caller is None or type(caller) in six.integer_types)
+      assert(authid is None or type(authid) == six.text_type)
+      assert(authrole is None or type(authrole) == six.text_type)
+      assert(authmethod is None or type(authmethod) == six.text_type)
+
       Message.__init__(self)
       self.request = request
       self.registration = registration
@@ -2324,7 +2436,7 @@ class Invocation(Message):
       if details.has_key('timeout'):
 
          detail_timeout = details['timeout']
-         if type(detail_timeout) not in [int, long]:
+         if type(detail_timeout) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
          if detail_timeout < 0:
@@ -2345,7 +2457,7 @@ class Invocation(Message):
       if details.has_key('caller'):
 
          detail_caller = details['caller']
-         if type(detail_caller) not in [int, long]:
+         if type(detail_caller) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
          caller = detail_caller
@@ -2354,7 +2466,7 @@ class Invocation(Message):
       if details.has_key('authid'):
 
          detail_authid = details['authid']
-         if type(detail_authid) not in [str, unicode]:
+         if type(detail_authid) != six.text_type:
             raise ProtocolError("invalid type {} for 'authid' detail in INVOCATION".format(type(detail_authid)))
 
          authid = detail_authid
@@ -2363,7 +2475,7 @@ class Invocation(Message):
       if details.has_key('authrole'):
 
          detail_authrole = details['authrole']
-         if type(detail_authrole) not in [str, unicode]:
+         if type(detail_authrole) != six.text_type:
             raise ProtocolError("invalid type {} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
 
          authrole = detail_authrole
@@ -2372,7 +2484,7 @@ class Invocation(Message):
       if details.has_key('authmethod'):
 
          detail_authmethod = details['authmethod']
-         if type(detail_authrole) not in [str, unicode]:
+         if type(detail_authrole) != six.text_type:
             raise ProtocolError("invalid type {} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
 
          authmethod = detail_authmethod
@@ -2444,8 +2556,8 @@ class Interrupt(Message):
    The WAMP message code for this type of message.
    """
 
-   ABORT = 'abort'
-   KILL = 'kill'
+   ABORT = u'abort'
+   KILL = u'kill'
 
 
    def __init__(self, request, mode = None):
@@ -2454,9 +2566,13 @@ class Interrupt(Message):
 
       :param request: The WAMP request ID of the original `INVOCATION` to interrupt.
       :type request: int
-      :param mode: Specifies how to interrupt the invocation (abort or kill).
+      :param mode: Specifies how to interrupt the invocation (`"abort"` or `"kill"`).
       :type mode: str
       """
+      assert(type(request) in six.integer_types)
+      assert(mode is None or type(mode) == six.text_type)
+      assert(mode is None or mode in [self.ABORT, self.KILL])
+
       Message.__init__(self)
       self.request = request
       self.mode = mode
@@ -2489,7 +2605,7 @@ class Interrupt(Message):
       if options.has_key('mode'):
 
          option_mode = options['mode']
-         if type(option_mode) not in (str, unicode):
+         if type(option_mode) != six.text_type:
             raise ProtocolError("invalid type {} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
          if option_mode not in [Interrupt.ABORT, Interrupt.KILL]:
@@ -2551,9 +2667,15 @@ class Yield(Message):
       :param kwargs: Keyword values for application-defined event payload.
                      Must be serializable using any serializers in use.
       :type kwargs: dict
-      :progress: If `True`, this result is a progressive invocation result, and subsequent
-                 results (or a final error) will follow.
+      :param progress: If `True`, this result is a progressive invocation result, and subsequent
+                       results (or a final error) will follow.
+      :type progress: bool
       """
+      assert(type(request) in six.integer_types)
+      assert(args is None or type(args) in [list, tuple])
+      assert(kwargs is None or type(kwargs) == dict)
+      assert(progress is None or type(progress) == bool)
+
       Message.__init__(self)
       self.request = request
       self.args = args

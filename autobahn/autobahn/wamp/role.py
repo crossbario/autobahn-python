@@ -62,7 +62,7 @@ class RoleCommonPubSubFeatures(RoleFeatures):
 
 class RoleBrokerFeatures(RoleCommonPubSubFeatures):
    
-   ROLE = 'broker'
+   ROLE = u'broker'
 
    def __init__(self,
                 subscriber_blackwhite_listing = None,
@@ -87,7 +87,7 @@ class RoleBrokerFeatures(RoleCommonPubSubFeatures):
 
 class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
    
-   ROLE = 'subscriber'
+   ROLE = u'subscriber'
 
    def __init__(self,
                 publication_trustlevels = None,
@@ -108,7 +108,7 @@ class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
 
 class RolePublisherFeatures(RoleCommonPubSubFeatures):
    
-   ROLE = 'publisher'
+   ROLE = u'publisher'
 
    def __init__(self,
                 subscriber_blackwhite_listing = None,
@@ -139,7 +139,7 @@ class RoleCommonRpcFeatures(RoleFeatures):
 
 class RoleDealerFeatures(RoleCommonRpcFeatures):
 
-   ROLE = 'dealer'
+   ROLE = u'dealer'
 
    def __init__(self,
                 callee_blackwhite_listing = None,
@@ -158,7 +158,7 @@ class RoleDealerFeatures(RoleCommonRpcFeatures):
 
 class RoleCallerFeatures(RoleCommonRpcFeatures):
 
-   ROLE = 'caller'
+   ROLE = u'caller'
 
    def __init__(self,
                 callee_blackwhite_listing = None,
@@ -173,7 +173,7 @@ class RoleCallerFeatures(RoleCommonRpcFeatures):
 
 class RoleCalleeFeatures(RoleCommonRpcFeatures):
 
-   ROLE = 'callee'
+   ROLE = u'callee'
 
    def __init__(self,
                 call_trustlevels = None,
@@ -187,10 +187,10 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
 
 
 ROLE_NAME_TO_CLASS = {
-   'broker': RoleBrokerFeatures,
-   'subscriber': RoleSubscriberFeatures,
-   'publisher': RolePublisherFeatures,
-   'dealer': RoleDealerFeatures,
-   'caller': RoleCallerFeatures,
-   'callee': RoleCalleeFeatures,
+   u'broker': RoleBrokerFeatures,
+   u'subscriber': RoleSubscriberFeatures,
+   u'publisher': RolePublisherFeatures,
+   u'dealer': RoleDealerFeatures,
+   u'caller': RoleCallerFeatures,
+   u'callee': RoleCalleeFeatures,
 }

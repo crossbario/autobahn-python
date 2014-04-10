@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import inspect
+import six
 
 from zope.interface import implementer
 
@@ -700,7 +701,7 @@ class ApplicationSession(BaseSession):
 
       if not self._goodbye_sent:
          if not reason:
-            reason = "wamp.close.normal"
+            reason = u"wamp.close.normal"
          msg = wamp.message.Goodbye(reason = reason, message = log_message)
          self._transport.send(msg)
          self._goodbye_sent = True
@@ -807,7 +808,7 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ICaller.call`
       """
-      assert(type(procedure) in (str, unicode))
+      assert(isinstance(procedure, six.text_type))
 
       if not self._transport:
          raise exception.TransportLost()

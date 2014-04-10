@@ -84,7 +84,7 @@ if __name__ == '__main__':
       ## create a WAMP-over-WebSocket transport client factory
       ##
       from autobahn.twisted.websocket import WampWebSocketClientFactory
-      transport_factory = WampWebSocketClientFactory(session_factory, url = args.url, debug = args.debug)
+      transport_factory = WampWebSocketClientFactory(session_factory, url = args.url, debug = args.debug, debug_wamp = True)
       transport_factory.setProtocolOptions(failByDrop = False)
 
    elif args.transport in ['rawsocket-json', 'rawsocket-msgpack']:
