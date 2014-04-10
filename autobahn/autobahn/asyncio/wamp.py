@@ -99,3 +99,52 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    WAMP router session factory for asyncio-based applications.
    """
    session = RouterSession
+
+
+import sys
+import traceback
+import asyncio
+from autobahn.wamp.types import ComponentConfig
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
+
+
+class ApplicationRunner:
+
+   def __init__(self, endpoint, url, realm, extra = {}, debug = False,
+      debug_wamp = False, debug_app = False):
+      self.endpoint = endpoint
+      self.url = url
+      self.realm = realm
+      self.extra = extra
+      self.debug = debug
+      self.debug_wamp = debug_wamp
+      self.debug_app = debug_app
+      self.make = None
+
+
+   def run(self, make):
+      ## 1) factory for use ApplicationSession
+      def create():
+         cfg = ComponentConfig(self.realm, self.extra)
+         try:
+            session = make(cfg)
+         except Exception as e:
+            ## the app component could not be created .. fatal
+            print(traceback.format_exc())
+            asyncio.get_event_loop().stop()
+
+         session.debug_app = self.debug_app
+         return session
+
+      ## 2) create a WAMP-over-WebSocket transport client factory
+      transport_factory = WampWebSocketClientFactory(create, url = self.url,
+         debug = self.debug, debug_wamp = self.debug_wamp)
+
+      ## 3) start the client
+      loop = asyncio.get_event_loop()
+      coro = loop.create_connection(transport_factory, args.host, args.port)
+      loop.run_until_complete(coro)
+
+      ## 4) now enter the asyncio event loop
+      loop.run_forever()
+      loop.close()

@@ -29,6 +29,7 @@ from autobahn.wamp.exception import ApplicationError
 from wampirc.client import IRCClientFactory
 
 
+
 class Bot:
    """
    Tracks currently running bot instances.
@@ -37,6 +38,7 @@ class Bot:
       self.id = id
       self.factory = factory
       self.client = client
+
 
 
 class IRCComponent(ApplicationSession):
@@ -49,6 +51,7 @@ class IRCComponent(ApplicationSession):
       self.config = config
       self._bots = {}
       self._bot_no = 0
+
 
    @wamp.procedure('com.myapp.start_bot')
    def start_bot(self, nick, channels):
@@ -67,6 +70,7 @@ class IRCComponent(ApplicationSession):
 
       return d
 
+
    @wamp.procedure('com.myapp.stop_bot')
    def stop_bot(self, id):
       if id in self._bots:
@@ -78,8 +82,6 @@ class IRCComponent(ApplicationSession):
       else:
          raise ApplicationError('com.myapp.error.no_such_bot')
 
-   def onConnect(self):
-      self.join(self.config.realm)
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -91,8 +93,6 @@ class IRCComponent(ApplicationSession):
 
       print("IRC Bot Backend ready!")
 
-   def onLeave(self, details):
-      self.disconnect()
 
    def onDisconnect(self):
       reactor.stop()

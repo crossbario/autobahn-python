@@ -25,16 +25,10 @@ from autobahn.twisted.wamp import ApplicationSession
 from calculator import Calculator
 
 
+
 ## WAMP application component with our app code.
 ##
 class Component1(ApplicationSession):
-
-   def __init__(self, config):
-      ApplicationSession.__init__(self)
-      self.config = config
-
-   def onConnect(self):
-      self.join(self.config.realm)
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -61,8 +55,6 @@ class Component1(ApplicationSession):
          else:
             print("Failed to register procedure: {}".format(res.value))
 
-   def onLeave(self, details):
-      self.disconnect()
 
    def onDisconnect(self):
       reactor.stop()
@@ -73,7 +65,7 @@ def make(config):
    ##
    ## This component factory creates instances of the
    ## application component to run.
-   ## 
+   ##
    ## The function will get called either during development
    ## using the ApplicationRunner below, or as  a plugin running
    ## hosted in a WAMPlet container such as a Crossbar.io worker.

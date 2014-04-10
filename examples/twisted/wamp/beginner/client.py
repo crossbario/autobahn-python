@@ -26,14 +26,13 @@ from twisted.internet.endpoints import clientFromString
 from autobahn.twisted import wamp, websocket
 
 
+
 class MyFrontendComponent(wamp.ApplicationSession):
    """
    Application code goes here. This is an example component that calls
    a remote procedure on a WAMP peer, subscribes to a topic to receive
    events, and then stops the world after some events.
    """
-   def onConnect(self):
-      self.join(u"realm1")
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -60,11 +59,10 @@ class MyFrontendComponent(wamp.ApplicationSession):
       sub = yield self.subscribe(on_event, u'com.myapp.topic1')
       print("Subscribed with subscription ID {}".format(sub.id))
 
-   def onLeave(self, details):
-      self.disconnect()
 
    def onDisconnect(self):
       reactor.stop()
+
 
 
 if __name__ == '__main__':

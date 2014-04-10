@@ -37,8 +37,6 @@ class MyBackendComponent(wamp.ApplicationSession):
    a simple procedure which can be called remotely from any WAMP peer.
    It also publishes an event every second to some topic.
    """
-   def onConnect(self):
-      self.join(u"realm1")
 
    @inlineCallbacks
    def onJoin(self, details):
@@ -61,6 +59,7 @@ class MyBackendComponent(wamp.ApplicationSession):
          print("Published event.")
          counter += 1
          yield sleep(1)
+
 
 
 if __name__ == '__main__':

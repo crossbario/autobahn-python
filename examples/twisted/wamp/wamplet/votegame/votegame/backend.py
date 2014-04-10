@@ -87,7 +87,7 @@ class VoteGameBackend(ApplicationSession):
       def run(txn):
          ## FIXME: make the following into 1 (atomic) SQL statement
          ## => does SQLite feature "UPDATE .. RETURNING"?
-         txn.execute("UPDATE votes SET count = count + 1 WHERE item = ?", [item])         
+         txn.execute("UPDATE votes SET count = count + 1 WHERE item = ?", [item])
          txn.execute("SELECT count FROM votes WHERE item = ?", [item])
          count = int(txn.fetchone()[0])
 
@@ -98,9 +98,6 @@ class VoteGameBackend(ApplicationSession):
 
       return self.db.runInteraction(run)
 
-
-   def onConnect(self):
-      self.join(self.config.realm)
 
 
    @inlineCallbacks
@@ -120,9 +117,6 @@ class VoteGameBackend(ApplicationSession):
       print("VoteGame Backend ready!")
 
 
-   def onLeave(self, details):
-      self.disconnect()
-
 
    def onDisconnect(self):
       reactor.stop()
@@ -133,7 +127,7 @@ def make(config):
    ##
    ## This component factory creates instances of the
    ## application component to run.
-   ## 
+   ##
    ## The function will get called either during development
    ## using the ApplicationRunner below, or as  a plugin running
    ## hosted in a WAMPlet container such as a Crossbar.io worker.
