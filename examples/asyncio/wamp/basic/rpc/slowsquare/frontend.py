@@ -38,7 +38,7 @@ class Component(ApplicationSession):
          print("{}: {} in {}".format(msg, res, duration))
 
       t1 = time.clock()
-      d1 = self.call('com.math.slowsquare', 3)
+      d1 = self.call('com.math.slowsquare', 3, 2)
       d1.add_done_callback(partial(got, t1, "Slow Square"))
 
       t2 = time.clock()

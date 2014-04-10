@@ -321,14 +321,14 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
       """
-      self.join(six.u(self.config.realm))
+      self.join(self.config.realm)
 
 
    def join(self, realm):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.join`
       """
-      if True or six.PY2 and type(realm) == str:
+      if six.PY2 and type(realm) == str:
          realm = six.u(realm)
 
       if self._session_id:

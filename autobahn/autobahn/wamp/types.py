@@ -23,7 +23,10 @@ import six
 
 class ComponentConfig:
    def __init__(self, realm = None, extra = None):
-      self.realm = six.u(realm)
+      if six.PY2 and type(realm) == str:
+         self.realm = six.u(realm)
+      else:
+         self.realm = realm
       self.extra = extra
 
 
@@ -125,7 +128,9 @@ class SubscribeOptions:
       assert(details_arg is None or type(details_arg) == str)
 
       self.details_arg = details_arg
-      self.options = {'match': six.u(match)}
+      if match and six.PY2 and type(match) == str:
+         match = six.u(match)
+      self.options = {'match': match}
 
 
 
@@ -207,7 +212,6 @@ class RegisterOptions:
                           in this keyword argument to the callable.
       :type details_arg: str
       """
-      assert(details_arg is None or type(details_arg) == six.text_type)
       self.details_arg = details_arg
       self.options = {
          'pkeys': pkeys,

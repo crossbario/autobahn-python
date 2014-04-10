@@ -26,13 +26,6 @@ from autobahn.twisted.wamp import ApplicationSession
 
 class MyAppComponent(ApplicationSession):
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-   def onConnect(self):
-      self.join(self._realm)
-
    def onJoin(self, details):
       if not self.factory._myAppSession:
          self.factory._myAppSession = self
@@ -96,7 +89,7 @@ if __name__ == '__main__':
    ##
    @inlineCallbacks
    def pub():
-      counter = 0  
+      counter = 0
       while True:
          ## here we can access the app session that was created ..
          ##

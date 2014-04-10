@@ -32,6 +32,9 @@ if __name__ == '__main__':
    parser.add_argument("-c", "--component", type = str,
                        help = "Start WAMP client with this application component, e.g. 'timeservice.TimeServiceFrontend'")
 
+   parser.add_argument("-r", "--realm", type = str, default = "realm1",
+                       help = "The WAMP realm to start the component in (if any).")
+
    parser.add_argument("--host", type = str, default = "127.0.0.1",
                        help = 'IP or hostname to connect to.')
 
@@ -51,7 +54,7 @@ if __name__ == '__main__':
    ##
    from autobahn.asyncio.wamp import ApplicationSessionFactory
    from autobahn.wamp import types
-   session_factory = ApplicationSessionFactory(types.ComponentConfig(realm = u"realm1"))
+   session_factory = ApplicationSessionFactory(types.ComponentConfig(realm = args.realm))
 
 
    ## dynamically load the application component ..

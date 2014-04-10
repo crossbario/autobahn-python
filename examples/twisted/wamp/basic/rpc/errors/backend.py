@@ -41,15 +41,6 @@ class Component(ApplicationSession):
    Example WAMP application backend that raised exceptions.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    def onJoin(self, details):
 
       ## raising standard exceptions
@@ -75,14 +66,14 @@ class Component(ApplicationSession):
             raise ApplicationError("com.myapp.error.mixed_case", name.lower(), name.upper())
 
          if len(name) < 3 or len(name) > 10:
-            ## forward keyword arguments in exceptions 
+            ## forward keyword arguments in exceptions
             raise ApplicationError("com.myapp.error.invalid_length", min = 3, max = 10)
 
       self.register(checkname, 'com.myapp.checkname')
 
 
       ## defining and automapping WAMP application exceptions
-      ## 
+      ##
       self.define(AppError1)
 
       def compare(a, b):

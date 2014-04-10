@@ -35,6 +35,9 @@ if __name__ == '__main__':
    parser.add_argument("-c", "--component", type = str, default = None,
                        help = "Start WAMP server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
+   parser.add_argument("-r", "--realm", type = str, default = "realm1",
+                       help = "The WAMP realm to start the component in (if any).")
+
    parser.add_argument("--endpoint", type = str, default = "tcp:8080",
                        help = 'Twisted server endpoint descriptor, e.g. "tcp:8080" or "unix:/tmp/mywebsocket".')
 
@@ -84,7 +87,8 @@ if __name__ == '__main__':
       ## .. and create and add an WAMP application session to
       ## run next to the router
       ##
-      session_factory.add(SessionKlass())
+      from autobahn.wamp import types
+      session_factory.add(SessionKlass(types.ComponentConfig(realm = args.realm)))
 
 
    if args.transport == "websocket":

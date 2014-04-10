@@ -29,10 +29,6 @@ class Component(ApplicationSession):
    and stop after having received 5 events.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @inlineCallbacks
    def onJoin(self, details):
 
@@ -45,10 +41,6 @@ class Component(ApplicationSession):
             self.leave()
 
       yield self.subscribe(on_event, 'com.myapp.topic1')
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

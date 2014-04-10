@@ -30,10 +30,6 @@ class Component(ApplicationSession):
    An application component using the time service.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @inlineCallbacks
    def onJoin(self, details):
       try:
@@ -44,10 +40,6 @@ class Component(ApplicationSession):
          print("Current time from time service: {}".format(now))
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

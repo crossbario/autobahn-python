@@ -30,17 +30,9 @@ class Component(ApplicationSession):
    An application component registering RPC endpoints using decorators.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    @inlineCallbacks
    def onJoin(self, details):
+      print("273423")
 
       ## register all methods on this object decorated with "@wamp.procedure"
       ## as a RPC endpoint

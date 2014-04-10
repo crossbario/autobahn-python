@@ -30,16 +30,6 @@ class Component(ApplicationSession):
    and stop after having received 5 events.
    """
 
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-      self.received = 0
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
    @inlineCallbacks
    def onJoin(self, details):
 
@@ -67,10 +57,6 @@ class Component(ApplicationSession):
    @wamp.topic('com.myapp.topic2')
    def onEvent2(self, msg):
       print("Got event on topic2: {}".format(msg))
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

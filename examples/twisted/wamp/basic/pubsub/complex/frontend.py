@@ -33,10 +33,6 @@ class Component(ApplicationSession):
    of no payload and of complex payload, and stops after 5 seconds.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @inlineCallbacks
    def onJoin(self, details):
 
@@ -55,10 +51,6 @@ class Component(ApplicationSession):
 
 
       reactor.callLater(5, self.leave)
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

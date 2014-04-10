@@ -41,10 +41,6 @@ class Component(ApplicationSession):
    Example WAMP application frontend that catches exceptions.
    """
 
-   def onConnect(self):
-      self.join("realm1")
-
-
    @inlineCallbacks
    def onJoin(self, details):
 
@@ -71,7 +67,7 @@ class Component(ApplicationSession):
 
 
       ## defining and automapping WAMP application exceptions
-      ## 
+      ##
       self.define(AppError1)
 
       try:
@@ -81,10 +77,6 @@ class Component(ApplicationSession):
 
 
       self.leave()
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

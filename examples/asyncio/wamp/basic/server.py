@@ -32,6 +32,9 @@ if __name__ == '__main__':
    parser.add_argument("-c", "--component", type = str, default = None,
                        help = "Start WAMP server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
+   parser.add_argument("-r", "--realm", type = str, default = "realm1",
+                       help = "The WAMP realm to start the component in (if any).")
+
    parser.add_argument("--interface", type = str, default = "127.0.0.1",
                        help = 'IP of interface to listen on.')
 
@@ -71,7 +74,7 @@ if __name__ == '__main__':
       ## run next to the router
       ##
       from autobahn.wamp import types
-      session_factory.add(SessionKlass(types.ComponentConfig(realm = u"realm1")))
+      session_factory.add(SessionKlass(types.ComponentConfig(realm = args.realm)))
 
 
    if args.transport == "websocket":

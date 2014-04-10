@@ -19,7 +19,7 @@
 import time
 
 from twisted.internet import reactor
-from twisted.internet.defer import DeferredList 
+from twisted.internet.defer import DeferredList
 
 from autobahn.twisted.wamp import ApplicationSession
 
@@ -29,10 +29,6 @@ class Component(ApplicationSession):
    """
    An application component using the time service.
    """
-
-   def onConnect(self):
-      self.join("realm1")
-
 
    def onJoin(self, details):
 
@@ -53,10 +49,6 @@ class Component(ApplicationSession):
          self.leave()
 
       DeferredList ([d1, d2]).addBoth(done)
-
-
-   def onLeave(self, details):
-      self.disconnect()
 
 
    def onDisconnect(self):

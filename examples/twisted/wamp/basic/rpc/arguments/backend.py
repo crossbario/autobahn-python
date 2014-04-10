@@ -28,10 +28,6 @@ class Component(ApplicationSession):
    An application component providing procedures with different kinds of arguments.
    """
 
-   def onConnect(self):
-      self.join(u"realm1")
-
-
    def onJoin(self, details):
 
       def ping():

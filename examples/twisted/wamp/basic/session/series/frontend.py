@@ -31,15 +31,9 @@ class Component(ApplicationSession):
    during 3 subsequent WAMP sessions, while the
    underlying transport continues to exist.
    """
-
-   def __init__(self):
-      ApplicationSession.__init__(self)
+   def __init__(self, config):
+      ApplicationSession.__init__(self, config)
       self.count = 0
-
-
-   def onConnect(self):
-      print("Transport connected.")
-      self.join("realm1")
 
 
    @inlineCallbacks

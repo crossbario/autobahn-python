@@ -35,6 +35,9 @@ if __name__ == '__main__':
    parser.add_argument("-c", "--component", type = str,
                        help = "Start WAMP client with this application component, e.g. 'timeservice.TimeServiceFrontend'")
 
+   parser.add_argument("-r", "--realm", type = str, default = "realm1",
+                       help = "The WAMP realm to start the component in (if any).")
+
    parser.add_argument("--endpoint", type = str, default = "tcp:127.0.0.1:8080",
                        help = 'Twisted client endpoint descriptor, e.g. "tcp:127.0.0.1:8080" or "unix:/tmp/mywebsocket".')
 
@@ -64,7 +67,8 @@ if __name__ == '__main__':
    ## create a WAMP application session factory
    ##
    from autobahn.twisted.wamp import ApplicationSessionFactory
-   session_factory = ApplicationSessionFactory()
+   from autobahn.wamp import types
+   session_factory = ApplicationSessionFactory(types.ComponentConfig(realm = args.realm))
 
 
    ## dynamically load the application component ..
