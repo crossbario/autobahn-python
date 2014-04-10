@@ -24,7 +24,6 @@ import six
 from zope.interface import implementer
 
 from twisted.python import log
-from twisted.internet.defer import Deferred, maybeDeferred, DeferredList
 
 from autobahn.wamp.interfaces import ISession, \
                                      IPublication, \
@@ -425,7 +424,7 @@ class ApplicationSession(BaseSession):
             if msg.request in self._publish_reqs:
                d, opts = self._publish_reqs.pop(msg.request)
                p = Publication(msg.publication)
-               d.callback(p)
+               self._resolve_future(d, p)
             else:
                raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
 
@@ -438,7 +437,7 @@ class ApplicationSession(BaseSession):
                else:
                   self._subscriptions[msg.subscription] = Handler(obj, fn, topic)
                s = Subscription(self, msg.subscription)
-               d.callback(s)
+               self._resolve_future(d, s)
             else:
                raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
 
@@ -449,7 +448,7 @@ class ApplicationSession(BaseSession):
                if subscription.id in self._subscriptions:
                   del self._subscriptions[subscription.id]
                subscription.active = False
-               d.callback(None)
+               self._resolve_future(d, None)
             else:
                raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
 
@@ -491,16 +490,16 @@ class ApplicationSession(BaseSession):
                         res = types.CallResult(*msg.args, **msg.kwargs)
                      else:
                         res = types.CallResult(**msg.kwargs)
-                     d.callback(res)
+                     self._resolve_future(d, res)
                   else:
                      if msg.args:
                         if len(msg.args) > 1:
                            res = types.CallResult(*msg.args)
-                           d.callback(res)
+                           self._resolve_future(d, res)
                         else:
-                           d.callback(msg.args[0])
+                           self._resolve_future(d, msg.args[0])
                      else:
-                        d.callback(None)
+                        self._resolve_future(d, None)
             else:
                raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
 
@@ -536,25 +535,25 @@ class ApplicationSession(BaseSession):
                   if endpoint.obj:
                      if msg.kwargs:
                         if msg.args:
-                           d = maybeDeferred(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
+                           d = self._as_future(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
                         else:
-                           d = maybeDeferred(endpoint.fn, endpoint.obj, **msg.kwargs)
+                           d = self._as_future(endpoint.fn, endpoint.obj, **msg.kwargs)
                      else:
                         if msg.args:
-                           d = maybeDeferred(endpoint.fn, endpoint.obj, *msg.args)
+                           d = self._as_future(endpoint.fn, endpoint.obj, *msg.args)
                         else:
-                           d = maybeDeferred(endpoint.fn, endpoint.obj)
+                           d = self._as_future(endpoint.fn, endpoint.obj)
                   else:
                      if msg.kwargs:
                         if msg.args:
-                           d = maybeDeferred(endpoint.fn, *msg.args, **msg.kwargs)
+                           d = self._as_future(endpoint.fn, *msg.args, **msg.kwargs)
                         else:
-                           d = maybeDeferred(endpoint.fn, **msg.kwargs)
+                           d = self._as_future(endpoint.fn, **msg.kwargs)
                      else:
                         if msg.args:
-                           d = maybeDeferred(endpoint.fn, *msg.args)
+                           d = self._as_future(endpoint.fn, *msg.args)
                         else:
-                           d = maybeDeferred(endpoint.fn)
+                           d = self._as_future(endpoint.fn)
 
                   def success(res):
                      del self._invocations[msg.request]
@@ -576,7 +575,7 @@ class ApplicationSession(BaseSession):
 
                   self._invocations[msg.request] = d
 
-                  d.addCallbacks(success, error)
+                  self._add_future_callbacks(d, success, error)
 
          elif isinstance(msg, message.Interrupt):
 
@@ -597,7 +596,7 @@ class ApplicationSession(BaseSession):
                d, obj, fn, procedure, options = self._register_reqs.pop(msg.request)
                self._registrations[msg.registration] = Endpoint(obj, fn, procedure, options)
                r = Registration(self, msg.registration)
-               d.callback(r)
+               self._resolve_future(d, r)
             else:
                raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
 
@@ -608,7 +607,7 @@ class ApplicationSession(BaseSession):
                if registration.id in self._registrations:
                   del self._registrations[registration.id]
                registration.active = False
-               d.callback(None)
+               self._resolve_future(d, None)
             else:
                raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
 
@@ -647,7 +646,7 @@ class ApplicationSession(BaseSession):
                d = self._call_reqs.pop(msg.request)[0]
 
             if d:
-               d.errback(self._exception_from_message(msg))
+               self._reject_future(d, self._exception_from_message(msg))
             else:
                raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
 
@@ -713,7 +712,7 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
       """
-      assert(type(topic) in (str, unicode))
+      assert(type(topic) == six.text_type)
 
       if not self._transport:
          raise exception.TransportLost()
@@ -728,7 +727,7 @@ class ApplicationSession(BaseSession):
          msg = message.Publish(request, topic, args = args, kwargs = kwargs)
 
       if opts and opts.options['acknowledge'] == True:
-         d = Deferred()
+         d = self._create_future()
          self._publish_reqs[request] = d, opts
          self._transport.send(msg)
          return d
@@ -742,7 +741,7 @@ class ApplicationSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
       """
       assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
-      assert(topic is None or type(topic) in (str, unicode))
+      assert(topic is None or type(topic) == six.text_type)
       assert(options is None or isinstance(options, types.SubscribeOptions))
 
       if not self._transport:
@@ -751,7 +750,7 @@ class ApplicationSession(BaseSession):
       def _subscribe(obj, handler, topic, options):
          request = util.id()
 
-         d = Deferred()
+         d = self._create_future()
          self._subscribe_reqs[request] = (d, obj, handler, topic, options)
 
          if options is not None:
@@ -779,7 +778,7 @@ class ApplicationSession(BaseSession):
                if pat.is_handler():
                   uri = pat.uri()
                   dl.append(_subscribe(handler, proc, uri, options))
-         return DeferredList(dl, consumeErrors = True)
+         return self._gather_futures(dl, consume_exceptions = True)
 
 
    def _unsubscribe(self, subscription):
@@ -795,7 +794,7 @@ class ApplicationSession(BaseSession):
 
       request = util.id()
 
-      d = Deferred()
+      d = self._create_future()
       self._unsubscribe_reqs[request] = (d, subscription)
 
       msg = message.Unsubscribe(request, subscription.id)
@@ -822,11 +821,12 @@ class ApplicationSession(BaseSession):
          opts = None
          msg = message.Call(request, procedure, args = args, kwargs = kwargs)
 
-      def canceller(_d):
-         cancel_msg = message.Cancel(request)
-         self._transport.send(cancel_msg)
-
-      d = Deferred(canceller)
+      ## FIXME
+      #def canceller(_d):
+      #   cancel_msg = message.Cancel(request)
+      #   self._transport.send(cancel_msg)
+      #d = Deferred(canceller)
+      d = self._create_future()
       self._call_reqs[request] = d, opts
 
       self._transport.send(msg)
@@ -838,7 +838,7 @@ class ApplicationSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ICallee.register`
       """
       assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
-      assert(procedure is None or type(procedure) in (str, unicode))
+      assert(procedure is None or type(procedure) == six.text_type)
       assert(options is None or isinstance(options, types.RegisterOptions))
 
       if not self._transport:
@@ -847,7 +847,7 @@ class ApplicationSession(BaseSession):
       def _register(obj, endpoint, procedure, options):
          request = util.id()
 
-         d = Deferred()
+         d = self._create_future()
          self._register_reqs[request] = (d, obj, endpoint, procedure, options)
 
          if options is not None:
@@ -891,7 +891,7 @@ class ApplicationSession(BaseSession):
 
       request = util.id()
 
-      d = Deferred()
+      d = self._create_future()
       self._unregister_reqs[request] = (d, registration)
 
       msg = message.Unregister(request, registration.id)
@@ -922,6 +922,8 @@ class ApplicationSessionFactory:
       session.factory = self
       return session
 
+
+import asyncio
 
 
 class RouterApplicationSession:
@@ -991,7 +993,8 @@ class RouterApplicationSession:
 
          ## fake app session open
          ##
-         self._session.onJoin(SessionDetails(self._session._realm, self._session._session_id))
+         details = SessionDetails(self._session._realm, self._session._session_id)
+         self._session._as_future(self._session.onJoin, details)
 
 
       ## app-to-router
@@ -1122,7 +1125,7 @@ class RouterSession(BaseSession):
 
             details = types.HelloDetails(msg.roles, msg.authmethods)
 
-            d = maybeDeferred(self.onHello, self._realm, details)
+            d = self._as_future(self.onHello, self._realm, details)
 
             def success(res):
                msg = None
@@ -1145,11 +1148,11 @@ class RouterSession(BaseSession):
             def failed(err):
                log.msg(err.value)
 
-            d.addCallbacks(success, failed)
+            self._add_future_callbacks(d, success, failed)
 
          elif isinstance(msg, message.Authenticate):
 
-            d = maybeDeferred(self.onAuthenticate, msg.signature, {})
+            d = self._as_future(self.onAuthenticate, msg.signature, {})
 
             def success(res):
                msg = None
@@ -1169,7 +1172,7 @@ class RouterSession(BaseSession):
             def failed(err):
                log.msg(err.value)
 
-            d.addCallbacks(success, failed)
+            self._add_future_callbacks(d, success, failed)
 
          else:
             raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))

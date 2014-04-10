@@ -35,7 +35,7 @@ class MyFrontendComponent(ApplicationSession):
    events, and then stops the world after some events.
    """
    def onConnect(self):
-      self.join(u"realm1")
+      self.join("realm1")
 
    @inlineCallbacks
    def onJoin(self, details):

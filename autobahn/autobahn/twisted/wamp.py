@@ -25,29 +25,65 @@ __all__ = ['ApplicationSession',
 
 from autobahn.wamp import protocol
 
+from twisted.python import log
+from twisted.internet.defer import Deferred, maybeDeferred, DeferredList
 
-class ApplicationSession(protocol.ApplicationSession):
+
+
+class FutureMixin:
+   """
+   Mixin for Twisted style Futures ("Deferreds").
+   """
+
+   def _create_future(self):
+      print("FutureMixin._create_future")
+      return Deferred()
+
+   def _as_future(self, fun, *args, **kwargs):
+      print("FutureMixin._as_future")
+      return maybeDeferred(fun, *args, **kwargs)
+
+   def _resolve_future(self, future, value):
+      print("FutureMixin._resolve_future")
+      future.callback(value)
+
+   def _reject_future(self, future, value):
+      print("FutureMixin._reject_future")
+      future.errback(value)
+
+   def _add_future_callbacks(self, future, callback, errback):
+      print("FutureMixin._add_future_callbacks")
+      return future.addCallbacks(callback, errback)
+
+   def _gather_futures(self, futures, consume_exceptions = True):
+      print("FutureMixin._gather_futures")
+      return DeferredList(futures, consumeErrors = consume_exceptions)
+
+
+
+class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
    """
 
 
-class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for Twisted-based applications.
    """
 
 
-class RouterSession(protocol.RouterSession):
+class RouterSession(FutureMixin, protocol.RouterSession):
    """
    WAMP router session for Twisted-based applications.
    """
 
 
-class RouterSessionFactory(protocol.RouterSessionFactory):
+class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """
+   session = RouterSession
 
 
 import sys

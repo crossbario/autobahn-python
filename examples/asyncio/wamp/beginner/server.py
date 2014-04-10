@@ -19,16 +19,13 @@
 import sys
 import datetime
 
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.internet.defer import inlineCallbacks
-from twisted.internet.endpoints import serverFromString
+import asyncio
 
 from autobahn.wamp.router import RouterFactory
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
-from autobahn.twisted.wamp import RouterSessionFactory
-from autobahn.twisted.websocket import WampWebSocketServerFactory
+
+from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import RouterSessionFactory
+from autobahn.asyncio.websocket import WampWebSocketServerFactory
 
 
 class MyBackendComponent(ApplicationSession):
@@ -38,10 +35,12 @@ class MyBackendComponent(ApplicationSession):
    It also publishes an event every second to some topic.
    """
    def onConnect(self):
+      print("aaaa")
       self.join(u"realm1")
+      print("6666")
 
-   @inlineCallbacks
-   def onJoin(self, details):
+   def onJoin2(self, details):
+      print("555")
 
       ## register a procedure for remote calling
       ##
@@ -50,7 +49,22 @@ class MyBackendComponent(ApplicationSession):
          now = datetime.datetime.utcnow()
          return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-      yield self.register(utcnow, u'com.timeservice.now')
+      self.register(utcnow, u'com.timeservice.now')
+
+
+   @asyncio.coroutine
+   def onJoin(self, details):
+      print("555")
+
+      ## register a procedure for remote calling
+      ##
+      def utcnow():
+         print("Someone is calling me;)")
+         now = datetime.datetime.utcnow()
+         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+      reg = yield from self.register(utcnow, u'com.timeservice.now')
+      print("Registered procedure: {}".format(reg.id))
 
       ## publish events to a topic
       ##
@@ -59,13 +73,12 @@ class MyBackendComponent(ApplicationSession):
          self.publish(u'com.myapp.topic1', counter)
          print("Published event.")
          counter += 1
-         yield sleep(1)
+         yield from asyncio.sleep(1)
 
 
 if __name__ == '__main__':
 
-   ## 0) start logging to console
-   log.startLogging(sys.stdout)
+   import asyncio
 
    ## 1) create a WAMP router factory
    router_factory = RouterFactory()
@@ -77,11 +90,19 @@ if __name__ == '__main__':
    session_factory.add(MyBackendComponent())
 
    ## 4) create a WAMP-over-WebSocket transport server factory
-   transport_factory = WampWebSocketServerFactory(session_factory, debug = False, debug_wamp = True)
+   transport_factory = WampWebSocketServerFactory(session_factory, debug = True, debug_wamp = True)
 
-   ## 5) start the server from a Twisted endpoint
-   server = serverFromString(reactor, "tcp:8080")
-   server.listen(transport_factory)
+   ## 5) start the server
+   loop = asyncio.get_event_loop()
+   coro = loop.create_server(transport_factory, '127.0.0.1', 8080)
+   server = loop.run_until_complete(coro)
 
-   ## 6) now enter the Twisted reactor loop
-   reactor.run()
+   try:
+      print("sdfsdf")
+      ## 6) now enter the asyncio event loop
+      loop.run_forever()
+   except KeyboardInterrupt:
+      pass
+   finally:
+      server.close()
+      loop.close()

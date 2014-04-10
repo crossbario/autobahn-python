@@ -44,7 +44,7 @@ class RoleFeatures(util.EqualityMixin):
       ## check feature attributes
       for k in self.__dict__:
          if not k.startswith('_') and k != 'ROLE':
-            if type(getattr(self, k)) not in [types.NoneType, bool]:
+            if getattr(self, k) is not None and type(getattr(self, k)) != bool:
                raise ProtocolError("invalid type {} for feature '{}' for role '{}'".format(getattr(self, k), k, self.ROLE))
 
 

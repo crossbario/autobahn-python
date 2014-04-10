@@ -127,7 +127,7 @@ class Message(util.EqualityMixin):
       Implements :func:`autobahn.wamp.interfaces.IMessage.serialize`
       """
       ## only serialize if not cached ..
-      if not self._serialized.has_key(serializer):
+      if not serializer in self._serialized:
          self._serialized[serializer] = serializer.serialize(self.marshal())
       return self._serialized[serializer]
 
@@ -193,10 +193,10 @@ class Hello(Message):
 
       roles = []
 
-      if not details.has_key('roles'):
+      if not u'roles' in details:
          raise ProtocolError("missing mandatory roles attribute in options in HELLO")
 
-      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in HELLO")
+      details_roles = check_or_raise_extra(details[u'roles'], "'roles' in 'details' in HELLO")
 
       if len(details_roles) == 0:
          raise ProtocolError("empty 'roles' in 'details' in HELLO")
@@ -207,11 +207,11 @@ class Hello(Message):
 
          details_role = check_or_raise_extra(details_roles[role], "role '{}' in 'roles' in 'details' in HELLO".format(role))
 
-         if details_role.has_key('features'):
-            details_role_features = check_or_raise_extra(details_role['features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+         if u'features' in details_role:
+            details_role_features = check_or_raise_extra(details_role[u'features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = ROLE_NAME_TO_CLASS[role](**details_role['features'])
+            role_features = ROLE_NAME_TO_CLASS[role](**details_role[u'features'])
 
          else:
             role_features = ROLE_NAME_TO_CLASS[role]()
@@ -244,7 +244,7 @@ class Hello(Message):
          details[u'roles'][role.ROLE] = {}
          for feature in role.__dict__:
             if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-               if not details[u'roles'][role.ROLE].has_key(u'features'):
+               if not u'features' in details[u'roles'][role.ROLE]:
                   details[u'roles'][role.ROLE] = {u'features': {}}
                details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
@@ -325,7 +325,7 @@ class Welcome(Message):
 
       roles = []
 
-      if not details.has_key('roles'):
+      if not u'roles' in details:
          raise ProtocolError("missing mandatory roles attribute in options in WELCOME")
 
       details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in WELCOME")
@@ -337,11 +337,11 @@ class Welcome(Message):
          if role not in ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
-         if details_roles[role].has_key('features'):
-            details_role_features = check_or_raise_extra(details_roles[role]['features'], "'features' in role '{}' in 'roles' in 'details' in WELCOME".format(role))
+         if u'features' in details_roles[role]:
+            details_role_features = check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role]['features'])
+            role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role][u'features'])
 
          else:
             role_features = ROLE_NAME_TO_CLASS[role]()
@@ -374,7 +374,7 @@ class Welcome(Message):
          details[u'roles'][role.ROLE] = {}
          for feature in role.__dict__:
             if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-               if not details[u'roles'][role.ROLE].has_key(u'features'):
+               if not u'features' in details[u'roles'][role.ROLE]:
                   details[u'roles'][role.ROLE] = {u'features': {}}
                details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
@@ -441,9 +441,9 @@ class Abort(Message):
 
       message = None
 
-      if details.has_key('message'):
+      if u'message' in details:
 
-         details_message = details['message']
+         details_message = details[u'message']
          if type(details_message) != six.text_type:
             raise ProtocolError("invalid type {} for 'message' detail in ABORT".format(type(details_message)))
 
@@ -676,9 +676,9 @@ class Goodbye(Message):
 
       message = None
 
-      if details.has_key('message'):
+      if u'message' in details:
 
-         details_message = details['message']
+         details_message = details[u'message']
          if type(details_message) != six.text_type:
             raise ProtocolError("invalid type {} for 'message' detail in GOODBYE".format(type(details_message)))
 
@@ -1044,25 +1044,25 @@ class Publish(Message):
       eligible = None
       discloseMe = None
 
-      if options.has_key('acknowledge'):
+      if u'acknowledge' in options:
 
-         option_acknowledge = options['acknowledge']
+         option_acknowledge = options[u'acknowledge']
          if type(option_acknowledge) != bool:
             raise ProtocolError("invalid type {} for 'acknowledge' option in PUBLISH".format(type(option_acknowledge)))
 
          acknowledge = option_acknowledge
 
-      if options.has_key('exclude_me'):
+      if u'exclude_me' in options:
 
-         option_excludeMe = options['exclude_me']
+         option_excludeMe = options[u'exclude_me']
          if type(option_excludeMe) != bool:
             raise ProtocolError("invalid type {} for 'exclude_me' option in PUBLISH".format(type(option_excludeMe)))
 
          excludeMe = option_excludeMe
 
-      if options.has_key('exclude'):
+      if u'exclude' in options:
 
-         option_exclude = options['exclude']
+         option_exclude = options[u'exclude']
          if type(option_exclude) != list:
             raise ProtocolError("invalid type {} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
@@ -1072,9 +1072,9 @@ class Publish(Message):
 
          exclude = option_exclude
 
-      if options.has_key('eligible'):
+      if u'eligible' in options:
 
-         option_eligible = options['eligible']
+         option_eligible = options[u'eligible']
          if type(option_eligible) != list:
             raise ProtocolError("invalid type {} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
@@ -1084,9 +1084,9 @@ class Publish(Message):
 
          eligible = option_eligible
 
-      if options.has_key('disclose_me'):
+      if u'disclose_me' in options:
 
-         option_discloseMe = options['disclose_me']
+         option_discloseMe = options[u'disclose_me']
          if type(option_discloseMe) != bool:
             raise ProtocolError("invalid type {} for 'disclose_me' option in PUBLISH".format(type(option_discloseMe)))
 
@@ -1270,9 +1270,9 @@ class Subscribe(Message):
 
       match = Subscribe.MATCH_EXACT
 
-      if options.has_key('match'):
+      if u'match' in options:
 
-         option_match = options['match']
+         option_match = options[u'match']
          if type(option_match) != six.text_type:
             raise ProtocolError("invalid type {} for 'match' option in SUBSCRIBE".format(type(option_match)))
 
@@ -1293,7 +1293,7 @@ class Subscribe(Message):
       options = {}
 
       if self.match and self.match != Subscribe.MATCH_EXACT:
-         options['match'] = self.match
+         options[u'match'] = self.match
 
       return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
 
@@ -1548,7 +1548,7 @@ class Event(Message):
       :type publisher: str
       """
       assert(type(subscription) in six.integer_types)
-      assert(type(publication) == six.text_type)
+      assert(type(publication) in six.integer_types)
       assert(args is None or type(args) in [list, tuple])
       assert(kwargs is None or type(kwargs) == dict)
       assert(publisher is None or type(publisher) in six.integer_types)
@@ -1595,9 +1595,9 @@ class Event(Message):
             raise ProtocolError("invalid type {} for 'kwargs' in EVENT".format(type(kwargs)))
 
       publisher = None
-      if details.has_key('publisher'):
+      if u'publisher' in details:
 
-         detail_publisher = details['publisher']
+         detail_publisher = details[u'publisher']
          if type(detail_publisher) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
@@ -1729,9 +1729,9 @@ class Call(Message):
             raise ProtocolError("invalid type {} for 'kwargs' in CALL".format(type(kwargs)))
 
       timeout = None
-      if options.has_key('timeout'):
+      if u'timeout' in options:
 
-         option_timeout = options['timeout']
+         option_timeout = options[u'timeout']
          if type(option_timeout) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'timeout' option in CALL".format(type(option_timeout)))
 
@@ -1741,18 +1741,18 @@ class Call(Message):
          timeout = option_timeout
 
       receive_progress = None
-      if options.has_key('receive_progress'):
+      if u'receive_progress' in options:
 
-         option_receive_progress = options['receive_progress']
+         option_receive_progress = options[u'receive_progress']
          if type(option_receive_progress) != bool:
             raise ProtocolError("invalid type {} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
 
          receive_progress = option_receive_progress
 
       discloseMe = None
-      if options.has_key('disclose_me'):
+      if u'disclose_me' in options:
 
-         option_discloseMe = options['disclose_me']
+         option_discloseMe = options[u'disclose_me']
          if type(option_discloseMe) != bool:
             raise ProtocolError("invalid type {} for 'disclose_me' option in CALL".format(type(option_discloseMe)))
 
@@ -1860,9 +1860,9 @@ class Cancel(Message):
       ##
       mode = None
 
-      if options.has_key('mode'):
+      if u'mode' in options:
 
-         option_mode = options['mode']
+         option_mode = options[u'mode']
          if type(option_mode) != six.text_type:
             raise ProtocolError("invalid type {} for 'mode' option in CANCEL".format(type(option_mode)))
 
@@ -1974,9 +1974,9 @@ class Result(Message):
 
       progress = None
 
-      if details.has_key('progress'):
+      if u'progress' in details:
 
-         detail_progress = details['progress']
+         detail_progress = details[u'progress']
          if type(detail_progress) != bool:
             raise ProtocolError("invalid type {} for 'progress' option in RESULT".format(type(detail_progress)))
 
@@ -2075,9 +2075,9 @@ class Register(Message):
       pkeys = None
       discloseCaller = None
 
-      if options.has_key('pkeys'):
+      if u'pkeys' in options:
 
-         option_pkeys = options['pkeys']
+         option_pkeys = options[u'pkeys']
          if type(option_pkeys) != list:
             raise ProtocolError("invalid type {} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
 
@@ -2088,9 +2088,9 @@ class Register(Message):
          pkeys = option_pkeys
 
 
-      if options.has_key('disclose_caller'):
+      if u'disclose_caller' in options:
 
-         option_discloseCaller = options['disclose_caller']
+         option_discloseCaller = options[u'disclose_caller']
          if type(option_discloseCaller) != bool:
             raise ProtocolError("invalid type {} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
 
@@ -2108,10 +2108,10 @@ class Register(Message):
       options = {}
 
       if self.pkeys is not None:
-         options['pkeys'] = self.pkeys
+         options[u'pkeys'] = self.pkeys
 
       if self.discloseCaller is not None:
-         options['disclose_caller'] = self.discloseCaller
+         options[u'disclose_caller'] = self.discloseCaller
 
       return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 
@@ -2433,9 +2433,9 @@ class Invocation(Message):
             raise ProtocolError("invalid type {} for 'kwargs' in INVOCATION".format(type(kwargs)))
 
       timeout = None
-      if details.has_key('timeout'):
+      if u'timeout' in details:
 
-         detail_timeout = details['timeout']
+         detail_timeout = details[u'timeout']
          if type(detail_timeout) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
@@ -2445,45 +2445,45 @@ class Invocation(Message):
          timeout = detail_timeout
 
       receive_progress = None
-      if details.has_key('receive_progress'):
+      if u'receive_progress' in details:
 
-         detail_receive_progress = details['receive_progress']
+         detail_receive_progress = details[u'receive_progress']
          if type(detail_receive_progress) != bool:
             raise ProtocolError("invalid type {} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
 
          receive_progress = detail_receive_progress
 
       caller = None
-      if details.has_key('caller'):
+      if u'caller' in details:
 
-         detail_caller = details['caller']
+         detail_caller = details[u'caller']
          if type(detail_caller) not in six.integer_types:
             raise ProtocolError("invalid type {} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
          caller = detail_caller
 
       authid = None
-      if details.has_key('authid'):
+      if u'authid' in details:
 
-         detail_authid = details['authid']
+         detail_authid = details[u'authid']
          if type(detail_authid) != six.text_type:
             raise ProtocolError("invalid type {} for 'authid' detail in INVOCATION".format(type(detail_authid)))
 
          authid = detail_authid
 
       authrole = None
-      if details.has_key('authrole'):
+      if u'authrole' in details:
 
-         detail_authrole = details['authrole']
+         detail_authrole = details[u'authrole']
          if type(detail_authrole) != six.text_type:
             raise ProtocolError("invalid type {} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
 
          authrole = detail_authrole
 
       authmethod = None
-      if details.has_key('authmethod'):
+      if u'authmethod' in details:
 
-         detail_authmethod = details['authmethod']
+         detail_authmethod = details[u'authmethod']
          if type(detail_authrole) != six.text_type:
             raise ProtocolError("invalid type {} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
 
@@ -2602,9 +2602,9 @@ class Interrupt(Message):
       ##
       mode = None
 
-      if options.has_key('mode'):
+      if u'mode' in options:
 
-         option_mode = options['mode']
+         option_mode = options[u'mode']
          if type(option_mode) != six.text_type:
             raise ProtocolError("invalid type {} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
@@ -2625,7 +2625,7 @@ class Interrupt(Message):
       options = {}
 
       if self.mode is not None:
-         options['mode'] = self.mode
+         options[u'mode'] = self.mode
 
       return [Interrupt.MESSAGE_TYPE, self.request, options]
 
@@ -2717,9 +2717,9 @@ class Yield(Message):
 
       progress = None
 
-      if options.has_key('progress'):
+      if u'progress' in options:
 
-         option_progress = options['progress']
+         option_progress = options[u'progress']
          if type(option_progress) != bool:
             raise ProtocolError("invalid type {} for 'progress' option in YIELD".format(type(option_progress)))
 
@@ -2737,7 +2737,7 @@ class Yield(Message):
       options = {}
 
       if self.progress is not None:
-         options['progress'] = self.progress
+         options[u'progress'] = self.progress
 
       if self.kwargs:
          return [Yield.MESSAGE_TYPE, self.request, options, self.args, self.kwargs]
