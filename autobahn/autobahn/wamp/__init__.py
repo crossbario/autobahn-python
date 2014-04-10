@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 from autobahn.wamp.uri import Pattern
 
 
@@ -29,7 +31,7 @@ def procedure(uri):
       assert(callable(f))
       if not hasattr(f, '_wampuris'):
          f._wampuris = []
-      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
+      f._wampuris.append(Pattern(six.u(uri), Pattern.URI_TARGET_ENDPOINT))
       return f
    return decorate
 
@@ -42,7 +44,7 @@ def topic(uri):
       assert(callable(f))
       if not hasattr(f, '_wampuris'):
          f._wampuris = []
-      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
+      f._wampuris.append(Pattern(six.u(uri), Pattern.URI_TARGET_HANDLER))
       return f
    return decorate
 
@@ -55,6 +57,6 @@ def error(uri):
       assert(issubclass(cls, Exception))
       if not hasattr(cls, '_wampuris'):
          cls._wampuris = []
-      cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
+      cls._wampuris.append(Pattern(six.u(uri), Pattern.URI_TARGET_EXCEPTION))
       return cls
    return decorate

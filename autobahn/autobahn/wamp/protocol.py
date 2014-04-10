@@ -173,8 +173,8 @@ class BaseSession:
          self._uri_to_ecls[exception._wampuris[0].uri()] = exception
       else:
          assert(not hasattr(exception, '_wampuris'))
-         self._ecls_to_uri_pat[exception] = [uri.Pattern(error, uri.Pattern.URI_TARGET_HANDLER)]
-         self._uri_to_ecls[error] = exception
+         self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
+         self._uri_to_ecls[six.u(error)] = exception
 
 
    def _message_from_exception(self, request_type, request, exc):
@@ -187,12 +187,12 @@ class BaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-         msg = message.Error(request_type, request, exc.error, args = list(exc.args), kwargs = exc.kwargs)
+         msg = message.Error(request_type, request, six.u(exc.error), args = list(exc.args), kwargs = exc.kwargs)
       else:
          if self._ecls_to_uri_pat.has_key(exc.__class__):
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
          else:
-            error = "wamp.error.runtime_error"
+            error = u"wamp.error.runtime_error"
 
          if hasattr(exc, 'args'):
             if hasattr(exc, 'kwargs'):
@@ -320,6 +320,9 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ISession.join`
       """
+      if six.PY2 and type(realm) == str:
+         realm = six.u(realm)
+
       if self._session_id:
          raise Exception("already joined")
 
@@ -714,6 +717,8 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
       """
+      if six.PY2 and type(topic) == str:
+         topic = six.u(topic)
       assert(type(topic) == six.text_type)
 
       if not self._transport:
@@ -743,6 +748,8 @@ class ApplicationSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
       """
       assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
+      if topic and six.PY2 and type(topic) == str:
+         topic = six.u(topic)
       assert(topic is None or type(topic) == six.text_type)
       assert(options is None or isinstance(options, types.SubscribeOptions))
 
@@ -809,6 +816,8 @@ class ApplicationSession(BaseSession):
       """
       Implements :func:`autobahn.wamp.interfaces.ICaller.call`
       """
+      if six.PY2 and type(procedure) == str:
+         procedure = six.u(procedure)
       assert(isinstance(procedure, six.text_type))
 
       if not self._transport:
@@ -840,6 +849,8 @@ class ApplicationSession(BaseSession):
       Implements :func:`autobahn.wamp.interfaces.ICallee.register`
       """
       assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
+      if procedure and six.PY2 and type(procedure) == str:
+         procedure = six.u(procedure)
       assert(procedure is None or type(procedure) == six.text_type)
       assert(options is None or isinstance(options, types.RegisterOptions))
 
@@ -877,7 +888,7 @@ class ApplicationSession(BaseSession):
                if pat.is_endpoint():
                   uri = pat.uri()
                   dl.append(_register(endpoint, proc, uri, options))
-         return DeferredList(dl, consumeErrors = True)
+         return self._gather_futures(dl, consume_exceptions = True)
 
 
    def _unregister(self, registration):

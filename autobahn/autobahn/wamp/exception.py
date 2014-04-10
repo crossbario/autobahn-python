@@ -74,19 +74,19 @@ class ApplicationError(Error):
    Base class for all exceptions that can/may be handled
    at the application level.
    """
-   NOT_AUTHORIZED             = "wamp.error.not_authorized"
-   INVALID_ARGUMENT           = "wamp.error.invalid_argument"
-   INVALID_URI                = "wamp.error.invalid_uri"
-   DISCLOSE_ME_NOT_ALLOWED    = "wamp.error.disclose_me.not_allowed"
-   PROCEDURE_ALREADY_EXISTS   = "wamp.error.procedure_already_exists"
-   NO_SUCH_REALM              = "wamp.error.no_such_realm"
-   SYSTEM_SHUTDOWN            = "wamp.error.system_shutdown"
-   CLOSE_REALM                = "wamp.error.close_realm"
-   GOODBYE_AND_OUT            = "wamp.error.goodbye_and_out"
-   NO_SUCH_REGISTRATION       = "wamp.error.no_such_registration"
-   NO_SUCH_SUBSCRIPTION       = "wamp.error.no_such_subscription"
-   NO_SUCH_PROCEDURE          = "wamp.error.no_such_procedure"
-   CANCELED                   = "wamp.error.canceled"
+   NOT_AUTHORIZED             = u"wamp.error.not_authorized"
+   INVALID_ARGUMENT           = u"wamp.error.invalid_argument"
+   INVALID_URI                = u"wamp.error.invalid_uri"
+   DISCLOSE_ME_NOT_ALLOWED    = u"wamp.error.disclose_me.not_allowed"
+   PROCEDURE_ALREADY_EXISTS   = u"wamp.error.procedure_already_exists"
+   NO_SUCH_REALM              = u"wamp.error.no_such_realm"
+   SYSTEM_SHUTDOWN            = u"wamp.error.system_shutdown"
+   CLOSE_REALM                = u"wamp.error.close_realm"
+   GOODBYE_AND_OUT            = u"wamp.error.goodbye_and_out"
+   NO_SUCH_REGISTRATION       = u"wamp.error.no_such_registration"
+   NO_SUCH_SUBSCRIPTION       = u"wamp.error.no_such_subscription"
+   NO_SUCH_PROCEDURE          = u"wamp.error.no_such_procedure"
+   CANCELED                   = u"wamp.error.canceled"
 
    def __init__(self, error, *args, **kwargs):
       """
@@ -123,7 +123,7 @@ class InvalidTopic(Exception):
 
 class CallError(ApplicationError):
    """
-   Remote procedure call errors. 
+   Remote procedure call errors.
    """
 
    def __init__(self, error, problem):

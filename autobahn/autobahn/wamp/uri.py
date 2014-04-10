@@ -17,6 +17,7 @@
 ###############################################################################
 
 import re
+import six
 
 # TODO:
 # suffix matches
@@ -52,8 +53,7 @@ class Pattern:
       :param target: The target for this pattern: a procedure endpoint (a callable),
                      an event handler (a callable) or an exception (a class).
       """
-      assert(type(uri) == str)
-      assert(type(target) == int)
+      assert(type(uri) == six.text_type)
       assert(target in [Pattern.URI_TARGET_ENDPOINT,
                         Pattern.URI_TARGET_HANDLER,
                         Pattern.URI_TARGET_EXCEPTION])

@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
    ## start Twisted logging to stdout
    ##
-   if True or args.debug:
+   if args.debug:
       log.startLogging(sys.stdout)
 
 
@@ -92,7 +92,7 @@ if __name__ == '__main__':
       ## create a WAMP-over-WebSocket transport server factory
       ##
       from autobahn.twisted.websocket import WampWebSocketServerFactory
-      transport_factory = WampWebSocketServerFactory(session_factory, debug = args.debug, debug_wamp = True)
+      transport_factory = WampWebSocketServerFactory(session_factory, debug_wamp = args.debug)
       transport_factory.setProtocolOptions(failByDrop = False)
 
    elif args.transport in ['rawsocket-json', 'rawsocket-msgpack']:
