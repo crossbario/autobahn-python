@@ -4,6 +4,9 @@ A **WAMPlet** can be thought of a reusable application component that can be dep
 
 Get started by copying this folder and it's contents and begin by modifying a working base line.
 
+> This example is using **asyncio**. You can find the **Twisted** variant [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/wamplet/wamplet1)
+> 
+
 ## WAMPlet Development
 
 All the interesting bits with our application component are in [here](wamplet1/component1.py).
@@ -38,12 +41,12 @@ To make *automatic WAMPlet discovery* work, the [Setup file](setup.py) contains 
 
 ```python
    entry_points = {
-      'autobahn.twisted.wamplet': [
+      'autobahn.asyncio.wamplet': [
          'component1 = wamplet1.component1:make'
       ],
    },
 ```
 
-where `entry_points` must have an entry `autobahn.twisted.wamplet` that lists application components the package exposes.
+where `entry_points` must have an entry `autobahn.asyncio.wamplet` that lists application components the package exposes.
 
 Here, the factory function `make()` in the module `component1` in the package `wamplet1` is to be exposed as the WAMPlet `component1`.
