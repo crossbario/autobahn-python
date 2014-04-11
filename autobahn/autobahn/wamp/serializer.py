@@ -216,7 +216,6 @@ else:
 
 
 
-   @implementer(ISerializer)
    class MsgPackSerializer(Serializer):
 
       SERIALIZER_ID = "msgpack"

@@ -937,7 +937,7 @@ class ApplicationSession(BaseSession):
 IPublisher.register(ApplicationSession)
 ISubscriber.register(ApplicationSession)
 ICaller.register(ApplicationSession)
-#ICallee.register(ApplicationSession)
+#ICallee.register(ApplicationSession) ## FIXME: ".register" collides with the ABC "register" method
 ITransportHandler.register(ApplicationSession)
 
 

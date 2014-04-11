@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Note:
 ##
@@ -65,10 +65,9 @@ except:
    ## https://github.com/oberstet/scratchbox/tree/master/python/utf8
    ##
 
-   import sys
-   PY3 = sys.version_info >= (3,)
+   import six
 
-   if PY3:
+   if six.PY3:
 
       ## Python 3 and above
 

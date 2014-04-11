@@ -16,9 +16,7 @@
 ##
 ###############################################################################
 
-import sys
-PY3 = sys.version_info >= (3,)
-
+import six
 
 
 ## use Cython implementation of XorMasker validator if available
@@ -82,7 +80,7 @@ except:
          assert len(mask) == 4
          self.ptr = 0
          self.mskarray = [array('B'), array('B'), array('B'), array('B')]
-         if PY3:
+         if six.PY3:
             for j in xrange(4):
                self.mskarray[0].append(mask[ j & 3])
                self.mskarray[1].append(mask[(j + 1) & 3])

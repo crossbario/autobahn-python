@@ -17,15 +17,18 @@
 ###############################################################################
 
 import abc
+import six
 
 
 
-class IObjectSerializer(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IObjectSerializer(object):
    """
    Raw Python object serialization and unserialization. Object serializers are
    used by classes implementing WAMP serializers, that is instances of
    :class:`autobahn.wamp.interfaces.ISerializer`.
    """
+
 
    @abc.abstractproperty
    def BINARY(self):
@@ -59,7 +62,8 @@ class IObjectSerializer(metaclass = abc.ABCMeta):
 
 
 
-class IMessage(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IMessage(object):
    """
    A WAMP message.
    """
@@ -80,7 +84,7 @@ class IMessage(metaclass = abc.ABCMeta):
       """
 
 
-   @abc.abstractstaticmethod
+   #@abc.abstractstaticmethod ## FIXME: this is Python 3 only
    def parse(wmsg):
       """
       Factory method that parses a unserialized raw message (as returned byte
@@ -137,7 +141,8 @@ class IMessage(metaclass = abc.ABCMeta):
 
 
 
-class ISerializer(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ISerializer(object):
    """
    WAMP message serialization and unserialization.
    """
@@ -181,7 +186,8 @@ class ISerializer(metaclass = abc.ABCMeta):
 
 
 
-class ITransport(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ITransport(object):
    """
    A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
    message-based channel.
@@ -227,7 +233,8 @@ class ITransport(metaclass = abc.ABCMeta):
 
 
 
-class ITransportHandler(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ITransportHandler(object):
 
    @abc.abstractmethod
    def onOpen(self, transport):
@@ -260,7 +267,8 @@ class ITransportHandler(metaclass = abc.ABCMeta):
 
 
 
-class ISession(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ISession(object):
    """
    Base interface for WAMP sessions.
    """
@@ -380,7 +388,8 @@ class ICaller(ISession):
 
 
 
-class IRegistration(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IRegistration(object):
    """
    Represents a registration of an endpoint.
    """
@@ -463,7 +472,8 @@ class ICallee(ISession):
 
 
 
-class IPublication(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IPublication(object):
    """
    Represents a publication of an event. This is used with acknowledged publications.
    """
@@ -514,7 +524,8 @@ class IPublisher(ISession):
 
 
 
-class ISubscription(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class ISubscription(object):
    """
    Represents a subscription to a topic.
    """
@@ -597,7 +608,8 @@ class ISubscriber(ISession):
 
 
 
-class IRouterBase(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IRouterBase(object):
 
    @abc.abstractproperty
    def factory(self):
@@ -715,7 +727,8 @@ class IDealer(IRouterBase):
 
 
 
-class IRouterFactory(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IRouterFactory(object):
 
    @abc.abstractmethod
    def get(self, realm):

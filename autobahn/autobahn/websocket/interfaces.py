@@ -21,9 +21,11 @@ __all__ = ['IWebSocketChannel',
            'IWebSocketChannelStreamingApi']
 
 import abc
+import six
 
 
-class IWebSocketChannel(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class IWebSocketChannel(object):
    """
    A WebSocket channel is a bidirectional, full-duplex, ordered, reliable message channel
    over a WebSocket connection as specified in RFC6455.
