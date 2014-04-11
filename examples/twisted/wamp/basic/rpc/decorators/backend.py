@@ -32,8 +32,6 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
-      print("273423")
-
       ## register all methods on this object decorated with "@wamp.procedure"
       ## as a RPC endpoint
       ##

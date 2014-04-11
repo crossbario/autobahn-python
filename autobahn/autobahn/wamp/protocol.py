@@ -425,7 +425,7 @@ class ApplicationSession(BaseSession):
                except Exception as e:
                   if self.debug_app:
                      print("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
-                     log.err(err)
+                     print(err)
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
@@ -578,7 +578,7 @@ class ApplicationSession(BaseSession):
                   def error(err):
                      if self.debug_app:
                         print("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
-                        log.err(err)
+                        print(err)
                      del self._invocations[msg.request]
 
                      if hasattr(err, 'value'):
@@ -791,8 +791,9 @@ class ApplicationSession(BaseSession):
          ## decorated with "wamp.topic"
          ##
          dl = []
-         for k in inspect.getmembers(handler.__class__, inspect.isfunction):
-#         for k in inspect.getmembers(handler.__class__, inspect.ismethod):
+
+         test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
+         for k in inspect.getmembers(handler.__class__, test):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]
@@ -893,8 +894,9 @@ class ApplicationSession(BaseSession):
          ## decorated with "wamp.procedure"
          ##
          dl = []
-#         for k in inspect.getmembers(endpoint.__class__, inspect.ismethod):
-         for k in inspect.getmembers(endpoint.__class__, inspect.isfunction):
+
+         test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
+         for k in inspect.getmembers(endpoint.__class__, test):
             proc = k[1]
             if "_wampuris" in proc.__dict__:
                pat = proc.__dict__["_wampuris"][0]
