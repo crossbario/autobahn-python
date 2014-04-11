@@ -82,22 +82,12 @@ def make(config):
 if __name__ == '__main__':
    from autobahn.twisted.wamp import ApplicationRunner
 
-   config = {
-      "router": {
-         "type": "websocket",
-         "endpoint": {
-            "type": "tcp",
-            "host": "localhost",
-            "port": 8080
-         },
-         "url": "ws://localhost:8080/ws",
-         "realm": "realm1"
-      }
-   }
-
    ## test drive the component during development ..
-   runner = ApplicationRunner(config,
-      debug = False,       ## low-level WebSocket debugging
-      debug_wamp = False,  ## WAMP protocol-level debugging
-      debug_app = True)    ## app-level debugging
+   runner = ApplicationRunner(
+      url = "ws://127.0.0.1:8080/ws",
+      realm = "realm1",
+      debug = False, ## low-level WebSocket debugging
+      debug_wamp = False, ## WAMP protocol-level debugging
+      debug_app = True) ## app-level debugging
+
    runner.run(make)

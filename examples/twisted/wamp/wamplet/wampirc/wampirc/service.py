@@ -117,7 +117,7 @@ if __name__ == '__main__':
    }
 
    ## test drive the component during development ..
-   runner = ApplicationRunner(endpoint = "tcp:127.0.0.1:8080",
+   runner = ApplicationRunner(
       url = "ws://localhost:8080/ws",
       realm = "realm1",
       extra = extra,

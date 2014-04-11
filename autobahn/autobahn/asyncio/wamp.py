@@ -101,6 +101,7 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    session = RouterSession
 
 
+
 import sys
 import traceback
 import asyncio
@@ -112,8 +113,8 @@ from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 class ApplicationRunner:
 
-   def __init__(self, url, realm, extra = {}, debug = False, debug_wamp = False,
-      debug_app = False):
+   def __init__(self, url, realm, extra = {},
+      debug = False, debug_wamp = False, debug_app = False):
       self.url = url
       self.realm = realm
       self.extra = extra
