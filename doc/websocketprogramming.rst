@@ -1,7 +1,7 @@
 Programming with WebSocekt
 ==========================
 
-.. note:: Content will be added to this section in the near future. For now, please take a look at the :ref:`WebSocket Examples <websocket_examples>` and the ref:`WebSocket Reference <websocket_reference>`.
+.. note:: Content will be added to this section in the near future. For now, please take a look at the :ref:`WebSocket Examples <websocket_examples>` and the :ref:`WebSocket Reference <websocket_reference>`.
 
 
 Upgrading from Autobahn < 0.7.0
