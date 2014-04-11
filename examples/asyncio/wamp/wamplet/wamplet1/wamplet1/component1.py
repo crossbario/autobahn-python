@@ -53,7 +53,7 @@ class Component1(ApplicationSession):
          if isinstance(res, wamp.protocol.Registration):
             print("Ok, registered procedure with registration ID {}".format(res.id))
          else:
-            print("Failed to register procedure: {}".format(res.value))
+            print("Failed to register procedure: {}".format(res))
 
 
    def onDisconnect(self):

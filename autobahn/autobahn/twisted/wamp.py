@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 __all__ = ['ApplicationSession',
            'ApplicationSessionFactory',
+           'ApplicationRunner',
            'RouterSession',
            'RouterSessionFactory']
 
@@ -65,6 +66,8 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    """
    WAMP application session factory for Twisted-based applications.
    """
+   session = ApplicationSession
+
 
 
 class RouterSession(FutureMixin, protocol.RouterSession):
@@ -80,6 +83,7 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    session = RouterSession
 
 
+
 import sys
 import traceback
 
@@ -92,9 +96,32 @@ from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 
 class ApplicationRunner:
+   """
+   This class is a convenience tool mainly for development and quick hosting
+   of WAMP application components.
+
+   It can host a WAMP application component in a WAMP-over-WebSocket client
+   connecting to a WAMP router.
+   """
 
    def __init__(self, url, realm, extra = {}, 
       debug = False, debug_wamp = False, debug_app = False):
+      """
+      Constructor.
+      
+      :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
+      :type url: str
+      :param realm: The WAMP realm to join the application session to.
+      :type realm: str
+      :param extra: Optional extra configuration to forward to the application component.
+      :type extra: dict
+      :param debug: Turn on low-level debugging.
+      :type debug: bool
+      :param debug_wamp: Turn on WAMP-level debugging.
+      :type debug_wamp: bool
+      :param debug_app: Turn on app-level debugging.
+      :type debug_app: bool
+      """
       self.url = url
       self.realm = realm
       self.extra = extra
@@ -105,6 +132,13 @@ class ApplicationRunner:
 
 
    def run(self, make):
+      """
+      Run the application component.
+      
+      :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+                   when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+      :type make: callable
+      """
       from twisted.internet import reactor
 
       ## 0) start logging to console

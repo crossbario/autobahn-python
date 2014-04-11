@@ -25,8 +25,9 @@ publish: clean
 	python setup.py sdist upload
 
 test:
+	trial autobahn
+#	trial autobahn.websocket.test
 #	trial autobahn.wamp.test
-	trial autobahn.websocket.test
 #	trial autobahn.wamp.test.test_message
 #	trial autobahn.wamp.test.test_protocol
 #	trial autobahn.wamp.test.test_protocol_peer
