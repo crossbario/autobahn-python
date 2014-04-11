@@ -24,9 +24,8 @@ import six
 class ComponentConfig:
    def __init__(self, realm = None, extra = None):
       if six.PY2 and type(realm) == str:
-         self.realm = six.u(realm)
-      else:
-         self.realm = realm
+         realm = six.u(realm)
+      self.realm = realm
       self.extra = extra
 
 
@@ -41,12 +40,29 @@ class RouterOptions:
 
 
 class HelloReturn:
-   pass
-
+   """
+   Base class for HELLO return information.
+   """
 
 
 class Accept(HelloReturn):
+   """
+   Information to accept a HELLO.
+   """
+
    def __init__(self, authid = None, authrole = None, authmethod = None):
+      if six.PY2:
+         if type(authid) == str:
+            authid = six.u(authid)
+         if type(authrole) == str:
+            authrole = six.u(authrole)
+         if type(authmethod) == str:
+            authmethod = six.u(authmethod)
+
+      assert(authid is None or type(authid) == six.text_type)
+      assert(authrole is None or type(authrole) == six.text_type)
+      assert(authmethod is None or type(authmethod) == six.text_type)
+
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
@@ -54,7 +70,20 @@ class Accept(HelloReturn):
 
 
 class Deny(HelloReturn):
+   """
+   Information to deny a HELLO.
+   """
+
    def __init__(self, reason = u"wamp.error.not_authorized", message = None):
+      if six.PY2:
+         if type(reason) == str:
+            reason = six.u(reason)
+         if type(message) == str:
+            message = six.u(message)
+
+      assert(type(reason) == six.text_type)
+      assert(message is None or type(message) == six.text_type)
+
       self.reason = reason
       self.message = message
 
@@ -62,6 +91,10 @@ class Deny(HelloReturn):
 
 class Challenge(HelloReturn):
    def __init__(self, method, extra = {}):
+      if six.PY2:
+         if type(method) == str:
+            method = six.u(method)
+
       self.method = method
       self.extra = extra
 

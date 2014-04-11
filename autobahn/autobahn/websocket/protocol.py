@@ -32,23 +32,6 @@ __all__ = ["createWsUrl",
            "WebSocketClientProtocol",
            "WebSocketClientFactory"]
 
-## The Python urlparse module currently does not contain the ws/wss
-## schemes, so we add those dynamically (which is a hack of course).
-##
-try:
-   import urlparse
-except:
-   ## Python 3
-   from urllib import parse as urlparse
-
-wsschemes = ["ws", "wss"]
-urlparse.uses_relative.extend(wsschemes)
-urlparse.uses_netloc.extend(wsschemes)
-urlparse.uses_params.extend(wsschemes)
-urlparse.uses_query.extend(wsschemes)
-urlparse.uses_fragment.extend(wsschemes)
-
-import urllib
 import binascii
 import hashlib
 import base64
@@ -74,6 +57,19 @@ from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import *
 from autobahn.websocket import http
+
+
+from six.moves import urllib
+
+# ## The Python urlparse module currently does not contain the ws/wss
+# ## schemes, so we add those dynamically (which is a hack of course).
+# ##
+# wsschemes = ["ws", "wss"]
+# urlparse.uses_relative.extend(wsschemes)
+# urlparse.uses_netloc.extend(wsschemes)
+# urlparse.uses_params.extend(wsschemes)
+# urlparse.uses_query.extend(wsschemes)
+# urlparse.uses_fragment.extend(wsschemes)
 
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
@@ -105,14 +101,14 @@ def createWsUrl(hostname, port = None, isSecure = False, path = None, params = N
    else:
       scheme = "ws"
    if path is not None:
-      ppath = urllib.quote(path)
+      ppath = urllib.parse.quote(path)
    else:
       ppath = "/"
    if params is not None:
-      query = urllib.urlencode(params)
+      query = urllib.parse.urlencode(params)
    else:
       query = None
-   return urlparse.urlunparse((scheme, netloc, ppath, None, query, None))
+   return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
 
@@ -132,7 +128,7 @@ def parseWsUrl(url):
 
    :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
    """
-   parsed = urlparse.urlparse(url)
+   parsed = urllib.parse.urlparse(url)
    if not parsed.hostname or parsed.hostname == "":
       raise Exception("invalid WebSocket URL: missing hostname")
    if parsed.scheme not in ["ws", "wss"]:
@@ -148,13 +144,13 @@ def parseWsUrl(url):
       raise Exception("invalid WebSocket URL: non-empty fragment '%s" % parsed.fragment)
    if parsed.path is not None and parsed.path != "":
       ppath = parsed.path
-      path = urllib.unquote(ppath)
+      path = urllib.parse.unquote(ppath)
    else:
       ppath = "/"
       path = ppath
    if parsed.query is not None and parsed.query != "":
       resource = ppath + "?" + parsed.query
-      params = urlparse.parse_qs(parsed.query)
+      params = urllib.parse.parse_qs(parsed.query)
    else:
       resource = ppath
       params = {}
@@ -2751,7 +2747,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ##
          self.http_request_uri = rl[1].strip()
          try:
-            (scheme, netloc, path, params, query, fragment) = urlparse.urlparse(self.http_request_uri)
+            (scheme, netloc, path, params, query, fragment) = urllib.parse.urlparse(self.http_request_uri)
 
             ## FIXME: check that if absolute resource URI is given,
             ## the scheme/netloc matches the server
@@ -2766,7 +2762,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ## resource path and query parameters .. this will get forwarded
             ## to onConnect()
             self.http_request_path = path
-            self.http_request_params = urlparse.parse_qs(query)
+            self.http_request_params = urllib.parse.parse_qs(query)
          except:
             return self.failHandshake("Bad HTTP request resource - could not parse '%s'" % rl[1].strip())
 

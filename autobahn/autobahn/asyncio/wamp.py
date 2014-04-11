@@ -104,15 +104,16 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
 import sys
 import traceback
 import asyncio
+
+from autobahn.websocket.protocol import parseWsUrl
 from autobahn.wamp.types import ComponentConfig
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 
 class ApplicationRunner:
 
-   def __init__(self, endpoint, url, realm, extra = {}, debug = False,
-      debug_wamp = False, debug_app = False):
-      self.endpoint = endpoint
+   def __init__(self, url, realm, extra = {}, debug = False, debug_wamp = False,
+      debug_app = False):
       self.url = url
       self.realm = realm
       self.extra = extra
@@ -136,13 +137,15 @@ class ApplicationRunner:
          session.debug_app = self.debug_app
          return session
 
+      isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+      
       ## 2) create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create, url = self.url,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## 3) start the client
       loop = asyncio.get_event_loop()
-      coro = loop.create_connection(transport_factory, args.host, args.port)
+      coro = loop.create_connection(transport_factory, host, port)
       loop.run_until_complete(coro)
 
       ## 4) now enter the asyncio event loop

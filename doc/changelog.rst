@@ -3,6 +3,12 @@
 Changelog
 =========
 
+0.8.8
+-----
+ * initial support for WAMP on asyncio
+ * new WAMP examples
+ * WAMP ApplicationRunner
+
 0.8.7
 -----
  * maintenance release
