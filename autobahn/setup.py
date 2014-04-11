@@ -112,8 +112,7 @@ setup(
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
    platforms = ('Any'),
-   install_requires = ['six>=1.6.1',
-                       'zope.interface>=4.0.2'],
+   install_requires = ['six>=1.6.1'],
    extras_require = {
       ## asyncio is needed for Autobahn/asyncio
       'asyncio': asyncio_packages,

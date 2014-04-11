@@ -24,8 +24,6 @@ __all__= ['WampWebSocketServerProtocol',
           'WampWebSocketServerFactory',
           'WampWebSocketClientFactory']
 
-from zope.interface import implementer
-
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 
@@ -36,7 +34,6 @@ import traceback
 
 
 
-@implementer(ITransport)
 class WampWebSocketProtocol:
    """
    Base class for WAMP-over-WebSocket transport mixins.
@@ -148,6 +145,10 @@ class WampWebSocketProtocol:
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_GOING_AWAY)
       else:
          raise TransportLost()
+
+
+
+ITransport.register(WampWebSocketProtocol)
 
 
 

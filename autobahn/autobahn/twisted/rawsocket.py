@@ -24,20 +24,17 @@ __all__= ['WampRawSocketServerProtocol',
           'WampRawSocketServerFactory',
           'WampRawSocketClientFactory']
 
-from zope.interface import implementer
-
 from twisted.python import log
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
 
-from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 import binascii
 
 
-@implementer(ITransport)
+
 class WampRawSocketProtocol(Int32StringReceiver):
    """
    Base class for WAMP-over-Raw transport mixins.

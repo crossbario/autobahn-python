@@ -48,8 +48,6 @@ __all__ = ['Hello',
 import re
 import six
 
-from zope.interface import implementer
-
 import autobahn
 from autobahn import util
 from autobahn.wamp.exception import ProtocolError
@@ -133,7 +131,10 @@ class Message(util.EqualityMixin):
 
 
 
-@implementer(IMessage)
+IMessage.register(Message)
+
+
+
 class Hello(Message):
    """
    A WAMP `HELLO` message.
@@ -262,7 +263,6 @@ class Hello(Message):
 
 
 
-@implementer(IMessage)
 class Welcome(Message):
    """
    A WAMP `WELCOME` message.
@@ -389,7 +389,6 @@ class Welcome(Message):
 
 
 
-@implementer(IMessage)
 class Abort(Message):
    """
    A WAMP `ABORT` message.
@@ -473,7 +472,6 @@ class Abort(Message):
 
 
 
-@implementer(IMessage)
 class Challenge(Message):
    """
    A WAMP `CHALLENGE` message.
@@ -547,7 +545,6 @@ class Challenge(Message):
 
 
 
-@implementer(IMessage)
 class Authenticate(Message):
    """
    A WAMP `AUTHENTICATE` message.
@@ -618,7 +615,6 @@ class Authenticate(Message):
 
 
 
-@implementer(IMessage)
 class Goodbye(Message):
    """
    A WAMP `GOODBYE` message.
@@ -708,7 +704,6 @@ class Goodbye(Message):
 
 
 
-@implementer(IMessage)
 class Heartbeat(Message):
    """
    A WAMP `HEARTBEAT` message.
@@ -808,7 +803,6 @@ class Heartbeat(Message):
 
 
 
-@implementer(IMessage)
 class Error(Message):
    """
    A WAMP `ERROR` message.
@@ -929,7 +923,6 @@ class Error(Message):
 
 
 
-@implementer(IMessage)
 class Publish(Message):
    """
    A WAMP `PUBLISH` message.
@@ -1138,7 +1131,6 @@ class Publish(Message):
 
 
 
-@implementer(IMessage)
 class Published(Message):
    """
    A WAMP `PUBLISHED` message.
@@ -1208,7 +1200,6 @@ class Published(Message):
 
 
 
-@implementer(IMessage)
 class Subscribe(Message):
    """
    A WAMP `SUBSCRIBE` message.
@@ -1306,7 +1297,6 @@ class Subscribe(Message):
 
 
 
-@implementer(IMessage)
 class Subscribed(Message):
    """
    A WAMP `SUBSCRIBED` message.
@@ -1376,7 +1366,6 @@ class Subscribed(Message):
 
 
 
-@implementer(IMessage)
 class Unsubscribe(Message):
    """
    A WAMP `UNSUBSCRIBE` message.
@@ -1447,7 +1436,6 @@ class Unsubscribe(Message):
 
 
 
-@implementer(IMessage)
 class Unsubscribed(Message):
    """
    A WAMP `UNSUBSCRIBED` message.
@@ -1512,7 +1500,6 @@ class Unsubscribed(Message):
 
 
 
-@implementer(IMessage)
 class Event(Message):
    """
    A WAMP `EVENT` message.
@@ -1637,7 +1624,6 @@ class Event(Message):
 
 
 
-@implementer(IMessage)
 class Call(Message):
    """
    A WAMP `CALL` message.
@@ -1800,7 +1786,6 @@ class Call(Message):
 
 
 
-@implementer(IMessage)
 class Cancel(Message):
    """
    A WAMP `CANCEL` message.
@@ -1896,7 +1881,6 @@ class Cancel(Message):
 
 
 
-@implementer(IMessage)
 class Result(Message):
    """
    A WAMP `RESULT` message.
@@ -2012,7 +1996,6 @@ class Result(Message):
 
 
 
-@implementer(IMessage)
 class Register(Message):
    """
    A WAMP `REGISTER` message.
@@ -2124,7 +2107,6 @@ class Register(Message):
 
 
 
-@implementer(IMessage)
 class Registered(Message):
    """
    A WAMP `REGISTERED` message.
@@ -2194,7 +2176,6 @@ class Registered(Message):
 
 
 
-@implementer(IMessage)
 class Unregister(Message):
    """
    A WAMP Unprovide message.
@@ -2265,7 +2246,6 @@ class Unregister(Message):
 
 
 
-@implementer(IMessage)
 class Unregistered(Message):
    """
    A WAMP `UNREGISTERED` message.
@@ -2330,7 +2310,6 @@ class Unregistered(Message):
 
 
 
-@implementer(IMessage)
 class Invocation(Message):
    """
    A WAMP `INVOCATION` message.
@@ -2543,7 +2522,6 @@ class Invocation(Message):
 
 
 
-@implementer(IMessage)
 class Interrupt(Message):
    """
    A WAMP `INTERRUPT` message.
@@ -2638,7 +2616,6 @@ class Interrupt(Message):
 
 
 
-@implementer(IMessage)
 class Yield(Message):
    """
    A WAMP `YIELD` message.

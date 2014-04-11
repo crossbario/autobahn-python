@@ -18,10 +18,6 @@
 
 from __future__ import absolute_import
 
-import sys
-PY3 = sys.version_info >= (3,)
-
-
 __all__ = ["createWsUrl",
            "parseWsUrl",
 
@@ -62,11 +58,10 @@ import os
 import pickle
 import copy
 import json
+import six
 
 from pprint import pformat
 from collections import deque
-
-from zope.interface import implementer
 
 from autobahn import __version__
 
@@ -475,9 +470,6 @@ class Timings:
 
 
 
-@implementer(IWebSocketChannel)
-@implementer(IWebSocketChannelFrameApi)
-@implementer(IWebSocketChannelStreamingApi)
 class WebSocketProtocol:
    """
    Protocol base class for WebSocket.
@@ -1543,7 +1535,7 @@ class WebSocketProtocol:
 
             ## FIN, RSV, OPCODE
             ##
-            if PY3:
+            if six.PY3:
                b = self.data[0]
             else:
                b = ord(self.data[0])
@@ -1553,7 +1545,7 @@ class WebSocketProtocol:
 
             ## MASK, PAYLOAD LEN 1
             ##
-            if PY3:
+            if six.PY3:
                b = self.data[1]
             else:
                b = ord(self.data[1])
@@ -2020,7 +2012,7 @@ class WebSocketProtocol:
       else:
          raise Exception("invalid payload length")
 
-      if PY3:
+      if six.PY3:
          raw = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv, plm])
       else:
          raw = b''.join([chr(b0), chr(b1), el, mv, plm])
@@ -2135,7 +2127,7 @@ class WebSocketProtocol:
       if reason is not None:
          if code is None:
             raise Exception("close reason without close code")
-         if PY3:
+         if six.PY3:
             if type(reason) != str:
                raise Exception("invalid type %s for close reason" % type(reason))
          else:
@@ -2261,7 +2253,7 @@ class WebSocketProtocol:
 
       ## write message frame header
       ##
-      if PY3:
+      if six.PY3:
          header = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mv])
       else:
          header = b''.join([chr(b0), chr(b1), el, mv])
@@ -2523,6 +2515,12 @@ class WebSocketProtocol:
 
 
 
+IWebSocketChannel.register(WebSocketProtocol)
+IWebSocketChannelFrameApi.register(WebSocketProtocol)
+IWebSocketChannelStreamingApi.register(WebSocketProtocol)
+
+
+
 class PreparedMessage:
    """
    Encapsulates a prepared message to be sent later once or multiple
@@ -2608,7 +2606,7 @@ class PreparedMessage:
 
       ## raw WS message (single frame)
       ##
-      if PY3:
+      if six.PY3:
          self.payloadHybi = b''.join([b0.to_bytes(1, 'big'), b1.to_bytes(1, 'big'), el, mask, plm])
       else:
          self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])

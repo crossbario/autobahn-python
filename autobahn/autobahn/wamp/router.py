@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from zope.interface import implementer
-
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
@@ -29,7 +27,6 @@ from autobahn.wamp.dealer import Dealer
 from autobahn.wamp.interfaces import IRouter, IRouterFactory
 
 
-@implementer(IRouter)
 class Router:
    """
    Basic WAMP router.
@@ -118,7 +115,10 @@ class Router:
 
 
 
-@implementer(IRouterFactory)
+IRouter.register(Router)
+
+
+
 class RouterFactory:
    """
    Basic WAMP Router factory.
@@ -154,3 +154,7 @@ class RouterFactory:
       del self._routers[router.realm]
       if self.debug:
          print("Router destroyed for realm '{}'".format(router.realm))
+
+
+
+IRouterFactory.register(RouterFactory)

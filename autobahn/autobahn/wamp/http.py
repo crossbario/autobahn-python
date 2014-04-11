@@ -31,6 +31,7 @@ from autobahn.util import newid
 from protocol import WampProtocol, parseSubprotocolIdentifier
 
 
+
 class WampHttpResourceSessionSend(Resource):
    """
    A Web resource for sending via XHR that is part of a WampHttpResourceSession.

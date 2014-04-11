@@ -23,7 +23,6 @@ __all__ = ['Serializer',
            'JsonSerializer']
 
 import six
-from zope.interface import implementer
 
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
@@ -130,7 +129,6 @@ class Serializer:
 ##
 import json
 
-@implementer(IObjectSerializer)
 class JsonObjectSerializer:
 
    BINARY = False
@@ -157,13 +155,21 @@ class JsonObjectSerializer:
 
 
 
-@implementer(ISerializer)
+IObjectSerializer.register(JsonObjectSerializer)
+
+
+
 class JsonSerializer(Serializer):
 
    SERIALIZER_ID = "json"
 
    def __init__(self):
       Serializer.__init__(self, JsonObjectSerializer())
+
+
+
+ISerializer.register(JsonSerializer)
+
 
 
 
@@ -175,7 +181,7 @@ try:
 except ImportError:
    pass
 else:
-   @implementer(IObjectSerializer)
+
    class MsgPackObjectSerializer:
 
       BINARY = True
@@ -202,7 +208,12 @@ else:
          """
          return msgpack.unpackb(payload, encoding = 'utf-8')
 
+
+   IObjectSerializer.register(MsgPackObjectSerializer)
+
+
    __all__.append('MsgPackObjectSerializer')
+
 
 
    @implementer(ISerializer)
@@ -212,5 +223,9 @@ else:
 
       def __init__(self):
          Serializer.__init__(self, MsgPackObjectSerializer())
+
+   
+   ISerializer.register(MsgPackSerializer)
+
 
    __all__.append('MsgPackSerializer')

@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from zope.interface import implementer
-
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -31,7 +29,6 @@ from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_
 
 
 
-@implementer(IDealer)
 class Dealer:
    """
    Basic WAMP dealer, implements :class:`autobahn.wamp.interfaces.IDealer`.
@@ -233,3 +230,7 @@ class Dealer:
          del self._invocations[error.request]
       else:
          raise ProtocolError("Dealer.onInvocationError(): ERROR received for non-pending request_type {} and request ID {}".format(error.request_type, error.request))
+
+
+
+IDealer.register(Dealer)

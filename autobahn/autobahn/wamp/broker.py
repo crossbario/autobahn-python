@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from zope.interface import implementer
-
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -31,7 +29,6 @@ from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_
 
 
 
-@implementer(IBroker)
 class Broker:
    """
    Basic WAMP broker, implements :class:`autobahn.wamp.interfaces.IBroker`.
@@ -250,3 +247,7 @@ class Broker:
          reply = message.Error(message.Unsubscribe.MESSAGE_TYPE, unsubscribe.request, ApplicationError.NO_SUCH_SUBSCRIPTION)
 
       session._transport.send(reply)
+
+
+
+IBroker.register(Broker)

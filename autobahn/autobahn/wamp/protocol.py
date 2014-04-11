@@ -21,8 +21,6 @@ from __future__ import absolute_import
 import inspect
 import six
 
-from zope.interface import implementer
-
 from autobahn.wamp.interfaces import ISession, \
                                      IPublication, \
                                      IPublisher, \
@@ -69,7 +67,6 @@ class Handler:
 
 
 
-@implementer(IPublication)
 class Publication:
    """
    Object representing a publication.
@@ -80,7 +77,10 @@ class Publication:
 
 
 
-@implementer(ISubscription)
+IPublication.register(Publication)
+
+
+
 class Subscription:
    """
    Object representing a subscription.
@@ -99,7 +99,10 @@ class Subscription:
 
 
 
-@implementer(IRegistration)
+ISubscription.register(Subscription)
+
+
+
 class Registration:
    """
    Object representing a registration.
@@ -118,7 +121,10 @@ class Registration:
 
 
 
-@implementer(ISession)
+IRegistration.register(Registration)
+
+
+
 class BaseSession:
    """
    WAMP session base class.
@@ -254,11 +260,10 @@ class BaseSession:
 
 
 
-@implementer(IPublisher)
-@implementer(ISubscriber)
-@implementer(ICaller)
-@implementer(ICallee)
-@implementer(ITransportHandler)
+ISession.register(BaseSession)
+
+
+
 class ApplicationSession(BaseSession):
    """
    WAMP endpoint session.
@@ -929,6 +934,14 @@ class ApplicationSession(BaseSession):
 
 
 
+IPublisher.register(ApplicationSession)
+ISubscriber.register(ApplicationSession)
+ICaller.register(ApplicationSession)
+#ICallee.register(ApplicationSession)
+ITransportHandler.register(ApplicationSession)
+
+
+
 class ApplicationSessionFactory:
    """
    WAMP endpoint session factory.
@@ -1081,7 +1094,6 @@ class RouterApplicationSession:
 
 
 
-@implementer(ITransportHandler)
 class RouterSession(BaseSession):
    """
    WAMP router session.
@@ -1289,6 +1301,10 @@ class RouterSession(BaseSession):
          self._goodbye_sent = True
       else:
          raise SessionNotReady("Already requested to close the session")
+
+
+
+ITransportHandler.register(RouterSession)
 
 
 

@@ -16,12 +16,14 @@
 ##
 ###############################################################################
 
+__all__ = ['IWebSocketChannel',
+           'IWebSocketChannelFrameApi',
+           'IWebSocketChannelStreamingApi']
 
-import zope
-from zope.interface import Interface, Attribute
+import abc
 
 
-class IWebSocketChannel(Interface):
+class IWebSocketChannel(metaclass = abc.ABCMeta):
    """
    A WebSocket channel is a bidirectional, full-duplex, ordered, reliable message channel
    over a WebSocket connection as specified in RFC6455.
@@ -30,7 +32,8 @@ class IWebSocketChannel(Interface):
    and methods.
    """
 
-   def onConnect(requestOrResponse):
+   @abc.abstractmethod
+   def onConnect(self, requestOrResponse):
       """
       Callback fired during WebSocket opening handshake when a client connects (with
       request from client) or when server connection established (with response from
@@ -41,13 +44,17 @@ class IWebSocketChannel(Interface):
                                or :class:`autobahn.websocket.protocol.ConnectionResponse`.
       """
 
-   def onOpen():
+
+   @abc.abstractmethod
+   def onOpen(self):
       """
       Callback fired when the initial WebSocket opening handshake was completed.
       You now can send and receive WebSocket messages.
       """
 
-   def sendMessage(payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
+
+   @abc.abstractmethod
+   def sendMessage(self, payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
       """
       Send a WebSocket message.
 
@@ -72,7 +79,9 @@ class IWebSocketChannel(Interface):
       :type doNotCompress: bool
       """
 
-   def onMessage(payload, isBinary):
+
+   @abc.abstractmethod
+   def onMessage(self, payload, isBinary):
       """
       Callback fired when a complete WebSocket message was received.
 
@@ -83,7 +92,9 @@ class IWebSocketChannel(Interface):
       :type isBinary: bool
       """
 
-   def sendClose(code = None, reason = None):
+
+   @abc.abstractmethod
+   def sendClose(self, code = None, reason = None):
       """
       Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
@@ -95,7 +106,9 @@ class IWebSocketChannel(Interface):
       :type reason: str
       """
 
-   def onClose(wasClean, code, reason):
+
+   @abc.abstractmethod
+   def onClose(self, wasClean, code, reason):
       """
       Callback fired when the WebSocket connection has been closed (WebSocket closing
       handshake has been finished or the connection was closed uncleanly).
@@ -108,7 +121,9 @@ class IWebSocketChannel(Interface):
       :type reason: str
       """
 
-   def sendPreparedMessage(preparedMsg):
+
+   @abc.abstractmethod
+   def sendPreparedMessage(self, preparedMsg):
       """
       Send a message that was previously prepared with :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`.
 
@@ -116,7 +131,9 @@ class IWebSocketChannel(Interface):
       :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
       """
 
-   def sendPing(payload = None):
+
+   @abc.abstractmethod
+   def sendPing(self, payload = None):
       """
       Send a WebSocket ping to the peer.
 
@@ -127,7 +144,9 @@ class IWebSocketChannel(Interface):
       :type payload: bytes
       """
 
-   def onPing(payload):
+
+   @abc.abstractmethod
+   def onPing(self, payload):
       """
       Callback fired when a WebSocket ping was received. A default implementation responds
       by sending a WebSocket pong.
@@ -136,7 +155,9 @@ class IWebSocketChannel(Interface):
       :type payload: bytes
       """
 
-   def sendPong(payload = None):
+
+   @abc.abstractmethod
+   def sendPong(self, payload = None):
       """
       Send a WebSocket pong to the peer.
 
@@ -147,7 +168,9 @@ class IWebSocketChannel(Interface):
       :type payload: bytes
       """
 
-   def onPong(payload):
+
+   @abc.abstractmethod
+   def onPong(self, payload):
       """
       Callback fired when a WebSocket pong was received. A default implementation does nothing.
 
@@ -162,7 +185,8 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
    Frame-based API to a WebSocket channel.
    """
 
-   def onMessageBegin(isBinary):
+   @abc.abstractmethod
+   def onMessageBegin(self, isBinary):
       """
       Callback fired when receiving of a new WebSocket message has begun.
 
@@ -170,7 +194,9 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type isBinary: bool
       """
 
-   def onMessageFrame(payload):
+
+   @abc.abstractmethod
+   def onMessageFrame(self, payload):
       """
       Callback fired when a complete WebSocket message frame for a previously begun
       WebSocket message has been received.
@@ -179,13 +205,17 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type payload: list of bytes
       """
 
-   def onMessageEnd():
+
+   @abc.abstractmethod
+   def onMessageEnd(self):
       """
       Callback fired when a WebSocket message has been completely received (the last
       WebSocket frame for that message has been received).
       """
 
-   def beginMessage(isBinary = False, doNotCompress = False):
+
+   @abc.abstractmethod
+   def beginMessage(self, isBinary = False, doNotCompress = False):
       """
       Begin sending a new WebSocket message.
 
@@ -198,7 +228,9 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type doNotCompress: bool
       """
 
-   def sendMessageFrame(payload, sync = False):
+
+   @abc.abstractmethod
+   def sendMessageFrame(self, payload, sync = False):
       """
       When a message has been previously begun, send a complete message frame in one go.
 
@@ -211,7 +243,9 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type sync: bool
       """
 
-   def endMessage():
+
+   @abc.abstractmethod
+   def endMessage(self):
       """
       End a message previously begun message. No more frames may be sent (for that message).
       You have to begin a new message before sending again.
@@ -224,7 +258,8 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
    Streaming API to a WebSocket channel.
    """
 
-   def onMessageFrameBegin(length):
+   @abc.abstractmethod
+   def onMessageFrameBegin(self, length):
       """
       Callback fired when receiving a new message frame has begun.
       A default implementation will prepare to buffer message frame data.
@@ -233,7 +268,9 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
       :type length: int
       """
 
-   def onMessageFrameData(payload):
+
+   @abc.abstractmethod
+   def onMessageFrameData(self, payload):
       """
       Callback fired when receiving data within a previously begun message frame.
       A default implementation will buffer data for frame.
@@ -242,14 +279,18 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
       :type payload: bytes
       """
 
-   def onMessageFrameEnd():
+
+   @abc.abstractmethod
+   def onMessageFrameEnd(self):
       """
       Callback fired when a previously begun message frame has been completely received.
       A default implementation will flatten the buffered frame data and
       fire `onMessageFrame`.
       """
 
-   def beginMessageFrame(length):
+
+   @abc.abstractmethod
+   def beginMessageFrame(self, length):
       """
       Begin sending a new message frame.
 
@@ -257,7 +298,9 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
       :type length: int
       """
 
-   def sendMessageFrameData(payload, sync = False):
+
+   @abc.abstractmethod
+   def sendMessageFrameData(self, payload, sync = False):
       """
       Send out data when within a message frame (message was begun, frame was begun).
       Note that the frame is automatically ended when enough data has been sent.

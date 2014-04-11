@@ -16,22 +16,27 @@
 ##
 ###############################################################################
 
-from zope.interface import Interface, Attribute
+import abc
 
 
 
-class IObjectSerializer(Interface):
+class IObjectSerializer(metaclass = abc.ABCMeta):
    """
    Raw Python object serialization and unserialization. Object serializers are
    used by classes implementing WAMP serializers, that is instances of
    :class:`autobahn.wamp.interfaces.ISerializer`.
    """
 
-   BINARY = Attribute("""Flag to indicate if serializer requires a binary clean
-      transport or if UTF8 transparency is sufficient.""")
+   @abc.abstractproperty
+   def BINARY(self):
+      """
+      Flag to indicate if serializer requires a binary clean
+      transport or if UTF8 transparency is sufficient.
+      """
 
 
-   def serialize(obj):
+   @abc.abstractmethod
+   def serialize(self, obj):
       """
       Serialize an object to a byte string.
 
@@ -41,7 +46,8 @@ class IObjectSerializer(Interface):
       :returns: str -- Serialized byte string.
       """
 
-   def unserialize(bytes):
+   @abc.abstractmethod
+   def unserialize(self, bytes):
       """
       Unserialize an object from a byte string.
 
@@ -53,21 +59,28 @@ class IObjectSerializer(Interface):
 
 
 
-class IMessage(Interface):
+class IMessage(metaclass = abc.ABCMeta):
    """
    A WAMP message.
    """
 
-   MESSAGE_TYPE = Attribute("""WAMP message type code.""")
+   @abc.abstractproperty
+   def MESSAGE_TYPE(self):
+      """
+      WAMP message type code.
+      """
 
 
-   def marshal():
+   @abc.abstractmethod
+   def marshal(self):
       """
       Marshal this object into a raw message for subsequent serialization to bytes.
 
       :returns: list -- The serialized raw message.
       """
 
+
+   @abc.abstractstaticmethod
    def parse(wmsg):
       """
       Factory method that parses a unserialized raw message (as returned byte
@@ -77,7 +90,9 @@ class IMessage(Interface):
       :returns: obj -- An instance of this class. 
       """
    
-   def serialize(serializer):
+
+   @abc.abstractmethod
+   def serialize(self, serializer):
       """
       Serialize this object into a wire level bytestring representation and cache
       the resulting bytestring. If the cache already contains an entry for the given
@@ -89,23 +104,31 @@ class IMessage(Interface):
       :returns: bytes -- The serialized bytes.
       """
 
-   def uncache():
+
+   @abc.abstractmethod
+   def uncache(self):
       """
       Resets the serialization cache.
       """
 
-   def __eq__(other):
+
+   @abc.abstractmethod
+   def __eq__(self, other):
       """
       Message equality. This does an attribute-wise comparison (but skips attributes
       that start with "_").
       """
 
-   def __ne__(other):
+
+   @abc.abstractmethod
+   def __ne__(self, other):
       """
       Message inequality (just the negate of message equality).
       """
 
-   def __str__():
+
+   @abc.abstractmethod
+   def __str__(self):
       """
       Returns text representation of this message.
 
@@ -114,17 +137,27 @@ class IMessage(Interface):
 
 
 
-class ISerializer(Interface):
+class ISerializer(metaclass = abc.ABCMeta):
    """
    WAMP message serialization and unserialization.
    """
 
-   MESSAGE_TYPE_MAP = Attribute("""Mapping of WAMP message type codes to WAMP message classes.""")
+   @abc.abstractproperty
+   def MESSAGE_TYPE_MAP(self):
+      """
+      Mapping of WAMP message type codes to WAMP message classes.
+      """
 
-   SERIALIZER_ID = Attribute("""The WAMP serialization format ID.""")
+
+   @abc.abstractproperty
+   def SERIALIZER_ID(self):
+      """
+      The WAMP serialization format ID.
+      """
 
 
-   def serialize(message):
+   @abc.abstractmethod
+   def serialize(self, message):
       """
       Serializes a WAMP message to bytes to be sent to a transport.
 
@@ -134,7 +167,9 @@ class ISerializer(Interface):
       :returns: tuple -- A pair `(bytes, isBinary)`.
       """
 
-   def unserialize(bytes, isBinary):
+
+   @abc.abstractmethod
+   def unserialize(self, bytes, isBinary):
       """
       Unserializes bytes from a transport and parses a WAMP message.
 
@@ -146,13 +181,14 @@ class ISerializer(Interface):
 
 
 
-class ITransport(Interface):
+class ITransport(metaclass = abc.ABCMeta):
    """
    A WAMP transport is a bidirectional, full-duplex, reliable, ordered,
    message-based channel.
    """
 
-   def send(message):
+   @abc.abstractmethod
+   def send(self, message):
       """
       Send a WAMP message over the transport to the peer. If the transport is
       not open, this raises :class:`autobahn.wamp.exception.TransportLost`.
@@ -161,21 +197,27 @@ class ITransport(Interface):
       :type message: obj      
       """
 
-   def isOpen():
+
+   @abc.abstractmethod
+   def isOpen(self):
       """
       Check if the transport is open for messaging.
 
       :returns: bool -- `True`, if the transport is open.
       """
 
-   def close():
+
+   @abc.abstractmethod
+   def close(self):
       """
       Close the transport regularily. The transport will perform any
       closing handshake if applicable. This should be used for any
       application initiated closing.
       """
 
-   def abort():
+
+   @abc.abstractmethod
+   def abort(self):
       """
       Abort the transport abruptly. The transport will be destroyed as
       fast as possible, and without playing nice to the peer. This should
@@ -185,9 +227,10 @@ class ITransport(Interface):
 
 
 
-class ITransportHandler(Interface):
+class ITransportHandler(metaclass = abc.ABCMeta):
 
-   def onOpen(transport):
+   @abc.abstractmethod
+   def onOpen(self, transport):
       """
       Callback fired when transport is open.
 
@@ -195,7 +238,9 @@ class ITransportHandler(Interface):
       :type transport: obj      
       """
 
-   def onMessage(message):
+
+   @abc.abstractmethod
+   def onMessage(self, message):
       """
       Callback fired when a WAMP message was received.
 
@@ -203,7 +248,9 @@ class ITransportHandler(Interface):
       :type message: obj
       """
 
-   def onClose(wasClean):
+
+   @abc.abstractmethod
+   def onClose(self, wasClean):
       """
       Callback fired when the transport has been closed.
 
@@ -213,22 +260,27 @@ class ITransportHandler(Interface):
 
 
 
-class ISession(Interface):
+class ISession(metaclass = abc.ABCMeta):
    """
    Base interface for WAMP sessions.
    """
 
-   def onConnect():
+   @abc.abstractmethod
+   def onConnect(self):
       """
       Callback fired when the transport this session will run over has been established.
       """
 
-   def join(realm):
+
+   @abc.abstractmethod
+   def join(self, realm):
       """
       Attach the session to the given realm. A session is open as soon as it is attached to a realm.
       """
 
-   def onJoin(details):
+
+   @abc.abstractmethod
+   def onJoin(self, details):
       """
       Callback fired when WAMP session has been established.
 
@@ -236,7 +288,9 @@ class ISession(Interface):
       :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
       """
 
-   def leave(reason = None, message = None):
+
+   @abc.abstractmethod
+   def leave(self, reason = None, message = None):
       """
       Actively close this WAMP session.
 
@@ -247,7 +301,9 @@ class ISession(Interface):
       :type message: str
       """
 
-   def onLeave(details):
+
+   @abc.abstractmethod
+   def onLeave(self, details):
       """
       Callback fired when WAMP session has is closed
 
@@ -255,17 +311,23 @@ class ISession(Interface):
       :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
       """
 
-   def disconnect():
+
+   @abc.abstractmethod
+   def disconnect(self):
       """
       Close the underlying transport.
       """
 
-   def onDisconnect():
+
+   @abc.abstractmethod
+   def onDisconnect(self):
       """
       Callback fired when underlying transport has been closed.
       """
 
-   def define(exception, error = None):
+
+   @abc.abstractmethod
+   def define(self, exception, error = None):
       """
       Defines an exception for a WAMP error in the context of this WAMP session.
 
@@ -283,7 +345,8 @@ class ICaller(ISession):
    Interface for WAMP peers implementing role *Caller*.
    """
 
-   def call(procedure, *args, **kwargs):
+   @abc.abstractmethod
+   def call(self, procedure, *args, **kwargs):
       """
       Call a remote procedure.
 
@@ -317,15 +380,26 @@ class ICaller(ISession):
 
 
 
-class IRegistration(Interface):
+class IRegistration(metaclass = abc.ABCMeta):
    """
    Represents a registration of an endpoint.
    """
-   id = Attribute("The WAMP registration ID for this registration.")
 
-   active = Attribute("Flag indicating if registration is active.")
+   @abc.abstractproperty
+   def id(self):
+      """
+      The WAMP registration ID for this registration.
+      """
 
-   def unregister():
+   @abc.abstractproperty
+   def id(self):
+      """
+      Flag indicating if registration is active.
+      """
+
+
+   @abc.abstractmethod
+   def unregister(self):
       """
       Unregister this registration that was previously created from
       :func:`autobahn.wamp.interfaces.ICallee.register`.
@@ -351,7 +425,8 @@ class ICallee(ISession):
    Interface for WAMP peers implementing role *Callee*.
    """
 
-   def register(endpoint, procedure = None, options = None):
+   @abc.abstractmethod
+   def register(self, endpoint, procedure = None, options = None):
       """
       Register an endpoint for a procedure to (subsequently) receive calls
       calling that procedure.
@@ -388,11 +463,16 @@ class ICallee(ISession):
 
 
 
-class IPublication(Interface):
+class IPublication(metaclass = abc.ABCMeta):
    """
    Represents a publication of an event. This is used with acknowledged publications.
    """
-   id = Attribute("The WAMP publication ID for this publication.")
+
+   @abc.abstractproperty
+   def id(self):
+      """
+      The WAMP publication ID for this publication.
+      """
 
 
 
@@ -401,7 +481,8 @@ class IPublisher(ISession):
    Interface for WAMP peers implementing role *Publisher*.
    """
 
-   def publish(topic, *args, **kwargs):
+   @abc.abstractmethod
+   def publish(self, topic, *args, **kwargs):
       """
       Publish an event to a topic.
 
@@ -433,15 +514,27 @@ class IPublisher(ISession):
 
 
 
-class ISubscription(Interface):
+class ISubscription(metaclass = abc.ABCMeta):
    """
    Represents a subscription to a topic.
    """
-   id = Attribute("The WAMP subscription ID for this subscription.")
 
-   active = Attribute("Flag indicating if subscription is active.")
+   @abc.abstractproperty
+   def id(self):
+      """
+      The WAMP subscription ID for this subscription.
+      """
 
-   def unsubscribe():
+
+   @abc.abstractproperty
+   def active(self):
+      """
+      Flag indicating if subscription is active.
+      """
+
+
+   @abc.abstractmethod
+   def unsubscribe(self):
       """
       Unsubscribe this subscription that was previously created from
       :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
@@ -467,7 +560,8 @@ class ISubscriber(ISession):
    Interface for WAMP peers implementing role *Subscriber*.
    """
 
-   def subscribe(handler, topic = None, options = None):
+   @abc.abstractmethod
+   def subscribe(self, handler, topic = None, options = None):
       """
       Subscribe to a topic and subsequently receive events published to that topic.
 
@@ -503,12 +597,24 @@ class ISubscriber(ISession):
 
 
 
-class IRouterBase(Interface):
+class IRouterBase(metaclass = abc.ABCMeta):
 
-   factory = Attribute("The router factory this router was created from.")
-   realm = Attribute("The WAMP realm this router handles.")
+   @abc.abstractproperty
+   def factory(self):
+      """
+      The router factory this router was created from.
+      """
 
-   def attach(session):
+
+   @abc.abstractproperty
+   def realm(self):
+      """
+      The WAMP realm this router handles.
+      """
+
+
+   @abc.abstractmethod
+   def attach(self, session):
       """
       Attach a WAMP application session to this router.
 
@@ -516,7 +622,9 @@ class IRouterBase(Interface):
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
       """
 
-   def detach(session):
+
+   @abc.abstractmethod
+   def detach(self, session):
       """
       Detach a WAMP application session from this router.
 
@@ -528,7 +636,8 @@ class IRouterBase(Interface):
 
 class IRouter(IRouterBase):
 
-   def process(session, message):
+   @abc.abstractmethod
+   def process(self, session, message):
       """
       Process a WAMP message received on the given session.
 
@@ -544,14 +653,20 @@ class IBroker(IRouterBase):
    """
    WAMP broker interface. Brokers are responsible for event routing
    """
+
+   @abc.abstractmethod
    def processPublish(self, session, publish):
       """
       """
 
+
+   @abc.abstractmethod
    def processSubscribe(self, session, subscribe):
       """
       """
 
+
+   @abc.abstractmethod
    def processUnsubscribe(self, session, unsubscribe):
       """
       """
@@ -562,35 +677,48 @@ class IDealer(IRouterBase):
    """
    WAMP dealer interface. Dealers are responsible for call routing.
    """
-   def processRegister(session, register):
-      """
-      """
 
-   def processUnregister(session, unregister):
-      """
-      """
-
-   def processCall(session, call):
-      """
-      """
-
-   def processCancel(session, cancel):
-      """
-      """
-
-   def processYield(session, yield_):
-      """
-      """
-
-   def processInvocationError(session, error):
+   @abc.abstractmethod
+   def processRegister(self, session, register):
       """
       """
 
 
+   @abc.abstractmethod
+   def processUnregister(self, session, unregister):
+      """
+      """
 
-class IRouterFactory(Interface):
 
-   def get(realm):
+   @abc.abstractmethod
+   def processCall(self, session, call):
+      """
+      """
+
+
+   @abc.abstractmethod
+   def processCancel(self, session, cancel):
+      """
+      """
+
+
+   @abc.abstractmethod
+   def processYield(self, session, yield_):
+      """
+      """
+
+
+   @abc.abstractmethod
+   def processInvocationError(self, session, error):
+      """
+      """
+
+
+
+class IRouterFactory(metaclass = abc.ABCMeta):
+
+   @abc.abstractmethod
+   def get(self, realm):
       """
       Get router for responsible for given realm.
       """
