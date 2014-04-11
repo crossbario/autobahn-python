@@ -119,8 +119,8 @@ A sample WAMP application component implementing all client roles:
 
 Complete example code:
 
- * `server <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`_ which provides a remote procedure enpoint and publishes to a topic
- * `client <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`_ lient which calls the procedure and subscribes to the topic
+ * **server**, which provides a remote procedure enpoint and publishes to a topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`_ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/server.py>`_
+ * **client**, which calls the procedure and subscribes to the topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`_ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`_
 
 There are many more examples showing options and advanced features, listed on the :doc:`example overview page <examples>`.
 
@@ -128,8 +128,6 @@ There are many more examples showing options and advanced features, listed on th
 .. note::
 
    * WAMP application components can be run in servers and clients without any modification to your component class.
-
-   * While |ab| supports both `Twisted`_ and `asyncio`_ for WebSocket code, WAMP is currently only supported on Twisted.
 
    * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
 
@@ -149,7 +147,7 @@ Features
 * best-in-class standards conformance (100% strict passes with `AutobahnTestsuite`_)
 * message-, frame- and streaming-APIs for WebSocket
 * supports TLS (secure WebSocket) and proxies
-* Open-source (Apache 2 `license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
+* Open-source (`Apache 2 license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
 
 
 Python support
