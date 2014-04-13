@@ -13,8 +13,17 @@
      ga('send', 'pageview');
    </script>
 
+   <link rel="stylesheet" href="_static/communitywidget.css">
+
 {% endblock %}
 
 {% block footer %}
    {{ super() }}
+
+   <!-- community widget iframe -->
+   <!-- <iframe id="communityWidget" src="http://127.0.0.1:8090/widget/index.html" frameborder="0"></iframe> -->
+   <iframe id="communityWidget" src="http://192.168.1.147:8090/widget/index.html" frameborder="0"></iframe>
+   <!-- change url for production -->
+
+   <script src="_static/communitywidget.js"></script>
 {% endblock %}
