@@ -1,11 +1,12 @@
 #communityWidget {
    position: fixed;
    top: 81px;
-   right: 0px;
+   right: -2px;
    background-color: #fff;
    z-index: 1000;
-   border-radius: 6px 0 0 6px;
-   box-shadow: 0 0 12px 2px rgba(0, 0, 0, 0.4);
+   border-radius: 3px 0 0 3px;
+   border: solid 1px #fff;
+   box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.3);
 }
 
 #communityWidget.nonDisplay {
@@ -18,9 +19,9 @@
 
 #communityWidget.min {
    width: 143px;
-   height: 40px;
+   height: 36px;
 }
 #communityWidget.max {
    width: 170px;
-   height: 279px;
+   height: 254px;
 }

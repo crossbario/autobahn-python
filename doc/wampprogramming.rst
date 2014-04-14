@@ -149,6 +149,7 @@ For example, here is how you call a remote procedure that takes no arguments and
    now = yield session.call("com.timeservice.now")
    print(now)
 
+
 This is using `yield`, which assumes the context in that you run this code is a *co-routine* (something decorated with `defer.inlineDeferred` in Twisted or `asyncio.coroutine` in asyncio).
 
 The same call using plain Twisted Deferreds would look like:
