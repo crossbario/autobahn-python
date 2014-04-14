@@ -25,11 +25,11 @@ publish: clean
 	python setup.py sdist upload
 
 test:
+	trial autobahn.wamp.test.test_component
 #	trial autobahn
 #	trial autobahn.websocket.test
 #	trial autobahn.wamp.test
 #	trial autobahn.wamp.test.test_message
-	trial autobahn.wamp.test.test_component
 #	trial autobahn.wamp.test.test_protocol
 #	trial autobahn.wamp.test.test_protocol_peer
 #	trial autobahn.wamp.test.test_serializer

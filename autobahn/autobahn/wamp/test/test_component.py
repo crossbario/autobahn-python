@@ -85,6 +85,7 @@ class CaseComponent(wamp.ApplicationSession):
       msg = u'= : {:>3} : {:<20} : {}'.format(self._logline, self.__class__.__name__, sargs)
       self._logline += 1
       print(msg)
+      self.config.dlog.append(msg)
       if self.config.log and not self.config.log.closed:
          self.config.log.write(msg + "\n")
          self.config.log.flush()
@@ -277,6 +278,7 @@ class TestRpc(unittest.TestCase):
          print "X"*10, e
 #      log = io.open(config.extra['caselog'], 'w')
       config.log = log
+      config.dlog = []
       config.components = []
 
       config.all_done = []
@@ -449,8 +451,8 @@ class TestRpc(unittest.TestCase):
          if config.connected_clients:
             for proto in config.connected_clients:
                proto.transport.abortConnection()
-         #for c in config.components:
-         #   c.leave()
+         print("Log length: {}".format(len(config.dlog)))
+         print(config.dlog)
          #from twisted.internet import reactor
          #reactor.callLater(1, reactor.stop)
 

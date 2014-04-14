@@ -175,7 +175,8 @@ class Broker:
                              publisher = publisher)
          for receiver in receivers:
             if me_also or receiver != session:
-               receiver._transport.send(msg)
+               if receiver._transport:
+                  receiver._transport.send(msg)
 
 
    def processSubscribe(self, session, subscribe):
