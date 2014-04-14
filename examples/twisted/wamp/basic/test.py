@@ -44,8 +44,15 @@ class CaseComponent(wamp.ApplicationSession):
       self._logline = 1
       self.finished = False
 
-   def log(self, msg):
-      msg = u'= : {:>3} : {:<20} : {}'.format(self._logline, self.__class__.__name__, msg)
+   def log(self, *args):
+      if len(args) > 1:
+         sargs = ", ".join(str(s) for s in args)
+      elif len(args) == 1:
+         sargs = args[0]
+      else:
+         sargs = "-"
+
+      msg = u'= : {:>3} : {:<20} : {}'.format(self._logline, self.__class__.__name__, sargs)
       self._logline += 1
       print(msg)
       if self.config.log and not self.config.log.closed:
@@ -108,18 +115,23 @@ class Case2_Backend(CaseComponent):
       self.log("joined")
 
       def ping():
+         self.log("ping() is invoked")
          return
 
       def add2(a, b):
+         self.log("add2() is invoked", a, b)
          return a + b
 
       def stars(nick = "somebody", stars = 0):
+         self.log("stars() is invoked", nick, stars)
          return u"{} starred {}x".format(nick, stars)
 
       def orders(product, limit = 5):
+         self.log("orders() is invoked", product, limit)
          return [u"Product {}".format(i) for i in range(50)][:limit]
 
       def arglen(*args, **kwargs):
+         self.log("arglen() is invoked", args, kwargs)
          return [len(args), len(kwargs)]
 
       yield self.register(ping, u'com.arguments.ping')
@@ -269,8 +281,8 @@ if __name__ == '__main__':
    else:
       embedded_components = []
       #client_components = [Case2_Backend]
-      client_components = [Case1_Backend, Case1_Frontend]
-      #client_components = [Case2_Backend, Case2_Frontend]
+      #client_components = [Case1_Backend, Case1_Frontend]
+      client_components = [Case2_Backend, Case2_Frontend]
 
    log = io.open(config.extra['caselog'], 'w')
    config.log = log
@@ -349,28 +361,34 @@ if __name__ == '__main__':
 
          serializers = [JsonSerializer()]
 
-         def maker(Klass):
-            class TestClientProtocol(WampWebSocketClientProtocol):
-               def onOpen(self):
-                  self.txcnt = 0
-                  self.rxcnt = 0
-                  WampWebSocketClientProtocol.onOpen(self)
-
-               def sendMessage(self, bytes, isBinary):
-                  self.txcnt += 1
-                  print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, bytes))
-                  WampWebSocketClientProtocol.sendMessage(self, bytes, isBinary)
-
-               def onMessage(self, bytes, isBinary):
-                  self.rxcnt += 1
-                  print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, bytes))
-                  WampWebSocketClientProtocol.onMessage(self, bytes, isBinary)
-            return TestClientProtocol
-
          ## create a WAMP-over-WebSocket transport client factory
          ##
          transport_factory = WampWebSocketClientFactory(session_factory, serializers = serializers, url = args.url, debug_wamp = args.debug)
-         transport_factory.protocol = maker(C)
+
+
+         if False:
+            def maker(Klass):
+               class TestClientProtocol(WampWebSocketClientProtocol):
+                  def onOpen(self):
+                     self.txcnt = 0
+                     self.rxcnt = 0
+                     WampWebSocketClientProtocol.onOpen(self)
+
+                  def sendMessage(self, bytes, isBinary):
+                     self.txcnt += 1
+                     print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, bytes))
+                     WampWebSocketClientProtocol.sendMessage(self, bytes, isBinary)
+
+                  def onMessage(self, bytes, isBinary):
+                     self.rxcnt += 1
+                     print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, bytes))
+                     WampWebSocketClientProtocol.onMessage(self, bytes, isBinary)
+               return TestClientProtocol
+
+            transport_factory.protocol = maker(C)
+         else:
+            transport_factory.protocol = WampWebSocketClientProtocol
+
          transport_factory.setProtocolOptions(failByDrop = False)
 
       elif args.transport in ['rawsocket-json', 'rawsocket-msgpack']:
