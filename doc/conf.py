@@ -43,8 +43,7 @@ except ImportError:
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.doctest',
               'sphinx.ext.intersphinx',
-              'sphinx.ext.viewcode',
-              'repoze.sphinx.autointerface']
+              'sphinx.ext.viewcode']
 
 if spelling is not None:
    extensions.append('sphinxcontrib.spelling')

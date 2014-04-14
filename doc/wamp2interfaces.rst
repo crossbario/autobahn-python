@@ -20,7 +20,7 @@ Sessions
 
 Base interface for WAMP sessions of any role:
 
-.. autointerface:: autobahn.wamp.interfaces.ISession
+.. autoclass:: autobahn.wamp.interfaces.ISession
    :members:
 
 
@@ -55,7 +55,7 @@ Calling
 
 *Callers* can call remote procedures on other WAMP application components using the following interface:
 
-.. autointerface:: autobahn.wamp.interfaces.ICaller
+.. autoclass:: autobahn.wamp.interfaces.ICaller
    :members:
 
 
@@ -89,7 +89,7 @@ Registering
 
 *Callees* provide endpoints which can be called as remote procedures from other WAMP application components:
 
-.. autointerface:: autobahn.wamp.interfaces.ICallee
+.. autoclass:: autobahn.wamp.interfaces.ICallee
    :members:
 
 
@@ -98,7 +98,7 @@ Registration
 
 Each registration of an endpoint at a *Dealer* is represented by
 
-.. autointerface:: autobahn.wamp.interfaces.IRegistration
+.. autoclass:: autobahn.wamp.interfaces.IRegistration
    :members:
 
 
@@ -126,14 +126,14 @@ Subscribers
 Subscribing
 ^^^^^^^^^^^
 
-.. autointerface:: autobahn.wamp.interfaces.ISubscriber
+.. autoclass:: autobahn.wamp.interfaces.ISubscriber
    :members:
 
 
 Subscription
 ^^^^^^^^^^^^
 
-.. autointerface:: autobahn.wamp.interfaces.ISubscription
+.. autoclass:: autobahn.wamp.interfaces.ISubscription
    :members:
 
 
@@ -162,14 +162,14 @@ Publishers
 Publishing
 ^^^^^^^^^^
 
-.. autointerface:: autobahn.wamp.interfaces.IPublisher
+.. autoclass:: autobahn.wamp.interfaces.IPublisher
    :members:
 
 
 Publication
 ^^^^^^^^^^^
 
-.. autointerface:: autobahn.wamp.interfaces.IPublication
+.. autoclass:: autobahn.wamp.interfaces.IPublication
    :members:
 
 
@@ -198,32 +198,32 @@ Decorators
 Other Interfaces
 ----------------
 
-.. autointerface:: autobahn.wamp.interfaces.IObjectSerializer
+.. autoclass:: autobahn.wamp.interfaces.IObjectSerializer
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IMessage
+.. autoclass:: autobahn.wamp.interfaces.IMessage
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.ISerializer
+.. autoclass:: autobahn.wamp.interfaces.ISerializer
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.ITransport
+.. autoclass:: autobahn.wamp.interfaces.ITransport
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.ITransportHandler
+.. autoclass:: autobahn.wamp.interfaces.ITransportHandler
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IRouterBase
+.. autoclass:: autobahn.wamp.interfaces.IRouterBase
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IRouter
+.. autoclass:: autobahn.wamp.interfaces.IRouter
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IBroker
+.. autoclass:: autobahn.wamp.interfaces.IBroker
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IDealer
+.. autoclass:: autobahn.wamp.interfaces.IDealer
    :members:
 
-.. autointerface:: autobahn.wamp.interfaces.IRouterFactory
+.. autoclass:: autobahn.wamp.interfaces.IRouterFactory
    :members:
