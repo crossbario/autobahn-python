@@ -21,13 +21,25 @@
    {{ super() }}
 
    <!-- community widget iframe -->
-   <!-- <iframe id="communityWidget" src="http://127.0.0.1:8090/widget/index.html" frameborder="0"></iframe> -->
 
-   <link rel="stylesheet" href="_static/communitywidget.css">
+   {% if widgeturl %}
 
-   <iframe id="communityWidget" src="http://192.168.1.147:8090/widget/index.html" frameborder="0"></iframe>
+      <!-- general styles for the widget -->
+      <link rel="stylesheet" type="text/css" href="{{ widgeturl }}/css/parent.css" />
+      <!-- site-specific modifications -->
+      <link rel="stylesheet" href="_static/communitywidget.css">
+      <!-- base stylesheet to ensure non-Display if nothing loads -->
+      <style>
+         #communityWidget.nonDisplay {
+            display: none;
+         }
+      </style>
+      <iframe id="communityWidget" class="nonDisplay" src="{{ widgeturl }}/index.html" frameborder="0"></iframe>
+      <script src="{{ widgeturl }}/js/parent.js"></script>
 
-   <!-- change url for production -->
+   {% else %}
+      <!-- Community Widget stripped! -->
+   {% endif %}
 
-   <script src="_static/communitywidget.js"></script>
+
 {% endblock %}

@@ -186,6 +186,11 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# additional variables which become accessible in the template engine's context for
+# all pages
+# html_context = {'widgeturl': 'http://192.168.1.147:8090/widget'}
+html_context = {'widgeturl': 'https://demo.crossbar.io/clandeck/widget'}
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 #html_last_updated_fmt = '%b %d, %Y'
