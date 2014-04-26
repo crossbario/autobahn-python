@@ -129,8 +129,8 @@ class Broker:
             for s in publish.eligible:
                if s in self._session_id_to_session:
                   eligible.append(self._session_id_to_session[s])
-            if eligible:
-               receivers = set(eligible) & receivers
+            
+            receivers = set(eligible) & receivers
 
          ## remove "excluded" receivers
          ##
