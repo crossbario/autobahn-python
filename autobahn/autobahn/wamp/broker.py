@@ -175,6 +175,7 @@ class Broker:
                              publisher = publisher)
          for receiver in receivers:
             if me_also or receiver != session:
+               ## the subscribing session might have been lost in the meantime ..
                if receiver._transport:
                   receiver._transport.send(msg)
 

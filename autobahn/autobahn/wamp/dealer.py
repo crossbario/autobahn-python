@@ -210,7 +210,11 @@ class Dealer:
       if yield_.request in self._invocations:
          call_msg, call_session = self._invocations[yield_.request]
          msg = message.Result(call_msg.request, args = yield_.args, kwargs = yield_.kwargs, progress = yield_.progress)
-         call_session._transport.send(msg)
+
+         ## the calling session might have been lost in the meantime ..
+         if call_session._transport:
+            call_session._transport.send(msg)
+
          if not yield_.progress:
             del self._invocations[yield_.request]
       else:
@@ -226,7 +230,11 @@ class Dealer:
       if error.request in self._invocations:
          call_msg, call_session = self._invocations[error.request]
          msg = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, error.error, args = error.args, kwargs = error.kwargs)
-         call_session._transport.send(msg)
+
+         ## the calling session might have been lost in the meantime ..
+         if call_session._transport:
+            call_session._transport.send(msg)
+
          del self._invocations[error.request]
       else:
          raise ProtocolError("Dealer.onInvocationError(): ERROR received for non-pending request_type {} and request ID {}".format(error.request_type, error.request))
