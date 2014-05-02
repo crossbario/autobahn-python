@@ -112,7 +112,7 @@ class ServerProtocol(WampWebSocketServerProtocol):
 
 
 
-from autobahn.wamp.protocol import RouterSession
+from autobahn.twisted.wamp import RouterSession
 from autobahn.wamp import types
 
 
@@ -148,8 +148,7 @@ class MyRouterSession(RouterSession):
       ## The client did it's Mozilla Persona authentication thing
       ## and now wants to verify the authentication and login.
       assertion = signature
-      audience = 'http://localhost:8080/'
-      audience = 'http://192.168.1.130:8080/'
+      audience = 'http://127.0.0.1:8080/'
 
       ## To verify the authentication, we need to send a HTTP/POST
       ## to Mozilla Persona. When successful, Persona will send us
@@ -263,7 +262,7 @@ if __name__ == '__main__':
    ## create a WAMP-over-WebSocket transport server factory
    ##
    from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = args.debug)
+   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug_wamp = args.debug)
    transport_factory.protocol = ServerProtocol
    transport_factory._cookies = {}
 
