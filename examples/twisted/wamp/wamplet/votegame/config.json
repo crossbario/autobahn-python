@@ -1,0 +1,60 @@
+{
+   "processes": [
+      {
+         "type": "worker",
+         "modules": [
+            {
+               "type": "router",
+               "realms": {
+                  "realm1": {
+                     "permissions": {
+                        "anonymous": {
+                           "create": true,
+                           "join": true,
+                           "access": {
+                              "*": {
+                                 "publish": true,
+                                 "subscribe": true,
+                                 "call": true,
+                                 "register": true
+                              }
+                           }
+                        }
+                     },
+                     "components": [
+                        {
+                           "type": "wamplet",
+                           "dist": "votegame",
+                           "entry": "backend",
+                           "extra": {
+                              "dbfile": "votegame.db",
+                              "items": ["banana", "lemon", "grapefruit"]
+                           }
+                        }
+                     ]
+                  }
+               },
+               "transports": [
+                  {
+                     "type": "web",
+                     "endpoint": {
+                        "type": "tcp",
+                        "port": 8080
+                     },
+                     "paths": {
+                        "/": {
+                           "type": "static",
+                           "module": "votegame",
+                           "resource": "web"
+                        },
+                        "ws": {
+                           "type": "websocket"
+                        }
+                     }
+                  }
+               ]
+            }
+         ]
+      }
+   ]
+}
