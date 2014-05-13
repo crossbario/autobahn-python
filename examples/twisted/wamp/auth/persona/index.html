@@ -28,6 +28,7 @@
          var signoutLink = document.getElementById('signout');
          signoutLink.onclick = function() {
             navigator.id.logout();
+            document.location.reload();
          };
          signoutLink.disabled = true;
 
