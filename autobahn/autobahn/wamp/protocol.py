@@ -191,7 +191,8 @@ class BaseSession:
       :type exc: Instance of :class:`Exception` or subclass thereof.
       """
       if isinstance(exc, exception.ApplicationError):
-         msg = message.Error(request_type, request, six.u(exc.error), args = list(exc.args), kwargs = exc.kwargs)
+         error_uri = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
+         msg = message.Error(request_type, request, error_uri, args = list(exc.args), kwargs = exc.kwargs)
       else:
          if exc.__class__ in self._ecls_to_uri_pat:
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
