@@ -11,12 +11,23 @@
       <button onclick="vote('grapefruit')">Grapefruit</button>
 
       <script>
+         // WebSocket (WAMP) server address
+         var wsuri;
+
+         if (document.location.origin == "file://") {
+            wsuri = "ws://127.0.0.1:8080/ws";
+         } else {
+            wsuri = (window.location.protocol === "http:" ? "ws:" : "wss:") + "//" + document.location.host + "/ws";
+         }
+
          var connection = new autobahn.Connection({
-            url: 'ws://127.0.0.1:8080/ws',
-            realm: 'realm1'}
-         );
+            url: wsuri,
+            realm: 'realm1'
+         });
 
          connection.onopen = function (session) {
+
+            console.log("Connected to", wsuri);
 
             session.subscribe('com.votegame.onvote', function (args) {
                console.log("new votes for " + args[0] + " : " + args[1]);
