@@ -45,7 +45,7 @@ class Router:
       :param options: Router options.
       :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
-      self.debug = True
+      self.debug = False
       self.factory = factory
       self.realm = realm
       self._options = options or types.RouterOptions()
