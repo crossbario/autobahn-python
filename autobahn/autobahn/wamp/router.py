@@ -45,6 +45,7 @@ class Router:
       :param options: Router options.
       :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
+      self.debug = True
       self.factory = factory
       self.realm = realm
       self._options = options or types.RouterOptions()
@@ -79,6 +80,9 @@ class Router:
       """
       Implements :func:`autobahn.wamp.interfaces.IRouter.process`
       """
+      if self.debug:
+         print("Router.process", msg)
+
       ## Broker
       ##
       if isinstance(msg, message.Publish):
