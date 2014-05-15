@@ -81,7 +81,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.process`
       """
       if self.debug:
-         print("Router.process", msg)
+         print("Router.process: {}".format(msg))
 
       ## Broker
       ##
