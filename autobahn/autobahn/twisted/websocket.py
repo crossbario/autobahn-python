@@ -575,12 +575,30 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
          del kwargs['debug_wamp']
       else:
          debug_wamp = False
+      
+      if 'enable_compression' in kwargs:
+         enable_compression = bool(kwargs['enable_compression'])
+         del kwargs['enable_compression']
+      else:
+         enable_compression = False
 
       websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
 
       kwargs['protocols'] = self._protocols
 
       WebSocketServerFactory.__init__(self, *args, **kwargs)
+      
+      if enable_compression:
+         ## Enable WebSocket extension "permessage-deflate".
+         ##
+         
+         ## Function to accept offers from the client ..
+         def accept(offers):
+            for offer in offers:
+               if isinstance(offer, PerMessageDeflateOffer):
+                  return PerMessageDeflateOfferAccept(offer)
+         
+         self.setProtocolOptions(perMessageCompressionAccept = accept)
 
 
 
