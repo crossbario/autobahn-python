@@ -21,28 +21,41 @@ from __future__ import absolute_import
 __all__ = ("utcnow",
            "parseutc",
            "utcstr",
+           "id",
            "newid",
            "rtime",
            "Stopwatch",
            "Tracker",)
 
 
-import datetime
 import time
 import random
 import sys
+from datetime import datetime
 from pprint import pformat
-
-UTC_TIMESTAMP_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 
 def utcnow():
    """
    Get current time in UTC as ISO 8601 string.
+
+   :returns str -- Current time as string in ISO 8601 format.
    """
-   now = datetime.datetime.utcnow()
-   return now.strftime(UTC_TIMESTAMP_FORMAT)
+   now = datetime.utcnow()
+   return now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
+
+
+def utcstr(ts):
+   """
+   Format UTC timestamp in ISO 8601 format.
+
+   :param ts: Timestamp.
+   :type ts: instance of datetime.
+   :returns str -- Timestamp formatted in ISO 8601 format.
+   """
+   return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 
 
@@ -50,21 +63,11 @@ def parseutc(s):
    """
    Parse an ISO 8601 combined date and time string, like i.e. 2011-11-23T12:23Z
    into a UTC datetime instance.
+
+   @deprecated: Use the iso8601 module (eg, iso8601.parse_date("2014-05-23T13:03:44.123Z"))
    """
    try:
-      return datetime.datetime.strptime(s, UTC_TIMESTAMP_FORMAT)
-   except:
-      return None
-
-
-
-def utcstr(dt):
-   """
-   Convert an UTC datetime instance into an ISO 8601 combined date and time,
-   like i.e. 2011-11-23T12:23Z
-   """
-   try:
-      return dt.strftime(UTC_TIMESTAMP_FORMAT)
+      return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
    except:
       return None
 
@@ -72,7 +75,11 @@ def utcstr(dt):
 
 def id():
    """
-   Generate a new random object ID.
+   Generate a new random object ID from range [0, 2**53]. The upper bound 2**53
+   is chosen since it is the maximum integer that can be represented as
+   a IEEE double such that all smaller integers are representable as well.
+   Hence, IDs can be safely used with languages that use IEEE double as their
+   main (or only) number type (JavaScript, Lua, ..).
    """
    return random.randint(0, 9007199254740992)
 
