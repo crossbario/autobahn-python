@@ -142,6 +142,12 @@ class BaseSession:
       self._ecls_to_uri_pat = {}
       self._uri_to_ecls = {}
 
+      ## session authentication information
+      ##
+      self._authid = None
+      self._authrole = None
+      self._authmethod = None
+
 
    def onConnect(self):
       """
