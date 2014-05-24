@@ -2123,12 +2123,8 @@ class WebSocketProtocol:
       if reason is not None:
          if code is None:
             raise Exception("close reason without close code")
-         if six.PY3:
-            if type(reason) != str:
-               raise Exception("invalid type %s for close reason" % type(reason))
-         else:
-            if type(reason) not in [str, unicode]:
-               raise Exception("invalid type %s for close reason" % type(reason))
+         if type(reason) != six.text_type:
+            raise Exception("invalid type %s for close reason" % type(reason))
          reasonUtf8 = reason.encode("utf8")
          if len(reasonUtf8) + 2 > 125:
             raise Exception("close reason too long (%d)" % len(reasonUtf8))
