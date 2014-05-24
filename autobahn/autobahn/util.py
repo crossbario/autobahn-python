@@ -55,7 +55,10 @@ def utcstr(ts):
    :type ts: instance of datetime.
    :returns str -- Timestamp formatted in ISO 8601 format.
    """
-   return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+   if ts:
+      return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+   else:
+      return ts
 
 
 
