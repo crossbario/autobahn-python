@@ -16,13 +16,14 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
 __all__ = ['ApplicationSession',
            'ApplicationSessionFactory',
            'ApplicationRunner',
            'RouterSession',
            'RouterSessionFactory']
 
-from __future__ import absolute_import
 import sys
 
 from twisted.python import log
