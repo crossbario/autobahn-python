@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ class Echo1ServerProtocol(WebSocketServerProtocol):
    def onMessage(self, payload, isBinary):
       if not isBinary:
          msg = "Echo 1 - {}".format(payload.decode('utf8'))
-         self.proto.sendMessage(msg.encode('utf8'))
+         print(msg)
+         self.sendMessage(msg.encode('utf8'))
 
 
 
@@ -44,27 +45,20 @@ class Echo2ServerProtocol(WebSocketServerProtocol):
    def onMessage(self, payload, isBinary):
       if not isBinary:
          msg = "Echo 2 - {}".format(payload.decode('utf8'))
-         self.proto.sendMessage(msg.encode('utf8'))
+         print(msg)
+         self.sendMessage(msg.encode('utf8'))
 
 
 
 if __name__ == '__main__':
 
-   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
+   log.startLogging(sys.stdout)
 
-   factory1 = WebSocketServerFactory("ws://localhost:9000",
-                                     debug = debug,
-                                     debugCodePaths = debug)
+   factory1 = WebSocketServerFactory()
    factory1.protocol = Echo1ServerProtocol
    resource1 = WebSocketResource(factory1)
 
-   factory2 = WebSocketServerFactory("ws://localhost:9000",
-                                     debug = debug,
-                                     debugCodePaths = debug)
+   factory2 = WebSocketServerFactory()
    factory2.protocol = Echo2ServerProtocol
    resource2 = WebSocketResource(factory2)
 

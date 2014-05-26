@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+##  Copyright (C) 2011-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -59,18 +59,10 @@ class EchoClientFactory(WebSocketClientFactory):
 if __name__ == '__main__':
 
    if len(sys.argv) < 2:
-      print("Need the WebSocket server address, i.e. ws://localhost:9000")
+      print("Need the WebSocket server address, i.e. ws://localhost:9000/echo1")
       sys.exit(1)
 
-   if len(sys.argv) > 2 and sys.argv[2] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
-
-   factory = EchoClientFactory(sys.argv[1],
-                               debug = debug,
-                               debugCodePaths = debug)
+   factory = EchoClientFactory(sys.argv[1])
    connectWS(factory)
 
    reactor.run()
