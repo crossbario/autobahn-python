@@ -16,19 +16,23 @@
 ##
 ###############################################################################
 
-from __future__ import absolute_import
-
 __all__ = ['ApplicationSession',
            'ApplicationSessionFactory',
            'ApplicationRunner',
            'RouterSession',
            'RouterSessionFactory']
 
-from autobahn.wamp import protocol
+from __future__ import absolute_import
+import sys
 
 from twisted.python import log
 from twisted.internet.defer import Deferred, maybeDeferred, DeferredList
+from twisted.internet.endpoints import clientFromString
 
+from autobahn.wamp import protocol
+from autobahn.websocket.protocol import parseWsUrl
+from autobahn.wamp.types import ComponentConfig
+from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 
 class FutureMixin:
@@ -55,7 +59,6 @@ class FutureMixin:
       return DeferredList(futures, consumeErrors = consume_exceptions)
 
 
-
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
@@ -67,7 +70,6 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    WAMP application session factory for Twisted-based applications.
    """
    session = ApplicationSession
-
 
 
 class RouterSession(FutureMixin, protocol.RouterSession):
@@ -83,18 +85,6 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    session = RouterSession
 
 
-
-import sys
-import traceback
-
-from twisted.python import log
-from twisted.internet.endpoints import clientFromString
-
-from autobahn.websocket.protocol import parseWsUrl
-from autobahn.wamp.types import ComponentConfig
-from autobahn.twisted.websocket import WampWebSocketClientFactory
-
-
 class ApplicationRunner:
    """
    This class is a convenience tool mainly for development and quick hosting
@@ -104,11 +94,11 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = {}, 
+   def __init__(self, url, realm, extra = None,
       debug = False, debug_wamp = False, debug_app = False):
       """
       Constructor.
-      
+
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
       :type url: str
       :param realm: The WAMP realm to join the application session to.
@@ -124,7 +114,7 @@ class ApplicationRunner:
       """
       self.url = url
       self.realm = realm
-      self.extra = extra
+      self.extra = extra or dict()
       self.debug = debug
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
@@ -134,7 +124,7 @@ class ApplicationRunner:
    def run(self, make):
       """
       Run the application component.
-      
+
       :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
                    when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
       :type make: callable
@@ -150,7 +140,7 @@ class ApplicationRunner:
          cfg = ComponentConfig(self.realm, self.extra)
          try:
             session = make(cfg)
-         except Exception as e:
+         except Exception:
             ## the app component could not be created .. fatal
             #print(traceback.format_exc())
             log.err()
