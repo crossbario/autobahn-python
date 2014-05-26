@@ -36,6 +36,7 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 
+
 class FutureMixin:
    """
    Mixin for Twisted style Futures ("Deferreds").
@@ -60,10 +61,12 @@ class FutureMixin:
       return DeferredList(futures, consumeErrors = consume_exceptions)
 
 
+
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
    """
+
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
@@ -73,10 +76,12 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    session = ApplicationSession
 
 
+
 class RouterSession(FutureMixin, protocol.RouterSession):
    """
    WAMP router session for Twisted-based applications.
    """
+
 
 
 class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
@@ -84,6 +89,7 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    WAMP router session factory for Twisted-based applications.
    """
    session = RouterSession
+
 
 
 class ApplicationRunner:
@@ -143,7 +149,6 @@ class ApplicationRunner:
             session = make(cfg)
          except Exception:
             ## the app component could not be created .. fatal
-            #print(traceback.format_exc())
             log.err()
             reactor.stop()
 

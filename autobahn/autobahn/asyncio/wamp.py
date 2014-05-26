@@ -24,11 +24,16 @@ __all__ = ['ApplicationSession',
            'RouterSession',
            'RouterSessionFactory']
 
-from autobahn.wamp import protocol
+import sys
 
 import asyncio
 from asyncio.tasks import iscoroutine
 from asyncio import Future
+
+from autobahn.wamp import protocol
+from autobahn.websocket.protocol import parseWsUrl
+from autobahn.wamp.types import ComponentConfig
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 
 
@@ -105,15 +110,6 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
 
 
 
-import sys
-import traceback
-import asyncio
-
-from autobahn.websocket.protocol import parseWsUrl
-from autobahn.wamp.types import ComponentConfig
-from autobahn.asyncio.websocket import WampWebSocketClientFactory
-
-
 class ApplicationRunner:
    """
    This class is a convenience tool mainly for development and quick hosting
@@ -123,7 +119,7 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = {},
+   def __init__(self, url, realm, extra = None,
       debug = False, debug_wamp = False, debug_app = False):
       """
       Constructor.
@@ -143,7 +139,7 @@ class ApplicationRunner:
       """
       self.url = url
       self.realm = realm
-      self.extra = extra
+      self.extra = extra or dict()
       self.debug = debug
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
@@ -154,7 +150,7 @@ class ApplicationRunner:
       """
       Run the application component.
 
-      :param make: A factory that produces instances of :class:`autobahn.twisted.wamp.ApplicationSession`
+      :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
                    when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
       :type make: callable
       """
@@ -163,7 +159,7 @@ class ApplicationRunner:
          cfg = ComponentConfig(self.realm, self.extra)
          try:
             session = make(cfg)
-         except Exception as e:
+         except Exception:
             ## the app component could not be created .. fatal
             print(traceback.format_exc())
             asyncio.get_event_loop().stop()
