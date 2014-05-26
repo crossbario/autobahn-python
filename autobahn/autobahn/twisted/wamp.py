@@ -167,3 +167,44 @@ class ApplicationRunner:
 
       ## 4) now enter the Twisted reactor loop
       reactor.run()
+
+
+
+from twisted.internet.defer import inlineCallbacks
+
+
+class Application:
+
+   def __init__(self, url, realm):
+      self._url = url
+      self._realm = realm
+      self._procs = []
+
+
+   def run(self):
+      extra = {
+         'app': self
+      }
+
+      class _ApplicationSession(ApplicationSession):
+
+         def __init__(self, config):
+            ApplicationSession.__init__(self)
+            self.config = config
+            self.app = config.extra['app']
+
+         @inlineCallbacks
+         def onJoin(self, details):
+            for uri, proc in self.app._procs:
+               reg = yield self.register(proc, uri)
+               print("registered procedure '{}' ({})".format(uri, reg.id))
+
+      runner = ApplicationRunner(self._url, self._realm, extra = extra, debug = False)
+      runner.run(_ApplicationSession)
+
+
+   def procedure(self, uri):
+      def decorate(f):
+         self._procs.append((uri, f))
+         return f
+      return decorate
