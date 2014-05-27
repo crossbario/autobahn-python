@@ -101,7 +101,12 @@ class ApplicationError(Error):
 
 
    def __str__(self):
-      return "ApplicationError({}, {} {})".format(self.error, list(self.args), self.kwargs)
+      if self.kwargs and 'traceback' in self.kwargs:
+         tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
+         self.kwargs['traceback'] = '...'
+      else:
+         tb = ''
+      return "ApplicationError('{}', args = {}, kwargs = {}){}".format(self.error, self.args, self.kwargs, tb)
 
 
 
