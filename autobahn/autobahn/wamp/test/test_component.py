@@ -27,24 +27,6 @@ from autobahn.wamp import role
 from autobahn.wamp import serializer
 
 
-###############################################################################
-##
-##  Copyright (C) 2011-2014 Tavendo GmbH
-##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
-##
-##      http://www.apache.org/licenses/LICENSE-2.0
-##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
-##
-###############################################################################
-
 import sys
 import io
 import six
@@ -273,9 +255,8 @@ if False:
          )
          try:
             log = io.open('caselog.log', 'w')
-            print "WWW"*10, log
          except Exception as e:
-            print "X"*10, e
+            print(e)
    #      log = io.open(config.extra['caselog'], 'w')
          config.log = log
          config.dlog = []
@@ -289,9 +270,6 @@ if False:
             c = C(config, one_done)
             config.components.append(c)
             session_factory.add(c)
-
-         print "2"*10
-
 
          if self.transport == "websocket":
 
@@ -330,13 +308,9 @@ if False:
          d = server.listen(transport_factory)
 
          def onlisten(port):
-            print "onlisten", port
             config.port = port
 
          d.addCallback(onlisten)
-
-
-         print "3"*10
 
          clients = []
          clients_d = []
@@ -360,8 +334,6 @@ if False:
             ##
             session_factory.session = make_make(C, one_done)
 
-            print "4"*10
-
             if self.transport == "websocket":
 
                from autobahn.wamp.serializer import JsonSerializer
@@ -372,13 +344,10 @@ if False:
                ##
                transport_factory = WampWebSocketClientFactory(session_factory, serializers = serializers, url = self.url, debug_wamp = self.debug)
 
-               print "5"*10
-
                if True:
                   def maker(Klass):
                      class TestClientProtocol(WampWebSocketClientProtocol):
                         def onOpen(self):
-                           print "onOpen"
                            self.txcnt = 0
                            self.rxcnt = 0
                            WampWebSocketClientProtocol.onOpen(self)
@@ -422,17 +391,12 @@ if False:
             cl = clientFromString(reactor, self.client)
             clients_d.append(cl.connect(transport_factory))
 
-            print "6"*10
-
             clients.append(cl)
-
-         print config.all_done
 
          config.connected_clients = None
 
          def client_connected(res):
             config.connected_clients = [proto for success, proto in res if success]
-            print "XXXXXXX", config.connected_clients
 
          DeferredList(clients_d).addCallback(client_connected)
 
@@ -440,10 +404,7 @@ if False:
          d = DeferredList(config.all_done, consumeErrors = True)
          #d = config.components[1]._done
 
-         print "7"
-
          def done(res):
-            print "DOne"
             log.flush()
             log.close()
             if config.port:
@@ -457,20 +418,13 @@ if False:
             #reactor.callLater(1, reactor.stop)
 
          def error(err):
-            print err
+            print(err)
 
          d.addCallbacks(done, error)
-
-         print "8", d
 
    #      d2 = Deferred()
 
          return d
-
-
-
-
-
 
 
 if __name__ == '__main__':
