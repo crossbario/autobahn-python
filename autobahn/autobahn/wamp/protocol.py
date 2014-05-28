@@ -150,7 +150,7 @@ class BaseSession:
       ## this is for marshalling traceback from exceptions thrown in user
       ## code within WAMP error messages (that is, when invoking remoted
       ## procedures)
-      self.include_tracebacks = False
+      self.traceback_app = False
 
       ## mapping of exception classes to WAMP error URIs
       self._ecls_to_uri_pat = {}
@@ -613,7 +613,7 @@ class ApplicationSession(BaseSession):
                      self._transport.send(reply)
 
                   def error(err):
-                     if self.include_tracebacks:
+                     if self.traceback_app:
                         ## if asked to marshal the traceback within the WAMP error message, extract it
                         tb = StringIO()
                         err.printTraceback(file = tb)
