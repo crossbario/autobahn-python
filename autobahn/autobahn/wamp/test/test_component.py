@@ -36,10 +36,34 @@ from twisted.python import log
 from twisted.internet.defer import inlineCallbacks, Deferred, DeferredList
 from twisted.internet.endpoints import serverFromString
 from twisted.internet.endpoints import clientFromString
+from autobahn.twisted.util import sleep
 
 from autobahn.wamp import router
 from autobahn.twisted.util import sleep
 from autobahn.twisted import wamp, websocket
+
+from autobahn.wamp.router import RouterFactory
+from autobahn.twisted.wamp import RouterSessionFactory
+from autobahn.wamp import types
+
+
+from autobahn.wamp.serializer import MsgPackSerializer
+from autobahn.wamp.serializer import JsonSerializer
+
+from autobahn.twisted.wamp import ApplicationSessionFactory
+
+
+from autobahn.twisted.rawsocket import WampRawSocketServerFactory, \
+                                       WampRawSocketClientFactory, \
+                                       WampRawSocketServerProtocol, \
+                                       WampRawSocketClientProtocol
+
+from autobahn.twisted.websocket import WampWebSocketServerFactory, \
+                                       WampWebSocketClientFactory, \
+                                       WampWebSocketClientProtocol, \
+                                       WampWebSocketServerProtocol
+
+
 
 
 class CaseComponent(wamp.ApplicationSession):
@@ -162,8 +186,6 @@ class Case2_Backend(CaseComponent):
       self.finish()
 
 
-from autobahn.twisted.util import sleep
-
 class Case2_Frontend(CaseComponent):
 
    @inlineCallbacks
@@ -232,13 +254,11 @@ if False:
 
          ## create a WAMP router factory
          ##
-         from autobahn.wamp.router import RouterFactory
          router_factory = RouterFactory()
 
 
          ## create a WAMP router session factory
          ##
-         from autobahn.twisted.wamp import RouterSessionFactory
          session_factory = RouterSessionFactory(router_factory)
 
 
@@ -246,8 +266,6 @@ if False:
          ## .. and create and add an WAMP application session to
          ## run next to the router
          ##
-         from autobahn.wamp import types
-
          config = types.ComponentConfig(realm = self.realm,
             extra = {
                'caselog': 'case1.log'
@@ -275,7 +293,6 @@ if False:
 
             ## create a WAMP-over-WebSocket transport server factory
             ##
-            from autobahn.twisted.websocket import WampWebSocketServerFactory
             transport_factory = WampWebSocketServerFactory(session_factory, debug_wamp = self.debug)
             transport_factory.setProtocolOptions(failByDrop = False, openHandshakeTimeout = 0, closeHandshakeTimeout = 0)
 
@@ -284,22 +301,17 @@ if False:
             ## create a WAMP-over-RawSocket transport server factory
             ##
             if self.transport == 'rawsocket-msgpack':
-               from autobahn.wamp.serializer import MsgPackSerializer
                serializer = MsgPackSerializer()
             elif self.transport == 'rawsocket-json':
-               from autobahn.wamp.serializer import JsonSerializer
                serializer = JsonSerializer()
             else:
                raise Exception("should not arrive here")
 
-            from autobahn.twisted.rawsocket import WampRawSocketServerFactory
             transport_factory = WampRawSocketServerFactory(session_factory, serializer, debug = self.debug)
 
          else:
             raise Exception("should not arrive here")
 
-
-         from autobahn.twisted.websocket import WampWebSocketClientFactory, WampWebSocketClientProtocol
 
          ## start the server from an endpoint
          ##
@@ -317,7 +329,6 @@ if False:
          for C in client_components:
             ## create a WAMP application session factory
             ##
-            from autobahn.twisted.wamp import ApplicationSessionFactory
             session_factory = ApplicationSessionFactory(config)
 
             one_done = Deferred()
@@ -335,8 +346,6 @@ if False:
             session_factory.session = make_make(C, one_done)
 
             if self.transport == "websocket":
-
-               from autobahn.wamp.serializer import JsonSerializer
 
                serializers = [JsonSerializer()]
 
@@ -374,15 +383,12 @@ if False:
                ## create a WAMP-over-RawSocket transport client factory
                ##
                if self.transport == 'rawsocket-msgpack':
-                  from autobahn.wamp.serializer import MsgPackSerializer
                   serializer = MsgPackSerializer()
                elif self.transport == 'rawsocket-json':
-                  from autobahn.wamp.serializer import JsonSerializer
                   serializer = JsonSerializer()
                else:
                   raise Exception("should not arrive here")
 
-               from autobahn.twisted.rawsocket import WampRawSocketClientFactory
                transport_factory = WampRawSocketClientFactory(session_factory, serializer, debug = self.debug)
 
 
