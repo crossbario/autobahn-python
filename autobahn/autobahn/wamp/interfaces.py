@@ -647,16 +647,19 @@ class IRouterBase(object):
 
 
 class IRouter(IRouterBase):
+   """
+   WAMP router interface. Routers are responsible for event and call routing.
+   """
 
    @abc.abstractmethod
    def process(self, session, message):
       """
       Process a WAMP message received on the given session.
 
-      :param session: Application session to remove.
-      :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`     
-      :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-      :type message: obj
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param message: The WAMP message to be processed.
+      :type message: A provider of :class:`autobahn.wamp.interfaces.IMessage`.
       """
 
 
@@ -669,18 +672,36 @@ class IBroker(IRouterBase):
    @abc.abstractmethod
    def processPublish(self, session, publish):
       """
+      Process a WAMP `PUBLISH` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `PUBLISH` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Publish`.
       """
 
 
    @abc.abstractmethod
    def processSubscribe(self, session, subscribe):
       """
+      Process a WAMP `SUBSCRIBE` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `SUBSCRIBE` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Subscribe`.
       """
 
 
    @abc.abstractmethod
    def processUnsubscribe(self, session, unsubscribe):
       """
+      Process a WAMP `UNSUBSCRIBE` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `UNSUBSCRIBE` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Unsubscribe`.
       """
 
 
@@ -693,36 +714,72 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processRegister(self, session, register):
       """
+      Process a WAMP `REGISTER` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `REGISTER` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Register`.
       """
 
 
    @abc.abstractmethod
    def processUnregister(self, session, unregister):
       """
+      Process a WAMP `UNREGISTER` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `UNREGISTER` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Unregister`.
       """
 
 
    @abc.abstractmethod
    def processCall(self, session, call):
       """
+      Process a WAMP `CALL` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `CALL` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Call`.
       """
 
 
    @abc.abstractmethod
    def processCancel(self, session, cancel):
       """
+      Process a WAMP `CANCEL` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `CANCEL` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Cancel`.
       """
 
 
    @abc.abstractmethod
    def processYield(self, session, yield_):
       """
+      Process a WAMP `YIELD` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `YIELD` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Yield`.
       """
 
 
    @abc.abstractmethod
    def processInvocationError(self, session, error):
       """
+      Process a WAMP `ERROR` message received from a WAMP client.
+
+      :param session: Application session on which the message was received.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param publish: The WAMP `ERROR` message to be processed.
+      :type publish: Instance of :class:`autobahn.wamp.message.Error`.
       """
 
 
