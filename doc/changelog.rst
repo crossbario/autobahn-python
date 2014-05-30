@@ -3,6 +3,10 @@
 Changelog
 =========
 
+0.8.9
+-----
+ * maintenance release
+
 0.8.8
 -----
  * initial support for WAMP on asyncio
