@@ -27,24 +27,6 @@ from autobahn.wamp import role
 from autobahn.wamp import serializer
 
 
-###############################################################################
-##
-##  Copyright (C) 2011-2014 Tavendo GmbH
-##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
-##
-##      http://www.apache.org/licenses/LICENSE-2.0
-##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
-##
-###############################################################################
-
 import sys
 import io
 import six
@@ -54,10 +36,34 @@ from twisted.python import log
 from twisted.internet.defer import inlineCallbacks, Deferred, DeferredList
 from twisted.internet.endpoints import serverFromString
 from twisted.internet.endpoints import clientFromString
+from autobahn.twisted.util import sleep
 
 from autobahn.wamp import router
 from autobahn.twisted.util import sleep
 from autobahn.twisted import wamp, websocket
+
+from autobahn.wamp.router import RouterFactory
+from autobahn.twisted.wamp import RouterSessionFactory
+from autobahn.wamp import types
+
+
+from autobahn.wamp.serializer import MsgPackSerializer
+from autobahn.wamp.serializer import JsonSerializer
+
+from autobahn.twisted.wamp import ApplicationSessionFactory
+
+
+from autobahn.twisted.rawsocket import WampRawSocketServerFactory, \
+                                       WampRawSocketClientFactory, \
+                                       WampRawSocketServerProtocol, \
+                                       WampRawSocketClientProtocol
+
+from autobahn.twisted.websocket import WampWebSocketServerFactory, \
+                                       WampWebSocketClientFactory, \
+                                       WampWebSocketClientProtocol, \
+                                       WampWebSocketServerProtocol
+
+
 
 
 class CaseComponent(wamp.ApplicationSession):
@@ -180,8 +186,6 @@ class Case2_Backend(CaseComponent):
       self.finish()
 
 
-from autobahn.twisted.util import sleep
-
 class Case2_Frontend(CaseComponent):
 
    @inlineCallbacks
@@ -232,245 +236,201 @@ class Case2_Frontend(CaseComponent):
       self.finish()
 
 
+if False:
+   class TestRpc(unittest.TestCase):
 
-class TestRpc(unittest.TestCase):
-
-   def setUp(self):
-      self.debug = False
-      self.realm = "realm1"
-      self.transport = "websocket"
-      self.url = "ws://127.0.0.1:8080"
-      self.client = "tcp:127.0.0.1:8080"
-      self.server = "tcp:8080"
-
-
-   def test_minimal(self):
-
-      embedded_components, client_components = [], [Case2_Backend, Case2_Frontend]
-
-      ## create a WAMP router factory
-      ##
-      from autobahn.wamp.router import RouterFactory
-      router_factory = RouterFactory()
+      def setUp(self):
+         self.debug = False
+         self.realm = "realm1"
+         self.transport = "websocket"
+         self.url = "ws://127.0.0.1:8080"
+         self.client = "tcp:127.0.0.1:8080"
+         self.server = "tcp:8080"
 
 
-      ## create a WAMP router session factory
-      ##
-      from autobahn.twisted.wamp import RouterSessionFactory
-      session_factory = RouterSessionFactory(router_factory)
+      def test_minimal(self):
 
+         embedded_components, client_components = [], [Case2_Backend, Case2_Frontend]
 
-
-      ## .. and create and add an WAMP application session to
-      ## run next to the router
-      ##
-      from autobahn.wamp import types
-
-      config = types.ComponentConfig(realm = self.realm,
-         extra = {
-            'caselog': 'case1.log'
-         }
-      )
-      try:
-         log = io.open('caselog.log', 'w')
-         print "WWW"*10, log
-      except Exception as e:
-         print "X"*10, e
-#      log = io.open(config.extra['caselog'], 'w')
-      config.log = log
-      config.dlog = []
-      config.components = []
-
-      config.all_done = []
-
-      for C in embedded_components:
-         one_done = Deferred()
-         config.all_done.append(one_done)
-         c = C(config, one_done)
-         config.components.append(c)
-         session_factory.add(c)
-
-      print "2"*10
-
-
-      if self.transport == "websocket":
-
-         ## create a WAMP-over-WebSocket transport server factory
+         ## create a WAMP router factory
          ##
-         from autobahn.twisted.websocket import WampWebSocketServerFactory
-         transport_factory = WampWebSocketServerFactory(session_factory, debug_wamp = self.debug)
-         transport_factory.setProtocolOptions(failByDrop = False, openHandshakeTimeout = 0, closeHandshakeTimeout = 0)
+         router_factory = RouterFactory()
 
-      elif self.transport in ['rawsocket-json', 'rawsocket-msgpack']:
 
-         ## create a WAMP-over-RawSocket transport server factory
+         ## create a WAMP router session factory
          ##
-         if self.transport == 'rawsocket-msgpack':
-            from autobahn.wamp.serializer import MsgPackSerializer
-            serializer = MsgPackSerializer()
-         elif self.transport == 'rawsocket-json':
-            from autobahn.wamp.serializer import JsonSerializer
-            serializer = JsonSerializer()
-         else:
-            raise Exception("should not arrive here")
-
-         from autobahn.twisted.rawsocket import WampRawSocketServerFactory
-         transport_factory = WampRawSocketServerFactory(session_factory, serializer, debug = self.debug)
-
-      else:
-         raise Exception("should not arrive here")
+         session_factory = RouterSessionFactory(router_factory)
 
 
-      from autobahn.twisted.websocket import WampWebSocketClientFactory, WampWebSocketClientProtocol
 
-      ## start the server from an endpoint
-      ##
-      from twisted.internet import reactor
-      server = serverFromString(reactor, self.server)
-      d = server.listen(transport_factory)
-
-      def onlisten(port):
-         print "onlisten", port
-         config.port = port
-
-      d.addCallback(onlisten)
-
-
-      print "3"*10
-
-      clients = []
-      clients_d = []
-      for C in client_components:
-         ## create a WAMP application session factory
+         ## .. and create and add an WAMP application session to
+         ## run next to the router
          ##
-         from autobahn.twisted.wamp import ApplicationSessionFactory
-         session_factory = ApplicationSessionFactory(config)
+         config = types.ComponentConfig(realm = self.realm,
+            extra = {
+               'caselog': 'case1.log'
+            }
+         )
+         try:
+            log = io.open('caselog.log', 'w')
+         except Exception as e:
+            print(e)
+   #      log = io.open(config.extra['caselog'], 'w')
+         config.log = log
+         config.dlog = []
+         config.components = []
 
-         one_done = Deferred()
-         config.all_done.append(one_done)
+         config.all_done = []
 
-         def make_make(Klass, done):
-            def make(config):
-               c = Klass(config, done)
-               config.components.append(c)
-               return c
-            return make
-
-         ## .. and set the session class on the factory
-         ##
-         session_factory.session = make_make(C, one_done)
-
-         print "4"*10
+         for C in embedded_components:
+            one_done = Deferred()
+            config.all_done.append(one_done)
+            c = C(config, one_done)
+            config.components.append(c)
+            session_factory.add(c)
 
          if self.transport == "websocket":
 
-            from autobahn.wamp.serializer import JsonSerializer
-
-            serializers = [JsonSerializer()]
-
-            ## create a WAMP-over-WebSocket transport client factory
+            ## create a WAMP-over-WebSocket transport server factory
             ##
-            transport_factory = WampWebSocketClientFactory(session_factory, serializers = serializers, url = self.url, debug_wamp = self.debug)
-
-            print "5"*10
-
-            if True:
-               def maker(Klass):
-                  class TestClientProtocol(WampWebSocketClientProtocol):
-                     def onOpen(self):
-                        print "onOpen"
-                        self.txcnt = 0
-                        self.rxcnt = 0
-                        WampWebSocketClientProtocol.onOpen(self)
-
-                     def sendMessage(self, bytes, isBinary):
-                        self.txcnt += 1
-                        print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, bytes))
-                        WampWebSocketClientProtocol.sendMessage(self, bytes, isBinary)
-
-                     def onMessage(self, bytes, isBinary):
-                        self.rxcnt += 1
-                        print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, bytes))
-                        WampWebSocketClientProtocol.onMessage(self, bytes, isBinary)
-                  return TestClientProtocol
-
-               transport_factory.protocol = maker(C)
-            else:
-               transport_factory.protocol = WampWebSocketClientProtocol
-
+            transport_factory = WampWebSocketServerFactory(session_factory, debug_wamp = self.debug)
             transport_factory.setProtocolOptions(failByDrop = False, openHandshakeTimeout = 0, closeHandshakeTimeout = 0)
 
          elif self.transport in ['rawsocket-json', 'rawsocket-msgpack']:
 
-            ## create a WAMP-over-RawSocket transport client factory
+            ## create a WAMP-over-RawSocket transport server factory
             ##
             if self.transport == 'rawsocket-msgpack':
-               from autobahn.wamp.serializer import MsgPackSerializer
                serializer = MsgPackSerializer()
             elif self.transport == 'rawsocket-json':
-               from autobahn.wamp.serializer import JsonSerializer
                serializer = JsonSerializer()
             else:
                raise Exception("should not arrive here")
 
-            from autobahn.twisted.rawsocket import WampRawSocketClientFactory
-            transport_factory = WampRawSocketClientFactory(session_factory, serializer, debug = self.debug)
+            transport_factory = WampRawSocketServerFactory(session_factory, serializer, debug = self.debug)
+
+         else:
+            raise Exception("should not arrive here")
 
 
-         ## start the client from an endpoint
+         ## start the server from an endpoint
          ##
-         cl = clientFromString(reactor, self.client)
-         clients_d.append(cl.connect(transport_factory))
+         from twisted.internet import reactor
+         server = serverFromString(reactor, self.server)
+         d = server.listen(transport_factory)
 
-         print "6"*10
+         def onlisten(port):
+            config.port = port
 
-         clients.append(cl)
+         d.addCallback(onlisten)
 
-      print config.all_done
+         clients = []
+         clients_d = []
+         for C in client_components:
+            ## create a WAMP application session factory
+            ##
+            session_factory = ApplicationSessionFactory(config)
 
-      config.connected_clients = None
+            one_done = Deferred()
+            config.all_done.append(one_done)
 
-      def client_connected(res):
-         config.connected_clients = [proto for success, proto in res if success]
-         print "XXXXXXX", config.connected_clients
+            def make_make(Klass, done):
+               def make(config):
+                  c = Klass(config, done)
+                  config.components.append(c)
+                  return c
+               return make
 
-      DeferredList(clients_d).addCallback(client_connected)
+            ## .. and set the session class on the factory
+            ##
+            session_factory.session = make_make(C, one_done)
+
+            if self.transport == "websocket":
+
+               serializers = [JsonSerializer()]
+
+               ## create a WAMP-over-WebSocket transport client factory
+               ##
+               transport_factory = WampWebSocketClientFactory(session_factory, serializers = serializers, url = self.url, debug_wamp = self.debug)
+
+               if True:
+                  def maker(Klass):
+                     class TestClientProtocol(WampWebSocketClientProtocol):
+                        def onOpen(self):
+                           self.txcnt = 0
+                           self.rxcnt = 0
+                           WampWebSocketClientProtocol.onOpen(self)
+
+                        def sendMessage(self, bytes, isBinary):
+                           self.txcnt += 1
+                           print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, bytes))
+                           WampWebSocketClientProtocol.sendMessage(self, bytes, isBinary)
+
+                        def onMessage(self, bytes, isBinary):
+                           self.rxcnt += 1
+                           print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, bytes))
+                           WampWebSocketClientProtocol.onMessage(self, bytes, isBinary)
+                     return TestClientProtocol
+
+                  transport_factory.protocol = maker(C)
+               else:
+                  transport_factory.protocol = WampWebSocketClientProtocol
+
+               transport_factory.setProtocolOptions(failByDrop = False, openHandshakeTimeout = 0, closeHandshakeTimeout = 0)
+
+            elif self.transport in ['rawsocket-json', 'rawsocket-msgpack']:
+
+               ## create a WAMP-over-RawSocket transport client factory
+               ##
+               if self.transport == 'rawsocket-msgpack':
+                  serializer = MsgPackSerializer()
+               elif self.transport == 'rawsocket-json':
+                  serializer = JsonSerializer()
+               else:
+                  raise Exception("should not arrive here")
+
+               transport_factory = WampRawSocketClientFactory(session_factory, serializer, debug = self.debug)
 
 
-      d = DeferredList(config.all_done, consumeErrors = True)
-      #d = config.components[1]._done
+            ## start the client from an endpoint
+            ##
+            cl = clientFromString(reactor, self.client)
+            clients_d.append(cl.connect(transport_factory))
 
-      print "7"
+            clients.append(cl)
 
-      def done(res):
-         print "DOne"
-         log.flush()
-         log.close()
-         if config.port:
-            config.port.stopListening()
-         if config.connected_clients:
-            for proto in config.connected_clients:
-               proto.transport.abortConnection()
-         print("Log length: {}".format(len(config.dlog)))
-         print(config.dlog)
-         #from twisted.internet import reactor
-         #reactor.callLater(1, reactor.stop)
+         config.connected_clients = None
 
-      def error(err):
-         print err
+         def client_connected(res):
+            config.connected_clients = [proto for success, proto in res if success]
 
-      d.addCallbacks(done, error)
-
-      print "8", d
-
-#      d2 = Deferred()
-
-      return d
+         DeferredList(clients_d).addCallback(client_connected)
 
 
+         d = DeferredList(config.all_done, consumeErrors = True)
+         #d = config.components[1]._done
 
+         def done(res):
+            log.flush()
+            log.close()
+            if config.port:
+               config.port.stopListening()
+            if config.connected_clients:
+               for proto in config.connected_clients:
+                  proto.transport.abortConnection()
+            print("Log length: {}".format(len(config.dlog)))
+            print(config.dlog)
+            #from twisted.internet import reactor
+            #reactor.callLater(1, reactor.stop)
 
+         def error(err):
+            print(err)
 
+         d.addCallbacks(done, error)
+
+   #      d2 = Deferred()
+
+         return d
 
 
 if __name__ == '__main__':

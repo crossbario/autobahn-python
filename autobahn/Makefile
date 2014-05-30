@@ -15,6 +15,7 @@ clean:
 	rm -rf ./build
 	rm -rf ./dist
 	rm -rf ./temp
+	rm -rf ./_trial_temp
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;
@@ -25,10 +26,10 @@ publish: clean
 	python setup.py sdist upload
 
 test:
-	trial autobahn.wamp.test.test_component
-#	trial autobahn
+	trial autobahn
 #	trial autobahn.websocket.test
 #	trial autobahn.wamp.test
+#	trial autobahn.wamp.test.test_component
 #	trial autobahn.wamp.test.test_message
 #	trial autobahn.wamp.test.test_protocol
 #	trial autobahn.wamp.test.test_protocol_peer

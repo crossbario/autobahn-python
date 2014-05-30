@@ -55,6 +55,7 @@ class Echo1Service(BaseService):
    def onMessage(self, payload, isBinary):
       if not isBinary:
          msg = "Echo 1 - {}".format(payload.decode('utf8'))
+         print(msg)
          self.proto.sendMessage(msg.encode('utf8'))
 
 
@@ -66,6 +67,7 @@ class Echo2Service(BaseService):
    def onMessage(self, payload, isBinary):
       if not isBinary:
          msg = "Echo 2 - {}".format(payload.decode('utf8'))
+         print(msg)
          self.proto.sendMessage(msg.encode('utf8'))
 
 
@@ -119,22 +121,8 @@ class ServiceServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
-
-   factory = WebSocketServerFactory("ws://localhost:9000",
-                                    debug = debug,
-                                    debugCodePaths = debug)
-
+   factory = WebSocketServerFactory("ws://localhost:9000")
    factory.protocol = ServiceServerProtocol
-   factory.setProtocolOptions(allowHixie76 = True, failByDrop = False)
    listenWS(factory)
-
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
 
    reactor.run()
