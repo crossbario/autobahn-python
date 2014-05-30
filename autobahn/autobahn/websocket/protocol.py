@@ -58,18 +58,30 @@ from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import *
 from autobahn.websocket import http
 
-
 from six.moves import urllib
 
-# ## The Python urlparse module currently does not contain the ws/wss
-# ## schemes, so we add those dynamically (which is a hack of course).
-# ##
-# wsschemes = ["ws", "wss"]
-# urlparse.uses_relative.extend(wsschemes)
-# urlparse.uses_netloc.extend(wsschemes)
-# urlparse.uses_params.extend(wsschemes)
-# urlparse.uses_query.extend(wsschemes)
-# urlparse.uses_fragment.extend(wsschemes)
+## The Python urlparse module currently does not contain the ws/wss
+## schemes, so we add those dynamically (which is a hack of course).
+## Since the urllib from six.moves does not seem to expose the stuff
+## we monkey patch here, we do it manually.
+##
+## Important: if you change this stuff (you shouldn't), make sure
+## _all_ our unit tests for WS URLs succeed
+##
+if not six.PY3:
+   ## Python 2
+   import urlparse
+else:
+   ## Python 3
+   from urllib import parse as urlparse
+
+wsschemes = ["ws", "wss"]
+urlparse.uses_relative.extend(wsschemes)
+urlparse.uses_netloc.extend(wsschemes)
+urlparse.uses_params.extend(wsschemes)
+urlparse.uses_query.extend(wsschemes)
+urlparse.uses_fragment.extend(wsschemes)
+
 
 
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
@@ -128,7 +140,7 @@ def parseWsUrl(url):
 
    :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
    """
-   parsed = urllib.parse.urlparse(url)
+   parsed = urlparse.urlparse(url)
    if not parsed.hostname or parsed.hostname == "":
       raise Exception("invalid WebSocket URL: missing hostname")
    if parsed.scheme not in ["ws", "wss"]:
@@ -150,7 +162,7 @@ def parseWsUrl(url):
       path = ppath
    if parsed.query is not None and parsed.query != "":
       resource = ppath + "?" + parsed.query
-      params = urllib.parse.parse_qs(parsed.query)
+      params = urlparse.parse_qs(parsed.query)
    else:
       resource = ppath
       params = {}

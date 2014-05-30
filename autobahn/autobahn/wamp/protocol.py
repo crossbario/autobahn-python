@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import inspect
 import six
+from six import StringIO
 
 from autobahn.wamp.interfaces import ISession, \
                                      IPublication, \
@@ -138,8 +139,23 @@ class BaseSession:
       """
       Ctor.
       """
+      ## this is for library level debugging
       self.debug = False
+
+      ## this is for app level debugging. exceptions raised in user code
+      ## will get logged (that is, when invoking remoted procedures or
+      ## when invoking event handlers)
+      self.debug_app = False
+
+      ## this is for marshalling traceback from exceptions thrown in user
+      ## code within WAMP error messages (that is, when invoking remoted
+      ## procedures)
+      self.traceback_app = False
+
+      ## mapping of exception classes to WAMP error URIs
       self._ecls_to_uri_pat = {}
+
+      ## mapping of WAMP error URIs to exception classes
       self._uri_to_ecls = {}
 
       ## session authentication information
@@ -187,31 +203,42 @@ class BaseSession:
          self._uri_to_ecls[six.u(error)] = exception
 
 
-   def _message_from_exception(self, request_type, request, exc):
+   def _message_from_exception(self, request_type, request, exc, tb = None):
       """
       Create a WAMP error message from an exception.
 
+      :param request_type: The request type this WAMP error message is for.
+      :type request_type: int
       :param request: The request ID this WAMP error message is for.
       :type request: int
       :param exc: The exception.
       :type exc: Instance of :class:`Exception` or subclass thereof.
+      :param tb: Optional traceback. If present, it'll be included with the WAMP error message.
+      :type tb: list or None
       """
+      args = None
+      if hasattr(exc, 'args'):
+         args = list(exc.args) # make sure tuples are made into lists
+
+      kwargs = None
+      if hasattr(exc, 'kwargs'):
+         kwargs = exc.kwargs
+
+      if tb:
+         if kwargs:
+            kwargs['traceback'] = tb
+         else:
+            kwargs = {'traceback': tb}
+
       if isinstance(exc, exception.ApplicationError):
-         error_uri = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
-         msg = message.Error(request_type, request, error_uri, args = list(exc.args), kwargs = exc.kwargs)
+         error = exc.error if type(exc.error) == six.text_type else six.u(exc.error)
       else:
          if exc.__class__ in self._ecls_to_uri_pat:
             error = self._ecls_to_uri_pat[exc.__class__][0]._uri
          else:
             error = u"wamp.error.runtime_error"
 
-         if hasattr(exc, 'args'):
-            if hasattr(exc, 'kwargs'):
-               msg = message.Error(request_type, request, error, args = exc.args, kwargs = exc.kwargs)
-            else:
-               msg = message.Error(request_type, request, error, args = exc.args)
-         else:
-            msg = message.Error(request_type, request, error)
+      msg = message.Error(request_type, request, error, args, kwargs)
 
       return msg
 
@@ -315,8 +342,6 @@ class ApplicationSession(BaseSession):
 
       ## incoming invocations
       self._invocations = {}
-
-      self.debug_app = False
 
 
    def onOpen(self, transport):
@@ -588,16 +613,25 @@ class ApplicationSession(BaseSession):
                      self._transport.send(reply)
 
                   def error(err):
+                     if self.traceback_app:
+                        ## if asked to marshal the traceback within the WAMP error message, extract it
+                        tb = StringIO()
+                        err.printTraceback(file = tb)
+                        tb = tb.getvalue().splitlines()
+                     else:
+                        tb = None
+
                      if self.debug_app:
                         print("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
                         print(err)
+
                      del self._invocations[msg.request]
 
                      if hasattr(err, 'value'):
                         exc = err.value
                      else:
                         exc = err
-                     reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc)
+                     reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc, tb)
                      self._transport.send(reply)
 
                   self._invocations[msg.request] = d
