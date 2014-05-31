@@ -516,33 +516,3 @@ class Application(object):
          yield handler(*args, **kwargs)
 
 
-
-# by default, the application run on port 8080
-app = Application("your_project_name")
-
-# register a function to allow calling from outside
-# via RPC
-@app.register('success')
-def a_procedure(context, arg1, arg2):
-   print(arg1, arg2)
-   # publish the event
-   context.publish('an_event', "Hello !",
-                   # force publisher to receive its
-                   # own event
-                   options={"excludeMe": False})
-
-# register a callback that will be called with the
-# event 'an_event' is triggered
-@app.subscribe('an_event')
-def an_event(context, val):
-   print(val)
-
-# This will be called once the application is connecter
-# to the server
-@app.signal('onjoin')
-def entry_point(context):
-   print('Starting demo !')
-   context.call('success', True, False)
-
-if __name__ == "__main__":
-    app.run()
