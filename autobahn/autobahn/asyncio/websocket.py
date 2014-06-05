@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -23,7 +23,12 @@ __all__ = ['WebSocketServerProtocol',
 
 from collections import deque
 
-import asyncio
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
+
 from asyncio.tasks import iscoroutine
 from asyncio import Future
 

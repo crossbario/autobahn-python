@@ -18,7 +18,11 @@
 
 import math
 
-import asyncio
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
 
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
