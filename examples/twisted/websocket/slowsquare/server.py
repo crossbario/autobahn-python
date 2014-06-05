@@ -48,7 +48,7 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
          try:
             res = yield self.slowsquare(x)
          except Exception as e:
-            self.sendClose(1000, str(e))
+            self.sendClose(1000, "Exception raised: {}".format(e))
          else:
             self.sendMessage(json.dumps(res).encode('utf8'))
 
