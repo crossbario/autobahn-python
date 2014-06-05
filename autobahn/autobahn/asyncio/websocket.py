@@ -80,11 +80,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
          while len(self.receive_queue):
             data = self.receive_queue.popleft()
             if self.transport:
-               try:
-                  self._dataReceived(data)
-               except Exception as e:
-                  raise e
-                  #print("WebSocketAdapterProtocol._consume: {}".format(e))
+               self._dataReceived(data)
             else:
                print("WebSocketAdapterProtocol._consume: no transport")
          self._consume()
