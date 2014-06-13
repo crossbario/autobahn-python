@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,108 +16,101 @@
 ##
 ###############################################################################
 
+import sys
+import six
+import datetime
 
-from autobahn.wamp2.broker import Broker
-from autobahn.wamp2.websocket import WampWebSocketServerProtocol, \
-                                     WampWebSocketServerFactory
+from twisted.python import log
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
+from twisted.internet.endpoints import serverFromString
 
-from autobahn.wamp2.serializer import WampJsonSerializer, WampMsgPackSerializer
-
-from autobahn.wamp2.http import WampHttpResourceSession, \
-                                WampHttpResource
-
-
-from autobahn.wamp2.protocol import WampProtocol
-
-
-class MyWampSession(WampProtocol):
-
-   def __init__(self, broker):
-      self._broker = broker
-
-   def onSessionOpen(self):
-      self.setBroker(self._broker)
-
-
-class MyWampSessionFactory:
-
-   def __init__(self):
-      self._broker = Broker()
-
-   def createSession(self):
-      session = MyWampSession(self._broker)
-      return session
+from autobahn.wamp import router, types
+from autobahn.twisted.util import sleep
+from autobahn.twisted import wamp, websocket
 
 
 
-class MyPubSubResourceSession(WampHttpResourceSession):
+class MyBackendComponent(wamp.ApplicationSession):
+   """
+   Application code goes here. This is an example component that provides
+   a simple procedure which can be called remotely from any WAMP peer.
+   It also publishes an event every second to some topic.
+   """
 
-   def onSessionOpen(self):
-      self.setBroker(self._parent._broker)
+   @inlineCallbacks
+   def onJoin(self, details):
 
-   def onSessionClose(self):
-      print "SESSION CLOSED"
+      ## register a procedure for remote calling
+      ##
+      def utcnow():
+         print("Someone is calling me;)")
+         now = datetime.datetime.utcnow()
+         return six.u(now.strftime("%Y-%m-%dT%H:%M:%SZ"))
+
+      reg = yield self.register(utcnow, u'com.timeservice.now')
+      print("Registered procedure with ID {}".format(reg.id))
+
+      ## publish events to a topic
+      ##
+      counter = 0
+      while True:
+         self.publish(u'com.myapp.topic1', counter)
+         print("Published event.")
+         counter += 1
+         yield sleep(1)
 
 
-class MyPubSubResource(WampHttpResource):
+   
 
-   protocol = MyPubSubResourceSession
+from twisted.web.server import Site
+from twisted.web.static import File
+from autobahn.twisted.resource import WebSocketResource
 
-   def __init__(self, serializers, broker, debug = True):
-      WampHttpResource.__init__(self, serializers = serializers, debug = debug)
-      self._broker = broker
-
-
-
-class PubSubServerProtocol(WampWebSocketServerProtocol):
-
-   def onSessionOpen(self):
-      self.setBroker(self.factory._broker)
-
-
-
-class PubSubServerFactory(WampWebSocketServerFactory):
-
-   protocol = PubSubServerProtocol
-
-   def __init__(self, url, serializers, broker, debug = False):
-      WampWebSocketServerFactory.__init__(self, url, serializers = serializers, debug = debug)
-      self._broker = broker
-
+from autobahn.wamp.http import WampHttpResource
 
 
 
 if __name__ == '__main__':
 
-   import sys
-
-   from twisted.internet import reactor
-   from twisted.python import log
-   from twisted.web.server import Site
-   from twisted.web.static import File
-
-   from twisted.internet.endpoints import serverFromString
-
+   ## 0) start logging to console
    log.startLogging(sys.stdout)
 
-   broker = Broker()
-
-   jsonSerializer = WampJsonSerializer()
-
-   serializers = [WampMsgPackSerializer(), jsonSerializer]
-
-   wampfactory = PubSubServerFactory("ws://localhost:9000", serializers, broker, debug = False)
-   wampserver = serverFromString(reactor, "tcp:9000")
-   wampserver.listen(wampfactory)
+   root = File(".")
 
 
-   wampResource = MyPubSubResource([jsonSerializer], broker)
+   ## 1) create a WAMP router factory
+   router_factory = router.RouterFactory()
 
-   root = File("longpoll")
-   root.putChild("wamp", wampResource)
+   ## 2) create a WAMP router session factory
+   session_factory = wamp.RouterSessionFactory(router_factory)
 
-   site = Site(root)
-   site.log = lambda _: None # disable any logging
-   reactor.listenTCP(8080, site)
+   ## 3) Optionally, add embedded WAMP application sessions to the router
+   component_config = types.ComponentConfig(realm = "realm1")
+   component_session = MyBackendComponent(component_config)
+   session_factory.add(component_session)
 
+   ## 4) create a WAMP-over-WebSocket transport server factory
+   transport_factory = websocket.WampWebSocketServerFactory(session_factory, \
+                                                            debug = False, \
+                                                            debug_wamp = False)
+   transport_factory.startFactory()
+
+
+   ws_resource = WebSocketResource(transport_factory)
+   root.putChild("ws", ws_resource)
+
+   lp_resource = WampHttpResource(session_factory)
+   root.putChild("lp", lp_resource)
+
+
+
+   transport_factory = Site(root)
+   transport_factory.noisy = False
+
+   ## 5) start the server from a Twisted endpoint
+   server = serverFromString(reactor, "tcp:8080")
+   server.listen(transport_factory)
+
+   ## 6) now enter the Twisted reactor loop
    reactor.run()

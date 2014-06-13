@@ -25,7 +25,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import serverFromString
 
-from autobahn.wamp import router
+from autobahn.wamp import router, types
 from autobahn.twisted.util import sleep
 from autobahn.twisted import wamp, websocket
 
@@ -74,7 +74,9 @@ if __name__ == '__main__':
    session_factory = wamp.RouterSessionFactory(router_factory)
 
    ## 3) Optionally, add embedded WAMP application sessions to the router
-   session_factory.add(MyBackendComponent())
+   component_config = types.ComponentConfig(realm = "realm1")
+   component_session = MyBackendComponent(component_config)
+   session_factory.add(component_session)
 
    ## 4) create a WAMP-over-WebSocket transport server factory
    transport_factory = websocket.WampWebSocketServerFactory(session_factory, \

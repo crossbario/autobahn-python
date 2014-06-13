@@ -16,6 +16,11 @@
 ##
 ###############################################################################
 
+from __future__ import absolute_import
+
+__all__ = ['WampHttpResource']
+
+
 import json
 from collections import deque
 
@@ -28,7 +33,10 @@ from twisted.web.server import NOT_DONE_YET
 
 from autobahn.util import newid
 
-from protocol import WampProtocol, parseSubprotocolIdentifier
+#from autobahn.wamp.protocol import WampProtocol
+from autobahn.wamp.websocket import parseSubprotocolIdentifier
+from autobahn.wamp.serializer import JsonSerializer
+
 
 
 
@@ -150,7 +158,8 @@ class WampHttpResourceSessionReceive(Resource):
 
 
 
-class WampHttpResourceSession(Resource, WampProtocol):
+#class WampHttpResourceSession(Resource, WampProtocol):
+class WampHttpResourceSession(Resource):
    """
    A Web resource representing an open WAMP session.
    """
@@ -284,6 +293,7 @@ class WampHttpResource(Resource):
 
 
    def __init__(self,
+                factory,
                 serializers = None,
                 timeout = 10,
                 killAfter = 30,
@@ -307,12 +317,15 @@ class WampHttpResource(Resource):
       :param debug: Enable debug logging.
       :type debug: bool
       """
+      Resource.__init__(self)
+
+      ## RouterSessionFactory
+      self._factory = factory
+
       ## lazy import to avoid reactor install upon module import
       if reactor is None:
          from twisted.internet import reactor
       self.reactor = reactor
-
-      Resource.__init__(self)
 
       self._debug = debug
       self._timeout = timeout
@@ -321,7 +334,7 @@ class WampHttpResource(Resource):
       self._queueLimitMessages = queueLimitMessages
 
       if serializers is None:
-         serializers = [WampJsonSerializer()]
+         serializers = [JsonSerializer()]
 
       self._serializers = {}
       for ser in serializers:
