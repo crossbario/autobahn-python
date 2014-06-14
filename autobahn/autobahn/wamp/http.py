@@ -76,7 +76,7 @@ class WampHttpResourceSessionSend(Resource):
             log.msg("WAMP session data received (transport ID %s): %s" % (self._parent._transportid, payload))
 
          ## process batch of WAMP messages
-         for data in payload.split("0x00"):
+         for data in payload.split("\30"):
             self._parent.onMessage(data, False)
 
       except Exception as e:
@@ -152,15 +152,10 @@ class WampHttpResourceSessionReceive(Resource):
       """
       if self._request and len(self._queue):
 
-         self._request.write('[')
-
          while len(self._queue) > 0:
             msg = self._queue.popleft()
             self._request.write(msg)
-            if len(self._queue):
-               self._request.write(',')
-
-         self._request.write(']')
+            self._request.write("\30")
 
          self._request.finish()
          self._request = None
@@ -194,6 +189,56 @@ class WampHttpResourceSessionReceive(Resource):
 
 
 
+class WampHttpResourceSessionClose(Resource):
+   """
+   A Web resource for closing the Long-poll session WampHttpResourceSession.
+   """
+
+   def __init__(self, parent):
+      """
+      Ctor.
+
+      :param parent: The Web parent resource for the WAMP session.
+      :type parent: instance of WampHttpResourceSession
+      """
+      Resource.__init__(self)
+
+      self._parent = parent
+      self._debug = self._parent._parent._debug
+      self.reactor = self._parent._parent.reactor
+
+
+   def render_POST(self, request):
+      """
+      A client receives WAMP messages by issuing a HTTP/POST to this
+      Web resource. The request will immediately return when there are
+      messages pending to be received. When there are no such messages
+      pending, the request will "just hang", until either a message
+      arrives to be received or a timeout occurs.
+      """
+      self._parent._parent.setStandardHeaders(request)
+
+      payload = request.content.read()
+
+      try:
+         options = json.loads(payload)
+      except Exception as e:
+         return self._failRequest(request, "could not parse WAMP session open request body [%s]" % e)
+
+      if type(options) != dict:
+         return self._failRequest(request, "invalid type for WAMP session open request [was '%s', expected dictionary]" % type(options))
+
+      reason = options.get('reason', 'wamp.close.normal')
+
+      request.setHeader('content-type', 'application/json; charset=utf-8')
+
+      ret = {
+      }
+
+      return json.dumps(ret)
+
+
+
 class WampHttpResourceSession(Resource):
    """
    A Web resource representing an open WAMP session.
@@ -221,9 +266,11 @@ class WampHttpResourceSession(Resource):
 
       self._send = WampHttpResourceSessionSend(self)
       self._receive = WampHttpResourceSessionReceive(self)
+      self._close = WampHttpResourceSessionClose(self)
 
       self.putChild("send", self._send)
       self.putChild("receive", self._receive)
+      self.putChild("close", self._close)
 
       killAfter = self._parent._killAfter
       self._isalive = False
@@ -233,7 +280,7 @@ class WampHttpResourceSession(Resource):
             if self._debug:
                log.msg("killing inactive WAMP session (transport ID %s)" % self._transportid)
 
-            self.onClose(False, 5000, "Session inactive")
+            self.onClose(False, 5000, "session inactive")
             self._receive._kill()
             del self._parent._transports[self._transportid]
          else:
@@ -249,6 +296,47 @@ class WampHttpResourceSession(Resource):
          log.msg("WAMP session resource initialized (transport ID %s)" % self._transportid)
 
       self.onOpen()
+
+
+   def close(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.close`
+      """
+      if self.isOpen():
+         self.onClose(True, 1000, "session closed")
+         self._receive._kill()
+         del self._parent._transports[self._transportid]
+      else:
+         raise TransportLost()
+
+
+   def abort(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
+      """
+      if self.isOpen():
+         self.onClose(True, 1000, "session aborted")
+         self._receive._kill()
+         del self._parent._transports[self._transportid]
+      else:
+         raise TransportLost()
+
+
+   def onClose(self, wasClean, code, reason):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
+      """
+      ## WebSocket connection lost - fire off the WAMP
+      ## session close callback
+      try:
+         if self._debug_wamp:
+            print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
+         self._session.onClose(wasClean)
+      except Exception as e:
+         ## silently ignore exceptions raised here ..
+         if self._debug_wamp:
+            traceback.print_exc()
+      self._session = None
 
 
    def onOpen(self):
@@ -369,14 +457,19 @@ class WampHttpResourceOpen(Resource):
 
       request.setHeader('content-type', 'application/json; charset=utf-8')
 
-      #transportid = newid()
-      transportid = "kjmd3sBLOUnb3Fyr"
+      if self._parent._debug_session_id:
+         transportid = self._parent._debug_session_id
+      else:
+         transportid = newid()
 
       ## create instance of WampHttpResourceSession or subclass thereof ..
       ##
       self._parent._transports[transportid] = self._parent.protocol(self._parent, transportid, serializer)
 
-      ret = {'transport': transportid, 'protocol': protocol}
+      ret = {
+         'transport': transportid,
+         'protocol': protocol
+      }
 
       return json.dumps(ret)
 
@@ -384,7 +477,9 @@ class WampHttpResourceOpen(Resource):
 
 class WampHttpResource(Resource):
    """
-   A WAMP Web base resource.
+   A WAMP-over-Long-Poll resource for use with Twisted Web resource trees.
+
+   @see: https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport
    """
 
    protocol = WampHttpResourceSession
@@ -398,6 +493,7 @@ class WampHttpResource(Resource):
                 queueLimitBytes = 128 * 1024,
                 queueLimitMessages = 100,
                 debug = False,
+                debug_session_id = None,
                 reactor = None):
       """
       Create new HTTP WAMP Web resource.
@@ -426,6 +522,7 @@ class WampHttpResource(Resource):
       self.reactor = reactor
 
       self._debug = debug
+      self._debug_session_id = debug_session_id
       self._timeout = timeout
       self._killAfter = killAfter
       self._queueLimitBytes = queueLimitBytes
