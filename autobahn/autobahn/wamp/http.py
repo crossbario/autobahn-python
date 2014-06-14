@@ -37,7 +37,13 @@ from autobahn.util import newid
 from autobahn.wamp.websocket import parseSubprotocolIdentifier
 from autobahn.wamp.serializer import JsonSerializer
 
+from autobahn.websocket import protocol
+from autobahn.websocket import http
 
+from autobahn.wamp.interfaces import ITransport
+from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
+
+import traceback
 
 
 class WampHttpResourceSessionSend(Resource):
@@ -158,7 +164,6 @@ class WampHttpResourceSessionReceive(Resource):
 
 
 
-#class WampHttpResourceSession(Resource, WampProtocol):
 class WampHttpResourceSession(Resource):
    """
    A Web resource representing an open WAMP session.
@@ -177,18 +182,18 @@ class WampHttpResourceSession(Resource):
 
       self._parent = parent
       self._debug = self._parent._debug
+      self._debug_wamp = True
       self.reactor = self._parent.reactor
-
 
       self._transportid = transportid
       self._serializer = serializer
+      self._session = None
 
       self._send = WampHttpResourceSessionSend(self)
       self._receive = WampHttpResourceSessionReceive(self)
 
       self.putChild("send", self._send)
       self.putChild("receive", self._receive)
-
 
       killAfter = self._parent._killAfter
       self._isalive = False
@@ -216,10 +221,72 @@ class WampHttpResourceSession(Resource):
       self.onOpen()
 
 
+   def onOpen(self):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
+      """
+      ## WebSocket connection established. Now let the user WAMP session factory
+      ## create a new WAMP session and fire off session open callback.
+      try:
+         self._session = self._parent._factory()
+         self._session.onOpen(self)
+      except Exception as e:
+         if self.factory.debug_wamp:
+            traceback.print_exc()
+
+
    def sendMessage(self, bytes, isBinary):
       if self._debug:
          log.msg("WAMP session send bytes (transport ID %s): %s" % (self._transportid, bytes))
       self._receive.queue(bytes)
+
+
+   def onMessage(self, payload, isBinary):
+      """
+      Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
+      """
+      try:
+         msg = self._serializer.unserialize(payload, isBinary)
+         if self._debug_wamp:
+            print("RX {}".format(msg))
+         self._session.onMessage(msg)
+
+      except ProtocolError as e:
+         if self._debug_wamp:
+            traceback.print_exc()
+         reason = "WAMP Protocol Error ({})".format(e)
+         ## FIXME
+
+      except Exception as e:
+         if self._debug_wamp:
+            traceback.print_exc()
+         reason = "WAMP Internal Error ({})".format(e)
+         ## FIXME
+
+
+   def send(self, msg):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.send`
+      """
+      if self.isOpen():
+         try:
+            if self.debug_wamp:
+               print("TX {}".format(msg))
+            bytes, isBinary = self._serializer.serialize(msg)
+         except Exception as e:
+            ## all exceptions raised from above should be serialization errors ..
+            raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
+         else:
+            self.sendMessage(bytes, isBinary)
+      else:
+         raise TransportLost()
+
+
+   def isOpen(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
+      """
+      return self._session is not None
 
 
 
@@ -334,7 +401,24 @@ class WampHttpResource(Resource):
       self._queueLimitMessages = queueLimitMessages
 
       if serializers is None:
-         serializers = [JsonSerializer()]
+         serializers = []
+
+         ## try MsgPack WAMP serializer
+         try:
+            from autobahn.wamp.serializer import MsgPackSerializer
+            serializers.append(MsgPackSerializer())
+         except ImportError:
+            pass
+
+         ## try JSON WAMP serializer
+         try:
+            from autobahn.wamp.serializer import JsonSerializer
+            serializers.append(JsonSerializer())
+         except ImportError:
+            pass
+
+         if not serializers:
+            raise Exception("could not import any WAMP serializers")
 
       self._serializers = {}
       for ser in serializers:
