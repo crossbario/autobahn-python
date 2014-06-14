@@ -22,6 +22,8 @@ __all__ = ['WampHttpResource']
 
 
 import json
+import traceback
+
 from collections import deque
 
 from twisted.python import log
@@ -33,17 +35,12 @@ from twisted.web.server import NOT_DONE_YET
 
 from autobahn.util import newid
 
-#from autobahn.wamp.protocol import WampProtocol
 from autobahn.wamp.websocket import parseSubprotocolIdentifier
-from autobahn.wamp.serializer import JsonSerializer
 
-#from autobahn.websocket import protocol
-#from autobahn.websocket import http
+from autobahn.wamp.exception import ProtocolError, \
+                                    SerializationError, \
+                                    TransportLost
 
-from autobahn.wamp.interfaces import ITransport
-from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-
-import traceback
 
 
 class WampHttpResourceSessionSend(Resource):
@@ -53,6 +50,10 @@ class WampHttpResourceSessionSend(Resource):
 
    def __init__(self, parent):
       """
+      Ctor.
+
+      :param parent: The Web parent resource for the WAMP session.
+      :type parent: instance of WampHttpResourceSession
       """
       Resource.__init__(self)
 
@@ -63,13 +64,21 @@ class WampHttpResourceSessionSend(Resource):
 
    def render_POST(self, request):
       """
-      WAMP message send.
+      A client sends a message via WAMP-over-Longpoll by HTTP/POSTing
+      to this Web resource. The body of the POST should contain a batch
+      ## of WAMP messages which are serialized according to the selected
+      serializer, and delimited by a single \0 byte in between two WAMP
+      messages in the batch.
       """
       payload = request.content.read()
       try:
          if self._debug:
             log.msg("WAMP session data received (transport ID %s): %s" % (self._parent._transportid, payload))
-         self._parent.onMessage(payload, False)
+
+         ## process batch of WAMP messages
+         for data in payload.split("0x00"):
+            self._parent.onMessage(data, False)
+
       except Exception as e:
          request.setHeader('content-type', 'text/plain; charset=UTF-8')
          request.setResponseCode(http.BAD_REQUEST)
@@ -91,6 +100,10 @@ class WampHttpResourceSessionReceive(Resource):
 
    def __init__(self, parent):
       """
+      Ctor.
+
+      :param parent: The Web parent resource for the WAMP session.
+      :type parent: instance of WampHttpResourceSession
       """
       Resource.__init__(self)
 
@@ -113,11 +126,20 @@ class WampHttpResourceSessionReceive(Resource):
 
 
    def queue(self, data):
+      """
+      Enqueue data for receive by client.
+
+      :param data: The data to be received by the client.
+      :type data: bytes
+      """
       self._queue.append(data)
       self._trigger()
 
 
    def _kill(self):
+      """
+      Kill any outstanding request.
+      """
       if self._request:
          self._request.finish()
          self._request = None
@@ -125,10 +147,11 @@ class WampHttpResourceSessionReceive(Resource):
 
 
    def _trigger(self):
+      """
+      Trigger batched sending of queued messages.
+      """
       if self._request and len(self._queue):
 
-         ## batched sending of queued messages
-         ##
          self._request.write('[')
 
          while len(self._queue) > 0:
@@ -144,6 +167,13 @@ class WampHttpResourceSessionReceive(Resource):
 
 
    def render_POST(self, request):
+      """
+      A client receives WAMP messages by issuing a HTTP/POST to this
+      Web resource. The request will immediately return when there are
+      messages pending to be received. When there are no such messages
+      pending, the request will "just hang", until either a message
+      arrives to be received or a timeout occurs.
+      """
 
       self._parent._parent.setStandardHeaders(request)
       request.setHeader('content-type', 'application/json; charset=utf-8')
