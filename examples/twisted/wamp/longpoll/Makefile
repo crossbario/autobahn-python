@@ -1,5 +1,5 @@
 test:
-	PYTHONPATH=../../../../../autobahn python server.py
+	PYTHONPATH=../../../../autobahn python server.py
 
 open:
 	curl -H "Content-Type: application/json" \
