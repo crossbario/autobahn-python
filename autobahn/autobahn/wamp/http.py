@@ -37,8 +37,8 @@ from autobahn.util import newid
 from autobahn.wamp.websocket import parseSubprotocolIdentifier
 from autobahn.wamp.serializer import JsonSerializer
 
-from autobahn.websocket import protocol
-from autobahn.websocket import http
+#from autobahn.websocket import protocol
+#from autobahn.websocket import http
 
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
@@ -231,7 +231,7 @@ class WampHttpResourceSession(Resource):
          self._session = self._parent._factory()
          self._session.onOpen(self)
       except Exception as e:
-         if self.factory.debug_wamp:
+         if self._debug_wamp:
             traceback.print_exc()
 
 
@@ -270,7 +270,7 @@ class WampHttpResourceSession(Resource):
       """
       if self.isOpen():
          try:
-            if self.debug_wamp:
+            if self._debug_wamp:
                print("TX {}".format(msg))
             bytes, isBinary = self._serializer.serialize(msg)
          except Exception as e:
@@ -339,7 +339,8 @@ class WampHttpResourceOpen(Resource):
 
       request.setHeader('content-type', 'application/json; charset=utf-8')
 
-      transportid = newid()
+      #transportid = newid()
+      transportid = "kjmd3sBLOUnb3Fyr"
 
       ## create instance of WampHttpResourceSession or subclass thereof ..
       ##
