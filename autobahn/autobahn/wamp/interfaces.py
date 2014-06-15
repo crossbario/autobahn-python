@@ -452,7 +452,7 @@ class ICallee(ISession):
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
       If ``endpoint`` is an object, then each of the object's methods that are decorated
-      with :func:`autobahn.wamp.procedure` are registered as procedure endpoints, and a list of
+      with :func:`autobahn.wamp.register` are registered as procedure endpoints, and a list of
       Deferreds/Futures is returned that each resolves or rejects as above.
 
       :param endpoint: The endpoint or endpoint object called under the procedure.
@@ -588,7 +588,7 @@ class ISubscriber(ISession):
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
       If ``handler`` is an object, then each of the object's methods that are decorated
-      with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
+      with :func:`autobahn.wamp.subscribe` are subscribed as event handlers, and a list of
       Deferreds/Futures is returned that each resolves or rejects as above.
 
       :param handler: The event handler or handler object to receive events.

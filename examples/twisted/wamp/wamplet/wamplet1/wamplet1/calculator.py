@@ -24,17 +24,17 @@ class Calculator(object):
    An application component registering RPC endpoints using decorators.
    """
 
-   @wamp.procedure('com.mathservice.add2')
+   @wamp.register('com.mathservice.add2')
    def add2(self, x, y):
       return x + y
 
 
-   @wamp.procedure('com.mathservice.mul2')
+   @wamp.register('com.mathservice.mul2')
    def mul2(self, x, y):
       return x * y
 
 
-   @wamp.procedure('com.mathservice.div2')
+   @wamp.register('com.mathservice.div2')
    def square(self, x, y):
       if y:
          return float(x) / float(y)

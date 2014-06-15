@@ -68,7 +68,7 @@ class VoteGameBackend(ApplicationSession):
       log.msg("Database opened.")
 
 
-   @wamp.procedure("com.votegame.get_votes")
+   @wamp.register("com.votegame.get_votes")
    def get_votes(self):
       def run(txn):
          txn.execute("SELECT item, count FROM votes")
@@ -79,7 +79,7 @@ class VoteGameBackend(ApplicationSession):
       return self.db.runInteraction(run)
 
 
-   @wamp.procedure("com.votegame.vote")
+   @wamp.register("com.votegame.vote")
    def vote(self, item):
       if not item in self.config.extra['items']:
          raise ApplicationError("com.votegame.error.no_such_item", "no item '{}' to vote on".format(item))

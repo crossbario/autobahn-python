@@ -26,12 +26,12 @@ from autobahn.twisted.wamp import ApplicationSession
 
 class MyService1:
 
-   @wamp.procedure('com.mathservice.add2')
+   @wamp.register('com.mathservice.add2')
    def add2(self, x, y):
       return x + y
 
 
-   @wamp.procedure('com.mathservice.mul2')
+   @wamp.register('com.mathservice.mul2')
    def mul2(self, x, y):
       return x * y
 
@@ -44,7 +44,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
-      ## register all methods on this object decorated with "@wamp.procedure"
+      ## register all methods on this object decorated with "@wamp.register"
       ## as a RPC endpoint
       ##
       svc1 = MyService1()
@@ -60,12 +60,12 @@ class Component(ApplicationSession):
                print("Failed to register procedure: {}".format(res.value))
 
 
-   @wamp.procedure('com.mathservice.square2')
+   @wamp.register('com.mathservice.square2')
    def square2(self, x, y):
       return x * x + y * y
 
 
-   @wamp.procedure('com.mathservice.div2')
+   @wamp.register('com.mathservice.div2')
    def div2(self, x, y):
       if y:
          return float(x) / float(y)
