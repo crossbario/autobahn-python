@@ -24,6 +24,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 
 from autobahn.twisted import wamp, websocket
+from autobahn.wamp import types
 
 
 
@@ -71,7 +72,8 @@ if __name__ == '__main__':
    log.startLogging(sys.stdout)
 
    ## 1) create a WAMP application session factory
-   session_factory = wamp.ApplicationSessionFactory()
+   component_config = types.ComponentConfig(realm = "realm1")
+   session_factory = wamp.ApplicationSessionFactory(config = component_config)
    session_factory.session = MyFrontendComponent
 
    ## 2) create a WAMP-over-WebSocket transport client factory
