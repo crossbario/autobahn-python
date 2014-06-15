@@ -90,7 +90,7 @@ class TestSerializer(unittest.TestCase):
             msg2 = serializer.unserialize(bytes, binary)
 
             ## must be equal: message roundtrips via the serializer
-            self.assertEqual(msg, msg2)
+            self.assertEqual([msg], msg2)
 
 
    def test_caching(self):

@@ -1,4 +1,7 @@
 test:
+	PYTHONPATH=../../../../autobahn python test.py
+
+serve:
 	PYTHONPATH=../../../../autobahn python server.py
 
 open:
