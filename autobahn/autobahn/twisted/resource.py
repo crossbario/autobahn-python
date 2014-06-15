@@ -166,17 +166,7 @@ class WebSocketResource(object):
       ## which we will do a 2nd time), but it's totally non-invasive to our
       ## code. Maybe improve this.
       ##
-      args = []
-      for name, values in request.args.iteritems():
-          for value in values:
-              args.append(name + "=" + value)
-      #args = [name + "=" + value for value in values for name, values in request.args.iteritems()]
-      if args:
-          args = "?" + "&".join(args)
-      else:
-          args = ""
-      #args = args and ("?" + "&".join(args)) or ""
-      data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.path + args)
+      data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.uri)
       for h in request.requestHeaders.getAllRawHeaders():
          data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
       data += "\x0d\x0a"
