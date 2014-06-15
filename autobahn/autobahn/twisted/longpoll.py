@@ -23,6 +23,7 @@ __all__ = ['WampLongPollResource']
 
 import json
 import traceback
+import binascii
 
 from collections import deque
 
@@ -59,7 +60,6 @@ class WampLongPollResourceSessionSend(Resource):
 
       self._parent = parent
       self._debug = self._parent._parent._debug
-      self.reactor = self._parent.reactor
 
 
    def render_POST(self, request):
@@ -70,24 +70,31 @@ class WampLongPollResourceSessionSend(Resource):
       serializer, and delimited by a single \0 byte in between two WAMP
       messages in the batch.
       """
+      serializer = self._parent._serializer
+      failRequest = self._parent._parent.failRequest
+
+      headers = request.getAllHeaders()
+
+      content_type = headers.get('content-type', None)
+
+      if content_type != serializer.MIME_TYPE:
+         return failRequest(request, "request MIME type does not match serializer")
+
       payload = request.content.read()
+
       try:
          if self._debug:
-            log.msg("WAMP session data received (transport ID %s): %s" % (self._parent._transportid, payload))
+            log.msg("WAMP session data received (transport ID {0}): {1}".format(self._parent._transportid, binascii.hexlify(payload)))
 
          ## process batch of WAMP messages
          self._parent.onMessage(payload, None)
 
       except Exception as e:
-         request.setHeader('content-type', 'text/plain; charset=UTF-8')
-         request.setResponseCode(http.BAD_REQUEST)
-         return "could not unserialize WAMP message [%s]" % e
+         return failRequest(request, "could not unserialize WAMP message: {0}".format(e))
 
       else:
          request.setResponseCode(http.NO_CONTENT)
          self._parent._parent.setStandardHeaders(request)
-         request.setHeader('content-type', 'application/json; charset=utf-8')
-
          self._parent._isalive = True
          return ""
 
@@ -118,9 +125,9 @@ class WampLongPollResourceSessionReceive(Resource):
       if self._debug:
          def logqueue():
             if not self._killed:
-               log.msg("WAMP session send queue length (transport ID %s): %s" % (self._parent._transportid, len(self._queue)))
+               log.msg("WAMP session send queue length (transport ID {0}): {1}".format(self._parent._transportid, len(self._queue)))
                if not self._request:
-                  log.msg("WAMP session has no XHR poll request (transport ID %s)" % self._parent._transportid)
+                  log.msg("WAMP session has no XHR poll request (transport ID {0})".format(self._parent._transportid))
                self.reactor.callLater(1, logqueue)
          logqueue()
 
@@ -170,13 +177,13 @@ class WampLongPollResourceSessionReceive(Resource):
       """
 
       self._parent._parent.setStandardHeaders(request)
-      request.setHeader('content-type', 'application/json; charset=utf-8')
+      request.setHeader('content-type', self._parent._serializer.MIME_TYPE)
 
       self._request = request
 
       def cancel(err):
          if self._debug:
-            log.msg("WAMP session XHR poll request gone (transport ID %s" % self._parent._transportid)
+            log.msg("WAMP session XHR poll request gone (transport ID {0})".format(self._parent._transportid))
          self._request = None
 
       request.notifyFinish().addErrback(cancel)
@@ -204,7 +211,6 @@ class WampLongPollResourceSessionClose(Resource):
 
       self._parent = parent
       self._debug = self._parent._parent._debug
-      self.reactor = self._parent._parent.reactor
 
 
    def render_POST(self, request):
@@ -215,26 +221,46 @@ class WampLongPollResourceSessionClose(Resource):
       pending, the request will "just hang", until either a message
       arrives to be received or a timeout occurs.
       """
-      self._parent._parent.setStandardHeaders(request)
+      serializer = self._parent._serializer
+      failRequest = self._parent._parent.failRequest
+
+      headers = request.getAllHeaders()
+
+      ## unserialize the opening dictionary from the HTTP/POST body
+      ## using the serializer as indicated by the request body MIME type
+      ##
+      content_type = headers.get('content-type', None)
+
+      if content_type != serializer.MIME_TYPE:
+         return failRequest(request, "request MIME type does not match serializer")
+
 
       payload = request.content.read()
 
       try:
-         options = json.loads(payload)
+         msgs = serializer._serializer.unserialize(payload)
+         options = msgs[0]
       except Exception as e:
-         return self._failRequest(request, "could not parse WAMP session open request body [%s]" % e)
+         return failRequest(request, "could not parse WAMP session close request body: {0}".format(e))
 
       if type(options) != dict:
-         return self._failRequest(request, "invalid type for WAMP session open request [was '%s', expected dictionary]" % type(options))
+         return failRequest(request, "invalid type for WAMP session close request [was {0}, expected dictionary]".format(type(options)))
 
       reason = options.get('reason', 'wamp.close.normal')
 
-      request.setHeader('content-type', 'application/json; charset=utf-8')
+      ## now actually close the session
+      self._parent.close()
 
-      ret = {
+      self._parent._parent.setStandardHeaders(request)
+
+      request.setHeader('content-type', serializer.MIME_TYPE)
+
+      result = {
       }
 
-      return json.dumps(ret)
+      bytes = serializer._serializer.serialize(result)
+
+      return bytes
 
 
 
@@ -277,14 +303,14 @@ class WampLongPollResourceSession(Resource):
       def killIfDead():
          if not self._isalive:
             if self._debug:
-               log.msg("killing inactive WAMP session (transport ID %s)" % self._transportid)
+               log.msg("killing inactive WAMP session (transport ID {0})".format(self._transportid))
 
             self.onClose(False, 5000, "session inactive")
             self._receive._kill()
             del self._parent._transports[self._transportid]
          else:
             if self._debug:
-               log.msg("WAMP session still alive (transport ID %s)" % self._transportid)
+               log.msg("WAMP session still alive (transport ID {0})".format(self._transportid))
 
             self._isalive = False
             self.reactor.callLater(killAfter, killIfDead)
@@ -292,7 +318,7 @@ class WampLongPollResourceSession(Resource):
       self.reactor.callLater(killAfter, killIfDead)
 
       if self._debug:
-         log.msg("WAMP session resource initialized (transport ID %s)" % self._transportid)
+         log.msg("WAMP session resource initialized (transport ID {0})".format(self._transportid))
 
       self.onOpen()
 
@@ -329,7 +355,7 @@ class WampLongPollResourceSession(Resource):
       ## session close callback
       try:
          if self._debug_wamp:
-            print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
+            print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
@@ -354,7 +380,7 @@ class WampLongPollResourceSession(Resource):
 
    def sendMessage(self, bytes, isBinary):
       if self._debug:
-         log.msg("WAMP session send bytes (transport ID %s): %s" % (self._transportid, bytes))
+         log.msg("WAMP session send bytes (transport ID {0}): {1}".format(self._transportid, binascii.hexlify(bytes)))
       self._receive.queue(bytes)
 
 
@@ -364,7 +390,7 @@ class WampLongPollResourceSession(Resource):
       """
       for msg in self._serializer.unserialize(payload, isBinary):
          if self._debug_wamp:
-            print("RX {}".format(msg))
+            print("RX {0}".format(msg))
          self._session.onMessage(msg)
 
 
@@ -375,11 +401,11 @@ class WampLongPollResourceSession(Resource):
       if self.isOpen():
          try:
             if self._debug_wamp:
-               print("TX {}".format(msg))
+               print("TX {0}".format(msg))
             bytes, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
-            raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
+            raise SerializationError("unable to serialize WAMP application payload ({0})".format(e))
          else:
             self.sendMessage(bytes, isBinary)
       else:
@@ -408,30 +434,43 @@ class WampLongPollResourceOpen(Resource):
       self.reactor = self._parent.reactor
 
 
-   def _failRequest(self, request, msg):
-      request.setHeader('content-type', 'text/plain; charset=UTF-8')
-      request.setResponseCode(http.BAD_REQUEST)
-      return msg
-
 
    def render_POST(self, request):
       """
       Request to create a new WAMP session.
       """
-      self._parent.setStandardHeaders(request)
+      headers = request.getAllHeaders()
+
+      ## unserialize the opening dictionary from the HTTP/POST body
+      ## using the serializer as indicated by the request body MIME type
+      ##
+      content_type = headers.get('content-type', None)
+      serializer = None
+      for ser in self._parent._serializers.values():
+         if content_type == ser.MIME_TYPE:
+            serializer = ser
+            break
+
+      if not ser:
+         return self._parent.failRequest(request, "request MIME type does not match any serializer")
 
       payload = request.content.read()
-
       try:
-         options = json.loads(payload)
+         msgs = serializer._serializer.unserialize(payload)
+         options = msgs[0]
       except Exception as e:
-         return self._failRequest(request, "could not parse WAMP session open request body [%s]" % e)
+         return self._parent.failRequest(request, "could not parse WAMP session open request body: {0}".format(e))
 
       if type(options) != dict:
-         return self._failRequest(request, "invalid type for WAMP session open request [was '%s', expected dictionary]" % type(options))
+         return self._parent.failRequest(request, "invalid type for WAMP session open request [was {0}, expected dictionary]".format(type(options)))
 
       if not options.has_key('protocols'):
-         return self._failRequest(request, "missing attribute 'protocols' in WAMP session open request")
+         return self._parent.failRequest(request, "missing attribute 'protocols' in WAMP session open request")
+
+
+      ## ok, now create the response according to the serializer chosen in the "protocols" attribute
+      ##
+      self._parent.setStandardHeaders(request)
 
       protocol = None
       for p in options['protocols']:
@@ -442,11 +481,10 @@ class WampLongPollResourceOpen(Resource):
             break
 
       if protocol is None:
-         return self._failRequest(request, "no common protocol to speak (I speak: {})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
-
-      request.setHeader('content-type', 'application/json; charset=utf-8')
+         return self._failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
 
       if self._parent._debug_session_id:
+         ## use fixed transport ID for debugging purposes
          transportid = self._parent._debug_session_id
       else:
          transportid = newid()
@@ -455,18 +493,29 @@ class WampLongPollResourceOpen(Resource):
       ##
       self._parent._transports[transportid] = self._parent.protocol(self._parent, transportid, serializer)
 
-      ret = {
+      request.setHeader('content-type', serializer.MIME_TYPE)
+
+      result = {
          'transport': transportid,
          'protocol': protocol
       }
 
-      return json.dumps(ret)
+      bytes = serializer._serializer.serialize(result)
+
+      return bytes
 
 
 
 class WampLongPollResource(Resource):
    """
    A WAMP-over-Long-Poll resource for use with Twisted Web resource trees.
+
+   This resource exposes the following paths:
+
+   * `<Base URL>/open`
+   * `<Base URL>/<Transport ID>/send`
+   * `<Base URL>/<Transport ID>/receive`
+   * `<Base URL>/<Transport ID>/close`
 
    @see: https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport
    """
@@ -487,6 +536,8 @@ class WampLongPollResource(Resource):
       """
       Create new HTTP WAMP Web resource.
 
+      :param factory: A (router) session factory.
+      :type factory: Instance of `RouterSessionFactory`.
       :param serializers: List of WAMP serializers.
       :type serializers: List of WampSerializer objects.
       :param timeout: XHR polling timeout in seconds.
@@ -499,6 +550,10 @@ class WampLongPollResource(Resource):
       :type queueLimitMessages: int
       :param debug: Enable debug logging.
       :type debug: bool
+      :param debug_session_id: If given, use this fixed transport ID.
+      :type debug_session_id: str
+      :param reactor: The Twisted reactor to run under.
+      :type reactor: obj
       """
       Resource.__init__(self)
 
@@ -555,16 +610,13 @@ class WampLongPollResource(Resource):
 
    def getChild(self, name, request):
       """
-      Returns send/receive resource for transport.
-
-      <Base URL>/<Transport ID>/send
-      <Base URL>/<Transport ID>/receive
+      Returns send/receive/close resource for transport.
       """
       if name not in self._transports:
-         return NoResource("No WAMP transport '%s'" % name)
+         return NoResource("no WAMP transport '{}'".format(name))
 
-      if len(request.postpath) != 1 or request.postpath[0] not in ['send', 'receive']:
-         return NoResource("Invalid WAMP transport operation '%s'" % request.postpath[0])
+      if len(request.postpath) != 1 or request.postpath[0] not in ['send', 'receive', 'close']:
+         return NoResource("invalid WAMP transport operation '{}'".format(request.postpath))
 
       return self._transports[name]
 
@@ -573,13 +625,23 @@ class WampLongPollResource(Resource):
       """
       Set standard HTTP response headers.
       """
-      origin = request.getHeader("Origin")
+      origin = request.getHeader("origin")
       if origin is None or origin == "null":
          origin = "*"
       request.setHeader('access-control-allow-origin', origin)
       request.setHeader('access-control-allow-credentials', 'true')
-      request.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+      request.setHeader('cache-control', 'no-store, no-cache, must-revalidate, max-age=0')
 
-      headers = request.getHeader('Access-Control-Request-Headers')
+      headers = request.getHeader('access-control-request-headers')
       if headers is not None:
-         request.setHeader('Access-Control-Allow-Headers', headers)
+         request.setHeader('access-control-allow-headers', headers)
+
+
+   def failRequest(self, request, msg):
+      """
+      Fails a request to the long-poll service.
+      """
+      self.setStandardHeaders(request)
+      request.setHeader('content-type', 'text/plain; charset=UTF-8')
+      request.setResponseCode(http.BAD_REQUEST)
+      return msg

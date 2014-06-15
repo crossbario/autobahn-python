@@ -192,6 +192,7 @@ IObjectSerializer.register(JsonObjectSerializer)
 class JsonSerializer(Serializer):
 
    SERIALIZER_ID = "json"
+   MIME_TYPE = "application/json"
 
    def __init__(self, batched = False):
       """
@@ -297,6 +298,7 @@ else:
    class MsgPackSerializer(Serializer):
 
       SERIALIZER_ID = "msgpack"
+      MIME_TYPE = "application/x-msgpack"
 
       def __init__(self, batched = False):
          """
