@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-__all__ = ['WampHttpResource']
+__all__ = ['WampLongPollResource']
 
 
 import json
@@ -43,9 +43,9 @@ from autobahn.wamp.exception import ProtocolError, \
 
 
 
-class WampHttpResourceSessionSend(Resource):
+class WampLongPollResourceSessionSend(Resource):
    """
-   A Web resource for sending via XHR that is part of a WampHttpResourceSession.
+   A Web resource for sending via XHR that is part of a WampLongPollResourceSession.
    """
 
    def __init__(self, parent):
@@ -53,7 +53,7 @@ class WampHttpResourceSessionSend(Resource):
       Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
-      :type parent: instance of WampHttpResourceSession
+      :type parent: instance of WampLongPollResourceSession
       """
       Resource.__init__(self)
 
@@ -93,9 +93,9 @@ class WampHttpResourceSessionSend(Resource):
 
 
 
-class WampHttpResourceSessionReceive(Resource):
+class WampLongPollResourceSessionReceive(Resource):
    """
-   A Web resource for receiving via XHR that is part of a WampHttpResourceSession.
+   A Web resource for receiving via XHR that is part of a WampLongPollResourceSession.
    """
 
    def __init__(self, parent):
@@ -103,7 +103,7 @@ class WampHttpResourceSessionReceive(Resource):
       Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
-      :type parent: instance of WampHttpResourceSession
+      :type parent: instance of WampLongPollResourceSession
       """
       Resource.__init__(self)
 
@@ -189,9 +189,9 @@ class WampHttpResourceSessionReceive(Resource):
 
 
 
-class WampHttpResourceSessionClose(Resource):
+class WampLongPollResourceSessionClose(Resource):
    """
-   A Web resource for closing the Long-poll session WampHttpResourceSession.
+   A Web resource for closing the Long-poll session WampLongPollResourceSession.
    """
 
    def __init__(self, parent):
@@ -199,7 +199,7 @@ class WampHttpResourceSessionClose(Resource):
       Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
-      :type parent: instance of WampHttpResourceSession
+      :type parent: instance of WampLongPollResourceSession
       """
       Resource.__init__(self)
 
@@ -239,7 +239,7 @@ class WampHttpResourceSessionClose(Resource):
 
 
 
-class WampHttpResourceSession(Resource):
+class WampLongPollResourceSession(Resource):
    """
    A Web resource representing an open WAMP session.
    """
@@ -249,7 +249,7 @@ class WampHttpResourceSession(Resource):
       Create a new Web resource representing a WAMP session.
 
       :param parent: The WAMP Web base resource.
-      :type parent: Instance of WampHttpResource.
+      :type parent: Instance of WampLongPollResource.
       :param serializer: The WAMP serializer in use for this session.
       :type serializer: An instance of WampSerializer.
       """
@@ -264,9 +264,9 @@ class WampHttpResourceSession(Resource):
       self._serializer = serializer
       self._session = None
 
-      self._send = WampHttpResourceSessionSend(self)
-      self._receive = WampHttpResourceSessionReceive(self)
-      self._close = WampHttpResourceSessionClose(self)
+      self._send = WampLongPollResourceSessionSend(self)
+      self._receive = WampLongPollResourceSessionReceive(self)
+      self._close = WampLongPollResourceSessionClose(self)
 
       self.putChild("send", self._send)
       self.putChild("receive", self._receive)
@@ -408,7 +408,7 @@ class WampHttpResourceSession(Resource):
 
 
 
-class WampHttpResourceOpen(Resource):
+class WampLongPollResourceOpen(Resource):
    """
    A Web resource for creating new WAMP sessions.
    """
@@ -462,7 +462,7 @@ class WampHttpResourceOpen(Resource):
       else:
          transportid = newid()
 
-      ## create instance of WampHttpResourceSession or subclass thereof ..
+      ## create instance of WampLongPollResourceSession or subclass thereof ..
       ##
       self._parent._transports[transportid] = self._parent.protocol(self._parent, transportid, serializer)
 
@@ -475,14 +475,14 @@ class WampHttpResourceOpen(Resource):
 
 
 
-class WampHttpResource(Resource):
+class WampLongPollResource(Resource):
    """
    A WAMP-over-Long-Poll resource for use with Twisted Web resource trees.
 
    @see: https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport
    """
 
-   protocol = WampHttpResourceSession
+   protocol = WampLongPollResourceSession
 
 
    def __init__(self,
@@ -556,10 +556,10 @@ class WampHttpResource(Resource):
 
       ## <Base URL>/open
       ##
-      self.putChild("open", WampHttpResourceOpen(self))
+      self.putChild("open", WampLongPollResourceOpen(self))
 
       if self._debug:
-         log.msg("WampHttpResource initialized")
+         log.msg("WampLongPollResource initialized")
 
 
    def getChild(self, name, request):
