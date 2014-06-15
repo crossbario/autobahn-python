@@ -32,8 +32,12 @@ from autobahn.twisted.resource import WebSocketResource, \
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
+   def onConnect(self, request):
+      print("WebSocket connection request: {}".format(request))
+
    def onMessage(self, payload, isBinary):
       self.sendMessage(payload, isBinary)
+
 
 
 if __name__ == '__main__':
