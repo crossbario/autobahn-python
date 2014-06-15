@@ -295,6 +295,12 @@ class WampLongPollResourceSession(Resource):
       self._serializer = serializer
       self._session = None
 
+      ## session authentication information
+      ##
+      self._authid = None
+      self._authrole = None
+      self._authmethod = None
+
       self._send = WampLongPollResourceSessionSend(self)
       self._receive = WampLongPollResourceSessionReceive(self)
       self._close = WampLongPollResourceSessionClose(self)
