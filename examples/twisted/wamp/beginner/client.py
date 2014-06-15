@@ -76,12 +76,16 @@ if __name__ == '__main__':
    session_factory = wamp.ApplicationSessionFactory(config = component_config)
    session_factory.session = MyFrontendComponent
 
-   from autobahn.wamp.serializer import *
-   serializers = []
-   #serializers.append(JsonSerializer(batched = True))
-   serializers.append(MsgPackSerializer(batched = True))
-   #serializers.append(JsonSerializer())
-   #serializers.append(MsgPackSerializer())
+   ## optional: use specific set of serializers
+   if False:
+      serializers = None
+   else:
+      from autobahn.wamp.serializer import *
+      serializers = []
+      serializers.append(JsonSerializer(batched = True))
+      #serializers.append(MsgPackSerializer(batched = True))
+      #serializers.append(JsonSerializer())
+      #serializers.append(MsgPackSerializer())
 
    ## 2) create a WAMP-over-WebSocket transport client factory
    transport_factory = websocket.WampWebSocketClientFactory(session_factory,

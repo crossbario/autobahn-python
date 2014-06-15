@@ -176,6 +176,8 @@ class JsonObjectSerializer:
          chunks = payload.split('\30')[:-1]
       else:
          chunks = [payload]
+      if len(chunks) == 0:
+         raise Exception("batch format error")
       if six.PY3:
          return [json.loads(data.decode('utf8')) for data in chunks]
       else:

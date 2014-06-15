@@ -1,7 +1,4 @@
 test:
-	PYTHONPATH=../../../../autobahn python test.py
-
-serve:
 	PYTHONPATH=../../../../autobahn python server.py
 
 open:
@@ -22,3 +19,7 @@ subscribe:
 	curl -H "Content-Type: application/json" \
 	   -d '[32, 1, {}, "com.myapp.topic1"]' \
 	   http://127.0.0.1:8080/lp/kjmd3sBLOUnb3Fyr/send
+
+
+test_ser:
+	PYTHONPATH=../../../../autobahn python test.py

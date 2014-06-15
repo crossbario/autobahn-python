@@ -76,20 +76,20 @@ class WampLongPollResourceSessionSend(Resource):
             log.msg("WAMP session data received (transport ID %s): %s" % (self._parent._transportid, payload))
 
          ## process batch of WAMP messages
-         for data in payload.split("\30"):
-            self._parent.onMessage(data, False)
+         self._parent.onMessage(payload, None)
 
       except Exception as e:
          request.setHeader('content-type', 'text/plain; charset=UTF-8')
          request.setResponseCode(http.BAD_REQUEST)
          return "could not unserialize WAMP message [%s]" % e
 
-      request.setResponseCode(http.NO_CONTENT)
-      self._parent._parent.setStandardHeaders(request)
-      request.setHeader('content-type', 'application/json; charset=utf-8')
+      else:
+         request.setResponseCode(http.NO_CONTENT)
+         self._parent._parent.setStandardHeaders(request)
+         request.setHeader('content-type', 'application/json; charset=utf-8')
 
-      self._parent._isalive = True
-      return ""
+         self._parent._isalive = True
+         return ""
 
 
 
@@ -155,7 +155,6 @@ class WampLongPollResourceSessionReceive(Resource):
          while len(self._queue) > 0:
             msg = self._queue.popleft()
             self._request.write(msg)
-            self._request.write("\30")
 
          self._request.finish()
          self._request = None
@@ -363,23 +362,10 @@ class WampLongPollResourceSession(Resource):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
       """
-      try:
-         msg = self._serializer.unserialize(payload, isBinary)
+      for msg in self._serializer.unserialize(payload, isBinary):
          if self._debug_wamp:
             print("RX {}".format(msg))
          self._session.onMessage(msg)
-
-      except ProtocolError as e:
-         if self._debug_wamp:
-            traceback.print_exc()
-         reason = "WAMP Protocol Error ({})".format(e)
-         ## FIXME
-
-      except Exception as e:
-         if self._debug_wamp:
-            traceback.print_exc()
-         reason = "WAMP Internal Error ({})".format(e)
-         ## FIXME
 
 
    def send(self, msg):
@@ -454,6 +440,9 @@ class WampLongPollResourceOpen(Resource):
             serializer = self._parent._serializers[serializerId]
             protocol = p
             break
+
+      if protocol is None:
+         return self._failRequest(request, "no common protocol to speak (I speak: {})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
 
       request.setHeader('content-type', 'application/json; charset=utf-8')
 
@@ -534,6 +523,7 @@ class WampLongPollResource(Resource):
          ## try MsgPack WAMP serializer
          try:
             from autobahn.wamp.serializer import MsgPackSerializer
+            serializers.append(MsgPackSerializer(batched = True))
             serializers.append(MsgPackSerializer())
          except ImportError:
             pass
@@ -541,6 +531,7 @@ class WampLongPollResource(Resource):
          ## try JSON WAMP serializer
          try:
             from autobahn.wamp.serializer import JsonSerializer
+            serializers.append(JsonSerializer(batched = True))
             serializers.append(JsonSerializer())
          except ImportError:
             pass
