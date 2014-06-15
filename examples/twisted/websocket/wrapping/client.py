@@ -22,7 +22,7 @@ from twisted.internet.protocol import Protocol
 class HelloClientProtocol(Protocol):
 
    def connectionMade(self):
-      print("connectionMade")
+      print("connectionMade", self.transport.getHost(), self.transport.getPeer())
       self.transport.write('hello' * 100)
 
    def dataReceived(self, data):
@@ -44,6 +44,7 @@ if __name__ == '__main__':
    wrappedFactory = Factory.forProtocol(HelloClientProtocol)
    factory = WrappingWebSocketClientFactory(wrappedFactory,
       "ws://localhost:9000",
+      debug = False,
       enableCompression = False,
       autoFragmentSize = 1024)
 
