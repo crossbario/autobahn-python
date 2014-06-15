@@ -24,26 +24,7 @@ from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession
 
 
-
-class Component(ApplicationSession):
-   """
-   An application component registering RPC endpoints using decorators.
-   """
-
-   @inlineCallbacks
-   def onJoin(self, details):
-      ## register all methods on this object decorated with "@wamp.procedure"
-      ## as a RPC endpoint
-      ##
-      results = yield self.register(self)
-      for success, res in results:
-         if success:
-            ## res is an Registration instance
-            print("Ok, registered procedure with registration ID {}".format(res.id))
-         else:
-            ## res is an Failure instance
-            print("Failed to register procedure: {}".format(res.value))
-
+class MyService1:
 
    @wamp.procedure('com.mathservice.add2')
    def add2(self, x, y):
@@ -55,8 +36,37 @@ class Component(ApplicationSession):
       return x * y
 
 
+
+class Component(ApplicationSession):
+   """
+   An application component registering RPC endpoints using decorators.
+   """
+
+   @inlineCallbacks
+   def onJoin(self, details):
+      ## register all methods on this object decorated with "@wamp.procedure"
+      ## as a RPC endpoint
+      ##
+      svc1 = MyService1()
+
+      for obj in [self, svc1]:
+         results = yield self.register(obj)
+         for success, res in results:
+            if success:
+               ## res is an Registration instance
+               print("Ok, registered procedure on {} with registration ID {}".format(obj, res.id))
+            else:
+               ## res is an Failure instance
+               print("Failed to register procedure: {}".format(res.value))
+
+
+   @wamp.procedure('com.mathservice.square2')
+   def square2(self, x, y):
+      return x * x + y * y
+
+
    @wamp.procedure('com.mathservice.div2')
-   def square(self, x, y):
+   def div2(self, x, y):
       if y:
          return float(x) / float(y)
       else:
