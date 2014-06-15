@@ -159,7 +159,13 @@ class WampLongPollResourceSessionReceive(Resource):
       """
       if self._request and len(self._queue):
 
-         while len(self._queue) > 0:
+         if self._parent._serializer._serializer._batched:
+            ## in batched mode, write all pending messages
+            while len(self._queue) > 0:
+               msg = self._queue.popleft()
+               self._request.write(msg)
+         else:
+            ## in unbatched mode, only write 1 pending message
             msg = self._queue.popleft()
             self._request.write(msg)
 
