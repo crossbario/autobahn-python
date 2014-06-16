@@ -17,7 +17,12 @@
 ###############################################################################
 
 import datetime
-import asyncio
+
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
 
 from autobahn import wamp
 from autobahn.asyncio.wamp import ApplicationSession
@@ -46,7 +51,7 @@ class Component1(ApplicationSession):
       ##
       self.calculator = Calculator()
 
-      ## register all methods on the "calculator" decorated with "@wamp.procedure"
+      ## register all methods on the "calculator" decorated with "@wamp.register"
       ##
       results = yield from self.register(self.calculator)
       for res in results:

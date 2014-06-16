@@ -18,7 +18,11 @@
 
 import datetime
 
-import asyncio
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
 
 from autobahn import wamp
 from autobahn.asyncio.wamp import ApplicationSession
@@ -33,7 +37,7 @@ class Component(ApplicationSession):
    @asyncio.coroutine
    def onJoin(self, details):
 
-      ## register all methods on this object decorated with "@wamp.procedure"
+      ## register all methods on this object decorated with "@wamp.register"
       ## as a RPC endpoint
       ##
       results = yield from self.register(self)
@@ -46,17 +50,17 @@ class Component(ApplicationSession):
             print("Failed to register procedure: {}".format(res))
 
 
-   @wamp.procedure('com.mathservice.add2')
+   @wamp.register('com.mathservice.add2')
    def add2(self, x, y):
       return x + y
 
 
-   @wamp.procedure('com.mathservice.mul2')
+   @wamp.register('com.mathservice.mul2')
    def mul2(self, x, y):
       return x * y
 
 
-   @wamp.procedure('com.mathservice.div2')
+   @wamp.register('com.mathservice.div2')
    def square(self, x, y):
       if y:
          return float(x) / float(y)

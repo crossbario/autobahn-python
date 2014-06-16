@@ -330,6 +330,14 @@ class WrappingWebSocketAdapter:
       ## part of ITransport
       self.sendClose()
 
+   def getPeer(self):
+      ## part of ITransport
+      return self.transport.getPeer()
+
+   def getHost(self):
+      ## part of ITransport
+      return self.transport.getHost()
+
 
 
 class WrappingWebSocketServerProtocol(WrappingWebSocketAdapter, WebSocketServerProtocol):

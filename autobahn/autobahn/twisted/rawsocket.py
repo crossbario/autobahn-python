@@ -69,11 +69,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
    def stringReceived(self, payload):
       if self.factory.debug:
          log.msg("RX octets: {}".format(binascii.hexlify(payload)))
-      try:         
-         msg = self.factory._serializer.unserialize(payload)
-         if self.factory.debug:
-            log.msg("RX WAMP message: {}".format(msg))
-         self._session.onMessage(msg)
+      try:
+         for msg in self.factory._serializer.unserialize(payload):
+            if self.factory.debug:
+               log.msg("RX WAMP message: {}".format(msg))
+            self._session.onMessage(msg)
 
       except ProtocolError as e:
          if self.factory.debug:

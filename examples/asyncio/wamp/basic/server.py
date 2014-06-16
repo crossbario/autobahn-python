@@ -19,8 +19,13 @@
 
 if __name__ == '__main__':
 
-   import sys, argparse, asyncio
+   import sys, argparse
 
+   try:
+      import asyncio
+   except ImportError:
+      ## Trollius >= 0.3 was renamed
+      import trollius as asyncio
 
    ## parse command line arguments
    ##

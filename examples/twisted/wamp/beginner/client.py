@@ -24,6 +24,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import clientFromString
 
 from autobahn.twisted import wamp, websocket
+from autobahn.wamp import types
 
 
 
@@ -71,13 +72,24 @@ if __name__ == '__main__':
    log.startLogging(sys.stdout)
 
    ## 1) create a WAMP application session factory
-   session_factory = wamp.ApplicationSessionFactory()
+   component_config = types.ComponentConfig(realm = "realm1")
+   session_factory = wamp.ApplicationSessionFactory(config = component_config)
    session_factory.session = MyFrontendComponent
 
+   ## optional: use specific set of serializers
+   if False:
+      serializers = None
+   else:
+      from autobahn.wamp.serializer import *
+      serializers = []
+      serializers.append(JsonSerializer(batched = True))
+      #serializers.append(MsgPackSerializer(batched = True))
+      #serializers.append(JsonSerializer())
+      #serializers.append(MsgPackSerializer())
+
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = websocket.WampWebSocketClientFactory(session_factory, \
-                                                            debug = False, \
-                                                            debug_wamp = False)
+   transport_factory = websocket.WampWebSocketClientFactory(session_factory,
+      serializers = serializers, debug = True, debug_wamp = False)
 
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")

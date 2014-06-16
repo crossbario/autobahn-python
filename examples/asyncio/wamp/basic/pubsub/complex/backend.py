@@ -18,7 +18,11 @@
 
 import random
 
-import asyncio
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
 
 from autobahn.wamp.types import SubscribeOptions
 from autobahn.asyncio.wamp import ApplicationSession

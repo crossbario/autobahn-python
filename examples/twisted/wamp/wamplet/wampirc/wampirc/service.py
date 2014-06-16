@@ -53,7 +53,7 @@ class IRCComponent(ApplicationSession):
       self._bot_no = 0
 
 
-   @wamp.procedure('com.myapp.start_bot')
+   @wamp.register('com.myapp.start_bot')
    def start_bot(self, nick, channels):
       self._bot_no += 1
       id = self._bot_no
@@ -71,7 +71,7 @@ class IRCComponent(ApplicationSession):
       return d
 
 
-   @wamp.procedure('com.myapp.stop_bot')
+   @wamp.register('com.myapp.stop_bot')
    def stop_bot(self, id):
       if id in self._bots:
          f = self._bots[id].factory

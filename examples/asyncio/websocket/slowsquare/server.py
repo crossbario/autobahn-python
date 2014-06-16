@@ -40,7 +40,7 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
          try:
             res = yield from self.slowsquare(x)
          except Exception as e:
-            self.sendClose(1000, str(e))
+            self.sendClose(1000, "Exception raised: {0}".format(e))
          else:
             self.sendMessage(json.dumps(res).encode('utf8'))
 
@@ -48,7 +48,11 @@ class SlowSquareServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-   import asyncio
+   try:
+      import asyncio
+   except ImportError:
+      ## Trollius >= 0.3 was renamed
+      import trollius as asyncio
 
    factory = WebSocketServerFactory("ws://localhost:9000", debug = False)
    factory.protocol = SlowSquareServerProtocol

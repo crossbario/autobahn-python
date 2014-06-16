@@ -46,7 +46,7 @@ class Component1(ApplicationSession):
       ##
       self.calculator = Calculator()
 
-      ## register all methods on the "calculator" decorated with "@wamp.procedure"
+      ## register all methods on the "calculator" decorated with "@wamp.register"
       ##
       results = yield self.register(self.calculator)
       for success, res in results:

@@ -84,10 +84,10 @@ class WampWebSocketProtocol:
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
       """
       try:
-         msg = self._serializer.unserialize(payload, isBinary)
-         if self.factory.debug_wamp:
-            print("RX {}".format(msg))
-         self._session.onMessage(msg)
+         for msg in self._serializer.unserialize(payload, isBinary):
+            if self.factory.debug_wamp:
+               print("RX {}".format(msg))
+            self._session.onMessage(msg)
 
       except ProtocolError as e:
          if self.factory.debug_wamp:
@@ -158,7 +158,7 @@ def parseSubprotocolIdentifier(subprotocol):
       if s[0] != "wamp":
          raise Exception("invalid protocol %s" % s[0])
       version = int(s[1])
-      serializerId = s[2]
+      serializerId = '.'.join(s[2:])
       return version, serializerId
    except:
       return None, None
@@ -242,6 +242,7 @@ class WampWebSocketFactory:
          ## try MsgPack WAMP serializer
          try:
             from autobahn.wamp.serializer import MsgPackSerializer
+            serializers.append(MsgPackSerializer(batched = True))
             serializers.append(MsgPackSerializer())
          except ImportError:
             pass
@@ -249,6 +250,7 @@ class WampWebSocketFactory:
          ## try JSON WAMP serializer
          try:
             from autobahn.wamp.serializer import JsonSerializer
+            serializers.append(JsonSerializer(batched = True))
             serializers.append(JsonSerializer())
          except ImportError:
             pass

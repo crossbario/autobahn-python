@@ -81,7 +81,11 @@ class TesteeServerFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
 
-   import asyncio
+   try:
+      import asyncio
+   except ImportError:
+      ## Trollius >= 0.3 was renamed
+      import trollius as asyncio
 
    factory = TesteeServerFactory("ws://localhost:9002", debug = False)
 

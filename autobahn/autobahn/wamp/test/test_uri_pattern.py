@@ -87,7 +87,7 @@ class TestDecorators(unittest.TestCase):
 
    def test_decorate_endpoint(self):
 
-      @wamp.procedure("com.calculator.square")
+      @wamp.register("com.calculator.square")
       def square(x):
          pass
 
@@ -101,7 +101,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
       self.assertEqual(square._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
-      @wamp.procedure("com.myapp.product.<product:int>.update")
+      @wamp.register("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          pass
 
@@ -115,7 +115,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(update_product._wampuris[0].uri(), "com.myapp.product.<product:int>.update")
       self.assertEqual(update_product._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-      @wamp.procedure("com.myapp.<category:string>.<id:int>.update")
+      @wamp.register("com.myapp.<category:string>.<id:int>.update")
       def update(category = None, id = None):
          pass
 
@@ -132,7 +132,7 @@ class TestDecorators(unittest.TestCase):
 
    def test_decorate_handler(self):
 
-      @wamp.topic("com.myapp.on_shutdown")
+      @wamp.subscribe("com.myapp.on_shutdown")
       def on_shutdown():
          pass
 
@@ -146,7 +146,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(on_shutdown._wampuris[0].uri(), "com.myapp.on_shutdown")
       self.assertEqual(on_shutdown._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
-      @wamp.topic("com.myapp.product.<product:int>.on_update")
+      @wamp.subscribe("com.myapp.product.<product:int>.on_update")
       def on_product_update(product = None, label = None):
          pass
 
@@ -160,7 +160,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(on_product_update._wampuris[0].uri(), "com.myapp.product.<product:int>.on_update")
       self.assertEqual(on_product_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-      @wamp.topic("com.myapp.<category:string>.<id:int>.on_update")
+      @wamp.subscribe("com.myapp.<category:string>.<id:int>.on_update")
       def on_update(category = None, id = None, label = None):
          pass
 
@@ -222,14 +222,14 @@ class TestDecorators(unittest.TestCase):
 
    def test_match_decorated_endpoint(self):
 
-      @wamp.procedure("com.calculator.square")
+      @wamp.register("com.calculator.square")
       def square(x):
          return x
 
       args, kwargs = square._wampuris[0].match("com.calculator.square")
       self.assertEqual(square(666, **kwargs), 666)
 
-      @wamp.procedure("com.myapp.product.<product:int>.update")
+      @wamp.register("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          return product, label
 
@@ -237,7 +237,7 @@ class TestDecorators(unittest.TestCase):
       kwargs['label'] = "foobar"
       self.assertEqual(update_product(**kwargs), (123456, "foobar"))
 
-      @wamp.procedure("com.myapp.<category:string>.<id:int>.update")
+      @wamp.register("com.myapp.<category:string>.<id:int>.update")
       def update(category = None, id = None, label = None):
          return category, id, label
 
@@ -248,14 +248,14 @@ class TestDecorators(unittest.TestCase):
 
    def test_match_decorated_handler(self):
 
-      @wamp.topic("com.myapp.on_shutdown")
+      @wamp.subscribe("com.myapp.on_shutdown")
       def on_shutdown():
          pass
 
       args, kwargs = on_shutdown._wampuris[0].match("com.myapp.on_shutdown")
       self.assertEqual(on_shutdown(**kwargs), None)
 
-      @wamp.topic("com.myapp.product.<product:int>.on_update")
+      @wamp.subscribe("com.myapp.product.<product:int>.on_update")
       def on_product_update(product = None, label = None):
          return product, label
 
@@ -263,7 +263,7 @@ class TestDecorators(unittest.TestCase):
       kwargs['label'] = "foobar"
       self.assertEqual(on_product_update(**kwargs), (123456, "foobar"))
 
-      @wamp.topic("com.myapp.<category:string>.<id:int>.on_update")
+      @wamp.subscribe("com.myapp.<category:string>.<id:int>.on_update")
       def on_update(category = None, id = None, label = None):
          return category, id, label
 
@@ -421,8 +421,8 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
    def test_decorate_endpoint_multiple(self):
 
-      @wamp.procedure("com.oldapp.oldproc")
-      @wamp.procedure("com.calculator.square")
+      @wamp.register("com.oldapp.oldproc")
+      @wamp.register("com.calculator.square")
       def square(x):
          pass
 

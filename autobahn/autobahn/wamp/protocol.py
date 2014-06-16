@@ -828,16 +828,14 @@ class ApplicationSession(BaseSession):
          return d
 
       if callable(handler):
-         ## register a single handler
-         ##
+
+         ## subscribe a single handler
          return _subscribe(None, handler, topic, options)
 
       else:
-         ## register all methods on an object
-         ## decorated with "wamp.topic"
-         ##
-         dl = []
 
+         ## subscribe all methods on an object decorated with "wamp.subscribe"
+         dl = []
          test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
          for k in inspect.getmembers(handler.__class__, test):
             proc = k[1]
@@ -937,7 +935,7 @@ class ApplicationSession(BaseSession):
 
       else:
          ## register all methods on an object
-         ## decorated with "wamp.procedure"
+         ## decorated with "wamp.register"
          ##
          dl = []
 

@@ -33,7 +33,7 @@ class Component(ApplicationSession):
    @inlineCallbacks
    def onJoin(self, details):
 
-      ## subscribe all methods on this object decorated with "@wamp.topic"
+      ## subscribe all methods on this object decorated with "@wamp.subscribe"
       ## as PubSub event handlers
       ##
       results = yield self.subscribe(self)
@@ -46,7 +46,7 @@ class Component(ApplicationSession):
             print("Failed to subscribe handler: {}".format(res.value))
 
 
-   @wamp.topic('com.myapp.topic1')
+   @wamp.subscribe('com.myapp.topic1')
    def onEvent1(self, i):
       print("Got event on topic1: {}".format(i))
       self.received += 1
@@ -54,7 +54,7 @@ class Component(ApplicationSession):
          self.leave()
 
 
-   @wamp.topic('com.myapp.topic2')
+   @wamp.subscribe('com.myapp.topic2')
    def onEvent2(self, msg):
       print("Got event on topic2: {}".format(msg))
 

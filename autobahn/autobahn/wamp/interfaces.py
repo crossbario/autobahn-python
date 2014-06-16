@@ -33,7 +33,7 @@ class IObjectSerializer(object):
    @abc.abstractproperty
    def BINARY(self):
       """
-      Flag to indicate if serializer requires a binary clean
+      Flag (read-only) to indicate if serializer requires a binary clean
       transport or if UTF8 transparency is sufficient.
       """
 
@@ -46,18 +46,18 @@ class IObjectSerializer(object):
       :param obj: Object to serialize.
       :type obj: Any serializable type.
 
-      :returns: str -- Serialized byte string.
+      :returns: bytes -- Serialized byte string.
       """
 
    @abc.abstractmethod
    def unserialize(self, bytes):
       """
-      Unserialize an object from a byte string.
+      Unserialize objects from a byte string.
 
-      :param bytes: Object to serialize.
-      :type bytes: Any serializable type.
+      :param bytes: Objects to unserialize.
+      :type bytes: bytes
 
-      :returns: obj -- Any type that can be unserialized.
+      :returns: list -- List of (raw) objects unserialized.
       """
 
 
@@ -176,12 +176,12 @@ class ISerializer(object):
    @abc.abstractmethod
    def unserialize(self, bytes, isBinary):
       """
-      Unserializes bytes from a transport and parses a WAMP message.
+      Unserializes bytes from a transport and parses WAMP messages.
 
       :param bytes: Byte string from wire.
       :type bytes: bytes
 
-      :returns: obj -- An instance that implements :class:`autobahn.wamp.interfaces.IMessage`.
+      :returns: list -- List of objects that implement :class:`autobahn.wamp.interfaces.IMessage`.
       """
 
 
@@ -452,7 +452,7 @@ class ICallee(ISession):
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
       If ``endpoint`` is an object, then each of the object's methods that are decorated
-      with :func:`autobahn.wamp.procedure` are registered as procedure endpoints, and a list of
+      with :func:`autobahn.wamp.register` are registered as procedure endpoints, and a list of
       Deferreds/Futures is returned that each resolves or rejects as above.
 
       :param endpoint: The endpoint or endpoint object called under the procedure.
@@ -588,7 +588,7 @@ class ISubscriber(ISession):
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
       If ``handler`` is an object, then each of the object's methods that are decorated
-      with :func:`autobahn.wamp.topic` are subscribed as event handlers, and a list of
+      with :func:`autobahn.wamp.subscribe` are subscribed as event handlers, and a list of
       Deferreds/Futures is returned that each resolves or rejects as above.
 
       :param handler: The event handler or handler object to receive events.

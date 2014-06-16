@@ -26,7 +26,12 @@ __all__ = ['ApplicationSession',
 
 import sys
 
-import asyncio
+try:
+   import asyncio
+except ImportError:
+   ## Trollius >= 0.3 was renamed
+   import trollius as asyncio
+
 from asyncio.tasks import iscoroutine
 from asyncio import Future
 
