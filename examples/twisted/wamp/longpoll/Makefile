@@ -20,6 +20,9 @@ subscribe:
 	   -d '[32, 1, {}, "com.myapp.topic1"]' \
 	   http://127.0.0.1:8080/lp/kjmd3sBLOUnb3Fyr/send
 
+close:
+	curl -H "Content-Type: application/json" -d '' \
+	   http://127.0.0.1:8080/lp/kjmd3sBLOUnb3Fyr/close
 
 test_ser:
 	PYTHONPATH=../../../../autobahn python test.py

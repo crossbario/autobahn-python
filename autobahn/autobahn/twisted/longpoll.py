@@ -195,8 +195,8 @@ class WampLongPollResourceSessionClose(Resource):
       """
       Ctor.
 
-      :param parent: The parent Web resource for the WAMP session.
-      :type parent: Instance of `WampLongPollResourceSession`.
+      :param parent: The Web parent resource for the WAMP session.
+      :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResourceSession`.
       """
       Resource.__init__(self)
       self._parent = parent
@@ -205,43 +205,21 @@ class WampLongPollResourceSessionClose(Resource):
 
    def render_POST(self, request):
       """
-      A client receives WAMP messages by issuing a HTTP/POST to this
-      Web resource. The request will immediately return when there are
-      messages pending to be received. When there are no such messages
-      pending, the request will "just hang", until either a message
-      arrives to be received or a timeout occurs.
+      A client may actively close a session (and the underlying long-poll transport)
+      by issuing a HTTP/POST with empty body to this resource.
       """
       if self._debug:
          log.msg("WampLongPoll: closing transport '{0}'".format(self._parent._transportid))
 
-      payload = request.content.read()
-      try:
-         details = json.loads(payload)
-      except Exception as e:
-         return self._parent._parent.failRequest(request, "could not parse WAMP session close request body: {0}".format(e))
-
-      if type(options) != dict:
-         return self._parent._parent.failRequest(request, "invalid type for WAMP session close request [was {0}, expected dictionary]".format(type(details)))
-
-      reason = details.get('reason', 'wamp.close.normal')
-
       ## now actually close the session
       self._parent.close()
-
-      ## create response
-      ##
-      self._parent._parent.setStandardHeaders(request)
-      request.setHeader('content-type', 'application/json; charset=utf-8')
-
-      result = {
-      }
-
-      bytes = json.dumps(result)
 
       if self._debug:
          log.msg("WampLongPoll: session ended and transport {0} closed".format(self._parent._transportid))
 
-      return bytes
+      request.setResponseCode(http.NO_CONTENT)
+      self._parent._parent.setStandardHeaders(request)
+      return ""
 
 
 
@@ -338,13 +316,14 @@ class WampLongPollResourceSession(Resource):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
       """
-      try:
-         self._session.onClose(wasClean)
-      except Exception as e:
-         ## silently ignore exceptions raised here ..
-         if self._debug_wamp:
-            traceback.print_exc()
-      self._session = None
+      if self._session:
+         try:
+            self._session.onClose(wasClean)
+         except Exception as e:
+            ## silently ignore exceptions raised here ..
+            if self._debug:
+               traceback.print_exc()
+         self._session = None
 
 
    def onOpen(self):
@@ -355,7 +334,7 @@ class WampLongPollResourceSession(Resource):
          self._session = self._parent._factory()
          self._session.onOpen(self)
       except Exception as e:
-         if self._debug_wamp:
+         if self._debug:
             traceback.print_exc()
 
 
