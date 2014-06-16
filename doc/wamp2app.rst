@@ -20,7 +20,7 @@ It lets you react, using callback defined via decorators, to 3 things :
 
 .. code-block:: python
 
-   from autobahn.twisted.app import Application
+   from autobahn.twisted.wamp import Application
    from autobahn.wamp.types import PublishOptions
  
    app = Application()
@@ -87,7 +87,7 @@ lines in the same function. In that case, you should not `return`, but use
 
 .. code-block:: python
 
-   from autobahn.twisted.app import Application
+   from autobahn.twisted.wamp import Application
 
    from twisted.internet.defer import returnValue
    from twisted.web.client import Agent
@@ -135,7 +135,7 @@ Now, in a Terminal:
 Reference
 ---------
 
-.. autoclass:: autobahn.twisted.app.Application
+.. autoclass:: autobahn.twisted.wamp.Application
    :show-inheritance:
    :members: __init__,
              __call__,
