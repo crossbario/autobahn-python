@@ -16,123 +16,6 @@
 ##
 ###############################################################################
 
-"""
-   Flask-like syntaxe for WAMP projects.
-
-   This is intended to make it easier to start with autobahn/crossbar.io
-   and abstract a lot of things : you don't have to think about the main
-   loop, the application session class lifecycle, etc.
-
-   It lets you react, using callback defined via decorators, to 3 things :
-      - PUB/SUB events : regular WAMP PUB/SUB events.
-      - RPC calls : expose a function as callable from the outside.
-      - app signals : internal app events allowing you to react to the app
-                      lifecycle.
-
-   :Example:
-
-      from autobahn.twisted.app import Application
-      from autobahn.wamp.types import PublishOptions
-
-      app = Application()
-
-      # Register a function to allow calling it from outside
-      # via RPC
-      @app.register('a_procedure_name')
-      def a_procedure(arg1, arg2):
-         print('The procedure is called with these arguments :')
-         print(arg1, arg2)
-         # publish the event
-         app.session.publish('an_event',
-                             "Some data attached to the event",
-                            # force publisher to receive its
-                            # own event
-                            options=PublishOptions(excludeMe=False))
-
-      # Register a callback that will be called when the
-      # event 'an_event' is triggered
-      @app.subscribe('an_event')
-      def an_event(val):
-         print('Received an event with something :')
-         print(val)
-
-      # This will be called once the application is connected
-      # to the server
-      @app.signal('onjoin')
-      def entry_point():
-         print('The application is connected !')
-         # Calling a_procedure()
-         app.session.call('a_procedure_name', True, False)
-
-      if __name__ == "__main__":
-          # By default, the application run on port 8080
-          print('Before the app start')
-          app.run()
-
-      # Now, in a Terminal:
-
-      ## $ python script.py
-      ## Running on 'ws://localhost:8080'
-      ## Before the app start
-      ## The application is connected !
-      ## The procedure is called with these arguments :
-      ## (True, False)
-      ## Received an event with something :
-      ## Some data attached to the event
-
-   Ok, this example is cheating a little bit because the application triggers
-   events and listen to them, and it calls it's own code via RPC. You may want
-   to call them from a Web page using autobahn.js (http://autobahn.ws/js/) for
-   a more convincing demo.
-
-   If you use "yield" inside any of the callbacks, `@inlineCallbacks` will
-   be applied automatically. It means every yielded line will be be added in
-   a Defered so they execute sequencially, in regards to the other yielded
-   lines in the same function. In that case, you should not `return`, but use
-   `returnValue`.
-
-   E.G :
-
-      from autobahn.twisted.app import Application
-
-      from twisted.internet.defer import returnValue
-      from twisted.web.client import Agent
-
-      app = Application()
-
-      @app.register('statuscode')
-      def statuscode(url):
-         ''' Return the status code of a GET request on a URL '''
-
-         # Little hack to add asynchronous requests to our app
-         # It's not very clean, but for the example, it will do :)
-         from twisted.internet import reactor
-         agent = Agent(reactor)
-
-         # Asynchronous GET request on the url
-         d = yield agent.request('GET', url)
-
-         # Using returnValue and not return because the whole
-         # procedure is a coroutine since we used yield.
-         returnValue(d.code)
-
-      @app.signal('onjoin')
-      def entry_point():
-         # Calling statuscode
-         url = "http://tavendo.com"
-         code = yield app.session.call('statuscode', url)
-         print("GET on '%s' returned status '%s'" % (url, code))
-
-      if __name__ == "__main__":
-          app.run()
-
-      # Now, in a Terminal:
-      ## python script.py
-      ## Running on 'ws://localhost:8080'
-      ## GET on 'http://tavendo.com' returned status '200'
-
-"""
-
 from __future__ import absolute_import
 
 import inspect
@@ -145,118 +28,174 @@ from autobahn.twisted.wamp import ApplicationSession, \
                                   ApplicationRunner
 
 
+
 class _ApplicationSession(ApplicationSession):
+   """
+   WAMP application session class used internally with :class:`autobahn.twisted.app.Application`.
+   """
 
    def __init__(self, config, app):
+      """
+      Ctor.
+
+      :param config: The component configuration.
+      :type config: Instance of :class:`autobahn.wamp.types.ComponentConfig`
+      :param app: The application this session is for.
+      :type app: Instance of :class:`autobahn.twisted.app.Application`.
+      """
       ApplicationSession.__init__(self, config)
       self.app = app
 
 
+   def onConnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
+      """
+      yield self.app._fire_signal('onconnect')
+      self.join(self.config.realm)
+
+
    @inlineCallbacks
    def onJoin(self, details):
-
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
+      """
       for uri, proc in self.app._procs:
-         self.app._fire_signal('onregister', uri, proc)
          yield self.register(proc, uri)
 
       for uri, handler in self.app._handlers:
-         self.app._fire_signal('onsubscribe', uri, func)
          yield self.subscribe(handler, uri)
 
-      yield self.app._fire_signal('onjoin')
+      yield self.app._fire_signal('onjoined')
+
+
+   def onLeave(self, details):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
+      """
+      yield self.app._fire_signal('onleave')
+      self.disconnect()
+
+
+   def onDisconnect(self):
+      """
+      Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
+      """
+      yield self.app._fire_signal('ondisconnect')
 
 
 
-class Application(object):
-   """ Self contained autobahn application, including it's own server.
 
-      See module docstring for usage.
+class Application:
+   """
+   A WAMP application. The application object provides a simple way of
+   creating, debugging and running WAMP application components.
    """
 
    def __init__(self, prefix = None):
       """
       Ctor.
 
-      :param prefix: The application URI prefix to use, e.g. `com.example.myapp`.
+      :param prefix: The application URI prefix to use for procedures and topics,
+         e.g. `com.example.myapp`.
       :type prefix: str
       """
-      self.session = None
       self._prefix = prefix
+
+      ## procedures to be registered once the app session has joined the router/realm
       self._procs = []
+
+      ## event handler to be subscribed once the app session has joined the router/realm
       self._handlers = []
+
+      ## app lifecycle signal handlers
       self._signals = {}
+
+      ## once an app session is connected, this will be here
+      self.session = None
 
 
    def __call__(self, config):
       """
-      Factory creating the application session.
+      Factory creating a WAMP application session for the application.
 
       :param config: Component configuration.
-      :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
+      :type config: Instance of :class:`autobahn.wamp.types.ComponentConfig`
 
-      :returns: obj -- An object that derives of :class:`autobahn.twisted.wamp.ApplicationSession`
+      :returns: obj -- An object that derives of
+         :class:`autobahn.twisted.wamp.ApplicationSession`
       """
       assert(self.session is None)
       self.session = _ApplicationSession(config, self)
       return self.session
 
 
-   def run(self, url = "ws://localhost:8080",
-           realm = "realm1", standalone = True):
-      print("Running on '%s'" % url)
+   def run(self, url = "ws://localhost:8080/ws", realm = "realm1", standalone = True):
+      """
+      Run the application.
+
+      :param url: The URL of the WAMP router to connect to.
+      :type url: str
+      :param realm: The realm on the WAMP router to join.
+      :type realm: str
+      :param standalone: If `True`, run an embedded WAMP router instead of connecting
+         to an external one. This is useful during development and debugging.
+      """
+      if standalone:
+         print("Running on {} ..".format(url))
       runner = ApplicationRunner(url, realm, standalone = standalone)
       runner.run(self.__call__)
 
 
    def register(self, uri = None):
-      """ Decorator exposing a function as a remote callable procedure.
+      """
+      Decorator exposing a function as a remote callable procedure.
 
-         The function will be bound as a RPC handler in onJoin().
+      The first argument of the decorator should be the URI of the procedure
+      to register under.
 
-         E.G:
+      :Example:
 
-            @app.register('add')
-            def add(a, b):
-               return a + b
+      .. code-block:: python
 
-         The URI doesn't have to be the same as the function name. You can do :
+         @app.register('com.myapp.add2')
+         def add2(a, b):
+            return a + b
 
-            @app.register('add')
-            def _(a, b):
-               return a + b
+      Above function can then be called remotely over WAMP using the URI `com.myapp.add2`
+      the function was registered under.
 
-         If you don't pass a URI, the function name will be used as such :
+      If no URI is given, the URI is constructed from the application URI prefix
+      and the Python function name.
 
-            # URI will be 'add'
-            @app.register()
-            def add(a, b):
-               return a + b
+      :Example:
 
-         If your application has a prefix, it will be prepended to the URI :
+      .. code-block:: python
 
-            app = Application('com.yoursite.yourapp')
+         app = Application('com.myapp')
 
-            # URI will be 'com.yoursite.yourapp.add'
-            @app.register('add')
-            def _(a, b):
-               return a + b
+         # implicit URI will be 'com.myapp.add2'
+         @app.register()
+         def add2(a, b):
+            return a + b
 
-         If the function yield, it will be assumed that it's an asychronous
-         process and `@inlineCallbacks` will be applied to it. In that case, if
-         you wish to return something, you should use `returnValue` :
+      If the function `yields` (is a co-routine), the `@inlineCallbacks` decorator
+      will be applied automatically to it. In that case, if you wish to return something,
+      you should use `returnValue`:
 
-         E.G:
+      :Example:
 
-            from twisted.internet.defer import returnValue
+      .. code-block:: python
 
-            @app.register()
-            def add(a, b):
-               res = yield stuff(a, b)
-               returnValue(res)
+         from twisted.internet.defer import returnValue
 
-         :param uri: The URI (remote procedure name)
-                     this callback is related to.
-         :type uri: str
+         @app.register('com.myapp.add2')
+         def add2(a, b):
+            res = yield stuff(a, b)
+            returnValue(res)
+
+      :param uri: The URI of the procedure to register under.
+      :type uri: str
       """
       def decorator(func):
          if uri:
@@ -274,67 +213,67 @@ class Application(object):
 
 
    def subscribe(self, uri = None):
-      """ Decorator attaching a function as an event callback.
+      """
+      Decorator attaching a function as an event handler.
 
-         The function arguments will be data attached to the event.
+      The first argument of the decorator should be the URI of the topic
+      to subscribe to. If no URI is given, the URI is constructed from
+      the application URI prefix and the Python function name.
 
-         E.G:
+      If the function yield, it will be assumed that it's an asychronous
+      process and inlineCallbacks will be applied to it.
 
-            @app.subscribe('event_name')
-            def add(a, b):
-               return a + b
+      :Example:
 
-         The first argument of the decorator should be the event name.
+      .. code-block:: python
 
-         If the function yield, it will be assumed that it's an asychronous
-         process and inlineCallbacks will be applied to it.
+         @app.subscribe('com.myapp.topic1')
+         def onevent1(x, y):
+            print("got event on topic1", x, y)
 
-         :param uri: The URI (event name)
-                     this callback is related to.
-         :type uri: str
-
+      :param uri: The URI of the topic to subscribe to.
+      :type uri: str
       """
       def decorator(func):
+         if uri:
+            _uri = uri
+         else:
+            assert(self._prefix is not None)
+            _uri = "{}.{}".format(self._prefix, func.__name__)
 
          if inspect.isgeneratorfunction(func):
             func = inlineCallbacks(func)
 
-         self._handlers.append((uri, func))
+         self._handlers.append((_uri, func))
          return func
       return decorator
 
 
    def signal(self, name):
-      """ Decorator attaching a function as an app signal callback.
+      """
+      Decorator attaching a function as handler for application signals.
 
-         Signals are local events triggered internally and exposed
-         to the developper to be able to react to the application lifecycle.
+      Signals are local events triggered internally and exposed to the
+      developer to be able to react to the application lifecycle.
 
-         Arguments will be data attached to the signal.
+      If the function yield, it will be assumed that it's an asychronous
+      coroutine and inlineCallbacks will be applied to it.
 
-         E.G:
+      Current signals :
 
-            @app.signal('onjoin')
-            def _():
-               # do after the app has join a realm
+         - `onjoined`: Triggered after the application session has joined the
+            realm on the router and registered/subscribed all procedures
+            and event handlers that were setup via decorators.
+         - `onleave`: Triggered when the application session leaves the realm.
 
-         If the function yield, it will be assumed that it's an asychronous
-         coroutine and inlineCallbacks will be applied to it.
+      .. code-block:: python
 
-         Current signals :
+         @app.signal('onjoined')
+         def _():
+            # do after the app has join a realm
 
-            - onregister : when a callback RPC is registered.
-                           Params:
-                              * uri : the RPC uri.
-                              * func : the RPC callback.
-
-            - onsubscribe : when a event handler is registered.
-                            Params:
-                               * uri : the RPC uri.
-                               * func : the RPC callback.
-            - onjoin : after the app connected to the router and made all
-                       the RPC registration and PUB/SUB subcricptions.
-
+      :param name: The name of the signal to watch.
+      :type name: str
       """
       def decorator(func):
          if inspect.isgeneratorfunction(func):

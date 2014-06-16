@@ -31,5 +31,4 @@ WAMP
    wamp2errors
    wamp2router
    wamp2protocol
-
-
+   wamp2app
