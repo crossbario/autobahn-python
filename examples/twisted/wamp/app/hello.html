@@ -17,7 +17,16 @@
 
             session.call("com.example.hello").then(
                function (res) {
-                  console.log(res);
+                  console.log("hello:" ,res);
+               },
+               function (err) {
+                  console.log(err);
+               }
+            );
+
+            session.call("com.example.add2", [7, 11]).then(
+               function (res) {
+                  console.log("add2:", res);
                },
                function (err) {
                   console.log(err);
@@ -26,7 +35,6 @@
          };
 
          connection.open();
-
       </script>
    </body>
 </html>
