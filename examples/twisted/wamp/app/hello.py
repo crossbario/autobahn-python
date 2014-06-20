@@ -3,7 +3,7 @@ sys.path.insert(0, "../../../../autobahn")
 
 from twisted.internet.defer import returnValue
 
-from autobahn.twisted.app import Application
+from autobahn.twisted.wamp import Application
 app = Application('com.example')
 
 
@@ -17,11 +17,11 @@ def add2(a, b):
 def hello():
    print("hello() called")
    res = yield app.session.call('com.example.add2', 2, 3)
-   returnValue("Hello: {}".format(res))
+   returnValue("Hello {}".format(res))
 
 
-@app.signal('onpostjoin')
-def onpostjoin():
+@app.signal('onjoined')
+def onjoined():
    print("realm joined!")
 
 
