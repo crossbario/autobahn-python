@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+   <body>
+      <h1>Hello WAMP</h1>
+      <p>Open JavaScript console to watch output.</p>
+      <script src="autobahn.min.js"></script>
+
+      <script>
+         var connection = new autobahn.Connection({
+            url: "ws://127.0.0.1:8080/ws",
+            realm: 'realm1'
+         });
+
+         connection.onopen = function (session) {
+
+            console.log("connected");
+
+            session.call("com.example.hello").then(
+               function (res) {
+                  console.log(res);
+               },
+               function (err) {
+                  console.log(err);
+               }
+            );
+         };
+
+         connection.open();
+
+      </script>
+   </body>
+</html>

@@ -101,7 +101,7 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = None,
+   def __init__(self, url, realm, extra = None, standalone = False,
       debug = False, debug_wamp = False, debug_app = False):
       """
       Constructor.
@@ -122,6 +122,7 @@ class ApplicationRunner:
       self.url = url
       self.realm = realm
       self.extra = extra or dict()
+      self.standalone = standalone
       self.debug = debug
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
@@ -138,11 +139,29 @@ class ApplicationRunner:
       """
       from twisted.internet import reactor
 
-      ## 0) start logging to console
+      isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+
+      ## start logging to console
       if self.debug or self.debug_wamp or self.debug_app:
          log.startLogging(sys.stdout)
 
-      ## 1) factory for use ApplicationSession
+      ## run an embedded router if ask to start standalone
+      if self.standalone:
+
+         from autobahn.wamp.router import RouterFactory
+         from autobahn.twisted.websocket import WampWebSocketServerFactory
+         from twisted.internet.endpoints import serverFromString
+
+         router_factory = RouterFactory()
+         session_factory = RouterSessionFactory(router_factory)
+
+         transport_factory = WampWebSocketServerFactory(session_factory)
+         transport_factory.setProtocolOptions(failByDrop = False)
+
+         server = serverFromString(reactor, "tcp:{}".format(port))
+         server.listen(transport_factory)
+
+      ## factory for use ApplicationSession
       def create():
          cfg = ComponentConfig(self.realm, self.extra)
          try:
@@ -155,15 +174,13 @@ class ApplicationRunner:
          session.debug_app = self.debug_app
          return session
 
-      isSecure, host, port, resource, path, params = parseWsUrl(self.url)
-
-      ## 2) create a WAMP-over-WebSocket transport client factory
+      ## create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create, url = self.url,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
-      ## 3) start the client from a Twisted endpoint
+      ## start the client from a Twisted endpoint
       client = clientFromString(reactor, "tcp:{}:{}".format(host, port))
       client.connect(transport_factory)
 
-      ## 4) now enter the Twisted reactor loop
+      ## now enter the Twisted reactor loop
       reactor.run()
