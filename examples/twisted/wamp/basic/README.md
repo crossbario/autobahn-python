@@ -1,5 +1,26 @@
 # WAMP Programming Examples
 
+## Examples
+
+1. RPC
+  * [Arguments](rpc/arguments)
+  * Complex
+  * Decorators
+  * Errors
+  * Options
+  * Progress
+  * Slow Square
+  * Time Service
+2. PubSub
+  * Basic
+  * Complex
+  * Decorators
+  * Options
+  * Unsubscribe
+
+
+## How to run
+
 To run the following examples, you need a WAMP router.
 
 For example, you can use the included basic WAMP router by doing
