@@ -55,12 +55,14 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       self.runs = 0
       yield self.test()
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

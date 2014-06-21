@@ -18,10 +18,8 @@
 
 import random
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import SubscribeOptions
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 
@@ -30,7 +28,7 @@ from autobahn.twisted.wamp import ApplicationSession
 class Component(ApplicationSession):
    """
    An application component that publishes events with no payload
-   and with complex payloads every second.
+   and with complex payload every second.
    """
 
    @inlineCallbacks

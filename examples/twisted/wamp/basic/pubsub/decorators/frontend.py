@@ -32,6 +32,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       ## subscribe all methods on this object decorated with "@wamp.subscribe"
       ## as PubSub event handlers
@@ -60,6 +61,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

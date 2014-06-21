@@ -16,7 +16,6 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
@@ -31,9 +30,11 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       counter = 0
       while True:
+         print(".")
          self.publish('com.myapp.topic1', counter)
          counter += 1
          yield sleep(1)

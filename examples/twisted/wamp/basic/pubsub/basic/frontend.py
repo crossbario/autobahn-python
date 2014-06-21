@@ -31,6 +31,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       self.received = 0
 
@@ -44,6 +45,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

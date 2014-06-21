@@ -16,8 +16,6 @@
 ##
 ###############################################################################
 
-import random
-
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
@@ -54,6 +52,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 
