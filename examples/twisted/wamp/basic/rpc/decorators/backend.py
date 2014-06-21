@@ -71,3 +71,10 @@ class Component(ApplicationSession):
          return float(x) / float(y)
       else:
          return 0
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

@@ -35,6 +35,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       self.received = 0
 
@@ -49,9 +50,15 @@ class Component(ApplicationSession):
 
       yield self.subscribe(on_topic2, 'com.myapp.topic2')
 
-
       reactor.callLater(5, self.leave)
 
 
    def onDisconnect(self):
       reactor.stop()
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

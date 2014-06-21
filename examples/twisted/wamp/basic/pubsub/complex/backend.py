@@ -35,9 +35,11 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       counter = 0
       while True:
+         print(".")
          self.publish('com.myapp.heartbeat')
 
          obj = {'counter': counter, 'foo': [1, 2, 3]}
@@ -45,3 +47,9 @@ class Component(ApplicationSession):
 
          counter += 1
          yield sleep(1)
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

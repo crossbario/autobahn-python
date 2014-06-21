@@ -50,3 +50,10 @@ class Component(ApplicationSession):
       self.register(stars, u'com.arguments.stars')
       self.register(orders, u'com.arguments.orders')
       self.register(arglen, u'com.arguments.arglen')
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

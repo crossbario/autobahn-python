@@ -37,3 +37,10 @@ class Component(ApplicationSession):
          self.publish('com.myapp.topic1', counter)
          counter += 1
          yield sleep(1)
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

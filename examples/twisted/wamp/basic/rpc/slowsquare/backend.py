@@ -44,3 +44,10 @@ class Component(ApplicationSession):
          returnValue(x * x)
 
       self.register(slowsquare, 'com.math.slowsquare')
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

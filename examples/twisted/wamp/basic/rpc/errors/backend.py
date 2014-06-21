@@ -81,3 +81,10 @@ class Component(ApplicationSession):
             raise AppError1(b - a)
 
       self.register(compare, 'com.myapp.compare')
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)

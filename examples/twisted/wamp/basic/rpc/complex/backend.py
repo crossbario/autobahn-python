@@ -42,3 +42,10 @@ class Component(ApplicationSession):
          return CallResult(forename, surname)
 
       self.register(split_name, 'com.myapp.split_name')
+
+
+
+if __name__ == '__main__':
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner.run(Component)
