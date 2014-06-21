@@ -4,19 +4,19 @@
 
 1. RPC
   * [Arguments](rpc/arguments)
-  * Complex
-  * Decorators
-  * Errors
-  * Options
-  * Progress
-  * Slow Square
-  * Time Service
+  * [Complex](rpc/complex)
+  * [Decorators](rpc/decorators)
+  * [Errors](rpc/errors)
+  * [Options](rpc/options)
+  * [Progress](rpc/progress)
+  * [Slow Square](rpc/slowsquare)
+  * [Time Service](rpc/timeservice)
 2. PubSub
-  * Basic
-  * Complex
-  * Decorators
-  * Options
-  * Unsubscribe
+  * [Basic](pubsub/basic)
+  * [Complex](pubsub/complex)
+  * [Decorators](pubsub/decorators)
+  * [Options](pubsub/options)
+  * [Unsubscribe](pubsub/unsubscribe)
 
 
 ## How to run
