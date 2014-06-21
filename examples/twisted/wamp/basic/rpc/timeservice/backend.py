@@ -18,6 +18,8 @@
 
 import datetime
 
+from twisted.internet.defer import inlineCallbacks
+
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -27,13 +29,17 @@ class Component(ApplicationSession):
    A simple time service application component.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def utcnow():
          now = datetime.datetime.utcnow()
          return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-      self.register(utcnow, 'com.timeservice.now')
+      yield self.register(utcnow, 'com.timeservice.now')
+
+      print("procedures registered")
 
 
 

@@ -43,6 +43,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       ## catching standard exceptions
       ##
@@ -80,6 +81,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

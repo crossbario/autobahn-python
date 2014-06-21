@@ -19,7 +19,6 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import CallResult
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -32,6 +31,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       res = yield self.call('com.myapp.add_complex', 2, 3, 4, 5)
       print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
@@ -43,6 +43,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

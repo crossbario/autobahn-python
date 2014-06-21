@@ -30,6 +30,8 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
+
       procs = [u'com.mathservice.add2',
                u'com.mathservice.mul2',
                u'com.mathservice.square2',
@@ -46,6 +48,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

@@ -16,8 +16,6 @@
 ##
 ###############################################################################
 
-import datetime
-
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
@@ -44,6 +42,8 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
+
       ## register all methods on this object decorated with "@wamp.register"
       ## as a RPC endpoint
       ##

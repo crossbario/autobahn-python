@@ -19,7 +19,7 @@
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
+from autobahn.wamp.types import CallOptions
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -31,6 +31,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def on_event(val):
          print("Someone requested to square non-positive: {}".format(val))
@@ -45,6 +46,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

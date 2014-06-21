@@ -16,8 +16,7 @@
 ##
 ###############################################################################
 
-from twisted.internet.defer import Deferred, \
-                                   inlineCallbacks, \
+from twisted.internet.defer import inlineCallbacks, \
                                    returnValue
 
 from autobahn.twisted.wamp import ApplicationSession
@@ -30,12 +29,14 @@ class Component(ApplicationSession):
    A math service application component.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def square(x):
          return x * x
 
-      self.register(square, 'com.math.square')
+      yield self.register(square, 'com.math.square')
 
 
       @inlineCallbacks
@@ -43,7 +44,9 @@ class Component(ApplicationSession):
          yield sleep(delay)
          returnValue(x * x)
 
-      self.register(slowsquare, 'com.math.slowsquare')
+      yield self.register(slowsquare, 'com.math.slowsquare')
+
+      print("procedures registered")
 
 
 

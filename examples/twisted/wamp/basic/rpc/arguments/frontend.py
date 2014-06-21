@@ -30,6 +30,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       yield self.call(u'com.arguments.ping')
       print("Pinged!")
@@ -71,6 +72,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

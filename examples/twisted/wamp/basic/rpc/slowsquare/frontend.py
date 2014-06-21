@@ -31,6 +31,7 @@ class Component(ApplicationSession):
    """
 
    def onJoin(self, details):
+      print("session attached")
 
       def got(res, started, msg):
          duration = 1000. * (time.clock() - started)
@@ -52,6 +53,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

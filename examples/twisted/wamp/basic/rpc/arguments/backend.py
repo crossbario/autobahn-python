@@ -16,7 +16,6 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.wamp import ApplicationSession
@@ -28,7 +27,9 @@ class Component(ApplicationSession):
    An application component providing procedures with different kinds of arguments.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def ping():
          return
@@ -45,11 +46,12 @@ class Component(ApplicationSession):
       def arglen(*args, **kwargs):
          return [len(args), len(kwargs)]
 
-      self.register(ping, u'com.arguments.ping')
-      self.register(add2, u'com.arguments.add2')
-      self.register(stars, u'com.arguments.stars')
-      self.register(orders, u'com.arguments.orders')
-      self.register(arglen, u'com.arguments.arglen')
+      yield self.register(ping, u'com.arguments.ping')
+      yield self.register(add2, u'com.arguments.add2')
+      yield self.register(stars, u'com.arguments.stars')
+      yield self.register(orders, u'com.arguments.orders')
+      yield self.register(arglen, u'com.arguments.arglen')
+      print("procedures registered")
 
 
 

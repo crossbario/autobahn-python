@@ -16,8 +16,6 @@
 ##
 ###############################################################################
 
-import datetime
-
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
@@ -32,6 +30,7 @@ class Component(ApplicationSession):
 
    @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
       try:
          now = yield self.call('com.timeservice.now')
       except Exception as e:
@@ -43,6 +42,7 @@ class Component(ApplicationSession):
 
 
    def onDisconnect(self):
+      print("disconnected")
       reactor.stop()
 
 

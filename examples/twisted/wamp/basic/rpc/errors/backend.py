@@ -18,7 +18,6 @@
 
 import math
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
@@ -41,7 +40,9 @@ class Component(ApplicationSession):
    Example WAMP application backend that raised exceptions.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       ## raising standard exceptions
       ##
@@ -52,7 +53,7 @@ class Component(ApplicationSession):
             ## this also will raise, if x < 0
             return math.sqrt(x)
 
-      self.register(sqrt, 'com.myapp.sqrt')
+      yield self.register(sqrt, 'com.myapp.sqrt')
 
 
       ## raising WAMP application exceptions
@@ -69,7 +70,7 @@ class Component(ApplicationSession):
             ## forward keyword arguments in exceptions
             raise ApplicationError("com.myapp.error.invalid_length", min = 3, max = 10)
 
-      self.register(checkname, 'com.myapp.checkname')
+      yield self.register(checkname, 'com.myapp.checkname')
 
 
       ## defining and automapping WAMP application exceptions
@@ -80,7 +81,9 @@ class Component(ApplicationSession):
          if a < b:
             raise AppError1(b - a)
 
-      self.register(compare, 'com.myapp.compare')
+      yield self.register(compare, 'com.myapp.compare')
+
+      print("procedures registered")
 
 
 

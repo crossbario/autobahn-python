@@ -16,7 +16,6 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import CallResult
@@ -30,18 +29,22 @@ class Component(ApplicationSession):
    return complex results.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def add_complex(a, ai, b, bi):
          return CallResult(c = a + b, ci = ai + bi)
 
-      self.register(add_complex, 'com.myapp.add_complex')
+      yield self.register(add_complex, 'com.myapp.add_complex')
 
       def split_name(fullname):
          forename, surname = fullname.split()
          return CallResult(forename, surname)
 
-      self.register(split_name, 'com.myapp.split_name')
+      yield self.register(split_name, 'com.myapp.split_name')
+
+      print("procedures registered")
 
 
 

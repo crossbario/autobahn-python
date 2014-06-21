@@ -16,10 +16,9 @@
 ##
 ###############################################################################
 
-from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
+from autobahn.wamp.types import RegisterOptions, PublishOptions
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -30,7 +29,9 @@ class Component(ApplicationSession):
    different kinds of arguments.
    """
 
+   @inlineCallbacks
    def onJoin(self, details):
+      print("session attached")
 
       def square(val, details = None):
          print("square called from: {}".format(details.caller))
@@ -45,7 +46,9 @@ class Component(ApplicationSession):
             self.publish('com.myapp.square_on_nonpositive', val, options = options)
          return val * val
 
-      self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
+      yield self.register(square, 'com.myapp.square', RegisterOptions(details_arg = 'details'))
+
+      print("procedure registered")
 
 
 
