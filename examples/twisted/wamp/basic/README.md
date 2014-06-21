@@ -62,3 +62,68 @@ E.g. the Python examples can be run
 cd pubsub/basic
 python backend.py
 ```
+
+
+## Hosting
+
+Crossbar.io is a WAMP router that can also act as a host for WAMP application components. E.g. to let Crossbar.io host a backend application component, you can use a node configuration like this:
+
+```javascript
+
+{
+   "controller": {
+   },
+   "workers": [
+      {
+         "type": "router",
+         "options": {
+            "pythonpath": ["f:\\scm\\tavendo\\autobahn\\AutobahnPython\\examples\\twisted\\wamp\\basic"]
+         },
+         "realms": [
+            {
+               "name": "realm1",
+               "roles": [
+                  {
+                     "name": "anonymous",
+                     "permissions": [
+                        {
+                           "uri": "*",
+                           "publish": true,
+                           "subscribe": true,
+                           "call": true,
+                           "register": true
+                        }
+                     ]
+                  }
+               ]
+            }
+         ],
+         "components": [
+            {
+               "type": "class",
+               "classname": "pubsub.complex.backend.Component",
+               "realm": "realm1"
+            }
+         ],
+         "transports": [
+            {
+               "type": "web",
+               "endpoint": {
+                  "type": "tcp",
+                  "port": 8080
+               },
+               "paths": {
+                  "/": {
+                     "type": "static",
+                     "directory": ".."
+                  },
+                  "ws": {
+                     "type": "websocket"
+                  }
+               }
+            }
+         ]
+      }
+   ]
+}
+```
