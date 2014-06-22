@@ -52,7 +52,6 @@ class UserDb:
 
 
 
-
 class PendingAuth:
    """
    User for tracking pending authentications.
@@ -96,32 +95,33 @@ class MyRouterSession(RouterSession):
 
       self._pending_auth = None
 
-      for authmethod in details.authmethods:
-         if authmethod == u"wampcra":
+      if details.authmethods:
+         for authmethod in details.authmethods:
+            if authmethod == u"wampcra":
 
-            ## lookup user in user DB
-            salt, key, role = yield self.factory.userdb.get(details.authid)
+               ## lookup user in user DB
+               salt, key, role = yield self.factory.userdb.get(details.authid)
 
-            ## if user found ..
-            if key:
+               ## if user found ..
+               if key:
 
-               ## setup pending auth
-               self._pending_auth = PendingAuth(key, details.pending_session,
-                  details.authid, role, authmethod, "userdb")
+                  ## setup pending auth
+                  self._pending_auth = PendingAuth(key, details.pending_session,
+                     details.authid, role, authmethod, "userdb")
 
-               ## send challenge to client
-               extra = {
-                  'challenge': self._pending_auth.challenge
-               }
+                  ## send challenge to client
+                  extra = {
+                     'challenge': self._pending_auth.challenge
+                  }
 
-               ## when using salted passwords, provide the client with
-               ## the salt and then PBKDF2 parameters used
-               if salt:
-                  extra['salt'] = salt
-                  extra['iterations'] = 1000
-                  extra['keylen'] = 32
+                  ## when using salted passwords, provide the client with
+                  ## the salt and then PBKDF2 parameters used
+                  if salt:
+                     extra['salt'] = salt
+                     extra['iterations'] = 1000
+                     extra['keylen'] = 32
 
-               defer.returnValue(types.Challenge('wampcra', extra))
+                  defer.returnValue(types.Challenge('wampcra', extra))
 
       ## deny client
       defer.returnValue(types.Deny())
@@ -147,7 +147,6 @@ class MyRouterSession(RouterSession):
 
 
 
-
 class TimeService(ApplicationSession):
    """
    A simple time service application component.
@@ -161,7 +160,6 @@ class TimeService(ApplicationSession):
          return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
       self.register(utcnow, 'com.timeservice.now')
-
 
 
 
