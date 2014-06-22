@@ -1165,12 +1165,14 @@ class RouterSession(BaseSession):
 
       self._realm = None
       self._session_id = None
+      self._pending_session_id = None
 
       ## session authentication information
       ##
       self._authid = None
       self._authrole = None
       self._authmethod = None
+      self._authprovider = None
 
 
    def onHello(self, realm, details):
@@ -1187,8 +1189,12 @@ class RouterSession(BaseSession):
       """
       if self._session_id is None:
 
-         def welcome(realm, authid = None, authrole = None, authmethod = None):
-            self._session_id = util.id()
+         if not self._pending_session_id:
+            self._pending_session_id = util.id()
+
+         def welcome(realm, authid = None, authrole = None, authmethod = None, authprovider = None):
+            self._session_id = self._pending_session_id
+            self._pending_session_id = None
             self._goodbye_sent = False
 
             self._router = self._router_factory.get(realm)
@@ -1198,20 +1204,21 @@ class RouterSession(BaseSession):
             self._authid = authid
             self._authrole = authrole
             self._authmethod = authmethod
+            self._authprovider = authprovider
 
             roles = self._router.attach(self)
 
-            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole, authmethod = authmethod)
+            msg = message.Welcome(self._session_id, roles, authid = authid, authrole = authrole, authmethod = authmethod, authprovider = authprovider)
             self._transport.send(msg)
 
-            self.onJoin(SessionDetails(self._realm, self._session_id, self._authid, self._authrole, self._authmethod))
+            self.onJoin(SessionDetails(self._realm, self._session_id, self._authid, self._authrole, self._authmethod, self._authprovider))
 
          ## the first message MUST be HELLO
          if isinstance(msg, message.Hello):
 
             self._realm = msg.realm
 
-            details = types.HelloDetails(msg.roles, msg.authmethods)
+            details = types.HelloDetails(msg.roles, msg.authmethods, msg.authid, self._pending_session_id)
 
             d = self._as_future(self.onHello, self._realm, details)
 
@@ -1219,7 +1226,7 @@ class RouterSession(BaseSession):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid, res.authrole, res.authmethod)
+                  welcome(self._realm, res.authid, res.authrole, res.authmethod, res.authprovider)
 
                elif isinstance(res, types.Challenge):
                   msg = message.Challenge(res.method, res.extra)
@@ -1246,7 +1253,7 @@ class RouterSession(BaseSession):
                msg = None
 
                if isinstance(res, types.Accept):
-                  welcome(self._realm, res.authid, res.authrole, res.authmethod)
+                  welcome(self._realm, res.authid, res.authrole, res.authmethod, res.authprovider)
 
                elif isinstance(res, types.Deny):
                   msg = message.Abort(res.reason, res.message)
@@ -1282,6 +1289,7 @@ class RouterSession(BaseSession):
             self._router.detach(self)
 
             self._session_id = None
+            self._pending_session_id = None
 
             #self._transport.close()
 
@@ -1313,9 +1321,12 @@ class RouterSession(BaseSession):
 
          self._session_id = None
 
+      self._pending_session_id = None
+
       self._authid = None
       self._authrole = None
       self._authmethod = None
+      self._authprovider = None
 
 
    def onJoin(self, details):
@@ -1395,5 +1406,5 @@ class RouterSessionFactory:
                    given by `self.session`.
       """
       session = self.session(self._routerFactory)
-      session.factory = session
+      session.factory = self
       return session

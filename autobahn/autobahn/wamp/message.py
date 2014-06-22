@@ -148,7 +148,7 @@ class Hello(Message):
    """
 
 
-   def __init__(self, realm, roles, authmethods = None):
+   def __init__(self, realm, roles, authmethods = None, authid = None):
       """
       Message constructor.
 
@@ -170,6 +170,7 @@ class Hello(Message):
       self.realm = realm
       self.roles = roles
       self.authmethods = authmethods
+      self.authid = authid
 
 
    @staticmethod
@@ -231,7 +232,15 @@ class Hello(Message):
 
          authmethods = details_authmethods
 
-      obj = Hello(realm, roles, authmethods)
+      authid = None
+      if u'authid' in details:
+         details_authid = details[u'authid']
+         if type(details_authid) != six.text_type:
+            raise ProtocolError("invalid type {} for 'authid' detail in HELLO".format(type(details_authid)))
+
+         authid = details_authid
+
+      obj = Hello(realm, roles, authmethods, authid)
 
       return obj
 
@@ -252,6 +261,9 @@ class Hello(Message):
       if self.authmethods:
          details[u'authmethods'] = self.authmethods
 
+      if self.authid:
+         details[u'authid'] = self.authid
+
       return [Hello.MESSAGE_TYPE, self.realm, details]
 
 
@@ -259,7 +271,7 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HELLO Message (realm = {}, roles = {}, authmethods = {})".format(self.realm, self.roles, self.authmethods)
+      return "WAMP HELLO Message (realm = {}, roles = {}, authmethods = {}, authid = {})".format(self.realm, self.roles, self.authmethods, self.authid)
 
 
 
@@ -276,7 +288,7 @@ class Welcome(Message):
    """
 
 
-   def __init__(self, session, roles, authid = None, authrole = None, authmethod = None):
+   def __init__(self, session, roles, authid = None, authrole = None, authmethod = None, authprovider = None):
       """
       Message constructor.
 
@@ -290,6 +302,7 @@ class Welcome(Message):
       assert(authid is None or type(authid) == six.text_type)
       assert(authrole is None or type(authrole) == six.text_type)
       assert(authmethod is None or type(authmethod) == six.text_type)
+      assert(authprovider is None or type(authprovider) == six.text_type)
 
       Message.__init__(self)
       self.session = session
@@ -297,6 +310,7 @@ class Welcome(Message):
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
+      self.authprovider = authprovider
 
 
    @staticmethod
@@ -322,6 +336,7 @@ class Welcome(Message):
       authid = details.get(u'authid', None)
       authrole = details.get(u'authrole', None)
       authmethod = details.get(u'authmethod', None)
+      authprovider = details.get(u'authprovider', None)
 
       roles = []
 
@@ -348,7 +363,7 @@ class Welcome(Message):
 
          roles.append(role_features)
 
-      obj = Welcome(session, roles, authid, authrole, authmethod)
+      obj = Welcome(session, roles, authid, authrole, authmethod, authprovider)
 
       return obj
 
@@ -370,6 +385,9 @@ class Welcome(Message):
       if self.authrole:
          details[u'authmethod'] = self.authmethod
 
+      if self.authprovider:
+         details[u'authprovider'] = self.authprovider
+
       for role in self.roles:
          details[u'roles'][role.ROLE] = {}
          for feature in role.__dict__:
@@ -385,7 +403,7 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {}, authmethod = {})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod)
+      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {}, authmethod = {}, authprovider = {})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 

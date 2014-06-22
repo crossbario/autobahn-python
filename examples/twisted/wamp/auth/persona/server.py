@@ -20,31 +20,6 @@ import datetime
 
 from autobahn.twisted.wamp import ApplicationSession
 
-
-class TimeService(ApplicationSession):
-   """
-   A simple time service application component.
-   """
-
-   def __init__(self, realm = "realm1"):
-      ApplicationSession.__init__(self)
-      self._realm = realm
-
-
-   def onConnect(self):
-      self.join(self._realm)
-
-
-   def onJoin(self, details):
-
-      def utcnow():
-         now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-      self.register(utcnow, 'com.timeservice.now')
-
-
-
 from twisted.python import log
 from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
 from twisted.internet.defer import Deferred
@@ -57,7 +32,30 @@ from autobahn.util import newid, utcnow
 from autobahn.websocket import http
 
 
+
+
+class TimeService(ApplicationSession):
+   """
+   A simple time service application component.
+   """
+
+   def onJoin(self, details):
+      print("session attached")
+
+      def utcnow():
+         now = datetime.datetime.utcnow()
+         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+      self.register(utcnow, 'com.timeservice.now')
+
+
+
+
+
 class ServerProtocol(WampWebSocketServerProtocol):
+   """
+   A WAMP-WebSocket transport that supports Cookie based authentication.
+   """
 
    ## authid -> cookie -> set(connection)
 
@@ -119,29 +117,49 @@ from autobahn.wamp import types
 class MyRouterSession(RouterSession):
 
    def onOpen(self, transport):
+      """
+      Callback fired when transport (WebSocket connection) was established.
+      """
       RouterSession.onOpen(self, transport)
-      print "transport authenticated: {}".format(self._transport._authenticated)
+      print("MyRouterSession.onOpen: transport authenticated = {}".format(self._transport._authenticated))
 
 
    def onHello(self, realm, details):
-      print "onHello: {} {}".format(realm, details)
-      if self._transport._authenticated is not None:
-         return types.Accept(authid = self._transport._authenticated)
-      else:
-         return types.Challenge("mozilla-persona")
-      return accept
+      """
+      Callback fired when client wants to attach session.
+      """
+      print("MyRouterSession.onHello: {} {}".format(realm, details))
+
+      for authmethod in details.authmethods:
+         if authmethod == u"cookie" and self._transport._authenticated is not None:
+            ## already authenticated via Cookie on transport
+            return types.Accept(authid = self._transport._authenticated, authrole = "user", authmethod = "cookie")
+         elif authmethod == u"mozilla-persona":
+            ## not yet authenticated: send challenge
+            return types.Challenge("mozilla-persona")
+
+      return types.Deny()
 
 
    def onLeave(self, details):
+      """
+      Callback fired when a client session leaves.
+      """
       if details.reason == "wamp.close.logout":
+         ## if asked to logout, set cookie to "not authenticated" ..
          cookie = self._transport.factory._cookies[self._transport._cbtid]
          cookie['authenticated'] = None
+
+         ## .. and kill all currently connected clients (for the cookie)
          for proto in cookie['connections']:
             proto.sendClose()
 
 
    def onAuthenticate(self, signature, extra):
-      print "onAuthenticate: {} {}".format(signature, extra)
+      """
+      Callback fired when a client responds to an authentication challenge.
+      """
+      print("onAuthenticate: {} {}".format(signature, extra))
 
       dres = Deferred()
 
@@ -184,7 +202,7 @@ class MyRouterSession(RouterSession):
                self._transport.factory._cookies[self._transport._cbtid]['authenticated'] = res['email']
 
                log.msg("Authenticated user {}".format(res['email']))
-               dres.callback(types.Accept(authid = res['email']))
+               dres.callback(types.Accept(authid = res['email'], authrole = "user", authmethod = "mozilla-persona"))
             else:
                log.msg("Authentication failed!")
                dres.callback(types.Deny())
@@ -198,6 +216,8 @@ class MyRouterSession(RouterSession):
       d.addCallbacks(done, error)
 
       return dres
+
+
 
 
 if __name__ == '__main__':
@@ -227,10 +247,7 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
 
-   ## start Twisted logging to stdout
-   ##
-   if True or args.debug:
-      log.startLogging(sys.stdout)
+   log.startLogging(sys.stdout)
 
 
    ## we use an Autobahn utility to install the "best" available Twisted reactor
@@ -256,13 +273,15 @@ if __name__ == '__main__':
 
    ## start an embedded application component ..
    ##
-   session_factory.add(TimeService())
+   component_config = types.ComponentConfig(realm = "realm1")
+   component_session = TimeService(component_config)
+   session_factory.add(component_session)
 
 
    ## create a WAMP-over-WebSocket transport server factory
    ##
    from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug_wamp = args.debug)
+   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = False, debug_wamp = args.debug)
    transport_factory.protocol = ServerProtocol
    transport_factory._cookies = {}
 

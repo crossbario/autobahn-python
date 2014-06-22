@@ -41,16 +41,28 @@ class RouterOptions:
 
 class HelloReturn:
    """
-   Base class for HELLO return information.
+   Base class for `HELLO` return information.
    """
 
 
 class Accept(HelloReturn):
    """
-   Information to accept a HELLO.
+   Information to accept a `HELLO`.
    """
 
-   def __init__(self, authid = None, authrole = None, authmethod = None):
+   def __init__(self, authid = None, authrole = None, authmethod = None, authprovider = None):
+      """
+      Ctor.
+
+      :param authid: The authentication ID the client is assigned, e.g. `"joe"` or `"joe@example.com"`.
+      :type authid: str
+      :param authrole: The authentication role the client is assigned, e.g. `"anonymous"`, `"user"` or `"com.myapp.user"`.
+      :type authrole: str
+      :param authmethod: The authentication method that was used to authenticate the client, e.g. `"cookie"` or `"wampcra"`.
+      :type authmethod: str
+      :param authprovider: The authentication provider that was used to authenticate the client, e.g. `"mozilla-persona"`.
+      :type authprovider: str
+      """
       if six.PY2:
          if type(authid) == str:
             authid = six.u(authid)
@@ -58,23 +70,35 @@ class Accept(HelloReturn):
             authrole = six.u(authrole)
          if type(authmethod) == str:
             authmethod = six.u(authmethod)
+         if type(authprovider) == str:
+            authprovider = six.u(authprovider)
 
       assert(authid is None or type(authid) == six.text_type)
       assert(authrole is None or type(authrole) == six.text_type)
       assert(authmethod is None or type(authmethod) == six.text_type)
+      assert(authprovider is None or type(authprovider) == six.text_type)
 
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
+      self.authprovider = authprovider or authmethod
 
 
 
 class Deny(HelloReturn):
    """
-   Information to deny a HELLO.
+   Information to deny a `HELLO`.
    """
 
    def __init__(self, reason = u"wamp.error.not_authorized", message = None):
+      """
+      Ctor.
+
+      :param reason: The reason of denying the authentication (an URI, e.g. `wamp.error.not_authorized`)
+      :type reason: str
+      :param message: A human readable message (for logging purposes).
+      :type message: str
+      """
       if six.PY2:
          if type(reason) == str:
             reason = six.u(reason)
@@ -90,33 +114,70 @@ class Deny(HelloReturn):
 
 
 class Challenge(HelloReturn):
-   def __init__(self, method, extra = {}):
+   """
+   Information to challenge the client upon `HELLO`.
+   """
+
+   def __init__(self, method, extra = None):
+      """
+      Ctor.
+
+      :param method: The authentication method for the challenge (e.g. `"wampcra"`).
+      :type method: str
+      :param extra: Any extra information for the authentication challenge. This is
+         specific to the authentication method.
+      :type extra: dict
+      """
       if six.PY2:
          if type(method) == str:
             method = six.u(method)
 
       self.method = method
-      self.extra = extra
+      self.extra = extra or {}
 
 
 
 class HelloDetails:
-   def __init__(self, roles = None, authmethods = None):
+   """
+   Provides details of a WAMP session while still attaching.
+   """
+
+   def __init__(self, roles = None, authmethods = None, authid = None, pending_session = None):
+      """
+      Ctor.
+
+      :param roles: The WAMP roles and features supported by the attaching client.
+      :type roles: dict
+      :param authmethods: The authentication methods the client is willing to perform.
+      :type authmethods: list
+      :param authid: The authentication ID the client wants to authenticate as. Required for WAMP-CRA.
+      :type authid: str
+      :param pending_session: The session ID the session will get once successfully attached.
+      :type pending_session: int
+      """
       self.roles = roles
       self.authmethods = authmethods
+      self.authid = authid
+      self.pending_session = pending_session
+
+   def __str__(self):
+      return "HelloDetails(roles = {}, authmethods = {}, authid = {}, pending_session = {})".format(self.roles, self.authmethods, self.authid, self.pending_session)
 
 
 
 class SessionDetails:
    """
-   Provides details for a WAMP session, provided in
-   :func:`autobahn.wamp.interfaces.IAppSession.onSessionOpen`.
+   Provides details for a WAMP session upon open.
+   
+   @see: :func:`autobahn.wamp.interfaces.ISession.onJoin`
    """
 
-   def __init__(self, realm, session, authid = None, authrole = None, authmethod = None):
+   def __init__(self, realm, session, authid = None, authrole = None, authmethod = None, authprovider = None):
       """
       Ctor.
 
+      :param realm: The realm this WAMP session is attached to.
+      :type realm: str
       :param session: WAMP session ID of this session.
       :type session: int
       """
@@ -125,6 +186,7 @@ class SessionDetails:
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
+      self.authprovider = authprovider
 
    def __str__(self):
       return "SessionDetails(realm = {}, session = {}, authid = {}, authrole = {}, authmethod = {})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
@@ -133,11 +195,20 @@ class SessionDetails:
 
 class CloseDetails:
    """
-   Provides details on closing of a WAMP session, provided in
-   :func:`autobahn.wamp.interfaces.IAppSession.onSessionClose`.
+   Provides details for a WAMP session upon open.
+   
+   @see: :func:`autobahn.wamp.interfaces.ISession.onLeave`
    """
 
    def __init__(self, reason = None, message = None):
+      """
+      Ctor.
+
+      :param reason: The close reason (an URI, e.g. `wamp.close.normal`)
+      :type reason: str
+      :param message: Closing log message.
+      :type message: str
+      """
       self.reason = reason
       self.message = message
 

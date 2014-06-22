@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+   </head>
+   <body>
+      <h1>WAMP Challenge-Response Authentication</h1>
+      <p>Open JavaScript console to watch output.</p>
+
+      <script src="autobahn.min.js"></script>
+      <script src="hmac-sha256.js"></script>
+      <script src="pbkdf2.js"></script>
+      <script src="enc-base64.js"></script>
+
+      <script>
+
+         if (true) {
+            var user = "peter";
+            var key = autobahn.auth_cra.derive_key("secret1", "salt123");
+         } else {
+            var user = "joe";
+            var key = "secret2";
+         }
+
+
+         function onchallenge (session, method, extra) {
+
+            console.log(method, extra);
+
+            if (method === "wampcra") {
+
+               console.log("authenticating via '" + method + "' and challenge '" + extra.challenge + "'");
+
+               return autobahn.auth_cra.sign(key, extra.challenge);
+
+            } else {
+               throw "don't know how to authenticate using '" + method + "'";
+            }
+         }
+
+         var connection = new autobahn.Connection({
+            url: 'ws://127.0.0.1:8080/ws',
+            realm: 'realm1',
+            authmethods: ["wampcra"],
+            authid: user,
+            onchallenge: onchallenge
+         });
+
+         connection.onopen = function (session, details) {
+
+            console.log("connected session with ID " + session.id);
+            console.log("authenticated using method '" + details.authmethod + "' and provider '" + details.authprovider + "'");
+            console.log("authenticated with authid '" + details.authid + "' and authrole '" + details.authrole + "'");
+
+            session.call('com.timeservice.now').then(
+               function (now) {
+                  console.log("call result", now);
+               },
+               function (error) {
+                  console.log("call error", error);
+               }
+            );
+         };
+
+         connection.onclose = function () {
+            console.log("disconnected", arguments);
+         }
+
+         connection.open();
+      </script>
+   </body>
+</html>

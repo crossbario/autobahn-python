@@ -25,7 +25,9 @@ __all__ = ("utcnow",
            "newid",
            "rtime",
            "Stopwatch",
-           "Tracker",)
+           "Tracker",
+           "derive_key",
+           "compute_signature")
 
 
 import time
@@ -267,3 +269,85 @@ class EqualityMixin:
 
    def __ne__(self, other):
       return not self.__eq__(other)
+
+
+
+## pbkdf2_bin() function taken from https://github.com/mitsuhiko/python-pbkdf2
+## Copyright 2011 by Armin Ronacher. Licensed under BSD license.
+## @see: https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
+##
+import sys
+PY3 = sys.version_info >= (3,)
+
+
+import hmac
+import hashlib
+from struct import Struct
+from operator import xor
+from itertools import starmap
+
+if PY3:
+   izip = zip
+else:
+   from itertools import izip, starmap
+
+_pack_int = Struct('>I').pack
+
+
+def pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
+   hashfunc = hashfunc or hashlib.sha256
+   mac = hmac.new(data, None, hashfunc)
+   def _pseudorandom(x, mac=mac):
+      h = mac.copy()
+      h.update(x)
+      return map(ord, h.digest())
+   buf = []
+   for block in xrange(1, -(-keylen // mac.digest_size) + 1):
+      rv = u = _pseudorandom(salt + _pack_int(block))
+      for i in xrange(iterations - 1):
+         u = _pseudorandom(''.join(map(chr, u)))
+         rv = starmap(xor, izip(rv, u))
+      buf.extend(rv)
+   return ''.join(map(chr, buf))[:keylen]
+
+
+
+import binascii
+
+
+def derive_key(secret, salt, iterations = 1000, keylen = 32):
+   """
+   Computes a derived cryptographic key from a password according to PBKDF2.
+   
+   @see: http://en.wikipedia.org/wiki/PBKDF2
+
+   :param secret: The secret.
+   :type secret: str
+   :param salt: The salt to be used.
+   :type salt: str
+   :param iterations: Number of iterations of derivation algorithm to run.
+   :type iterations: int
+   :param keylen: Length of the key to derive in bits.
+   :type keylen: int
+
+   :returns str -- The derived key in Base64 encoding.
+   """
+   key = pbkdf2_bin(secret, salt, iterations, keylen)
+   return binascii.b2a_base64(key).strip()
+
+
+
+def compute_signature(key, challenge):
+   """
+   Compute an authentication signature from an authentication
+   challenge and a (derived) key.
+
+   :param key: The key derived (via PBKDF2) from the secret.
+   :type key: str
+   :param challenge: The authentication challenge to sign.
+   :type challenge: str
+
+   :returns str -- The authentication signature.
+   """
+   sig = hmac.new(key, challenge, hashlib.sha256).digest()
+   return binascii.b2a_base64(sig).strip()
