@@ -25,10 +25,10 @@ from twisted.internet import defer
 
 from autobahn import util
 from autobahn.wamp import types
+from autobahn.wamp import auth
 from autobahn.twisted.wamp import ApplicationSession, RouterSession
 from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
 
-from autobahn.wamp import auth
 
 
 class UserDb:

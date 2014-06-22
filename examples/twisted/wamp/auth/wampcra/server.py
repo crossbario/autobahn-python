@@ -24,6 +24,7 @@ from twisted.internet import defer
 
 
 from autobahn import util
+from autobahn.wamp import auth
 from autobahn.wamp import types
 from autobahn.twisted.wamp import ApplicationSession, RouterSession
 from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
@@ -40,7 +41,7 @@ class UserDb:
 
    def add(self, authid, authrole, secret, salt = None):
       if salt:
-         key = util.derive_key(secret, salt)
+         key = auth.derive_key(secret, salt)
       else:
          key = secret
       self._creds[authid] = (salt, key, authrole)
@@ -77,7 +78,7 @@ class PendingAuth:
          'timestamp': self.timestamp
       }
       self.challenge = json.dumps(challenge_obj)
-      self.signature = util.compute_signature(key, self.challenge)
+      self.signature = auth.compute_wcs(key, self.challenge)
 
 
 
