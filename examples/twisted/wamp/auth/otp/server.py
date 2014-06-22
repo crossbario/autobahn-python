@@ -107,8 +107,9 @@ class MyRouterSession(RouterSession):
 
       ## if there is a pending auth, and the signature provided by client matches ..
       if self._pending_auth:
-         otp = auth.compute_totp(self._pending_auth.secret)
-         if signature == otp:
+         if signature == auth.compute_totp(self._pending_auth.secret) or \
+            signature == auth.compute_totp(self._pending_auth.secret, 1) or \
+            signature == auth.compute_totp(self._pending_auth.secret, -1):
             ## accept the client
             return types.Accept(authid = self._pending_auth.authid,
                authrole = self._pending_auth.authrole,
