@@ -1,37 +1,24 @@
 ## Hello WAMP
 
-Run a WAMP router listening on `ws://localhost:8080/ws`, e.g. Crossbar.io:
+This example demonstrates the use of `wamp.Application` objects, an alternative WAMP API to `ApplicationSession`.
 
-```shell
-crossbar init
-crossbar start
+`Application` objects provide a Flask-esque API to WAMP. You create an application object and then can e.g. register procedures using decorators:
+
+```python
+app = Application()
+
+@app.register('com.example.add2')
+def add2(a, b):
+   return a + b
 ```
 
-Start the app component:
+### Running the Example
+
+Start the app component for development in a standalone router embedding the component:
+
 
 ```shell
 python hello.py
 ```
 
 Open `hello.html` in your browser.
-
-
-### Dev. Notes
-
-For hacking on Autobahn library code while running this example, there are 2 options.
-
-Either insert the following at the beginning of the `hello.py`:
-
-```python
-import sys
-sys.path.insert(0, "../../../../autobahn")
-```
-
-or run the example by doing:
-
-```shell
-PYTHONPATH=../../../../autobahn python hello.py
-```
-
-Note that in the latter case, you must remove any installed Autobahn from your Python (since PYTHONPATH will be *appended* to the Python module search path).
-
