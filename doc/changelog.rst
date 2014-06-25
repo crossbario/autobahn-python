@@ -3,6 +3,13 @@
 Changelog
 =========
 
+0.8.10
+------
+ * WAMP-over-Long-poll (preliminary)
+ * WAMP Auth methods CR, Ticket, TOTP (preliminary)
+ * WAMP App object (preliminary)
+ * various fixes
+
 0.8.9
 -----
  * maintenance release
