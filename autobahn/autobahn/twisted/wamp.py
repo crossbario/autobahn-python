@@ -160,7 +160,7 @@ class ApplicationRunner:
          router_factory = RouterFactory()
          session_factory = RouterSessionFactory(router_factory)
 
-         transport_factory = WampWebSocketServerFactory(session_factory)
+         transport_factory = WampWebSocketServerFactory(session_factory, debug = self.debug, debug_wamp = self.debug_wamp)
          transport_factory.setProtocolOptions(failByDrop = False)
 
          server = serverFromString(reactor, "tcp:{}".format(port))
@@ -295,7 +295,8 @@ class Application:
       return self.session
 
 
-   def run(self, url = "ws://localhost:8080/ws", realm = "realm1", standalone = True):
+   def run(self, url = "ws://localhost:8080/ws", realm = "realm1", standalone = True,
+      debug = False, debug_wamp = False, debug_app = False):
       """
       Run the application.
 
@@ -305,11 +306,17 @@ class Application:
       :type realm: str
       :param standalone: If `True`, run an embedded WAMP router instead of connecting
          to an external one. This is useful during development and debugging.
+      :param debug: Turn on low-level debugging.
+      :type debug: bool
+      :param debug_wamp: Turn on WAMP-level debugging.
+      :type debug_wamp: bool
+      :param debug_app: Turn on app-level debugging.
+      :type debug_app: bool
       """
       if standalone:
          print("Running on {} ..".format(url))
       runner = ApplicationRunner(url, realm, standalone = standalone,
-         debug = False, debug_wamp = False, debug_app = False)
+         debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
       runner.run(self.__call__)
 
 
