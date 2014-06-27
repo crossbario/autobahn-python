@@ -419,6 +419,10 @@ class Timings:
    """
    Helper class to track timings by key. This class also supports item access,
    iteration and conversion to string.
+
+    This is duplicated in ``autobahn.utils.Tracker``...  Can we get rid of
+    this?
+
    """
 
    def __init__(self):
@@ -731,8 +735,6 @@ class WebSocketProtocol:
       """
       if not self.failedByMe:
          payload = b''.join(self.message_data)
-         if self.trackedTimings:
-            self.trackedTimings.track("onMessage")
          self._onMessage(payload, self.message_is_binary)
 
       self.message_data = None
@@ -1055,21 +1057,6 @@ class WebSocketProtocol:
          return False
 
 
-   def setTrackTimings(self, enable):
-      """
-      Enable/disable tracking of detailed timings.
-
-      :param enable: Turn time tracking on/off.
-      :type enable: bool
-      """
-      if not hasattr(self, 'trackTimings') or self.trackTimings != enable:
-         self.trackTimings = enable
-         if self.trackTimings:
-            self.trackedTimings = Timings()
-         else:
-            self.trackedTimings = None
-
-
    def _connectionMade(self):
       """
       This is called by network framework when a new TCP connection has been established
@@ -1097,10 +1084,6 @@ class WebSocketProtocol:
 
       ## permessage-compress extension
       self._perMessageCompress = None
-
-      ## Time tracking
-      self.trackedTimings = None
-      self.setTrackTimings(self.trackTimings)
 
       ## Traffic stats
       self.trafficStats = TrafficStats()
@@ -1479,8 +1462,6 @@ class WebSocketProtocol:
                   self.utf8validateIncomingCurrentMessage = False
 
                self.data = self.data[1:]
-               if self.trackedTimings:
-                  self.trackedTimings.track("onMessageBegin")
                self._onMessageBegin(False)
 
             ## Hixie close from peer received
@@ -1805,8 +1786,6 @@ class WebSocketProtocol:
 
             ## track timings
             ##
-            if self.trackedTimings:
-               self.trackedTimings.track("onMessageBegin")
 
             ## fire onMessageBegin
             ##
@@ -2382,8 +2361,6 @@ class WebSocketProtocol:
       if self.state != WebSocketProtocol.STATE_OPEN:
          return
 
-      if self.trackedTimings:
-         self.trackedTimings.track("sendMessage")
 
       if self.websocket_version == 0:
          if isBinary:
@@ -3209,8 +3186,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       ## fire handler on derived class
       ##
-      if self.trackedTimings:
-         self.trackedTimings.track("onOpen")
       self._onOpen()
 
       ## process rest, if any
@@ -4038,8 +4013,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
          else:
             ## fire handler on derived class
             ##
-            if self.trackedTimings:
-               self.trackedTimings.track("onOpen")
             self._onOpen()
 
          ## process rest, if any
