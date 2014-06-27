@@ -56,10 +56,12 @@ if __name__ == '__main__':
 
    factory1 = WebSocketServerFactory()
    factory1.protocol = Echo1ServerProtocol
+   factory1.startFactory() # when wrapped as a Twisted Web resource, start the underlying factory manually
    resource1 = WebSocketResource(factory1)
 
    factory2 = WebSocketServerFactory()
    factory2.protocol = Echo2ServerProtocol
+   factory2.startFactory() # when wrapped as a Twisted Web resource, start the underlying factory manually
    resource2 = WebSocketResource(factory2)
 
    ## Establish a dummy root resource
