@@ -6,6 +6,12 @@ This example demonstrates combining a [Klein](https://github.com/twisted/klein) 
 
 ### Running the Example
 
+Install dependencies:
+
+```shell
+pip install jinja2 klein
+```
+
 Start the server side:
 
 
