@@ -41,7 +41,7 @@ def square(x):
 ##
 webapp = Klein()
 webapp.visits = 0
-webapp.templates = jinja2.Environment(loader = jinja2.FileSystemLoader('.'))
+webapp.templates = jinja2.Environment(loader = jinja2.FileSystemLoader('templates'))
 
 
 @webapp.route('/')
@@ -56,17 +56,15 @@ def home(request):
 @inlineCallbacks
 def square(request, x):
    result = yield wampapp.session.call('com.example.square', x)
-   returnValue('{} square is {}'.format(x, result))
-
-
-@webapp.route('/squareform', methods = ['POST'])
-@inlineCallbacks
-def squareform(request):
-   x = int(request.args.get('x', [0])[0])
-   result = yield wampapp.session.call('com.example.square', x)
    page = webapp.templates.get_template('result.html')
    content = page.render(x = x, result = result)
    returnValue(content)
+
+
+@webapp.route('/square/submit', methods = ['POST'])
+def square_submit(request):
+   x = int(request.args.get('x', [0])[0])
+   return square(request, x)
 
 
 
@@ -77,5 +75,5 @@ if __name__ == "__main__":
    from twisted.internet import reactor
    log.startLogging(sys.stdout)
 
-   reactor.listenTCP(8090, Site(webapp.resource()))
+   reactor.listenTCP(8080, Site(webapp.resource()))
    wampapp.run("ws://localhost:9000", "realm1", standalone = True)

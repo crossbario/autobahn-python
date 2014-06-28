@@ -1,24 +1,16 @@
-## Hello WAMP
+## WAMP-Klein Application
 
-This example demonstrates the use of `wamp.Application` objects, an alternative WAMP API to `ApplicationSession`.
+This example demonstrates combining a [Klein](https://github.com/twisted/klein) Web application with a Autobahn WAMP application.
 
-`Application` objects provide a Flask-esque API to WAMP. You create an application object and then can e.g. register procedures using decorators:
-
-```python
-app = Application()
-
-@app.register('com.example.add2')
-def add2(a, b):
-   return a + b
-```
+> Klein essentially is Flask for Twisted Web.
 
 ### Running the Example
 
-Start the app component for development in a standalone router embedding the component:
+Start the server side:
 
 
 ```shell
-python hello.py
+python server.py
 ```
 
-Open `hello.html` in your browser.
+Open [http://localhost:8080](http://localhost:8080) in your browser.
