@@ -9,7 +9,7 @@ This example demonstrates combining a [Klein](https://github.com/twisted/klein) 
 Install dependencies:
 
 ```shell
-pip install jinja2 klein
+pip install autobahn[twisted] jinja2 klein
 ```
 
 Start the server side:
