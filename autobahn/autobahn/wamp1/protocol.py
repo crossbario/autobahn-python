@@ -2002,7 +2002,8 @@ class Call:
           self.timings = None
 
    def track(self, key):
-        self.timings.track(key)
+       if self.timings:
+           self.timings.track(key)
 
 
 
