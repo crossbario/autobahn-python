@@ -187,13 +187,15 @@ class Stopwatch:
 
 class Tracker:
 
-   def __init__(self, tracker, tracked):
+   def __init__(self):
       """
+      Helper class to track timings by key. This class also supports item access,
+      iteration and conversion to string.
+
       """
-      self.tracker = tracker
-      self.tracked = tracked
       self._timings = {}
       self._stopwatch = Stopwatch()
+      self._offset = time.time()
 
 
    def track(self, key):
@@ -241,7 +243,11 @@ class Tracker:
 
 
    def __getitem__(self, key):
-      return self._timings.get(key, None)
+      """
+      Returns the unix timestamp of when an event was triggered.
+
+      """
+      return self._offset + self._timings.get(key, None)
 
 
    def __iter__(self):

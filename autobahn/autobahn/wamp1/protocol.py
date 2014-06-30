@@ -52,8 +52,8 @@ from twisted.internet.defer import Deferred, \
 
 from autobahn import __version__
 
-from autobahn.websocket.protocol import WebSocketProtocol, \
-                                        Timings
+from autobahn.websocket.protocol import WebSocketProtocol
+
 from autobahn.websocket import http
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory, \
@@ -61,7 +61,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketServerProtocol
 from autobahn.wamp1.pbkdf2 import pbkdf2_bin
 from autobahn.wamp1.prefixmap import PrefixMap
-from autobahn.util import utcnow, newid
+from autobahn.util import utcnow, newid, Tracker
 
 
 def exportRpc(arg = None):
@@ -1997,7 +1997,7 @@ class Call:
       self.args = args
       self.extra = extra
       if self.proto.trackTimings:
-          self.timings = Timings()
+          self.timings = Tracker()
       else:
           self.timings = None
 
