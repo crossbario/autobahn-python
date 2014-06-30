@@ -52,8 +52,8 @@ from twisted.internet.defer import Deferred, \
 
 from autobahn import __version__
 
-from autobahn.websocket.protocol import WebSocketProtocol, \
-                                        Timings
+from autobahn.websocket.protocol import WebSocketProtocol
+
 from autobahn.websocket import http
 from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory, \
@@ -61,7 +61,7 @@ from autobahn.twisted.websocket import WebSocketClientProtocol, \
                                        WebSocketServerProtocol
 from autobahn.wamp1.pbkdf2 import pbkdf2_bin
 from autobahn.wamp1.prefixmap import PrefixMap
-from autobahn.util import utcnow, newid
+from autobahn.util import utcnow, newid, Tracker
 
 
 def exportRpc(arg = None):
@@ -1996,7 +1996,14 @@ class Call:
       self.uri = uri
       self.args = args
       self.extra = extra
-      self.timings = None
+      if self.proto.trackTimings:
+          self.timings = Tracker()
+      else:
+          self.timings = None
+
+   def track(self, key):
+       if self.timings:
+           self.timings.track(key)
 
 
 
@@ -2007,6 +2014,7 @@ class Handler(object):
 
 
    typeid = None
+   tracker = None
 
 
    def __init__(self, proto, prefixes):
@@ -2061,16 +2069,6 @@ class Handler(object):
       Has to be overridden in subclasses.
       """
       raise NotImplementedError
-
-
-   def maybeTrackTimings(self, call, msg):
-      """
-      Track timings, if desired.
-      """
-      if self.proto.trackTimings:
-         self.proto.doTrack(msg)
-         call.timings = self.proto.trackedTimings
-         self.proto.trackedTimings = Timings()
 
 
 
@@ -2131,7 +2129,7 @@ class CallHandler(Handler):
       uri, args = self.proto.onBeforeCall(self.callid, self.uri, self.args, bool(self.proto.procForUri(self.uri)))
 
       call = Call(self.proto, self.callid, uri, args)
-      self.maybeTrackTimings(call, "onBeforeCall")
+      call.track("onBeforeCall")
       return call
 
 
@@ -2181,7 +2179,7 @@ class CallHandler(Handler):
       Execute custom success handler and send call result.
       """
       ## track timing and fire user callback
-      self.maybeTrackTimings(call, "onAfterCallSuccess")
+      call.track("onAfterCallSuccess")
       call.result = self.proto.onAfterCallSuccess(result, call)
 
       ## send out WAMP message
@@ -2193,7 +2191,7 @@ class CallHandler(Handler):
       Execute custom error handler and send call error.
       """
       ## track timing and fire user callback
-      self.maybeTrackTimings(call, "onAfterCallError")
+      call.track("onAfterCallError")
       call.error = self.proto.onAfterCallError(error, call)
 
       ## send out WAMP message
@@ -2214,7 +2212,7 @@ class CallHandler(Handler):
          self.proto.sendMessage(rmsg)
 
          ## track timing and fire user callback
-         self.maybeTrackTimings(call, "onAfterSendCallSuccess")
+         call.track("onAfterSendCallSuccess")
          self.proto.onAfterSendCallSuccess(rmsg, call)
 
 
@@ -2235,7 +2233,7 @@ class CallHandler(Handler):
             self.proto.sendMessage(rmsg)
 
             ## track timing and fire user callback
-            self.maybeTrackTimings(call, "onAfterSendCallError")
+            call.track("onAfterSendCallError")
             self.proto.onAfterSendCallError(rmsg, call)
 
             if killsession:
