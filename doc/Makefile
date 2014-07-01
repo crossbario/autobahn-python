@@ -48,6 +48,10 @@ help:
 
 clean:
 	rm -rf $(BUILDDIR)/*
+	rm -rf ./reference/
+
+api:
+	sphinx-apidoc -o reference ../autobahn/autobahn/
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

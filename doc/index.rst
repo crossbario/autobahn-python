@@ -153,7 +153,8 @@ Features
 Python support
 --------------
 
-Support for |ab| on Twisted and asyncio is as follows:
+Support for |ab| on Twisted and asyncio is as follows.
+Most of Autobahn's WebSocket and WAMP features are available on both `Twisted`_ and `asyncio`_.
 
 +---------------+-----------+---------+---------------------------------+
 | Python        | Twisted   | asyncio | Notes                           |
@@ -174,9 +175,7 @@ Support for |ab| on Twisted and asyncio is as follows:
 .. _1: http://twistedmatrix.com/trac/ticket/3413
 .. _2: http://twistedmatrix.com/trac/ticket/6746
 
-**WebSocket** - implemented on both `Twisted`_ and `asyncio`_
 
-**WAMP** - currently only implented on `Twisted`_
 
 Where to go from here
 ---------------------
@@ -201,4 +200,3 @@ Where to go from here
    reference
    changelog
    table_of_contents
-

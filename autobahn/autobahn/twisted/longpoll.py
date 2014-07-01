@@ -78,11 +78,11 @@ class WampLongPollResourceSessionSend(Resource):
          self._parent.onMessage(payload, None)
 
       except Exception as e:
-         return self._parent._parent.failRequest(request, "could not unserialize WAMP message: {0}".format(e))
+         return self._parent._parent._failRequest(request, "could not unserialize WAMP message: {0}".format(e))
 
       else:
          request.setResponseCode(http.NO_CONTENT)
-         self._parent._parent.setStandardHeaders(request)
+         self._parent._parent._setStandardHeaders(request)
          self._parent._isalive = True
          return ""
 
@@ -169,7 +169,7 @@ class WampLongPollResourceSessionReceive(Resource):
       ## remember request, which marks the session as being polled
       self._request = request
 
-      self._parent._parent.setStandardHeaders(request)
+      self._parent._parent._setStandardHeaders(request)
       request.setHeader('content-type', self._parent._serializer.MIME_TYPE)
 
       def cancel(err):
@@ -218,7 +218,7 @@ class WampLongPollResourceSessionClose(Resource):
          log.msg("WampLongPoll: session ended and transport {0} closed".format(self._parent._transportid))
 
       request.setResponseCode(http.NO_CONTENT)
-      self._parent._parent.setStandardHeaders(request)
+      self._parent._parent._setStandardHeaders(request)
       return ""
 
 
@@ -402,13 +402,13 @@ class WampLongPollResourceOpen(Resource):
       try:
          options = json.loads(payload)
       except Exception as e:
-         return self._parent.failRequest(request, "could not parse WAMP session open request body: {0}".format(e))
+         return self._parent._failRequest(request, "could not parse WAMP session open request body: {0}".format(e))
 
       if type(options) != dict:
-         return self._parent.failRequest(request, "invalid type for WAMP session open request [was {0}, expected dictionary]".format(type(options)))
+         return self._parent._failRequest(request, "invalid type for WAMP session open request [was {0}, expected dictionary]".format(type(options)))
 
       if not 'protocols' in options:
-         return self._parent.failRequest(request, "missing attribute 'protocols' in WAMP session open request")
+         return self._parent._failRequest(request, "missing attribute 'protocols' in WAMP session open request")
 
       ## determine the protocol to speak
       ##
@@ -421,7 +421,7 @@ class WampLongPollResourceOpen(Resource):
             break
 
       if protocol is None:
-         return self._failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
+         return self.__failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
 
       ## make up new transport ID
       ##
@@ -437,7 +437,7 @@ class WampLongPollResourceOpen(Resource):
 
       ## create response
       ##
-      self._parent.setStandardHeaders(request)
+      self._parent._setStandardHeaders(request)
       request.setHeader('content-type', 'application/json; charset=utf-8')
 
       result = {
@@ -456,16 +456,23 @@ class WampLongPollResourceOpen(Resource):
 
 class WampLongPollResource(Resource):
    """
-   A WAMP-over-Long-Poll resource for use with Twisted Web resource trees.
+   A WAMP-over-Longpoll resource for use with Twisted Web Resource trees.
 
-   This resource exposes the following paths:
+   This class provides an implementation of the
+   `WAMP-over-Longpoll Transport <https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport>`_
+   for WAMP.
 
-   * `<Base URL>/open`
-   * `<Base URL>/<Transport ID>/send`
-   * `<Base URL>/<Transport ID>/receive`
-   * `<Base URL>/<Transport ID>/close`
+   The Resource exposes the following paths (child resources).
 
-   @see: https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport
+   Opening a new WAMP session:
+
+      * ``<base-url>/open``
+
+   Once a transport is created and the session is opened:
+
+      * ``<base-url>/<transport-id>/send``
+      * ``<base-url>/<transport-id>/receive``
+      * ``<base-url>/<transport-id>/close``
    """
 
    protocol = WampLongPollResourceSession
@@ -559,6 +566,11 @@ class WampLongPollResource(Resource):
    def getChild(self, name, request):
       """
       Returns send/receive/close resource for transport.
+
+      .. seealso::
+
+         * :class:`twisted.web.resource.Resource`
+         * :class:`zipfile.ZipFile`
       """
       if name not in self._transports:
          return NoResource("no WAMP transport '{}'".format(name))
@@ -569,7 +581,7 @@ class WampLongPollResource(Resource):
       return self._transports[name]
 
 
-   def setStandardHeaders(self, request):
+   def _setStandardHeaders(self, request):
       """
       Set standard HTTP response headers.
       """
@@ -585,11 +597,11 @@ class WampLongPollResource(Resource):
          request.setHeader('access-control-allow-headers', headers)
 
 
-   def failRequest(self, request, msg):
+   def _failRequest(self, request, msg):
       """
       Fails a request to the long-poll service.
       """
-      self.setStandardHeaders(request)
+      self._setStandardHeaders(request)
       request.setHeader('content-type', 'text/plain; charset=UTF-8')
       request.setResponseCode(http.BAD_REQUEST)
       return msg
