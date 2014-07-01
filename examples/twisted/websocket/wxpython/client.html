@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+   <body>
+      <h1>wxPython/Autobahn WebSocket Demo</h1>
+      <p>Please open the JavaScript console to see what's going on.</p>
+      <script>
+         var sock = new WebSocket("ws://127.0.0.1:9000");
+
+         sock.onopen = function () {
+            console.log("connected");
+         }
+
+         sock.onclose = function (evt) {
+            console.log("connection lost", evt.reason);
+            sock = null;
+         }
+
+         sock.onmessage = function (evt) {
+            console.log("message received", evt.data);
+         }
+      </script>
+   </body>
+</html>
