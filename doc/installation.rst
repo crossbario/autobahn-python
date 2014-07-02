@@ -104,5 +104,5 @@ In the Python interpreter, to check the installation do:
 .. doctest::
 
    >>> from autobahn import __version__
-   >>> print __version__
+   >>> print(__version__)
    0.8.5
