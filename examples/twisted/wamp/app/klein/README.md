@@ -1,22 +1,12 @@
 ## WAMP-Klein Application
 
-This example demonstrates combining a [Klein](https://github.com/twisted/klein) Web application with a Autobahn WAMP application.
+The examples here demonstrate how to combine a [Klein](https://github.com/twisted/klein) Web application with a Autobahn WAMP application. Klein essentially is Flask for Twisted Web.
 
-> Klein essentially is Flask for Twisted Web.
+A detailed discussion of Example 1 (see below) is here:
 
-### Running the Example
+ * [Mixing Web and WAMP code with Twisted Klein](http://tavendo.com/blog/post/mixing-web-and-wamp-code-with-twisted-klein/)
 
-Install dependencies:
+### Examples
 
-```shell
-pip install autobahn[twisted] jinja2 klein
-```
-
-Start the server side:
-
-
-```shell
-python server.py
-```
-
-Open [http://localhost:8080](http://localhost:8080) in your browser.
+* [Example 1](example1): minimalistic; runs Web and WAMP app in different processes
+* [Example 2](example2): more extended; runs Web and WAMP app in same process 
