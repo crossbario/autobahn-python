@@ -60,13 +60,13 @@ class Component(ApplicationSession):
       print("Arglen 1: {}".format(arglengths))
 
       arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3)
-      print("Arglen 1: {}".format(arglengths))
-
-      arglengths = yield self.call(u'com.arguments.arglen', a = 1, b = 2, c = 3)
       print("Arglen 2: {}".format(arglengths))
 
-      arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
+      arglengths = yield self.call(u'com.arguments.arglen', a = 1, b = 2, c = 3)
       print("Arglen 3: {}".format(arglengths))
+
+      arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
+      print("Arglen 4: {}".format(arglengths))
 
       self.leave()
 
