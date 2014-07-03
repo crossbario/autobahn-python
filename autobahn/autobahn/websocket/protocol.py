@@ -3298,11 +3298,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
    <body>
       <h1>AutobahnPython %s</h1>
       <p>
-         I am not Web server, but a WebSocket endpoint.
-         You can talk to me using the WebSocket <a href="http://tools.ietf.org/html/rfc6455">protocol</a>.
+         I am not Web server, but a <b>WebSocket Endpoint</b>.
       </p>
       <p>
-         For more information, please visit <a href="http://autobahn.ws/python">my homepage</a>.
+         You can talk to me using the <a href="http://tools.ietf.org/html/rfc6455">WebSocket</a> protocol.
+      </p>
+      <p>
+         For more information, please see:
+         <ul>
+            <li><a href="http://autobahn.ws/python">AutobahnPython</a></li>
+         </ul>
       </p>
    </body>
 </html>

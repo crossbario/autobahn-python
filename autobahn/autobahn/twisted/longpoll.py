@@ -563,6 +563,11 @@ class WampLongPollResource(Resource):
          log.msg("WampLongPollResource initialized")
 
 
+   def render_GET(self, request):
+      request.setHeader('content-type', 'text/html; charset=UTF-8')
+      return self.getNotice()
+
+
    def getChild(self, name, request):
       """
       Returns send/receive/close resource for transport.
@@ -605,3 +610,58 @@ class WampLongPollResource(Resource):
       request.setHeader('content-type', 'text/plain; charset=UTF-8')
       request.setResponseCode(http.BAD_REQUEST)
       return msg
+
+
+   def getNotice(self, redirectUrl = None, redirectAfter = 0):
+      """
+      Render a user notice (HTML page) when the Long-Poll root resource
+      is accessed via HTTP/GET (by a user).
+
+      :param redirectUrl: Optional URL to redirect the user to.
+      :type redirectUrl: str
+      :param redirectAfter: When `redirectUrl` is provided, redirect after this time (seconds).
+      :type redirectAfter: int
+      """
+      from autobahn import __version__
+
+      if redirectUrl:
+         redirect = """<meta http-equiv="refresh" content="%d;URL='%s'">""" % (redirectAfter, redirectUrl)
+      else:
+         redirect = ""
+      html = """
+<!DOCTYPE html>
+<html>
+   <head>
+      %s
+      <style>
+         body {
+            color: #fff;
+            background-color: #027eae;
+            font-family: "Segoe UI", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+         }
+
+         a, a:visited, a:hover {
+            color: #fff;
+         }
+      </style>
+   </head>
+   <body>
+      <h1>AutobahnPython %s</h1>
+      <p>
+         I am not Web server, but a <b>WAMP-over-LongPoll Endpoint</b>.
+      </p>
+      <p>
+         You can talk to me using the <a href="https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport">WAMP-over-LongPoll</a> protocol.
+      </p>
+      <p>
+         For more information, please see:
+         <ul>
+            <li><a href="http://wamp.ws/">WAMP</a></li>
+            <li><a href="http://autobahn.ws/python">AutobahnPython</a></li>
+         </ul>
+      </p>
+   </body>
+</html>
+""" % (redirect, __version__)
+      return html
