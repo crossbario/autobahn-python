@@ -565,7 +565,8 @@ class WampLongPollResource(Resource):
 
    def render_GET(self, request):
       request.setHeader('content-type', 'text/html; charset=UTF-8')
-      return self.getNotice()
+      peer = "{}:{}".format(request.client.host, request.client.port)
+      return self.getNotice(peer = peer)
 
 
    def getChild(self, name, request):
@@ -612,7 +613,7 @@ class WampLongPollResource(Resource):
       return msg
 
 
-   def getNotice(self, redirectUrl = None, redirectAfter = 0):
+   def getNotice(self, peer, redirectUrl = None, redirectAfter = 0):
       """
       Render a user notice (HTML page) when the Long-Poll root resource
       is accessed via HTTP/GET (by a user).
