@@ -425,9 +425,9 @@ class WampLongPollResourceOpen(Resource):
 
       ## make up new transport ID
       ##
-      if self._parent._debug_session_id:
+      if self._parent._debug_transport_id:
          ## use fixed transport ID for debugging purposes
-         transport = self._parent._debug_session_id
+         transport = self._parent._debug_transport_id
       else:
          transport = newid()
 
@@ -486,7 +486,7 @@ class WampLongPollResource(Resource):
                 queueLimitBytes = 128 * 1024,
                 queueLimitMessages = 100,
                 debug = False,
-                debug_session_id = None,
+                debug_transport_id = None,
                 reactor = None):
       """
       Create new HTTP WAMP Web resource.
@@ -505,8 +505,8 @@ class WampLongPollResource(Resource):
       :type queueLimitMessages: int
       :param debug: Enable debug logging.
       :type debug: bool
-      :param debug_session_id: If given, use this fixed transport ID.
-      :type debug_session_id: str
+      :param debug_transport_id: If given, use this fixed transport ID.
+      :type debug_transport_id: str
       :param reactor: The Twisted reactor to run under.
       :type reactor: obj
       """
@@ -521,7 +521,7 @@ class WampLongPollResource(Resource):
       self.reactor = reactor
 
       self._debug = debug
-      self._debug_session_id = debug_session_id
+      self._debug_transport_id = debug_transport_id
       self._timeout = timeout
       self._killAfter = killAfter
       self._queueLimitBytes = queueLimitBytes
