@@ -649,7 +649,7 @@ class WampLongPollResource(Resource):
    <body>
       <h1>AutobahnPython %s</h1>
       <p>
-         I am not Web server, but a <b>WAMP-over-LongPoll Endpoint</b>.
+         I am not Web server, but a <b>WAMP-over-LongPoll</b> transport endpoint.
       </p>
       <p>
          You can talk to me using the <a href="https://github.com/tavendo/WAMP/blob/master/spec/advanced.md#long-poll-transport">WAMP-over-LongPoll</a> protocol.
