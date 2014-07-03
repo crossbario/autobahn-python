@@ -193,8 +193,8 @@ class Tracker:
       self.tracker = tracker
       self.tracked = tracked
       self._timings = {}
-      self._stopwatch = Stopwatch()
-      self._offset = datetime.utcnow()
+      self._offset = rtime()
+      self._dt_offset = datetime.utcnow()
 
 
    def track(self, key):
@@ -204,7 +204,7 @@ class Tracker:
       :param key: Key under which to track the timing.
       :type key: str
       """
-      self._timings[key] = self._stopwatch.elapsed()
+      self._timings[key] = rtime()
 
 
    def diff(self, startKey, endKey, format = True):
@@ -250,11 +250,17 @@ class Tracker:
       :returns:  timezone-naive datetime
 
       """
-      return self._offset + timedelta(seconds=self._timings[key])
+      elapsed = self[key]
+      if elapsed is None:
+         raise KeyError("No such key \"%s\"." % elapsed)
+      return self._dt_offset + timedelta(seconds=elapsed)
 
 
    def __getitem__(self, key):
-      return self._timings.get(key, None)
+      if key in self._timings:
+         return self._timings[key] - self._offset
+      else:
+         return None
 
 
    def __iter__(self):
