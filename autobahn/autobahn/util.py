@@ -33,7 +33,7 @@ __all__ = ("utcnow",
 import time
 import random
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pformat
 
 
@@ -194,6 +194,7 @@ class Tracker:
       self.tracked = tracked
       self._timings = {}
       self._stopwatch = Stopwatch()
+      self._offset = datetime.utcnow()
 
 
    def track(self, key):
@@ -238,6 +239,18 @@ class Tracker:
             return "n.a.".rjust(8)
          else:
             return None
+
+   def absolute(self, key):
+      """
+      Return the UTC wall-clock time at which a tracked event occurred.
+
+      :param key:  The key
+      :type key:  str
+
+      :returns:  timezone-naive datetime
+
+      """
+      return self._offset + timedelta(seconds=self._timings[key])
 
 
    def __getitem__(self, key):
