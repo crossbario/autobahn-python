@@ -33,7 +33,7 @@ __all__ = ("utcnow",
 import time
 import random
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pprint import pformat
 
 
@@ -193,7 +193,8 @@ class Tracker:
       self.tracker = tracker
       self.tracked = tracked
       self._timings = {}
-      self._stopwatch = Stopwatch()
+      self._offset = rtime()
+      self._dt_offset = datetime.utcnow()
 
 
    def track(self, key):
@@ -203,7 +204,7 @@ class Tracker:
       :param key: Key under which to track the timing.
       :type key: str
       """
-      self._timings[key] = self._stopwatch.elapsed()
+      self._timings[key] = rtime()
 
 
    def diff(self, startKey, endKey, format = True):
@@ -239,9 +240,27 @@ class Tracker:
          else:
             return None
 
+   def absolute(self, key):
+      """
+      Return the UTC wall-clock time at which a tracked event occurred.
+
+      :param key:  The key
+      :type key:  str
+
+      :returns:  timezone-naive datetime
+
+      """
+      elapsed = self[key]
+      if elapsed is None:
+         raise KeyError("No such key \"%s\"." % elapsed)
+      return self._dt_offset + timedelta(seconds=elapsed)
+
 
    def __getitem__(self, key):
-      return self._timings.get(key, None)
+      if key in self._timings:
+         return self._timings[key] - self._offset
+      else:
+         return None
 
 
    def __iter__(self):
