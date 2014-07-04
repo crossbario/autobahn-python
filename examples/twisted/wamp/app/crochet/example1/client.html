@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+   <body>
+      <h1>Flask/Crochet/Autobahn: Example 1</h1>
+      <p>Open JavaScript console to watch output.</p>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
+      <script>
+         var connection = new autobahn.Connection({
+            url: "ws://127.0.0.1:9000",
+            realm: 'realm1'
+         });
+
+         connection.onopen = function (session) {
+
+            console.log("connected");
+
+            session.subscribe("com.example.on_visit", function (args, kwargs) {
+               console.log("got event:", args, kwargs);
+            }).then(
+               function (sub) {
+                  console.log("subscribed", sub.id);
+               },
+               function (err) {
+                  console.log("error:", err);
+               }
+            );
+         };
+
+         connection.open();
+      </script>
+   </body>
+</html>
