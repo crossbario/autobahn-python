@@ -134,7 +134,7 @@ class ApplicationRunner:
       self.make = None
 
 
-   def run(self, make):
+   def run(self, make, start_reactor = True):
       """
       Run the application component.
 
@@ -188,7 +188,8 @@ class ApplicationRunner:
       client.connect(transport_factory)
 
       ## now enter the Twisted reactor loop
-      reactor.run()
+      if start_reactor:
+         reactor.run()
 
 
 
@@ -296,7 +297,8 @@ class Application:
 
 
    def run(self, url = "ws://localhost:8080/ws", realm = "realm1", standalone = True,
-      debug = False, debug_wamp = False, debug_app = False):
+      debug = False, debug_wamp = False, debug_app = False,
+      start_reactor = True):
       """
       Run the application.
 
@@ -317,7 +319,7 @@ class Application:
          print("Running on {} ..".format(url))
       runner = ApplicationRunner(url, realm, standalone = standalone,
          debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
-      runner.run(self.__call__)
+      runner.run(self.__call__, start_reactor)
 
 
    def register(self, uri = None):
