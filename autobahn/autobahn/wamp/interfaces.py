@@ -655,6 +655,13 @@ class IRouter(IRouterBase):
    ACTION_PUBLISH = 3
    ACTION_SUBSCRIBE = 4
 
+   ACTION_TO_STRING = {
+      ACTION_CALL: 'call',
+      ACTION_REGISTER: 'register',
+      ACTION_PUBLISH: 'publish',
+      ACTION_SUBSCRIBE: 'subscribe',
+   }
+
 
    @abc.abstractmethod
    def process(self, session, message):
