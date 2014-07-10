@@ -18,12 +18,14 @@
 
 from __future__ import absolute_import
 
+from twisted.internet.defer import maybeDeferred
+
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError, ApplicationError
-from autobahn.wamp.interfaces import IDealer
+from autobahn.wamp.interfaces import IDealer, IRouter
 
 from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_EMPTY
 
@@ -34,16 +36,16 @@ class Dealer:
    Basic WAMP dealer, implements :class:`autobahn.wamp.interfaces.IDealer`.
    """
 
-   def __init__(self, realm, options):
+   def __init__(self, router, options):
       """
       Constructor.
 
-      :param realm: The realm this dealer is working for.
-      :type realm: str
+      :param router: The router this dealer is part of.
+      :type router: Object that implements :class:`autobahn.wamp.interfaces.IRouter`.
       :param options: Router options.
       :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
-      self.realm = realm
+      self._router = router
       self._options = options or types.RouterOptions()
 
       ## map: session -> set(registration)
@@ -110,17 +112,28 @@ class Dealer:
       else:
 
          if not register.procedure in self._procs_to_regs:
-            registration_id = util.id()
-            self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller)
-            self._regs_to_procs[registration_id] = register.procedure
 
-            self._session_to_registrations[session].add(registration_id)
+            d = maybeDeferred(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
 
-            reply = message.Registered(register.request, registration_id)
+            def on_authorize(authorized):
+               if authorized:
+                  registration_id = util.id()
+                  self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller)
+                  self._regs_to_procs[registration_id] = register.procedure
+
+                  self._session_to_registrations[session].add(registration_id)
+
+                  reply = message.Registered(register.request, registration_id)
+               else:
+                  reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to register procedure URI '{}'".format(register.procedure)])
+
+               session._transport.send(reply)
+
+            d.addCallback(on_authorize)
+
          else:
             reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure URI '{}'".format(register.procedure)])
-
-      session._transport.send(reply)
+            session._transport.send(reply)
 
 
    def processUnregister(self, session, unregister):
@@ -130,12 +143,27 @@ class Dealer:
       assert(session in self._session_to_registrations)
 
       if unregister.registration in self._regs_to_procs:
-         del self._procs_to_regs[self._regs_to_procs[unregister.registration]]
-         del self._regs_to_procs[unregister.registration]
 
-         self._session_to_registrations[session].discard(unregister.registration)
+         ## map registration ID to procedure URI
+         procedure = self._regs_to_procs[unregister.registration]
 
-         reply = message.Unregistered(unregister.request)
+         ## get the session that originally registered the procedure
+         _, reg_session, _ = self._procs_to_regs[procedure]
+
+         if session != reg_session:
+            ## procedure was registered by a different session!
+            ##
+            reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, ApplicationError.NO_SUCH_REGISTRATION)
+         else:
+            ## alright. the procedure had been registered by the session
+            ## that now wants to unregister it.
+            ##
+            del self._procs_to_regs[procedure]
+            del self._regs_to_procs[unregister.registration]
+
+            self._session_to_registrations[session].discard(unregister.registration)
+
+            reply = message.Unregistered(unregister.request)
       else:
          reply = message.Error(message.Unregister.MESSAGE_TYPE, unregister.request, ApplicationError.NO_SUCH_REGISTRATION)
 
@@ -159,34 +187,45 @@ class Dealer:
       else:
 
          if call.procedure in self._procs_to_regs:
-            registration_id, endpoint_session, discloseCaller = self._procs_to_regs[call.procedure]
 
-            request_id = util.id()
+            d = maybeDeferred(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
 
-            if discloseCaller or call.discloseMe:
-               caller = session._session_id
-               authid = session._authid
-               authrole = session._authrole
-               authmethod = session._authmethod
-            else:
-               caller = None
-               authid = None
-               authrole = None
-               authmethod = None
+            def on_authorize(authorized):
+               if authorized:
+                  registration_id, endpoint_session, discloseCaller = self._procs_to_regs[call.procedure]
 
-            invocation = message.Invocation(request_id,
-                                            registration_id,
-                                            args = call.args,
-                                            kwargs = call.kwargs,
-                                            timeout = call.timeout,
-                                            receive_progress = call.receive_progress,
-                                            caller = caller,
-                                            authid = authid,
-                                            authrole = authrole,
-                                            authmethod = authmethod)
+                  request_id = util.id()
 
-            self._invocations[request_id] = (call, session)
-            endpoint_session._transport.send(invocation)
+                  if discloseCaller or call.discloseMe:
+                     caller = session._session_id
+                     authid = session._authid
+                     authrole = session._authrole
+                     authmethod = session._authmethod
+                  else:
+                     caller = None
+                     authid = None
+                     authrole = None
+                     authmethod = None
+
+                  invocation = message.Invocation(request_id,
+                                                  registration_id,
+                                                  args = call.args,
+                                                  kwargs = call.kwargs,
+                                                  timeout = call.timeout,
+                                                  receive_progress = call.receive_progress,
+                                                  caller = caller,
+                                                  authid = authid,
+                                                  authrole = authrole,
+                                                  authmethod = authmethod)
+
+                  self._invocations[request_id] = (call, session)
+                  endpoint_session._transport.send(invocation)
+               else:
+                  reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to call procedure '{}'".format(call.procedure)])
+                  session._transport.send(reply)                 
+
+            d.addCallback(on_authorize)
+
          else:
             reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{}' registered".format(call.procedure)])
             session._transport.send(reply)

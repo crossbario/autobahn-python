@@ -49,8 +49,8 @@ class Router:
       self.factory = factory
       self.realm = realm
       self._options = options or types.RouterOptions()
-      self._broker = Broker(realm, self._options)
-      self._dealer = Dealer(realm, self._options)
+      self._broker = Broker(self, self._options)
+      self._dealer = Dealer(self, self._options)
       self._attached = 0
 
 
@@ -116,6 +116,16 @@ class Router:
 
       else:
          raise ProtocolError("Unexpected message {}".format(msg.__class__))
+
+
+   def authorize(self, session, uri, action):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
+      """
+      if True or self.debug:
+         print("Router.authorize: {} {} {}".format(session._session_id, uri, action))
+      return True
+
 
 
 

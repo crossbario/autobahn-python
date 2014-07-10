@@ -37,13 +37,16 @@ class Component(ApplicationSession):
          now = datetime.datetime.utcnow()
          return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-      yield self.register(utcnow, 'com.timeservice.now')
-
-      print("procedures registered")
+      try:
+         yield self.register(utcnow, 'com.timeservice.now')
+      except Exception as e:
+         print("failed to register procedure: {}".format(e))
+      else:
+         print("procedure registered")
 
 
 
 if __name__ == '__main__':
    from autobahn.twisted.wamp import ApplicationRunner
-   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1", standalone = True, debug = False)
    runner.run(Component)

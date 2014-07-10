@@ -650,6 +650,11 @@ class IRouter(IRouterBase):
    """
    WAMP router interface. Routers are responsible for event and call routing.
    """
+   ACTION_CALL = 1
+   ACTION_REGISTER = 2
+   ACTION_PUBLISH = 3
+   ACTION_SUBSCRIBE = 4
+
 
    @abc.abstractmethod
    def process(self, session, message):
@@ -660,6 +665,23 @@ class IRouter(IRouterBase):
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
       :param message: The WAMP message to be processed.
       :type message: A provider of :class:`autobahn.wamp.interfaces.IMessage`.
+      """
+
+
+   @abc.abstractmethod
+   def authorize(self, session, uri, action):
+      """
+      Authorization hook: check if the given `session` is authorized to perform
+      the given `action` on the given `uri`.
+
+      :param session: Application session on which the action is to be authorized.
+      :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
+      :param uri: The URI on which the session wants to perform the action.
+      :type uri: str
+      :param action: The action the session wants to perform. One of
+         `IRouter.ACTION_CALL`, `IRouter.ACTION_REGISTER`,
+         `IRouter.ACTION_PUBLISH` or `IRouter.ACTION_SUBSCRIBE`.
+      :type action: int
       """
 
 
