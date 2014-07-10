@@ -122,10 +122,9 @@ class Router:
       """
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
-      if True or self.debug:
+      if self.debug:
          print("Router.authorize: {} {} {}".format(session._session_id, uri, action))
       return True
-
 
 
 
@@ -139,6 +138,12 @@ class RouterFactory:
 
    This class implements :class:`autobahn.wamp.interfaces.IRouterFactory`.
    """
+
+   router = Router
+   """
+   The router class this factory will create router instances from.
+   """
+
 
    def __init__(self, options = None, debug = False):
       """
@@ -157,7 +162,7 @@ class RouterFactory:
       Implements :func:`autobahn.wamp.interfaces.IRouterFactory.get`
       """
       if not realm in self._routers:
-         self._routers[realm] = Router(self, realm, self._options)
+         self._routers[realm] = self.router(self, realm, self._options)
          if self.debug:
             print("Router created for realm '{}'".format(realm))
       return self._routers[realm]
