@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+from twisted.internet.defer import maybeDeferred
+
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -191,6 +193,8 @@ class Broker:
                         ## the subscribing session might have been lost in the meantime ..
                         if receiver._transport:
                            receiver._transport.send(msg)
+
+         d.addCallback(on_authorize)
 
 
    def processSubscribe(self, session, subscribe):
