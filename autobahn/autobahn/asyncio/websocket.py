@@ -25,12 +25,13 @@ from collections import deque
 
 try:
    import asyncio
+   from asyncio.tasks import iscoroutine
+   from asyncio import Future
 except ImportError:
    ## Trollius >= 0.3 was renamed
    import trollius as asyncio
-
-from asyncio.tasks import iscoroutine
-from asyncio import Future
+   from trollius.tasks import iscoroutine
+   from trollius import Future
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
