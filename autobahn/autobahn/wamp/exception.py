@@ -75,6 +75,7 @@ class ApplicationError(Error):
    at the application level.
    """
    NOT_AUTHORIZED             = u"wamp.error.not_authorized"
+   AUTHORIZATION_FAILED       = u"wamp.error.authorization_failed"
    INVALID_ARGUMENT           = u"wamp.error.invalid_argument"
    INVALID_URI                = u"wamp.error.invalid_uri"
    DISCLOSE_ME_NOT_ALLOWED    = u"wamp.error.disclose_me.not_allowed"

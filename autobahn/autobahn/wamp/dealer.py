@@ -113,9 +113,11 @@ class Dealer:
 
          if not register.procedure in self._procs_to_regs:
 
+            ## authorize action
+            ##
             d = maybeDeferred(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
 
-            def on_authorize(authorized):
+            def on_authorize_success(authorized):
                if authorized:
                   registration_id = util.id()
                   self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller)
@@ -129,7 +131,11 @@ class Dealer:
 
                session._transport.send(reply)
 
-            d.addCallback(on_authorize)
+            def on_authorize_error(err):
+               reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure URI '{}': {}".format(register.procedure, err.value)])
+               session._transport.send(reply)
+
+            d.addCallbacks(on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure URI '{}'".format(register.procedure)])
@@ -188,9 +194,11 @@ class Dealer:
 
          if call.procedure in self._procs_to_regs:
 
+            ## authorize action
+            ##
             d = maybeDeferred(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
 
-            def on_authorize(authorized):
+            def on_authorize_success(authorized):
                if authorized:
                   registration_id, endpoint_session, discloseCaller = self._procs_to_regs[call.procedure]
 
@@ -224,7 +232,11 @@ class Dealer:
                   reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to call procedure '{}'".format(call.procedure)])
                   session._transport.send(reply)                 
 
-            d.addCallback(on_authorize)
+            def on_authorize_error(err):
+               reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for calling procedure '{}': {}".format(call.procedure, err.value)])
+               session._transport.send(reply)
+
+            d.addCallbacks(on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{}' registered".format(call.procedure)])
