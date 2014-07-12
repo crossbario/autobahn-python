@@ -163,6 +163,7 @@ class BaseSession:
       self._authid = None
       self._authrole = None
       self._authmethod = None
+      self._authprovider = None
 
 
    def onConnect(self):
@@ -1019,7 +1020,7 @@ class RouterApplicationSession:
    Wraps an application session to run directly attached to a WAMP router (broker+dealer).
    """
 
-   def __init__(self, session, routerFactory):
+   def __init__(self, session, routerFactory, authid = None, authrole = None):
       """
       Wrap an application session and add it to the given broker and dealer.
 
@@ -1027,6 +1028,10 @@ class RouterApplicationSession:
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
       :param routerFactory: The router factory to associate this session with.
       :type routerFactory: An instance that implements :class:`autobahn.wamp.interfaces.IRouterFactory`
+      :param authid: The fixed/trusted authentication ID under which the session will run.
+      :type authid: str
+      :param authrole: The fixed/trusted authentication role under which the session will run.
+      :type authrole: str
       """
 
       ## remember router we are wrapping the app session for
@@ -1037,6 +1042,11 @@ class RouterApplicationSession:
       ## remember wrapped app session
       ##
       self._session = session
+
+      ## remember "trusted" authentication information
+      ##
+      self._trusted_authid = authid
+      self._trusted_authrole = authrole
 
       ## set fake transport on session ("pass-through transport")
       ##
@@ -1076,12 +1086,22 @@ class RouterApplicationSession:
          ## fake session ID assignment (normally done in WAMP opening handshake)
          self._session._session_id = util.id()
 
+         ## set fixed/trusted authentication information
+         self._session._authid = self._trusted_authid
+         self._session._authrole = self._trusted_authrole
+         self._session._authmethod = None
+         ## FIXME: the following does blow up
+         #self._session._authmethod = u'trusted'
+         self._session._authprovider = None
+
          ## add app session to router
          self._router.attach(self._session)
 
          ## fake app session open
          ##
-         details = SessionDetails(self._session._realm, self._session._session_id)
+         details = SessionDetails(self._session._realm, self._session._session_id,
+            self._session._authid, self._session._authrole, self._session._authmethod,
+            self._session._authprovider)
          self._session._as_future(self._session.onJoin, details)
          #self._session.onJoin(details)
 
@@ -1377,7 +1397,7 @@ class RouterSessionFactory:
       self._app_sessions = {}
 
 
-   def add(self, session):
+   def add(self, session, authid = None, authrole = None):
       """
       Adds a WAMP application session to run directly in this router.
 
@@ -1385,7 +1405,7 @@ class RouterSessionFactory:
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
       #router = self._routerFactory.get(session.realm)
-      self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory)
+      self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory, authid, authrole)
 
 
    def remove(self, session):
