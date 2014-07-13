@@ -111,7 +111,7 @@ class Accept(HelloReturn):
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
-      self.authprovider = authprovider or authmethod
+      self.authprovider = authprovider
 
 
    def __str__(self):

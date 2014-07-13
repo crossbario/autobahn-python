@@ -81,6 +81,7 @@ class ApplicationError(Error):
    DISCLOSE_ME_NOT_ALLOWED    = u"wamp.error.disclose_me.not_allowed"
    PROCEDURE_ALREADY_EXISTS   = u"wamp.error.procedure_already_exists"
    NO_SUCH_REALM              = u"wamp.error.no_such_realm"
+   NO_SUCH_ROLE               = u"wamp.error.no_such_role"
    SYSTEM_SHUTDOWN            = u"wamp.error.system_shutdown"
    CLOSE_REALM                = u"wamp.error.close_realm"
    GOODBYE_AND_OUT            = u"wamp.error.goodbye_and_out"
