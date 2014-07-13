@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import six
 
 
+
 class ComponentConfig:
    """
    WAMP application component configuration. An instance of this class is
@@ -41,6 +42,9 @@ class ComponentConfig:
       self.realm = realm
       self.extra = extra
 
+   def __str__(self):
+      return "ComponentConfig(realm = {}, extra = {})".format(self.realm, self.extra)
+
 
 
 class RouterOptions:
@@ -59,12 +63,16 @@ class RouterOptions:
       """
       self.uri_check = uri_check or RouterOptions.URI_CHECK_STRICT
 
+   def __str__(self):
+      return "RouterOptions(uri_check = {})".format(self.uri_check)
+
 
 
 class HelloReturn:
    """
    Base class for `HELLO` return information.
    """
+
 
 
 class Accept(HelloReturn):
@@ -106,6 +114,10 @@ class Accept(HelloReturn):
       self.authprovider = authprovider or authmethod
 
 
+   def __str__(self):
+      return "Accept(authid = {}, authrole = {}, authmethod = {}, authprovider = {})".format(self.authid, self.authrole, self.authmethod, self.authprovider)
+
+
 
 class Deny(HelloReturn):
    """
@@ -134,6 +146,10 @@ class Deny(HelloReturn):
       self.message = message
 
 
+   def __str__(self):
+      return "Deny(reason = {}, message = '{}'')".format(self.reason, self.message)
+
+
 
 class Challenge(HelloReturn):
    """
@@ -156,6 +172,10 @@ class Challenge(HelloReturn):
 
       self.method = method
       self.extra = extra or {}
+
+
+   def __str__(self):
+      return "Challenge(method = {}, extra = {})".format(self.method, self.extra)
 
 
 
@@ -181,6 +201,7 @@ class HelloDetails:
       self.authmethods = authmethods
       self.authid = authid
       self.pending_session = pending_session
+
 
    def __str__(self):
       return "HelloDetails(roles = {}, authmethods = {}, authid = {}, pending_session = {})".format(self.roles, self.authmethods, self.authid, self.pending_session)
@@ -210,6 +231,7 @@ class SessionDetails:
       self.authmethod = authmethod
       self.authprovider = authprovider
 
+
    def __str__(self):
       return "SessionDetails(realm = {}, session = {}, authid = {}, authrole = {}, authmethod = {})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
 
@@ -235,6 +257,10 @@ class CloseDetails:
       self.message = message
 
 
+   def __str__(self):
+      return "CloseDetails(reason = {}, message = '{}'')".format(self.reason, self.message)
+
+
 
 class SubscribeOptions:
    """
@@ -253,10 +279,17 @@ class SubscribeOptions:
       assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
       assert(details_arg is None or type(details_arg) == str)
 
-      self.details_arg = details_arg
       if match and six.PY2 and type(match) == str:
          match = six.u(match)
+      self.match = match
+      self.details_arg = details_arg
+
+      ## options dict as sent within WAMP message
       self.options = {'match': match}
+
+
+   def __str__(self):
+      return "SubscribeOptions(match = {}, details_arg = {})".format(self.match, self.details_arg)
 
 
 
@@ -276,6 +309,10 @@ class EventDetails:
       """
       self.publication = publication
       self.publisher = publisher
+
+
+   def __str__(self):
+      return "EventDetails(publication = {}, publisher = {})".format(self.publication, self.publisher)
 
 
 
@@ -314,6 +351,13 @@ class PublishOptions:
       assert(eligible is None or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
       assert(discloseMe is None or type(discloseMe) == bool)
 
+      self.acknowledge = acknowledge
+      self.excludeMe = excludeMe
+      self.exclude = exclude
+      self.eligible = eligible
+      self.discloseMe = discloseMe
+
+      ## options dict as sent within WAMP message
       self.options = {
          'acknowledge': acknowledge,
          'excludeMe': excludeMe,
@@ -321,6 +365,10 @@ class PublishOptions:
          'eligible': eligible,
          'discloseMe': discloseMe
       }
+
+
+   def __str__(self):
+      return "PublishOptions(acknowledge = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
 
 
 
@@ -339,10 +387,18 @@ class RegisterOptions:
       :type details_arg: str
       """
       self.details_arg = details_arg
+      self.pkeys = pkeys
+      self.discloseCaller = discloseCaller
+
+      ## options dict as sent within WAMP message
       self.options = {
          'pkeys': pkeys,
          'discloseCaller': discloseCaller
       }
+
+
+   def __str__(self):
+      return "RegisterOptions(details_arg = {}, pkeys = {}, discloseCaller = {})".format(self.details_arg, self.pkeys, self.discloseCaller)
 
 
 
@@ -410,14 +466,22 @@ class CallOptions:
       assert(discloseMe is None or type(discloseMe) == bool)
       assert(runOn is None or (type(runOn) == six.text_type and runOn in [u"all", u"any", u"partition"]))
 
+      self.onProgress = onProgress
+      self.timeout = timeout
+      self.discloseMe = discloseMe
+      self.runOn = runOn
+
+      ## options dict as sent within WAMP message
       self.options = {
          'timeout': timeout,
          'discloseMe': discloseMe
       }
-
-      self.onProgress = onProgress
       if onProgress:
          self.options['receive_progress'] = True
+
+
+   def __str__(self):
+      return "CallOptions(onProgress = {}, timeout = {}, discloseMe = {}, runOn = {})".format(self.onProgress, self.timeout, self.discloseMe, self.runOn)
 
 
 
@@ -438,6 +502,7 @@ class CallResult:
       """
       self.results = results
       self.kwresults = kwresults
+
 
    def __str__(self):
       return "CallResult(results = {}, kwresults = {})".format(self.results, self.kwresults)
