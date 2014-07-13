@@ -22,7 +22,20 @@ import six
 
 
 class ComponentConfig:
+   """
+   WAMP application component configuration. An instance of this class is
+   provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
+   """
+
    def __init__(self, realm = None, extra = None):
+      """
+      Ctor.
+
+      :param realm: The realm the session should join.
+      :type realm: str
+      :param extra: Optional dictionary with extra configuration.
+      :type extra: dict
+      """
       if six.PY2 and type(realm) == str:
          realm = six.u(realm)
       self.realm = realm
@@ -31,10 +44,19 @@ class ComponentConfig:
 
 
 class RouterOptions:
+   """
+   Router options for creating routers.
+   """
    URI_CHECK_LOOSE = "loose"
    URI_CHECK_STRICT = "strict"
 
    def __init__(self, uri_check = None):
+      """
+      Ctor.
+
+      :param uri_check: Method which should be applied to check WAMP URIs.
+      :type uri_check: str
+      """
       self.uri_check = uri_check or RouterOptions.URI_CHECK_STRICT
 
 

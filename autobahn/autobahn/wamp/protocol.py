@@ -312,12 +312,12 @@ class ApplicationSession(BaseSession):
      * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
 
-   def __init__(self, config = types.ComponentConfig(u"anonymous")):
+   def __init__(self, config = None):
       """
       Constructor.
       """
       BaseSession.__init__(self)
-      self.config = config
+      self.config = config or types.ComponentConfig(realm = u"default")
 
       self._transport = None
       self._session_id = None
@@ -992,14 +992,14 @@ class ApplicationSessionFactory:
    WAMP application session class to be used in this factory.
    """
 
-   def __init__(self, config = types.ComponentConfig(u"anonymous")):
+   def __init__(self, config = None):
       """
       Ctor.
 
       :param config: The default component configuration.
       :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
       """
-      self.config = config
+      self.config = config or types.ComponentConfig(realm = u"default")
 
 
    def __call__(self):
