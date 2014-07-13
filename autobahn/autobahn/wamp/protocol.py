@@ -1102,6 +1102,7 @@ class RouterApplicationSession:
          details = SessionDetails(self._session._realm, self._session._session_id,
             self._session._authid, self._session._authrole, self._session._authmethod,
             self._session._authprovider)
+
          self._session._as_future(self._session.onJoin, details)
          #self._session.onJoin(details)
 
@@ -1388,10 +1389,12 @@ class RouterSessionFactory:
    WAMP router session class to be used in this factory.
    """
 
-
    def __init__(self, routerFactory):
       """
       Constructor.
+
+      :param routerFactory: The router factory this session factory is working for.
+      :type routerFactory: Instance of :class:`autobahn.wamp.router.RouterFactory`.
       """
       self._routerFactory = routerFactory
       self._app_sessions = {}
@@ -1404,7 +1407,6 @@ class RouterSessionFactory:
       :param: session: A WAMP application session.
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
-      #router = self._routerFactory.get(session.realm)
       self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory, authid, authrole)
 
 
@@ -1415,7 +1417,6 @@ class RouterSessionFactory:
       if session in self._app_sessions:
          self._app_sessions[session]._session.disconnect()
          del self._app_sessions[session]
-
 
 
    def __call__(self):
