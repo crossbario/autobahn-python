@@ -129,7 +129,7 @@ class Broker:
             if not authorized:
 
                if publish.acknowledge:
-                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic URI '{}'".format(publish.topic)])
+                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic '{}'".format(publish.topic)])
                   session._transport.send(reply)
 
             else:
@@ -230,7 +230,7 @@ class Broker:
          def on_authorize_success(authorized):
             if not authorized:
 
-               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic URI '{}'".format(subscribe.topic)])
+               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic '{}'".format(subscribe.topic)])
 
             else:
 

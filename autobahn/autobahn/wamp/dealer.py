@@ -127,18 +127,18 @@ class Dealer:
 
                   reply = message.Registered(register.request, registration_id)
                else:
-                  reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to register procedure URI '{}'".format(register.procedure)])
+                  reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to register procedure '{}'".format(register.procedure)])
 
                session._transport.send(reply)
 
             def on_authorize_error(err):
-               reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure URI '{}': {}".format(register.procedure, err.value)])
+               reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure '{}': {}".format(register.procedure, err.value)])
                session._transport.send(reply)
 
             d.addCallbacks(on_authorize_success, on_authorize_error)
 
          else:
-            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure URI '{}'".format(register.procedure)])
+            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure '{}'".format(register.procedure)])
             session._transport.send(reply)
 
 
