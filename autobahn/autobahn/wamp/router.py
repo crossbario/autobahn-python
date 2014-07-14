@@ -122,7 +122,7 @@ class Router:
       """
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
-      if True or self.debug:
+      if self.debug:
          print("Router.authorize: {} {} {}".format(session._session_id, uri, action))
       return True
 
