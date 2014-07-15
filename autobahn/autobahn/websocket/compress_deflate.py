@@ -317,7 +317,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
               'requestMaxWindowBits': self.requestMaxWindowBits,
               'noContextTakeover': self.noContextTakeover,
               'windowBits': self.windowBits,
-              'memLevel': memLevel}
+              'memLevel': self.memLevel}
 
 
    def __repr__(self):

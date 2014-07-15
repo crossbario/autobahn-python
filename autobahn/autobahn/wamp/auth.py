@@ -88,6 +88,7 @@ PY3 = sys.version_info >= (3,)
 
 import hmac
 import hashlib
+import random
 from struct import Struct
 from operator import xor
 from itertools import starmap

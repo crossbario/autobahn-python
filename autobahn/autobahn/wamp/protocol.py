@@ -462,8 +462,7 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     print("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
-                     print(err)
+                     print("Failure while firing event handler {} subscribed under '{}' ({}): {}".format(handler.fn, handler.topic, msg.subscription, e))
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))

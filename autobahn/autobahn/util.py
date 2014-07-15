@@ -25,9 +25,7 @@ __all__ = ("utcnow",
            "newid",
            "rtime",
            "Stopwatch",
-           "Tracker",
-           "derive_key",
-           "compute_signature")
+           "Tracker")
 
 
 import time
