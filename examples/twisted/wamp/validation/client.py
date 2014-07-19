@@ -33,6 +33,11 @@ class Component(ApplicationSession):
    def onJoin(self, details):
       print("session attached")
 
+      def add2(a, b):
+         return a + b
+
+      yield self.register(add2, 'com.myapp.add2')
+
       def on_event(i):
          print("Got event: {}".format(i))
 
@@ -41,12 +46,20 @@ class Component(ApplicationSession):
       counter = 0
       while True:
          print(".")
+
+         try:
+            res = yield self.call('com.myapp.add2', counter, 7)
+            print("Got call result: {}".format(res))
+         except Exception as e:
+            print("Call failed: {}".format(e))
+
          try:
             publication = yield self.publish('com.myapp.topic1', counter,
                   options = PublishOptions(acknowledge = True, discloseMe = True, excludeMe = False))
             print("Event published with publication ID {}".format(publication.id))
          except Exception as e:
             print("Publication failed: {}".format(e))
+
          counter += 1
          yield sleep(1)
 
