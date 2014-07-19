@@ -659,7 +659,7 @@ class IRouter(IRouterBase):
       ACTION_CALL: 'call',
       ACTION_REGISTER: 'register',
       ACTION_PUBLISH: 'publish',
-      ACTION_SUBSCRIBE: 'subscribe',
+      ACTION_SUBSCRIBE: 'subscribe'
    }
 
 
@@ -689,6 +689,23 @@ class IRouter(IRouterBase):
          `IRouter.ACTION_CALL`, `IRouter.ACTION_REGISTER`,
          `IRouter.ACTION_PUBLISH` or `IRouter.ACTION_SUBSCRIBE`.
       :type action: int
+      """
+
+
+   @abc.abstractmethod
+   def validate(self, payload_type, uri, args, kwargs):
+      """
+      Validation hook: check if the given payload (`args`and `kwargs`) is
+      valid for the given URI and payload type.
+
+      :param uri: The URI on which the session wants to perform the action.
+      :type uri: str
+      :param payload_type: The payload type to be validated. One of `["event", "call", "call_result", "call_error"]`
+      :type payload_type: str
+      :param args: The positional payload to be validated.
+      :type args: list
+      :param kwargs: The keyword payload to be validated.
+      :type kwargs: dict
       """
 
 

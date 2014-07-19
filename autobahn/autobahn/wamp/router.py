@@ -123,8 +123,16 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
       if self.debug:
-         print("Router.authorize: {} {} {}".format(session._session_id, uri, action))
+         print("Router.authorize: {} {} {}".format(session, uri, action))
       return True
+
+
+   def validate(self, payload_type, uri, args, kwargs):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IRouter.validate`
+      """
+      if self.debug:
+         print("Router.validate: {} {} {} {}".format(payload_type, uri, args, kwargs))
 
 
 

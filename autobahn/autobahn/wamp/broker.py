@@ -120,6 +120,15 @@ class Broker:
 
       if publish.topic in self._topic_to_sessions or publish.acknowledge:
 
+         ## validate payload
+         ##
+         try:
+            self._router.validate('event', publish.topic, publish.args, publish.kwargs)
+         except Exception as e:
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_ARGUMENT, ["publish to topic URI '{}' with invalid application payload: {}".format(publish.topic, e)])
+            session._transport.send(reply)
+            return
+
          ## authorize action
          ##
          d = maybeDeferred(self._router.authorize, session, publish.topic, IRouter.ACTION_PUBLISH)
