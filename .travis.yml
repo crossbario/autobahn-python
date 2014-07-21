@@ -4,7 +4,7 @@ install:
   - pip install tox 
 
 script:
-  - tox
+  - tox -c autobahn/tox.ini
 
 env:
   - TOXENV = py27twisted
