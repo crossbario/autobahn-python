@@ -76,6 +76,7 @@ class TestSerializer(unittest.TestCase):
    def setUp(self):
       self.serializers = []
       self.serializers.append(serializer.JsonSerializer())
+      self.serializers.append(serializer.JsonSerializer(batched = True))
       try:
          self.serializers.append(serializer.MsgPackSerializer())
       except:
