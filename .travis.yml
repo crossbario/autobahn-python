@@ -10,3 +10,5 @@ env:
   - TOXENV = py27twisted
   - TOXENV = py27asyncio
   - TOXENV = py34asyncio
+  - TOXENV = pypy2twisted
+  - TOXENV = pypy2asyncio
