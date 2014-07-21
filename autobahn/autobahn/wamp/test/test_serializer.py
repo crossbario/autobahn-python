@@ -76,7 +76,11 @@ class TestSerializer(unittest.TestCase):
    def setUp(self):
       self.serializers = []
       self.serializers.append(serializer.JsonSerializer())
-      self.serializers.append(serializer.MsgPackSerializer())
+      try:
+         self.serializers.append(serializer.MsgPackSerializer())
+      except:
+         ## MsgPack not installed
+         pass
 
 
    def test_roundtrip(self):

@@ -34,8 +34,6 @@ from twisted.internet.defer import Deferred, \
                                    DeferredList, \
                                    inlineCallbacks
 
-from twisted.internet.endpoints import clientFromString
-
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
@@ -184,6 +182,8 @@ class ApplicationRunner:
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## start the client from a Twisted endpoint
+      from twisted.internet.endpoints import clientFromString
+      
       client = clientFromString(reactor, "tcp:{}:{}".format(host, port))
       client.connect(transport_factory)
 
