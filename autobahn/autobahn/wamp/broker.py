@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from twisted.internet.defer import maybeDeferred
-
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -131,7 +129,7 @@ class Broker:
 
          ## authorize action
          ##
-         d = maybeDeferred(self._router.authorize, session, publish.topic, IRouter.ACTION_PUBLISH)
+         d = self._as_future(self._router.authorize, session, publish.topic, IRouter.ACTION_PUBLISH)
 
          def on_authorize_success(authorized):
 
@@ -234,7 +232,7 @@ class Broker:
 
          ## authorize action
          ##
-         d = maybeDeferred(self._router.authorize, session, subscribe.topic, IRouter.ACTION_SUBSCRIBE)
+         d = self._as_future(self._router.authorize, session, subscribe.topic, IRouter.ACTION_SUBSCRIBE)
 
          def on_authorize_success(authorized):
             if not authorized:

@@ -380,7 +380,7 @@ class MockSession:
       # 1. map to ecls based on error URI wildcard/prefix
       # 2. extract additional args/kwargs from error URI
 
-      if self._uri_to_ecls.has_key(error):
+      if error in self._uri_to_ecls:
          ecls = self._uri_to_ecls[error]
          try:
             ## the following might fail, eg. TypeError when

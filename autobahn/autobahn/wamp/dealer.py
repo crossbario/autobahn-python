@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from twisted.internet.defer import maybeDeferred
-
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -115,7 +113,7 @@ class Dealer:
 
             ## authorize action
             ##
-            d = maybeDeferred(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
+            d = self._as_future(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
 
             def on_authorize_success(authorized):
                if authorized:
@@ -205,7 +203,7 @@ class Dealer:
 
             ## authorize action
             ##
-            d = maybeDeferred(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
+            d = self._as_future(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
 
             def on_authorize_success(authorized):
                if authorized:

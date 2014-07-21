@@ -23,7 +23,11 @@ __all__ = ['ApplicationSession',
            'ApplicationRunner',
            'Application',
            'RouterSession',
-           'RouterSessionFactory']
+           'RouterSessionFactory',
+           'Broker',
+           'Dealer',
+           'Router',
+           'RouterFactory']
 
 import sys
 import inspect
@@ -36,8 +40,10 @@ from twisted.internet.defer import Deferred, \
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+
 
 
 class FutureMixin:
@@ -62,6 +68,37 @@ class FutureMixin:
 
    def _gather_futures(self, futures, consume_exceptions = True):
       return DeferredList(futures, consumeErrors = consume_exceptions)
+
+
+
+class Broker(FutureMixin, broker.Broker):
+   """
+   Basic WAMP broker for Twisted-based applications.
+   """
+
+
+
+class Dealer(FutureMixin, dealer.Dealer):
+   """
+   Basic WAMP dealer for Twisted-based applications.
+   """
+
+
+
+class Router(FutureMixin, router.Router):
+   """
+   Basic WAMP router for Twisted-based applications.
+   """
+   broker = Broker
+   dealer = Dealer
+
+
+
+class RouterFactory(FutureMixin, router.RouterFactory):
+   """
+   Basic WAMP router factory for Twisted-based applications.
+   """
+   router = Router
 
 
 

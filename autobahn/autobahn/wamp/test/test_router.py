@@ -21,8 +21,16 @@ from __future__ import absolute_import
 #from twisted.trial import unittest
 import unittest
 
+import os
 
-from autobahn.wamp.router import Router
+
+if os.environ.get('USE_TWISTED', False):
+   from autobahn.twisted.wamp import Router
+elif os.environ.get('USE_ASYNCIO', False):
+   from autobahn.asyncio.wamp import Router
+else:
+   raise Exception("Neither USE_TWISTED nor USE_ASYNCIO set")
+
 
 
 class TestRouter(unittest.TestCase):

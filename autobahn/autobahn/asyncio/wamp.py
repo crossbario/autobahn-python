@@ -22,7 +22,11 @@ __all__ = ['ApplicationSession',
            'ApplicationSessionFactory',
            'ApplicationRunner',
            'RouterSession',
-           'RouterSessionFactory']
+           'RouterSessionFactory',
+           'Broker',
+           'Dealer',
+           'Router',
+           'RouterFactory']
 
 import sys
 
@@ -37,8 +41,9 @@ except ImportError:
    from trollius import Future
 
 from autobahn.wamp import protocol
-from autobahn.websocket.protocol import parseWsUrl
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp import router, broker, dealer
+from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 
@@ -85,6 +90,37 @@ class FutureMixin:
 
    def _gather_futures(self, futures, consume_exceptions = True):
       return asyncio.gather(*futures, return_exceptions = consume_exceptions)
+
+
+
+class Broker(FutureMixin, broker.Broker):
+   """
+   Basic WAMP broker for asyncio-based applications.
+   """
+
+
+
+class Dealer(FutureMixin, dealer.Dealer):
+   """
+   Basic WAMP dealer for asyncio-based applications.
+   """
+
+
+
+class Router(FutureMixin, router.Router):
+   """
+   Basic WAMP router for asyncio-based applications.
+   """
+   broker = Broker
+   dealer = Dealer
+
+
+
+class RouterFactory(FutureMixin, router.RouterFactory):
+   """
+   Basic WAMP router factory for asyncio-based applications.
+   """
+   router = Router
 
 
 
