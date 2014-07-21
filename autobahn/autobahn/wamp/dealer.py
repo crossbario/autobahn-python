@@ -133,7 +133,7 @@ class Dealer:
                reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure '{}': {}".format(register.procedure, err.value)])
                session._transport.send(reply)
 
-            d.addCallbacks(on_authorize_success, on_authorize_error)
+            self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure '{}'".format(register.procedure)])
@@ -243,7 +243,7 @@ class Dealer:
                reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for calling procedure '{}': {}".format(call.procedure, err.value)])
                session._transport.send(reply)
 
-            d.addCallbacks(on_authorize_success, on_authorize_error)
+            self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{}' registered".format(call.procedure)])

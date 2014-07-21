@@ -211,7 +211,7 @@ class Broker:
                reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for publishing to topic URI '{}': {}".format(publish.topic, err.value)])
                session._transport.send(reply)
 
-         d.addCallbacks(on_authorize_success, on_authorize_error)
+         self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
 
    def processSubscribe(self, session, subscribe):
@@ -268,7 +268,7 @@ class Broker:
             reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for subscribing to topic URI '{}': {}".format(subscribe.topic, err.value)])
             session._transport.send(reply)
 
-         d.addCallbacks(on_authorize_success, on_authorize_error)
+         self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
 
    def processUnsubscribe(self, session, unsubscribe):
