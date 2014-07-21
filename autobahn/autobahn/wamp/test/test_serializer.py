@@ -18,8 +18,8 @@
 
 from __future__ import absolute_import
 
-from twisted.trial import unittest
-#import unittest
+#from twisted.trial import unittest
+import unittest
 
 from autobahn import wamp
 from autobahn.wamp import message

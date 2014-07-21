@@ -18,10 +18,9 @@
 
 from __future__ import absolute_import
 
-from twisted.trial import unittest
-#import unittest
+#from twisted.trial import unittest
+import unittest
 
-#from autobahn import wamp2 as wamp
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern
 

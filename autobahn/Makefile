@@ -16,6 +16,7 @@ clean:
 	rm -rf ./dist
 	rm -rf ./temp
 	rm -rf ./_trial_temp
+	rm -rf ./.tox
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;

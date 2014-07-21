@@ -18,10 +18,8 @@
 
 from __future__ import absolute_import
 
-try:
-   from twisted.trial import unittest
-except:
-   import unittest
+#from twisted.trial import unittest
+import unittest
 
 from autobahn.websocket.protocol import createWsUrl, parseWsUrl
 
