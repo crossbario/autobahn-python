@@ -49,8 +49,8 @@ class Router:
       self.factory = factory
       self.realm = realm
       self._options = options or types.RouterOptions()
-      self._broker = Broker(self, self._options)
-      self._dealer = Dealer(self, self._options)
+      self._broker = self.broker(self, self._options)
+      self._dealer = self.dealer(self, self._options)
       self._attached = 0
 
 
