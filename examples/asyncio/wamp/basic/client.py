@@ -98,6 +98,9 @@ if __name__ == '__main__':
       from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
       transport_factory = WampRawSocketClientFactory(session_factory, serializer, debug = args.debug)
 
+   else:
+      raise Exception("logic error")
+
 
    ## start the client
    loop = asyncio.get_event_loop()

@@ -275,6 +275,7 @@ if False:
             log = io.open('caselog.log', 'w')
          except Exception as e:
             print(e)
+            return
    #      log = io.open(config.extra['caselog'], 'w')
          config.log = log
          config.dlog = []

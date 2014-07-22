@@ -2481,8 +2481,8 @@ class Invocation(Message):
       if u'authmethod' in details:
 
          detail_authmethod = details[u'authmethod']
-         if type(detail_authrole) != six.text_type:
-            raise ProtocolError("invalid type {0} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
+         if type(detail_authmethod) != six.text_type:
+            raise ProtocolError("invalid type {0} for 'authmethod' detail in INVOCATION".format(type(detail_authmethod)))
 
          authmethod = detail_authmethod
 

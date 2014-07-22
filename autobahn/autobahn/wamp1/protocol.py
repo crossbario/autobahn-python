@@ -457,6 +457,7 @@ class WampProtocol:
          raise Exception("invalid type for procedure URI")
 
       procuri = args[0]
+      callid = None
       while True:
          callid = newid()
          if not self.calls.has_key(callid):

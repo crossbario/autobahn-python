@@ -216,9 +216,9 @@ class ApplicationRunner:
             ## the app component could not be created .. fatal
             log.err()
             reactor.stop()
-
-         session.debug_app = self.debug_app
-         return session
+         else:
+            session.debug_app = self.debug_app
+            return session
 
       ## create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create, url = self.url,

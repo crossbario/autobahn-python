@@ -211,9 +211,9 @@ class ApplicationRunner:
             ## the app component could not be created .. fatal
             print(e)
             asyncio.get_event_loop().stop()
-
-         session.debug_app = self.debug_app
-         return session
+         else:
+            session.debug_app = self.debug_app
+            return session
 
       isSecure, host, port, resource, path, params = parseWsUrl(self.url)
       
