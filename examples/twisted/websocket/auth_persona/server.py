@@ -136,7 +136,7 @@ class PersonaServerProtocol(WebSocketServerProtocol):
             ## The client did it's Mozilla Persona authentication thing
             ## and now wants to verify the authentication and login.
             assertion = msg.get('assertion')
-            audience = msg.get('audience');
+            audience = msg.get('audience')
 
             ## To verify the authentication, we need to send a HTTP/POST
             ## to Mozilla Persona. When successful, Persona will send us
