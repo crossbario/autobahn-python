@@ -1872,19 +1872,14 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
          ## create authentication challenge
          ##
-         info = {}
-         info['authid'] = authid
-         info['authkey'] = authKey
-         info['timestamp'] = utcnow()
-         info['sessionid'] = self.session_id
-         info['extra'] = extra
+         info = {'authid': authid, 'authkey': authKey, 'timestamp': utcnow(), 'sessionid': self.session_id,
+                 'extra': extra}
 
          pp = maybeDeferred(self.getAuthPermissions, authKey, extra)
 
          def onAuthPermissionsOk(res):
             if res is None:
-               res = {'permissions': {}}
-               res['permissions'] = {'pubsub': [], 'rpc': []}
+               res = {'permissions': {'pubsub': [], 'rpc': []}}
             info['permissions'] = res['permissions']
             if 'authextra' in res:
                 info['authextra'] = res['authextra']
