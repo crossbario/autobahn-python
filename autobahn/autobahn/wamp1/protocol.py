@@ -2470,8 +2470,7 @@ class CallErrorHandler(Handler):
       ## Pop and process Call Deferred
       d = self.proto.calls.pop(self.callid, None)
       if d:
-         e = Exception()
-         e.args = (self.erroruri, self.errordesc, self.errordetails)
+         e = Exception(self.erroruri, self.errordesc, self.errordetails)
          d.errback(e)
       else:
          if self.proto.debugWamp:
