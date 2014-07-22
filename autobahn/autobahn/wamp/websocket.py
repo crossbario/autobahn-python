@@ -39,7 +39,7 @@ class WampWebSocketProtocol:
    Base class for WAMP-over-WebSocket transport mixins.
    """
 
-   def _bailout(self, code, reason):
+   def _bailout(self, code, reason = None):
       if self.factory.debug_wamp:
          print("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
       self.failConnection(code, reason)

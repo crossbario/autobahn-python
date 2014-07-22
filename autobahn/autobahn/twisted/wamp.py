@@ -250,6 +250,7 @@ class _ApplicationSession(ApplicationSession):
       :param app: The application this session is for.
       :type app: Instance of :class:`autobahn.twisted.app.Application`.
       """
+      # noinspection PyArgumentList
       ApplicationSession.__init__(self, config)
       self.app = app
 

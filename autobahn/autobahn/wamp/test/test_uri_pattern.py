@@ -289,6 +289,7 @@ class TestDecorators(unittest.TestCase):
                    self.args == other.args
 
       args, kwargs = AppError._wampuris[0].match("com.myapp.error")
+      # noinspection PyArgumentList
       self.assertEqual(AppError("fuck", **kwargs), AppError("fuck"))
 
 

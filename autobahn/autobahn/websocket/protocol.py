@@ -471,7 +471,7 @@ class Timings:
       return self._timings.get(key, None)
 
    def __iter__(self):
-      return self._timings.__iter__(self)
+      return self._timings.__iter__()
 
    def __str__(self):
       return pformat(self._timings)
