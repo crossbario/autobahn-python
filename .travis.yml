@@ -7,6 +7,8 @@ script:
   - tox -c autobahn/tox.ini
 
 env:
+  - TOXENV = py26twisted
+  - TOXENV = py26asyncio
   - TOXENV = py27twisted
   - TOXENV = py27asyncio
   - TOXENV = py34asyncio
