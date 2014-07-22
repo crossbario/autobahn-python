@@ -85,7 +85,7 @@ class Pattern:
                # should not arrive here
                raise Exception("logic error")
 
-            pl.append("(?P<{}>[a-z0-9_]+)".format(name))
+            pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
             continue
 
          match = Pattern._URI_NAMED_COMPONENT.match(component)
@@ -95,7 +95,7 @@ class Pattern:
                raise Exception("invalid URI")
 
             nc[name] = str
-            pl.append("(?P<{}>[a-z][a-z0-9_]*)".format(name))
+            pl.append("(?P<{0}>[a-z][a-z0-9_]*)".format(name))
             continue
 
          match = Pattern._URI_COMPONENT.match(component)

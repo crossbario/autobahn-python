@@ -72,28 +72,28 @@ _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)?$")
 
 def check_or_raise_uri(value, message):
    if type(value) != six.text_type:
-      raise ProtocolError("{}: invalid type {} for URI".format(message, type(value)))
+      raise ProtocolError("{0}: invalid type {1} for URI".format(message, type(value)))
    if not _URI_PAT_LOOSE.match(value):
-      raise ProtocolError("{}: invalid value '{}' for URI".format(message, value))
+      raise ProtocolError("{0}: invalid value '{1}' for URI".format(message, value))
    return value
 
 
 
 def check_or_raise_id(value, message):
    if type(value) not in six.integer_types:
-      raise ProtocolError("{}: invalid type {} for ID".format(message, type(value)))
+      raise ProtocolError("{0}: invalid type {1} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
-      raise ProtocolError("{}: invalid value {} for ID".format(message, value))
+      raise ProtocolError("{0}: invalid value {1} for ID".format(message, value))
    return value
 
 
 
 def check_or_raise_extra(value, message):
    if type(value) != dict:
-      raise ProtocolError("{}: invalid type {}".format(message, type(value)))
+      raise ProtocolError("{0}: invalid type {1}".format(message, type(value)))
    for k in value.keys():
       if type(k) != six.text_type:
-         raise ProtocolError("{}: invalid type {} for key '{}'".format(message, type(k), k))
+         raise ProtocolError("{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
    return value
 
 
@@ -188,7 +188,7 @@ class Hello(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for HELLO".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for HELLO".format(len(wmsg)))
 
       realm = check_or_raise_uri(wmsg[1], "'realm' in HELLO")
       details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
@@ -205,12 +205,12 @@ class Hello(Message):
 
       for role in details_roles:
          if role not in ROLE_NAME_TO_CLASS:
-            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in HELLO".format(role))
+            raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-         details_role = check_or_raise_extra(details_roles[role], "role '{}' in 'roles' in 'details' in HELLO".format(role))
+         details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
          if u'features' in details_role:
-            details_role_features = check_or_raise_extra(details_role[u'features'], "'features' in role '{}' in 'roles' in 'details' in HELLO".format(role))
+            details_role_features = check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
             role_features = ROLE_NAME_TO_CLASS[role](**details_role[u'features'])
@@ -224,11 +224,11 @@ class Hello(Message):
       if u'authmethods' in details:
          details_authmethods = details[u'authmethods']
          if type(details_authmethods) != list:
-            raise ProtocolError("invalid type {} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
+            raise ProtocolError("invalid type {0} for 'authmethods' detail in HELLO".format(type(details_authmethods)))
 
          for auth_method in details_authmethods:
             if type(auth_method) != six.text_type:
-               raise ProtocolError("invalid type {} for item in 'authmethods' detail in HELLO".format(type(auth_method)))
+               raise ProtocolError("invalid type {0} for item in 'authmethods' detail in HELLO".format(type(auth_method)))
 
          authmethods = details_authmethods
 
@@ -236,7 +236,7 @@ class Hello(Message):
       if u'authid' in details:
          details_authid = details[u'authid']
          if type(details_authid) != six.text_type:
-            raise ProtocolError("invalid type {} for 'authid' detail in HELLO".format(type(details_authid)))
+            raise ProtocolError("invalid type {0} for 'authid' detail in HELLO".format(type(details_authid)))
 
          authid = details_authid
 
@@ -271,7 +271,7 @@ class Hello(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HELLO Message (realm = {}, roles = {}, authmethods = {}, authid = {})".format(self.realm, self.roles, self.authmethods, self.authid)
+      return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3})".format(self.realm, self.roles, self.authmethods, self.authid)
 
 
 
@@ -328,7 +328,7 @@ class Welcome(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for WELCOME".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for WELCOME".format(len(wmsg)))
 
       session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
       details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
@@ -350,10 +350,10 @@ class Welcome(Message):
 
       for role in details_roles:
          if role not in ROLE_NAME_TO_CLASS:
-            raise ProtocolError("invalid role '{}' in 'roles' in 'details' in WELCOME".format(role))
+            raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
          if u'features' in details_roles[role]:
-            details_role_features = check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{}' in 'roles' in 'details' in WELCOME".format(role))
+            details_role_features = check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
             role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role][u'features'])
@@ -403,7 +403,7 @@ class Welcome(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP WELCOME Message (session = {}, roles = {}, authid = {}, authrole = {}, authmethod = {}, authprovider = {})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
+      return "WAMP WELCOME Message (session = {0}, roles = {1}, authid = {2}, authrole = {3}, authmethod = {4}, authprovider = {5})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 
@@ -451,7 +451,7 @@ class Abort(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Abort.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for ABORT".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for ABORT".format(len(wmsg)))
 
       details = check_or_raise_extra(wmsg[1], "'details' in ABORT")
       reason = check_or_raise_uri(wmsg[2], "'reason' in ABORT")
@@ -462,7 +462,7 @@ class Abort(Message):
 
          details_message = details[u'message']
          if type(details_message) != six.text_type:
-            raise ProtocolError("invalid type {} for 'message' detail in ABORT".format(type(details_message)))
+            raise ProtocolError("invalid type {0} for 'message' detail in ABORT".format(type(details_message)))
 
          message = details_message
 
@@ -486,7 +486,7 @@ class Abort(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP ABORT Message (message = {}, reason = {})".format(self.message, self.reason)
+      return "WAMP ABORT Message (message = {0}, reason = {1})".format(self.message, self.reason)
 
 
 
@@ -535,11 +535,11 @@ class Challenge(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Challenge.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for CHALLENGE".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for CHALLENGE".format(len(wmsg)))
 
       method = wmsg[1]
       if type(method) != str:
-         raise ProtocolError("invalid type {} for 'method' in CHALLENGE".format(type(method)))
+         raise ProtocolError("invalid type {0} for 'method' in CHALLENGE".format(type(method)))
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in CHALLENGE")
 
@@ -559,7 +559,7 @@ class Challenge(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CHALLENGE Message (method = {}, extra = {})".format(self.method, self.extra)
+      return "WAMP CHALLENGE Message (method = {0}, extra = {1})".format(self.method, self.extra)
 
 
 
@@ -604,11 +604,11 @@ class Authenticate(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for AUTHENTICATE".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for AUTHENTICATE".format(len(wmsg)))
 
       signature = wmsg[1]
       if type(signature) != six.text_type:
-         raise ProtocolError("invalid type {} for 'signature' in AUTHENTICATE".format(type(signature)))
+         raise ProtocolError("invalid type {0} for 'signature' in AUTHENTICATE".format(type(signature)))
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
 
@@ -629,7 +629,7 @@ class Authenticate(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP AUTHENTICATE Message (signature = {})".format(self.signature)
+      return "WAMP AUTHENTICATE Message (signature = {0})".format(self.signature)
 
 
 
@@ -683,7 +683,7 @@ class Goodbye(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for GOODBYE".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for GOODBYE".format(len(wmsg)))
 
       details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
       reason = check_or_raise_uri(wmsg[2], "'reason' in GOODBYE")
@@ -694,7 +694,7 @@ class Goodbye(Message):
 
          details_message = details[u'message']
          if type(details_message) != six.text_type:
-            raise ProtocolError("invalid type {} for 'message' detail in GOODBYE".format(type(details_message)))
+            raise ProtocolError("invalid type {0} for 'message' detail in GOODBYE".format(type(details_message)))
 
          message = details_message
 
@@ -718,7 +718,7 @@ class Goodbye(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP GOODBYE Message (message = {}, reason = {})".format(self.message, self.reason)
+      return "WAMP GOODBYE Message (message = {0}, reason = {1})".format(self.message, self.reason)
 
 
 
@@ -774,29 +774,29 @@ class Heartbeat(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
 
       if len(wmsg) not in [3, 4]:
-         raise ProtocolError("invalid message length {} for HEARTBEAT".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for HEARTBEAT".format(len(wmsg)))
 
       incoming = wmsg[1]
 
       if type(incoming) not in six.integer_types:
-         raise ProtocolError("invalid type {} for 'incoming' in HEARTBEAT".format(type(incoming)))
+         raise ProtocolError("invalid type {0} for 'incoming' in HEARTBEAT".format(type(incoming)))
 
       if incoming < 0: # must be non-negative
-         raise ProtocolError("invalid value {} for 'incoming' in HEARTBEAT".format(incoming))
+         raise ProtocolError("invalid value {0} for 'incoming' in HEARTBEAT".format(incoming))
 
       outgoing = wmsg[2]
 
       if type(outgoing) not in six.integer_types:
-         raise ProtocolError("invalid type {} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
+         raise ProtocolError("invalid type {0} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
 
       if outgoing <= 0: # must be positive
-         raise ProtocolError("invalid value {} for 'outgoing' in HEARTBEAT".format(outgoing))
+         raise ProtocolError("invalid value {0} for 'outgoing' in HEARTBEAT".format(outgoing))
 
       discard = None
       if len(wmsg) > 3:
          discard = wmsg[3]
          if type(discard) != six.text_type:
-            raise ProtocolError("invalid type {} for 'discard' in HEARTBEAT".format(type(discard)))
+            raise ProtocolError("invalid type {0} for 'discard' in HEARTBEAT".format(type(discard)))
 
       obj = Heartbeat(incoming, outgoing, discard = discard)
 
@@ -817,7 +817,7 @@ class Heartbeat(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP HEARTBEAT Message (incoming {}, outgoing = {}, len(discard) = {})".format(self.incoming, self.outgoing, len(self.discard) if self.discard else None)
+      return "WAMP HEARTBEAT Message (incoming {0}, outgoing = {1}, len(discard) = {2})".format(self.incoming, self.outgoing, len(self.discard) if self.discard else None)
 
 
 
@@ -883,11 +883,11 @@ class Error(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE)
 
       if len(wmsg) not in (5, 6, 7):
-         raise ProtocolError("invalid message length {} for ERROR".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for ERROR".format(len(wmsg)))
 
       request_type = wmsg[1]
       if type(request_type) not in six.integer_types:
-         raise ProtocolError("invalid type {} for 'request_type' in ERROR".format(request_type))
+         raise ProtocolError("invalid type {0} for 'request_type' in ERROR".format(request_type))
 
       if request_type not in [Subscribe.MESSAGE_TYPE,
                               Unsubscribe.MESSAGE_TYPE,
@@ -896,7 +896,7 @@ class Error(Message):
                               Unregister.MESSAGE_TYPE,
                               Call.MESSAGE_TYPE,
                               Invocation.MESSAGE_TYPE]:
-         raise ProtocolError("invalid value {} for 'request_type' in ERROR".format(request_type))
+         raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
       request = check_or_raise_id(wmsg[2], "'request' in ERROR")
       details = check_or_raise_extra(wmsg[3], "'details' in ERROR")
@@ -906,13 +906,13 @@ class Error(Message):
       if len(wmsg) > 5:
          args = wmsg[5]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in ERROR".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in ERROR".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 6:
          kwargs = wmsg[6]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in ERROR".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
 
       obj = Error(request_type, request, error, args = args, kwargs = kwargs)
 
@@ -937,7 +937,7 @@ class Error(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP Error Message (request_type = {}, request = {}, error = {}, args = {}, kwargs = {})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
+      return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
 
 
 
@@ -1031,7 +1031,7 @@ class Publish(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
       if len(wmsg) not in (4, 5, 6):
-         raise ProtocolError("invalid message length {} for PUBLISH".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for PUBLISH".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in PUBLISH")
       options = check_or_raise_extra(wmsg[2], "'options' in PUBLISH")
@@ -1041,13 +1041,13 @@ class Publish(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in PUBLISH".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in PUBLISH".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in PUBLISH".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
       acknowledge = None
       excludeMe = None
@@ -1059,7 +1059,7 @@ class Publish(Message):
 
          option_acknowledge = options[u'acknowledge']
          if type(option_acknowledge) != bool:
-            raise ProtocolError("invalid type {} for 'acknowledge' option in PUBLISH".format(type(option_acknowledge)))
+            raise ProtocolError("invalid type {0} for 'acknowledge' option in PUBLISH".format(type(option_acknowledge)))
 
          acknowledge = option_acknowledge
 
@@ -1067,7 +1067,7 @@ class Publish(Message):
 
          option_excludeMe = options[u'exclude_me']
          if type(option_excludeMe) != bool:
-            raise ProtocolError("invalid type {} for 'exclude_me' option in PUBLISH".format(type(option_excludeMe)))
+            raise ProtocolError("invalid type {0} for 'exclude_me' option in PUBLISH".format(type(option_excludeMe)))
 
          excludeMe = option_excludeMe
 
@@ -1075,11 +1075,11 @@ class Publish(Message):
 
          option_exclude = options[u'exclude']
          if type(option_exclude) != list:
-            raise ProtocolError("invalid type {} for 'exclude' option in PUBLISH".format(type(option_exclude)))
+            raise ProtocolError("invalid type {0} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
          for sessionId in option_exclude:
             if type(sessionId) not in six.integer_types:
-               raise ProtocolError("invalid type {} for value in 'exclude' option in PUBLISH".format(type(sessionId)))
+               raise ProtocolError("invalid type {0} for value in 'exclude' option in PUBLISH".format(type(sessionId)))
 
          exclude = option_exclude
 
@@ -1087,11 +1087,11 @@ class Publish(Message):
 
          option_eligible = options[u'eligible']
          if type(option_eligible) != list:
-            raise ProtocolError("invalid type {} for 'eligible' option in PUBLISH".format(type(option_eligible)))
+            raise ProtocolError("invalid type {0} for 'eligible' option in PUBLISH".format(type(option_eligible)))
 
          for sessionId in option_eligible:
             if type(sessionId) not in six.integer_types:
-               raise ProtocolError("invalid type {} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
+               raise ProtocolError("invalid type {0} for value in 'eligible' option in PUBLISH".format(type(sessionId)))
 
          eligible = option_eligible
 
@@ -1099,7 +1099,7 @@ class Publish(Message):
 
          option_discloseMe = options[u'disclose_me']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'disclose_me' option in PUBLISH".format(type(option_discloseMe)))
+            raise ProtocolError("invalid type {0} for 'disclose_me' option in PUBLISH".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1145,7 +1145,7 @@ class Publish(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP PUBLISH Message (request = {}, topic = {}, args = {}, kwargs = {}, acknowledge = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+      return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, excludeMe = {5}, exclude = {6}, eligible = {7}, discloseMe = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
 
 
 
@@ -1193,7 +1193,7 @@ class Published(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for PUBLISHED".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for PUBLISHED".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
       publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
@@ -1214,7 +1214,7 @@ class Published(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP PUBLISHED Message (request = {}, publication = {})".format(self.request, self.publication)
+      return "WAMP PUBLISHED Message (request = {0}, publication = {1})".format(self.request, self.publication)
 
 
 
@@ -1271,7 +1271,7 @@ class Subscribe(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
       if len(wmsg) != 4:
-         raise ProtocolError("invalid message length {} for SUBSCRIBE".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for SUBSCRIBE".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
       options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
@@ -1283,10 +1283,10 @@ class Subscribe(Message):
 
          option_match = options[u'match']
          if type(option_match) != six.text_type:
-            raise ProtocolError("invalid type {} for 'match' option in SUBSCRIBE".format(type(option_match)))
+            raise ProtocolError("invalid type {0} for 'match' option in SUBSCRIBE".format(type(option_match)))
 
          if option_match not in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD]:
-            raise ProtocolError("invalid value {} for 'match' option in SUBSCRIBE".format(option_match))
+            raise ProtocolError("invalid value {0} for 'match' option in SUBSCRIBE".format(option_match))
 
          match = option_match
 
@@ -1311,7 +1311,7 @@ class Subscribe(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP SUBSCRIBE Message (request = {}, topic = {}, match = {})".format(self.request, self.topic, self.match)
+      return "WAMP SUBSCRIBE Message (request = {0}, topic = {1}, match = {2})".format(self.request, self.topic, self.match)
 
 
 
@@ -1359,7 +1359,7 @@ class Subscribed(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for SUBSCRIBED".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for SUBSCRIBED".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED")
       subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED")
@@ -1380,7 +1380,7 @@ class Subscribed(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP SUBSCRIBED Message (request = {}, subscription = {})".format(self.request, self.subscription)
+      return "WAMP SUBSCRIBED Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
 
 
 
@@ -1429,7 +1429,7 @@ class Unsubscribe(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for WAMP UNSUBSCRIBE".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for WAMP UNSUBSCRIBE".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBE")
       subscription = check_or_raise_id(wmsg[2], "'subscription' in UNSUBSCRIBE")
@@ -1450,7 +1450,7 @@ class Unsubscribe(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP UNSUBSCRIBE Message (request = {}, subscription = {})".format(self.request, self.subscription)
+      return "WAMP UNSUBSCRIBE Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
 
 
 
@@ -1494,7 +1494,7 @@ class Unsubscribed(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE)
 
       if len(wmsg) != 2:
-         raise ProtocolError("invalid message length {} for UNSUBSCRIBED".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for UNSUBSCRIBED".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED")
 
@@ -1514,7 +1514,7 @@ class Unsubscribed(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP UNSUBSCRIBED Message (request = {})".format(self.request)
+      return "WAMP UNSUBSCRIBED Message (request = {0})".format(self.request)
 
 
 
@@ -1581,7 +1581,7 @@ class Event(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
       if len(wmsg) not in (4, 5, 6):
-         raise ProtocolError("invalid message length {} for EVENT".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for EVENT".format(len(wmsg)))
 
       subscription = check_or_raise_id(wmsg[1], "'subscription' in EVENT")
       publication = check_or_raise_id(wmsg[2], "'publication' in EVENT")
@@ -1591,20 +1591,20 @@ class Event(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in EVENT".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in EVENT".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in EVENT".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
 
       publisher = None
       if u'publisher' in details:
 
          detail_publisher = details[u'publisher']
          if type(detail_publisher) not in six.integer_types:
-            raise ProtocolError("invalid type {} for 'publisher' detail in EVENT".format(type(detail_publisher)))
+            raise ProtocolError("invalid type {0} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
          publisher = detail_publisher
 
@@ -1638,7 +1638,7 @@ class Event(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP EVENT Message (subscription = {}, publication = {}, args = {}, kwargs = {}, publisher = {})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher)
+      return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher)
 
 
 
@@ -1714,7 +1714,7 @@ class Call(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
       if len(wmsg) not in (4, 5, 6):
-         raise ProtocolError("invalid message length {} for CALL".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for CALL".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in CALL")
       options = check_or_raise_extra(wmsg[2], "'options' in CALL")
@@ -1724,23 +1724,23 @@ class Call(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in CALL".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in CALL".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in CALL".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in CALL".format(type(kwargs)))
 
       timeout = None
       if u'timeout' in options:
 
          option_timeout = options[u'timeout']
          if type(option_timeout) not in six.integer_types:
-            raise ProtocolError("invalid type {} for 'timeout' option in CALL".format(type(option_timeout)))
+            raise ProtocolError("invalid type {0} for 'timeout' option in CALL".format(type(option_timeout)))
 
          if option_timeout < 0:
-            raise ProtocolError("invalid value {} for 'timeout' option in CALL".format(option_timeout))
+            raise ProtocolError("invalid value {0} for 'timeout' option in CALL".format(option_timeout))
 
          timeout = option_timeout
 
@@ -1749,7 +1749,7 @@ class Call(Message):
 
          option_receive_progress = options[u'receive_progress']
          if type(option_receive_progress) != bool:
-            raise ProtocolError("invalid type {} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
+            raise ProtocolError("invalid type {0} for 'receive_progress' option in CALL".format(type(option_receive_progress)))
 
          receive_progress = option_receive_progress
 
@@ -1758,7 +1758,7 @@ class Call(Message):
 
          option_discloseMe = options[u'disclose_me']
          if type(option_discloseMe) != bool:
-            raise ProtocolError("invalid type {} for 'disclose_me' option in CALL".format(type(option_discloseMe)))
+            raise ProtocolError("invalid type {0} for 'disclose_me' option in CALL".format(type(option_discloseMe)))
 
          discloseMe = option_discloseMe
 
@@ -1800,7 +1800,7 @@ class Call(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CALL Message (request = {}, procedure = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, discloseMe = {})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.discloseMe)
+      return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, discloseMe = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.discloseMe)
 
 
 
@@ -1854,7 +1854,7 @@ class Cancel(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for CANCEL".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for CANCEL".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
       options = check_or_raise_extra(wmsg[2], "'options' in CANCEL")
@@ -1867,10 +1867,10 @@ class Cancel(Message):
 
          option_mode = options[u'mode']
          if type(option_mode) != six.text_type:
-            raise ProtocolError("invalid type {} for 'mode' option in CANCEL".format(type(option_mode)))
+            raise ProtocolError("invalid type {0} for 'mode' option in CANCEL".format(type(option_mode)))
 
          if option_mode not in [Cancel.SKIP, Cancel.ABORT, Cancel.KILL]:
-            raise ProtocolError("invalid value '{}' for 'mode' option in CANCEL".format(option_mode))
+            raise ProtocolError("invalid value '{0}' for 'mode' option in CANCEL".format(option_mode))
 
          mode = option_mode
 
@@ -1895,7 +1895,7 @@ class Cancel(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP CANCEL Message (request = {}, mode = '{}'')".format(self.request, self.mode)
+      return "WAMP CANCEL Message (request = {0}, mode = '{1}'')".format(self.request, self.mode)
 
 
 
@@ -1957,7 +1957,7 @@ class Result(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
-         raise ProtocolError("invalid message length {} for RESULT".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for RESULT".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in RESULT")
       details = check_or_raise_extra(wmsg[2], "'details' in RESULT")
@@ -1966,13 +1966,13 @@ class Result(Message):
       if len(wmsg) > 3:
          args = wmsg[3]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in RESULT".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in RESULT".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 4:
          kwargs = wmsg[4]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in RESULT".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
 
       progress = None
 
@@ -1980,7 +1980,7 @@ class Result(Message):
 
          detail_progress = details[u'progress']
          if type(detail_progress) != bool:
-            raise ProtocolError("invalid type {} for 'progress' option in RESULT".format(type(detail_progress)))
+            raise ProtocolError("invalid type {0} for 'progress' option in RESULT".format(type(detail_progress)))
 
          progress = detail_progress
 
@@ -2010,7 +2010,7 @@ class Result(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP RESULT Message (request = {}, args = {}, kwargs = {}, progress = {})".format(self.request, self.args, self.kwargs, self.progress)
+      return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
 
 
 
@@ -2067,7 +2067,7 @@ class Register(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Register.MESSAGE_TYPE)
 
       if len(wmsg) != 4:
-         raise ProtocolError("invalid message length {} for REGISTER".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for REGISTER".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
       options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
@@ -2080,11 +2080,11 @@ class Register(Message):
 
          option_pkeys = options[u'pkeys']
          if type(option_pkeys) != list:
-            raise ProtocolError("invalid type {} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
+            raise ProtocolError("invalid type {0} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
 
          for pk in option_pkeys:
             if type(pk) not in six.integer_types:
-               raise ProtocolError("invalid type for value '{}' in 'pkeys' option in REGISTER".format(type(pk)))
+               raise ProtocolError("invalid type for value '{0}' in 'pkeys' option in REGISTER".format(type(pk)))
 
          pkeys = option_pkeys
 
@@ -2093,7 +2093,7 @@ class Register(Message):
 
          option_discloseCaller = options[u'disclose_caller']
          if type(option_discloseCaller) != bool:
-            raise ProtocolError("invalid type {} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
+            raise ProtocolError("invalid type {0} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
 
          discloseCaller = option_discloseCaller
 
@@ -2121,7 +2121,7 @@ class Register(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP REGISTER Message (request = {}, procedure = {}, pkeys = {}, discloseCaller = {})".format(self.request, self.procedure, self.pkeys, self.discloseCaller)
+      return "WAMP REGISTER Message (request = {0}, procedure = {1}, pkeys = {2}, discloseCaller = {3})".format(self.request, self.procedure, self.pkeys, self.discloseCaller)
 
 
 
@@ -2169,7 +2169,7 @@ class Registered(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Registered.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for REGISTERED".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for REGISTERED".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in REGISTERED")
       registration = check_or_raise_id(wmsg[2], "'registration' in REGISTERED")
@@ -2190,7 +2190,7 @@ class Registered(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP REGISTERED Message (request = {}, registration = {})".format(self.request, self.registration)
+      return "WAMP REGISTERED Message (request = {0}, registration = {1})".format(self.request, self.registration)
 
 
 
@@ -2239,7 +2239,7 @@ class Unregister(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unregister.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for WAMP UNREGISTER".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for WAMP UNREGISTER".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
       registration = check_or_raise_id(wmsg[2], "'registration' in UNREGISTER")
@@ -2260,7 +2260,7 @@ class Unregister(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP UNREGISTER Message (request = {}, registration = {})".format(self.request, self.registration)
+      return "WAMP UNREGISTER Message (request = {0}, registration = {1})".format(self.request, self.registration)
 
 
 
@@ -2304,7 +2304,7 @@ class Unregistered(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE)
 
       if len(wmsg) != 2:
-         raise ProtocolError("invalid message length {} for UNREGISTER".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for UNREGISTER".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
 
@@ -2324,7 +2324,7 @@ class Unregistered(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP UNREGISTER Message (request = {})".format(self.request)
+      return "WAMP UNREGISTER Message (request = {0})".format(self.request)
 
 
 
@@ -2411,7 +2411,7 @@ class Invocation(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE)
 
       if len(wmsg) not in (4, 5, 6):
-         raise ProtocolError("invalid message length {} for INVOCATION".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for INVOCATION".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
       registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
@@ -2421,23 +2421,23 @@ class Invocation(Message):
       if len(wmsg) > 4:
          args = wmsg[4]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in INVOCATION".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in INVOCATION".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 5:
          kwargs = wmsg[5]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in INVOCATION".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in INVOCATION".format(type(kwargs)))
 
       timeout = None
       if u'timeout' in details:
 
          detail_timeout = details[u'timeout']
          if type(detail_timeout) not in six.integer_types:
-            raise ProtocolError("invalid type {} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
+            raise ProtocolError("invalid type {0} for 'timeout' detail in INVOCATION".format(type(detail_timeout)))
 
          if detail_timeout < 0:
-            raise ProtocolError("invalid value {} for 'timeout' detail in INVOCATION".format(detail_timeout))
+            raise ProtocolError("invalid value {0} for 'timeout' detail in INVOCATION".format(detail_timeout))
 
          timeout = detail_timeout
 
@@ -2446,7 +2446,7 @@ class Invocation(Message):
 
          detail_receive_progress = details[u'receive_progress']
          if type(detail_receive_progress) != bool:
-            raise ProtocolError("invalid type {} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
+            raise ProtocolError("invalid type {0} for 'receive_progress' detail in INVOCATION".format(type(detail_receive_progress)))
 
          receive_progress = detail_receive_progress
 
@@ -2455,7 +2455,7 @@ class Invocation(Message):
 
          detail_caller = details[u'caller']
          if type(detail_caller) not in six.integer_types:
-            raise ProtocolError("invalid type {} for 'caller' detail in INVOCATION".format(type(detail_caller)))
+            raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(detail_caller)))
 
          caller = detail_caller
 
@@ -2464,7 +2464,7 @@ class Invocation(Message):
 
          detail_authid = details[u'authid']
          if type(detail_authid) != six.text_type:
-            raise ProtocolError("invalid type {} for 'authid' detail in INVOCATION".format(type(detail_authid)))
+            raise ProtocolError("invalid type {0} for 'authid' detail in INVOCATION".format(type(detail_authid)))
 
          authid = detail_authid
 
@@ -2473,7 +2473,7 @@ class Invocation(Message):
 
          detail_authrole = details[u'authrole']
          if type(detail_authrole) != six.text_type:
-            raise ProtocolError("invalid type {} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
+            raise ProtocolError("invalid type {0} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
 
          authrole = detail_authrole
 
@@ -2482,7 +2482,7 @@ class Invocation(Message):
 
          detail_authmethod = details[u'authmethod']
          if type(detail_authrole) != six.text_type:
-            raise ProtocolError("invalid type {} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
+            raise ProtocolError("invalid type {0} for 'authmethod' detail in INVOCATION".format(type(detail_authrole)))
 
          authmethod = detail_authmethod
 
@@ -2536,7 +2536,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {}, registration = {}, args = {}, kwargs = {}, timeout = {}, receive_progress = {}, caller = {}, authid = {}, authrole = {}, authmethod = {})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole, self.authmethod)
+      return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, authid = {7}, authrole = {8}, authmethod = {9})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole, self.authmethod)
 
 
 
@@ -2589,7 +2589,7 @@ class Interrupt(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE)
 
       if len(wmsg) != 3:
-         raise ProtocolError("invalid message length {} for INTERRUPT".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for INTERRUPT".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
       options = check_or_raise_extra(wmsg[2], "'options' in INTERRUPT")
@@ -2602,10 +2602,10 @@ class Interrupt(Message):
 
          option_mode = options[u'mode']
          if type(option_mode) != six.text_type:
-            raise ProtocolError("invalid type {} for 'mode' option in INTERRUPT".format(type(option_mode)))
+            raise ProtocolError("invalid type {0} for 'mode' option in INTERRUPT".format(type(option_mode)))
 
          if option_mode not in [Interrupt.ABORT, Interrupt.KILL]:
-            raise ProtocolError("invalid value '{}' for 'mode' option in INTERRUPT".format(option_mode))
+            raise ProtocolError("invalid value '{0}' for 'mode' option in INTERRUPT".format(option_mode))
 
          mode = option_mode
 
@@ -2630,7 +2630,7 @@ class Interrupt(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INTERRUPT Message (request = {}, mode = '{}'')".format(self.request, self.mode)
+      return "WAMP INTERRUPT Message (request = {0}, mode = '{1}')".format(self.request, self.mode)
 
 
 
@@ -2693,7 +2693,7 @@ class Yield(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE)
 
       if len(wmsg) not in (3, 4, 5):
-         raise ProtocolError("invalid message length {} for YIELD".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for YIELD".format(len(wmsg)))
 
       request = check_or_raise_id(wmsg[1], "'request' in YIELD")
       options = check_or_raise_extra(wmsg[2], "'options' in YIELD")
@@ -2702,13 +2702,13 @@ class Yield(Message):
       if len(wmsg) > 3:
          args = wmsg[3]
          if type(args) != list:
-            raise ProtocolError("invalid type {} for 'args' in YIELD".format(type(args)))
+            raise ProtocolError("invalid type {0} for 'args' in YIELD".format(type(args)))
 
       kwargs = None
       if len(wmsg) > 4:
          kwargs = wmsg[4]
          if type(kwargs) != dict:
-            raise ProtocolError("invalid type {} for 'kwargs' in YIELD".format(type(kwargs)))
+            raise ProtocolError("invalid type {0} for 'kwargs' in YIELD".format(type(kwargs)))
 
       progress = None
 
@@ -2716,7 +2716,7 @@ class Yield(Message):
 
          option_progress = options[u'progress']
          if type(option_progress) != bool:
-            raise ProtocolError("invalid type {} for 'progress' option in YIELD".format(type(option_progress)))
+            raise ProtocolError("invalid type {0} for 'progress' option in YIELD".format(type(option_progress)))
 
          progress = option_progress
 
@@ -2746,4 +2746,4 @@ class Yield(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP YIELD Message (request = {}, args = {}, kwargs = {}, progress = {})".format(self.request, self.args, self.kwargs, self.progress)
+      return "WAMP YIELD Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
