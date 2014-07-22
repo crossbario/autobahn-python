@@ -2,7 +2,7 @@ import binascii
 
 from autobahn.wamp.serializer import JsonObjectSerializer, MsgPackObjectSerializer
 
-ser = JsonObjectSerializer(batched = True)
+#ser = JsonObjectSerializer(batched = True)
 ser = MsgPackObjectSerializer(batched = True)
 
 

@@ -207,16 +207,18 @@ class Hello(Message):
          if role not in ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
+         role_cls = ROLE_NAME_TO_CLASS[role]
+
          details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
          if u'features' in details_role:
             check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = ROLE_NAME_TO_CLASS[role](**details_role[u'features'])
+            role_features = role_cls(**details_role[u'features'])
 
          else:
-            role_features = ROLE_NAME_TO_CLASS[role]()
+            role_features = role_cls()
 
          roles.append(role_features)
 
@@ -352,14 +354,16 @@ class Welcome(Message):
          if role not in ROLE_NAME_TO_CLASS:
             raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
+         role_cls = ROLE_NAME_TO_CLASS[role]
+
          if u'features' in details_roles[role]:
             check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
-            role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role][u'features'])
+            role_features = role_cls(**details_roles[role][u'features'])
 
          else:
-            role_features = ROLE_NAME_TO_CLASS[role]()
+            role_features = role_cls()
 
          roles.append(role_features)
 

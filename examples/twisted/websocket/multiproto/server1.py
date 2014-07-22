@@ -98,8 +98,9 @@ class ServiceServerProtocol(WebSocketServerProtocol):
       ## use other information from request, such has HTTP headers,
       ## WebSocket subprotocol, WebSocket origin etc etc
       ##
-      if self.SERVICEMAP.has_key(request.path):
-         self.service = self.SERVICEMAP[request.path](self)
+      if request.path in self.SERVICEMAP:
+         cls = self.SERVICEMAP[request.path]
+         self.service = cls(self)
       else:
          err = "No service under %s" % request.path
          print(err)

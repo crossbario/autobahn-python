@@ -262,7 +262,7 @@ class Tracker:
 
 
    def __iter__(self):
-      return self._timings.__iter__(self)
+      return self._timings.__iter__()
 
 
    def __str__(self):
