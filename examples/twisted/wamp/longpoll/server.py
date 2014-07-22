@@ -61,8 +61,8 @@ if __name__ == '__main__':
    component_session = MyBackendComponent(component_config)
    session_factory.add(component_session)
 
-   ws_factory = websocket.WampWebSocketServerFactory(session_factory, \
-                                                     debug = False, \
+   ws_factory = websocket.WampWebSocketServerFactory(session_factory,
+                                                     debug = False,
                                                      debug_wamp = False)
    ws_factory.startFactory()
 

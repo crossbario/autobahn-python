@@ -75,8 +75,8 @@ if __name__ == '__main__':
    session_factory.session = MyFrontendComponent
 
    ## 2) create a WAMP-over-WebSocket transport client factory
-   transport_factory = websocket.WampWebSocketClientFactory(session_factory, \
-                                                            debug = False, \
+   transport_factory = websocket.WampWebSocketClientFactory(session_factory,
+                                                            debug = False,
                                                             debug_wamp = False)
 
    ## 3) start the client

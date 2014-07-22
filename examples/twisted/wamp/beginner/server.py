@@ -79,8 +79,8 @@ if __name__ == '__main__':
    session_factory.add(component_session)
 
    ## 4) create a WAMP-over-WebSocket transport server factory
-   transport_factory = websocket.WampWebSocketServerFactory(session_factory, \
-                                                            debug = True, \
+   transport_factory = websocket.WampWebSocketServerFactory(session_factory,
+                                                            debug = True,
                                                             debug_wamp = False)
 
    ## 5) start the server from a Twisted endpoint
