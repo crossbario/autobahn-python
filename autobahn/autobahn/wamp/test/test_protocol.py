@@ -133,7 +133,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_publish(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          publication = yield handler.publish('com.myapp.topic1')
          self.assertEqual(publication, None)
@@ -154,7 +154,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_publish_acknowledged(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          publication = yield handler.publish('com.myapp.topic1', options = types.PublishOptions(acknowledge = True))
          self.assertTrue(type(publication.id) in (int, long))
@@ -175,7 +175,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_publish_undefined_exception(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          options = types.PublishOptions(acknowledge = True)
 
@@ -186,7 +186,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_publish_defined_exception(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          options = types.PublishOptions(acknowledge = True)
 
@@ -200,7 +200,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_call(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          res = yield handler.call('com.myapp.procedure1')
          self.assertEqual(res, 100)
@@ -221,7 +221,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_call_with_complex_result(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          res = yield handler.call('com.myapp.procedure2')
          self.assertIsInstance(res, types.CallResult)
@@ -237,7 +237,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_subscribe(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          def on_event(*args, **kwargs):
             print("got event", args, kwargs)
@@ -252,7 +252,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_unsubscribe(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          def on_event(*args, **kwargs):
             print("got event", args, kwargs)
@@ -264,7 +264,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_register(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          def on_call(*args, **kwargs):
             print("got call", args, kwargs)
@@ -279,7 +279,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_unregister(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          def on_call(*args, **kwargs):
             print("got call", args, kwargs)
@@ -291,7 +291,7 @@ if os.environ.get('USE_TWISTED', False):
       @inlineCallbacks
       def test_invoke(self):
          handler = ApplicationSession()
-         transport = MockTransport(handler)
+         MockTransport(handler)
 
          def myproc1():
             return 23

@@ -270,10 +270,10 @@ class _ApplicationSession(ApplicationSession):
       Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
       """
       for uri, proc in self.app._procs:
-         res = yield self.register(proc, uri)
+         yield self.register(proc, uri)
 
       for uri, handler in self.app._handlers:
-         res = yield self.subscribe(handler, uri)
+         yield self.subscribe(handler, uri)
 
       yield self.app._fire_signal('onjoined')
 

@@ -92,7 +92,7 @@ class TestDecorators(unittest.TestCase):
    def test_decorate_endpoint(self):
 
       @wamp.register("com.calculator.square")
-      def square(x):
+      def square(_):
          pass
 
       self.assertTrue(hasattr(square, '_wampuris'))
@@ -105,6 +105,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
       self.assertEqual(square._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
+      # noinspection PyUnusedLocal
       @wamp.register("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          pass
@@ -402,11 +403,13 @@ class MockSession:
                   exc = ecls(*args)
                else:
                   exc = ecls()
-         except Exception as e:
+         except Exception:
             ## FIXME: log e
             exc = KwException(error, *args, **kwargs)
       else:
          ## this never fails
+         args = args or []
+         kwargs = kwargs or {}
          exc = KwException(error, *args, **kwargs)
       return exc
 
@@ -417,6 +420,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
    def test_decorate_exception_non_exception(self):
 
       def test():
+         # noinspection PyUnusedLocal
          @wamp.error("com.test.error")
          class Foo:
             pass
@@ -469,9 +473,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
          raise ProductInactiveError("fuck", 123456)
       except Exception as e:
          self.assertEqual(e._wampuris[0].uri(), "com.myapp.product.<product:int>.product_inactive")
-
-      class AppErrorUndecorated(Exception):
-         pass
 
       session = MockSession()
       session.define(AppError)

@@ -281,7 +281,7 @@ def worker(options):
 
    ## The master already created the socket, just start listening and accepting
    ##
-   port = reactor.adoptStreamPort(options.fd, AF_INET, factory)
+   reactor.adoptStreamPort(options.fd, AF_INET, factory)
 
    if not options.silence:
       print "Worker started on PID %s using factory %s and protocol %s" % (workerPid, factory, factory.protocol)

@@ -903,7 +903,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                   log.msg("unknown message type")
             else:
                log.msg("msg not a list")
-         except Exception as e:
+         except Exception:
             traceback.print_exc()
       else:
          log.msg("binary message")

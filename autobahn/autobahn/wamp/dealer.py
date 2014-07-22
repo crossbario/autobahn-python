@@ -106,6 +106,7 @@ class Dealer:
          (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(register.procedure)):
 
          reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI, ["register for invalid procedure URI '{}'".format(register.procedure)])
+         session._transport.send(reply)
 
       else:
 

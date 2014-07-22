@@ -324,7 +324,7 @@ class WrappingWebSocketAdapter:
    def writeSequence(self, data):
       ## part of ITransport
       for d in data:
-         self.write(data)
+         self.write(d)
 
    def loseConnection(self):
       ## part of ITransport

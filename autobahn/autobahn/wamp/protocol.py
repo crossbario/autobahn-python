@@ -274,7 +274,7 @@ class BaseSession:
                   exc = ecls(*msg.args)
                else:
                   exc = ecls()
-         except Exception as e:
+         except Exception:
             ## FIXME: log e
             pass
 
@@ -646,7 +646,7 @@ class ApplicationSession(BaseSession):
             else:
                try:
                   self._invocations[msg.request].cancel()
-               except Exception as e:
+               except Exception:
                   if self.debug:
                      print("could not cancel call {}".format(msg.request))
                finally:
@@ -1323,6 +1323,7 @@ class RouterSession(BaseSession):
             self._router.process(self, msg)
 
 
+   # noinspection PyUnusedLocal
    def onClose(self, wasClean):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`

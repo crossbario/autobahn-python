@@ -92,7 +92,7 @@ def newid(len = 16):
    """
    Generate a new random object ID.
    """
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in xrange(len)])
+   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(len)])
 
 
 

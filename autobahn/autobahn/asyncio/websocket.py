@@ -95,6 +95,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
          self.waiter.set_result(None)
 
 
+   # noinspection PyUnusedLocal
    def _closeConnection(self, abort = False):
       self.transport.close()
 
@@ -175,7 +176,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
          #  res = yield from res
       except http.HttpException as exc:
          self.failHandshake(exc.reason, exc.code)
-      except Exception as exc:
+      except Exception:
          self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
       else:
          self.succeedHandshake(res)

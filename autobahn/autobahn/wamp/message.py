@@ -210,7 +210,7 @@ class Hello(Message):
          details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
          if u'features' in details_role:
-            details_role_features = check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
+            check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
             ## FIXME: skip unknown attributes
             role_features = ROLE_NAME_TO_CLASS[role](**details_role[u'features'])
@@ -353,7 +353,7 @@ class Welcome(Message):
             raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
          if u'features' in details_roles[role]:
-            details_role_features = check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
+            check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
             ## FIXME: skip unknown attributes
             role_features = ROLE_NAME_TO_CLASS[role](**details_roles[role][u'features'])
@@ -576,7 +576,7 @@ class Authenticate(Message):
    """
 
 
-   def __init__(self, signature):
+   def __init__(self, signature, extra = None):
       """
       Message constructor.
 
@@ -584,9 +584,11 @@ class Authenticate(Message):
       :type signature: str
       """
       assert(type(signature) == six.text_type)
+      assert(extra is None or type(extra) == dict)
 
       Message.__init__(self)
       self.signature = signature
+      self.extra = extra or {}
 
 
    @staticmethod
@@ -612,7 +614,7 @@ class Authenticate(Message):
 
       extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
 
-      obj = Authenticate(signature)
+      obj = Authenticate(signature, extra)
 
       return obj
 
@@ -621,15 +623,14 @@ class Authenticate(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
       """
-      extra = {}
-      return [Authenticate.MESSAGE_TYPE, self.signature, extra]
+      return [Authenticate.MESSAGE_TYPE, self.signature, self.extra]
 
 
    def __str__(self):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP AUTHENTICATE Message (signature = {0})".format(self.signature)
+      return "WAMP AUTHENTICATE Message (signature = {0}, extra = {1})".format(self.signature, self.extra)
 
 
 
@@ -899,7 +900,7 @@ class Error(Message):
          raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
       request = check_or_raise_id(wmsg[2], "'request' in ERROR")
-      details = check_or_raise_extra(wmsg[3], "'details' in ERROR")
+      _ = check_or_raise_extra(wmsg[3], "'details' in ERROR")
       error = check_or_raise_uri(wmsg[4], "'error' in ERROR")
 
       args = None

@@ -154,7 +154,7 @@ def generate_wcs(short = False):
       l = 6
    else:
       l = 12
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for i in range(l)])
+   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(l)])
 
 
 

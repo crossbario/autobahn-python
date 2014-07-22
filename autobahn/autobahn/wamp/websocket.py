@@ -72,7 +72,7 @@ class WampWebSocketProtocol:
          if self.factory.debug_wamp:
             print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
-      except Exception as e:
+      except Exception:
          ## silently ignore exceptions raised here ..
          if self.factory.debug_wamp:
             traceback.print_exc()

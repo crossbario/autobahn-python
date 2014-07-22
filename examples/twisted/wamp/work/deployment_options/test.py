@@ -419,7 +419,7 @@ if __name__ == '__main__':
    d = DeferredList(config.all_done)
    #d = config.components[1]._done
 
-   def done(res):
+   def done(_):
       log.flush()
       log.close()
       for c in config.components:

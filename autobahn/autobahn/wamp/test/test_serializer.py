@@ -83,7 +83,7 @@ class TestSerializer(unittest.TestCase):
       try:
          self.serializers.append(serializer.MsgPackSerializer())
          self.serializers.append(serializer.MsgPackSerializer(batched = True))
-      except Exception as e:
+      except Exception:
          ## MsgPack not installed
          pass
 

@@ -13,6 +13,7 @@ class Foo(object):
 import asyncio
 
 #@inlineCallbacks
+# noinspection PyUnusedLocal
 @asyncio.coroutine
 def add2(a, b = 3, c = Foo, d = "klj", *args, **kwargs):
    """

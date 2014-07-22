@@ -208,7 +208,7 @@ class Publisher(unittest.TestCase):
          return "You said {}. I say hello!".format(msg)
 
       try:
-         reg1 = yield self.session.register("com.myapp.hello", hello)
+         yield self.session.register("com.myapp.hello", hello)
       except ApplicationError as err:
          print(err)
 
