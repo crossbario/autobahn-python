@@ -722,6 +722,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered publication handler for topic %s" % uri)
 
 
+   # noinspection PyDefaultArgument
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
       """
       Dispatch an event for a topic to all clients subscribed to
@@ -1013,6 +1014,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peer))
 
 
+   # noinspection PyDefaultArgument
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
       """
       Dispatch an event to all peers subscribed to the event topic.

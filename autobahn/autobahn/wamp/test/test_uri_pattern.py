@@ -379,7 +379,7 @@ class MockSession:
          self._uri_to_ecls[error] = exception
 
 
-   def map_error(self, error, args = [], kwargs = {}):
+   def map_error(self, error, args = None, kwargs = None):
 
       # FIXME:
       # 1. map to ecls based on error URI wildcard/prefix

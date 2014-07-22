@@ -81,8 +81,7 @@ if __name__ == '__main__':
       serializers = None
    else:
       from autobahn.wamp.serializer import *
-      serializers = []
-      serializers.append(JsonSerializer(batched = True))
+      serializers = [JsonSerializer(batched=True)]
       #serializers.append(MsgPackSerializer(batched = True))
       #serializers.append(JsonSerializer())
       #serializers.append(MsgPackSerializer())

@@ -503,7 +503,7 @@ class Challenge(Message):
    """
 
 
-   def __init__(self, method, extra = {}):
+   def __init__(self, method, extra = None):
       """
       Message constructor.
 
@@ -517,7 +517,7 @@ class Challenge(Message):
 
       Message.__init__(self)
       self.method = method
-      self.extra = extra
+      self.extra = extra or {}
 
 
    @staticmethod
