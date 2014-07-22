@@ -53,10 +53,12 @@ class FutureMixin:
    Mixin for Asyncio style Futures.
    """
 
-   def _create_future(self):
+   @staticmethod
+   def _create_future():
       return Future()
 
-   def _as_future(self, fun, *args, **kwargs):
+   @staticmethod
+   def _as_future(fun, *args, **kwargs):
       try:
          res = fun(*args, **kwargs)
       except Exception as e:
@@ -73,13 +75,16 @@ class FutureMixin:
             f.set_result(res)
             return f
 
-   def _resolve_future(self, future, value):
+   @staticmethod
+   def _resolve_future(future, value):
       future.set_result(value)
 
-   def _reject_future(self, future, value):
+   @staticmethod
+   def _reject_future(future, value):
       future.set_exception(value)
 
-   def _add_future_callbacks(self, future, callback, errback):
+   @staticmethod
+   def _add_future_callbacks(future, callback, errback):
       def done(f):
          try:
             res = f.result()
@@ -88,7 +93,8 @@ class FutureMixin:
             errback(e)
       return future.add_done_callback(done)
 
-   def _gather_futures(self, futures, consume_exceptions = True):
+   @staticmethod
+   def _gather_futures(futures, consume_exceptions = True):
       return asyncio.gather(*futures, return_exceptions = consume_exceptions)
 
 

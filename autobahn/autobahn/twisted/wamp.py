@@ -51,22 +51,28 @@ class FutureMixin:
    Mixin for Twisted style Futures ("Deferreds").
    """
 
-   def _create_future(self):
+   @staticmethod
+   def _create_future():
       return Deferred()
 
-   def _as_future(self, fun, *args, **kwargs):
+   @staticmethod
+   def _as_future(fun, *args, **kwargs):
       return maybeDeferred(fun, *args, **kwargs)
 
-   def _resolve_future(self, future, value):
+   @staticmethod
+   def _resolve_future(future, value):
       future.callback(value)
 
-   def _reject_future(self, future, value):
+   @staticmethod
+   def _reject_future(future, value):
       future.errback(value)
 
-   def _add_future_callbacks(self, future, callback, errback):
+   @staticmethod
+   def _add_future_callbacks(future, callback, errback):
       return future.addCallbacks(callback, errback)
 
-   def _gather_futures(self, futures, consume_exceptions = True):
+   @staticmethod
+   def _gather_futures(futures, consume_exceptions = True):
       return DeferredList(futures, consumeErrors = consume_exceptions)
 
 

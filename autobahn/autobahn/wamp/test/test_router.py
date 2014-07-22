@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-#from twisted.trial import unittest
-import unittest
 
 import os
 
@@ -36,11 +34,16 @@ else:
 from autobahn.wamp import types
 
 if USE_TWISTED:
-   from twisted.internet.defer import inlineCallbacks
-   from autobahn.twisted.wamp import RouterFactory, \
+   from twisted.trial import unittest
+   #import unittest
+
+   from twisted.internet.defer import inlineCallbacks, Deferred
+   from autobahn.twisted.wamp import FutureMixin, \
+                                     RouterFactory, \
                                      RouterSessionFactory, \
                                      ApplicationSession
 elif USE_ASYNCIO:
+   import unittest
 
    import logging
    logger = logging.getLogger('trollius')
@@ -49,7 +52,8 @@ elif USE_ASYNCIO:
    handler.setLevel(logging.DEBUG)
    logger.addHandler(handler)
 
-   from autobahn.asyncio.wamp import RouterFactory, \
+   from autobahn.asyncio.wamp import FutureMixin, \
+                                     RouterFactory, \
                                      RouterSessionFactory, \
                                      ApplicationSession
 
@@ -73,9 +77,18 @@ class TestEmbeddedSessions(unittest.TestCase):
       Create an application session and add it to a router to
       run embedded.
       """
-      session = ApplicationSession(types.ComponentConfig('realm1'))
+      d = FutureMixin._create_future()
+
+      class TestSession(ApplicationSession):
+
+         def onJoin(self, details):
+            FutureMixin._resolve_future(d, None)
+
+      session = TestSession(types.ComponentConfig('realm1'))
 
       self.session_factory.add(session)
+
+      return d
 
 
    def test_add_and_subscribe(self):
@@ -83,14 +96,27 @@ class TestEmbeddedSessions(unittest.TestCase):
       Create an application session that subscribes to some
       topic and add it to a router to run embedded.
       """
+      d = FutureMixin._create_future()
 
       class TestSession(ApplicationSession):
 
          def onJoin(self, details):
             def on_event(*arg, **kwargs):
                pass
-            d = self.subscribe(on_event, u'com.example.topic1')
+
+            d2 = self.subscribe(on_event, u'com.example.topic1')
+
+            def ok(_):
+               FutureMixin._resolve_future(d, None)
+            def error(err):
+               FutureMixin._reject_future(d, err)
+
+            FutureMixin._add_future_callbacks(d2, ok, error)
 
       session = TestSession(types.ComponentConfig('realm1'))
 
       self.session_factory.add(session)
+
+      return d
+
+      #d.addCallback(self.assertEqual, expected)
