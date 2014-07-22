@@ -1340,6 +1340,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          ##
          if self.subscriptions.has_key(topicUri):
             event = obj[2]
+            # noinspection PyCallingNonCallable
             self.subscriptions[topicUri](topicUri, event)
          else:
             ## event received for non-subscribed topic (could be because we

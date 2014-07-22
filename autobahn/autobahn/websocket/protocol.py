@@ -2964,7 +2964,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
             for c in key[:-2]:
                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
-                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
+                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" % (c, key))
 
          ## Sec-WebSocket-Extensions
          ##

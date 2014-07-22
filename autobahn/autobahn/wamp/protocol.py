@@ -615,6 +615,7 @@ class ApplicationSession(BaseSession):
                   def error(err):
                      if self.traceback_app:
                         ## if asked to marshal the traceback within the WAMP error message, extract it
+                        # noinspection PyCallingNonCallable
                         tb = StringIO()
                         err.printTraceback(file = tb)
                         tb = tb.getvalue().splitlines()
