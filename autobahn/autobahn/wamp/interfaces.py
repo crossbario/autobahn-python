@@ -85,6 +85,7 @@ class IMessage(object):
 
 
    #@abc.abstractstaticmethod ## FIXME: this is Python 3 only
+   # noinspection PyMethodParameters
    def parse(wmsg):
       """
       Factory method that parses a unserialized raw message (as returned byte

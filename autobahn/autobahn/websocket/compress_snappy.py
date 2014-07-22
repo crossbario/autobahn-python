@@ -55,7 +55,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
    """
 
    @classmethod
-   def parse(Klass, params):
+   def parse(cls, params):
       """
       Parses a WebSocket extension offer for `permessage-snappy` provided by a client to a server.
 
@@ -75,26 +75,26 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
          if p == 'client_no_context_takeover':
             if val != True:
-               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
                acceptNoContextTakeover = True
 
          elif p == 'server_no_context_takeover':
             if val != True:
-               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
                requestNoContextTakeover = True
 
          else:
-            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
-      offer = Klass(acceptNoContextTakeover,
+      offer = cls(acceptNoContextTakeover,
                     requestNoContextTakeover)
       return offer
 
@@ -241,7 +241,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
    """
 
    @classmethod
-   def parse(Klass, params):
+   def parse(cls, params):
       """
       Parses a WebSocket extension response for `permessage-snappy` provided by a server to a client.
 
@@ -256,26 +256,26 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
          if p == 'client_no_context_takeover':
             if val != True:
-               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
                client_no_context_takeover = True
 
          elif p == 'server_no_context_takeover':
             if val != True:
-               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, Klass.EXTENSION_NAME))
+               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
                server_no_context_takeover = True
 
          else:
-            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, Klass.EXTENSION_NAME))
+            raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
-      response = Klass(client_no_context_takeover,
+      response = cls(client_no_context_takeover,
                        server_no_context_takeover)
       return response
 
@@ -367,16 +367,16 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
    """
 
    @classmethod
-   def createFromResponseAccept(Klass, isServer, accept):
-      pmce = Klass(isServer,
+   def createFromResponseAccept(cls, isServer, accept):
+      pmce = cls(isServer,
                    accept.response.server_no_context_takeover,
                    accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
       return pmce
 
 
    @classmethod
-   def createFromOfferAccept(Klass, isServer, accept):
-      pmce = Klass(isServer,
+   def createFromOfferAccept(cls, isServer, accept):
+      pmce = cls(isServer,
                    accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
                    accept.requestNoContextTakeover)
       return pmce
