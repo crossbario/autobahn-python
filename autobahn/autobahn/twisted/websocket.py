@@ -588,6 +588,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
       kwargs['protocols'] = self._protocols
 
+      # noinspection PyCallByClass
       WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
