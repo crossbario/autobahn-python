@@ -52,10 +52,18 @@ elif USE_ASYNCIO:
    handler.setLevel(logging.DEBUG)
    logger.addHandler(handler)
 
+   try:
+      import asyncio
+   except ImportError:
+      import trollius as asyncio
+
+   import gc
+
    from autobahn.asyncio.wamp import FutureMixin, \
                                      RouterFactory, \
                                      RouterSessionFactory, \
                                      ApplicationSession
+
 
 
 
@@ -68,8 +76,19 @@ class TestEmbeddedSessions(unittest.TestCase):
       """
       Setup router and router session factories.
       """
+      if USE_ASYNCIO:
+         self.loop = asyncio.new_event_loop()
+         asyncio.set_event_loop(self.loop)
+
       self.router_factory = RouterFactory()
       self.session_factory = RouterSessionFactory(self.router_factory)
+
+
+   def tearDown(self):
+      if USE_ASYNCIO:
+         self.loop.close()
+         asyncio.set_event_loop(None)
+         gc.collect()
 
 
    def test_add(self):
@@ -88,7 +107,12 @@ class TestEmbeddedSessions(unittest.TestCase):
 
       self.session_factory.add(session)
 
-      return d
+      if USE_ASYNCIO:
+         self.loop.run_until_complete(d)
+      elif USE_TWISTED:
+         return d
+      else:
+         raise Exception("logic error")
 
 
    def test_add_and_subscribe(self):
@@ -117,6 +141,11 @@ class TestEmbeddedSessions(unittest.TestCase):
 
       self.session_factory.add(session)
 
-      return d
+      if USE_ASYNCIO:
+         self.loop.run_until_complete(d)
+      elif USE_TWISTED:
+         return d
+      else:
+         raise Exception("logic error")
 
       #d.addCallback(self.assertEqual, expected)
