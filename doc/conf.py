@@ -26,6 +26,8 @@ except ImportError:
    spelling = None
 
 
+DEBUG = False
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -107,8 +109,10 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-#pygments_style = 'sphinx'
-pygments_style = 'flask_theme_support.FlaskyStyle'
+if DEBUG:
+   pygments_style = 'sphinx'
+else:
+   pygments_style = 'flask_theme_support.FlaskyStyle'
 # pygments_style = 'pastie'
 # pygments_style = 'monokai'
 # pygments_style = 'colorful'
@@ -125,7 +129,7 @@ pygments_style = 'flask_theme_support.FlaskyStyle'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-if False:
+if DEBUG:
    if sphinx_rtd_theme:
       html_theme = "sphinx_rtd_theme"
       html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
@@ -291,22 +295,24 @@ man_pages = [
 autodoc_member_order = 'bysource'
 
 ## http://sphinx-doc.org/ext/intersphinx.html
-intersphinx_mapping = {
-   'python': ('http://docs.python.org/', None),
-   #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
-}
+if not DEBUG:
+   intersphinx_mapping = {
+      'python': ('http://docs.python.org/', None),
+      #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
+   }
 
 
 rst_epilog = """
 .. |ab| replace:: **Autobahn**\|Python
 """
 
-rst_prolog = """
-.. container:: topnav
+if not DEBUG:
+   rst_prolog = """
+   .. container:: topnav
 
-   :doc:`Overview <index>` :doc:`installation` :doc:`Examples <examples>`  :doc:`WebSocket <websocketprogramming>`  :doc:`WAMP <wampprogramming>` :doc:`Reference <reference>` :doc:`TOC <table_of_contents>`
+      :doc:`Overview <index>` :doc:`installation` :doc:`Examples <examples>`  :doc:`WebSocket <websocketprogramming>`  :doc:`WAMP <wampprogramming>` :doc:`Reference <reference>` :doc:`TOC <table_of_contents>`
 
-"""
+   """
 
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
 autoclass_content = 'both'

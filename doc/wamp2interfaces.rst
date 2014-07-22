@@ -187,9 +187,9 @@ Publish Options
 Decorators
 ++++++++++
 
-.. autofunction:: autobahn.wamp.procedure
+.. autofunction:: autobahn.wamp.register
 
-.. autofunction:: autobahn.wamp.topic
+.. autofunction:: autobahn.wamp.subscribe
 
 .. autofunction:: autobahn.wamp.error
 
