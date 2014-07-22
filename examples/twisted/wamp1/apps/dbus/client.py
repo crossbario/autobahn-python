@@ -38,10 +38,8 @@ def delay(t):
 class DbusClientProtocol(WampCraClientProtocol):
 
    def onSessionOpen(self):
-      self.authenticate(self.onAuthSuccess,
-                        self.onAuthError,
-                        authKey = self.factory.user,
-                        authSecret = self.factory.password)
+      d = self.authenticate(authKey = self.factory.user, authSecret = self.factory.password)
+      d.addCallbacks(self.onAuthSuccess, self.onAuthError)
 
 
    def onClose(self, wasClean, code, reason):

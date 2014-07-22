@@ -67,7 +67,7 @@ if __name__ == '__main__':
    ws_factory.startFactory()
 
    ws_resource = WebSocketResource(ws_factory)
-   lp_resource = WampLongPollResource(session_factory, debug = True, debug_session_id = "kjmd3sBLOUnb3Fyr")
+   lp_resource = WampLongPollResource(session_factory, debug = True, debug_transport_id = "kjmd3sBLOUnb3Fyr")
 
    root = File(".")
    root.putChild("ws", ws_resource)
