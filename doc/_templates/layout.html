@@ -4,6 +4,7 @@
 
    {{ super() }}
 
+<!--
    <script>
      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -12,8 +13,18 @@
      ga('create', 'UA-23019220-3', 'autobahn.ws');
      ga('send', 'pageview');
    </script>
+-->
 
+   <style>
+.bs-sidenav.affix {
+position: relative;
+top: 80px;
+}
 
+.section {
+   margin: 60px 20px 20px 20px;
+}
+   </style>
 
 {% endblock %}
 
@@ -22,7 +33,7 @@
 
    <!-- community widget iframe -->
 
-   {% if widgeturl %}
+   {% if False and widgeturl %}
 
       <!-- general styles for the widget -->
       <link rel="stylesheet" type="text/css" href="{{ widgeturl }}/css/parent.css" />

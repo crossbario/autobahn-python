@@ -1,9 +1,24 @@
-Programming with WebSocekt
+Programming with WebSocket
 ==========================
 
+.. contents:: Table of Contents
+   :depth: 3
+   :backlinks: top
+
+FIXME: rewrite TOC to task oriented style (e.g. "Sending and Receiving Messages")
+
+Creating Server Applications
+----------------------------
+
+External hyperlinks, like Python_.
+
+.. _Python: :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
+
+
+Server Protocols
+~~~~~~~~~~~~~~~~
 
 To create a WebSocket server, you need to write a protocol class to specify the behavior of the server. 
-
 For example, here is a protocol for a WebSocket echo server that will simply echo back any WebSocket message it receives:
 
 .. code-block:: python
@@ -21,6 +36,8 @@ The first thing to note is that you **derive** your protocol class from a base c
 
 So a Twisted-based echo protocol would import the base protocol from `autobahn.twisted.websocket` and derive from :class:`autobahn.twisted.websocket.WebSocketServerProtocol`:
 
+.. centered:: Twisted
+
 .. code-block:: python
 
    from autobahn.twisted.websocket import WebSocketServerProtocol
@@ -32,6 +49,8 @@ So a Twisted-based echo protocol would import the base protocol from `autobahn.t
          self.sendMessage(payload, isBinary)
 
 while an asyncio echo protocol would import the base protocol from `autobahn.asyncio.websocket` and dervice from :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`:
+
+.. centered:: asyncio
 
 .. code-block:: python
 
@@ -45,9 +64,15 @@ while an asyncio echo protocol would import the base protocol from `autobahn.asy
 
 .. note:: In this example, only the import differs between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
 
+
+Running a WebSocket Server
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Now that we have defined the behavior of our WebSocket server, we need to actually start one that listens on a specific TCP port.
 
 Here is one way of doing that when using Twisted:
+
+.. centered:: Twisted
 
 .. code-block:: python
 
@@ -70,33 +95,38 @@ Here is one way of doing that when using Twisted:
 
 And here is the asyncio way:
 
+.. centered:: asyncio
+
 .. code-block:: python
 
-if __name__ == '__main__':
+   if __name__ == '__main__':
 
-   try:
-      import asyncio
-   except ImportError:
-      ## Trollius >= 0.3 was renamed
-      import trollius as asyncio
+      try:
+         import asyncio
+      except ImportError:
+         ## Trollius >= 0.3 was renamed
+         import trollius as asyncio
 
-   from autobahn.twisted.websocket import WebSocketServerFactory
+      from autobahn.twisted.websocket import WebSocketServerFactory
 
-   factory = WebSocketServerFactory()
-   factory.protocol = EchoServerProtocol
+      factory = WebSocketServerFactory()
+      factory.protocol = EchoServerProtocol
 
-   loop = asyncio.get_event_loop()
-   coro = loop.create_server(factory, '127.0.0.1', 9000)
-   server = loop.run_until_complete(coro)
+      loop = asyncio.get_event_loop()
+      coro = loop.create_server(factory, '127.0.0.1', 9000)
+      server = loop.run_until_complete(coro)
 
-   try:
-      loop.run_forever()
-   except KeyboardInterrupt:
-      pass
-   finally:
-      server.close()
-      loop.close()
+      try:
+         loop.run_forever()
+      except KeyboardInterrupt:
+         pass
+      finally:
+         server.close()
+         loop.close()
 
+
+WebSocket Callbacks
+~~~~~~~~~~~~~~~~~~~
 
 Both of these classes implement the core WebSocket interface:
 
@@ -126,7 +156,7 @@ When the WebSocket connection has closed, the :meth:`autobahn.websocket.interfac
 
 In any case, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage` hook is the most important. It is here where you implement what should happen when a new (incoming) WebSocket message was received.
 
-
+Here is an example that overrides all of above callbacks:
 
 .. code-block:: python
 
@@ -151,8 +181,13 @@ In any case, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessag
          print("WebSocket connection closed: {}".format(reason))
 
 
+WebSocket Methods
+-----------------
 
-.. note:: Content will be added to this section in the near future. For now, please take a look at the :ref:`WebSocket Examples <websocket_examples>` and the :ref:`WebSocket Reference <websocket_reference>`.
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
+
+
 
 
 Upgrading from Autobahn < 0.7.0
@@ -162,13 +197,20 @@ Starting with release 0.7.0, |ab| now supports both Twisted and asyncio as the u
 
 |ab| **< 0.7.0**:
 
+.. code-block:: python
+
      from autobahn.websocket import WebSocketServerProtocol
 
 |ab| **>= 0.7.0**:
 
+
+.. code-block:: python
+
      from autobahn.twisted.websocket import WebSocketServerProtocol
 
 or
+
+.. code-block:: python
 
      from autobahn.asyncio.websocket import WebSocketServerProtocol
 
@@ -176,3 +218,10 @@ Two more small changes (also see the `interface definition <https://github.com/t
 
  1. ``WebSocketProtocol.sendMessage``: renaming of parameter ``binary`` to ``isBinary`` (for consistency with `onMessage`)
  2. ``ConnectionRequest`` no longer provides ``peerstr``, but only ``peer``, and the latter is a plain, descriptive string (this was needed since we now support both Twisted and asyncio, and also non-TCP transports)
+
+
+Related Information
+-------------------
+
+1. :ref:`WebSocket Examples <websocket_examples>`
+2. :ref:`WebSocket Reference <websocket_reference>`

@@ -25,8 +25,13 @@ try:
 except ImportError:
    spelling = None
 
+try:
+   import sphinx_bootstrap_theme
+except ImportError:
+   sphinx_bootstrap_theme = None
 
-DEBUG = False
+
+DEBUG = True
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -130,10 +135,21 @@ else:
 # a list of builtin themes.
 
 if DEBUG:
-   if sphinx_rtd_theme:
-      html_theme = "sphinx_rtd_theme"
-      html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-   else:
+
+   html_theme = None
+   html_theme_path = None
+
+   if sphinx_bootstrap_theme:
+      html_theme = 'bootstrap'
+      tp = sphinx_bootstrap_theme.get_html_theme_path()
+      print("Theme path: {}".format(tp))
+      html_theme_path = tp
+
+   # if sphinx_rtd_theme:
+   #    html_theme = "sphinx_rtd_theme"
+   #    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+   if not html_theme:
       #html_theme = "default"
       html_theme = 'sphinxdoc'
 else:
@@ -193,7 +209,9 @@ html_static_path = ['_static']
 # additional variables which become accessible in the template engine's context for
 # all pages
 # html_context = {'widgeturl': 'http://192.168.1.147:8090/widget'}
-html_context = {'widgeturl': 'https://demo.crossbar.io/clandeckwidget'}
+html_context = {
+   'widgeturl': 'https://demo.crossbar.io/clandeckwidget'
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -205,9 +223,22 @@ html_context = {'widgeturl': 'https://demo.crossbar.io/clandeckwidget'}
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-    # 'index':    ['side-primary.html', 'searchbox.html'],
-    '**':       ['side-secondary.html', 'stay_informed.html', 'sidetoc.html',
-                 'previous_next.html', 'searchbox.html' ]
+   'index': [
+      'side-primary.html',
+      #'side-secondary.html',
+      #'stay_informed.html',
+      #'sidetoc.html',
+      #'previous_next.html',
+      #'searchbox.html'
+   ],
+   '**': [
+      #'side-primary.html',
+      'side-secondary.html',
+      #'stay_informed.html',
+      'sidetoc.html',
+      #'previous_next.html',
+      #'searchbox.html'
+   ]
 }
 
 # Additional templates that should be rendered to pages, maps page names to

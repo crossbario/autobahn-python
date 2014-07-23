@@ -17,11 +17,11 @@ Message-based Processing
 
 The message-based API is implemented in the following methods and callbacks
 
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onOpen`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessage`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessage`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendClose`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onClose`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
 
 
 Prepared Messages
@@ -30,7 +30,7 @@ Prepared Messages
 In case you want to send a single WebSocket message to multiple peers, AutobahnPython provides an optimized way of sending using
 
   * :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPreparedMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
 
 
 Handshake Hooks
@@ -47,12 +47,26 @@ Ping/Pong Processing
 
 The basic API also allows for explicit processing of WebSocket Pings and Pongs:
 
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onPing`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onPong`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPing`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendPong`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPong`
 
 Note that explicit processing of Pings/Pongs is unnecessary normally - AutobahnPython will do the right thing under the hood.
+
+
+Implementation
+--------------
+
+The basic API is implemented in the following classes
+
+* :class:`autobahn.websocket.protocol.WebSocketProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketServerProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketClientProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
 
 
 Interface Definition
@@ -75,7 +89,7 @@ and `2^63` octets.
 The implementation of the basic API is message-based, and thus has to buffer
 all data received for a message frame, and buffer all frames received for
 a message, and only when the message finally ends, flattens all buffered
-data and fires :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessage`.
+data and fires :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`.
 
 Usually, when you produce/consume messages of small to limited size (like
 say `<256k`), this is absolutely sufficient and convenient.
@@ -97,16 +111,26 @@ processing - both sending and receiving.
 Frame-based API
 ---------------
 
-API for frame-based processing is implemented in:
+API for frame-based processing consists of these callbacks and methods
 
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageBegin`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrame`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageEnd`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessage`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessageFrame`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.endMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.onMessageBegin`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.onMessageFrame`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.onMessageEnd`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.beginMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.sendMessageFrame`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.endMessage`
 
-and has the following definition:
+is implemented in the following classes
+
+* :class:`autobahn.websocket.protocol.WebSocketProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketServerProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketClientProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+
+and has the following definition
 
 .. autoclass:: autobahn.websocket.interfaces.IWebSocketChannelFrameApi
    :members:
@@ -115,19 +139,29 @@ and has the following definition:
 Streaming API
 -------------
 
-API for streaming processing is implemented in:
+API for streaming processing consists of these callbacks and methods
 
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageBegin`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameBegin`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameData`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageFrameEnd`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.onMessageEnd`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessage`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.beginMessageFrame`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.sendMessageFrameData`
-  * :func:`autobahn.websocket.protocol.WebSocketProtocol.endMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageBegin`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageFrameBegin`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageFrameData`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageFrameEnd`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageEnd`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.beginMessage`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.beginMessageFrame`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.sendMessageFrameData`
+  * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.endMessage`
 
-and has the following definition:
+is implemented in the following classes
+
+* :class:`autobahn.websocket.protocol.WebSocketProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketServerProtocol`
+* :class:`autobahn.websocket.protocol.WebSocketClientProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
+* :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+
+and has the following definition
 
 .. autoclass:: autobahn.websocket.interfaces.IWebSocketChannelStreamingApi
    :members:
