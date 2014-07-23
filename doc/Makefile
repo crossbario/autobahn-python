@@ -51,7 +51,7 @@ clean:
 	rm -rf ./reference/
 
 api:
-	sphinx-apidoc -o reference ../autobahn/autobahn/
+	sphinx-apidoc -o pages/reference ../autobahn/autobahn/
 
 html:
 	PYTHONPATH="../autobahn" $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
