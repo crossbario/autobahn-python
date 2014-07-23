@@ -16,8 +16,8 @@
 .. _tulip: https://pypi.python.org/pypi/asyncio/
 
 
-|ab| Reference
-==============
+|ab|
+====
 
 Release v\ |version|. (:ref:`Changelog`)
 
@@ -33,8 +33,8 @@ WebSocket allows `bidirectional real-time messaging on the Web <http://tavendo.c
 
 WAMP implements `two messaging patterns on top of WebSocket <http://wamp.ws/why/>`_:
 
- * **Publish & Subscribe**: *Publishers* publish events to a topic, and *subscribers* to the topic receive these events. A *router* brokers these events.
- * **Remote Procedure Calls**: A *callee* registers a remote procedure with a *router*. A *caller* makes a call for that procedure to the *router*. The *router* deals the call to the *callee* and returns the result to the *caller*.
+* **Publish & Subscribe**: *Publishers* publish events to a topic, and *subscribers* to the topic receive these events. A *router* brokers these events.
+* **Remote Procedure Calls**: A *callee* registers a remote procedure with a *router*. A *caller* makes a call for that procedure to the *router*. The *router* deals the call to the *callee* and returns the result to the *caller*.
 
 Basic *router* functionality is provided by |ab|.
 
