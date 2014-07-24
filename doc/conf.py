@@ -139,11 +139,78 @@ if DEBUG:
    html_theme = None
    html_theme_path = None
 
+   ## Sphinx-Bootstrap Theme
+   ##
+   ## http://sphinx-bootstrap-theme.readthedocs.org/en/latest/README.html
+   ##
    if sphinx_bootstrap_theme:
+
       html_theme = 'bootstrap'
-      tp = sphinx_bootstrap_theme.get_html_theme_path()
-      print("Theme path: {}".format(tp))
-      html_theme_path = tp
+      html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+      html_theme_options = {
+          # Navigation bar title. (Default: ``project`` value)
+          'navbar_title': "Autobahn",
+
+          # Tab name for entire site. (Default: "Site")
+          'navbar_site_name': "Site",
+
+          # A list of tuples containing pages or urls to link to.
+          # Valid tuples should be in the following forms:
+          #    (name, page)                 # a link to a page
+          #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
+          #    (name, "http://example.com", True) # arbitrary absolute url
+          # Note the "1" or "True" value above as the third argument to indicate
+          # an arbitrary url.
+          'navbar_links': [
+              #("Examples", "examples"),
+              #("Link", "http://example.com", True),
+          ],
+
+          # Render the next and previous page links in navbar. (Default: true)
+          'navbar_sidebarrel': True,
+
+          # Render the current pages TOC in the navbar. (Default: true)
+          'navbar_pagenav': True,
+
+          # Tab name for the current pages TOC. (Default: "Page")
+          #'navbar_pagenav_name': "Page",
+
+          # Global TOC depth for "site" navbar tab. (Default: 1)
+          # Switching to -1 shows all levels.
+          'globaltoc_depth': 1,
+
+          # Include hidden TOCs in Site navbar?
+          #
+          # Note: If this is "false", you cannot have mixed ``:hidden:`` and
+          # non-hidden ``toctree`` directives in the same page, or else the build
+          # will break.
+          #
+          # Values: "true" (default) or "false"
+          'globaltoc_includehidden': "true",
+
+          # HTML navbar class (Default: "navbar") to attach to <div> element.
+          # For black navbar, do "navbar navbar-inverse"
+          #'navbar_class': "navbar navbar-inverse",
+          'navbar_class': "navbar",
+
+          # Fix navigation bar to top of page?
+          # Values: "true" (default) or "false"
+          'navbar_fixed_top': "true",
+
+          # Location of link to source.
+          # Options are "nav" (default), "footer" or anything else to exclude.
+          'source_link_position': "nav",
+
+          # Bootswatch (http://bootswatch.com/) theme.
+          #
+          # Options are nothing with "" (default) or the name of a valid theme
+          # such as "amelia" or "cosmo".
+          'bootswatch_theme': "",
+
+          # Choose Bootstrap version.
+          # Values: "3" (default) or "2" (in quotes)
+          #'bootstrap_version': "3",
+      }
 
    # if sphinx_rtd_theme:
    #    html_theme = "sphinx_rtd_theme"
@@ -162,7 +229,7 @@ else:
 # documentation.
 #html_theme_options = {}
 
-html_theme_options = {
+#html_theme_options = {
 #  'footertextcolor': '#ccc',
 #  'sidebarbgcolor': '#111',
 #  'sidebartextcolor': '#ccc',
@@ -179,7 +246,7 @@ html_theme_options = {
 #  'codetextcolor': '#ccc',
 #  'bodyfont': 'serif',
 #  'headfont': 'serif',
-}
+#}
 
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -335,6 +402,22 @@ if not DEBUG:
 
 rst_epilog = """
 .. |ab| replace:: **Autobahn**\|Python
+.. _Autobahn: http://autobahn.ws
+.. _AutobahnJS: http://autobahn.ws/js
+.. _AutobahnPython: **Autobahn**\|Python
+.. _WebSocket: http://tools.ietf.org/html/rfc6455
+.. _RFC6455: http://tools.ietf.org/html/rfc6455
+.. _WAMP: http://wamp.ws/
+.. _Twisted: http://twistedmatrix.com/
+.. _asyncio: http://docs.python.org/3.4/library/asyncio.html
+.. _CPython: http://python.org/
+.. _PyPy: http://pypy.org/
+.. _Jython: http://jython.org/
+.. _WAMPv1: http://wamp.ws/spec/wamp1/
+.. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
+.. _AutobahnTestsuite: http://autobahn.ws/testsuite
+.. _trollius: https://pypi.python.org/pypi/trollius/
+.. _tulip: https://pypi.python.org/pypi/asyncio/
 """
 
 if not DEBUG:

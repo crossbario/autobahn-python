@@ -5,7 +5,7 @@ Programming with WebSocket
    :depth: 3
    :backlinks: top
 
-FIXME: rewrite TOC to task oriented style (e.g. "Sending and Receiving Messages")
+FIXME: rewrite TOC to task oriented style (e.g. "Sending and Receiving Messages", "WebSocket Connection Lifecycle")
 
 Creating Server Applications
 ----------------------------

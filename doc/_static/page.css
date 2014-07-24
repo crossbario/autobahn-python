@@ -1,0 +1,25 @@
+body {
+   font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+}
+
+#logoblock {
+   text-align: center;
+}
+
+#sidebar {
+   /* bs-sidenav affix-top */
+   /*padding: 8px;*/
+}
+
+.sidebar_block {
+   padding-left: 24px;
+}
+
+.bs-sidenav.affix {
+   position: static;
+   top: 0;
+}
+
+.col-md-9 {
+   padding: 24px 80px 20px 32px;
+}
