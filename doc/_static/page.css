@@ -1,5 +1,17 @@
 body {
    font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+   font-size: 15px;
+   /*line-height: 1.5em;*/
+}
+
+h1 {
+   margin-top: 40px;   
+}
+
+h2 {
+   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
+   font-weight: 300;
+   margin-top: 32px;
 }
 
 #logoblock {
@@ -21,11 +33,15 @@ body {
 }
 
 .col-md-9 {
-   padding: 24px 80px 20px 32px;
+   padding: 8px 100px 20px 32px;
 }
 
 #quicklinks > h4 {
    font-size: 15px;
    padding-left: 12px;
    line-height: 1.1em;
+}
+
+footer {
+   font-size: 12px;
 }

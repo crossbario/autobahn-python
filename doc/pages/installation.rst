@@ -1,6 +1,8 @@
 Installation
 ============
 
+This document describes the prerequisites and the installation of |ab|.
+
 Requirements
 ------------
 

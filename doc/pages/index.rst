@@ -135,7 +135,7 @@ Complete example code:
 
 
 Where to start
-==============
+--------------
 
 To get started, jump to :doc:`installation`.
 
@@ -149,7 +149,7 @@ For **WAMP developers**, :doc:`wamp/wampprogramming` gives an introduction for p
 
 
 Community
-=========
+---------
 
 Development of |ab| takes place on the Github `source repository <https://github.com/tavendo/AutobahnPython>`_. We are open for contributions, whether that's code or documentation! We also take bug reports at the `issue tracker <https://github.com/tavendo/AutobahnPython/issues>`_.
 

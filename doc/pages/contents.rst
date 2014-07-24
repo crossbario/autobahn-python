@@ -1,7 +1,7 @@
-.. _table_of_contents:
+.. _site_contents:
 
-Table of Contents
-=================
+Site Contents
+=============
 
 .. toctree::
    :maxdepth: 3
