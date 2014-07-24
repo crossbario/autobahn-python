@@ -23,3 +23,9 @@ body {
 .col-md-9 {
    padding: 24px 80px 20px 32px;
 }
+
+#quicklinks > h4 {
+   font-size: 15px;
+   padding-left: 12px;
+   line-height: 1.1em;
+}

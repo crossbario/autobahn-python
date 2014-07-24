@@ -24,3 +24,16 @@ You can also depend on an install variant which automatically installs respectiv
    install_requires = ["autobahn[twisted,accelerate]>=0.7.2"]
 
 
+
+There are many more examples showing options and advanced features:
+
+* :doc:`WebSocket Examples <websocket/examples>`.
+* :doc:`WAMP Examples <wamp/examples>`.
+
+
+.. note::
+
+   * WAMP application components can be run in servers and clients without any modification to your component class.
+
+   * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
+

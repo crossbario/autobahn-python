@@ -4,11 +4,15 @@ Installation
 Requirements
 ------------
 
-|ab| runs on Python on top of a networking framework, either `Twisted`_ or `asyncio`_ and most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio.
+|ab| runs on Python on top of a networking framework, either
 
-For Twisted installation, please see `here <http://twistedmatrix.com/>`_.
 
-Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`_. For Python 2, `trollius`_ will work.
+1. `Twisted`_ or
+2. `asyncio`_
+
+and most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio.
+
+For Twisted installation, please see `here <http://twistedmatrix.com/>`_. Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`_. For Python 2, `trollius`_ will work.
 
 Here are the configurations suppored by |ab|:
 
@@ -32,28 +36,26 @@ Here are the configurations suppored by |ab|:
 .. _2: http://twistedmatrix.com/trac/ticket/6746
 
 
-Install from Python Package Index
----------------------------------
+Install from PyPI
+-----------------
 
-Install from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_:
+To install |ab| from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_
 
 ::
 
    $ pip install autobahn
 
-You can also specify install variants (see below)
+You can also specify *install variants* (see below). E.g. to install Twisted automatically as a dependency
 
 ::
 
-   pip install autobahn[twisted,accelerate]
+   pip install autobahn[twisted]
 
-The latter will automatically install Twisted and native acceleration packages when running on CPython.
+And to install asyncio backports automatically when required
 
 ::
 
-   pip install autobahn[asyncio,accelerate]
-
-The latter will automatically install asyncio backports when required and native acceleration packages when running on CPython.
+   pip install autobahn[asyncio]
 
 
 Install from Sources
@@ -91,20 +93,28 @@ Install Variants
 
 |ab| has the following install variants:
 
-1. ``twisted``: Install Twisted as a dependency
-2. ``asyncio``: Install asyncio as a dependency (or use stdlib)
-3. ``accelerate``: Install native acceleration packages on CPython
-4. ``compress``: Install packages for non-standard WebSocket compression methods
-5. ``serialization``: Install packages for additional WAMP serialization formats (currently `MsgPack <http://msgpack.org>`_)
++-------------------+--------------------------------------------------------------------------------------------------------+
+| **Variant**       | **Description**                                                                                        |
++-------------------+--------------------------------------------------------------------------------------------------------+
+| ``twisted``       | Install Twisted as a dependency                                                                        |
++-------------------+--------------------------------------------------------------------------------------------------------+
+| ``asyncio``       | Install asyncio as a dependency (or use stdlib)                                                        |
++-------------------+--------------------------------------------------------------------------------------------------------+
+| ``accelerate``    | Install native acceleration packages on CPython                                                        |
++-------------------+--------------------------------------------------------------------------------------------------------+
+| ``compress``      | Install packages for non-standard WebSocket compression methods                                        |
++-------------------+--------------------------------------------------------------------------------------------------------+
+| ``serialization`` | Install packages for additional WAMP serialization formats (currently `MsgPack <http://msgpack.org>`_) |
++-------------------+--------------------------------------------------------------------------------------------------------+
 
-Install variants can be combined, e.g. to install all optional packaged for use with Twisted on CPython:
+Install variants can be combined, e.g. to install |ab| with all optional packages for use with Twisted on CPython:
 
 ::
 
    pip install autobahn[twisted,accelerate,compress,serialization]
 
 
-Check the installation
+Check the Installation
 ----------------------
 
 To check the installation, fire up the Python and run

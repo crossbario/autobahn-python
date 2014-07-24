@@ -70,7 +70,8 @@ master_doc = 'pages/index'
 
 # General information about the project.
 project = u'AutobahnPython'
-copyright = u'2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>, <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a><br>Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>'
+#copyright = u'2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>, <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a><br>Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>'
+copyright = None
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -149,7 +150,7 @@ if DEBUG:
       html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
       html_theme_options = {
           # Navigation bar title. (Default: ``project`` value)
-          'navbar_title': "Autobahn",
+          'navbar_title': "Autobahn|Python",
 
           # Tab name for entire site. (Default: "Site")
           'navbar_site_name': "Site",

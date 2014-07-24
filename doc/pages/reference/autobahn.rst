@@ -1,5 +1,5 @@
-autobahn package
-================
+|ab| API Reference
+==================
 
 Subpackages
 -----------

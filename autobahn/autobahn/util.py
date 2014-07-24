@@ -40,7 +40,7 @@ def utcnow():
    """
    Get current time in UTC as ISO 8601 string.
 
-   :returns str -- Current time as string in ISO 8601 format.
+   :returns: str -- Current time as string in ISO 8601 format.
    """
    now = datetime.utcnow()
    return now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -53,7 +53,8 @@ def utcstr(ts):
 
    :param ts: Timestamp.
    :type ts: instance of datetime.
-   :returns str -- Timestamp formatted in ISO 8601 format.
+
+   :returns: str -- Timestamp formatted in ISO 8601 format.
    """
    if ts:
       return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
@@ -245,7 +246,7 @@ class Tracker:
       :param key:  The key
       :type key:  str
 
-      :returns:  timezone-naive datetime
+      :returns: timezone-naive datetime
 
       """
       elapsed = self[key]
