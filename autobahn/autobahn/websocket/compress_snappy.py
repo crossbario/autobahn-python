@@ -59,7 +59,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       """
       Parses a WebSocket extension offer for `permessage-snappy` provided by a client to a server.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
@@ -245,7 +245,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
       """
       Parses a WebSocket extension response for `permessage-snappy` provided by a server to a client.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyResponse`.

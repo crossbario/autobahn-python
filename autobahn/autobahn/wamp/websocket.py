@@ -223,13 +223,15 @@ class WampWebSocketFactory:
 
    def __init__(self, factory, serializers = None, debug_wamp = False):
       """
+      Ctor.
+
       :param factory: A callable that produces instances that implement
-                      :class:`autobahn.wamp.interfaces.ITransportHandler`
+         :class:`autobahn.wamp.interfaces.ITransportHandler`
       :type factory: callable
       :param serializers: A list of WAMP serializers to use (or None for default
-                          serializers). Serializers must implement
-                         :class:`autobahn.wamp.interfaces.ISerializer`.
-      type serializers: list
+         serializers). Serializers must implement
+         :class:`autobahn.wamp.interfaces.ISerializer`.
+      :type serializers: list
       """
       assert(callable(factory))
       self._factory = factory

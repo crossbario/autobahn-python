@@ -4,10 +4,6 @@ autobahn.websocket package
 Subpackages
 -----------
 
-.. toctree::
-
-    autobahn.websocket.test
-
 Submodules
 ----------
 

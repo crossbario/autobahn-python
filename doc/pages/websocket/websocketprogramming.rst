@@ -224,4 +224,3 @@ Related Information
 -------------------
 
 1. :ref:`WebSocket Examples <websocket_examples>`
-2. :ref:`WebSocket Reference <websocket_reference>`

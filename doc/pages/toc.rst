@@ -7,8 +7,8 @@ Table of Contents
    :maxdepth: 3
 
    index
-   introduction
    installation
    websocket/websocketprogramming
    wamp/wampprogramming
+   reference/autobahn
    changelog

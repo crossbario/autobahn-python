@@ -128,18 +128,3 @@ Now, in a Terminal:
    $ python script.py
    Running on 'ws://localhost:8080'
    GET on 'http://tavendo.com' returned status '200'
-
-
-
-
-Reference
----------
-
-.. autoclass:: autobahn.twisted.wamp.Application
-   :show-inheritance:
-   :members: __init__,
-             __call__,
-             run,
-             register,
-             subscribe,
-             signal

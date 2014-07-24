@@ -64,7 +64,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
       """
       Parses a WebSocket extension offer for `permessage-bzip2` provided by a client to a server.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageBzip2Offer`.
@@ -254,7 +254,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
       """
       Parses a WebSocket extension response for `permessage-bzip2` provided by a server to a client.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageBzip2Response`.

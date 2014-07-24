@@ -12,8 +12,11 @@ The message-based API closely resembles the API of WebSocket available to JavaSc
 Most of the time, this API is what you should use, unless you have specific needs (frame-based / streaming processing, see below).
 
 
+
 Message-based Processing
 ------------------------
+
+The interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` defines the API for message-based WebSocket processing and consists of these callbacks and methods
 
 The message-based API is implemented in the following methods and callbacks
 
@@ -69,15 +72,6 @@ The basic API is implemented in the following classes
 * :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
 
 
-Interface Definition
---------------------
-
-The basic API has the following interface definition:
-
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannel
-   :members:
-
-
 
 Advanced WebSocket
 ==================
@@ -111,7 +105,7 @@ processing - both sending and receiving.
 Frame-based API
 ---------------
 
-API for frame-based processing consists of these callbacks and methods
+The interface :class:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi` defines the API for frame-based WebSocket processing and consists of these callbacks and methods
 
   * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.onMessageBegin`
   * :func:`autobahn.websocket.interfaces.IWebSocketChannelFrameApi.onMessageFrame`
@@ -130,16 +124,12 @@ is implemented in the following classes
 * :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
 * :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
 
-and has the following definition
-
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannelFrameApi
-   :members:
 
 
 Streaming API
 -------------
 
-API for streaming processing consists of these callbacks and methods
+The interface :class:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi` defines the API for streaming WebSocket processing and consists of these callbacks and methods
 
   * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageBegin`
   * :func:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi.onMessageFrameBegin`
@@ -160,8 +150,3 @@ is implemented in the following classes
 * :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
 * :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
 * :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
-
-and has the following definition
-
-.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannelStreamingApi
-   :members:

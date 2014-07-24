@@ -70,7 +70,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       """
       Parses a WebSocket extension offer for `permessage-deflate` provided by a client to a server.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
@@ -340,7 +340,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
       """
       Parses a WebSocket extension response for `permessage-deflate` provided by a server to a client.
 
-      :param params: Output from :method:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
+      :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
       :type params: list
 
       :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateResponse`.
