@@ -40,13 +40,6 @@ Further, |Ab| is written with these goals
 
 We do take those design and implementation goals quite serious. For example, |Ab| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |Ab|;)
 
-.. note::
-
-   We will refer to |Ab| simply by **Autobahn** when it is clear from the context
-   which Autobahn subproject library is meant. In this documentation, this
-   is |Ab| almost always.
-
-
 
 What can I do with this stuff?
 ------------------------------

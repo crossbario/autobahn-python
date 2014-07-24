@@ -402,7 +402,7 @@ if not DEBUG:
 
 
 rst_epilog = """
-.. |ab| replace:: Autobahn
+.. |ab| replace:: Autobahn|Python
 .. |Ab| replace:: **Autobahn**\|Python
 .. _Autobahn: http://autobahn.ws
 .. _AutobahnJS: http://autobahn.ws/js

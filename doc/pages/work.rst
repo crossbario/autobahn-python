@@ -37,3 +37,10 @@ There are many more examples showing options and advanced features:
 
    * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
 
+
+.. note::
+
+   We will refer to |Ab| simply by **Autobahn** when it is clear from the context
+   which Autobahn subproject library is meant. In this documentation, this
+   is |Ab| almost always.
+
