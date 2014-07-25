@@ -130,14 +130,12 @@ class BaseSession:
    """
    WAMP session base class.
 
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.ISession`
+   This class implements :class:`autobahn.wamp.interfaces.ISession`.
    """
 
    def __init__(self):
       """
-      Ctor.
+
       """
       ## this is for library level debugging
       self.debug = False
@@ -163,6 +161,7 @@ class BaseSession:
       self._authid = None
       self._authrole = None
       self._authmethod = None
+      self._authprovider = None
 
 
    def onConnect(self):
@@ -273,7 +272,7 @@ class BaseSession:
                   exc = ecls(*msg.args)
                else:
                   exc = ecls()
-         except Exception as e:
+         except Exception:
             ## FIXME: log e
             pass
 
@@ -300,23 +299,21 @@ ISession.register(BaseSession)
 
 class ApplicationSession(BaseSession):
    """
-   WAMP endpoint session.
+   WAMP endpoint session. This class implements
 
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.IPublisher`
-     * :class:`autobahn.wamp.interfaces.ISubscriber`
-     * :class:`autobahn.wamp.interfaces.ICaller`
-     * :class:`autobahn.wamp.interfaces.ICallee`
-     * :class:`autobahn.wamp.interfaces.ITransportHandler`
+   * :class:`autobahn.wamp.interfaces.IPublisher`
+   * :class:`autobahn.wamp.interfaces.ISubscriber`
+   * :class:`autobahn.wamp.interfaces.ICaller`
+   * :class:`autobahn.wamp.interfaces.ICallee`
+   * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
 
-   def __init__(self, config = types.ComponentConfig(u"anonymous")):
+   def __init__(self, config = None):
       """
       Constructor.
       """
       BaseSession.__init__(self)
-      self.config = config
+      self.config = config or types.ComponentConfig(realm = u"default")
 
       self._transport = None
       self._session_id = None
@@ -461,8 +458,7 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     print("Failure while firing event handler {} subscribed under '{}' ({}):".format(handler.fn, handler.topic, msg.subscription))
-                     print(err)
+                     print("Failure while firing event handler {} subscribed under '{}' ({}): {}".format(handler.fn, handler.topic, msg.subscription, e))
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
@@ -615,6 +611,7 @@ class ApplicationSession(BaseSession):
                   def error(err):
                      if self.traceback_app:
                         ## if asked to marshal the traceback within the WAMP error message, extract it
+                        # noinspection PyCallingNonCallable
                         tb = StringIO()
                         err.printTraceback(file = tb)
                         tb = tb.getvalue().splitlines()
@@ -645,7 +642,7 @@ class ApplicationSession(BaseSession):
             else:
                try:
                   self._invocations[msg.request].cancel()
-               except Exception as e:
+               except Exception:
                   if self.debug:
                      print("could not cancel call {}".format(msg.request))
                finally:
@@ -991,14 +988,13 @@ class ApplicationSessionFactory:
    WAMP application session class to be used in this factory.
    """
 
-   def __init__(self, config = types.ComponentConfig(u"anonymous")):
+   def __init__(self, config = None):
       """
-      Ctor.
 
       :param config: The default component configuration.
       :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
       """
-      self.config = config
+      self.config = config or types.ComponentConfig(realm = u"default")
 
 
    def __call__(self):
@@ -1019,7 +1015,7 @@ class RouterApplicationSession:
    Wraps an application session to run directly attached to a WAMP router (broker+dealer).
    """
 
-   def __init__(self, session, routerFactory):
+   def __init__(self, session, routerFactory, authid = None, authrole = None):
       """
       Wrap an application session and add it to the given broker and dealer.
 
@@ -1027,6 +1023,10 @@ class RouterApplicationSession:
       :type session: An instance that implements :class:`autobahn.wamp.interfaces.ISession`
       :param routerFactory: The router factory to associate this session with.
       :type routerFactory: An instance that implements :class:`autobahn.wamp.interfaces.IRouterFactory`
+      :param authid: The fixed/trusted authentication ID under which the session will run.
+      :type authid: str
+      :param authrole: The fixed/trusted authentication role under which the session will run.
+      :type authrole: str
       """
 
       ## remember router we are wrapping the app session for
@@ -1037,6 +1037,11 @@ class RouterApplicationSession:
       ## remember wrapped app session
       ##
       self._session = session
+
+      ## remember "trusted" authentication information
+      ##
+      self._trusted_authid = authid
+      self._trusted_authrole = authrole
 
       ## set fake transport on session ("pass-through transport")
       ##
@@ -1076,12 +1081,23 @@ class RouterApplicationSession:
          ## fake session ID assignment (normally done in WAMP opening handshake)
          self._session._session_id = util.id()
 
+         ## set fixed/trusted authentication information
+         self._session._authid = self._trusted_authid
+         self._session._authrole = self._trusted_authrole
+         self._session._authmethod = None
+         ## FIXME: the following does blow up
+         #self._session._authmethod = u'trusted'
+         self._session._authprovider = None
+
          ## add app session to router
          self._router.attach(self._session)
 
          ## fake app session open
          ##
-         details = SessionDetails(self._session._realm, self._session._session_id)
+         details = SessionDetails(self._session._realm, self._session._session_id,
+            self._session._authid, self._session._authrole, self._session._authmethod,
+            self._session._authprovider)
+
          self._session._as_future(self._session.onJoin, details)
          #self._session.onJoin(details)
 
@@ -1135,11 +1151,7 @@ class RouterApplicationSession:
 
 class RouterSession(BaseSession):
    """
-   WAMP router session.
-
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.ITransportHandler`
+   WAMP router session. This class implements :class:`autobahn.wamp.interfaces.ITransportHandler`.
    """
 
    def __init__(self, routerFactory):
@@ -1302,6 +1314,7 @@ class RouterSession(BaseSession):
             self._router.process(self, msg)
 
 
+   # noinspection PyUnusedLocal
    def onClose(self, wasClean):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
@@ -1368,24 +1381,24 @@ class RouterSessionFactory:
    WAMP router session class to be used in this factory.
    """
 
-
    def __init__(self, routerFactory):
       """
-      Constructor.
+
+      :param routerFactory: The router factory this session factory is working for.
+      :type routerFactory: Instance of :class:`autobahn.wamp.router.RouterFactory`.
       """
       self._routerFactory = routerFactory
       self._app_sessions = {}
 
 
-   def add(self, session):
+   def add(self, session, authid = None, authrole = None):
       """
       Adds a WAMP application session to run directly in this router.
 
       :param: session: A WAMP application session.
       :type session: A instance of a class that derives of :class:`autobahn.wamp.protocol.WampAppSession`
       """
-      #router = self._routerFactory.get(session.realm)
-      self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory)
+      self._app_sessions[session] = RouterApplicationSession(session, self._routerFactory, authid, authrole)
 
 
    def remove(self, session):
@@ -1395,7 +1408,6 @@ class RouterSessionFactory:
       if session in self._app_sessions:
          self._app_sessions[session]._session.disconnect()
          del self._app_sessions[session]
-
 
 
    def __call__(self):

@@ -61,13 +61,13 @@ if __name__ == '__main__':
    component_session = MyBackendComponent(component_config)
    session_factory.add(component_session)
 
-   ws_factory = websocket.WampWebSocketServerFactory(session_factory, \
-                                                     debug = False, \
+   ws_factory = websocket.WampWebSocketServerFactory(session_factory,
+                                                     debug = False,
                                                      debug_wamp = False)
    ws_factory.startFactory()
 
    ws_resource = WebSocketResource(ws_factory)
-   lp_resource = WampLongPollResource(session_factory, debug = True, debug_session_id = "kjmd3sBLOUnb3Fyr")
+   lp_resource = WampLongPollResource(session_factory, debug = True, debug_transport_id = "kjmd3sBLOUnb3Fyr")
 
    root = File(".")
    root.putChild("ws", ws_resource)

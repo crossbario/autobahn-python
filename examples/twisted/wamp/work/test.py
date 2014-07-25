@@ -49,8 +49,8 @@ def test1():
 
    wampSerializer = WampSerializer(serializer)
 
-   wampMsg = WampMessageSubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
-   wampMsg = WampMessageUnsubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
+   #wampMsg = WampMessageSubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
+   #wampMsg = WampMessageUnsubscribe("http://myapp.com/topic1", match = WampMessageSubscribe.MATCH_PREFIX)
    wampMsg = WampMessagePublish("http://myapp.com/topic1", "Hello, world!")
 
    bytes = wampSerializer.serialize(wampMsg)

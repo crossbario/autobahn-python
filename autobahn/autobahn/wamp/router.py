@@ -36,7 +36,6 @@ class Router:
 
    def __init__(self, factory, realm, options = None):
       """
-      Ctor.
 
       :param factory: The router factory this router was created by.
       :type factory: Object that implements :class:`autobahn.wamp.interfaces.IRouterFactory`..
@@ -49,8 +48,8 @@ class Router:
       self.factory = factory
       self.realm = realm
       self._options = options or types.RouterOptions()
-      self._broker = Broker(self, self._options)
-      self._dealer = Dealer(self, self._options)
+      self._broker = self.broker(self, self._options)
+      self._dealer = self.dealer(self, self._options)
       self._attached = 0
 
 
@@ -123,8 +122,16 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
       if self.debug:
-         print("Router.authorize: {} {} {}".format(session._session_id, uri, action))
+         print("Router.authorize: {} {} {}".format(session, uri, action))
       return True
+
+
+   def validate(self, payload_type, uri, args, kwargs):
+      """
+      Implements :func:`autobahn.wamp.interfaces.IRouter.validate`
+      """
+      if self.debug:
+         print("Router.validate: {} {} {} {}".format(payload_type, uri, args, kwargs))
 
 
 
@@ -147,7 +154,6 @@ class RouterFactory:
 
    def __init__(self, options = None, debug = False):
       """
-      Ctor.
 
       :param options: Default router options.
       :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.      

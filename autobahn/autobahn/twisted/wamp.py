@@ -23,7 +23,12 @@ __all__ = ['ApplicationSession',
            'ApplicationRunner',
            'Application',
            'RouterSession',
-           'RouterSessionFactory']
+           'RouterSessionFactory',
+           'Broker',
+           'Dealer',
+           'Router',
+           'RouterFactory',
+           'FutureMixin']
 
 import sys
 import inspect
@@ -34,12 +39,12 @@ from twisted.internet.defer import Deferred, \
                                    DeferredList, \
                                    inlineCallbacks
 
-from twisted.internet.endpoints import clientFromString
-
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+
 
 
 class FutureMixin:
@@ -47,23 +52,72 @@ class FutureMixin:
    Mixin for Twisted style Futures ("Deferreds").
    """
 
-   def _create_future(self):
+   @staticmethod
+   def _create_future():
       return Deferred()
 
-   def _as_future(self, fun, *args, **kwargs):
+   @staticmethod
+   def _as_future(fun, *args, **kwargs):
       return maybeDeferred(fun, *args, **kwargs)
 
-   def _resolve_future(self, future, value):
+   @staticmethod
+   def _resolve_future(future, value):
       future.callback(value)
 
-   def _reject_future(self, future, value):
+   @staticmethod
+   def _reject_future(future, value):
       future.errback(value)
 
-   def _add_future_callbacks(self, future, callback, errback):
+   @staticmethod
+   def _add_future_callbacks(future, callback, errback):
       return future.addCallbacks(callback, errback)
 
-   def _gather_futures(self, futures, consume_exceptions = True):
+   @staticmethod
+   def _gather_futures(futures, consume_exceptions = True):
       return DeferredList(futures, consumeErrors = consume_exceptions)
+
+
+
+class Broker(FutureMixin, broker.Broker):
+   """
+   Basic WAMP broker for Twisted-based applications.
+   """
+
+
+
+class Dealer(FutureMixin, dealer.Dealer):
+   """
+   Basic WAMP dealer for Twisted-based applications.
+   """
+
+
+
+class Router(FutureMixin, router.Router):
+   """
+   Basic WAMP router for Twisted-based applications.
+   """
+
+   broker = Broker
+   """
+   The broker class this router will use. Defaults to :class:`autobahn.twisted.wamp.Broker`
+   """
+
+   dealer = Dealer
+   """
+   The dealer class this router will use. Defaults to :class:`autobahn.twisted.wamp.Dealer`
+   """
+
+
+
+class RouterFactory(FutureMixin, router.RouterFactory):
+   """
+   Basic WAMP router factory for Twisted-based applications.
+   """
+
+   router = Router
+   """
+   The router class this router factory will use. Defaults to :class:`autobahn.twisted.wamp.Router`
+   """
 
 
 
@@ -78,7 +132,11 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    """
    WAMP application session factory for Twisted-based applications.
    """
+
    session = ApplicationSession
+   """
+   The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
+   """
 
 
 
@@ -93,7 +151,11 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """
+
    session = RouterSession
+   """
+   The router session class this router session factory will use. Defaults to :class:`autobahn.asyncio.wamp.RouterSession`.
+   """
 
 
 
@@ -109,7 +171,6 @@ class ApplicationRunner:
    def __init__(self, url, realm, extra = None, standalone = False,
       debug = False, debug_wamp = False, debug_app = False):
       """
-      Constructor.
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
       :type url: str
@@ -175,15 +236,17 @@ class ApplicationRunner:
             ## the app component could not be created .. fatal
             log.err()
             reactor.stop()
-
-         session.debug_app = self.debug_app
-         return session
+         else:
+            session.debug_app = self.debug_app
+            return session
 
       ## create a WAMP-over-WebSocket transport client factory
       transport_factory = WampWebSocketClientFactory(create, url = self.url,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## start the client from a Twisted endpoint
+      from twisted.internet.endpoints import clientFromString
+      
       client = clientFromString(reactor, "tcp:{}:{}".format(host, port))
       client.connect(transport_factory)
 
@@ -200,13 +263,13 @@ class _ApplicationSession(ApplicationSession):
 
    def __init__(self, config, app):
       """
-      Ctor.
 
       :param config: The component configuration.
       :type config: Instance of :class:`autobahn.wamp.types.ComponentConfig`
       :param app: The application this session is for.
       :type app: Instance of :class:`autobahn.twisted.app.Application`.
       """
+      # noinspection PyArgumentList
       ApplicationSession.__init__(self, config)
       self.app = app
 
@@ -226,10 +289,10 @@ class _ApplicationSession(ApplicationSession):
       Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
       """
       for uri, proc in self.app._procs:
-         res = yield self.register(proc, uri)
+         yield self.register(proc, uri)
 
       for uri, handler in self.app._handlers:
-         res = yield self.subscribe(handler, uri)
+         yield self.subscribe(handler, uri)
 
       yield self.app._fire_signal('onjoined')
 
@@ -260,7 +323,6 @@ class Application:
 
    def __init__(self, prefix = None):
       """
-      Ctor.
 
       :param prefix: The application URI prefix to use for procedures and topics,
          e.g. `com.example.myapp`.

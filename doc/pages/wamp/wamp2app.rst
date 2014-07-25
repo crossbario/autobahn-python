@@ -61,7 +61,7 @@ It lets you react, using callback defined via decorators, to 3 things :
 
 # Now, in a Terminal:
 
-.. code-block:: shell
+.. code-block:: console
 
    $ python script.py
    Running on 'ws://localhost:8080'
@@ -123,23 +123,8 @@ lines in the same function. In that case, you should not `return`, but use
 
 Now, in a Terminal:
 
-.. code-block:: shell
+.. code-block:: console
 
-   python script.py
+   $ python script.py
    Running on 'ws://localhost:8080'
    GET on 'http://tavendo.com' returned status '200'
-
-
-
-
-Reference
----------
-
-.. autoclass:: autobahn.twisted.wamp.Application
-   :show-inheritance:
-   :members: __init__,
-             __call__,
-             run,
-             register,
-             subscribe,
-             signal

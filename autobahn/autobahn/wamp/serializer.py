@@ -158,7 +158,7 @@ class JsonObjectSerializer:
       s = json.dumps(obj, separators = (',',':'))
       if six.PY3:
          if self._batched:
-            return s.encode('utf8') + '\30'
+            return s.encode('utf8') + b'\30'
          else:
             return s.encode('utf8')
       else:
@@ -173,7 +173,7 @@ class JsonObjectSerializer:
       Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
       """
       if self._batched:
-         chunks = payload.split('\30')[:-1]
+         chunks = payload.split(b'\30')[:-1]
       else:
          chunks = [payload]
       if len(chunks) == 0:

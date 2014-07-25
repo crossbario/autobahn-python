@@ -1,16 +1,17 @@
 language: python
 
-python:
-  - "2.6"
-  - "2.7"
-  - "3.3"
-  - "3.4"
-  - "pypy"
-
-before_script:
-  - pip install Twisted
+install:
+  - pip install tox 
 
 script:
-  - cd autobahn
-  - python setup.py install
-  - python -c "from autobahn import *"
+  - tox -c autobahn/tox.ini
+
+env:
+  - TOXENV = py26twisted
+  - TOXENV = py26asyncio
+  - TOXENV = py27twisted
+  - TOXENV = py27asyncio
+  - TOXENV = py33asyncio
+  - TOXENV = py34asyncio
+  - TOXENV = pypy2twisted
+  - TOXENV = pypy2asyncio

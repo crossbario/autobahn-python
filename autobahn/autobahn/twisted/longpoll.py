@@ -319,7 +319,7 @@ class WampLongPollResourceSession(Resource):
       if self._session:
          try:
             self._session.onClose(wasClean)
-         except Exception as e:
+         except Exception:
             ## silently ignore exceptions raised here ..
             if self._debug:
                traceback.print_exc()
@@ -333,7 +333,7 @@ class WampLongPollResourceSession(Resource):
       try:
          self._session = self._parent._factory()
          self._session.onOpen(self)
-      except Exception as e:
+      except Exception:
          if self._debug:
             traceback.print_exc()
 
@@ -413,6 +413,7 @@ class WampLongPollResourceOpen(Resource):
       ## determine the protocol to speak
       ##
       protocol = None
+      serializer = None
       for p in options['protocols']:
          version, serializerId = parseSubprotocolIdentifier(p)
          if version == 2 and serializerId in self._parent._serializers.keys():

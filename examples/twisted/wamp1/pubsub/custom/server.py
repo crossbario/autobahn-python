@@ -64,7 +64,7 @@ class MyTopicService:
       """
       print "client wants to publish to %s%s" % (topicUriPrefix, topicUriSuffix)
       try:
-         i = int(topicUriSuffix)
+         _ = int(topicUriSuffix)
          if type(event) == dict and event.has_key("count"):
             if event["count"] > 0:
                self.serial += 1

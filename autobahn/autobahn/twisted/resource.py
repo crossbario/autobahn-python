@@ -119,6 +119,7 @@ class WebSocketResource(object):
       self._factory = factory
 
 
+   # noinspection PyUnusedLocal
    def getChildWithDefault(self, name, request):
       """
       This resource cannot have children, hence this will always fail.

@@ -39,7 +39,7 @@ class WampWebSocketProtocol:
    Base class for WAMP-over-WebSocket transport mixins.
    """
 
-   def _bailout(self, code, reason):
+   def _bailout(self, code, reason = None):
       if self.factory.debug_wamp:
          print("Failing WAMP-over-WebSocket transport: code = {}, reason = '{}'".format(code, reason))
       self.failConnection(code, reason)
@@ -72,7 +72,7 @@ class WampWebSocketProtocol:
          if self.factory.debug_wamp:
             print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
-      except Exception as e:
+      except Exception:
          ## silently ignore exceptions raised here ..
          if self.factory.debug_wamp:
             traceback.print_exc()
@@ -223,13 +223,15 @@ class WampWebSocketFactory:
 
    def __init__(self, factory, serializers = None, debug_wamp = False):
       """
+      Ctor.
+
       :param factory: A callable that produces instances that implement
-                      :class:`autobahn.wamp.interfaces.ITransportHandler`
+         :class:`autobahn.wamp.interfaces.ITransportHandler`
       :type factory: callable
       :param serializers: A list of WAMP serializers to use (or None for default
-                          serializers). Serializers must implement
-                         :class:`autobahn.wamp.interfaces.ISerializer`.
-      type serializers: list
+         serializers). Serializers must implement
+         :class:`autobahn.wamp.interfaces.ISerializer`.
+      :type serializers: list
       """
       assert(callable(factory))
       self._factory = factory

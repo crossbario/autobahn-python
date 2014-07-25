@@ -16,21 +16,28 @@
 ##
 ###############################################################################
 
-__all__ = ['WebSocketServerProtocol',
-           'WebSocketServerFactory',
+__all__ = ['WebSocketAdapterProtocol',
+           'WebSocketServerProtocol',
            'WebSocketClientProtocol',
-           'WebSocketClientFactory']
+           'WebSocketAdapterFactory',
+           'WebSocketServerFactory',
+           'WebSocketClientFactory',
+           'WampWebSocketServerProtocol',
+           'WampWebSocketClientProtocol',
+           'WampWebSocketServerFactory',
+           'WampWebSocketClientFactory']
 
 from collections import deque
 
 try:
    import asyncio
+   from asyncio.tasks import iscoroutine
+   from asyncio import Future
 except ImportError:
    ## Trollius >= 0.3 was renamed
    import trollius as asyncio
-
-from asyncio.tasks import iscoroutine
-from asyncio import Future
+   from trollius.tasks import iscoroutine
+   from trollius import Future
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
@@ -94,6 +101,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
          self.waiter.set_result(None)
 
 
+   # noinspection PyUnusedLocal
    def _closeConnection(self, abort = False):
       self.transport.close()
 
@@ -174,7 +182,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
          #  res = yield from res
       except http.HttpException as exc:
          self.failHandshake(exc.reason, exc.code)
-      except Exception as exc:
+      except Exception:
          self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
       else:
          self.succeedHandshake(res)
@@ -290,6 +298,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
       kwargs['protocols'] = self._protocols
 
+      # noinspection PyCallByClass
       WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 

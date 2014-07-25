@@ -457,6 +457,7 @@ class WampProtocol:
          raise Exception("invalid type for procedure URI")
 
       procuri = args[0]
+      callid = None
       while True:
          callid = newid()
          if not self.calls.has_key(callid):
@@ -721,6 +722,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
          log.msg("registered publication handler for topic %s" % uri)
 
 
+   # noinspection PyDefaultArgument
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
       """
       Dispatch an event for a topic to all clients subscribed to
@@ -901,7 +903,7 @@ class WampServerProtocol(WebSocketServerProtocol, WampProtocol):
                   log.msg("unknown message type")
             else:
                log.msg("msg not a list")
-         except Exception as e:
+         except Exception:
             traceback.print_exc()
       else:
          log.msg("binary message")
@@ -1012,6 +1014,7 @@ class WampServerFactory(WebSocketServerFactory, WampFactory):
             log.msg("unsubscribed peer %s from all topics" % (proto.peer))
 
 
+   # noinspection PyDefaultArgument
    def dispatch(self, topicUri, event, exclude = [], eligible = None):
       """
       Dispatch an event to all peers subscribed to the event topic.
@@ -1339,6 +1342,7 @@ class WampClientProtocol(WebSocketClientProtocol, WampProtocol):
          ##
          if self.subscriptions.has_key(topicUri):
             event = obj[2]
+            # noinspection PyCallingNonCallable
             self.subscriptions[topicUri](topicUri, event)
          else:
             ## event received for non-subscribed topic (could be because we
@@ -1868,19 +1872,14 @@ class WampCraServerProtocol(WampServerProtocol, WampCraProtocol):
 
          ## create authentication challenge
          ##
-         info = {}
-         info['authid'] = authid
-         info['authkey'] = authKey
-         info['timestamp'] = utcnow()
-         info['sessionid'] = self.session_id
-         info['extra'] = extra
+         info = {'authid': authid, 'authkey': authKey, 'timestamp': utcnow(), 'sessionid': self.session_id,
+                 'extra': extra}
 
          pp = maybeDeferred(self.getAuthPermissions, authKey, extra)
 
          def onAuthPermissionsOk(res):
             if res is None:
-               res = {'permissions': {}}
-               res['permissions'] = {'pubsub': [], 'rpc': []}
+               res = {'permissions': {'pubsub': [], 'rpc': []}}
             info['permissions'] = res['permissions']
             if 'authextra' in res:
                 info['authextra'] = res['authextra']
@@ -2471,8 +2470,7 @@ class CallErrorHandler(Handler):
       ## Pop and process Call Deferred
       d = self.proto.calls.pop(self.callid, None)
       if d:
-         e = Exception()
-         e.args = (self.erroruri, self.errordesc, self.errordetails)
+         e = Exception(self.erroruri, self.errordesc, self.errordetails)
          d.errback(e)
       else:
          if self.proto.debugWamp:

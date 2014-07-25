@@ -3,6 +3,19 @@
 Changelog
 =========
 
+0.8.12
+------
+ * WAMP application payload validation hooks
+ * added Tox based testing for multiple platforms
+ * code quality fixes
+ 
+0.8.11
+------
+ * hooks and infrastructure for WAMP2 authorization
+ * new examples: Twisted Klein, Crochet, wxPython
+ * improved WAMP long-poll transport
+ * improved stats tracker
+
 0.8.10
 ------
  * WAMP-over-Long-poll (preliminary)

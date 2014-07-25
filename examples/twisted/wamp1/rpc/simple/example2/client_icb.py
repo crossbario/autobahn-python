@@ -39,6 +39,7 @@ class SimpleClientProtocol(WampClientProtocol):
       print "SUCCESS:", result
 
 
+   # noinspection PyUnusedLocal
    def done(self, *args):
       self.sendClose()
       reactor.stop()

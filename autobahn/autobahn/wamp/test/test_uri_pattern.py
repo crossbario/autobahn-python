@@ -18,10 +18,14 @@
 
 from __future__ import absolute_import
 
-from twisted.trial import unittest
-#import unittest
+import sys
 
-#from autobahn import wamp2 as wamp
+if sys.version_info < (2,7):
+   import unittest2 as unittest
+else:
+   #from twisted.trial import unittest
+   import unittest
+
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern
 
@@ -88,7 +92,7 @@ class TestDecorators(unittest.TestCase):
    def test_decorate_endpoint(self):
 
       @wamp.register("com.calculator.square")
-      def square(x):
+      def square(_):
          pass
 
       self.assertTrue(hasattr(square, '_wampuris'))
@@ -101,6 +105,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(square._wampuris[0].uri(), "com.calculator.square")
       self.assertEqual(square._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
+      # noinspection PyUnusedLocal
       @wamp.register("com.myapp.product.<product:int>.update")
       def update_product(product = None, label = None):
          pass
@@ -285,6 +290,7 @@ class TestDecorators(unittest.TestCase):
                    self.args == other.args
 
       args, kwargs = AppError._wampuris[0].match("com.myapp.error")
+      # noinspection PyArgumentList
       self.assertEqual(AppError("fuck", **kwargs), AppError("fuck"))
 
 
@@ -375,13 +381,13 @@ class MockSession:
          self._uri_to_ecls[error] = exception
 
 
-   def map_error(self, error, args = [], kwargs = {}):
+   def map_error(self, error, args = None, kwargs = None):
 
       # FIXME:
       # 1. map to ecls based on error URI wildcard/prefix
       # 2. extract additional args/kwargs from error URI
 
-      if self._uri_to_ecls.has_key(error):
+      if error in self._uri_to_ecls:
          ecls = self._uri_to_ecls[error]
          try:
             ## the following might fail, eg. TypeError when
@@ -397,11 +403,13 @@ class MockSession:
                   exc = ecls(*args)
                else:
                   exc = ecls()
-         except Exception as e:
+         except Exception:
             ## FIXME: log e
             exc = KwException(error, *args, **kwargs)
       else:
          ## this never fails
+         args = args or []
+         kwargs = kwargs or {}
          exc = KwException(error, *args, **kwargs)
       return exc
 
@@ -412,6 +420,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
    def test_decorate_exception_non_exception(self):
 
       def test():
+         # noinspection PyUnusedLocal
          @wamp.error("com.test.error")
          class Foo:
             pass
@@ -464,9 +473,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
          raise ProductInactiveError("fuck", 123456)
       except Exception as e:
          self.assertEqual(e._wampuris[0].uri(), "com.myapp.product.<product:int>.product_inactive")
-
-      class AppErrorUndecorated(Exception):
-         pass
 
       session = MockSession()
       session.define(AppError)

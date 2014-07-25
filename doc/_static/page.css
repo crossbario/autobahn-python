@@ -1,0 +1,70 @@
+body {
+   font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+   font-size: 15px;
+   /*line-height: 1.5em;*/
+}
+
+h1 {
+   margin-top: 40px;   
+}
+
+h2 {
+   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
+   font-weight: 300;
+   margin-top: 32px;
+}
+
+#logoblock {
+   text-align: center;
+}
+
+#sidebar {
+   /* bs-sidenav affix-top */
+   /*padding: 8px;*/
+}
+
+.sidebar_block {
+   padding-left: 24px;
+}
+
+.bs-sidenav.affix {
+   position: static;
+   top: 0;
+}
+
+.col-md-9 {
+   padding: 8px 100px 20px 32px;
+}
+
+#quicklinks > h4 {
+   font-size: 15px;
+   padding-left: 12px;
+   line-height: 1.1em;
+}
+
+footer {
+   font-size: 12px;
+}
+
+dl.class, dl.exception, dl.function {
+   margin-top: 24px;
+   box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
+   padding: 12px;
+}
+
+dl.method, dl.attribute, dl.staticmethod {
+   border-top: 1px solid #ddd;
+   padding: 8px;
+}
+
+dl.exception {
+   border-left: 5px solid rgba(255,80,80,0.6);
+}
+
+dl.class {
+   border-left: 5px solid rgba(80,80,255,0.6);
+}
+
+dl.function {
+   border-left: 5px solid rgba(255,255,80,0.6);
+}

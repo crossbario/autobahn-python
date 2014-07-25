@@ -4,6 +4,9 @@
 
    {{ super() }}
 
+   <link rel="stylesheet" href="{{ pathto('_static/page.css', 1) }}">
+
+<!--
    <script>
      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -12,17 +15,29 @@
      ga('create', 'UA-23019220-3', 'autobahn.ws');
      ga('send', 'pageview');
    </script>
-
-
+-->
 
 {% endblock %}
 
 {% block footer %}
-   {{ super() }}
+
+   <footer class="footer">
+  <div class="container">
+    <p class="pull-right">
+      <a href="#">Back to top</a>      
+    </p>
+    <p>
+      Copyright © 2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>. Content on this site is licensed under <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a>.
+      <br>
+      Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>.
+    </p>
+  </div>
+</footer>
+
 
    <!-- community widget iframe -->
 
-   {% if widgeturl %}
+   {% if False and widgeturl %}
 
       <!-- general styles for the widget -->
       <link rel="stylesheet" type="text/css" href="{{ widgeturl }}/css/parent.css" />

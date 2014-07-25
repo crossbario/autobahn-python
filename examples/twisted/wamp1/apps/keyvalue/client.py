@@ -30,6 +30,7 @@ from autobahn.wamp1.protocol import WampClientFactory, \
 
 class KeyValueClientProtocol(WampClientProtocol):
 
+   # noinspection PyUnusedLocal
    def done(self, *args):
       self.sendClose()
       reactor.stop()

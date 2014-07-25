@@ -122,25 +122,25 @@ class Stats:
    def stats(self, advance = True):
       elapsed = self.stopwatch.stop()
 
-      s =    ("Period No.        : %d\n" + \
-              "Period duration   : %.3f s\n" + \
-              "Connected clients : %d\n" + \
-              "\n" + \
+      s =    ("Period No.        : %d\n" +
+              "Period duration   : %.3f s\n" +
+              "Connected clients : %d\n" +
+              "\n" +
 
-              "Period\n" + \
-              "  Handshakes      : %20d # %20d #/s\n" + \
-              "  Echo'ed msgs    : %20d # %20d #/s\n" + \
-              "  Echo'ed octets  : %20d B %20d B/s\n" + \
-              "  Wire octets in  : %20d B %20d B/s\n" + \
-              "  Wire octets out : %20d B %20d B/s\n" + \
-              "\n" + \
+              "Period\n" +
+              "  Handshakes      : %20d # %20d #/s\n" +
+              "  Echo'ed msgs    : %20d # %20d #/s\n" +
+              "  Echo'ed octets  : %20d B %20d B/s\n" +
+              "  Wire octets in  : %20d B %20d B/s\n" +
+              "  Wire octets out : %20d B %20d B/s\n" +
+              "\n" +
 
-              "Total\n" + \
-              "  Handshakes      : %20d #\n" + \
-              "  Echo'ed msgs    : %20d #\n" + \
-              "  Echo'ed octets  : %20d B\n" + \
-              "  Wire octets in  : %20d B\n" + \
-              "  Wire octets out : %20d B\n" + \
+              "Total\n" +
+              "  Handshakes      : %20d #\n" +
+              "  Echo'ed msgs    : %20d #\n" +
+              "  Echo'ed octets  : %20d B\n" +
+              "  Wire octets in  : %20d B\n" +
+              "  Wire octets out : %20d B\n" +
 
               ""
               ) % (self.period,
@@ -281,7 +281,7 @@ def worker(options):
 
    ## The master already created the socket, just start listening and accepting
    ##
-   port = reactor.adoptStreamPort(options.fd, AF_INET, factory)
+   reactor.adoptStreamPort(options.fd, AF_INET, factory)
 
    if not options.silence:
       print "Worker started on PID %s using factory %s and protocol %s" % (workerPid, factory, factory.protocol)

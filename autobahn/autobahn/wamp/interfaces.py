@@ -85,6 +85,7 @@ class IMessage(object):
 
 
    #@abc.abstractstaticmethod ## FIXME: this is Python 3 only
+   # noinspection PyMethodParameters
    def parse(wmsg):
       """
       Factory method that parses a unserialized raw message (as returned byte
@@ -120,7 +121,7 @@ class IMessage(object):
    def __eq__(self, other):
       """
       Message equality. This does an attribute-wise comparison (but skips attributes
-      that start with "_").
+      that start with `_`).
       """
 
 
@@ -169,7 +170,7 @@ class ISerializer(object):
       :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
       :type message: obj
 
-      :returns: tuple -- A pair `(bytes, isBinary)`.
+      :returns: tuple -- A pair ``(bytes, isBinary)``.
       """
 
 
@@ -209,7 +210,7 @@ class ITransport(object):
       """
       Check if the transport is open for messaging.
 
-      :returns: bool -- `True`, if the transport is open.
+      :returns: bool -- ``True``, if the transport is open.
       """
 
 
@@ -374,7 +375,7 @@ class ICaller(ISession):
       :class:`autobahn.wamp.types.CallOptions`, this will provide
       specific options for the call to perform.
 
-      :param procedure: The URI of the remote procedure to be called, e.g. `com.myapp.hello`.
+      :param procedure: The URI of the remote procedure to be called, e.g. ``"com.myapp.hello"``.
       :type procedure: str
       :param args: Any positional arguments for the call.
       :type args: list
@@ -457,7 +458,7 @@ class ICallee(ISession):
 
       :param endpoint: The endpoint or endpoint object called under the procedure.
       :type endpoint: callable
-      :param procedure: When `endpoint` is a single event handler, the URI (or URI pattern)
+      :param procedure: When ``endpoint`` is a single event handler, the URI (or URI pattern)
                     of the procedure to register for. When ``endpoint`` is an endpoint
                     object, this value is ignored (and should be ``None``).
       :type procedure: str
@@ -503,20 +504,20 @@ class IPublisher(ISession):
       If publication acknowledgement is requested via ``options.acknowledge == True``,
       this function returns a Deferred/Future:
 
-        - if the publication succeeds the Deferred/Future will resolve to an object
-          that implements :class:`autobahn.wamp.interfaces.IPublication`.
+      - if the publication succeeds the Deferred/Future will resolve to an object
+        that implements :class:`autobahn.wamp.interfaces.IPublication`.
 
-        - if the publication fails the Deferred/Future will reject with an instance
-          of :class:`autobahn.wamp.exception.ApplicationError`.
+      - if the publication fails the Deferred/Future will reject with an instance
+        of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      :param topic: The URI of the topic to publish to, e.g. `com.myapp.mytopic1`.
+      :param topic: The URI of the topic to publish to, e.g. ``"com.myapp.mytopic1"``.
       :type topic: str
       :param args: Arbitrary application payload for the event (positional arguments).
       :type args: list
       :param kwargs: Arbitrary application payload for the event (keyword arguments).
       :type kwargs: dict
 
-      :returns: obj -- `None` for non-acknowledged publications or,
+      :returns: obj -- ``None`` for non-acknowledged publications or,
                        for acknowledged publications, an instance of
                        :class:`twisted.internet.defer.Deferred` (when running under Twisted)
                        or an instance of :class:`asyncio.Future` (when running under asyncio).
@@ -593,9 +594,9 @@ class ISubscriber(ISession):
 
       :param handler: The event handler or handler object to receive events.
       :type handler: callable or obj
-      :param topic: When `handler` is a single event handler, the URI (or URI pattern)
-                    of the topic to subscribe to. When `handler` is an event handler
-                    object, this value is ignored (and should be `None`).
+      :param topic: When ``handler`` is a single event handler, the URI (or URI pattern)
+                    of the topic to subscribe to. When ``handler`` is an event handler
+                    object, this value is ignored (and should be ``None``).
       :type topic: str
       :param options: Options for subscribing.
       :type options: An instance of :class:`autobahn.wamp.types.SubscribeOptions`.
@@ -659,7 +660,7 @@ class IRouter(IRouterBase):
       ACTION_CALL: 'call',
       ACTION_REGISTER: 'register',
       ACTION_PUBLISH: 'publish',
-      ACTION_SUBSCRIBE: 'subscribe',
+      ACTION_SUBSCRIBE: 'subscribe'
    }
 
 
@@ -678,17 +679,34 @@ class IRouter(IRouterBase):
    @abc.abstractmethod
    def authorize(self, session, uri, action):
       """
-      Authorization hook: check if the given `session` is authorized to perform
-      the given `action` on the given `uri`.
+      Authorization hook: check if the given ``session`` is authorized to perform
+      the given ``action`` on the given ``uri``.
 
       :param session: Application session on which the action is to be authorized.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
       :param uri: The URI on which the session wants to perform the action.
       :type uri: str
       :param action: The action the session wants to perform. One of
-         `IRouter.ACTION_CALL`, `IRouter.ACTION_REGISTER`,
-         `IRouter.ACTION_PUBLISH` or `IRouter.ACTION_SUBSCRIBE`.
+         ``IRouter.ACTION_CALL``, ``IRouter.ACTION_REGISTER``,
+         ``IRouter.ACTION_PUBLISH`` or ``IRouter.ACTION_SUBSCRIBE``.
       :type action: int
+      """
+
+
+   @abc.abstractmethod
+   def validate(self, payload_type, uri, args, kwargs):
+      """
+      Validation hook: check if the given payload (``args`` and ``kwargs``) is
+      valid for the given URI and payload type.
+
+      :param uri: The URI on which the session wants to perform the action.
+      :type uri: str
+      :param payload_type: The payload type to be validated. One of ``["event", "call", "call_result", "call_error"]``
+      :type payload_type: str
+      :param args: The positional payload to be validated.
+      :type args: list
+      :param kwargs: The keyword payload to be validated.
+      :type kwargs: dict
       """
 
 
@@ -701,11 +719,11 @@ class IBroker(IRouterBase):
    @abc.abstractmethod
    def processPublish(self, session, publish):
       """
-      Process a WAMP `PUBLISH` message received from a WAMP client.
+      Process a WAMP ``PUBLISH`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `PUBLISH` message to be processed.
+      :param publish: The WAMP ``PUBLISH`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Publish`.
       """
 
@@ -713,11 +731,11 @@ class IBroker(IRouterBase):
    @abc.abstractmethod
    def processSubscribe(self, session, subscribe):
       """
-      Process a WAMP `SUBSCRIBE` message received from a WAMP client.
+      Process a WAMP ``SUBSCRIBE`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `SUBSCRIBE` message to be processed.
+      :param publish: The WAMP ``SUBSCRIBE`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Subscribe`.
       """
 
@@ -725,11 +743,11 @@ class IBroker(IRouterBase):
    @abc.abstractmethod
    def processUnsubscribe(self, session, unsubscribe):
       """
-      Process a WAMP `UNSUBSCRIBE` message received from a WAMP client.
+      Process a WAMP ``UNSUBSCRIBE`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `UNSUBSCRIBE` message to be processed.
+      :param publish: The WAMP ``UNSUBSCRIBE`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Unsubscribe`.
       """
 
@@ -743,11 +761,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processRegister(self, session, register):
       """
-      Process a WAMP `REGISTER` message received from a WAMP client.
+      Process a WAMP ``REGISTER`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `REGISTER` message to be processed.
+      :param publish: The WAMP ``REGISTER`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Register`.
       """
 
@@ -755,11 +773,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processUnregister(self, session, unregister):
       """
-      Process a WAMP `UNREGISTER` message received from a WAMP client.
+      Process a WAMP ``UNREGISTER`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `UNREGISTER` message to be processed.
+      :param publish: The WAMP ``UNREGISTER`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Unregister`.
       """
 
@@ -767,11 +785,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processCall(self, session, call):
       """
-      Process a WAMP `CALL` message received from a WAMP client.
+      Process a WAMP ``CALL`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `CALL` message to be processed.
+      :param publish: The WAMP ``CALL`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Call`.
       """
 
@@ -779,11 +797,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processCancel(self, session, cancel):
       """
-      Process a WAMP `CANCEL` message received from a WAMP client.
+      Process a WAMP ``CANCEL`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `CANCEL` message to be processed.
+      :param publish: The WAMP ``CANCEL`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Cancel`.
       """
 
@@ -791,11 +809,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processYield(self, session, yield_):
       """
-      Process a WAMP `YIELD` message received from a WAMP client.
+      Process a WAMP ``YIELD`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `YIELD` message to be processed.
+      :param publish: The WAMP ``YIELD`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Yield`.
       """
 
@@ -803,11 +821,11 @@ class IDealer(IRouterBase):
    @abc.abstractmethod
    def processInvocationError(self, session, error):
       """
-      Process a WAMP `ERROR` message received from a WAMP client.
+      Process a WAMP ``ERROR`` message received from a WAMP client.
 
       :param session: Application session on which the message was received.
       :type session: A provider of :class:`autobahn.wamp.interfaces.ISession`.
-      :param publish: The WAMP `ERROR` message to be processed.
+      :param publish: The WAMP ``ERROR`` message to be processed.
       :type publish: Instance of :class:`autobahn.wamp.message.Error`.
       """
 

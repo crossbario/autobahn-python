@@ -1,9 +1,10 @@
-<div class="side_toc  sidebar_block">
-   <h4><a href="{{ pathto('table_of_contents') }}">{{ _('Table Of Contents') }}</a></h4>
-
-   <h4><a href="{{ pathto('genindex') }}">Index</a></h4>
-
+<div class="side_toc sidebar_block">
+   <hr>
+   <h4><a href="{{ pathto('pages/contents') }}">{{ _('Site Contents') }}</a></h4>
+   <hr>
    <h4>Page Contents</h4>
-       {{ toc }}
-
+   {{ toc }}
+   <hr>
+   <h4><a href="{{ pathto('pages/reference/autobahn') }}">API Reference</a></h4>
+   <h4><a href="{{ pathto('genindex') }}">Index</a></h4>
 </div>

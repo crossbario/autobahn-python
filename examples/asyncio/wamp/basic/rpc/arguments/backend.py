@@ -36,6 +36,7 @@ class Component(ApplicationSession):
       def stars(nick = "somebody", stars = 0):
          return u"{} starred {}x".format(nick, stars)
 
+      # noinspection PyUnusedLocal
       def orders(product, limit = 5):
          return [u"Product {}".format(i) for i in range(50)][:limit]
 

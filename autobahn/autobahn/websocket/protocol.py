@@ -471,7 +471,7 @@ class Timings:
       return self._timings.get(key, None)
 
    def __iter__(self):
-      return self._timings.__iter__(self)
+      return self._timings.__iter__()
 
    def __str__(self):
       return pformat(self._timings)
@@ -1972,7 +1972,7 @@ class WebSocketProtocol:
          if len(payload) < 1:
             raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
          l = payload_len
-         pl = b''.join([payload for k in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
+         pl = b''.join([payload for _ in range(payload_len / len(payload))]) + payload[:payload_len % len(payload)]
       else:
          l = len(payload)
          pl = payload
@@ -2964,7 +2964,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
             for c in key[:-2]:
                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
-                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" (c, key))
+                  return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" % (c, key))
 
          ## Sec-WebSocket-Extensions
          ##
@@ -3219,7 +3219,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          self.consumeData()
 
 
-   def failHandshake(self, reason, code = http.BAD_REQUEST[0], responseHeaders = []):
+   def failHandshake(self, reason, code = http.BAD_REQUEST[0], responseHeaders = None):
       """
       During opening handshake the client request was invalid, we send a HTTP
       error response and then drop the connection.
@@ -3230,13 +3230,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
       self.dropConnection(abort = False)
 
 
-   def sendHttpErrorResponse(self, code, reason, responseHeaders = []):
+   def sendHttpErrorResponse(self, code, reason, responseHeaders = None):
       """
       Send out HTTP error response.
       """
       response  = "HTTP/1.1 {0} {1}\x0d\x0a".format(code, reason)
-      for h in responseHeaders:
-         response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
+      if responseHeaders:
+         for h in responseHeaders:
+            response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
       response += "\x0d\x0a"
       self.sendData(response.encode('utf8'))
 
@@ -3334,9 +3335,9 @@ class WebSocketServerFactory(WebSocketFactory):
 
    def __init__(self,
                 url = None,
-                protocols = [],
+                protocols = None,
                 server = "AutobahnPython/%s" % __version__,
-                headers = {},
+                headers = None,
                 externalPort = None,
                 debug = False,
                 debugCodePaths = False):
@@ -3386,9 +3387,9 @@ class WebSocketServerFactory(WebSocketFactory):
 
    def setSessionParameters(self,
                             url = None,
-                            protocols = [],
+                            protocols = None,
                             server = None,
-                            headers = {},
+                            headers = None,
                             externalPort = None):
       """
       Set WebSocket session parameters.
@@ -3418,9 +3419,9 @@ class WebSocketServerFactory(WebSocketFactory):
       self.path = path
       self.params = params
 
-      self.protocols = protocols
+      self.protocols = protocols or []
       self.server = server
-      self.headers = headers
+      self.headers = headers or {}
 
       if externalPort:
          self.externalPort = externalPort
@@ -4083,9 +4084,9 @@ class WebSocketClientFactory(WebSocketFactory):
    def __init__(self,
                 url = None,
                 origin = None,
-                protocols = [],
+                protocols = None,
                 useragent = "AutobahnPython/%s" % __version__,
-                headers = {},
+                headers = None,
                 proxy = None,
                 debug = False,
                 debugCodePaths = False):
@@ -4138,9 +4139,9 @@ class WebSocketClientFactory(WebSocketFactory):
    def setSessionParameters(self,
                             url = None,
                             origin = None,
-                            protocols = [],
+                            protocols = None,
                             useragent = None,
-                            headers = {},
+                            headers = None,
                             proxy = None):
       """
       Set WebSocket session parameters.
@@ -4169,9 +4170,9 @@ class WebSocketClientFactory(WebSocketFactory):
       self.params = params
 
       self.origin = origin
-      self.protocols = protocols
+      self.protocols = protocols or []
       self.useragent = useragent
-      self.headers = headers
+      self.headers = headers or {}
 
       self.proxy = proxy
 

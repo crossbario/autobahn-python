@@ -25,6 +25,13 @@ try:
 except ImportError:
    spelling = None
 
+try:
+   import sphinx_bootstrap_theme
+except ImportError:
+   sphinx_bootstrap_theme = None
+
+
+DEBUG = True
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -59,11 +66,12 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'pages/index'
 
 # General information about the project.
 project = u'AutobahnPython'
-copyright = u'2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>, <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a><br>Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>'
+#copyright = u'2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>, <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a><br>Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>'
+copyright = None
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -107,8 +115,10 @@ exclude_patterns = ['_build']
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-#pygments_style = 'sphinx'
-pygments_style = 'flask_theme_support.FlaskyStyle'
+if DEBUG:
+   pygments_style = 'sphinx'
+else:
+   pygments_style = 'flask_theme_support.FlaskyStyle'
 # pygments_style = 'pastie'
 # pygments_style = 'monokai'
 # pygments_style = 'colorful'
@@ -125,11 +135,89 @@ pygments_style = 'flask_theme_support.FlaskyStyle'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 
-if False:
-   if sphinx_rtd_theme:
-      html_theme = "sphinx_rtd_theme"
-      html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-   else:
+if DEBUG:
+
+   html_theme = None
+   html_theme_path = None
+
+   ## Sphinx-Bootstrap Theme
+   ##
+   ## http://sphinx-bootstrap-theme.readthedocs.org/en/latest/README.html
+   ##
+   if sphinx_bootstrap_theme:
+
+      html_theme = 'bootstrap'
+      html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+      html_theme_options = {
+          # Navigation bar title. (Default: ``project`` value)
+          'navbar_title': "Autobahn|Python",
+
+          # Tab name for entire site. (Default: "Site")
+          'navbar_site_name': "Site",
+
+          # A list of tuples containing pages or urls to link to.
+          # Valid tuples should be in the following forms:
+          #    (name, page)                 # a link to a page
+          #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
+          #    (name, "http://example.com", True) # arbitrary absolute url
+          # Note the "1" or "True" value above as the third argument to indicate
+          # an arbitrary url.
+          'navbar_links': [
+              #("Examples", "examples"),
+              #("Link", "http://example.com", True),
+          ],
+
+          # Render the next and previous page links in navbar. (Default: true)
+          'navbar_sidebarrel': True,
+
+          # Render the current pages TOC in the navbar. (Default: true)
+          'navbar_pagenav': True,
+
+          # Tab name for the current pages TOC. (Default: "Page")
+          #'navbar_pagenav_name': "Page",
+
+          # Global TOC depth for "site" navbar tab. (Default: 1)
+          # Switching to -1 shows all levels.
+          'globaltoc_depth': 1,
+
+          # Include hidden TOCs in Site navbar?
+          #
+          # Note: If this is "false", you cannot have mixed ``:hidden:`` and
+          # non-hidden ``toctree`` directives in the same page, or else the build
+          # will break.
+          #
+          # Values: "true" (default) or "false"
+          'globaltoc_includehidden': "true",
+
+          # HTML navbar class (Default: "navbar") to attach to <div> element.
+          # For black navbar, do "navbar navbar-inverse"
+          #'navbar_class': "navbar navbar-inverse",
+          'navbar_class': "navbar",
+
+          # Fix navigation bar to top of page?
+          # Values: "true" (default) or "false"
+          'navbar_fixed_top': "true",
+
+          # Location of link to source.
+          # Options are "nav" (default), "footer" or anything else to exclude.
+          'source_link_position': "nav",
+
+          # Bootswatch (http://bootswatch.com/) theme.
+          #
+          # Options are nothing with "" (default) or the name of a valid theme
+          # such as "amelia" or "cosmo".
+          'bootswatch_theme': "",
+
+          # Choose Bootstrap version.
+          # Values: "3" (default) or "2" (in quotes)
+          #'bootstrap_version': "3",
+      }
+
+   # if sphinx_rtd_theme:
+   #    html_theme = "sphinx_rtd_theme"
+   #    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+   if not html_theme:
       #html_theme = "default"
       html_theme = 'sphinxdoc'
 else:
@@ -142,7 +230,7 @@ else:
 # documentation.
 #html_theme_options = {}
 
-html_theme_options = {
+#html_theme_options = {
 #  'footertextcolor': '#ccc',
 #  'sidebarbgcolor': '#111',
 #  'sidebartextcolor': '#ccc',
@@ -159,7 +247,7 @@ html_theme_options = {
 #  'codetextcolor': '#ccc',
 #  'bodyfont': 'serif',
 #  'headfont': 'serif',
-}
+#}
 
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -189,7 +277,9 @@ html_static_path = ['_static']
 # additional variables which become accessible in the template engine's context for
 # all pages
 # html_context = {'widgeturl': 'http://192.168.1.147:8090/widget'}
-html_context = {'widgeturl': 'https://demo.crossbar.io/clandeckwidget'}
+html_context = {
+   'widgeturl': 'https://demo.crossbar.io/clandeckwidget'
+}
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -201,9 +291,22 @@ html_context = {'widgeturl': 'https://demo.crossbar.io/clandeckwidget'}
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-    # 'index':    ['side-primary.html', 'searchbox.html'],
-    '**':       ['side-secondary.html', 'stay_informed.html', 'sidetoc.html',
-                 'previous_next.html', 'searchbox.html' ]
+   'index': [
+      'side-primary.html',
+      #'side-secondary.html',
+      #'stay_informed.html',
+      #'sidetoc.html',
+      #'previous_next.html',
+      #'searchbox.html'
+   ],
+   '**': [
+      #'side-primary.html',
+      'side-secondary.html',
+      #'stay_informed.html',
+      'sidetoc.html',
+      #'previous_next.html',
+      #'searchbox.html'
+   ]
 }
 
 # Additional templates that should be rendered to pages, maps page names to
@@ -291,22 +394,41 @@ man_pages = [
 autodoc_member_order = 'bysource'
 
 ## http://sphinx-doc.org/ext/intersphinx.html
-intersphinx_mapping = {
-   'python': ('http://docs.python.org/', None),
-   #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
-}
+if not DEBUG:
+   intersphinx_mapping = {
+      'python': ('http://docs.python.org/', None),
+      #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
+   }
 
 
 rst_epilog = """
-.. |ab| replace:: **Autobahn**\|Python
+.. |ab| replace:: Autobahn|Python
+.. |Ab| replace:: **Autobahn**\|Python
+.. _Autobahn: http://autobahn.ws
+.. _AutobahnJS: http://autobahn.ws/js
+.. _AutobahnPython: **Autobahn**\|Python
+.. _WebSocket: http://tools.ietf.org/html/rfc6455
+.. _RFC6455: http://tools.ietf.org/html/rfc6455
+.. _WAMP: http://wamp.ws/
+.. _Twisted: http://twistedmatrix.com/
+.. _asyncio: http://docs.python.org/3.4/library/asyncio.html
+.. _CPython: http://python.org/
+.. _PyPy: http://pypy.org/
+.. _Jython: http://jython.org/
+.. _WAMPv1: http://wamp.ws/spec/wamp1/
+.. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
+.. _AutobahnTestsuite: http://autobahn.ws/testsuite
+.. _trollius: https://pypi.python.org/pypi/trollius/
+.. _tulip: https://pypi.python.org/pypi/asyncio/
 """
 
-rst_prolog = """
-.. container:: topnav
+if not DEBUG:
+   rst_prolog = """
+   .. container:: topnav
 
-   :doc:`Overview <index>` :doc:`installation` :doc:`Examples <examples>`  :doc:`WebSocket <websocketprogramming>`  :doc:`WAMP <wampprogramming>` :doc:`Reference <reference>` :doc:`TOC <table_of_contents>`
+      :doc:`Overview <index>` :doc:`installation` :doc:`Examples <examples>`  :doc:`WebSocket <websocketprogramming>`  :doc:`WAMP <wampprogramming>` :doc:`Reference <reference>` :doc:`TOC <table_of_contents>`
 
-"""
+   """
 
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
 autoclass_content = 'both'

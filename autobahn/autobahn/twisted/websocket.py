@@ -324,7 +324,7 @@ class WrappingWebSocketAdapter:
    def writeSequence(self, data):
       ## part of ITransport
       for d in data:
-         self.write(data)
+         self.write(d)
 
    def loseConnection(self):
       ## part of ITransport
@@ -588,6 +588,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
       kwargs['protocols'] = self._protocols
 
+      # noinspection PyCallByClass
       WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 

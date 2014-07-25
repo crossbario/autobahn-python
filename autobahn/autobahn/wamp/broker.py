@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-from twisted.internet.defer import maybeDeferred
-
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -104,8 +102,8 @@ class Broker:
    def processPublish(self, session, publish):
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.processPublish`
-      """
-      assert(session in self._session_to_subscriptions)
+      """      
+      #assert(session in self._session_to_subscriptions)
 
       ## check topic URI
       ##
@@ -118,20 +116,34 @@ class Broker:
 
          return
 
-      if publish.topic in self._topic_to_sessions:
+      if publish.topic in self._topic_to_sessions or publish.acknowledge:
 
-         d = maybeDeferred(self._router.authorize, session, publish.topic, IRouter.ACTION_PUBLISH)
+         ## validate payload
+         ##
+         try:
+            self._router.validate('event', publish.topic, publish.args, publish.kwargs)
+         except Exception as e:
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_ARGUMENT, ["publish to topic URI '{}' with invalid application payload: {}".format(publish.topic, e)])
+            session._transport.send(reply)
+            return
 
-         def on_authorize(authorized):
+         ## authorize action
+         ##
+         d = self._as_future(self._router.authorize, session, publish.topic, IRouter.ACTION_PUBLISH)
+
+         def on_authorize_success(authorized):
+
             if not authorized:
 
                if publish.acknowledge:
-                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic URI '{}'".format(publish.topic)])
+                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic '{}'".format(publish.topic)])
                   session._transport.send(reply)
 
             else:
 
-               if self._topic_to_sessions[publish.topic]:
+               ## continue processing if either a) there are subscribers to the topic or b) the publish is to be acknowledged
+               ##
+               if publish.topic in self._topic_to_sessions and self._topic_to_sessions[publish.topic]:
 
                   ## initial list of receivers are all subscribers ..
                   ##
@@ -194,14 +206,19 @@ class Broker:
                         if receiver._transport:
                            receiver._transport.send(msg)
 
-         d.addCallback(on_authorize)
+         def on_authorize_error(err):
+            if publish.acknowledge:
+               reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for publishing to topic URI '{}': {}".format(publish.topic, err.value)])
+               session._transport.send(reply)
+
+         self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
 
    def processSubscribe(self, session, subscribe):
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.processSubscribe`
       """
-      assert(session in self._session_to_subscriptions)
+      #assert(session in self._session_to_subscriptions)
 
       ## check topic URI
       ##
@@ -215,12 +232,12 @@ class Broker:
 
          ## authorize action
          ##
-         d = maybeDeferred(self._router.authorize, session, subscribe.topic, IRouter.ACTION_SUBSCRIBE)
+         d = self._as_future(self._router.authorize, session, subscribe.topic, IRouter.ACTION_SUBSCRIBE)
 
-         def on_authorize(authorized):
+         def on_authorize_success(authorized):
             if not authorized:
 
-               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic URI '{}'".format(subscribe.topic)])
+               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic '{}'".format(subscribe.topic)])
 
             else:
 
@@ -247,14 +264,18 @@ class Broker:
 
             session._transport.send(reply)
 
-         d.addCallback(on_authorize)
+         def on_authorize_error(err):
+            reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for subscribing to topic URI '{}': {}".format(subscribe.topic, err.value)])
+            session._transport.send(reply)
+
+         self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
 
    def processUnsubscribe(self, session, unsubscribe):
       """
       Implements :func:`autobahn.wamp.interfaces.IBroker.processUnsubscribe`
       """
-      assert(session in self._session_to_subscriptions)
+      #assert(session in self._session_to_subscriptions)
 
       if unsubscribe.subscription in self._subscription_to_sessions:
 

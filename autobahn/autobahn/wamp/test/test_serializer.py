@@ -18,8 +18,8 @@
 
 from __future__ import absolute_import
 
-from twisted.trial import unittest
-#import unittest
+#from twisted.trial import unittest
+import unittest
 
 from autobahn import wamp
 from autobahn.wamp import message
@@ -76,7 +76,16 @@ class TestSerializer(unittest.TestCase):
    def setUp(self):
       self.serializers = []
       self.serializers.append(serializer.JsonSerializer())
+      self.serializers.append(serializer.JsonSerializer(batched = True))
+
       self.serializers.append(serializer.MsgPackSerializer())
+
+      try:
+         self.serializers.append(serializer.MsgPackSerializer())
+         self.serializers.append(serializer.MsgPackSerializer(batched = True))
+      except Exception:
+         ## MsgPack not installed
+         pass
 
 
    def test_roundtrip(self):

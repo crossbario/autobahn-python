@@ -13,7 +13,7 @@ class Component1(ApplicationSession):
       from twisted.internet import reactor
       self._agent = Agent(reactor)
 
-      reg = yield self.register(self)
+      yield self.register(self)
       print("Procedures registered")
 
 
@@ -21,7 +21,7 @@ class Component1(ApplicationSession):
    def httpget(self, url):
       d = self._agent.request('GET', str(url))
 
-      def cbResponse(ignored):
+      def cbResponse(_):
          return "got response"
       d.addCallback(cbResponse)
 
