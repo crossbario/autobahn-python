@@ -180,9 +180,10 @@ dl.function {
 
 
 .navbar-brand img {
-   height: 39px;
+   height: 29px;
    position: relative;
-   bottom: 8px;
+   bottom: 4px;
+   left: 9px;
 }
 /* sidebar extension across the entire viewport on narrower screens */
 /* and displayed above the content needs to be prevented */
