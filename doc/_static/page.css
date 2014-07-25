@@ -162,18 +162,25 @@ dl.function {
 }
 
 
-/* sidebar extension across the entire viewport on narrower screens */
-/* and displayed above the content needs to be prevented */
-
-/* attempt 1: move to the bottom of the page */
-
 .col-md-3 {
 
 }
 
 .col-md-9 {
-
+   padding-top: 38px; /* padding to avoid overlap with widget on narrow screens */
 }
+
+.navbar-version {
+   display: none;
+}
+
+/*.navbar-brand::before {
+   content: url('_static/logo.png');
+
+}*/
+
+/* sidebar extension across the entire viewport on narrower screens */
+/* and displayed above the content needs to be prevented */
 
 /* hide the sidebar */
 /* show logo + external links part in the footer */
