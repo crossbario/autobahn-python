@@ -21,10 +21,32 @@
 
 {% block footer %}
 
-   <footer class="footer">
+<footer class="footer">
   <div class="container">
+
+   <div class="extendedFooter">
+      <div class="logoblock">
+         <p class="logo">
+           <a href="{{ pathto('pages/index') }}"><img class="logo" src="{{ pathto('_static/logo.png', 1) }}" height="200" width="200" alt="Autobahn|Python"/></a>
+         </p>
+         <h3><strong>Autobahn</strong>|Python</h3>
+         <p>
+           <iframe src="http://ghbtns.com/github-btn.html?user=tavendo&repo=AutobahnPython&type=watch&count=true&size=large"
+             allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+         </p>
+      </div>
+      <div class="side_toc sidebar_block" id="quicklinks">
+         <h4><a href="https://pypi.python.org/pypi/autobahn/">Download</a></h4>
+         <h4><a href="https://github.com/tavendo/AutobahnPython">Source Code</a></h4>
+         <h4><a href="https://groups.google.com/forum/#!forum/autobahnws">Mailing List</a></h4>
+         <h4><a href="https://github.com/tavendo/AutobahnPython/issues">Issue Tracker</a></h4>
+         <h4><a href="http://stackoverflow.com/questions/tagged/autobahn?sort=newest">StackOverflow</a></h4>
+      </div>
+   </div>
+   <!-- <div class="clearBoth"></div> -->
+
     <p class="pull-right">
-      <a href="#">Back to top</a>      
+      <a href="#">Back to top</a>
     </p>
     <p>
       Copyright © 2011-2014 <a href="http://tavendo.com">Tavendo GmbH</a>. Content on this site is licensed under <a href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons CC-BY-SA</a>.
@@ -32,27 +54,20 @@
       Tavendo, WAMP and "Autobahn WebSocket" are trademarks of <a href="http://tavendo.com">Tavendo GmbH</a>.
     </p>
   </div>
+
 </footer>
 
 
    <!-- community widget iframe -->
 
-   {% if False and widgeturl %}
+   {% if True and widgeturl %}
 
-      <!-- general styles for the widget -->
-      <link rel="stylesheet" type="text/css" href="{{ widgeturl }}/css/parent.css" />
-      <!-- base stylesheet to ensure non-Display if nothing loads -->
-      <style>
-         #communityWidget.nonDisplay {
-            display: none;
-         }
-         #communityWidget {
-            top: 81px;
-            right: -2px;
-         }
-      </style>
-      <iframe id="communityWidget" class="nonDisplay" src="{{ widgeturl }}/index.html" frameborder="0"></iframe>
-      <script src="{{ widgeturl }}/js/parent.js"></script>
+      <!-- add community widget -->
+      <div id="widgetAnchor"></div>
+      <script src="{{ widgeturl }}/js/communitywidget.js"></script>
+      <script>
+         clandeck.create_widget({community: "tavendo", topOffset: "81px"});
+      </script>
 
    {% else %}
       <!-- Community Widget stripped! -->

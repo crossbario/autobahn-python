@@ -300,10 +300,10 @@ html_sidebars = {
       #'searchbox.html'
    ],
    '**': [
-      #'side-primary.html',
-      'side-secondary.html',
+      'side-primary.html',
+      # 'side-secondary.html',
       #'stay_informed.html',
-      'sidetoc.html',
+      # 'sidetoc.html',
       #'previous_next.html',
       #'searchbox.html'
    ]
