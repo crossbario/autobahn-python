@@ -58,6 +58,7 @@ body {
 }
 
 h1 {
+   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
    margin-top: 40px;
 }
 
@@ -65,6 +66,11 @@ h2 {
    font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
    font-weight: 300;
    margin-top: 32px;
+}
+
+h3 {
+   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
+   font-weight: 300;
 }
 
 #logoblock {
