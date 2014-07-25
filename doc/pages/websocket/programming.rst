@@ -1,8 +1,17 @@
 Programming with WebSocket
 ==========================
 
-This guide introduces WebSocket programming with |Ab|. You'll see how to create WebSocket server and client applications.
+This guide introduces WebSocket programming with |Ab|. You'll see how to create WebSocket server and client applications:
 
+1. :ref:`creating-websocket-servers`
+2. :ref:`creating-websocket-clients`
+
+Related Information:
+
+* :ref:`WebSocket Examples <websocket_examples>`
+
+
+.. _creating-websocket-servers:
 
 Creating Servers
 ----------------
@@ -278,6 +287,14 @@ The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose` will initi
 After a WebSocket connection has been closed, the protocol instance will get recycled. Should the client reconnect, a new protocol instance will be created and a new WebSocket opening handshake performed.
 
 
+.. _creating-websocket-clients:
+
+Creating Clients
+----------------
+
+Write me.
+
+
 
 Upgrading
 ---------
@@ -307,9 +324,3 @@ Two more small changes (also see the `interface definition <https://github.com/t
 
 1. ``WebSocketProtocol.sendMessage``: renaming of parameter ``binary`` to ``isBinary`` (for consistency with `onMessage`)
 2. ``ConnectionRequest`` no longer provides ``peerstr``, but only ``peer``, and the latter is a plain, descriptive string (this was needed since we now support both Twisted and asyncio, and also non-TCP transports)
-
-
-Related Information
--------------------
-
-1. :ref:`WebSocket Examples <websocket_examples>`
