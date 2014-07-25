@@ -1,11 +1,64 @@
+/* Source Sans Pro */
+
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-Regular.ttf');
+   font-weight: normal;
+}
+
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-Italic.ttf');
+   font-weight: normal;
+   font-style: italic;
+}
+
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-Bold.ttf');
+   font-weight: bold;
+}
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-BoldItalic.ttf');
+   font-weight: bold;
+   font-style: italic;
+}
+
+/*@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-Semibold.ttf');
+   font-weight: bold;
+}
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-SemiboldItalic.ttf');
+   font-weight: bold;
+   font-style: italic;
+}*/
+
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-Light.ttf');
+   font-weight: 300;
+}
+@font-face {
+   font-family: 'Source Sans Pro';
+   src: url('fonts/SourceSansPro-LightItalic.ttf');
+   font-weight: 300;
+   font-style: italic;
+}
+
+
 body {
    font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+   font-family: 'Source Sans Pro', sans-serif;
    font-size: 15px;
    /*line-height: 1.5em;*/
 }
 
 h1 {
-   margin-top: 40px;   
+   margin-top: 40px;
 }
 
 h2 {
@@ -67,4 +120,96 @@ dl.class {
 
 dl.function {
    border-left: 5px solid rgba(255,255,80,0.6);
+}
+
+
+/* navbar needs to collapse to hamburger sooner than default */
+/* snippet taken from http://stackoverflow.com/questions/18192082/bootstrap-3-navbar-collapse */
+/* cleaner way would be to recompile from LESS source */
+
+@media (max-width: 1200px) {
+    .navbar-header {
+        float: none;
+    }
+    .navbar-toggle {
+        display: block;
+    }
+    .navbar-collapse {
+        border-top: 1px solid transparent;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    .navbar-collapse.collapse {
+        display: none!important;
+    }
+    .navbar-nav {
+        float: none!important;
+        margin: 7.5px -15px;
+    }
+    .navbar-nav>li {
+        float: none;
+    }
+    .navbar-nav>li>a {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    /* since 3.1.0 */
+    .navbar-collapse.collapse.in {
+        display: block!important;
+    }
+    .collapsing {
+        overflow: hidden!important;
+    }
+}
+
+
+.col-md-3 {
+
+}
+
+.col-md-9 {
+   padding-top: 38px; /* padding to avoid overlap with widget on narrow screens */
+}
+
+.navbar-version {
+   display: none;
+}
+
+/*.navbar-brand::before {
+   content: url('_static/logo.png');
+
+}*/
+
+/* sidebar extension across the entire viewport on narrower screens */
+/* and displayed above the content needs to be prevented */
+
+/* hide the sidebar */
+/* show logo + external links part in the footer */
+
+.extendedFooter {
+   display: none;
+   overflow: hidden;
+   max-width: 400px;
+   margin: 0 auto;
+}
+
+.extendedFooter > div {
+   float: left;
+}
+
+.extendedFooter #quicklinks h4 {
+}
+
+.clearBoth {
+   clear: both;
+}
+
+@media (max-width: 990px) {
+   #sidebar {
+      display: none;
+   }
+
+   .extendedFooter {
+      display: inherit;
+   }
+
 }
