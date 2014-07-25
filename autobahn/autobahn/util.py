@@ -63,15 +63,21 @@ def utcstr(ts):
 
 
 
-def parseutc(s):
+def parseutc(datestr):
    """
-   Parse an ISO 8601 combined date and time string, like i.e. 2011-11-23T12:23Z
+   Parse an ISO 8601 combined date and time string, like i.e. ``"2011-11-23T12:23Z"``
    into a UTC datetime instance.
 
-   @deprecated: Use the iso8601 module (eg, iso8601.parse_date("2014-05-23T13:03:44.123Z"))
+   .. deprecated:: 0.8.12
+      Use the **iso8601** module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``)
+
+   :param datestr: The datetime string to parse.
+   :type datestr: str
+
+   :returns: obj -- A instance of datetime. 
    """
    try:
-      return datetime.strptime(s, "%Y-%m-%dT%H:%M:%SZ")
+      return datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%SZ")
    except:
       return None
 
@@ -79,11 +85,14 @@ def parseutc(s):
 
 def id():
    """
-   Generate a new random object ID from range [0, 2**53]. The upper bound 2**53
-   is chosen since it is the maximum integer that can be represented as
-   a IEEE double such that all smaller integers are representable as well.
+   Generate a new random object ID from range **[0, 2**53]**.
+
+   The upper bound 2**53 is chosen since it is the maximum integer that can be
+   represented as a IEEE double such that all smaller integers are representable as well.
    Hence, IDs can be safely used with languages that use IEEE double as their
    main (or only) number type (JavaScript, Lua, ..).
+
+   :returns: int -- The random object ID.
    """
    return random.randint(0, 9007199254740992)
 
@@ -92,6 +101,11 @@ def id():
 def newid(len = 16):
    """
    Generate a new random object ID.
+
+   :param len: The length (in chars) of the ID to generate.
+   :type len: int
+
+   :returns: str -- A random object ID.
    """
    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(len)])
 
@@ -243,10 +257,10 @@ class Tracker:
       """
       Return the UTC wall-clock time at which a tracked event occurred.
 
-      :param key:  The key
-      :type key:  str
+      :param key: The key
+      :type key: str
 
-      :returns: timezone-naive datetime
+      :returns: obj -- Timezone-naive datetime.
 
       """
       elapsed = self[key]
