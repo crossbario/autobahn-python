@@ -88,6 +88,10 @@ Complete example code:
 * `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
 * `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
 
+Introduction to WebSocket Programming with |ab|:
+
+* :doc:`websocket/programming`
+
 ---------
 
 A sample **WAMP application component** implementing all client roles:
@@ -124,6 +128,10 @@ Complete example code:
 * **server**, which provides a remote procedure enpoint and publishes to a topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/server.py>`__
 * **client**, which calls the procedure and subscribes to the topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
 
+Introduction to WAMP Programming with |ab|:
+
+* :doc:`wamp/programming`
+
 ----------
 
 
@@ -132,11 +140,11 @@ Where to start
 
 To get started, jump to :doc:`installation`.
 
-For **WebSocket developers**, :doc:`websocket/websocketprogramming` explains all you need to know about using |ab| as a WebSocket library, and includes a full reference for the relevant parts of the API.
+For **WebSocket developers**, :doc:`websocket/programming` explains all you need to know about using |ab| as a WebSocket library, and includes a full reference for the relevant parts of the API.
 
 :doc:`websocket/examples` lists WebSocket code examples covering a broader range of uses cases and advanced WebSocket features.
 
-For **WAMP developers**, :doc:`wamp/wampprogramming` gives an introduction for programming with WAMP in Python using |ab|.
+For **WAMP developers**, :doc:`wamp/programming` gives an introduction for programming with WAMP in Python using |ab|.
 
 :doc:`wamp/examples` lists WAMP code examples covering all features of WAMP.
 
@@ -164,7 +172,7 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    :hidden:
 
    installation
-   websocket/websocketprogramming
-   wamp/wampprogramming
+   websocket/programming
+   wamp/programming
    reference/autobahn
    changelog
