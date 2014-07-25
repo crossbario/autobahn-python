@@ -181,10 +181,15 @@ dl.function {
 }
 
 /*.navbar-brand::before {
-   content: url('_static/logo.png');
-
+   content: url('../../_static/logo.png');
 }*/
 
+
+.navbar-brand img {
+   height: 39px;
+   position: relative;
+   bottom: 8px;
+}
 /* sidebar extension across the entire viewport on narrower screens */
 /* and displayed above the content needs to be prevented */
 
