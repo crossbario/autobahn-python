@@ -26,12 +26,14 @@
 
       <!-- general styles for the widget -->
       <link rel="stylesheet" type="text/css" href="{{ widgeturl }}/css/parent.css" />
-      <!-- site-specific modifications -->
-      <link rel="stylesheet" href="_static/communitywidget.css">
       <!-- base stylesheet to ensure non-Display if nothing loads -->
       <style>
          #communityWidget.nonDisplay {
             display: none;
+         }
+         #communityWidget {
+            top: 81px;
+            right: -2px;
          }
       </style>
       <iframe id="communityWidget" class="nonDisplay" src="{{ widgeturl }}/index.html" frameborder="0"></iframe>
