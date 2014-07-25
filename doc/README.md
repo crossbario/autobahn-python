@@ -1,27 +1,27 @@
 # Autobahn|Python Documentation
 
-The **Autobahn**|Python reference documentation is generated using [Sphinx](http://sphinx.pocoo.org/) and available [online](http://autobahn.ws/python/reference).
+The **Autobahn**|Python documentation is generated using [Sphinx](http://sphinx.pocoo.org/) and available [online](http://autobahn.ws/python).
 
-To generate the documentation yourself you will need to have **Autobahn**|Python installed locally plus install Sphinx:
+## Generate the Docs
 
-	pip install sphinx
-    pip install sphinx_rtd_theme
-    pip install sphinxcontrib-spelling
-    pip install repoze.sphinx.autointerface
+To generate the documentation yourself you will need to have the following installed
+
+```sh
+pip install sphinx
+pip install sphinx-bootstrap-theme
+pip install sphinxcontrib-spelling
+pip install repoze.sphinx.autointerface
+```
 
 and then
 
-	cd doc
-	sphinx-build -b html . _html
+```sh
+cd doc
+make html
+```
 
-This will create the documentation under
+This will create the documentation under the directory `_build`.
 
-	_html
-
-
-## Custom Page Content
-
-To add custom page content to the generated pages, modify `templates/layout.html`.
 
 ## Publishing
 
@@ -31,14 +31,20 @@ To publish to the Autobahn web site ([here](http://autobahn.ws/python/reference/
 
 Then do
 
-	scons
+```sh
+scons
+```
 
 to build the docs and
 
-	scons publish
+```sh
+scons publish
+```
 
 to build and publish the docs and
 
-	scons -uc
+```sh
+scons -uc
+```
 
 to cleanup.

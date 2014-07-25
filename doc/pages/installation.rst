@@ -43,19 +43,19 @@ Install from PyPI
 
 To install |ab| from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_
 
-::
+.. code-block:: sh
 
-   $ pip install autobahn
+   pip install autobahn
 
 You can also specify *install variants* (see below). E.g. to install Twisted automatically as a dependency
 
-::
+.. code-block:: sh
 
    pip install autobahn[twisted]
 
 And to install asyncio backports automatically when required
 
-::
+.. code-block:: sh
 
    pip install autobahn[asyncio]
 
@@ -65,27 +65,27 @@ Install from Sources
 
 To install from sources, clone the repo
 
-::
+.. code-block:: sh
 
    git clone git@github.com:tavendo/AutobahnPython.git
 
 checkout a tagged release
 
-::
+.. code-block:: sh
 
    cd AutobahnPython
    git checkout v0.8.12
 
 and install
 
-::
+.. code-block:: sh
 
    cd autobahn
    python setup.py install
 
 You can also use Pip for the last step, which allows to specify install variants (see below)
 
-::
+.. code-block:: sh
 
    pip install -e .[twisted]
 
@@ -111,7 +111,7 @@ Install Variants
 
 Install variants can be combined, e.g. to install |ab| with all optional packages for use with Twisted on CPython:
 
-::
+.. code-block:: sh
 
    pip install autobahn[twisted,accelerate,compress,serialization]
 
