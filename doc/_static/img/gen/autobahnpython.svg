@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 350.77 52.273" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<rect stroke-linejoin="round" height="52.222" width="350.49" stroke="#4d4d4d" y="-.075577" x=".0049583" stroke-width=".30281" fill="#027eae"/>
+<g transform="translate(-3635.7 1248.1)">
+<text style="word-spacing:0px;letter-spacing:0px" line-height="125%" font-weight="bold" font-size="42.238px" y="-1206.6361" x="3678.532" font-family="Sans" xml:space="preserve" fill="#ffffff"><tspan y="-1206.6361" x="3678.532">Autobahn<tspan font-size="32.273px" font-weight="normal" fill="#ffffff"><tspan fill="#9ed106">|</tspan>Python</tspan></tspan></text>
+<path d="m3639.7-1244.1v37.363h34.399v-37.363h-34.399zm14.462 3.5857h1.6494v7.315h-3.2272l1.5778-7.315zm3.9921 0.072h1.6494l1.5778 7.291h-3.2272v-7.291zm-12.813 7.7452h23.116v1.3626h-1.1235v2.1036h-2.6535v-2.1036h-15.538v2.1036h-2.6056v-2.1036h-1.1952v-1.3626zm6.2391 3.2511h4.2312v18.813h-8.1755l3.9443-18.813zm6.5739 0h4.2312l3.9443 18.813h-8.1755v-18.813z" fill="#fff"/>
+</g>
+</svg>
