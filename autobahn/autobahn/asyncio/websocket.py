@@ -16,10 +16,16 @@
 ##
 ###############################################################################
 
-__all__ = ['WebSocketServerProtocol',
-           'WebSocketServerFactory',
+__all__ = ['WebSocketAdapterProtocol',
+           'WebSocketServerProtocol',
            'WebSocketClientProtocol',
-           'WebSocketClientFactory']
+           'WebSocketAdapterFactory',
+           'WebSocketServerFactory',
+           'WebSocketClientFactory',
+           'WampWebSocketServerProtocol',
+           'WampWebSocketClientProtocol',
+           'WampWebSocketServerFactory',
+           'WampWebSocketClientFactory']
 
 from collections import deque
 

@@ -36,7 +36,6 @@ class Router:
 
    def __init__(self, factory, realm, options = None):
       """
-      Ctor.
 
       :param factory: The router factory this router was created by.
       :type factory: Object that implements :class:`autobahn.wamp.interfaces.IRouterFactory`..
@@ -155,7 +154,6 @@ class RouterFactory:
 
    def __init__(self, options = None, debug = False):
       """
-      Ctor.
 
       :param options: Default router options.
       :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.      

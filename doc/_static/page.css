@@ -45,3 +45,26 @@ h2 {
 footer {
    font-size: 12px;
 }
+
+dl.class, dl.exception, dl.function {
+   margin-top: 24px;
+   box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.3);
+   padding: 12px;
+}
+
+dl.method, dl.attribute, dl.staticmethod {
+   border-top: 1px solid #ddd;
+   padding: 8px;
+}
+
+dl.exception {
+   border-left: 5px solid #f44;
+}
+
+dl.class {
+   border-left: 5px solid #44f;
+}
+
+dl.function {
+   border-left: 5px solid #ff4;
+}

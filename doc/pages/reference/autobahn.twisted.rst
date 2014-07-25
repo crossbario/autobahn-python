@@ -1,81 +1,81 @@
-autobahn.twisted package
-========================
+autobahn.twisted
+================
+
 
 Submodules
 ----------
 
-autobahn.twisted.choosereactor module
--------------------------------------
+autobahn.twisted.choosereactor
+------------------------------
 
 .. automodule:: autobahn.twisted.choosereactor
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.flashpolicy module
------------------------------------
+autobahn.twisted.flashpolicy
+----------------------------
 
 .. automodule:: autobahn.twisted.flashpolicy
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.forwarder module
----------------------------------
+autobahn.twisted.forwarder
+--------------------------
 
 .. automodule:: autobahn.twisted.forwarder
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.longpoll module
---------------------------------
+autobahn.twisted.longpoll
+-------------------------
 
 .. automodule:: autobahn.twisted.longpoll
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.rawsocket module
----------------------------------
+autobahn.twisted.rawsocket
+--------------------------
 
 .. automodule:: autobahn.twisted.rawsocket
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.resource module
---------------------------------
+autobahn.twisted.resource
+-------------------------
 
 .. automodule:: autobahn.twisted.resource
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.util module
-----------------------------
+autobahn.twisted.util
+---------------------
 
 .. automodule:: autobahn.twisted.util
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.wamp module
-----------------------------
+autobahn.twisted.wamp
+---------------------
 
 .. automodule:: autobahn.twisted.wamp
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.websocket module
----------------------------------
+autobahn.twisted.websocket
+--------------------------
 
 .. automodule:: autobahn.twisted.websocket
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 Module contents
 ---------------

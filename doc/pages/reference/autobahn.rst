@@ -27,8 +27,8 @@ Subpackages
 Submodules
 ----------
 
-autobahn.util module
---------------------
+autobahn.util
+-------------
 
 .. automodule:: autobahn.util
     :members:

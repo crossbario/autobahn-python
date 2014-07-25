@@ -1,113 +1,112 @@
-autobahn.wamp package
-=====================
+autobahn.wamp
+=============
 
 Submodules
 ----------
 
-autobahn.wamp.auth module
--------------------------
+autobahn.wamp.auth
+------------------
 
 .. automodule:: autobahn.wamp.auth
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.broker module
----------------------------
+autobahn.wamp.broker
+--------------------
 
 .. automodule:: autobahn.wamp.broker
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.dealer module
----------------------------
+autobahn.wamp.dealer
+--------------------
 
 .. automodule:: autobahn.wamp.dealer
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.exception module
-------------------------------
+autobahn.wamp.exception
+-----------------------
 
 .. automodule:: autobahn.wamp.exception
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.interfaces module
--------------------------------
+autobahn.wamp.interfaces
+------------------------
 
 .. automodule:: autobahn.wamp.interfaces
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.message module
-----------------------------
+autobahn.wamp.message
+---------------------
 
 .. automodule:: autobahn.wamp.message
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.protocol module
------------------------------
+autobahn.wamp.protocol
+----------------------
 
 .. automodule:: autobahn.wamp.protocol
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.role module
--------------------------
+autobahn.wamp.role
+------------------
 
 .. automodule:: autobahn.wamp.role
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.router module
----------------------------
+autobahn.wamp.router
+--------------------
 
 .. automodule:: autobahn.wamp.router
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.serializer module
--------------------------------
+autobahn.wamp.serializer
+------------------------
 
 .. automodule:: autobahn.wamp.serializer
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.types module
---------------------------
+autobahn.wamp.types
+-------------------
 
 .. automodule:: autobahn.wamp.types
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.uri module
-------------------------
+autobahn.wamp.uri
+-----------------
 
 .. automodule:: autobahn.wamp.uri
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.websocket module
-------------------------------
+autobahn.wamp.websocket
+-----------------------
 
 .. automodule:: autobahn.wamp.websocket
     :members:
     :undoc-members:
     :show-inheritance:
-
 
 Module contents
 ---------------

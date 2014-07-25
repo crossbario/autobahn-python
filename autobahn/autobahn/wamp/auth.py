@@ -42,7 +42,7 @@ def generate_totp_secret(short = False):
    :param short: If `True`, generate 5 bytes entropy, else 10 bytes.
    :type short: bool
 
-   :returns bytes -- The generated secret.
+   :returns: bytes -- The generated secret.
    """
    assert(type(short) == bool)
    if short:
@@ -61,7 +61,7 @@ def compute_totp(secret, offset = 0):
    :param offset: Time offset for which to compute TOTP.
    :type offset: int
 
-   :retuns str -- TOTP for current time (+/- offset).
+   :retuns: str -- TOTP for current time (+/- offset).
    """
    assert(type(secret) == six.binary_type)
    assert(type(offset) in six.integer_types)
@@ -134,7 +134,7 @@ def derive_key(secret, salt, iterations = 1000, keylen = 32):
    :param keylen: Length of the key to derive in bits.
    :type keylen: int
 
-   :returns str -- The derived key in Base64 encoding.
+   :returns: str -- The derived key in Base64 encoding.
    """
    key = pbkdf2_bin(secret, salt, iterations, keylen)
    return binascii.b2a_base64(key).strip()
@@ -148,7 +148,7 @@ def generate_wcs(short = False):
    :param short: If `True`, generate string of length 6, else 12
    :type short: bool
 
-   :returns str -- The generated secret.
+   :returns: str -- The generated secret.
    """
    if short:
       l = 6
@@ -168,7 +168,7 @@ def compute_wcs(key, challenge):
    :param challenge: The authentication challenge to sign.
    :type challenge: str
 
-   :returns str -- The authentication signature.
+   :returns: str -- The authentication signature.
    """
    sig = hmac.new(key, challenge, hashlib.sha256).digest()
    return binascii.b2a_base64(sig).strip()

@@ -124,7 +124,7 @@ class Pattern:
       """
       Returns the original URI (pattern) for this pattern.
 
-      :returns str -- The URI (pattern), e.g. `"com.myapp.product.<product:int>.update"`.
+      :returns: str -- The URI (pattern), e.g. `"com.myapp.product.<product:int>.update"`.
       """
       return self._uri
 
@@ -137,7 +137,7 @@ class Pattern:
       :param uri: The URI to match, e.g. `"com.myapp.product.123456.update"`.
       :type uri: str
 
-      :returns tuple -- A tuple `(args, kwargs)`
+      :returns: tuple -- A tuple `(args, kwargs)`
       """
       args = []
       kwargs = {}
@@ -159,7 +159,7 @@ class Pattern:
       """
       Check if this pattern is for a procedure endpoint.
 
-      :returns bool -- `True`, iff this pattern is for a procedure endpoint.
+      :returns: bool -- `True`, iff this pattern is for a procedure endpoint.
       """
       return self._target == Pattern.URI_TARGET_ENDPOINT
 
@@ -168,7 +168,7 @@ class Pattern:
       """
       Check if this pattern is for an event handler.
 
-      :returns bool -- `True`, iff this pattern is for an event handler.
+      :returns: bool -- `True`, iff this pattern is for an event handler.
       """
       return self._target == Pattern.URI_TARGET_HANDLER
 
@@ -177,6 +177,6 @@ class Pattern:
       """
       Check if this pattern is for an exception.
 
-      :returns bool -- `True`, iff this pattern is for an exception.
+      :returns: bool -- `True`, iff this pattern is for an exception.
       """
       return self._target == Pattern.URI_TARGET_EXCEPTION

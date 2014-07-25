@@ -130,14 +130,12 @@ class BaseSession:
    """
    WAMP session base class.
 
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.ISession`
+   This class implements :class:`autobahn.wamp.interfaces.ISession`.
    """
 
    def __init__(self):
       """
-      Ctor.
+
       """
       ## this is for library level debugging
       self.debug = False
@@ -301,15 +299,13 @@ ISession.register(BaseSession)
 
 class ApplicationSession(BaseSession):
    """
-   WAMP endpoint session.
+   WAMP endpoint session. This class implements
 
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.IPublisher`
-     * :class:`autobahn.wamp.interfaces.ISubscriber`
-     * :class:`autobahn.wamp.interfaces.ICaller`
-     * :class:`autobahn.wamp.interfaces.ICallee`
-     * :class:`autobahn.wamp.interfaces.ITransportHandler`
+   * :class:`autobahn.wamp.interfaces.IPublisher`
+   * :class:`autobahn.wamp.interfaces.ISubscriber`
+   * :class:`autobahn.wamp.interfaces.ICaller`
+   * :class:`autobahn.wamp.interfaces.ICallee`
+   * :class:`autobahn.wamp.interfaces.ITransportHandler`
    """
 
    def __init__(self, config = None):
@@ -994,7 +990,6 @@ class ApplicationSessionFactory:
 
    def __init__(self, config = None):
       """
-      Ctor.
 
       :param config: The default component configuration.
       :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
@@ -1156,11 +1151,7 @@ class RouterApplicationSession:
 
 class RouterSession(BaseSession):
    """
-   WAMP router session.
-
-   This class implements:
-
-     * :class:`autobahn.wamp.interfaces.ITransportHandler`
+   WAMP router session. This class implements :class:`autobahn.wamp.interfaces.ITransportHandler`.
    """
 
    def __init__(self, routerFactory):
@@ -1392,7 +1383,6 @@ class RouterSessionFactory:
 
    def __init__(self, routerFactory):
       """
-      Constructor.
 
       :param routerFactory: The router factory this session factory is working for.
       :type routerFactory: Instance of :class:`autobahn.wamp.router.RouterFactory`.

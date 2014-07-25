@@ -26,7 +26,8 @@ __all__ = ['ApplicationSession',
            'Broker',
            'Dealer',
            'Router',
-           'RouterFactory']
+           'RouterFactory',
+           'FutureMixin']
 
 import sys
 
@@ -117,8 +118,16 @@ class Router(FutureMixin, router.Router):
    """
    Basic WAMP router for asyncio-based applications.
    """
+
    broker = Broker
+   """
+   The broker class this router will use. Defaults to :class:`autobahn.asyncio.wamp.Broker`
+   """
+
    dealer = Dealer
+   """
+   The dealer class this router will use. Defaults to :class:`autobahn.asyncio.wamp.Dealer`
+   """
 
 
 
@@ -126,7 +135,11 @@ class RouterFactory(FutureMixin, router.RouterFactory):
    """
    Basic WAMP router factory for asyncio-based applications.
    """
+
    router = Router
+   """
+   The router class this router factory will use. Defaults to :class:`autobahn.asyncio.wamp.Router`
+   """
 
 
 
@@ -136,11 +149,16 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
 
 
+
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for asyncio-based applications.
    """
+
    session = ApplicationSession
+   """
+   The application session class this application session factory will use. Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
+   """
 
 
 
@@ -150,11 +168,16 @@ class RouterSession(FutureMixin, protocol.RouterSession):
    """
 
 
+
 class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for asyncio-based applications.
    """
+
    session = RouterSession
+   """
+   The router session class this router session factory will use. Defaults to :class:`autobahn.asyncio.wamp.RouterSession`.
+   """
 
 
 
@@ -170,7 +193,6 @@ class ApplicationRunner:
    def __init__(self, url, realm, extra = None,
       debug = False, debug_wamp = False, debug_app = False):
       """
-      Constructor.
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
       :type url: str

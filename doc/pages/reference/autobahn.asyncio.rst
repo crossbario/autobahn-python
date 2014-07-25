@@ -1,19 +1,19 @@
-autobahn.asyncio package
-========================
+autobahn.asyncio
+================
 
 Submodules
 ----------
 
-autobahn.asyncio.wamp module
-----------------------------
+autobahn.asyncio.wamp
+---------------------
 
 .. automodule:: autobahn.asyncio.wamp
     :members:
     :undoc-members:
     :show-inheritance:
 
-autobahn.asyncio.websocket module
----------------------------------
+autobahn.asyncio.websocket
+--------------------------
 
 .. automodule:: autobahn.asyncio.websocket
     :members:

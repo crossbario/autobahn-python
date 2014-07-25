@@ -27,7 +27,8 @@ __all__ = ['ApplicationSession',
            'Broker',
            'Dealer',
            'Router',
-           'RouterFactory']
+           'RouterFactory',
+           'FutureMixin']
 
 import sys
 import inspect
@@ -95,8 +96,16 @@ class Router(FutureMixin, router.Router):
    """
    Basic WAMP router for Twisted-based applications.
    """
+
    broker = Broker
+   """
+   The broker class this router will use. Defaults to :class:`autobahn.twisted.wamp.Broker`
+   """
+
    dealer = Dealer
+   """
+   The dealer class this router will use. Defaults to :class:`autobahn.twisted.wamp.Dealer`
+   """
 
 
 
@@ -104,7 +113,11 @@ class RouterFactory(FutureMixin, router.RouterFactory):
    """
    Basic WAMP router factory for Twisted-based applications.
    """
+
    router = Router
+   """
+   The router class this router factory will use. Defaults to :class:`autobahn.twisted.wamp.Router`
+   """
 
 
 
@@ -119,7 +132,11 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    """
    WAMP application session factory for Twisted-based applications.
    """
+
    session = ApplicationSession
+   """
+   The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
+   """
 
 
 
@@ -134,7 +151,11 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """
+
    session = RouterSession
+   """
+   The router session class this router session factory will use. Defaults to :class:`autobahn.asyncio.wamp.RouterSession`.
+   """
 
 
 
@@ -150,7 +171,6 @@ class ApplicationRunner:
    def __init__(self, url, realm, extra = None, standalone = False,
       debug = False, debug_wamp = False, debug_app = False):
       """
-      Constructor.
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
       :type url: str
@@ -243,7 +263,6 @@ class _ApplicationSession(ApplicationSession):
 
    def __init__(self, config, app):
       """
-      Ctor.
 
       :param config: The component configuration.
       :type config: Instance of :class:`autobahn.wamp.types.ComponentConfig`
@@ -304,7 +323,6 @@ class Application:
 
    def __init__(self, prefix = None):
       """
-      Ctor.
 
       :param prefix: The application URI prefix to use for procedures and topics,
          e.g. `com.example.myapp`.

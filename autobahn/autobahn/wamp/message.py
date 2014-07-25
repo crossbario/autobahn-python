@@ -181,7 +181,7 @@ class Hello(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -323,7 +323,7 @@ class Welcome(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -448,7 +448,7 @@ class Abort(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -532,7 +532,7 @@ class Challenge(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -603,7 +603,7 @@ class Authenticate(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -681,7 +681,7 @@ class Goodbye(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -772,7 +772,7 @@ class Heartbeat(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -881,7 +881,7 @@ class Error(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1029,7 +1029,7 @@ class Publish(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1191,7 +1191,7 @@ class Published(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1269,7 +1269,7 @@ class Subscribe(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1357,7 +1357,7 @@ class Subscribed(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1427,7 +1427,7 @@ class Unsubscribe(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1492,7 +1492,7 @@ class Unsubscribed(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1579,7 +1579,7 @@ class Event(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1712,7 +1712,7 @@ class Call(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1852,7 +1852,7 @@ class Cancel(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -1955,7 +1955,7 @@ class Result(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2065,7 +2065,7 @@ class Register(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2167,7 +2167,7 @@ class Registered(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2237,7 +2237,7 @@ class Unregister(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2302,7 +2302,7 @@ class Unregistered(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2409,7 +2409,7 @@ class Invocation(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2587,7 +2587,7 @@ class Interrupt(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
@@ -2691,7 +2691,7 @@ class Yield(Message):
       :param wmsg: The unserialized raw message.
       :type wmsg: list
 
-      :returns obj -- An instance of this class.
+      :returns: obj -- An instance of this class.
       """
       ## this should already be verified by WampSerializer.unserialize
       ##
