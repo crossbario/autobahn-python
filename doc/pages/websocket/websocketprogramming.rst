@@ -1,10 +1,6 @@
 Programming with WebSocket
 ==========================
 
-.. contents:: Table of Contents
-   :depth: 3
-   :backlinks: top
-
 FIXME: rewrite TOC to task oriented style (e.g. "Sending and Receiving Messages", "WebSocket Connection Lifecycle")
 
 Creating Server Applications
