@@ -1,17 +1,11 @@
 API Reference
 =============
 
-The following is a complete API reference of |ab|.
+The following is a complete API reference of |Ab|.
 
-.. note::
+This isn't intended for learning how to program with |Ab|, since it doesn't explain how parts work together. It is useful to lookup things like parameter names and types.
 
-   This isn't intended for learning how to program with |ab|, since it doesn't explain how parts work together. It is useful to lookup things like parameter names and types.
-
-.. warning::
-
-   Also note that this is a *complete* reference of both the *public* API and the *internal* API of |ab|.
-
-   As a user, you should only rely onl the *public* API, since internal APIs can (and often do) change without any guarantees.
+Also note that this is a *complete* reference of both the *public* API and the *internal* API of |Ab|. As a user, you should only rely on the *public* API, since internal APIs can (and often do) change without any guarantees.
 
 
 Subpackages
