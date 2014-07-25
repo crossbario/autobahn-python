@@ -48,7 +48,7 @@ footer {
 
 dl.class, dl.exception, dl.function {
    margin-top: 24px;
-   box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.3);
+   box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
    padding: 12px;
 }
 
@@ -58,13 +58,13 @@ dl.method, dl.attribute, dl.staticmethod {
 }
 
 dl.exception {
-   border-left: 5px solid #f44;
+   border-left: 5px solid rgba(255,80,80,0.6);
 }
 
 dl.class {
-   border-left: 5px solid #44f;
+   border-left: 5px solid rgba(80,80,255,0.6);
 }
 
 dl.function {
-   border-left: 5px solid #ff4;
+   border-left: 5px solid rgba(255,255,80,0.6);
 }
