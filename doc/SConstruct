@@ -46,6 +46,8 @@ import os
 import json
 import pkg_resources
 
+os.environ['PYTHONPATH'] = '../autobahn'
+
 taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
 #taschenmesser = "../../../infrequent/taschenmesser"
 env = Environment(tools = ['default', 'taschenmesser'],
