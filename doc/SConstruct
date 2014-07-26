@@ -31,7 +31,7 @@ IMG_GEN_DIR    = "_static/img/gen"
 DOCSDIR = '_build'
 
 ## Contains fingerprints of uploaded files
-UPLOADED = '_upload'
+UPLOADED = '_build_uploaded'
 
 ## The Tavendo S3 Bucket to upload to
 BUCKET = 'autobahn.ws'
