@@ -48,3 +48,7 @@ scons -uc
 ```
 
 to cleanup.
+
+sphinx-apidoc -o ./reference ../autobahn/autobahn/
+
+http://svn.python.org/projects/external/Sphinx-1.2/doc/templating.rst

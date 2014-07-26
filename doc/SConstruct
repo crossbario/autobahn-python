@@ -23,8 +23,10 @@ SVG_FILES = [
 IMG_SOURCE_DIR = "design"
 IMG_GEN_DIR    = "_static/img/gen"
 
-DOCSDIR = '_build/html'
-S3DIR = '_upload'
+DOCSDIR = '_build'
+UPLOADED = '_upload'
+BUCKET = 'autobahn.ws'
+BUCKET_PREFIX = 'python'
 
 
 
@@ -32,60 +34,37 @@ import os
 import json
 import pkg_resources
 
-taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
-#taschenmesser = "../../../infrequent/taschenmesser"
+#taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
+taschenmesser = "../../../infrequent/taschenmesser"
 env = Environment(tools = ['default', 'taschenmesser'],
                   toolpath = [taschenmesser],
                   ENV = os.environ)
 
-## build optimized SVGs, PNGs and gzipped versions of the former
-## inside IMG_GEN_DIR
+## Process SVGs
 ##
-imgs = []
-for svg in SVG_FILES:
-   svgOpt = env.Scour("%s/%s" % (IMG_GEN_DIR, svg),
-                      "%s/%s" % (IMG_SOURCE_DIR, svg),
-                      SCOUR_OPTIONS = {'enable_viewboxing': True})
-   imgs.append(svgOpt)
-   imgs.append(env.GZip("%s.gz" % svgOpt[0], svgOpt))
-   png = env.Svg2Png("%s.png" % os.path.splitext(str(svgOpt[0]))[0], svgOpt, SVG2PNG_OPTIONS = {})
-   imgs.append(png)
-   imgs.append(env.GZip("%s.gz" % png[0], png))
+imgs = env.process_svg(SVG_FILES, IMG_SOURCE_DIR, IMG_GEN_DIR)
 
-#Alias("img", imgs)
+Alias("img", imgs)
 
 
-##
 ## Sphinx Build
 ##
 docs = env.Command(DOCSDIR, [], "sphinx-build -b html . $TARGET")
+
 env.AlwaysBuild(docs)
-Depends(docs, imgs)
 Clean(docs, DOCSDIR)
+Alias("doc", docs)
+
+Default([imgs, docs])
 
 
-##
 ## Upload to Amazon S3
 ##
-uploaded = env.s3_dir_uploader(S3DIR, DOCSDIR, 'autobahn.ws', 'python/')
+uploaded = env.s3_dir_uploader(UPLOADED, DOCSDIR, BUCKET, BUCKET_PREFIX)
 
-# env['S3_RELPATH'] = DOCSDIR
-# env['S3_BUCKET'] = 'autobahn.ws'
-# env['S3_BUCKET_PREFIX'] = 'python/' # note the trailing slash!
-# env['S3_OBJECT_ACL'] = 'public-read'
+Depends(uploaded, docs)
+Depends(uploaded, imgs)
 
-# uploaded = []
-# import fnmatch
+Clean(uploaded, UPLOADED)
 
-# for root, dirnames, filenames in os.walk(DOCSDIR):
-#    if not root.endswith('.doctrees'):
-#       for filename in filenames:
-#          if not fnmatch.fnmatch(filename, '*.s3'):
-#             source = os.path.join(root, filename)
-#             target = os.path.join(S3DIR, source)
-#             uploaded.append(env.S3('{}.s3'.format(target), source))
-
-# Depends(uploaded, docs)
-# Clean(docs, S3DIR)
-# Alias("publish", uploaded)
-
+Alias("publish", uploaded)
