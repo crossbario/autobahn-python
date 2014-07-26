@@ -8,7 +8,7 @@ Site Contents
 
    index
    installation
-   websocket/websocketprogramming
-   wamp/wampprogramming
+   websocket/programming
+   wamp/programming
    reference/autobahn
    changelog
