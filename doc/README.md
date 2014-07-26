@@ -44,18 +44,18 @@ scons -uc
 
 > Note: this section is only relevant for administrators of the [Autobahn web site](http://autobahn.ws/).
 
-To publish to the Autobahn web site ([here](http://autobahn.ws/)), you will need [SCons](http://scons.org/) and [Taschenmesser](https://pypi.python.org/pypi/taschenmesser).
+Publishing requires a **2 step process**.
 
-Then do
+**First** do
 
 ```sh
 scons
 ```
 
-once to build the docs and then do
+to build the docs and **second** do
 
 ```sh
 scons publish
 ```
 
-to publish the docs.
+to actually publish the docs.
