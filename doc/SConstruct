@@ -16,26 +16,38 @@
 ##
 ###############################################################################
 
+## Image file names to process
 SVG_FILES = [
    "autobahnpython.svg"
 ]
 
+## Directory with image files to process
 IMG_SOURCE_DIR = "design"
+
+## Processed image files are placed here
 IMG_GEN_DIR    = "_static/img/gen"
 
+## Directory to upload
 DOCSDIR = '_build'
+
+## Contains fingerprints of uploaded files
 UPLOADED = '_upload'
+
+## The Tavendo S3 Bucket to upload to
 BUCKET = 'autobahn.ws'
+
+## The Bucket Prefix to upload files to
 BUCKET_PREFIX = 'python'
 
+### END OF CONFIG #############################################################
 
 
 import os
 import json
 import pkg_resources
 
-#taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
-taschenmesser = "../../../infrequent/taschenmesser"
+taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
+#taschenmesser = "../../../infrequent/taschenmesser"
 env = Environment(tools = ['default', 'taschenmesser'],
                   toolpath = [taschenmesser],
                   ENV = os.environ)
@@ -68,3 +80,12 @@ Depends(uploaded, imgs)
 Clean(uploaded, UPLOADED)
 
 Alias("publish", uploaded)
+
+
+## Run a test Web server
+##
+test = env.Command(None, [imgs, docs], 'twistd.py web -n -p 8080 --path="./_build/"')
+#test = env.Command(None, [imgs, docs], 'python -m SimpleHTTPServer 8080') # cannot set path here =(
+
+env.AlwaysBuild(test)
+Alias("test", test)
