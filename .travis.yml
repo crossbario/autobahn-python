@@ -13,8 +13,8 @@ env:
   - TOXENV = py27asyncio
   - TOXENV = py33asyncio
   - TOXENV = py34asyncio
-  - TOXENV = pypy2twisted
-  - TOXENV = pypy2asyncio
+#  - TOXENV = pypy2twisted
+#  - TOXENV = pypy2asyncio
 
 # This reportedly works around an issue downloading packages from pypi on
 # travis. Consider removing this after the underlying issue is fixed.
