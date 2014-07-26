@@ -23,7 +23,7 @@ SVG_FILES = [
 IMG_SOURCE_DIR = "design"
 IMG_GEN_DIR    = "_static/img/gen"
 
-DOCSDIR = '_build'
+DOCSDIR = '_build/html'
 S3DIR = '_upload'
 
 
@@ -51,6 +51,9 @@ for svg in SVG_FILES:
    png = env.Svg2Png("%s.png" % os.path.splitext(str(svgOpt[0]))[0], svgOpt, SVG2PNG_OPTIONS = {})
    imgs.append(png)
    imgs.append(env.GZip("%s.gz" % png[0], png))
+
+#Alias("img", imgs)
+
 
 ##
 ## Sphinx Build

@@ -46,8 +46,9 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
-clean:
-	rm -rf $(BUILDDIR)/*
+clean:	
+	rm -rf $(BUILDDIR)
+	mkdir $(BUILDDIR)
 
 api:
 	sphinx-apidoc -o ./reference ../autobahn/autobahn/
