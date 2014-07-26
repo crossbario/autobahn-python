@@ -3,18 +3,18 @@ language: python
 install:
   - pip install tox 
 
+env:
+  - TOX_ENV = py26twisted
+  - TOX_ENV = py26asyncio
+  - TOX_ENV = py27twisted
+  - TOX_ENV = py27asyncio
+  - TOX_ENV = py33asyncio
+  - TOX_ENV = py34asyncio
+#  - TOX_ENV = pypy2twisted
+#  - TOX_ENV = pypy2asyncio
+
 script:
   - tox -c autobahn/tox.ini -e $TOX_ENV
-
-env:
-  - TOXENV = py26twisted
-  - TOXENV = py26asyncio
-  - TOXENV = py27twisted
-  - TOXENV = py27asyncio
-  - TOXENV = py33asyncio
-  - TOXENV = py34asyncio
-#  - TOXENV = pypy2twisted
-#  - TOXENV = pypy2asyncio
 
 # This reportedly works around an issue downloading packages from pypi on
 # travis. Consider removing this after the underlying issue is fixed.
