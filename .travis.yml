@@ -4,14 +4,14 @@ install:
   - pip install tox 
 
 env:
-  - TOX_ENV = py26twisted
-  - TOX_ENV = py26asyncio
-  - TOX_ENV = py27twisted
-  - TOX_ENV = py27asyncio
-  - TOX_ENV = py33asyncio
-  - TOX_ENV = py34asyncio
-#  - TOX_ENV = pypy2twisted
-#  - TOX_ENV = pypy2asyncio
+  - TOX_ENV=py26twisted
+  - TOX_ENV=py26asyncio
+  - TOX_ENV=py27twisted
+  - TOX_ENV=py27asyncio
+  - TOX_ENV=py33asyncio
+  - TOX_ENV=py34asyncio
+#  - TOX_ENV=pypy2twisted
+#  - TOX_ENV=pypy2asyncio
 
 script:
   - tox -c autobahn/tox.ini -e $TOX_ENV
