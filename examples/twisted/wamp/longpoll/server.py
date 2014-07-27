@@ -27,7 +27,7 @@ from twisted.internet.endpoints import serverFromString
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.wamp import router, types
+from autobahn.wamp import types
 from autobahn.twisted.util import sleep
 
 from autobahn.twisted import wamp, websocket
@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   router_factory = router.RouterFactory()
+   router_factory = wamp.RouterFactory()
    session_factory = wamp.RouterSessionFactory(router_factory)
 
    component_config = types.ComponentConfig(realm = "realm1")

@@ -177,7 +177,7 @@ if __name__ == '__main__':
 
    ## create a WAMP router factory
    ##
-   from autobahn.wamp.router import RouterFactory
+   from autobahn.twisted.wamp import RouterFactory
    router_factory = RouterFactory()
 
 
