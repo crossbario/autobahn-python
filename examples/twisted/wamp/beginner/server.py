@@ -25,7 +25,7 @@ from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.endpoints import serverFromString
 
-from autobahn.wamp import router, types
+from autobahn.wamp import types
 from autobahn.twisted.util import sleep
 from autobahn.twisted import wamp, websocket
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
    log.startLogging(sys.stdout)
 
    ## 1) create a WAMP router factory
-   router_factory = router.RouterFactory()
+   router_factory = wamp.RouterFactory()
 
    ## 2) create a WAMP router session factory
    session_factory = wamp.RouterSessionFactory(router_factory)
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
    ## 4) create a WAMP-over-WebSocket transport server factory
    transport_factory = websocket.WampWebSocketServerFactory(session_factory,
-                                                            debug = True,
+                                                            debug = False,
                                                             debug_wamp = False)
 
    ## 5) start the server from a Twisted endpoint

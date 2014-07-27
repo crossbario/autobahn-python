@@ -81,14 +81,15 @@ if __name__ == '__main__':
       serializers = None
    else:
       from autobahn.wamp.serializer import *
-      serializers = [JsonSerializer(batched=True)]
+      serializers = []
+      #serializers.append(JsonSerializer(batched = True))
       #serializers.append(MsgPackSerializer(batched = True))
-      #serializers.append(JsonSerializer())
+      serializers.append(JsonSerializer())
       #serializers.append(MsgPackSerializer())
 
    ## 2) create a WAMP-over-WebSocket transport client factory
    transport_factory = websocket.WampWebSocketClientFactory(session_factory,
-      serializers = serializers, debug = True, debug_wamp = False)
+      serializers = serializers, debug = False, debug_wamp = False)
 
    ## 3) start the client from a Twisted endpoint
    client = clientFromString(reactor, "tcp:127.0.0.1:8080")
