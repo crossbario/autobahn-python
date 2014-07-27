@@ -2,61 +2,60 @@
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Regular.ttf');
+   src: url('fonts/SourceSansPro-Regular.ttf');
    font-weight: normal;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Italic.ttf');
+   src: url('fonts/SourceSansPro-Italic.ttf');
    font-weight: normal;
    font-style: italic;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Bold.ttf');
+   src: url('fonts/SourceSansPro-Bold.ttf');
    font-weight: bold;
 }
 
 /*
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-BoldItalic.ttf');
+   src: url('fonts/SourceSansPro-BoldItalic.ttf');
    font-weight: bold;
    font-style: italic;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Semibold.ttf');
+   src: url('fonts/SourceSansPro-Semibold.ttf');
    font-weight: bold;
 }
-
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-SemiboldItalic.ttf');
+   src: url('fonts/SourceSansPro-SemiboldItalic.ttf');
    font-weight: bold;
    font-style: italic;
-}
-*/
+}*/
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Light.ttf');
+   src: url('fonts/SourceSansPro-Light.ttf');
    font-weight: 300;
 }
-
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-LightItalic.ttf');
+   src: url('fonts/SourceSansPro-LightItalic.ttf');
    font-weight: 300;
    font-style: italic;
 }
+
 
 body {
    font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
    font-size: 15px;
+   /*line-height: 1.5em;*/
 }
 
 h1 {
@@ -75,39 +74,12 @@ h3 {
    font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
    font-weight: 300;
 }
-
-/*
-body {
-   font-family: 'Source Sans Pro', sans-serif;
-   font-size: 15px;
-}
-
-h1 {
-   font-family: 'Source Sans Pro', sans-serif;
-   font-weight: 300;
-   margin-top: 40px;
-}
-
-h2 {
-   font-family: 'Source Sans Pro', sans-serif;
-   font-weight: 300;
-   margin-top: 32px;
-}
-
-h3 {
-   font-family: 'Source Sans Pro', sans-serif;
-   font-weight: 300;
-}
-*/
 
 #logoblock {
    text-align: center;
 }
 
-#sidebar {
-   /* bs-sidenav affix-top */
-   /*padding: 8px;*/
-}
+
 
 .sidebar_block {
    padding-left: 24px;
@@ -119,7 +91,18 @@ h3 {
 }
 
 .col-md-9 {
-   padding: 8px 100px 20px 32px;
+   /*padding: 8px 100px 20px 32px;*/
+   padding-bottom: 20px;
+}
+
+.col-md-9 .section {
+   max-width: 750px;
+}
+
+@media (min-width: 992px) {
+   .col-md-9 {
+      padding-left: 32px;
+   }
 }
 
 #quicklinks > h4 {
@@ -194,11 +177,6 @@ dl.function {
     }
 }
 
-
-.col-md-3 {
-
-}
-
 .col-md-9 {
    padding-top: 38px; /* padding to avoid overlap with widget on narrow screens */
 }
@@ -207,20 +185,15 @@ dl.function {
    display: none;
 }
 
-/*.navbar-brand::before {
-   content: url('../../_static/logo.png');
-}*/
-
-
 .navbar-brand img {
    height: 29px;
    position: relative;
    bottom: 4px;
    left: 9px;
 }
+
 /* sidebar extension across the entire viewport on narrower screens */
 /* and displayed above the content needs to be prevented */
-
 /* hide the sidebar */
 /* show logo + external links part in the footer */
 
@@ -233,9 +206,6 @@ dl.function {
 
 .extendedFooter > div {
    float: left;
-}
-
-.extendedFooter #quicklinks h4 {
 }
 
 .clearBoth {
