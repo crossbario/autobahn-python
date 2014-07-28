@@ -6,8 +6,8 @@ Latest release: v\ |version| (:ref:`Changelog`)
 .. raw:: html
 
    <p>
-   <a href="https://travis-ci.org/tavendo/AutobahnPython"><img src="https://travis-ci.org/tavendo/AutobahnPython.png?branch=master" /></a>
-   <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/d/autobahn/badge.png" /></a>
+   <a href="https://travis-ci.org/tavendo/AutobahnPython"><img src="https://travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" /></a>
+   <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" /></a>
    </p>
 
 |Ab| is a subproject of the `Autobahn`_ project and provides open-source implementations of
