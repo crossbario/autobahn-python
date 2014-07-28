@@ -233,3 +233,43 @@ div.highlight {
 .highlight pre {
    word-wrap: normal;
 }
+
+.table {
+   margin-top: 1.5em;
+/*   
+   border-top: 3px solid rgba(158,209,8,0.6);
+*/   
+}
+
+.table tr:first-child {
+   font-size: 18px;
+/*   
+   background-color: rgba(158,209,8,0.6);
+*/   
+   background-color: rgba(2,126,174,1.0);
+   color: #fff;
+}
+
+.table tr:first-child td {
+}
+
+ol, ul {
+   line-height: 1.6em;
+}
+
+/*
+ul {
+   list-style: none;
+}
+
+
+ul.simple > li:before {
+   content: "●";
+   content: "•";
+   color: #888;
+   color: rgba(2,126,174,0.7);
+   color: rgba(158,209,8,0.9);
+   position: relative;
+   left: -12px;
+}
+*/
