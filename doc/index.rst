@@ -176,7 +176,9 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    :hidden:
 
    installation
-   websocket/programming
+   websocket/programming   
    wamp/programming
+   websocket/examples
+   wamp/examples
    reference/autobahn
    changelog
