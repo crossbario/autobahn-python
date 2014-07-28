@@ -222,3 +222,14 @@ dl.function {
    }
 
 }
+
+
+/* pygments code block shouldn't word wrap, but show overflow on scroll */
+
+div.highlight {
+   width: 100%;
+}
+
+.highlight pre {
+   word-wrap: normal;
+}
