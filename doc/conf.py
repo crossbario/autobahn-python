@@ -284,6 +284,7 @@ html_static_path = ['_static']
 html_context = {
    'widgeturl': 'https://demo.crossbar.io/clandeckwidget'
    # 'widgeturl': 'http://127.0.0.1:8090/widget'
+   #'widgeturl': None
 }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,

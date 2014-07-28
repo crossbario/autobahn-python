@@ -2,51 +2,51 @@
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-Regular.ttf');
+   src: url('../fonts/SourceSansPro-Regular.ttf');
    font-weight: normal;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-Italic.ttf');
+   src: url('../fonts/SourceSansPro-Italic.ttf');
    font-weight: normal;
    font-style: italic;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-Bold.ttf');
+   src: url('../fonts/SourceSansPro-Bold.ttf');
    font-weight: bold;
 }
 
 /*
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-BoldItalic.ttf');
+   src: url('../fonts/SourceSansPro-BoldItalic.ttf');
    font-weight: bold;
    font-style: italic;
 }
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-Semibold.ttf');
+   src: url('../fonts/SourceSansPro-Semibold.ttf');
    font-weight: bold;
 }
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-SemiboldItalic.ttf');
+   src: url('../fonts/SourceSansPro-SemiboldItalic.ttf');
    font-weight: bold;
    font-style: italic;
 }*/
 
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-Light.ttf');
+   src: url('../fonts/SourceSansPro-Light.ttf');
    font-weight: 300;
 }
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('fonts/SourceSansPro-LightItalic.ttf');
+   src: url('../fonts/SourceSansPro-LightItalic.ttf');
    font-weight: 300;
    font-style: italic;
 }
