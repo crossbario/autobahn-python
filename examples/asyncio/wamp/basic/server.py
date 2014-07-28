@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
    ## create a WAMP router factory
    ##
-   from autobahn.wamp.router import RouterFactory
+   from autobahn.asyncio.wamp import RouterFactory
    router_factory = RouterFactory()
 
 

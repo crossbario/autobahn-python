@@ -25,7 +25,6 @@ from twisted.python import log
 from twisted.internet.defer import inlineCallbacks, Deferred, DeferredList
 from twisted.internet.endpoints import serverFromString
 
-from autobahn.wamp import router
 from autobahn.twisted.util import sleep
 from autobahn.twisted import wamp, websocket
 
@@ -253,7 +252,7 @@ if __name__ == '__main__':
 
    ## create a WAMP router factory
    ##
-   from autobahn.wamp.router import RouterFactory
+   from autobahn.twisted.wamp import RouterFactory
    router_factory = RouterFactory()
 
 

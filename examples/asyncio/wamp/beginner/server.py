@@ -26,7 +26,6 @@ except ImportError:
    ## Trollius >= 0.3 was renamed
    import trollius as asyncio
 
-from autobahn.wamp import router
 from autobahn.asyncio import wamp, websocket
 
 
@@ -65,7 +64,7 @@ class MyBackendComponent(wamp.ApplicationSession):
 if __name__ == '__main__':
 
    ## 1) create a WAMP router factory
-   router_factory = router.RouterFactory()
+   router_factory = wamp.RouterFactory()
 
    ## 2) create a WAMP router session factory
    session_factory = wamp.RouterSessionFactory(router_factory)
