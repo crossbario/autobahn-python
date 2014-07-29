@@ -78,7 +78,10 @@ checkout a tagged release
    cd AutobahnPython
    git checkout v0.8.12
 
-and install
+.. warning::
+   You should only use *tagged* releases, not *trunk*. The latest code from *trunk* might be broken, unfinished and untested. So you have been warned;)
+
+To install
 
 .. code-block:: sh
 
@@ -90,6 +93,8 @@ You can also use Pip for the last step, which allows to specify install variants
 .. code-block:: sh
 
    pip install -e .[twisted]
+
+
 
 
 Install Variants

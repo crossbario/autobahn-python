@@ -288,31 +288,48 @@ span.pre {
 }
 
 div.admonition {
-   padding: 0.6em 1em 0.8em 1em;
-   margin: 1.5em auto 1.5em auto;
+   padding: 0.5em 0.8em 0.6em 0.8em;
+   margin: 1.5em auto 1.5em 1em;
 }
 
 .alert-info, .alert-warning, .alert-tip {
-   background-color: rgba(2,126,174,0.8);
+   background-color: #fff;
    background-image: none;
-   color: #fff;
+
    border: none;
    border-radius: 0;
    width: 90%;
-   margin: auto;
    text-shadow: none;
-   font-size: 14px;
+   font-size: 13px;
+
+   color: rgba(0,0,0,0.8);
+   border: 2px solid rgba(2,126,174,0.7);
+   border-left: 6px solid rgba(2,126,174,0.7);
 }
 
-.warning {
-   background-color: rgba(255,0,0,0.7);
-}
-
-.tip {
-   background-color: rgba(68,154,5,0.8);
-}
 
 p.admonition-title {
-   font-weight: normal;
-   font-size: 18px;
+   color: rgba(2,126,174,0.7);
+   font-weight: bold;
+   font-size: 16px;
+}
+
+
+.warning {
+   border: 2px solid rgba(255,0,0,0.5);
+   border-left: 6px solid rgba(255,0,0,0.5);
+}
+
+.warning p.admonition-title {
+   color: rgba(255,0,0,0.8);
+}
+
+
+.tip {
+   border: 2px solid rgba(158,209,8,1.0);
+   border-left: 6px solid rgba(158,209,8,1.0);
+}
+
+.tip p.admonition-title {
+   color: rgba(158,209,8,1.0);
 }

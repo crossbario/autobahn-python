@@ -16,7 +16,7 @@ Related Information:
 Creating Servers
 ----------------
 
-Using |ab| you can create WebSocket servers that will be able to talk to any (compliant) WebSocket client, including browsers.
+Using |Ab| you can create WebSocket servers that will be able to talk to any (compliant) WebSocket client, including browsers.
 
 We'll cover how to define the behavior of your WebSocket server by writing protocol classes and show some boilerplate for actually running a WebSocket server using the behavior defined in the server protocol.
 
@@ -97,7 +97,7 @@ When the ``payload`` is **text** (``isBinary == False``), the bytes received wil
 
    s = payload.decode('utf8')
 
-.. note::
+.. tip::
 
    You don't need to validate the bytes for actually being valid UTF8 - |ab| does that already when receiving the message.
 
@@ -118,7 +118,7 @@ Hence, to send a WebSocket text message, you will usually *encode* the payload t
    payload = s.encode('utf8')
    self.sendMessage(payload, isBinary = False)
 
-.. note::
+.. warning::
 
    |ab| will NOT validate the bytes of a text ``payload`` for actually being valid UTF8. You MUST ensure that you only provide valid UTF8 when sending text messages. If you produce invalid UTF8, a conforming WebSocket peer will close the WebSocket connection due to the protocol violation.
 
