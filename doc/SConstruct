@@ -87,8 +87,9 @@ Alias("publish", uploaded)
 
 ## Run a test Web server
 ##
-test = env.Command(None, [imgs, docs], 'twistd.py web -n -p 8080 --path="./_build/"')
+#test = env.Command(None, [imgs, docs], 'twistd.py web -n -p 8080 --path="./_build/"')
 #test = env.Command(None, [imgs, docs], 'python -m SimpleHTTPServer 8080') # cannot set path here =(
+#test = env.Command(None, [imgs, docs], 'python serve.py --root ./_build --silence')
 
-env.AlwaysBuild(test)
-Alias("test", test)
+#env.AlwaysBuild(test)
+#Alias("test", test)
