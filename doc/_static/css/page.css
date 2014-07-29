@@ -143,7 +143,7 @@ dl.function {
 /* snippet taken from http://stackoverflow.com/questions/18192082/bootstrap-3-navbar-collapse */
 /* cleaner way would be to recompile from LESS source */
 
-@media (max-width: 1200px) {
+@media (max-width: 800px) {
     .navbar-header {
         float: none;
     }
@@ -176,6 +176,11 @@ dl.function {
         overflow: hidden!important;
     }
 }
+
+li.hidden-sm {
+   display: none;
+}
+
 
 .col-md-9 {
    padding-top: 38px; /* padding to avoid overlap with widget on narrow screens */
@@ -280,4 +285,34 @@ ul.simple > li:before {
 span.pre {
    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
    font-size: 14px;   
+}
+
+div.admonition {
+   padding: 0.6em 1em 0.8em 1em;
+   margin: 1.5em auto 1.5em auto;
+}
+
+.alert-info, .alert-warning, .alert-tip {
+   background-color: rgba(2,126,174,0.8);
+   background-image: none;
+   color: #fff;
+   border: none;
+   border-radius: 0;
+   width: 90%;
+   margin: auto;
+   text-shadow: none;
+   font-size: 14px;
+}
+
+.warning {
+   background-color: rgba(255,0,0,0.7);
+}
+
+.tip {
+   background-color: rgba(68,154,5,0.8);
+}
+
+p.admonition-title {
+   font-weight: normal;
+   font-size: 18px;
 }

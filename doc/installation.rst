@@ -11,7 +11,10 @@ Requirements
 * `Twisted`_
 * `asyncio`_
 
-You will need at least one of those. Most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio, so you are free to choose the underlying networking framework based on your own criteria.
+You will need at least one of those.
+
+.. note::
+   Most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio, so you are free to choose the underlying networking framework based on your own criteria.
 
 For Twisted installation, please see `here <http://twistedmatrix.com/>`_. Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`_. For Python 2, `trollius`_ will work.
 

@@ -18,6 +18,7 @@
 
 ## Image file names to process
 SVG_FILES = [
+   "autobahn.svg",
    "autobahnpython.svg"
 ]
 
