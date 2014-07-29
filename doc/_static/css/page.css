@@ -236,18 +236,20 @@ div.highlight {
 
 .table {
    margin-top: 1.5em;
-/*   
+/*
    border-top: 3px solid rgba(158,209,8,0.6);
-*/   
+*/
+   border-top: 2px solid rgba(2,126,174,0.8);
 }
 
 .table tr:first-child {
-   font-size: 18px;
+   font-weight: bold;
 /*   
+   font-size: 18px;
    background-color: rgba(158,209,8,0.6);
-*/   
    background-color: rgba(2,126,174,1.0);
    color: #fff;
+*/   
 }
 
 .table tr:first-child td {
@@ -273,3 +275,9 @@ ul.simple > li:before {
    left: -12px;
 }
 */
+
+
+span.pre {
+   font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+   font-size: 14px;   
+}

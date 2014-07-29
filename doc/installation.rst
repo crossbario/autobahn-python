@@ -1,16 +1,15 @@
 Installation
 ============
 
-This document describes the prerequisites and the installation of |ab|.
+This document describes the prerequisites and the installation of |Ab|.
 
 Requirements
 ------------
 
-|ab| runs on Python on top of a networking framework, either
+|ab| runs on Python on top of these networking frameworks:
 
-
-1. `Twisted`_ or
-2. `asyncio`_
+* `Twisted`_
+* `asyncio`_
 
 You will need at least one of those. Most of Autobahn's WebSocket and WAMP features are available on both Twisted and asyncio, so you are free to choose the underlying networking framework based on your own criteria.
 
