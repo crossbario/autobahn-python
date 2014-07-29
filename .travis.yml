@@ -10,10 +10,8 @@ env:
   - TOX_ENV=py27asyncio
   - TOX_ENV=py33asyncio
   - TOX_ENV=py34asyncio
-
-# disabled until I find out how to select pypy, not pypy3 on Travis
-#  - TOX_ENV=pypy2twisted
-#  - TOX_ENV=pypy2asyncio
+  - TOX_ENV=pypy2twisted
+  - TOX_ENV=pypy2asyncio
 
 script:
   - tox -c autobahn/tox.ini -e $TOX_ENV
