@@ -350,6 +350,10 @@ p.admonition-title {
 /* fontstack testing */
 /*********************/
 
+/*body {
+   font-family: "Segoe UI", "Source Sans Pro", sans-serif;
+}*/
+
 body.native {
    font-family: "Segoe UI", "Lucida Grande", sans-serif;
 }
