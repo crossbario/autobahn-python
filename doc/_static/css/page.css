@@ -1,3 +1,24 @@
+ Open Sans */
+@font-face {
+   font-family: 'Open Sans';
+   src: url('../fonts/OpenSans-Regular.ttf');
+}
+@font-face {
+   font-family: 'Open Sans';
+   src: url('../fonts/OpenSans-Bold.ttf');
+   font-weight: bold;
+}
+@font-face {
+   font-family: 'Open Sans';
+   src: url('../fonts/OpenSans-Italic.ttf');
+   font-style: italic;
+}
+@font-face {
+   font-family: 'Open Sans';
+   src: url('../fonts/OpenSans-Light.ttf');
+   font-weight: 300;
+}
+
 /* Source Sans Pro */
 
 @font-face {
@@ -5,28 +26,12 @@
    src: url('../fonts/SourceSansPro-Regular.ttf');
    font-weight: normal;
 }
-
 @font-face {
    font-family: 'Source Sans Pro';
    src: url('../fonts/SourceSansPro-Italic.ttf');
    font-weight: normal;
    font-style: italic;
 }
-
-@font-face {
-   font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Bold.ttf');
-   font-weight: bold;
-}
-
-/*
-@font-face {
-   font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-BoldItalic.ttf');
-   font-weight: bold;
-   font-style: italic;
-}
-
 @font-face {
    font-family: 'Source Sans Pro';
    src: url('../fonts/SourceSansPro-Semibold.ttf');
@@ -34,44 +39,62 @@
 }
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-SemiboldItalic.ttf');
-   font-weight: bold;
-   font-style: italic;
-}*/
-
-@font-face {
-   font-family: 'Source Sans Pro';
    src: url('../fonts/SourceSansPro-Light.ttf');
    font-weight: 300;
 }
+
+/* Segoe UI */
+/* define here for used weights & styles so that
+font-weight & style declarations work for this + the fallback
+web font */
+
 @font-face {
-   font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-LightItalic.ttf');
-   font-weight: 300;
+   font-family: 'Segoe UI';
+   src: local('Segoe UI');
+   font-weight: normal;
+}
+@font-face {
+   font-family: 'Segoe UI';
+   src: local('Segoe UI Italic');
+   font-weight: normal;
    font-style: italic;
+}
+@font-face {
+   font-family: 'Segoe UI';
+   src: local('Segoe UI Bold');
+   font-weight: bold;
+}
+@font-face {
+   font-family: 'Segoe UI';
+   src: local('Segoe UI Light');
+   font-weight: 300;
 }
 
 
 body {
-   font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+   /*font-family: 'Segoe UI', sans-serif;*/
    font-size: 15px;
    /*line-height: 1.5em;*/
 }
 
+body.native {
+
+}
+
 h1 {
-   font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
+   /*font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;*/
    font-weight: 300;
    margin-top: 40px;
 }
 
 h2 {
-   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
+   /*font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;*/
    font-weight: 300;
    margin-top: 32px;
 }
 
 h3 {
-   font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;
+   /*font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;*/
    font-weight: 300;
 }
 
@@ -282,7 +305,7 @@ ol, ul {
 
 span.pre {
    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
-   font-size: 14px;   
+   font-size: 14px;
 }
 
 div.admonition {
@@ -311,7 +334,7 @@ p.admonition-title {
 }
 
 .note {
-   border-left: 12px solid rgba(2, 126, 174, 0.7);   
+   border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
 .warning {
@@ -320,4 +343,33 @@ p.admonition-title {
 
 .tip {
    border-left: 12px solid rgba(255, 230, 40, 0.7);
+}
+
+
+/*********************/
+/* fontstack testing */
+/*********************/
+
+body.native {
+   font-family: "Segoe UI", "Lucida Grande", sans-serif;
+}
+
+body.openSans {
+   font-family: "Open Sans", sans-serif;
+}
+
+body.sourceSans {
+   font-family: "Source Sans Pro";
+}
+
+
+button.selected {
+   background-color: green;
+}
+
+.fontstackButtons {
+   width: 100%;
+   position: fixed;
+   bottom: 0;
+   left: 0;
 }

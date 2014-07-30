@@ -69,4 +69,37 @@
    <!-- community widget stripped! -->
 {% endif %}
 
+<div class="fontstackButtons">
+   <button id="default" onclick="changeFontStack('default')" class="selected">Browser default</button>
+   <button id="native" onclick="changeFontStack('native')">Native Font Stack</button>
+   <button id="openSans" onclick="changeFontStack('openSans')">Open Sans (Web font)</button>
+   <button id="sourceSans" onclick="changeFontStack('sourceSans')">Source Sans Pro (Web font)</button>
+</div>
+
+<script>
+   function changeFontStack (stack) {
+      switch (stack) {
+         case "default":
+            document.body.setAttribute("class", "default");
+            break;
+         case "native":
+            document.body.setAttribute("class", "native");
+            break;
+         case "openSans":
+            document.body.setAttribute("class", "openSans");
+            break;
+         case "sourceSans":
+            document.body.setAttribute("class", "sourceSans");
+            break;
+      }
+
+      var buttons = document.getElementsByTagName("button");
+      for (var i = 0; i < buttons.length; i++) {
+         buttons[i].classList.remove("selected");
+      }
+      document.getElementById(stack).classList.add("selected");
+
+   }
+</script>
+
 {% endblock %}
