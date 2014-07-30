@@ -284,6 +284,7 @@ div.admonition {
    width: 90%;
    text-shadow: none;
    color: rgba(0,0,0,0.6);
+   font-size: 14px;
 
    border-radius: 18px;
    border-left: 12px solid rgba(2, 126, 174, 0.7);
