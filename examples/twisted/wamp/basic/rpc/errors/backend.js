@@ -15,7 +15,7 @@ connection.onopen = function (session) {
    function sqrt(args) {
       var x = args[0];
       if (x === 0) {
-         throw "don't ask folly questions;)";
+         throw "don't ask foolish questions;)";
       }
       var res = Math.sqrt(x);
       if (res !== res) {

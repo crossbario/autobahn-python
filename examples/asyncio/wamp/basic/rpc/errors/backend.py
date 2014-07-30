@@ -50,7 +50,7 @@ class Component(ApplicationSession):
       ##
       def sqrt(x):
          if x == 0:
-            raise Exception("don't ask folly questions;)")
+            raise Exception("don't ask foolish questions;)")
          else:
             ## this also will raise, if x < 0
             return math.sqrt(x)
