@@ -101,16 +101,13 @@ def check_or_raise_extra(value, message):
 
 class Message(util.EqualityMixin):
    """
-   WAMP message base class. This is not supposed to be instantiated.
+   WAMP message base class. Implements :class:`autobahn.wamp.interfaces.IMessage`.
+
+   .. note:: This is not supposed to be instantiated.
    """
 
    def __init__(self):
-      """
-      Base constructor.
-      """
-      ## serialization cache: mapping from ISerializer instances
-      ## to serialized bytes
-      ##
+      ## serialization cache: mapping from ISerializer instances to serialized bytes
       self._serialized = {}
 
 
