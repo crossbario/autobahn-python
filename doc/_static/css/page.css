@@ -79,7 +79,13 @@ h3 {
    text-align: center;
 }
 
+ul.nav-list li {
+   font-size: 13px;
+}
 
+ul.nav-list strong {
+   font-weight: normal;
+}
 
 .sidebar_block {
    padding-left: 24px;
