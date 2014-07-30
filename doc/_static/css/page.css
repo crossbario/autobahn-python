@@ -58,18 +58,6 @@ body {
    /*line-height: 1.5em;*/
 }
 
-#sidebar {
-   /* http://www.colorzilla.com/gradient-editor/ */
-   background: rgb(214,219,191); /* Old browsers */
-   background: -moz-linear-gradient(top, rgba(214,219,191,1) 0%, rgba(254,255,232,1) 100%); /* FF3.6+ */
-   background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(214,219,191,1)), color-stop(100%,rgba(254,255,232,1))); /* Chrome,Safari4+ */
-   background: -webkit-linear-gradient(top, rgba(214,219,191,1) 0%,rgba(254,255,232,1) 100%); /* Chrome10+,Safari5.1+ */
-   background: -o-linear-gradient(top, rgba(214,219,191,1) 0%,rgba(254,255,232,1) 100%); /* Opera 11.10+ */
-   background: -ms-linear-gradient(top, rgba(214,219,191,1) 0%,rgba(254,255,232,1) 100%); /* IE10+ */
-   background: linear-gradient(to bottom, rgba(214,219,191,1) 0%,rgba(254,255,232,1) 100%); /* W3C */
-   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d6dbbf', endColorstr='#feffe8',GradientType=0 ); /* IE6-9 */
-}
-
 h1 {
    font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;
    font-weight: 300;
@@ -129,7 +117,10 @@ footer {
 dl.class, dl.exception, dl.function {
    margin-top: 24px;
    box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
-   padding: 12px;
+   padding: 16px;
+
+   border-radius: 8px;
+   border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
 dl.method, dl.attribute, dl.staticmethod {
@@ -138,15 +129,15 @@ dl.method, dl.attribute, dl.staticmethod {
 }
 
 dl.exception {
-   border-left: 5px solid rgba(255,80,80,0.6);
+   border-left: 12px solid rgba(255, 30, 0, 0.7);
 }
 
 dl.class {
-   border-left: 5px solid rgba(80,80,255,0.6);
+   border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
 dl.function {
-   border-left: 5px solid rgba(255,255,80,0.6);
+   border-left: 12px solid rgba(255, 230, 40, 0.7);
 }
 
 
@@ -250,9 +241,14 @@ div.highlight {
    word-wrap: normal;
 }
 
+.highlight .hll {
+   background-color: #ffffcc;
+   background-color: #E4E451;
+}
+
 .table {
    margin-top: 1.5em;
-   border-top: 2px solid rgba(2,126,174,0.8);
+   border-top: 2px solid #333;
 }
 
 .table tr:first-child {
@@ -286,29 +282,24 @@ div.admonition {
    color: rgba(0,0,0,0.6);
    font-size: 14px;
 
-   border-radius: 18px;
-   border-left: 12px solid rgba(2, 126, 174, 0.7);
+   border-radius: 12px;
+   border-left: 12px solid rgba(0,0,0, 0.5);
    box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
 }
-
 
 p.admonition-title {
    font-weight: bold;
    font-size: 16px;
 }
 
+.note {
+   border-left: 12px solid rgba(2, 126, 174, 0.7);   
+}
 
 .warning {
    border-left: 12px solid rgba(255, 30, 0, 0.7);
 }
 
-.warning p.admonition-title {
-}
-
-
 .tip {
    border-left: 12px solid rgba(255, 230, 40, 0.7);
-}
-
-.tip p.admonition-title {
 }

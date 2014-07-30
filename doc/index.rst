@@ -1,6 +1,8 @@
 |Ab|
 ====
 
+*Open-source real-time framework for Web, Mobile & Internet of Things.*
+
 Latest release: v\ |version| (:ref:`Changelog`)
 
 .. raw:: html
