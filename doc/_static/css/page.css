@@ -128,6 +128,10 @@ dl .table tr:first-child {
    font-weight: normal;
 }
 
+th.field-name {
+   white-space: nowrap;
+}
+
 dl.class, dl.exception, dl.function {
    margin-top: 24px;
    box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
