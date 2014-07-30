@@ -18,7 +18,8 @@
 
 from __future__ import absolute_import
 
-__all__ = ['Hello',
+__all__ = ['Message',
+           'Hello',
            'Welcome',
            'Abort',
            'Challenge',
@@ -137,9 +138,9 @@ IMessage.register(Message)
 
 class Hello(Message):
    """
-   A WAMP `HELLO` message.
+   A WAMP ``HELLO`` message.
 
-   Format: `[HELLO, Realm|uri, Details|dict]`
+   Format: ``[HELLO, Realm|uri, Details|dict]``
    """
 
    MESSAGE_TYPE = 1
@@ -150,12 +151,15 @@ class Hello(Message):
 
    def __init__(self, realm, roles, authmethods = None, authid = None):
       """
-      Message constructor.
 
       :param realm: The URI of the WAMP realm to join.
-      :type realm: str
+      :type realm: unicode
       :param roles: The WAMP roles to announce.
       :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
+      :param authmethods: The authentication methods to announce.
+      :type authmethods: list of unicode or None
+      :param authid: The authentication ID to announce.
+      :type authid: unicode or None
       """
       assert(type(realm) == six.text_type)
       assert(type(roles) == list)
@@ -165,6 +169,7 @@ class Hello(Message):
          assert(type(authmethods) == list)
          for authmethod in authmethods:
             assert(type(authmethod) == six.text_type)
+      assert(authid is None or type(authid) == six.text_type)
 
       Message.__init__(self)
       self.realm = realm
@@ -279,9 +284,9 @@ class Hello(Message):
 
 class Welcome(Message):
    """
-   A WAMP `WELCOME` message.
+   A WAMP ``WELCOME`` message.
 
-   Format: `[WELCOME, Session|id, Details|dict]`
+   Format: ``[WELCOME, Session|id, Details|dict]``
    """
 
    MESSAGE_TYPE = 2
@@ -292,10 +297,19 @@ class Welcome(Message):
 
    def __init__(self, session, roles, authid = None, authrole = None, authmethod = None, authprovider = None):
       """
-      Message constructor.
 
       :param session: The WAMP session ID the other peer is assigned.
       :type session: int
+      :param roles: The WAMP roles to announce.
+      :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
+      :param authid: The authentication ID assigned.
+      :type authid: unicode or None
+      :param authrole: The authentication role assigned.
+      :type authrole: unicode or None
+      :param authmethod: The authentication method in use.
+      :type authmethod: unicode or None
+      :param authprovider: The authentication method in use.
+      :type authprovider: unicode or None
       """
       assert(type(session) in six.integer_types)
       assert(type(roles) == list)
@@ -413,9 +427,9 @@ class Welcome(Message):
 
 class Abort(Message):
    """
-   A WAMP `ABORT` message.
+   A WAMP ``ABORT`` message.
 
-   Format: `[ABORT, Details|dict, Reason|uri]`
+   Format: ``[ABORT, Details|dict, Reason|uri]``
    """
 
    MESSAGE_TYPE = 3
@@ -425,12 +439,11 @@ class Abort(Message):
 
    def __init__(self, reason, message = None):
       """
-      Message constructor.
 
       :param reason: WAMP or application error URI for aborting reason.
-      :type reason: str
+      :type reason: unicode
       :param message: Optional human-readable closing message, e.g. for logging purposes.
-      :type message: str
+      :type message: unicode or None
       """
       assert(type(reason) == six.text_type)
       assert(message is None or type(message) == six.text_type)
@@ -496,9 +509,9 @@ class Abort(Message):
 
 class Challenge(Message):
    """
-   A WAMP `CHALLENGE` message.
+   A WAMP ``CHALLENGE`` message.
 
-   Format: `[CHALLENGE, Method|string, Extra|dict]`
+   Format: ``[CHALLENGE, Method|string, Extra|dict]``
    """
 
    MESSAGE_TYPE = 4
@@ -509,15 +522,14 @@ class Challenge(Message):
 
    def __init__(self, method, extra = None):
       """
-      Message constructor.
 
       :param method: The authentication method.
-      :type method: str
+      :type method: unicode
       :param extra: Authentication method specific information.
-      :type extra: dict
+      :type extra: dict or None
       """
       assert(type(method) == six.text_type)
-      assert(type(extra) == dict)
+      assert(extra is None or type(extra) == dict)
 
       Message.__init__(self)
       self.method = method
@@ -569,9 +581,9 @@ class Challenge(Message):
 
 class Authenticate(Message):
    """
-   A WAMP `AUTHENTICATE` message.
+   A WAMP ``AUTHENTICATE`` message.
 
-   Format: `[AUTHENTICATE, Signature|string, Extra|dict]`
+   Format: ``[AUTHENTICATE, Signature|string, Extra|dict]``
    """
 
    MESSAGE_TYPE = 5
@@ -582,10 +594,11 @@ class Authenticate(Message):
 
    def __init__(self, signature, extra = None):
       """
-      Message constructor.
 
       :param signature: The signature for the authentication challenge.
-      :type signature: str
+      :type signature: unicode
+      :param extra: Authentication method specific information.
+      :type extra: dict or None
       """
       assert(type(signature) == six.text_type)
       assert(extra is None or type(extra) == dict)
@@ -640,9 +653,9 @@ class Authenticate(Message):
 
 class Goodbye(Message):
    """
-   A WAMP `GOODBYE` message.
+   A WAMP ``GOODBYE`` message.
 
-   Format: `[GOODBYE, Details|dict, Reason|uri]`
+   Format: ``[GOODBYE, Details|dict, Reason|uri]``
    """
 
    MESSAGE_TYPE = 6
@@ -658,12 +671,11 @@ class Goodbye(Message):
 
    def __init__(self, reason = DEFAULT_REASON, message = None):
       """
-      Message constructor.
 
       :param reason: Optional WAMP or application error URI for closing reason.
-      :type reason: str
+      :type reason: unicode
       :param message: Optional human-readable closing message, e.g. for logging purposes.
-      :type message: str
+      :type message: unicode or None
       """
       assert(type(reason) == six.text_type)
       assert(message is None or type(message) == six.text_type)
@@ -729,12 +741,12 @@ class Goodbye(Message):
 
 class Heartbeat(Message):
    """
-   A WAMP `HEARTBEAT` message.
+   A WAMP ``HEARTBEAT`` message.
 
    Formats:
 
-     * `[HEARTBEAT, Incoming|integer, Outgoing|integer]`
-     * `[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]`
+   * ``[HEARTBEAT, Incoming|integer, Outgoing|integer]``
+   * ``[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]``
    """
 
    MESSAGE_TYPE = 7
@@ -745,14 +757,13 @@ class Heartbeat(Message):
 
    def __init__(self, incoming, outgoing, discard = None):
       """
-      Message constructor.
 
       :param incoming: Last incoming heartbeat processed from peer.
       :type incoming: int
       :param outgoing: Outgoing heartbeat.
       :type outgoing: int
       :param discard: Optional data that is discared by peer.
-      :type discard: str
+      :type discard: unicode or None
       """
       assert(type(incoming) in six.integer_types)
       assert(type(outgoing) in six.integer_types)
@@ -828,12 +839,13 @@ class Heartbeat(Message):
 
 class Error(Message):
    """
-   A WAMP `ERROR` message.
+   A WAMP ``ERROR`` message.
 
    Formats:
-     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]`
-     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]`
-     * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
+
+   * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]``
+   * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]``
+   * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 8
@@ -844,20 +856,19 @@ class Error(Message):
 
    def __init__(self, request_type, request, error, args = None, kwargs = None):
       """
-      Message constructor.
 
       :param request_type: The WAMP message type code for the original request.
       :type request_type: int
       :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occured for.
       :type request: int
       :param error: The WAMP or application error URI for the error that occured.
-      :type error: str
+      :type error: unicode
       :param args: Positional values for application-defined exception.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or None
       :param kwargs: Keyword values for application-defined exception.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
       """
       assert(type(request_type) in six.integer_types)
       assert(type(request) in six.integer_types)
@@ -948,12 +959,13 @@ class Error(Message):
 
 class Publish(Message):
    """
-   A WAMP `PUBLISH` message.
+   A WAMP ``PUBLISH`` message.
 
    Formats:
-     * `[PUBLISH, Request|id, Options|dict, Topic|uri]`
-     * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list]`
-     * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]`
+
+   * ``[PUBLISH, Request|id, Options|dict, Topic|uri]``
+   * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list]``
+   * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 16
@@ -972,32 +984,31 @@ class Publish(Message):
                 eligible = None,
                 discloseMe = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
       :param topic: The WAMP or application URI of the PubSub topic the event should
-                    be published to.
-      :type topic: str
+         be published to.
+      :type topic: unicode
       :param args: Positional values for application-defined event payload.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined event payload.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
       :param acknowledge: If True, acknowledge the publication with a success or
-                          error response.
-      :type acknowledge: bool
-      :param excludeMe: If True, exclude the publisher from receiving the event, even
-                        if he is subscribed (and eligible).
-      :type excludeMe: bool
+         error response.
+      :type acknowledge: bool or None
+      :param excludeMe: If ``True``, exclude the publisher from receiving the event, even
+         if he is subscribed (and eligible).
+      :type excludeMe: bool or None
       :param exclude: List of WAMP session IDs to exclude from receiving this event.
-      :type exclude: list
+      :type exclude: list of int or None
       :param eligible: List of WAMP session IDs eligible to receive this event.
-      :type eligible: list
+      :type eligible: list of int or None
       :param discloseMe: If True, request to disclose the publisher of this event
-                         to subscribers.
-      :type discloseMe: bool
+         to subscribers.
+      :type discloseMe: bool or None
       """
       assert(type(request) in six.integer_types)
       assert(type(topic) == six.text_type)
@@ -1156,9 +1167,9 @@ class Publish(Message):
 
 class Published(Message):
    """
-   A WAMP `PUBLISHED` message.
+   A WAMP ``PUBLISHED`` message.
 
-   Format: `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
+   Format: ``[PUBLISHED, PUBLISH.Request|id, Publication|id]``
    """
 
    MESSAGE_TYPE = 17
@@ -1168,7 +1179,6 @@ class Published(Message):
 
    def __init__(self, request, publication):
       """
-      Message constructor.
 
       :param request: The request ID of the original `PUBLISH` request.
       :type request: int
@@ -1225,9 +1235,9 @@ class Published(Message):
 
 class Subscribe(Message):
    """
-   A WAMP `SUBSCRIBE` message.
+   A WAMP ``SUBSCRIBE`` message.
 
-   Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
+   Format: ``[SUBSCRIBE, Request|id, Options|dict, Topic|uri]``
    """
 
    MESSAGE_TYPE = 32
@@ -1241,14 +1251,13 @@ class Subscribe(Message):
 
    def __init__(self, request, topic, match = MATCH_EXACT):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
       :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
-      :type topic: str
+      :type topic: unicode
       :param match: The topic matching method to be used for the subscription.
-      :type match: str
+      :type match: unicode
       """
       assert(type(request) in six.integer_types)
       assert(type(topic) == six.text_type)
@@ -1322,9 +1331,9 @@ class Subscribe(Message):
 
 class Subscribed(Message):
    """
-   A WAMP `SUBSCRIBED` message.
+   A WAMP ``SUBSCRIBED`` message.
 
-   Format: `[SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]`
+   Format: ``[SUBSCRIBED, SUBSCRIBE.Request|id, Subscription|id]``
    """
 
    MESSAGE_TYPE = 33
@@ -1334,9 +1343,8 @@ class Subscribed(Message):
 
    def __init__(self, request, subscription):
       """
-      Message constructor.
 
-      :param request: The request ID of the original `SUBSCRIBE` request.
+      :param request: The request ID of the original ``SUBSCRIBE`` request.
       :type request: int
       :param subscription: The subscription ID for the subscribed topic (or topic pattern).
       :type subscription: int
@@ -1391,9 +1399,9 @@ class Subscribed(Message):
 
 class Unsubscribe(Message):
    """
-   A WAMP `UNSUBSCRIBE` message.
+   A WAMP ``UNSUBSCRIBE`` message.
 
-   Format: `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
+   Format: ``[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]``
    """
 
    MESSAGE_TYPE = 34
@@ -1404,7 +1412,6 @@ class Unsubscribe(Message):
 
    def __init__(self, request, subscription):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
@@ -1461,9 +1468,9 @@ class Unsubscribe(Message):
 
 class Unsubscribed(Message):
    """
-   A WAMP `UNSUBSCRIBED` message.
+   A WAMP ``UNSUBSCRIBED`` message.
 
-   Format: `[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]`
+   Format: ``[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]``
    """
 
    MESSAGE_TYPE = 35
@@ -1473,9 +1480,8 @@ class Unsubscribed(Message):
 
    def __init__(self, request):
       """
-      Message constructor.
 
-      :param request: The request ID of the original `UNSUBSCRIBE` request.
+      :param request: The request ID of the original ``UNSUBSCRIBE`` request.
       :type request: int
       """
       assert(type(request) in six.integer_types)
@@ -1525,13 +1531,13 @@ class Unsubscribed(Message):
 
 class Event(Message):
    """
-   A WAMP `EVENT` message.
+   A WAMP ``EVENT`` message.
 
    Formats:
 
-     * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict]`
-     * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list]`
-     * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]`
+   * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict]``
+   * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list]``
+   * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 36
@@ -1542,20 +1548,19 @@ class Event(Message):
 
    def __init__(self, subscription, publication, args = None, kwargs = None, publisher = None):
       """
-      Message constructor.
 
       :param subscription: The subscription ID this event is dispatched under.
       :type subscription: int
       :param publication: The publication ID of the dispatched event.
       :type publication: int
       :param args: Positional values for application-defined exception.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined exception.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
       :param publisher: If present, the WAMP session ID of the publisher of this event.
-      :type publisher: str
+      :type publisher: int or None
       """
       assert(type(subscription) in six.integer_types)
       assert(type(publication) in six.integer_types)
@@ -1649,12 +1654,13 @@ class Event(Message):
 
 class Call(Message):
    """
-   A WAMP `CALL` message.
+   A WAMP ``CALL`` message.
 
    Formats:
-     * `[CALL, Request|id, Options|dict, Procedure|uri]`
-     * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]`
-     * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
+
+   * ``[CALL, Request|id, Options|dict, Procedure|uri]``
+   * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]``
+   * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 48
@@ -1671,20 +1677,25 @@ class Call(Message):
                 receive_progress = None,
                 discloseMe = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
       :param procedure: The WAMP or application URI of the procedure which should be called.
-      :type procedure: str
+      :type procedure: unicode
       :param args: Positional values for application-defined call arguments.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined call arguments.
-                     Must be serializable using any serializers in use.
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
       :param timeout: If present, let the callee automatically cancel
-                      the call after this ms.
-      :type timeout: int
+         the call after this ms.
+      :type timeout: int or None
+      :param receive_progress: If ``True``, indicates that the caller wants to receive
+         progressive call results.
+      :type receive_progress: bool or None
+      :param discloseMe: If ``True``, the caller requests to disclose itself to the callee.
+      :type discloseMe: bool or None
       """
       assert(type(request) in six.integer_types)
       assert(type(procedure) == six.text_type)
@@ -1811,9 +1822,9 @@ class Call(Message):
 
 class Cancel(Message):
    """
-   A WAMP `CANCEL` message.
+   A WAMP ``CANCEL`` message.
 
-   Format: `[CANCEL, CALL.Request|id, Options|dict]`
+   Format: ``[CANCEL, CALL.Request|id, Options|dict]``
    """
 
    MESSAGE_TYPE = 49
@@ -1828,16 +1839,15 @@ class Cancel(Message):
 
    def __init__(self, request, mode = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of the original `CALL` to cancel.
       :type request: int
-      :param mode: Specifies how to cancel the call (`"skip"`, `"abort"` or `"kill"`).
-      :type mode: str
+      :param mode: Specifies how to cancel the call (``"skip"``, ``"abort"`` or ``"kill"``).
+      :type mode: unicode or None
       """
       assert(type(request) in six.integer_types)
       assert(mode is None or type(mode) == six.text_type)
-      assert(mode is None or mode in [self.SKIP, self.ABORT, self.KILL])
+      assert(mode in [None, self.SKIP, self.ABORT, self.KILL])
 
       Message.__init__(self)
       self.request = request
@@ -1906,12 +1916,13 @@ class Cancel(Message):
 
 class Result(Message):
    """
-   A WAMP `RESULT` message.
+   A WAMP ``RESULT`` message.
 
    Formats:
-     * `[RESULT, CALL.Request|id, Details|dict]`
-     * `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]`
-     * `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
+
+   * ``[RESULT, CALL.Request|id, Details|dict]``
+   * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]``
+   * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 50
@@ -1921,19 +1932,18 @@ class Result(Message):
 
    def __init__(self, request, args = None, kwargs = None, progress = None):
       """
-      Message constructor.
 
       :param request: The request ID of the original `CALL` request.
       :type request: int
       :param args: Positional values for application-defined event payload.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined event payload.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
-      :param progress: If `True`, this result is a progressive call result, and subsequent
-                       results (or a final error) will follow.
-      :type progress: bool
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
+      :param progress: If ``True``, this result is a progressive call result, and subsequent
+         results (or a final error) will follow.
+      :type progress: bool or None
       """
       assert(type(request) in six.integer_types)
       assert(args is None or type(args) in [list, tuple])
@@ -2021,9 +2031,9 @@ class Result(Message):
 
 class Register(Message):
    """
-   A WAMP `REGISTER` message.
+   A WAMP ``REGISTER`` message.
 
-   Format: `[REGISTER, Request|id, Options|dict, Procedure|uri]`
+   Format: ``[REGISTER, Request|id, Options|dict, Procedure|uri]``
    """
 
    MESSAGE_TYPE = 64
@@ -2033,14 +2043,16 @@ class Register(Message):
 
    def __init__(self, request, procedure, pkeys = None, discloseCaller = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
       :param procedure: The WAMP or application URI of the RPC endpoint provided.
-      :type procedure: str
+      :type procedure: unicode
       :param pkeys: The endpoint can work for this list of application partition keys.
-      :type pkeys: list
+      :type pkeys: list of int or None
+      :param discloseCaller: If ``True``, the (registering) callee requests to disclose
+         the identity of callers whenever called.
+      :type discloseCaller: bool or None
       """
       assert(type(request) in six.integer_types)
       assert(type(procedure) == six.text_type)
@@ -2132,9 +2144,9 @@ class Register(Message):
 
 class Registered(Message):
    """
-   A WAMP `REGISTERED` message.
+   A WAMP ``REGISTERED`` message.
 
-   Format: `[REGISTERED, REGISTER.Request|id, Registration|id]`
+   Format: ``[REGISTERED, REGISTER.Request|id, Registration|id]``
    """
 
    MESSAGE_TYPE = 65
@@ -2144,9 +2156,8 @@ class Registered(Message):
 
    def __init__(self, request, registration):
       """
-      Message constructor.
 
-      :param request: The request ID of the original `REGISTER` request.
+      :param request: The request ID of the original ``REGISTER`` request.
       :type request: int
       :param registration: The registration ID for the registered procedure (or procedure pattern).
       :type registration: int
@@ -2201,9 +2212,9 @@ class Registered(Message):
 
 class Unregister(Message):
    """
-   A WAMP Unprovide message.
+   A WAMP `UNREGISTER` message.
 
-   Format: `[UNREGISTER, Request|id, REGISTERED.Registration|id]`
+   Format: ``[UNREGISTER, Request|id, REGISTERED.Registration|id]``
    """
 
    MESSAGE_TYPE = 66
@@ -2214,7 +2225,6 @@ class Unregister(Message):
 
    def __init__(self, request, registration):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
@@ -2271,9 +2281,9 @@ class Unregister(Message):
 
 class Unregistered(Message):
    """
-   A WAMP `UNREGISTERED` message.
+   A WAMP ``UNREGISTERED`` message.
 
-   Format: `[UNREGISTERED, UNREGISTER.Request|id]`
+   Format: ``[UNREGISTERED, UNREGISTER.Request|id]``
    """
 
    MESSAGE_TYPE = 67
@@ -2283,9 +2293,8 @@ class Unregistered(Message):
 
    def __init__(self, request):
       """
-      Message constructor.
 
-      :param request: The request ID of the original `UNREGISTER` request.
+      :param request: The request ID of the original ``UNREGISTER`` request.
       :type request: int
       """
       assert(type(request) in six.integer_types)
@@ -2335,12 +2344,13 @@ class Unregistered(Message):
 
 class Invocation(Message):
    """
-   A WAMP `INVOCATION` message.
+   A WAMP ``INVOCATION`` message.
 
    Formats:
-     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]`
-     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list]`
-     * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]`
+
+   * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]``
+   * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list]``
+   * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 68
@@ -2361,21 +2371,30 @@ class Invocation(Message):
                 authrole = None,
                 authmethod = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of this request.
       :type request: int
       :param registration: The registration ID of the endpoint to be invoked.
       :type registration: int
       :param args: Positional values for application-defined event payload.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined event payload.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
       :param timeout: If present, let the callee automatically cancels
-                      the invocation after this ms.
-      :type timeout: int
+         the invocation after this ms.
+      :type timeout: int or None
+      :param receive_progress: Indicates if the callee should produce progressive results.
+      :type receive_progress: bool or None
+      :param caller: The WAMP session ID of the caller.
+      :type caller: int or None
+      :param authid: The authentication ID of the caller.
+      :type authid: unicode or None
+      :param authrole: The authentication role of the caller.
+      :type authrole: unicode or None
+      :param authmethod: The authentication method under which the caller was authenticated.
+      :type authmethod: unicode or None
       """
       assert(type(request) in six.integer_types)
       assert(type(registration) in six.integer_types)
@@ -2547,9 +2566,9 @@ class Invocation(Message):
 
 class Interrupt(Message):
    """
-   A WAMP `INTERRUPT` message.
+   A WAMP ``INTERRUPT`` message.
 
-   Format: `[INTERRUPT, INVOCATION.Request|id, Options|dict]`
+   Format: ``[INTERRUPT, INVOCATION.Request|id, Options|dict]``
    """
 
    MESSAGE_TYPE = 69
@@ -2563,12 +2582,11 @@ class Interrupt(Message):
 
    def __init__(self, request, mode = None):
       """
-      Message constructor.
 
-      :param request: The WAMP request ID of the original `INVOCATION` to interrupt.
+      :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
       :type request: int
-      :param mode: Specifies how to interrupt the invocation (`"abort"` or `"kill"`).
-      :type mode: str
+      :param mode: Specifies how to interrupt the invocation (``"abort"`` or ``"kill"``).
+      :type mode: unicode or None
       """
       assert(type(request) in six.integer_types)
       assert(mode is None or type(mode) == six.text_type)
@@ -2641,12 +2659,13 @@ class Interrupt(Message):
 
 class Yield(Message):
    """
-   A WAMP `YIELD` message.
+   A WAMP ``YIELD`` message.
 
    Formats:
-     * `[YIELD, INVOCATION.Request|id, Options|dict]`
-     * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list]`
-     * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
+
+   * ``[YIELD, INVOCATION.Request|id, Options|dict]``
+   * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list]``
+   * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]``
    """
 
    MESSAGE_TYPE = 70
@@ -2657,19 +2676,18 @@ class Yield(Message):
 
    def __init__(self, request, args = None, kwargs = None, progress = None):
       """
-      Message constructor.
 
       :param request: The WAMP request ID of the original call.
       :type request: int
       :param args: Positional values for application-defined event payload.
-                   Must be serializable using any serializers in use.
-      :type args: list
+         Must be serializable using any serializers in use.
+      :type args: list or tuple or None
       :param kwargs: Keyword values for application-defined event payload.
-                     Must be serializable using any serializers in use.
-      :type kwargs: dict
-      :param progress: If `True`, this result is a progressive invocation result, and subsequent
-                       results (or a final error) will follow.
-      :type progress: bool
+         Must be serializable using any serializers in use.
+      :type kwargs: dict or None
+      :param progress: If ``True``, this result is a progressive invocation result, and subsequent
+         results (or a final error) will follow.
+      :type progress: bool or None
       """
       assert(type(request) in six.integer_types)
       assert(args is None or type(args) in [list, tuple])
