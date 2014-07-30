@@ -140,7 +140,7 @@ Calling Procedures
 Standard Calls
 ..............
 
-Calling remote procedure with WAMP and **Autobahn**|Python is easy and probably quickest to introduce by giving examples.
+Calling remote procedure with WAMP and |Ab| is easy and probably quickest to introduce by giving examples.
 
 For example, here is how you call a remote procedure that takes no arguments and returns a single result - the current time:
 

@@ -16,16 +16,19 @@
 ##
 ###############################################################################
 
-__all__ = ['WebSocketAdapterProtocol',
-           'WebSocketServerProtocol',
-           'WebSocketClientProtocol',
-           'WebSocketAdapterFactory',
-           'WebSocketServerFactory',
-           'WebSocketClientFactory',
-           'WampWebSocketServerProtocol',
-           'WampWebSocketClientProtocol',
-           'WampWebSocketServerFactory',
-           'WampWebSocketClientFactory']
+__all__ = [
+   'WebSocketAdapterProtocol',
+   'WebSocketServerProtocol',
+   'WebSocketClientProtocol',
+   'WebSocketAdapterFactory',
+   'WebSocketServerFactory',
+   'WebSocketClientFactory',
+
+   'WampWebSocketServerProtocol',
+   'WampWebSocketClientProtocol',
+   'WampWebSocketServerFactory',
+   'WampWebSocketClientFactory'
+]
 
 from collections import deque
 

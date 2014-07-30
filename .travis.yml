@@ -22,3 +22,10 @@ script:
 # travis. Consider removing this after the underlying issue is fixed.
 # https://github.com/travis-ci/travis-ci/issues/2389
 sudo: false
+
+notifications:
+   irc:
+      channels:
+         - "irc.freenode.org#autobahn"
+      use_notice: true
+      skip_join: true

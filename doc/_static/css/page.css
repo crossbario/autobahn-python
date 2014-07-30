@@ -79,7 +79,13 @@ h3 {
    text-align: center;
 }
 
+ul.nav-list li {
+   font-size: 14px;
+}
 
+ul.nav-list strong {
+   font-weight: normal;
+}
 
 .sidebar_block {
    padding-left: 24px;
@@ -91,7 +97,6 @@ h3 {
 }
 
 .col-md-9 {
-   /*padding: 8px 100px 20px 32px;*/
    padding-bottom: 20px;
 }
 
@@ -115,27 +120,42 @@ footer {
    font-size: 12px;
 }
 
+dl .table {
+   border: none;
+}
+
+dl .table tr:first-child {
+   font-weight: normal;
+}
+
+th.field-name {
+   white-space: nowrap;
+}
+
 dl.class, dl.exception, dl.function {
    margin-top: 24px;
    box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
-   padding: 12px;
+   padding: 16px;
+
+   border-radius: 8px;
+   border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
 dl.method, dl.attribute, dl.staticmethod {
-   border-top: 1px solid #ddd;
+   border-top: 1px solid #aaa;
    padding: 8px;
 }
 
 dl.exception {
-   border-left: 5px solid rgba(255,80,80,0.6);
+   border-left: 12px solid rgba(255, 30, 0, 0.7);
 }
 
 dl.class {
-   border-left: 5px solid rgba(80,80,255,0.6);
+   border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
 dl.function {
-   border-left: 5px solid rgba(255,255,80,0.6);
+   border-left: 12px solid rgba(255, 230, 40, 0.7);
 }
 
 
@@ -143,7 +163,7 @@ dl.function {
 /* snippet taken from http://stackoverflow.com/questions/18192082/bootstrap-3-navbar-collapse */
 /* cleaner way would be to recompile from LESS source */
 
-@media (max-width: 1200px) {
+@media (max-width: 800px) {
     .navbar-header {
         float: none;
     }
@@ -176,6 +196,11 @@ dl.function {
         overflow: hidden!important;
     }
 }
+
+li.hidden-sm {
+   display: none;
+}
+
 
 .col-md-9 {
    padding-top: 38px; /* padding to avoid overlap with widget on narrow screens */
@@ -234,22 +259,18 @@ div.highlight {
    word-wrap: normal;
 }
 
+.highlight .hll {
+   background-color: #ffffcc;
+   background-color: #E4E451;
+}
+
 .table {
    margin-top: 1.5em;
-/*
-   border-top: 3px solid rgba(158,209,8,0.6);
-*/
-   border-top: 2px solid rgba(2,126,174,0.8);
+   border-top: 2px solid #333;
 }
 
 .table tr:first-child {
    font-weight: bold;
-/*   
-   font-size: 18px;
-   background-color: rgba(158,209,8,0.6);
-   background-color: rgba(2,126,174,1.0);
-   color: #fff;
-*/   
 }
 
 .table tr:first-child td {
@@ -259,25 +280,44 @@ ol, ul {
    line-height: 1.6em;
 }
 
-/*
-ul {
-   list-style: none;
-}
-
-
-ul.simple > li:before {
-   content: "●";
-   content: "•";
-   color: #888;
-   color: rgba(2,126,174,0.7);
-   color: rgba(158,209,8,0.9);
-   position: relative;
-   left: -12px;
-}
-*/
-
-
 span.pre {
    font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
    font-size: 14px;   
+}
+
+div.admonition {
+   padding: 1em 1.2em 1em 1.2em;
+   margin: 1.5em auto 1.5em auto;
+}
+
+.alert-info, .alert-warning, .alert-tip {
+   background-color: #fff;
+   background-image: none;
+
+   border: none;
+   width: 90%;
+   text-shadow: none;
+   color: rgba(0,0,0,0.6);
+   font-size: 14px;
+
+   border-radius: 12px;
+   border-left: 12px solid rgba(0,0,0, 0.5);
+   box-shadow: 0 0 8px 1px rgba(0, 0, 0, 0.2);
+}
+
+p.admonition-title {
+   font-weight: bold;
+   font-size: 16px;
+}
+
+.note {
+   border-left: 12px solid rgba(2, 126, 174, 0.7);   
+}
+
+.warning {
+   border-left: 12px solid rgba(255, 30, 0, 0.7);
+}
+
+.tip {
+   border-left: 12px solid rgba(255, 230, 40, 0.7);
 }

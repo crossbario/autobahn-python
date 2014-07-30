@@ -1,6 +1,8 @@
 |Ab|
 ====
 
+*Open-source real-time framework for Web, Mobile & Internet of Things.*
+
 Latest release: v\ |version| (:ref:`Changelog`)
 
 .. raw:: html
@@ -163,8 +165,8 @@ can be found `here <http://stackoverflow.com/questions/tagged/autobahn?sort=newe
 
 The best way to search the Web for |ab| related material is by using these search terms:
 
-* ``autobahnpython`` (`try <https://www.google.com/search?q=autobahnpython>`_)
-* ``autobahnws`` (`try <https://www.google.com/search?q=autobahnws>`_)
+* ``autobahnpython`` (`try <https://www.google.com/search?q=autobahnpython>`__)
+* ``autobahnws`` (`try <https://www.google.com/search?q=autobahnws>`__)
 
 You can also reach users and developers on IRC channel ``autobahn`` at ``freenode.net``.
 

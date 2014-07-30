@@ -3,9 +3,6 @@
 WebSocket Examples
 ==================
 
-|ab| provides WebSocket both under `Twisted <http://twistedmatrix.com/>`_ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`_.
-
-
 Basic Examples
 ++++++++++++++
 
