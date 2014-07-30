@@ -1,3 +1,5 @@
+:orphan:
+
 .. _site_contents:
 
 Site Contents

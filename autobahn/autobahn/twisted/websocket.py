@@ -18,18 +18,28 @@
 
 from __future__ import absolute_import
 
-__all__ = ['WebSocketServerProtocol',
-           'WebSocketServerFactory',
-           'WebSocketClientProtocol',
-           'WebSocketClientFactory',
-           'WrappingWebSocketServerFactory',
-           'WrappingWebSocketClientFactory',
-           'listenWS',
-           'connectWS',
-           'WampWebSocketServerProtocol',
-           'WampWebSocketServerFactory',
-           'WampWebSocketClientProtocol',
-           'WampWebSocketClientFactory']
+__all__ = [
+   'WebSocketAdapterProtocol',
+   'WebSocketServerProtocol',
+   'WebSocketClientProtocol',
+   'WebSocketAdapterFactory',
+   'WebSocketServerFactory',
+   'WebSocketClientFactory',
+
+   'WrappingWebSocketAdapter',
+   'WrappingWebSocketServerProtocol',
+   'WrappingWebSocketClientProtocol',
+   'WrappingWebSocketServerFactory',
+   'WrappingWebSocketClientFactory',
+
+   'listenWS',
+   'connectWS',
+
+   'WampWebSocketServerProtocol',
+   'WampWebSocketServerFactory',
+   'WampWebSocketClientProtocol',
+   'WampWebSocketClientFactory',
+]
 
 
 from base64 import b64encode, b64decode

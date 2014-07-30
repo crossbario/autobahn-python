@@ -112,6 +112,7 @@ When using WebSocket text messages with JSON ``payload``, typical code for recei
    import json
    obj = json.loads(payload.decode('utf8'))
 
+We are using the Python standard JSON module :py:mod:`json`.
 
 The ``payload`` (which is of type ``bytes`` on Python 3 and ``str`` on Python 2) is decoded from UTF8 into a native Python string, and then parsed from JSON into a native Python object.
 
@@ -146,7 +147,9 @@ When using WebSocket text messages with JSON ``payload``, typical code for encod
    import json
    payload = json.dumps(obj, ensure_ascii = False).encode('utf8')
 
-We are using ``ensure_ascii == False` which will allow JSON to use Unicode strings. We can do this since we are encoding to UTF8 anyway which can represent the full Unicode character set.
+We are using the Python standard JSON module :py:mod:`json`.
+
+The ``ensure_ascii == False`` option allows the JSON serializer to use Unicode strings. We can do this since we are encoding to UTF8 afterwards anyway. And UTF8 can represent the full Unicode character set.
 
 ----------
 
