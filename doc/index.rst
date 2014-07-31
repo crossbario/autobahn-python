@@ -1,5 +1,5 @@
-|Ab|
-====
+|AbL|
+=====
 
 *Open-source real-time framework for Web, Mobile & Internet of Things.*
 
@@ -12,7 +12,7 @@ Latest release: v\ |version| (:ref:`Changelog`)
    <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" /></a>
    </p>
 
-|Ab| is a subproject of the `Autobahn`_ project and provides open-source implementations of
+|AbL| is a subproject of the `Autobahn`_ project and provides open-source implementations of
 
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
@@ -21,7 +21,7 @@ in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
 
 WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ in an open standard WebSocket based protocol.
 
-|Ab| features
+|AbL| features
 
 * framework for `WebSocket`_ / `WAMP`_ clients and servers
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
@@ -35,13 +35,17 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 
 and much more.
 
-Further, |Ab| is written with these goals
+Further, |AbL| is written with these goals
 
 1. high-performance, fully asynchronous and scalable code
 2. best-in-class standards conformance and security
 
-We do take those design and implementation goals quite serious. For example, |Ab| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |Ab|;)
+We do take those design and implementation goals quite serious. For example, |AbL| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |AbL|;)
 
+.. note::
+   In the following, we will just refer to |Ab| instead of the
+   more precise term |AbL| and there is no
+   ambiguity.
 
 What can I do with this stuff?
 ------------------------------

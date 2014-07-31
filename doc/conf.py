@@ -382,10 +382,11 @@ intersphinx_mapping = {
    #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
 }
 
-
 rst_epilog = """
-.. |ab| replace:: Autobahn|Python
-.. |Ab| replace:: **Autobahn**\|Python
+.. |ab| replace:: Autobahn
+.. |Ab| replace:: **Autobahn**
+.. |abL| replace:: Autobahn|Python
+.. |AbL| replace:: **Autobahn**\|Python
 .. _Autobahn: http://autobahn.ws
 .. _AutobahnJS: http://autobahn.ws/js
 .. _AutobahnPython: **Autobahn**\|Python

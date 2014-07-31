@@ -38,14 +38,7 @@ For example, here is a protocol class for a WebSocket echo server that will simp
 
 This is just three lines of code, but we will go through each one carefully, since writing protocol classes like above really is core to WebSocket programming using |ab|.
 
-----------
-
-Protocol Base Class
-...................
-
-The **first thing** to note is that you **derive** your protocol class from a base class provided by |ab|.
-
-Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
+The **first thing** to note is that you **derive** your protocol class from a base class provided by |ab|. Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
 
 * :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
 * :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
@@ -85,7 +78,7 @@ while an asyncio echo protocol would import the base protocol from ``autobahn.as
 .. _receiving-messages:
 
 Receiving Messages
-..................
+~~~~~~~~~~~~~~~~~~
 
 The **second thing** to note is that we **override a hook** ``onMessage`` which is called by |ab| whenever the hook related event happens.
 
@@ -121,7 +114,7 @@ The ``payload`` (which is of type ``bytes`` on Python 3 and ``str`` on Python 2)
 .. _sending-messages:
 
 Sending Messages
-................
+~~~~~~~~~~~~~~~~
 
 The **third thing** to note is that we **use methods** like ``sendMessage`` provided by the base class to perform WebSocket related actions, like sending a WebSocket message.
 
@@ -226,6 +219,104 @@ You can find complete code for above examples here:
 * `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
 
 
+.. _connection-lifecycle:
+
+Connection Lifecycle
+~~~~~~~~~~~~~~~~~~~~
+
+As we have seen above, |ab| will fire *callbacks* on your protocol class whenever the event related to the respective hook occurs.
+
+It it in these hooks that you will implement application specific code.
+
+The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *callbacks*:
+
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
+
+We have already seen the callback for :ref:`receiving-messages`. This callback will usually fire many times during the lifetime of a WebSocket connection.
+
+In contrast, the other three callbacks above each only fires once for a given connection.
+
+Opening Handshake
+.................
+
+Whenever a new client connects to the server, a new protocol instance will be created and the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect` hook fires as soon as the WebSocket opening handshake is begun by the client.
+
+For a WebSocket server protocol, ``onConnect()`` will fire with 
+:class:`autobahn.websocket.protocol.ConnectionRequest` providing information on the client wishing to connect via WebSocket.
+
+.. code-block:: python
+
+   class MyServerProtocol(WebSocketServerProtocol):
+
+      def onConnect(self, request):
+         print("Client connecting: {}".format(request.peer))
+
+
+On the other hand, for a WebSocket client protocol, ``onConnect()`` will fire with 
+:class:`autobahn.websocket.protocol.ConnectionResponse` providing information on the WebSocket connection that was accepted by the server.
+
+.. code-block:: python
+
+   class MyClientProtocol(WebSocketClientProtocol):
+
+      def onConnect(self, response):
+         print("Connected to Server: {}".format(response.peer))
+
+In this hook you can do thing like
+
+* checking or setting cookies or other HTTP headers
+* verifying the client IP address
+* checking the origin of the WebSocket request
+* negotiate WebSocket subprotocols
+
+For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selectec subprotocol in it's ``onConnect()`` hook in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
+
+Connection Open
+...............
+
+The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen` hook fires when the WebSocket opening handshake has been successfully completed. You now can send and receive messages over the connection.
+
+.. code-block:: python
+
+   class MyProtocol(WebSocketProtocol):
+
+      def onOpen(self):
+         print("WebSocket connection open.")
+
+
+Closing a Connection
+....................
+
+The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *methods*:
+
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
+* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
+
+We've already seen one of above in :ref:`sending-messages`.
+
+The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose` will initiate a WebSocket closing handshake. After starting to close a WebSocket connection, no messages can be sent. Eventually, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` hook will fire.
+
+After a WebSocket connection has been closed, the protocol instance will get recycled. Should the client reconnect, a new protocol instance will be created and a new WebSocket opening handshake performed.
+
+
+Connection Close
+................
+
+When the WebSocket connection has closed, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` callback fires.
+
+.. code-block:: python
+
+   class MyProtocol(WebSocketProtocol):
+
+      def onClose(self, wasClean, code, reason):
+         print("WebSocket connection closed: {}".format(reason))
+
+When the connection has closed, no messages will be received anymore and you cannot send messages also. The protocol instance won't be reused. It'll be garbage collected. When the client reconnects, a completely new protocol instance will be created.
+
+
 .. _creating-websocket-clients:
 
 Creating Clients
@@ -257,15 +348,7 @@ For example, here is a protocol class for a WebSocket client that will send a We
          else:
             print("Text message received: {0}".format(payload.decode('utf8')))
 
-
-----------
-
-Protocol Base Class
-...................
-
-Similar to WebSocket servers, you **derive** your WebSocket client protocol class from a base class provided by |ab|.
-
-Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
+Similar to WebSocket servers, you **derive** your WebSocket client protocol class from a base class provided by |ab|. Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
 
 * :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
 * :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
@@ -310,25 +393,13 @@ while an asyncio-based protocol would import the base protocol from ``autobahn.a
 
 .. note:: In this example, only the imports differs between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
 
+-------
 
-Receiving Messages
-..................
+Receiving and sending WebSocket messages as well as connection lifecycle in clients works exactly the same as with servers. Please see
 
-Receiving WebSocket messages in clients works exactly the same as with servers.
-
-Please see :ref:`receiving-messages`.
-
-----------
-
-
-Sending Messages
-................
-
-Receiving WebSocket messages in clients works exactly the same as with servers.
-
-Please see :ref:`sending-messages`.
-
-----------
+* :ref:`receiving-messages`
+* :ref:`sending-messages`
+* :ref:`connection-lifecycle`
 
 
 Running a Client
@@ -395,142 +466,6 @@ You can find complete code for above examples here:
 
 * `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
 * `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
-
-
-.. _websocket-callbacks:
-
-WebSocket Callbacks
--------------------
-
-As we have seen above, |ab| will fire *callbacks* on your protocol class whenever the event related to the respective hook occurs.
-
-It it in these hooks that you will implement application specific code.
-
-The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *callbacks*:
-
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect`
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
-
-onConnect
-~~~~~~~~~
-
-Whenever a new client connects to the server, a new protocol instance will be created and the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect` hook fires as soon as the WebSocket opening handshake is begun by the client.
-
-For a WebSocket server protocol, ``onConnect()`` will fire with 
-:class:`autobahn.websocket.protocol.ConnectionRequest` providing information on the client wishing to connect via WebSocket.
-
-.. code-block:: python
-
-   class MyServerProtocol(WebSocketServerProtocol):
-
-      def onConnect(self, request):
-         print("Client connecting: {}".format(request.peer))
-
-
-On the other hand, for a WebSocket client protocol, ``onConnect()`` will fire with 
-:class:`autobahn.websocket.protocol.ConnectionResponse` providing information on the WebSocket connection that was accepted by the server.
-
-.. code-block:: python
-
-   class MyClientProtocol(WebSocketClientProtocol):
-
-      def onConnect(self, response):
-         print("Connected to Server: {}".format(response.peer))
-
-In this hook you can do thing like
-
-* checking or setting cookies or other HTTP headers
-* verifying the client IP address
-* checking the origin of the WebSocket request
-* negotiate WebSocket subprotocols
-
-For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selectec subprotocol in it's ``onConnect()`` hook in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
-
-
-onOpen
-~~~~~~
-
-The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen` hook fires when the WebSocket opening handshake has been successfully completed. You now can send and receive messages over the connection.
-
-.. code-block:: python
-
-   class MyProtocol(WebSocketProtocol):
-
-      def onOpen(self):
-         print("WebSocket connection open.")
-
-
-onClose
-~~~~~~~
-
-When the WebSocket connection has closed, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` callback fires.
-
-.. code-block:: python
-
-   class MyProtocol(WebSocketProtocol):
-
-      def onClose(self, wasClean, code, reason):
-         print("WebSocket connection closed: {}".format(reason))
-
-When the connection has closed, no messages will be received anymore and you cannot send messages also. The protocol instance won't be reused. It'll be garbage collected. When the client reconnects, a completely new protocol instance will be created.
-
-onMessage
-~~~~~~~~~
-
-In any case, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage` hook is the most important. It is here where you implement what should happen when a new (incoming) WebSocket message was received.
-
-Example
-~~~~~~~
-
-Here is an example that overrides all of above callbacks:
-
-.. code-block:: python
-
-   class MyServerProtocol(WebSocketServerProtocol):
-
-      def onConnect(self, request):
-         print("Client connecting: {}".format(request.peer))
-
-      def onOpen(self):
-         print("WebSocket connection open.")
-
-      def onMessage(self, payload, isBinary):
-         if isBinary:
-            print("Binary message received: {} bytes".format(len(payload)))
-         else:
-            print("Text message received: {}".format(payload.decode('utf8')))
-
-         ## echo back message verbatim
-         self.sendMessage(payload, isBinary)
-
-      def onClose(self, wasClean, code, reason):
-         print("WebSocket connection closed: {}".format(reason))
-
-
-.. _websocket-methods:
-
-
-WebSocket Methods
------------------
-
-The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *methods*:
-
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage`
-* :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
-
-sendMessage
-~~~~~~~~~~~
-
-We have already seen the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessage` method for sending WebSocket messages.
-
-sendClose
-~~~~~~~~~
-
-The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose` will initiate a WebSocket closing handshake. After starting to close a WebSocket connection, no messages can be sent. Eventually, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` hook will fire.
-
-After a WebSocket connection has been closed, the protocol instance will get recycled. Should the client reconnect, a new protocol instance will be created and a new WebSocket opening handshake performed.
 
 
 
