@@ -218,157 +218,6 @@ You can find complete code for above examples here:
 * `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
 
 
-.. _creating-websocket-clients:
-
-Creating Clients
-----------------
-
-.. note::
-   Creating WebSocket clients using |Ab| works very similar to creating WebSocket servers. Hence you should have read through :ref:`creating-websocket-servers` first.
-
-As with servers, the behavior of your WebSocket client is defined by writing a *protocol class*. 
-
-
-Client Protocols
-~~~~~~~~~~~~~~~~
-
-To create a WebSocket client, you need to write a protocol class to **specify the behavior** of the client. 
-
-For example, here is a protocol class for a WebSocket client that will send a WebSocket text message as soon as it is connected and log any WebSocket messages it receives:
-
-.. code-block:: python
-
-   class MyClientProtocol(WebSocketClientProtocol):
-
-      def onOpen(self):
-         self.sendMessage(u"Hello, world!".encode('utf8'))
-
-      def onMessage(self, payload, isBinary):
-         if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload)))
-         else:
-            print("Text message received: {0}".format(payload.decode('utf8')))
-
-Similar to WebSocket servers, you **derive** your WebSocket client protocol class from a base class provided by |ab|. Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
-
-* :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
-* :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
-
-So a Twisted-based protocol would import the base protocol from ``autobahn.twisted.websocket`` and derive from :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
-
-*Twisted:*
-
-.. code-block:: python
-
-   from autobahn.twisted.websocket import WebSocketClientProtocol
-
-   class MyClientProtocol(WebSocketClientProtocol):
-
-      def onOpen(self):
-         self.sendMessage(u"Hello, world!".encode('utf8'))
-
-      def onMessage(self, payload, isBinary):
-         if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload)))
-         else:
-            print("Text message received: {0}".format(payload.decode('utf8')))
-
-while an asyncio-based protocol would import the base protocol from ``autobahn.asyncio.websocket`` and dervice from :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
-
-*asyncio:*
-
-.. code-block:: python
-
-   from autobahn.asyncio.websocket import WebSocketClientProtocol
-
-   class MyClientProtocol(WebSocketClientProtocol):
-
-      def onOpen(self):
-         self.sendMessage(u"Hello, world!".encode('utf8'))
-
-      def onMessage(self, payload, isBinary):
-         if isBinary:
-            print("Binary message received: {0} bytes".format(len(payload)))
-         else:
-            print("Text message received: {0}".format(payload.decode('utf8')))
-
-.. note:: In this example, only the imports differs between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
-
--------
-
-Receiving and sending WebSocket messages as well as connection lifecycle in clients works exactly the same as with servers. Please see
-
-* :ref:`receiving-messages`
-* :ref:`sending-messages`
-* :ref:`connection-lifecycle`
-
-
-Running a Client
-~~~~~~~~~~~~~~~~
-
-Now that we have defined the behavior of our WebSocket client, we need to actually start one that connects to a server a specific TCP port.
-
-Here is one way of doing that when using Twisted
-
-*Twisted:*
-
-.. code-block:: python
-   :emphasize-lines: 9-11
-
-   if __name__ == '__main__':
-
-      import sys
-
-      from twisted.python import log
-      from twisted.internet import reactor
-      log.startLogging(sys.stdout)
-
-      from autobahn.twisted.websocket import WebSocketClientFactory
-      factory = WebSocketClientFactory()
-      factory.protocol = MyClientProtocol
-
-      reactor.connectTCP("127.0.0.1", 9000, factory)
-      reactor.run()
-
-What we are doing here is
-
-1. Setup Twisted logging
-2. Create a ``WebSocketClientFactory`` factory and set our ``MyClientProtocol`` on the factory (the highlighted lines)
-3. Start a client using the factory, connecting to localhost ``127.0.0.1`` on TCP port 9000
-
-Similar, here is the asyncio way
-
-*asyncio:*
-
-.. code-block:: python
-   :emphasize-lines: 9-11
-
-   if __name__ == '__main__':
-
-      try:
-         import asyncio
-      except ImportError:
-         ## Trollius >= 0.3 was renamed
-         import trollius as asyncio
-
-      from autobahn.asyncio.websocket import WebSocketClientFactory
-      factory = WebSocketClientFactory()
-      factory.protocol = MyClientProtocol
-
-      loop = asyncio.get_event_loop()
-      coro = loop.create_connection(factory, '127.0.0.1', 9000)
-      loop.run_until_complete(coro)
-      loop.run_forever()
-      loop.close()
-
-As can be seen, the boilerplate to create and run a client differ from Twisted, but again, the core code of creating a factory and setting our protocol (the highlighted lines) are identical (other than the differing import for the WebSocket factory).
-
-You can find complete code for above examples here:
-
-* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
-* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
-
-
 .. _connection-lifecycle:
 
 Connection Lifecycle
@@ -465,6 +314,156 @@ When the WebSocket connection has closed, the :meth:`autobahn.websocket.interfac
          print("WebSocket connection closed: {}".format(reason))
 
 When the connection has closed, no messages will be received anymore and you cannot send messages also. The protocol instance won't be reused. It'll be garbage collected. When the client reconnects, a completely new protocol instance will be created.
+
+
+.. _creating-websocket-clients:
+
+Creating Clients
+----------------
+
+.. note::
+   Creating WebSocket clients using |Ab| works very similar to creating WebSocket servers. Hence you should have read through :ref:`creating-websocket-servers` first.
+
+As with servers, the behavior of your WebSocket client is defined by writing a *protocol class*. 
+
+
+Client Protocols
+~~~~~~~~~~~~~~~~
+
+To create a WebSocket client, you need to write a protocol class to **specify the behavior** of the client. 
+
+For example, here is a protocol class for a WebSocket client that will send a WebSocket text message as soon as it is connected and log any WebSocket messages it receives:
+
+.. code-block:: python
+
+   class MyClientProtocol(WebSocketClientProtocol):
+
+      def onOpen(self):
+         self.sendMessage(u"Hello, world!".encode('utf8'))
+
+      def onMessage(self, payload, isBinary):
+         if isBinary:
+            print("Binary message received: {0} bytes".format(len(payload)))
+         else:
+            print("Text message received: {0}".format(payload.decode('utf8')))
+
+Similar to WebSocket servers, you **derive** your WebSocket client protocol class from a base class provided by |ab|. Depending on whether you write a Twisted or a asyncio based application, here are the base classes to derive from:
+
+* :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+* :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+
+So a Twisted-based protocol would import the base protocol from ``autobahn.twisted.websocket`` and derive from :class:`autobahn.twisted.websocket.WebSocketClientProtocol`
+
+*Twisted:*
+
+.. code-block:: python
+
+   from autobahn.twisted.websocket import WebSocketClientProtocol
+
+   class MyClientProtocol(WebSocketClientProtocol):
+
+      def onOpen(self):
+         self.sendMessage(u"Hello, world!".encode('utf8'))
+
+      def onMessage(self, payload, isBinary):
+         if isBinary:
+            print("Binary message received: {0} bytes".format(len(payload)))
+         else:
+            print("Text message received: {0}".format(payload.decode('utf8')))
+
+while an asyncio-based protocol would import the base protocol from ``autobahn.asyncio.websocket`` and dervice from :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+
+*asyncio:*
+
+.. code-block:: python
+
+   from autobahn.asyncio.websocket import WebSocketClientProtocol
+
+   class MyClientProtocol(WebSocketClientProtocol):
+
+      def onOpen(self):
+         self.sendMessage(u"Hello, world!".encode('utf8'))
+
+      def onMessage(self, payload, isBinary):
+         if isBinary:
+            print("Binary message received: {0} bytes".format(len(payload)))
+         else:
+            print("Text message received: {0}".format(payload.decode('utf8')))
+
+.. note:: In this example, only the imports differs between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
+
+-------
+
+Receiving and sending WebSocket messages as well as connection lifecycle in clients works exactly the same as with servers. Please see
+
+* :ref:`receiving-messages`
+* :ref:`sending-messages`
+* :ref:`connection-lifecycle`
+
+Running a Client
+~~~~~~~~~~~~~~~~
+
+Now that we have defined the behavior of our WebSocket client, we need to actually start one that connects to a server a specific TCP port.
+
+Here is one way of doing that when using Twisted
+
+*Twisted:*
+
+.. code-block:: python
+   :emphasize-lines: 9-11
+
+   if __name__ == '__main__':
+
+      import sys
+
+      from twisted.python import log
+      from twisted.internet import reactor
+      log.startLogging(sys.stdout)
+
+      from autobahn.twisted.websocket import WebSocketClientFactory
+      factory = WebSocketClientFactory()
+      factory.protocol = MyClientProtocol
+
+      reactor.connectTCP("127.0.0.1", 9000, factory)
+      reactor.run()
+
+What we are doing here is
+
+1. Setup Twisted logging
+2. Create a ``WebSocketClientFactory`` factory and set our ``MyClientProtocol`` on the factory (the highlighted lines)
+3. Start a client using the factory, connecting to localhost ``127.0.0.1`` on TCP port 9000
+
+Similar, here is the asyncio way
+
+*asyncio:*
+
+.. code-block:: python
+   :emphasize-lines: 9-11
+
+   if __name__ == '__main__':
+
+      try:
+         import asyncio
+      except ImportError:
+         ## Trollius >= 0.3 was renamed
+         import trollius as asyncio
+
+      from autobahn.asyncio.websocket import WebSocketClientFactory
+      factory = WebSocketClientFactory()
+      factory.protocol = MyClientProtocol
+
+      loop = asyncio.get_event_loop()
+      coro = loop.create_connection(factory, '127.0.0.1', 9000)
+      loop.run_until_complete(coro)
+      loop.run_forever()
+      loop.close()
+
+As can be seen, the boilerplate to create and run a client differ from Twisted, but again, the core code of creating a factory and setting our protocol (the highlighted lines) are identical (other than the differing import for the WebSocket factory).
+
+You can find complete code for above examples here:
+
+* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
+* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
 
 
 Upgrading
