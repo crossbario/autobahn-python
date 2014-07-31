@@ -39,8 +39,7 @@ Here are the configurations supported by |ab|:
 .. _1: http://twistedmatrix.com/trac/ticket/3413
 .. _2: http://twistedmatrix.com/trac/ticket/6746
 
-Performance Note
-~~~~~~~~~~~~~~~~
+*Performance Note*
 
 |ab| is portable, well tuned code. You can further accelerate performance by
 
@@ -163,9 +162,9 @@ You can also depend on an *install variant* which automatically installs depende
 
 The latter will automatically install Twisted as a dependency.
 
+-------
 
-Where to go
------------
+*Where to go*
 
 Now you've got |Ab| installed, depending on your needs, head over to
 

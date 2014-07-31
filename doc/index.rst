@@ -158,23 +158,28 @@ For **WAMP developers**, :doc:`wamp/programming` gives an introduction for progr
 Community
 ---------
 
-Development of |ab| takes place on the Github `source repository <https://github.com/tavendo/AutobahnPython>`_. We are open for contributions, whether that's code or documentation! We also take bug reports at the `issue tracker <https://github.com/tavendo/AutobahnPython/issues>`_.
+Development of |ab| takes place on the Github `source repository <https://github.com/tavendo/AutobahnPython>`_.
 
-The best place to ask questions about |ab| is on the `mailing list <https://groups.google.com/forum/#!forum/autobahnws>`_ or on `StackOverflow <http://stackoverflow.com>`_. Questions on StackOverflow related to |ab| are tagged ``autobahn`` (or ``autobahnws``) and
-can be found `here <http://stackoverflow.com/questions/tagged/autobahn?sort=newest>`_.
+.. note::
+   We are open for contributions, whether that's code or documentation! Preferably via pull requests.
 
-The best way to search the Web for |ab| related material is by using these search terms:
+We also take **bug reports** at the `issue tracker <https://github.com/tavendo/AutobahnPython/issues>`_.
 
-* ``autobahnpython`` (`try <https://www.google.com/search?q=autobahnpython>`__)
-* ``autobahnws`` (`try <https://www.google.com/search?q=autobahnws>`__)
+The best place to **ask questions** is on the `mailing list <https://groups.google.com/forum/#!forum/autobahnws>`_. We'd also love to hear about your project and what you are using |ab| for!
 
-You can also reach users and developers on IRC channel ``autobahn`` at ``freenode.net``.
+Another option is `StackOverflow <http://stackoverflow.com>`_ where `questions <http://stackoverflow.com/questions/tagged/autobahn?sort=newest>`__ related to |ab| are tagged `"autobahn" <http://stackoverflow.com/tags/autobahn/info>`__ (or `"autobahnws" <http://stackoverflow.com/tags/autobahnws/info>`__).
+
+The best way to **Search the Web** for related material is by using these (base) search terms:
+
+* `"autobahnpython" <https://www.google.com/search?q=autobahnpython>`__
+* `"autobahnws" <https://www.google.com/search?q=autobahnws>`__
+
+You can also reach users and developers on **IRC** channel ``#autobahn`` at `freenode.net <http://www.freenode.net/>`__.
 
 Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
 
 
 .. toctree::
-   :maxdepth: 2
    :hidden:
 
    installation
