@@ -1,113 +1,122 @@
- Open Sans */
-@font-face {
-   font-family: 'Open Sans';
-   src: url('../fonts/OpenSans-Regular.ttf');
-}
-@font-face {
-   font-family: 'Open Sans';
-   src: url('../fonts/OpenSans-Bold.ttf');
-   font-weight: bold;
-}
-@font-face {
-   font-family: 'Open Sans';
-   src: url('../fonts/OpenSans-Italic.ttf');
-   font-style: italic;
-}
-@font-face {
-   font-family: 'Open Sans';
-   src: url('../fonts/OpenSans-Light.ttf');
-   font-weight: 300;
-}
-
-/* Source Sans Pro */
-
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Regular.ttf');
+   src: url('../fonts/SourceSansPro-Regular.otf');
    font-weight: normal;
 }
+
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Italic.ttf');
+   src: url('../fonts/SourceSansPro-It.otf');
    font-weight: normal;
    font-style: italic;
 }
+
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Semibold.ttf');
+   src: url('../fonts/SourceSansPro-Semibold.otf');
    font-weight: bold;
 }
+
 @font-face {
    font-family: 'Source Sans Pro';
-   src: url('../fonts/SourceSansPro-Light.ttf');
+   src: url('../fonts/SourceSansPro-Light.otf');
    font-weight: 300;
 }
 
-/* Segoe UI */
-/* define here for used weights & styles so that
-font-weight & style declarations work for this + the fallback
-web font */
+@font-face {
+   font-family: 'Source Code Pro';
+   src: url('../fonts/SourceCodePro-Regular.otf');
+   font-weight: normal;
+}
 
 @font-face {
-   font-family: 'Segoe UI';
-   src: local('Segoe UI');
-   font-weight: normal;
-}
-@font-face {
-   font-family: 'Segoe UI';
-   src: local('Segoe UI Italic');
-   font-weight: normal;
-   font-style: italic;
-}
-@font-face {
-   font-family: 'Segoe UI';
-   src: local('Segoe UI Bold');
-   font-weight: bold;
-}
-@font-face {
-   font-family: 'Segoe UI';
-   src: local('Segoe UI Light');
+   font-family: 'Source Code Pro';
+   src: url('../fonts/SourceCodePro-Light.otf');
    font-weight: 300;
 }
 
+@font-face {
+   font-family: 'Source Code Pro';
+   src: url('../fonts/SourceCodePro-Semibold.otf');
+   font-weight: bold;
+}
 
 body {
-   /*font-family: 'Segoe UI', sans-serif;*/
-   font-size: 15px;
-   /*line-height: 1.5em;*/
+   font-family: "Source Sans Pro", sans-serif;
+   font-size: 16px;
+   line-height: 1.428571429;
+   color: #333;
+   background-color: #fff;
 }
 
-body.native {
+code, kbd, pre, samp, span.pre {
+   font-family: 'Source Code Pro', monospace;
+   font-size: 13px;
+}
 
+ul, ol {
+   line-height: 1.6em;
+}
+
+h1, h2, h3 {
+   font-weight: 300;
+   color: #027eae;
+}
+
+h4, h5, h6 {
+   color: #027eae;
 }
 
 h1 {
-   /*font-family: 'Segoe UI', 'Source Sans Pro', sans-serif;*/
-   font-weight: 300;
-   margin-top: 40px;
+   font-size: 2em;
+   margin: .67em 0;
 }
 
 h2 {
-   /*font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;*/
-   font-weight: 300;
-   margin-top: 32px;
+   font-size: 1.5em;
+   margin: .75em 0;
 }
 
 h3 {
-   /*font-family: 'Segoe UI Light', 'Source Sans Pro', sans-serif;*/
-   font-weight: 300;
+   font-size: 1.17em;
+   margin: .83em 0;
 }
+
+h4 {
+   font-size: 1em;
+   margin: 1.12em 0;
+}
+
+h5 {
+   font-size: .83em;
+   margin: 1.5em 0;
+}
+
+h6 {
+   font-size: .75em;
+   margin: 1.67em 0;
+}
+
 
 #logoblock {
    text-align: center;
 }
 
 ul.nav-list li {
-   font-size: 14px;
+   line-height: 1.3em
 }
 
 ul.nav-list strong {
    font-weight: normal;
+}
+
+#sidebar h1,
+#sidebar h2,
+#sidebar h3,
+#sidebar h4,
+#sidebar h5,
+#sidebar h6 {
+   color: #333;
 }
 
 .sidebar_block {
@@ -134,13 +143,12 @@ ul.nav-list strong {
 }
 
 #quicklinks > h4 {
-   font-size: 15px;
-   padding-left: 12px;
-   line-height: 1.1em;
+   line-height: 0.9em;
+   padding-left: 1em;
 }
 
 footer {
-   font-size: 12px;
+   font-size: 0.83em;
 }
 
 dl .table {
@@ -179,6 +187,7 @@ dl.class {
 
 dl.function {
    border-left: 12px solid rgba(255, 230, 40, 0.7);
+   border-left: 12px solid #E2D35E;
 }
 
 
@@ -287,6 +296,11 @@ div.highlight {
    background-color: #E4E451;
 }
 
+.highlight .c {
+   font-style: normal;
+   font-weight: 300;
+}
+
 .table {
    margin-top: 1.5em;
    border-top: 2px solid #333;
@@ -299,17 +313,8 @@ div.highlight {
 .table tr:first-child td {
 }
 
-ol, ul {
-   line-height: 1.6em;
-}
-
-span.pre {
-   font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
-   font-size: 14px;
-}
-
 div.admonition {
-   padding: 1em 1.2em 1em 1.2em;
+   padding: 0.5em 1.2em 0.8em 1.2em;
    margin: 1.5em auto 1.5em auto;
 }
 
@@ -321,7 +326,7 @@ div.admonition {
    width: 90%;
    text-shadow: none;
    color: rgba(0,0,0,0.6);
-   font-size: 14px;
+   font-size: 0.9em;
 
    border-radius: 12px;
    border-left: 12px solid rgba(0,0,0, 0.5);
@@ -330,50 +335,30 @@ div.admonition {
 
 p.admonition-title {
    font-weight: bold;
-   font-size: 16px;
+   font-size: 1.17em;
 }
 
 .note {
    border-left: 12px solid rgba(2, 126, 174, 0.7);
 }
 
+.note p.admonition-title {
+   color: #027eae;   
+}
+
 .warning {
    border-left: 12px solid rgba(255, 30, 0, 0.7);
 }
 
+.warning p.admonition-title {
+   color: #FF624D;
+}
+
 .tip {
    border-left: 12px solid rgba(255, 230, 40, 0.7);
+   border-left: 12px solid #E2D35E;
 }
 
-
-/*********************/
-/* fontstack testing */
-/*********************/
-
-/*body {
-   font-family: "Segoe UI", "Source Sans Pro", sans-serif;
-}*/
-
-body.native {
-   font-family: "Segoe UI", "Lucida Grande", sans-serif;
-}
-
-body.openSans {
-   font-family: "Open Sans", sans-serif;
-}
-
-body.sourceSans {
-   font-family: "Source Sans Pro";
-}
-
-
-button.selected {
-   background-color: green;
-}
-
-.fontstackButtons {
-   width: 100%;
-   position: fixed;
-   bottom: 0;
-   left: 0;
+.tip p.admonition-title {
+   color: #B1A549;
 }
