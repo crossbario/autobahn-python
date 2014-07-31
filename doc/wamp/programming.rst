@@ -1,5 +1,5 @@
-Programming with WAMP
-=====================
+WAMP Programming
+================
 
 This document gives an introduction for programming with WAMP in Python using |ab|.
 
