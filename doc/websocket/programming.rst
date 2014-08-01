@@ -70,7 +70,7 @@ while an asyncio echo protocol would import the base protocol from ``autobahn.as
          ## echo back message verbatim
          self.sendMessage(payload, isBinary)
 
-.. note:: In this example, only the imports differs between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
+.. note:: In this example, only the imports differ between the Twisted and the asyncio variant. The rest of the code is identical. However, in most real world programs you probably won't be able to or don't want to avoid using network framework specific code.
 
 ----------
 
@@ -79,9 +79,9 @@ while an asyncio echo protocol would import the base protocol from ``autobahn.as
 Receiving Messages
 ~~~~~~~~~~~~~~~~~~
 
-The **second thing** to note is that we **override a hook** ``onMessage`` which is called by |ab| whenever the hook related event happens.
+The **second thing** to note is that we **override a callback** ``onMessage`` which is called by |ab| whenever the callback related event happens.
 
-In case of ``onMessage``, the hook (or callback) will be called whenever a new WebSocket message was received. We will come back to WebSocket related callbacks later, but for now, the ``onMessage`` hook is all we need.
+In case of ``onMessage``, the callback will be called whenever a new WebSocket message was received. There are more WebSocket related callbacks, but for now the ``onMessage`` callback is all we need.
 
 When our server receives a WebSocket message, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage` will fire with the message ``payload`` received.
 
@@ -130,7 +130,7 @@ Hence, to send a WebSocket text message, you will usually *encode* the payload t
 
 .. warning::
 
-   |ab| will NOT validate the bytes of a text ``payload`` for actually being valid UTF8. You MUST ensure that you only provide valid UTF8 when sending text messages. If you produce invalid UTF8, a conforming WebSocket peer will close the WebSocket connection due to the protocol violation.
+   |ab| will NOT validate the bytes of a text ``payload`` being sent for actually being valid UTF8. You MUST ensure that you only provide valid UTF8 when sending text messages. If you produce invalid UTF8, a conforming WebSocket peer will close the WebSocket connection due to the protocol violation.
 
 When using WebSocket text messages with JSON ``payload``, typical code for encoding and sending Python objects that works on both Python 2 and 3 would look like this:
 
@@ -149,7 +149,12 @@ The ``ensure_ascii == False`` option allows the JSON serializer to use Unicode s
 Running a Server
 ~~~~~~~~~~~~~~~~
 
-Now that we have defined the behavior of our WebSocket server, we need to actually start one that listens on a specific TCP port.
+Now that we have defined the behavior of our WebSocket server in a protocol class, we need to actually start a server based on that behavior.
+
+Doing so involves two steps:
+
+1. Create a **Factory** for producing instances of our protocol class
+2. Create a TCP **listening server** using the former Factory
 
 Here is one way of doing that when using Twisted
 
@@ -176,7 +181,7 @@ Here is one way of doing that when using Twisted
 What we are doing here is
 
 1. Setup Twisted logging
-2. Create a ``WebSocketServerFactory`` factory and set our ``MyServerProtocol`` on the factory (the highlighted lines)
+2. Create a :class:`autobahn.twisted.websocket.WebSocketServerFactory` and set our ``MyServerProtocol`` on the factory (the highlighted lines)
 3. Start a server using the factory, listening on TCP port 9000
 
 Similar, here is the asyncio way
@@ -210,7 +215,14 @@ Similar, here is the asyncio way
          server.close()
          loop.close()
 
-As can be seen, the boilerplate to create and run a server differ from Twisted, but again, the core code of creating a factory and setting our protocol (the highlighted lines) are identical (other than the differing import for the WebSocket factory).
+What we are doing here is
+
+1. Import asyncio, or the Trollius backport
+2. Create a :class:`autobahn.asyncio.websocket.WebSocketServerFactory` and set our ``MyServerProtocol`` on the factory (the highlighted lines)
+3. Start a server using the factory, listening on TCP port 9000
+
+.. note::
+   As can be seen, the boilerplate to create and run a server differ from Twisted, but the core code of creating a factory and setting our protocol (the highlighted lines) is identical (other than the differing import for the WebSocket factory).
 
 You can find complete code for above examples here:
 
@@ -223,9 +235,9 @@ You can find complete code for above examples here:
 Connection Lifecycle
 --------------------
 
-As we have seen above, |ab| will fire *callbacks* on your protocol class whenever the event related to the respective hook occurs.
+As we have seen above, |ab| will fire *callbacks* on your protocol class whenever the event related to the respective callback occurs.
 
-It it in these hooks that you will implement application specific code.
+It is in these callbacks that you will implement application specific code.
 
 The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketChannel` provides the following *callbacks*:
 
@@ -241,7 +253,7 @@ In contrast, the other three callbacks above each only fires once for a given co
 Opening Handshake
 ~~~~~~~~~~~~~~~~~
 
-Whenever a new client connects to the server, a new protocol instance will be created and the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect` hook fires as soon as the WebSocket opening handshake is begun by the client.
+Whenever a new client connects to the server, a new protocol instance will be created and the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onConnect` callback fires as soon as the WebSocket opening handshake is begun by the client.
 
 For a WebSocket server protocol, ``onConnect()`` will fire with 
 :class:`autobahn.websocket.protocol.ConnectionRequest` providing information on the client wishing to connect via WebSocket.
@@ -264,19 +276,19 @@ On the other hand, for a WebSocket client protocol, ``onConnect()`` will fire wi
       def onConnect(self, response):
          print("Connected to Server: {}".format(response.peer))
 
-In this hook you can do thing like
+In this callback you can do thing like
 
 * checking or setting cookies or other HTTP headers
 * verifying the client IP address
 * checking the origin of the WebSocket request
 * negotiate WebSocket subprotocols
 
-For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selectec subprotocol in it's ``onConnect()`` hook in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
+For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selectec subprotocol in it's ``onConnect()`` callback in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
 
 Connection Open
 ~~~~~~~~~~~~~~~
 
-The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen` hook fires when the WebSocket opening handshake has been successfully completed. You now can send and receive messages over the connection.
+The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen` callback fires when the WebSocket opening handshake has been successfully completed. You now can send and receive messages over the connection.
 
 .. code-block:: python
 
@@ -296,7 +308,7 @@ The core WebSocket interface :class:`autobahn.websocket.interfaces.IWebSocketCha
 
 We've already seen one of above in :ref:`sending-messages`.
 
-The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose` will initiate a WebSocket closing handshake. After starting to close a WebSocket connection, no messages can be sent. Eventually, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` hook will fire.
+The :meth:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose` will initiate a WebSocket closing handshake. After starting to close a WebSocket connection, no messages can be sent. Eventually, the :meth:`autobahn.websocket.interfaces.IWebSocketChannel.onClose` callback will fire.
 
 After a WebSocket connection has been closed, the protocol instance will get recycled. Should the client reconnect, a new protocol instance will be created and a new WebSocket opening handshake performed.
 
@@ -403,7 +415,12 @@ Receiving and sending WebSocket messages as well as connection lifecycle in clie
 Running a Client
 ~~~~~~~~~~~~~~~~
 
-Now that we have defined the behavior of our WebSocket client, we need to actually start one that connects to a server a specific TCP port.
+Now that we have defined the behavior of our WebSocket client in a protocol class, we need to actually start a client based on that behavior.
+
+Doing so involves two steps:
+
+1. Create a **Factory** for producing instances of our protocol class
+2. Create a TCP **connecting client** using the former Factory
 
 Here is one way of doing that when using Twisted
 
@@ -430,7 +447,7 @@ Here is one way of doing that when using Twisted
 What we are doing here is
 
 1. Setup Twisted logging
-2. Create a ``WebSocketClientFactory`` factory and set our ``MyClientProtocol`` on the factory (the highlighted lines)
+2. Create a :class:`autobahn.twisted.websocket.WebSocketClientFactory` and set our ``MyClientProtocol`` on the factory (the highlighted lines)
 3. Start a client using the factory, connecting to localhost ``127.0.0.1`` on TCP port 9000
 
 Similar, here is the asyncio way
@@ -458,7 +475,14 @@ Similar, here is the asyncio way
       loop.run_forever()
       loop.close()
 
-As can be seen, the boilerplate to create and run a client differ from Twisted, but again, the core code of creating a factory and setting our protocol (the highlighted lines) are identical (other than the differing import for the WebSocket factory).
+What we are doing here is
+
+1. Import asyncio, or the Trollius backport
+2. Create a :class:`autobahn.asyncio.websocket.WebSocketClientFactory` and set our ``MyClientProtocol`` on the factory (the highlighted lines)
+3. Start a client using the factory, connecting to localhost ``127.0.0.1`` on TCP port 9000
+
+.. note::
+   As can be seen, the boilerplate to create and run a client differ from Twisted, but the core code of creating a factory and setting our protocol (the highlighted lines) is identical (other than the differing import for the WebSocket factory).
 
 You can find complete code for above examples here:
 
