@@ -8,6 +8,7 @@ clean:
 	rm -rf _build
 	rm -rf _build_uploaded
 	rm -rf _static/img/gen
+	rm -rf _test
 
 publish: clean build
 	scons publish
