@@ -1,4 +1,5 @@
 _build
 _upload
+_test
 _static/img/gen
 .sconsign.dblite

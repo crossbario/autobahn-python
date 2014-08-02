@@ -283,8 +283,26 @@ li.hidden-sm {
 
 /* pygments code block shouldn't word wrap, but show overflow on scroll */
 
-div.highlight {
+div.highlight, table.highlighttable {
    width: 100%;
+   margin-left: 0;
+}
+
+td.linenos {
+   width: 1px;
+}
+
+table.highlighttable td {
+   padding-right: 0;
+}
+
+.highlighttable .linenos pre {
+   font-size: 13px;
+   color: #B6B62C;
+}
+
+.highlighttable .code pre {
+   font-size: 13px;
 }
 
 .highlight pre {

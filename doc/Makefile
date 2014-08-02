@@ -11,3 +11,6 @@ clean:
 
 publish: clean build
 	scons publish
+
+doctest:
+	PYTHONPATH=../autobahn sphinx-build -b doctest -v . _test
