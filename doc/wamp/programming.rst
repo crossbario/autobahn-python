@@ -149,9 +149,9 @@ Now, when converted to ``inlineCallbacks``, the code becomes:
 
 Have a look at the highlighted lines - here is what we do:
 
-1. Decorating our squaring function with ``inlineCallbacks``. Doing so marks the function as a coroutine which allows us to use this sequential looking coding style.
-2. Inside the function, we simulate the slow execution by sleeping for a second. However, we are sleeping in a non-blocking way (:func:`autobahn.twisted.util.sleep`). The ``yield`` will put the coroutine aside until the sleep returns.
-3. To return values from Twisted coroutines, we need to use ``returnValue``.
+1. Decorating our squaring function with ``inlineCallbacks`` (line 5). Doing so marks the function as a coroutine which allows us to use this sequential looking coding style.
+2. Inside the function, we simulate the slow execution by sleeping for a second (line 7). However, we are sleeping in a non-blocking way (:func:`autobahn.twisted.util.sleep`). The ``yield`` will put the coroutine aside until the sleep returns.
+3. To return values from Twisted coroutines, we need to use ``returnValue`` (line 8).
 
 .. note::
 
@@ -257,9 +257,9 @@ Now, when converted to ``asyncio.coroutine``, the code becomes:
 
 The main differences (on surface) are:
 
-1. The use of the decorator ``@asyncio.coroutine`` in asyncio versus ``@defer.inlineCallbacks`` with Twisted
-2. The use of ``defer.returnValue`` in Twisted for returning values whereas in asyncio, you can use plain returns
-3. The use of ``yield from`` in asyncio, versus plain ``yield`` in Twisted
+1. The use of the decorator ``@asyncio.coroutine`` (line 3) in asyncio versus ``@defer.inlineCallbacks`` with Twisted
+2. The use of ``defer.returnValue`` in Twisted for returning values whereas in asyncio, you can use plain returns (line 6)
+3. The use of ``yield from`` in asyncio, versus plain ``yield`` in Twisted (line 5)
 4. The auxiliary code to get the event loop started and stopped
 
 Most of the examples that follow will show code for both Twisted and asyncio, unless the conversion is trivial.
