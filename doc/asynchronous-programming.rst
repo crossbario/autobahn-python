@@ -3,10 +3,44 @@
 Asynchronous Programming
 ========================
 
-We cannot give a complete introduction to asynchronous programming, Twisted or asyncio. Instead, you might have a look at the following resources for **Twisted**
+|Ab| is written according to a programming paradigm called *asynchronous programming* and implemented using *non-blocking* execution - and both go hand in hand.
 
-* `Jessica McKellar - Architecting an event-driven networking engine: Twisted Python <https://www.youtube.com/watch?v=3R4gP6Egh5M>`__
-* `Twisted Introduction <http://krondo.com/?page_id=1327>`__
+A very good technical introduction to these concepts can be found in `this chapter <http://krondo.com/?p=1209>`__ of an "Introduction to Asynchronous Programming and Twisted".
+
+Another highly recommended reading is `The Reactive Manifesto <http://www.reactivemanifesto.org>`__ which describes guiding principles, motivations and connects the dots
+
+.. epigraph::
+
+   Non-blocking means the ability to make continuous progress in order to for the application to be responsive at all times, even under failure and burst scenarios. For this all resources needed for a response—for example CPU, memory and network—must not be monopolized. As such it can enable both lower latency, higher throughput and better scalability.
+
+   -- `The Reactive Manifesto <http://www.reactivemanifesto.org>`__
+
+The fact that |Ab| is implemented using asynchronous programming and non-blocking execution shouldn't come as a surprise, since both Twisted and asyncio - the foundations upon which |ab| runs - are *asynchronous network programming frameworks*.
+
+On the other hand, the principles of asynchronous programming are independent of Twisted and asyncio. For example, other frameworks that fall into the same category are:
+
+* `NodeJS <http://nodejs.org/>`__
+* `Boost/ASIO <http://think-async.com/>`__
+* `Netty <http://netty.io/>`__
+* `Tornado <http://www.tornadoweb.org/>`__
+* `React <http://reactphp.org/>`__
+
+While getting accustomed to the asynchronous way of thinking takes some time and effort, the knowledge and experience acquired can be translated more or less directly to other frameworks in the asynchronous category.
+
+Below we are listing a couple of resources on the Web for Twisted and asyncio. Further, we'll have a quick look at some of the asynchronous programming primitive provided by Twisted and asyncio to show similarities and differences.
+
+
+Twisted Resources
+-----------------
+
+We cannot give a complete introduction to asynchronous programming with Twisted. And there is no need to, since there is great stuff on the Web. In particular we'd like to warmly recommend the following resources.
+
+* If you have limited time and nevertheless want to have an in-depth view of Twisted, Jessica McKellar has a great presentation recording with `Architecting an event-driven networking engine: Twisted Python <https://www.youtube.com/watch?v=3R4gP6Egh5M>`__. That's 45 minutes. Highly recommended.
+* If you really want to get it, Dave Peticolas has written an awesome `Introduction to Asynchronous Programming and Twisted <http://krondo.com/?page_id=1327>`__. This is a detailed, hands-on tutorial with lots of code examples that will take some time to work through - but you actually *learn* how to program with Twisted.
+
+
+Asyncio Resources
+-----------------
 
 and **asyncio**
 

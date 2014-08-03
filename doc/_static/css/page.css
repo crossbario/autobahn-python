@@ -136,6 +136,13 @@ ul.nav-list strong {
    max-width: 750px;
 }
 
+blockquote.epigraph {
+   border: none;
+   font-size: 1.1em;
+   font-style: italic;
+   color: #B6B62C;
+}
+
 @media (min-width: 992px) {
    .col-md-9 {
       padding-left: 32px;
@@ -269,6 +276,20 @@ li.hidden-sm {
    clear: both;
 }
 
+#manifesto img {
+   border: 0;
+   position: absolute;
+   right: 0;
+   top: 51px;
+   z-index: 10;
+}
+
+@media (max-width: 800px) {
+   #manifesto {
+      display: none;      
+   }
+}
+
 @media (max-width: 990px) {
    #sidebar {
       display: none;
@@ -277,7 +298,6 @@ li.hidden-sm {
    .extendedFooter {
       display: inherit;
    }
-
 }
 
 
@@ -361,7 +381,7 @@ p.admonition-title {
 }
 
 .note p.admonition-title {
-   color: #027eae;   
+   color: #027eae;
 }
 
 .warning {

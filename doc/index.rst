@@ -12,7 +12,7 @@ Latest release: v\ |version| (:ref:`Changelog`)
    <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" /></a>
    </p>
 
-|AbL| is a subproject of the `Autobahn`_ project and provides open-source implementations of
+|AbL| is part of the `Autobahn`_ project and provides open-source implementations of
 
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
