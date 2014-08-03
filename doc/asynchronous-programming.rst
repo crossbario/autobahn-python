@@ -3,7 +3,17 @@
 Asynchronous Programming
 ========================
 
+Introduction
+------------
+
+The asynchronous programming approach
+.....................................
+
 |Ab| is written according to a programming paradigm called *asynchronous programming* and implemented using *non-blocking* execution - and both go hand in hand.
+
+
+http://www.pyvideo.org/video/1681/so-easy-you-can-even-do-it-in-javascript-event-d
+
 
 A very good technical introduction to these concepts can be found in `this chapter <http://krondo.com/?p=1209>`__ of an "Introduction to Asynchronous Programming and Twisted".
 
@@ -27,20 +37,101 @@ On the other hand, the principles of asynchronous programming are independent of
 
 While getting accustomed to the asynchronous way of thinking takes some time and effort, the knowledge and experience acquired can be translated more or less directly to other frameworks in the asynchronous category.
 
+
+event driven programming
+
+
+Other forms of Concurrency
+..........................
+
+
+Other styles of concurrency:
+
+1. blocking OS threads
+2. blocking green threads
+3. actors
+4. `Software Transactional Memory (STM) <http://en.wikipedia.org/wiki/Software_transactional_memory>`__
+
+
+
+The `Actor model <http://en.wikipedia.org/wiki/Actor_model>`__
+
+* `Erlang <http://www.erlang.org/>`__
+* `Akka <http://akka.io/>`__
+* `Rust <http://www.rust-lang.org/>`__
+* `C++ Actor Framework <http://actor-framework.org/>`__
+
+STM applies the concept of `Optimistic Concurrency Control <http://en.wikipedia.org/wiki/Optimistic_concurrency_control>`__ from the persistent database world to (transient) program memory. Instead of lettings programs directly modify memory, all operations are first logged (inside a transaction), and then applied atomically - but only if no conflicting transaction has committed in the meantime. Hence, it's "optimistic" in that it assumes to be able to commit "normally", but needs to handle the failing at commit time.
+
+
+* `Eventlet <http://eventlet.net/>`__
+* `Gevent <http://gevent.org/>`__
+* `Stackless <http://www.stackless.com/>`__
+
 Below we are listing a couple of resources on the Web for Twisted and asyncio. Further, we'll have a quick look at some of the asynchronous programming primitive provided by Twisted and asyncio to show similarities and differences.
 
 
+Twisted or asyncio?
+...................
+
+Since |Ab| runs on both Twisted and asyncio, which networking framework should you use? Even more so, as the core of Twisted and asyncio is very similar and relies on the same concepts:
+
++------------------+------------------+-------------------------------------------------------------+
+| Twisted          | asyncio          | Description                                                 |
++------------------+------------------+-------------------------------------------------------------+
+| Deferred         | Future           | abstraction of a value which isn't available yet            |
++------------------+------------------+-------------------------------------------------------------+
+| Reactor          | Event Loop       | waits for and dispatches events                             |
++------------------+------------------+-------------------------------------------------------------+
+| Transport        | Transport        | abstraction of a communication channel (stream or datagram) |
++------------------+------------------+-------------------------------------------------------------+
+| Protocol         | Protocol         | this is where actual networking protocols are implemented   |
++------------------+------------------+-------------------------------------------------------------+
+| Protocol Factory | Protocol Factory | responsible for creating protocol instances                 |
++------------------+------------------+-------------------------------------------------------------+
+
+In fact, I'd say the biggest difference between Twisted and asyncio is Deferred vs Future. Those are similar on surface, but their semantics is different.
+
+Also, asyncio is opinionated towards co-routines. Means, idiomatic user code for asyncio is expected to use co-routines, and not plain Futures (which are considered too low-level for application code).
+
+But anyway, with asyncio being part of the language standard library (since Python 3.4), wouldn't you just *always* use asyncio? At least if you don't have a need to support already existing Twisted based code.
+
+The truth is that while the *core* of Twisted and asyncio are very similar, **Twisted has a much broader scope**:
+
+.. centered::
+   Twisted is "batteries included" for network programming
+
+So you get *tons* of actual network protocols already out-of-the-box - in production quality implementations!
+
+asyncio does not include any actual application layer network protocols like HTTP. If you need those, you'll have to look for asyncio implementations *outside* the standard library. For example, `here <https://github.com/KeepSafe/aiohttp>`__ is a HTTP server and client library for asyncio.
+
+Over time, an ecosystem of protocols will likely emerge around asyncio also. But right now, Twisted has a big advantage here.
+
+If you want to read more on this, Glyph (Twisted original author) has a nice blog post `here <https://glyph.twistedmatrix.com/2014/05/the-report-of-our-death.html>`__.
+
+
+Resources
+---------
+
 Twisted Resources
------------------
+.................
 
-We cannot give a complete introduction to asynchronous programming with Twisted. And there is no need to, since there is great stuff on the Web. In particular we'd like to warmly recommend the following resources.
+We cannot give an introduction to asynchronous programming with Twisted here. And there is no need to, since there is lots of great stuff on the Web. In particular we'd like to recommend the following resources.
 
-* If you have limited time and nevertheless want to have an in-depth view of Twisted, Jessica McKellar has a great presentation recording with `Architecting an event-driven networking engine: Twisted Python <https://www.youtube.com/watch?v=3R4gP6Egh5M>`__. That's 45 minutes. Highly recommended.
-* If you really want to get it, Dave Peticolas has written an awesome `Introduction to Asynchronous Programming and Twisted <http://krondo.com/?page_id=1327>`__. This is a detailed, hands-on tutorial with lots of code examples that will take some time to work through - but you actually *learn* how to program with Twisted.
+If you have limited time and nevertheless want to have an in-depth view of Twisted, Jessica McKellar has a great presentation recording with `Architecting an event-driven networking engine: Twisted Python <https://www.youtube.com/watch?v=3R4gP6Egh5M>`__. That's 45 minutes. Highly recommended.
+
+If you really want to get it, Dave Peticolas has written an awesome `Introduction to Asynchronous Programming and Twisted <http://krondo.com/?page_id=1327>`__. This is a detailed, hands-on tutorial with lots of code examples that will take some time to work through - but you actually *learn* how to program with Twisted.
+
+Then of course there is
+
+* `The Twisted Documentation <https://twisted.readthedocs.org/>`__
+* `The Twisted API Reference <https://twistedmatrix.com/documents/current/api/>`__
+
+and lots and lots of awesome `Twisted talks <http://www.pyvideo.org/search?models=videos.video&q=twisted>`__ on PyVideo.
 
 
 Asyncio Resources
------------------
+.................
 
 and **asyncio**
 
@@ -65,6 +156,10 @@ Asynchronous Programming Primitives
 
 Twisted Deferreds and inlineCallbacks
 .....................................
+
+https://twisted.readthedocs.org/en/latest/core/howto/defer-intro.html
+https://twisted.readthedocs.org/en/latest/core/howto/defer.html
+
 
 Programming with Twisted Deferreds involves attaching *callbacks* to Deferreds which get called when the Deferred finally either resolves successfully or fails with an error
 
