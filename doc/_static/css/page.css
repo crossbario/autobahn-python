@@ -54,6 +54,18 @@ code, kbd, pre, samp, span.pre {
    font-size: 13px;
 }
 
+/* scrolling for both code with and without line numbers  */
+[class^="highlight-"],
+[class*=" highlight-"] {
+   overflow: auto;
+   margin-bottom: 1em;
+}
+.highlight {
+   display: table;
+}
+
+
+
 ul, ol {
    line-height: 1.6em;
 }
@@ -307,6 +319,7 @@ table.highlighttable td {
 
 .highlight pre {
    word-wrap: normal;
+   margin: 0;
 }
 
 .highlight .hll {
@@ -361,7 +374,7 @@ p.admonition-title {
 }
 
 .note p.admonition-title {
-   color: #027eae;   
+   color: #027eae;
 }
 
 .warning {

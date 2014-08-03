@@ -14,3 +14,11 @@ publish: clean build
 
 doctest:
 	PYTHONPATH=../autobahn sphinx-build -b doctest -v . _test
+
+
+copy_css:
+	cp _static/css/page.css ../../AutobahnJS/doc/_static/css
+	cp _static/css/page.css ../../AutobahnAndroid/doc/_static/css
+	cp _static/css/page.css ../../AutobahnCpp/doc/_static/css
+	cp _static/css/page.css ../../AutobahnTestsuite/doc/_static/css
+
