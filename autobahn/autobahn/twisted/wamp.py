@@ -43,7 +43,8 @@ from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
-from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.twisted.websocket import WampWebSocketClientFactory, \
+                                       WampWebSocketServerFactory
 
 
 
@@ -214,8 +215,6 @@ class ApplicationRunner:
       ## run an embedded router if ask to start standalone
       if self.standalone:
 
-         from autobahn.wamp.router import RouterFactory
-         from autobahn.twisted.websocket import WampWebSocketServerFactory
          from twisted.internet.endpoints import serverFromString
 
          router_factory = RouterFactory()
