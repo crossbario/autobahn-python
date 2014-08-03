@@ -12,7 +12,7 @@ Latest release: v\ |version| (:ref:`Changelog`)
    <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" /></a>
    </p>
 
-|AbL| is a subproject of the `Autobahn`_ project and provides open-source implementations of
+|AbL| is part of the `Autobahn`_ project and provides open-source implementations of
 
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
@@ -150,6 +150,8 @@ Where to start
 
 To get started, jump to :doc:`installation`.
 
+For developers new to asynchronous programming, Twisted or asyncio, we've collected some useful pointers and information in :doc:`asynchronous-programming`.
+
 For **WebSocket developers**, :doc:`websocket/programming` explains all you need to know about using |ab| as a WebSocket library, and includes a full reference for the relevant parts of the API.
 
 :doc:`websocket/examples` lists WebSocket code examples covering a broader range of uses cases and advanced WebSocket features.
@@ -187,6 +189,7 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    :hidden:
 
    installation
+   asynchronous-programming
    websocket/programming   
    wamp/programming
    websocket/examples

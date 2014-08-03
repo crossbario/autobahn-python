@@ -168,5 +168,6 @@ The latter will automatically install Twisted as a dependency.
 
 Now you've got |Ab| installed, depending on your needs, head over to
 
-* :doc:`websocket/programming`
-* :doc:`wamp/programming`
+* :doc:`asynchronous-programming` - An very short introduction plus pointers to good Web resources.
+* :doc:`websocket/programming` - A guide to programming WebSocket applications with |ab|
+* :doc:`wamp/programming` - A guide to programming WAMP applications with |ab|

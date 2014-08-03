@@ -18,14 +18,14 @@
 
 from __future__ import absolute_import
 
-__all__ = ['Message',
+__all__ = ('Message',
            'Hello',
            'Welcome',
            'Abort',
            'Challenge',
            'Authenticate',
            'Goodbye',
-           'Heartbeat'
+           'Heartbeat',
            'Error',
            'Publish',
            'Published',
@@ -43,7 +43,7 @@ __all__ = ['Message',
            'Unregistered',
            'Invocation',
            'Interrupt',
-           'Yield']
+           'Yield')
 
 
 import re
