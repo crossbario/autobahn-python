@@ -245,7 +245,7 @@ class ApplicationRunner:
 
       ## 3) start the client
       loop = asyncio.get_event_loop()
-      coro = loop.create_connection(transport_factory, host, port)
+      coro = loop.create_connection(transport_factory, host, port, ssl = isSecure)
       loop.run_until_complete(coro)
 
       ## 4) now enter the asyncio event loop
