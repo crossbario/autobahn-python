@@ -245,8 +245,13 @@ class ApplicationRunner:
 
       ## start the client from a Twisted endpoint
       from twisted.internet.endpoints import clientFromString
+
+      if isSecure:
+         endpoint_descriptor = "ssl:{}:{}".format(host, port)
+      else:
+         endpoint_descriptor = "tcp:{}:{}".format(host, port)
       
-      client = clientFromString(reactor, "tcp:{}:{}".format(host, port))
+      client = clientFromString(reactor, endpoint_descriptor)
       client.connect(transport_factory)
 
       ## now enter the Twisted reactor loop
