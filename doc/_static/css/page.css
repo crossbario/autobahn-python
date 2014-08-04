@@ -322,6 +322,7 @@ div.highlight, table.highlighttable {
 
 td.linenos {
    width: 1px;
+   padding-top: 10px !important;
 }
 
 table.highlighttable td {

@@ -9,13 +9,14 @@ Introduction
 The asynchronous programming approach
 .....................................
 
-|Ab| is written according to a programming paradigm called *asynchronous programming* and implemented using *non-blocking* execution - and both go hand in hand.
-
-
-http://www.pyvideo.org/video/1681/so-easy-you-can-even-do-it-in-javascript-event-d
-
+|Ab| is written according to a programming paradigm called *asynchronous programming* (or *event driven programming*) and implemented using *non-blocking* execution - and both go hand in hand.
 
 A very good technical introduction to these concepts can be found in `this chapter <http://krondo.com/?p=1209>`__ of an "Introduction to Asynchronous Programming and Twisted".
+
+Here are two more presentations that introduce event-driven programming in Python
+
+* `Alex Martelli - Don't call us, we'll call you: callback patterns and idioms <https://www.youtube.com/watch?v=LCZRJStwkKM>`__
+* `Glyph Lefkowitz - So Easy You Can Even Do It in JavaScript: Event-Driven Architecture for Regular Programmers <http://www.pyvideo.org/video/1681/so-easy-you-can-even-do-it-in-javascript-event-d>`__
 
 Another highly recommended reading is `The Reactive Manifesto <http://www.reactivemanifesto.org>`__ which describes guiding principles, motivations and connects the dots
 
@@ -25,7 +26,7 @@ Another highly recommended reading is `The Reactive Manifesto <http://www.reacti
 
    -- `The Reactive Manifesto <http://www.reactivemanifesto.org>`__
 
-The fact that |Ab| is implemented using asynchronous programming and non-blocking execution shouldn't come as a surprise, since both Twisted and asyncio - the foundations upon which |ab| runs - are *asynchronous network programming frameworks*.
+The fact that |Ab| is implemented using asynchronous programming and non-blocking execution shouldn't come as a surprise, since both `Twisted <https://twistedmatrix.com/trac/>`__ and `asyncio <https://docs.python.org/3/library/asyncio.html>`__ - the foundations upon which |ab| runs - are *asynchronous network programming frameworks*.
 
 On the other hand, the principles of asynchronous programming are independent of Twisted and asyncio. For example, other frameworks that fall into the same category are:
 
@@ -35,46 +36,44 @@ On the other hand, the principles of asynchronous programming are independent of
 * `Tornado <http://www.tornadoweb.org/>`__
 * `React <http://reactphp.org/>`__
 
-While getting accustomed to the asynchronous way of thinking takes some time and effort, the knowledge and experience acquired can be translated more or less directly to other frameworks in the asynchronous category.
-
-
-event driven programming
+.. tip::
+   While getting accustomed to the asynchronous way of thinking takes some time and effort, the knowledge and experience acquired can be translated more or less directly to other frameworks in the asynchronous category.
 
 
 Other forms of Concurrency
 ..........................
 
+Asynchronous programming is not the only approach to concurrency. Other styles of concurrency include
 
-Other styles of concurrency:
-
-1. blocking OS threads
-2. blocking green threads
-3. actors
+1. `OS Threads <http://en.wikipedia.org/wiki/Thread_%28computing%29>`__
+2. `Green Threads <http://en.wikipedia.org/wiki/Green_threads>`__
+3. `Actors <http://en.wikipedia.org/wiki/Actor_model>`__
 4. `Software Transactional Memory (STM) <http://en.wikipedia.org/wiki/Software_transactional_memory>`__
 
+Obviously, we cannot go into much detail with all of above. But here are some pointers for further reading if you want to compare and contrast asynchronous programming with other approaches.
 
-
-The `Actor model <http://en.wikipedia.org/wiki/Actor_model>`__
+With the **Actor model** a system is composed of a set of *actors* which are independently running, executing sequentially and communicate strictly by message passing. There is no shared state at all. This approach is used in systems like
 
 * `Erlang <http://www.erlang.org/>`__
 * `Akka <http://akka.io/>`__
 * `Rust <http://www.rust-lang.org/>`__
 * `C++ Actor Framework <http://actor-framework.org/>`__
 
-STM applies the concept of `Optimistic Concurrency Control <http://en.wikipedia.org/wiki/Optimistic_concurrency_control>`__ from the persistent database world to (transient) program memory. Instead of lettings programs directly modify memory, all operations are first logged (inside a transaction), and then applied atomically - but only if no conflicting transaction has committed in the meantime. Hence, it's "optimistic" in that it assumes to be able to commit "normally", but needs to handle the failing at commit time.
+**Software Transactional Memory (STM)** applies the concept of `Optimistic Concurrency Control <http://en.wikipedia.org/wiki/Optimistic_concurrency_control>`__ from the persistent database world to (transient) program memory. Instead of lettings programs directly modify memory, all operations are first logged (inside a transaction), and then applied atomically - but only if no conflicting transaction has committed in the meantime. Hence, it's "optimistic" in that it assumes to be able to commit "normally", but needs to handle the failing at commit time.
 
+**Green Threads** is using light-weight, run-time level threads and thread scheduling instead of OS threads. Other than that, systems are implemented similar: green threads still block, and still do share state. Python has multiple efforts in this category:
 
 * `Eventlet <http://eventlet.net/>`__
 * `Gevent <http://gevent.org/>`__
 * `Stackless <http://www.stackless.com/>`__
 
-Below we are listing a couple of resources on the Web for Twisted and asyncio. Further, we'll have a quick look at some of the asynchronous programming primitive provided by Twisted and asyncio to show similarities and differences.
-
 
 Twisted or asyncio?
 ...................
 
-Since |Ab| runs on both Twisted and asyncio, which networking framework should you use? Even more so, as the core of Twisted and asyncio is very similar and relies on the same concepts:
+Since |Ab| runs on both Twisted and asyncio, which networking framework should you use?
+
+Even more so, as the core of Twisted and asyncio is very similar and relies on the same concepts:
 
 +------------------+------------------+-------------------------------------------------------------+
 | Twisted          | asyncio          | Description                                                 |
@@ -96,10 +95,7 @@ Also, asyncio is opinionated towards co-routines. Means, idiomatic user code for
 
 But anyway, with asyncio being part of the language standard library (since Python 3.4), wouldn't you just *always* use asyncio? At least if you don't have a need to support already existing Twisted based code.
 
-The truth is that while the *core* of Twisted and asyncio are very similar, **Twisted has a much broader scope**:
-
-.. centered::
-   Twisted is "batteries included" for network programming
+The truth is that while the *core* of Twisted and asyncio are very similar, **Twisted has a much broader scope: Twisted is "batteries included" for network programming.**
 
 So you get *tons* of actual network protocols already out-of-the-box - in production quality implementations!
 
@@ -112,6 +108,9 @@ If you want to read more on this, Glyph (Twisted original author) has a nice blo
 
 Resources
 ---------
+
+Below we are listing a couple of resources on the Web for Twisted and asyncio that you may find useful.
+
 
 Twisted Resources
 .................
@@ -133,7 +132,7 @@ and lots and lots of awesome `Twisted talks <http://www.pyvideo.org/search?model
 Asyncio Resources
 .................
 
-and **asyncio**
+asyncio is very new (August 2014). So the amount of material on the Web is still limited. Here are some resources you may find useful:
 
 * `Guido van Rossum's Keynote at PyCon US 2013 <http://pyvideo.org/video/1667/keynote-1>`__
 * `Tulip: Async I/O for Python 3 <http://www.youtube.com/watch?v=1coLC-MUCJc>`__
@@ -142,24 +141,21 @@ and **asyncio**
 
 However, we quickly introduce core asynchronous programming primitives provided by `Twisted <https://twistedmatrix.com/>`__ and `asyncio <https://docs.python.org/3.4/library/asyncio.html>`__:
 
-* `Twisted Deferreds <https://twistedmatrix.com/documents/current/core/howto/defer.html>`__ and `Twisted inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`__
-* `asyncio Futures <https://docs.python.org/3.4/library/asyncio-task.html#future>`__ and `asyncio coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`_
-
-Useful resources in the context of the latter are
-
-* `Alex Martelli - Don't call us, we'll call you: callback patterns and idioms <https://www.youtube.com/watch?v=LCZRJStwkKM>`__
-* `Wikipedia on Promises <http://en.wikipedia.org/wiki/Promise_%28programming%29>`__
-
 
 Asynchronous Programming Primitives
 -----------------------------------
 
+In this section, we have a quick look at some of the asynchronous programming primitive provided by Twisted and asyncio to show similarities and differences.
+
+
 Twisted Deferreds and inlineCallbacks
 .....................................
 
-https://twisted.readthedocs.org/en/latest/core/howto/defer-intro.html
-https://twisted.readthedocs.org/en/latest/core/howto/defer.html
+Documenation pointers:
 
+* `Introduction to Deferreds <https://twisted.readthedocs.org/en/latest/core/howto/defer-intro.html>`__
+* `Deferreds Reference <https://twisted.readthedocs.org/en/latest/core/howto/defer.html>`__
+* `Twisted inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`__
 
 Programming with Twisted Deferreds involves attaching *callbacks* to Deferreds which get called when the Deferred finally either resolves successfully or fails with an error
 
@@ -295,6 +291,7 @@ The rest of the program is just for driving our test function and running a Twis
 
 Asyncio Futures and Coroutines
 ..............................
+
 
 `Asyncio Futures <http://docs.python.org/3.4/library/asyncio-task.html#future>`_ like Twisted Deferreds encapsulate the result of a future computation. At the time of creation, the result is (usually) not yet available, and will only be available eventually.
 
