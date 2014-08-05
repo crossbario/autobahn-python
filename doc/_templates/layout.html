@@ -4,6 +4,84 @@
 
    {{ super() }}
 
+   <style>
+   {% if not no_network %}
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Regular.otf');
+         font-weight: normal;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-It.otf');
+         font-weight: normal;
+         font-style: italic;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Semibold.otf');
+         font-weight: bold;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Light.otf');
+         font-weight: 300;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Regular.otf');
+         font-weight: normal;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Light.otf');
+         font-weight: 300;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Semibold.otf');
+         font-weight: bold;
+      }
+   {% else %}
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url("{{ pathto('_static/fonts/SourceSansPro-Regular.otf', 1) }}");
+         font-weight: normal;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url("{{ pathto('_static/fonts/SourceSansPro-It.otf', 1) }}");
+         font-weight: normal;
+         font-style: italic;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url("{{ pathto('_static/fonts/SourceSansPro-Semibold.otf', 1) }}");
+         font-weight: bold;
+      }
+      @font-face {
+         font-family: 'Source Sans Pro';
+         src: url("{{ pathto('_static/fonts/SourceSansPro-Light.otf', 1) }}");
+         font-weight: 300;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url("{{ pathto('_static/fonts/SourceCodePro-Regular.otf', 1) }}");
+         font-weight: normal;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url("{{ pathto('_static/fonts/SourceCodePro-Light.otf', 1) }}");
+         font-weight: 300;
+      }
+      @font-face {
+         font-family: 'Source Code Pro';
+         src: url("{{ pathto('_static/fonts/SourceCodePro-Semibold.otf', 1) }}");
+         font-weight: bold;
+      }
+   {% endif %}
+   </style>
+
    <link rel="stylesheet" href="{{ pathto('_static/css/page.css', 1) }}">
    <link rel="stylesheet" href="{{ pathto('_static/css/local.css', 1) }}">
 
@@ -20,10 +98,14 @@
            <a href="/"><img class="logo" src="{{ pathto('_static/img/gen/autobahn.svg', 1) }}" height="200" width="200" alt="Autobahn|Python"/></a>
          </p>
          <h3 style="font-weight: normal;"><strong>Autobahn</strong>|Python</h3>
+         {% if not no_network %}
          <p>
            <iframe src="http://ghbtns.com/github-btn.html?user=tavendo&repo=AutobahnPython&type=watch&count=true&size=large"
              allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
          </p>
+         {% else %}
+         <!-- GitHub stripped! -->
+         {% endif %}
       </div>
       <div class="side_toc sidebar_block" id="quicklinks">
          <h4><a href="https://pypi.python.org/pypi/autobahn/">Download</a></h4>
@@ -33,7 +115,6 @@
          <h4><a href="http://stackoverflow.com/questions/tagged/autobahn?sort=newest">StackOverflow</a></h4>
       </div>
    </div>
-   <!-- <div class="clearBoth"></div> -->
 
     <p class="pull-right">
       <a href="#">Back to top</a>
@@ -60,10 +141,12 @@
    <!-- community widget stripped! -->
 {% endif %}
 
-<a id="manifesto" href="http://www.reactivemanifesto.org/">
-   <img src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png">
-</a>
 
+{% if not no_network %}
+   <a id="manifesto" href="http://www.reactivemanifesto.org/">
+      <img src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png">
+   </a>
+{% endif %}
 
 {% if not no_network %}
    <script>
