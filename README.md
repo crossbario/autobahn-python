@@ -101,10 +101,11 @@ class MyComponent(ApplicationSession):
 For more information, take a look at the [project documentation](http://autobahn.ws/python). This provides:
 
 * [installation instructions](http://autobahn.ws/python/installation.html)
-* [a list of all examples in this repo](http://autobahn.ws/python/examples.html)
-* [an introduction to WebSocket programming](http://autobahn.ws/python/websocketprogramming.html)
-* [an introduction to WAMP programming](http://autobahn.ws/python/wampprogramming.html)
-* [a full API reference](http://autobahn.ws/python/reference.html)
+* [an introduction to WebSocket programming](http://autobahn.ws/python/websocket/programming.html)
+* [an introduction to WAMP programming](http://autobahn.ws/python/wamp/programming.html)
+* [a list of WebSocket examples in this repo](http://autobahn.ws/python/websocket/examples.html)
+* [a list of WAMP examples in this repo](http://autobahn.ws/python/wamp/examples.html)
+* [a full API reference](http://autobahn.ws/python/reference/autobahn.html)
 
 
 ## Get in touch
