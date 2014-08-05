@@ -131,7 +131,11 @@ The *Caller* and *Callee* will usually run application code, while the *Dealer* 
 Registering Procedures
 ......................
 
-:func:`autobahn.wamp.interfaces.ICallee.register`
+To make a procedure available for remote calling, the procedure needs to be *registered*.
+
+Registering a procedure is done by calling :func:`autobahn.wamp.interfaces.ICallee.register`.
+
+Here is an example using **Twisted**
 
 Twisted
 
@@ -157,6 +161,9 @@ Twisted
          except Exception as e:
             print("could not register procedure: {0}".format(e))
 
+The procedure ``add2`` is registered (line 14) under the URI ``com.myapp.add2``. When the registration succeeds, callers will immediately be able to call the procedure using the URI under which it was registered (``com.myapp.add2``).
+
+The same code for **asyncio** looks like this
 
 asyncio
 
@@ -182,14 +189,20 @@ asyncio
          except Exception as e:
             print("could not register procedure: {0}".format(e))
 
+The differences to Twisted are:
+
+* the import (as with the previous examples)
+* the use of ``yield from`` instead of ``yield``
+
 
 .. _calling-procedures:
-
 
 Calling Procedures
 ..................
 
-:func:`autobahn.wamp.interfaces.ICaller.call`
+Calling a procedure (that has been previously registered) is done using :func:`autobahn.wamp.interfaces.ICaller.call`.
+
+Here is how you would call the procedure ``add2`` that we registered in :ref:`registering-procedures` under URI ``com.myapp.add2`` in **Twisted**
 
 Twisted
 
@@ -212,6 +225,7 @@ Twisted
          except Exception as e:
             print("call error: {0}".format(e))
 
+And here is the same done on **asyncio**
 
 asyncio
 
@@ -258,9 +272,11 @@ The *Publisher* and *Subscriber* will usually run application code, while the *B
 Subscribing to Topics
 .....................
 
-:func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
+To receive events published to a topic, a session needs to first subscribe to the topic.
 
-Twisted
+Subscribing to a topic is done by calling :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+
+Here is a **Twisted** example
 
 .. code-block:: python
    :linenos:
@@ -279,13 +295,18 @@ Twisted
             print("event received: {0}", count)
 
          try:
-            yield self.subscribe(oncounter, 'com.myapp.oncounter')
+            yield self.subscribe(oncounter, u'com.myapp.oncounter')
             print("subscribed to topic")
          except Exception as e:
             print("could not subscribe to topic: {0}".format(e))
 
+We create an event handler function ``oncounter`` (you can name that as you like) which will get called whenever an event for the topic is received.
 
-asyncio
+To subscribe (line 14), we provide the event handler function (``oncounter``) and the URI of the topic to which we want to subscribe (``u'com.myapp.oncounter'``).
+
+When the subscription succeeds, we will receive any events published to ``u'com.myapp.oncounter'``. Note that we won't receive events published *before* the subscription succeeds.
+
+The corresponding **asyncio** code looks like this
 
 .. code-block:: python
    :linenos:
@@ -304,10 +325,12 @@ asyncio
             print("event received: {0}", count)
 
          try:
-            yield from self.subscribe(oncounter, 'com.myapp.oncounter')
+            yield from self.subscribe(oncounter, u'com.myapp.oncounter')
             print("subscribed to topic")
          except Exception as e:
             print("could not subscribe to topic: {0}".format(e))
+
+Again, nearly identical to Twisted.
 
 
 .. _publishing-events:
@@ -315,9 +338,11 @@ asyncio
 Publishing Events
 .................
 
-:func:`autobahn.wamp.interfaces.IPublisher.publish`
+Publishing an event to a topic is done by calling :func:`autobahn.wamp.interfaces.IPublisher.publish`.
 
-Twisted
+Events can carry arbitrary positional and keyword based payload - as long as the payload is serializable in JSON.
+
+Here is a **Twisted** example that will publish an event to topic ``u'com.myapp.oncounter'`` with a single (positional) payload being a counter that is incremented for each publish
 
 .. code-block:: python
    :linenos:
@@ -335,11 +360,11 @@ Twisted
 
          counter = 0
          while True:
-            self.publish('com.myapp.oncounter', counter)
+            self.publish(u'com.myapp.oncounter', counter)
             counter += 1
             yield sleep(1)
 
-asyncio
+The corresponding **asyncio** code looks like this
 
 .. code-block:: python
    :linenos:
@@ -357,7 +382,7 @@ asyncio
 
          counter = 0
          while True:
-            self.publish('com.myapp.oncounter', counter)
+            self.publish(u'com.myapp.oncounter', counter)
             counter += 1
             yield from sleep(1)
 
@@ -366,7 +391,7 @@ asyncio
    By default, a publisher will not receive an event it publishes even when the publisher is *itself* subscribed to the topic subscribed to. This behavior can be overridden.
 
 .. tip::
-   By default, publications are unacknowledged. This means, a ``publish()`` may fail without noticing (like when the session is not authorized to publish to the given topic). This behavior can be overridden.
+   By default, publications are *unacknowledged*. This means, a ``publish()`` may fail *silently* (like when the session is not authorized to publish to the given topic). This behavior can be overridden.
 
 
 Upgrading

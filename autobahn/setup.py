@@ -37,29 +37,31 @@ PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
 
 LONGSDESC = """
-Autobahn|Python is a network library implementing
+**Autobahn**|Python
+-------------------
 
- * The WebSocket Protocol
- * The Web Application Messaging Protocol (WAMP)
+*Open-source real-time framework for Web, Mobile & Internet of Things.*
 
-for Twisted and Asyncio on Python 2 and 3.
+----
 
-Autobahn|Python is part of the Autobahn project:
+**Autobahn**|Python is part of the `Autobahn <http://autobahn.ws>`__ project
+and provides open-source implementations of
 
-The Autobahn project provides open-source implementations of the
-WebSocket and WAMP protocols. WebSocket allows bidirectional real-time
-messaging on the Web and WAMP adds asynchronous Remote Procedure Calls
-and Publish & Subscribe on top of WebSocket.
+* The WebSocket Protocol
+* The Web Application Messaging Protocol (WAMP)
+
+for **Twisted** and **asyncio**, on **Python 2** and **Python 3** and
+for writing **servers** and **clients**.
+
+WebSocket allows **bidirectional real-time messaging** on the Web and WAMP
+adds asynchronous **Remote Procedure Calls** and **Publish & Subscribe** on
+top of WebSocket.
 
 More information:
 
- * https://github.com/tavendo/AutobahnPython/blob/master/README.md
- * http://autobahn.ws/python
- * http://wamp.ws
-
-Source code:
-
- * https://github.com/tavendo/AutobahnPython
+* `Documentation <http://autobahn.ws/python>`__
+* `Source Code <https://github.com/tavendo/AutobahnPython>`__
+* `WAMP <http://wamp.ws>`__
 """
 
 ## get version string from "autobahn/__init__.py"
@@ -106,7 +108,7 @@ else:
 setup(
    name = 'autobahn',
    version = verstr,
-   description = 'Autobahn|Python provides WebSocket and WAMP for Twisted and Asyncio',
+   description = 'WebSocket client & server library, WAMP real-time framework',
    long_description = LONGSDESC,
    license = 'Apache License 2.0',
    author = 'Tavendo GmbH',
