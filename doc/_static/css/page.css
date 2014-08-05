@@ -6,9 +6,13 @@ body {
    background-color: #fff;
 }
 
-code, kbd, pre, samp, span.pre {
+code, kbd, pre, samp, span.pre, a.tx {
    font-family: 'Source Code Pro', Consolas, Menlo, monospace;
    font-size: 13px;
+}
+
+a.tx, a.tx:visited {
+   font-weight: bold;
 }
 
 /* scrolling for both code with and without line numbers  */

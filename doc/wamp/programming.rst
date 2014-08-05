@@ -50,7 +50,7 @@ When using **Twisted**, you derive from :class:`autobahn.twisted.wamp.Applicatio
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
 whereas when you are using **asyncio**, you derive from :class:`autobahn.asyncio.wamp.ApplicationSession`
 
@@ -62,7 +62,7 @@ whereas when you are using **asyncio**, you derive from :class:`autobahn.asyncio
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
 As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical.
 
@@ -131,13 +131,9 @@ The *Caller* and *Callee* will usually run application code, while the *Dealer* 
 Registering Procedures
 ......................
 
-To make a procedure available for remote calling, the procedure needs to be *registered*.
-
-Registering a procedure is done by calling :func:`autobahn.wamp.interfaces.ICallee.register`.
+To make a procedure available for remote calling, the procedure needs to be *registered*. Registering a procedure is done by calling :func:`autobahn.wamp.interfaces.ICallee.register` from a session.
 
 Here is an example using **Twisted**
-
-Twisted
 
 .. code-block:: python
    :linenos:
@@ -150,7 +146,7 @@ Twisted
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          def add2(x, y):
             return x + y
@@ -161,11 +157,17 @@ Twisted
          except Exception as e:
             print("could not register procedure: {0}".format(e))
 
-The procedure ``add2`` is registered (line 14) under the URI ``com.myapp.add2``. When the registration succeeds, callers will immediately be able to call the procedure using the URI under which it was registered (``com.myapp.add2``).
+The procedure ``add2`` is registered (line 14) under the URI ``u"com.myapp.add2"`` immediately in the ``onJoin`` callback which fires when the session has connected to a *Router* and joined a *Realm*.
 
-The same code for **asyncio** looks like this
+.. tip::
 
-asyncio
+   You can register *local* functions like in above example, *global* functions as well as *methods* on class instances. Further, procedures can also be automatically registered using *decorators* (see :ref:`registering-procedure-using-decorators`)
+
+When the registration succeeds, authorized callers will immediately be able to call the procedure (see :ref:`calling-procedures`) using the URI under which it was registered (``u"com.myapp.add2"``).
+
+A registration may also fail, e.g. when a procedure is already registered under the given URI or when the session is not authorized to register procedures.
+
+Using **asyncio**, the example looks like this
 
 .. code-block:: python
    :linenos:
@@ -178,7 +180,7 @@ asyncio
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          def add2(x, y):
             return x + y
@@ -189,9 +191,10 @@ asyncio
          except Exception as e:
             print("could not register procedure: {0}".format(e))
 
-The differences to Twisted are:
+The differences compared with the Twisted variant are:
 
-* the import (as with the previous examples)
+* the ``import`` of ``ApplicationSession``
+* the use of ``@coroutine`` to decorate co-routines
 * the use of ``yield from`` instead of ``yield``
 
 
@@ -204,8 +207,6 @@ Calling a procedure (that has been previously registered) is done using :func:`a
 
 Here is how you would call the procedure ``add2`` that we registered in :ref:`registering-procedures` under URI ``com.myapp.add2`` in **Twisted**
 
-Twisted
-
 .. code-block:: python
    :linenos:
    :emphasize-lines: 11
@@ -217,7 +218,7 @@ Twisted
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          try:
             res = yield self.call(u'com.myapp.add2', 2, 3)
@@ -226,8 +227,6 @@ Twisted
             print("call error: {0}".format(e))
 
 And here is the same done on **asyncio**
-
-asyncio
 
 .. code-block:: python
    :linenos:
@@ -240,7 +239,7 @@ asyncio
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          try:
             res = yield from self.call(u'com.myapp.add2', 2, 3)
@@ -289,7 +288,7 @@ Here is a **Twisted** example
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          def oncounter(count):
             print("event received: {0}", count)
@@ -319,7 +318,7 @@ The corresponding **asyncio** code looks like this
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          def oncounter(count):
             print("event received: {0}", count)
@@ -356,7 +355,7 @@ Here is a **Twisted** example that will publish an event to topic ``u'com.myapp.
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          counter = 0
          while True:
@@ -378,7 +377,7 @@ The corresponding **asyncio** code looks like this
    class MyComponent(ApplicationSession):
 
       def onJoin(self, details):
-         print("session established")
+         print("session ready")
 
          counter = 0
          while True:

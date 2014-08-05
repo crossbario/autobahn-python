@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import sphinx_bootstrap_theme
+
+sys.path.insert(0, os.path.abspath('./_extensions'))
+sys.path.insert(0, os.path.abspath('../autobahn'))
 
 extensions = [
    'sphinx.ext.autodoc',
@@ -9,7 +13,8 @@ extensions = [
    'sphinx.ext.intersphinx',
    'sphinx.ext.viewcode',
    'sphinx.ext.ifconfig',
-   'sphinxcontrib.spelling'
+   'sphinxcontrib.spelling',
+   'txsphinx'
 ]
 
 spelling_lang = 'en_US'
@@ -231,8 +236,9 @@ htmlhelp_basename = 'AutobahnPython'
 
 # http://sphinx-doc.org/ext/intersphinx.html
 intersphinx_mapping = {
-   'py': ('http://docs.python.org/', None),
-   #'twisted': ('http://twistedmatrix.com/documents/current/api/', None),
+   'py2': ('http://docs.python.org/2', None),
+   'py3': ('http://docs.python.org/3', None),
+   'six': ('https://pythonhosted.org/six/', None),
 }
 
 rst_epilog = """
