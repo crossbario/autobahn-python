@@ -188,20 +188,10 @@ no_network = None
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
    'index': [
-      'side-primary.html',
-      #'side-secondary.html',
-      #'stay_informed.html',
-      #'sidetoc.html',
-      #'previous_next.html',
-      #'searchbox.html'
+      'side-primary.html'
    ],
    '**': [
-      'side-primary.html',
-      # 'side-secondary.html',
-      #'stay_informed.html',
-      # 'sidetoc.html',
-      #'previous_next.html',
-      #'searchbox.html'
+      'side-primary.html'
    ]
 }
 
