@@ -5,9 +5,9 @@
 Changelog
 =========
 
-0.8.12-2
+0.8.13
 --------
-`Published 2014-07-23 <https://pypi.python.org/pypi/autobahn/0.8.12>`__
+`Published 2014-08-05 <https://pypi.python.org/pypi/autobahn/0.8.13>`__
 
 * fix Application class (#240)
 * support WSS for Application class

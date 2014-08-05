@@ -37,31 +37,26 @@ PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
 
 LONGSDESC = """
-**Autobahn**|Python
--------------------
+.. |ab| replace:: **Autobahn**\|Python
 
-*Open-source real-time framework for Web, Mobile & Internet of Things.*
+|ab| is a networking library that is part of the `Autobahn <http://autobahn.ws>`__
+project and provides implementations of
 
-----
+* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
+* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws>`__
 
-**Autobahn**|Python is part of the `Autobahn <http://autobahn.ws>`__ project
-and provides open-source implementations of
+for `Twisted <http://www.twistedmatrix.com/>`__ and
+`asyncio <https://docs.python.org/3/library/asyncio.html>`__,
+on Python 2 & 3 and for writing servers and clients.
 
-* The WebSocket Protocol
-* The Web Application Messaging Protocol (WAMP)
-
-for **Twisted** and **asyncio**, on **Python 2** and **Python 3** and
-for writing **servers** and **clients**.
-
-WebSocket allows **bidirectional real-time messaging** on the Web and WAMP
-adds asynchronous **Remote Procedure Calls** and **Publish & Subscribe** on
+WebSocket allows bidirectional real-time messaging on the Web and WAMP
+adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on
 top of WebSocket.
 
 More information:
 
-* `Documentation <http://autobahn.ws/python>`__
+* `Project Site <http://autobahn.ws/python>`__
 * `Source Code <https://github.com/tavendo/AutobahnPython>`__
-* `WAMP <http://wamp.ws>`__
 """
 
 ## get version string from "autobahn/__init__.py"

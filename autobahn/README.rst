@@ -1,17 +1,25 @@
-Twisted-based WebSocket/WAMP client and server framework.
+**Autobahn**|Python
+-------------------
 
-AutobahnPython provides a WebSocket (RFC6455, Hybi-10 to -17, Hixie-76)
-framework for creating WebSocket-based clients and servers.
+*Open-source real-time framework for Web, Mobile & Internet of Things.*
 
-AutobahnPython also includes an implementation of WAMP
-(The WebSockets Application Messaging Protocol), a light-weight,
-asynchronous RPC/PubSub over JSON/WebSocket protocol.
+----
+
+**Autobahn**|Python is part of the `Autobahn <http://autobahn.ws>`__ project
+and provides open-source implementations of
+
+* The WebSocket Protocol
+* The Web Application Messaging Protocol (WAMP)
+
+for **Twisted** and **asyncio**, on **Python 2** and **Python 3** and
+for writing **servers** and **clients**.
+
+WebSocket allows **bidirectional real-time messaging** on the Web and WAMP
+adds asynchronous **Remote Procedure Calls** and **Publish & Subscribe** on
+top of WebSocket.
 
 More information:
 
-   * http://autobahn.ws/python
-   * http://wamp.ws
-
-Source Code:
-
-   * https://github.com/tavendo/AutobahnPython
+* `Documentation <http://autobahn.ws/python>`__
+* `Source Code <https://github.com/tavendo/AutobahnPython>`__
+* `WAMP <http://wamp.ws>`__
