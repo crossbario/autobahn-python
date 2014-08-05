@@ -51,6 +51,10 @@ os.environ['PYTHONPATH'] = '../autobahn'
 
 taschenmesser = pkg_resources.resource_filename('taschenmesser', '..')
 #taschenmesser = "../../../infrequent/taschenmesser"
+
+AddOption('--no_network', dest = 'no_network', action = 'store_true', default = False,
+   help = "Run locally and disable anything doing network access")
+
 env = Environment(tools = ['default', 'taschenmesser'],
                   toolpath = [taschenmesser],
                   ENV = os.environ)
@@ -64,7 +68,13 @@ Alias("img", imgs)
 
 ## Sphinx Build
 ##
-docs = env.Command(DOCSDIR, [], "sphinx-build -b html . $TARGET")
+if GetOption('no_network'):
+   print("Building for no network")
+   docs = env.Command(DOCSDIR, [], "sphinx-build -A no_network=1 -D no_network=1 -b html . $TARGET")
+else:
+   docs = env.Command(DOCSDIR, [], "sphinx-build -b html . $TARGET")
+
+# sphinx-build -b spelling . _spelling
 
 env.AlwaysBuild(docs)
 Clean(docs, DOCSDIR)

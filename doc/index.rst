@@ -5,12 +5,18 @@
 
 Latest release: v\ |version| (:ref:`Changelog`)
 
-.. raw:: html
+.. ifconfig:: not no_network
 
-   <p>
-   <a href="https://travis-ci.org/tavendo/AutobahnPython"><img src="https://travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" /></a>
-   <a href="http://pypi.python.org/pypi/autobahn"><img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" /></a>
-   </p>
+   .. raw:: html
+
+      <p>
+         <a href="https://travis-ci.org/tavendo/AutobahnPython">
+            <img src="https://travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" />
+         </a>
+         <a href="http://pypi.python.org/pypi/autobahn">
+            <img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" />
+         </a>
+      </p>
 
 -----
 
@@ -137,7 +143,7 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* **server**, which provides a remote procedure enpoint and publishes to a topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/server.py>`__
+* **server**, which provides a remote procedure endpoint and publishes to a topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/server.py>`__
 * **client**, which calls the procedure and subscribes to the topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
 
 Introduction to WAMP Programming with |ab|:
@@ -166,7 +172,7 @@ For **WAMP developers**, :doc:`wamp/programming` gives an introduction for progr
 Community
 ---------
 
-Development of |ab| takes place on the Github `source repository <https://github.com/tavendo/AutobahnPython>`_.
+Development of |ab| takes place on the GitHub `source repository <https://github.com/tavendo/AutobahnPython>`_.
 
 .. note::
    We are open for contributions, whether that's code or documentation! Preferably via pull requests.

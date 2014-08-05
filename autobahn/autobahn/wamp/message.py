@@ -759,7 +759,7 @@ class Heartbeat(Message):
       :type incoming: int
       :param outgoing: Outgoing heartbeat.
       :type outgoing: int
-      :param discard: Optional data that is discared by peer.
+      :param discard: Optional data that is discarded by peer.
       :type discard: unicode or None
       """
       assert(type(incoming) in six.integer_types)
@@ -856,9 +856,9 @@ class Error(Message):
 
       :param request_type: The WAMP message type code for the original request.
       :type request_type: int
-      :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occured for.
+      :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occurred for.
       :type request: int
-      :param error: The WAMP or application error URI for the error that occured.
+      :param error: The WAMP or application error URI for the error that occurred.
       :type error: unicode
       :param args: Positional values for application-defined exception.
          Must be serializable using any serializers in use.

@@ -90,7 +90,7 @@ class IWebSocketChannel(object):
       :param doNotCompress: Iff ``True``, never compress this message. This only applies to
                             Hybi-Mode and only when WebSocket compression has been negotiated on
                             the WebSocket connection. Use when you know the payload 
-                            uncompressible (e.g. encrypted or already compressed).
+                            incompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
 
@@ -142,7 +142,7 @@ class IWebSocketChannel(object):
       """
       Send a message that was previously prepared with :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`.
 
-      :param prepareMessage: A previsouly prepared message.
+      :param prepareMessage: A previously prepared message.
       :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
       """
 
@@ -238,7 +238,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
       :type isBinary: bool
       :param doNotCompress: If ``True``, never compress this message. This only applies to
          Hybi-Mode and only when WebSocket compression has been negotiated on the WebSocket
-         connection. Use when you know the payload uncompressible (e.g. encrypted or
+         connection. Use when you know the payload incompressible (e.g. encrypted or
          already compressed).
       :type doNotCompress: bool
       """

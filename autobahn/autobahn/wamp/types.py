@@ -448,7 +448,7 @@ class CallOptions:
       :param onProgress: A callback that will be called when the remote endpoint
                          called yields interim call progress results.
       :type onProgress: a callable
-      :param timeout: Time in seconds after which the call should be automatically cancelled.
+      :param timeout: Time in seconds after which the call should be automatically canceled.
       :type timeout: float
       :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
                          to Callees. Note that a Dealer, depending on Dealer configuration, might

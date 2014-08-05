@@ -461,7 +461,7 @@ class Application:
       to subscribe to. If no URI is given, the URI is constructed from
       the application URI prefix and the Python function name.
 
-      If the function yield, it will be assumed that it's an asychronous
+      If the function yield, it will be assumed that it's an asynchronous
       process and inlineCallbacks will be applied to it.
 
       :Example:
@@ -497,7 +497,7 @@ class Application:
       Signals are local events triggered internally and exposed to the
       developer to be able to react to the application lifecycle.
 
-      If the function yield, it will be assumed that it's an asychronous
+      If the function yield, it will be assumed that it's an asynchronous
       coroutine and inlineCallbacks will be applied to it.
 
       Current signals :

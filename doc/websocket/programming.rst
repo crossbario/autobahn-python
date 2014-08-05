@@ -56,7 +56,7 @@ So a Twisted-based echo protocol would import the base protocol from ``autobahn.
          ## echo back message verbatim
          self.sendMessage(payload, isBinary)
 
-while an asyncio echo protocol would import the base protocol from ``autobahn.asyncio.websocket`` and dervice from :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
+while an asyncio echo protocol would import the base protocol from ``autobahn.asyncio.websocket`` and derive from :class:`autobahn.asyncio.websocket.WebSocketServerProtocol`
 
 *asyncio:*
 
@@ -283,7 +283,7 @@ In this callback you can do thing like
 * checking the origin of the WebSocket request
 * negotiate WebSocket subprotocols
 
-For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selectec subprotocol in it's ``onConnect()`` callback in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
+For example, a WebSocket client might offer to speak several WebSocket subprotocols. The server can inspect the offered protocols in ``onConnect()`` via the supplied instance of :class:`autobahn.websocket.protocol.ConnectionRequest`. When the server accepts the client, it'll chose one of the offered subprotocols. The client can then inspect the selected subprotocol in it's ``onConnect()`` callback in the supplied instance of :class:`autobahn.websocket.protocol.ConnectionResponse`.
 
 Connection Open
 ~~~~~~~~~~~~~~~
@@ -383,7 +383,7 @@ So a Twisted-based protocol would import the base protocol from ``autobahn.twist
          else:
             print("Text message received: {0}".format(payload.decode('utf8')))
 
-while an asyncio-based protocol would import the base protocol from ``autobahn.asyncio.websocket`` and dervice from :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
+while an asyncio-based protocol would import the base protocol from ``autobahn.asyncio.websocket`` and derive from :class:`autobahn.asyncio.websocket.WebSocketClientProtocol`
 
 *asyncio:*
 

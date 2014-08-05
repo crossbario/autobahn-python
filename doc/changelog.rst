@@ -27,7 +27,7 @@ Changelog
 `Published <https://pypi.python.org/pypi/autobahn/0.8.10>`__
 
 * WAMP-over-Long-poll (preliminary)
-* WAMP Auth methods CR, Ticket, TOTP (preliminary)
+* WAMP Authentication methods CR, Ticket, TOTP (preliminary)
 * WAMP App object (preliminary)
 * various fixes
 
@@ -57,14 +57,14 @@ Changelog
 
 * started reworking docs
 * allow factories to operate without WS URL
-* fix behavior on 2nd protocol violation
+* fix behavior on second protocol violation
 
 0.8.5
 -----
 `Published <https://pypi.python.org/pypi/autobahn/0.8.5>`__
 
 * support WAMP endpoint/handler decorators
-* new examples for endpoint/handler deorators
+* new examples for endpoint/handler decorators
 * fix excludeMe pubsub option
 
 0.8.4
@@ -73,7 +73,7 @@ Changelog
 
 * initial support for WAMP v2 authentication
 * various fixes/improvements to WAMP v2 implementation
-* new example: WebSocket auth. with Mozilla Persona
+* new example: WebSocket authentication with Mozilla Persona
 * polish up documentation
 
 0.8.3
@@ -154,7 +154,7 @@ Changelog
 * Twisted reactor is no longer imported on module level (but lazy)
 * optimize pure Python UTF8 validator (10-20% speedup on PyPy)
 * opening handshake traffic stats (per-open stats)
-* add multicore echo example
+* add multi-core echo example
 * fixes with examples of streaming mode
 * fix zero payload in streaming mode
 
@@ -164,7 +164,7 @@ Changelog
 
 * support latest `permessage-deflate` draft
 * allow controlling memory level for `zlib` / `permessage-deflate`
-* updated reference, moved docs to Readthedocs
+* updated reference, moved docs to "Read the Docs"
 * fixes #157 (a WAMP-CRA timing attack very, very unlikely to be exploitable, but anyway)
 
 0.6.3

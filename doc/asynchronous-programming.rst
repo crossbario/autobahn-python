@@ -151,7 +151,7 @@ In this section, we have a quick look at some of the asynchronous programming pr
 Twisted Deferreds and inlineCallbacks
 .....................................
 
-Documenation pointers:
+Documentation pointers:
 
 * `Introduction to Deferreds <https://twisted.readthedocs.org/en/latest/core/howto/defer-intro.html>`__
 * `Deferreds Reference <https://twisted.readthedocs.org/en/latest/core/howto/defer.html>`__
@@ -295,7 +295,7 @@ Asyncio Futures and Coroutines
 
 `Asyncio Futures <http://docs.python.org/3.4/library/asyncio-task.html#future>`_ like Twisted Deferreds encapsulate the result of a future computation. At the time of creation, the result is (usually) not yet available, and will only be available eventually.
 
-On the other hand, asyncio futures are quite different from Twisted Deferreds. One difference is that they have no builtin machinery for chaining.
+On the other hand, asyncio futures are quite different from Twisted Deferreds. One difference is that they have no built-in machinery for chaining.
 
 `Asyncio Coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`_ are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
 
@@ -340,7 +340,7 @@ First, consider this program using plain ``asyncio.Future``. We simulate calling
    loop.run_until_complete(test())
    loop.close()
 
-Using asyncio in this way is probably uite unusual. This is becomes asyncio os opinionated towards using coroutines from the beginning. Anyway, here is what above code does:
+Using asyncio in this way is probably quite unusual. This is becomes asyncio os opinionated towards using coroutines from the beginning. Anyway, here is what above code does:
 
 1. We create a ``Future`` to be returned by our ``slow_square`` function (line 4)
 2. We create a function ``resolve`` (a closure) in which we resolve the previously created Future with the result (lines 6-7)

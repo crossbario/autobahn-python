@@ -24,7 +24,7 @@ import six
 @six.add_metaclass(abc.ABCMeta)
 class IObjectSerializer(object):
    """
-   Raw Python object serialization and unserialization. Object serializers are
+   Raw Python object serialization and deserialization. Object serializers are
    used by classes implementing WAMP serializers, that is instances of
    :class:`autobahn.wamp.interfaces.ISerializer`.
    """
@@ -99,8 +99,8 @@ class IMessage(object):
    @abc.abstractmethod
    def serialize(self, serializer):
       """
-      Serialize this object into a wire level bytestring representation and cache
-      the resulting bytestring. If the cache already contains an entry for the given
+      Serialize this object into a wire level bytes representation and cache
+      the resulting bytes. If the cache already contains an entry for the given
       serializer, return the cached representation directly.
 
       :param serializer: The wire level serializer to use.
@@ -145,7 +145,7 @@ class IMessage(object):
 @six.add_metaclass(abc.ABCMeta)
 class ISerializer(object):
    """
-   WAMP message serialization and unserialization.
+   WAMP message serialization and deserialization.
    """
 
    @abc.abstractproperty
@@ -177,7 +177,7 @@ class ISerializer(object):
    @abc.abstractmethod
    def unserialize(self, bytes, isBinary):
       """
-      Unserializes bytes from a transport and parses WAMP messages.
+      Deserialize bytes from a transport and parse into WAMP messages.
 
       :param bytes: Byte string from wire.
       :type bytes: bytes
@@ -217,7 +217,7 @@ class ITransport(object):
    @abc.abstractmethod
    def close(self):
       """
-      Close the transport regularily. The transport will perform any
+      Close the transport regularly. The transport will perform any
       closing handshake if applicable. This should be used for any
       application initiated closing.
       """
@@ -262,7 +262,7 @@ class ITransportHandler(object):
       """
       Callback fired when the transport has been closed.
 
-      :param wasClean: Indicates if the transport has been closed regularily.
+      :param wasClean: Indicates if the transport has been closed regularly.
       :type wasClean: bool
       """
 
@@ -368,7 +368,7 @@ class ICaller(ISession):
       If the call fails, the returned Deferred/Future will be rejected with an instance
       of :class:`autobahn.wamp.exception.ApplicationError`.
 
-      If the *Caller* and *Dealer* implementations support cancelling of calls, the call may
+      If the *Caller* and *Dealer* implementations support canceling of calls, the call may
       be canceled by canceling the returned Deferred/Future.
 
       If ``kwargs`` contains an ``options`` keyword argument that is an instance of

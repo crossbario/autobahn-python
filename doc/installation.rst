@@ -77,7 +77,7 @@ And to install asyncio backports automatically when required
 Install from Sources
 ~~~~~~~~~~~~~~~~~~~~
 
-To install from sources, clone the repo
+To install from sources, clone the repository
 
 .. code-block:: sh
 

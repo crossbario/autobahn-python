@@ -287,7 +287,7 @@ class ConnectionRequest:
       """
       Constructor.
 
-      :param peer: Descriptor of the connecting client (eg IP address/port in case of TCP transports).
+      :param peer: Descriptor of the connecting client (e.g. IP address/port in case of TCP transports).
       :type peer: str
       :param headers: HTTP headers from opening handshake request.
       :type headers: dict
@@ -1960,8 +1960,8 @@ class WebSocketProtocol:
       When payload_len is given, it will always write that many octets to the stream.
       It'll wrap within payload, resending parts of that when more octets were requested
       The use case is again for fuzzing server which want to sent increasing amounts
-      of payload data to peers without having to construct potentially large messges
-      themselfes.
+      of payload data to peers without having to construct potentially large messages
+      themselves.
 
       Modes: Hybi
       """
@@ -2545,7 +2545,7 @@ class PreparedMessage:
       :param doNotCompress: Iff `True`, never compress this message. This only applies to
                             Hybi-Mode and only when WebSocket compression has been negotiated on
                             the WebSocket connection. Use when you know the payload
-                            uncompressible (e.g. encrypted or already compressed).
+                            incompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
       """
       if not doNotCompress:
@@ -2641,7 +2641,7 @@ class WebSocketFactory:
       :param doNotCompress: Iff `True`, never compress this message. This only applies to
                             Hybi-Mode and only when WebSocket compression has been negotiated on
                             the WebSocket connection. Use when you know the payload
-                            uncompressible (e.g. encrypted or already compressed).
+                            incompressible (e.g. encrypted or already compressed).
       :type doNotCompress: bool
 
       :returns: obj -- An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
@@ -3496,7 +3496,7 @@ class WebSocketServerFactory(WebSocketFactory):
       :type maxMessagePayloadSize: int
       :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
       :type autoFragmentSize: int
-      :param failByDrop: Fail connections by dropping the TCP connection without performaing closing handshake (default: `True`).
+      :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
       :type failbyDrop: bool
       :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
       :type echoCloseCodeReason: bool
@@ -3725,8 +3725,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
    def createHixieKey(self):
       """
-      Supposed to implement the crack smoker algorithm below. Well, crack
-      probably wasn't the stuff they smoked - dog poo?
+      Implements this algorithm:
 
       http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76#page-21
       Items 16 - 22
