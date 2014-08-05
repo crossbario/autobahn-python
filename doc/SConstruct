@@ -74,6 +74,7 @@ if GetOption('no_network'):
 else:
    docs = env.Command(DOCSDIR, [], "sphinx-build -b html . $TARGET")
 
+
 # sphinx-build -b spelling . _spelling
 
 env.AlwaysBuild(docs)

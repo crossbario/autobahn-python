@@ -4,83 +4,86 @@
 
    {{ super() }}
 
-   <style>
-   {% if not no_network %}
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Regular.otf');
-         font-weight: normal;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-It.otf');
-         font-weight: normal;
-         font-style: italic;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Semibold.otf');
-         font-weight: bold;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Light.otf');
-         font-weight: 300;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Regular.otf');
-         font-weight: normal;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Light.otf');
-         font-weight: 300;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Semibold.otf');
-         font-weight: bold;
-      }
+   {% if use_native_fonts %}
    {% else %}
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url("{{ pathto('_static/fonts/SourceSansPro-Regular.otf', 1) }}");
-         font-weight: normal;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url("{{ pathto('_static/fonts/SourceSansPro-It.otf', 1) }}");
-         font-weight: normal;
-         font-style: italic;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url("{{ pathto('_static/fonts/SourceSansPro-Semibold.otf', 1) }}");
-         font-weight: bold;
-      }
-      @font-face {
-         font-family: 'Source Sans Pro';
-         src: url("{{ pathto('_static/fonts/SourceSansPro-Light.otf', 1) }}");
-         font-weight: 300;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url("{{ pathto('_static/fonts/SourceCodePro-Regular.otf', 1) }}");
-         font-weight: normal;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url("{{ pathto('_static/fonts/SourceCodePro-Light.otf', 1) }}");
-         font-weight: 300;
-      }
-      @font-face {
-         font-family: 'Source Code Pro';
-         src: url("{{ pathto('_static/fonts/SourceCodePro-Semibold.otf', 1) }}");
-         font-weight: bold;
-      }
-   {% endif %}
+   <style>
+      {% if not no_network %}
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Regular.otf');
+            font-weight: normal;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-It.otf');
+            font-weight: normal;
+            font-style: italic;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Semibold.otf');
+            font-weight: bold;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceSansPro-Light.otf');
+            font-weight: 300;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Regular.otf');
+            font-weight: normal;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Light.otf');
+            font-weight: 300;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url('//tavendo-common-static.s3-eu-west-1.amazonaws.com/fonts/SourceCodePro-Semibold.otf');
+            font-weight: bold;
+         }
+      {% else %}
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url("{{ pathto('_static/fonts/SourceSansPro-Regular.otf', 1) }}");
+            font-weight: normal;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url("{{ pathto('_static/fonts/SourceSansPro-It.otf', 1) }}");
+            font-weight: normal;
+            font-style: italic;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url("{{ pathto('_static/fonts/SourceSansPro-Semibold.otf', 1) }}");
+            font-weight: bold;
+         }
+         @font-face {
+            font-family: 'Source Sans Pro';
+            src: url("{{ pathto('_static/fonts/SourceSansPro-Light.otf', 1) }}");
+            font-weight: 300;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url("{{ pathto('_static/fonts/SourceCodePro-Regular.otf', 1) }}");
+            font-weight: normal;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url("{{ pathto('_static/fonts/SourceCodePro-Light.otf', 1) }}");
+            font-weight: 300;
+         }
+         @font-face {
+            font-family: 'Source Code Pro';
+            src: url("{{ pathto('_static/fonts/SourceCodePro-Semibold.otf', 1) }}");
+            font-weight: bold;
+         }
+      {% endif %}
    </style>
+   {% endif %}
 
    <link rel="stylesheet" href="{{ pathto('_static/css/page.css', 1) }}">
    <link rel="stylesheet" href="{{ pathto('_static/css/local.css', 1) }}">

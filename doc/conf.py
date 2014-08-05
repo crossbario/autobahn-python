@@ -166,7 +166,8 @@ html_context = {
    #'widgeturl': 'https://demo.crossbar.io/clandeckwidget'
    #'widgeturl': 'http://127.0.0.1:8090/widget'
    'widgeturl': None,
-   'no_network': False
+   'no_network': False,
+   'use_native_fonts': True
 }
 
 ## additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)

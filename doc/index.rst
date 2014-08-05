@@ -11,7 +11,7 @@ Latest release: v\ |version| (:ref:`Changelog`)
 
       <p>
          <a href="https://travis-ci.org/tavendo/AutobahnPython">
-            <img src="https://travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" />
+            <img src="https://api.travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" />
          </a>
          <a href="http://pypi.python.org/pypi/autobahn">
             <img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" />

@@ -1,5 +1,5 @@
 body {
-   font-family: "Source Sans Pro", sans-serif;
+   font-family: 'Source Sans Pro', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
    font-size: 16px;
    line-height: 1.428571429;
    color: #333;
@@ -7,7 +7,7 @@ body {
 }
 
 code, kbd, pre, samp, span.pre {
-   font-family: 'Source Code Pro', monospace;
+   font-family: 'Source Code Pro', Consolas, Menlo, monospace;
    font-size: 13px;
 }
 
