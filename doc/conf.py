@@ -70,10 +70,6 @@ pygments_style = 'sphinx'
 html_theme = 'bootstrap'
 html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
-# (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
-# Path should be relative to the ``_static`` files directory.
-html_logo = "_static/img/gen/autobahnpython.svg"
-
 html_theme_options = {
     # Navigation bar title. (Default: ``project`` value)
     'navbar_title': " ",
@@ -164,6 +160,13 @@ html_theme_options = {
 html_static_path = ['_static']
 
 
+## additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)
+##
+def setup(app):
+   app.add_config_value('no_network', False, True)
+
+no_network = None
+
 ## additional variables which become accessible in the template engine's
 ## context for all pages
 ##
@@ -172,14 +175,13 @@ html_context = {
    #'widgeturl': 'http://127.0.0.1:8090/widget'
    'widgeturl': None,
    'no_network': False,
-   'use_native_fonts': True
+   'cstatic': 'http://127.0.0.1:8888',
+   #'cstatic': '//tavendo-common-static.s3-eu-west-1.amazonaws.com',
 }
 
-## additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)
-def setup(app):
-   app.add_config_value('no_network', False, True)
-
-no_network = None
+# (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
+# Path should be relative to the ``_static`` files directory.
+html_logo = None
 
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
