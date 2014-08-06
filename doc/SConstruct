@@ -72,9 +72,9 @@ Alias("img", imgs)
 ##
 if GetOption('no_network'):
    print("Building for no network")
-   docs = env.Command(DOCSDIR, [], 'sphinx-build -A no_network=1 -D no_network=1 -D cstatic="{}" -b html . $TARGET'.format(CSTATIC_LOCAL))
+   docs = env.Command(DOCSDIR, [], 'sphinx-build -A no_network=1 -D no_network=1 -A cstatic="{}" -b html . $TARGET'.format(CSTATIC_LOCAL))
 else:
-   docs = env.Command(DOCSDIR, [], 'sphinx-build cstatic="{}" -b html . $TARGET'.format(CSTATIC))
+   docs = env.Command(DOCSDIR, [], 'sphinx-build -A cstatic="{}" -b html . $TARGET'.format(CSTATIC))
 
 
 # sphinx-build -b spelling . _spelling

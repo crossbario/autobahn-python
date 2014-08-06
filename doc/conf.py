@@ -175,8 +175,8 @@ html_context = {
    #'widgeturl': 'http://127.0.0.1:8090/widget'
    'widgeturl': None,
    'no_network': False,
-   'cstatic': 'http://127.0.0.1:8888',
-   #'cstatic': '//tavendo-common-static.s3-eu-west-1.amazonaws.com',
+   #'cstatic': 'http://127.0.0.1:8888',
+   'cstatic': '//tavendo-common-static.s3-eu-west-1.amazonaws.com',
 }
 
 # (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
