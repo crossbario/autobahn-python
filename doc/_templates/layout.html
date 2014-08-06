@@ -9,11 +9,17 @@
 
    <style>
       .navbar-brand {
-         width: 209px;
-         height: 29px;
-         margin-top: 10px;
-         margin-left: 0px !important;
-         background-image: url({{ cstatic }}/img/gen/autobahnpython.svg.gz)
+         width: 239px;
+         height: 50px;
+         /*width: 209px;*/
+         /*height: 21px;*/
+         /*margin-top: 10px;*/
+         /*margin-left: 0px !important;*/
+         /*background-image: url({{ cstatic }}/img/gen/autobahnpython.svg.gz)*/
+      }
+
+      .navbar-brand::after {
+         content: url({{ cstatic }}/img/gen/autobahnpython.svg.gz);
       }
    </style>
 
@@ -74,11 +80,10 @@
 {% endif %}
 
 
-{% if not no_network %}
    <a id="manifesto" href="http://www.reactivemanifesto.org/">
-      <img src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png">
+      <!-- <img src="//d379ifj7s9wntv.cloudfront.net/reactivemanifesto/images/ribbons/we-are-reactive-black-right.png"> -->
+      <img src="{{ cstatic }}/img/gen/we_are_reactive.svg.gz" height="144" width="144" alt="Reactive Manifesto: We are reactive banner"/>
    </a>
-{% endif %}
 
 {% if not no_network %}
    <script>
