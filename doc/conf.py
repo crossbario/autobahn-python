@@ -4,6 +4,7 @@ import os
 import sys
 import sphinx_bootstrap_theme
 
+# only needed for Autobahn|Python
 sys.path.insert(0, os.path.abspath('./_extensions'))
 sys.path.insert(0, os.path.abspath('../autobahn'))
 
@@ -14,7 +15,7 @@ extensions = [
    'sphinx.ext.viewcode',
    'sphinx.ext.ifconfig',
    'sphinxcontrib.spelling',
-   'txsphinx'
+   'txsphinx' # only needed for Autobahn|Python
 ]
 
 spelling_lang = 'en_US'
@@ -194,9 +195,6 @@ html_logo = None
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-   'index': [
-      'side-primary.html'
-   ],
    '**': [
       'side-primary.html'
    ]

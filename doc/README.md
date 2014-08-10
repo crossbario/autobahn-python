@@ -1,6 +1,6 @@
 # Documentation
 
-The documentation is generated using [Sphinx](http://sphinx.pocoo.org/) and the generated documentation is hosted [here](http://autobahn.ws/) under the language specific subsite.
+The documentation is generated using [Sphinx](http://sphinx.pocoo.org/) and the generated documentation is hosted [here](http://autobahn.ws/python).
 
 ## Prerequisites
 

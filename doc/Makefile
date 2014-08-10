@@ -54,11 +54,17 @@ copy_serve:
 	cp serve.py ../../AutobahnCpp/doc/
 	cp serve.py ../../AutobahnTestsuite/doc/
 
-copy_readme:
-	cp README.md ../../AutobahnJS/doc/
-	cp README.md ../../AutobahnAndroid/doc/
-	cp README.md ../../AutobahnCpp/doc/
-	cp README.md ../../AutobahnTestsuite/doc/
+copy_wordlist:
+	cp spelling_wordlist.txt ../../AutobahnJS/doc/
+	cp spelling_wordlist.txt ../../AutobahnAndroid/doc/
+	cp spelling_wordlist.txt ../../AutobahnCpp/doc/
+	cp spelling_wordlist.txt ../../AutobahnTestsuite/doc/
+
+# copy_readme:
+# 	cp README.md ../../AutobahnJS/doc/
+# 	cp README.md ../../AutobahnAndroid/doc/
+# 	cp README.md ../../AutobahnCpp/doc/
+# 	cp README.md ../../AutobahnTestsuite/doc/
 
 copy: copy_makefile copy_gitignore copy_serve
 
