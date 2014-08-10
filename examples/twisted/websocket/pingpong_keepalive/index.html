@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <script type="text/javascript">
+         var sock = null;
+
+         window.onload = function() {
+
+            ellog = document.getElementById('log');
+
+            var wsuri;
+            if (window.location.protocol === "file:") {
+               wsuri = "ws://127.0.0.1:9000/ws";
+            } else {
+               wsuri = "ws://" + window.location.hostname + ":9000/ws";
+            }
+
+            if ("WebSocket" in window) {
+               sock = new WebSocket(wsuri);
+            } else if ("MozWebSocket" in window) {
+               sock = new MozWebSocket(wsuri);
+            } else {
+               console.log("Browser does not support WebSocket!");
+            }
+
+            if (sock) {
+               sock.onopen = function() {
+                  console.log("Connected to " + wsuri);
+               }
+
+               sock.onclose = function(e) {
+                  console.log("Connection closed (wasClean = " + e.wasClean + ", code = " + e.code + ", reason = '" + e.reason + "')");
+                  sock = null;
+               }
+
+               sock.onmessage = function(e) {
+                  console.log("Got echo: " + e.data);
+               }
+            }
+         };
+
+      </script>
+   </head>
+   <body>
+      <h1>WebSocket Ping/Pong Test</h1>
+      <noscript>You must enable JavaScript</noscript>
+   </body>
+</html>
