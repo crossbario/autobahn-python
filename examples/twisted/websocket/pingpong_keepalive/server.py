@@ -31,52 +31,15 @@ from autobahn.twisted.resource import WebSocketResource
 
 
 
-class PingServerProtocol(WebSocketServerProtocol):
-
-   def doPing(self):
-      if self.run:
-         self.sendPing()
-         self.factory.pingsSent[self.peer] += 1
-         print("Ping sent to {} - {}".format(self.peer, self.factory.pingsSent[self.peer]))
-         reactor.callLater(1, self.doPing)
-
-   def onPong(self, payload):
-      self.factory.pongsReceived[self.peer] += 1
-      print("Pong received from {} - {}".format(self.peer, self.factory.pongsReceived[self.peer]))
-
-   def onConnect(self, request):
-      print("Client connecting: {}".format(request.peer))
-
-   def onOpen(self):
-      print("Connection open")
-      self.factory.pingsSent[self.peer] = 0
-      self.factory.pongsReceived[self.peer] = 0
-      self.run = True
-      self.doPing()
-
-   def onClose(self, wasClean, code, reason):
-      self.run = False
-      print("Connection closed: wasClean = {}, code = {}, reason = {}".format(wasClean, code, reason))
-
-
-
-class PingServerFactory(WebSocketServerFactory):
-
-   def __init__(self, uri, debug):
-      WebSocketServerFactory.__init__(self, uri, debug = debug)
-      self.pingsSent = {}
-      self.pongsReceived = {}
-
-
-
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
 
-   factory = PingServerFactory("ws://localhost:9000",
-                               debug = 'debug' in sys.argv)
+   factory = WebSocketServerFactory("ws://localhost:9000", debug = False, debugCodePaths = True)
+   factory.protocol = WebSocketServerProtocol
 
-   factory.protocol = PingServerProtocol
+   factory.setProtocolOptions(autoPingInterval = 1, autoPingTimeout = 3, autoPingSize = 20)
+
    listenWS(factory)
 
    resource = WebSocketResource(factory)

@@ -26,24 +26,6 @@ from autobahn.twisted.websocket import WebSocketClientFactory, \
                                        connectWS
 
 
-class PingClientProtocol(WebSocketClientProtocol):
-
-   def onOpen(self):
-      self.pingsReceived = 0
-      self.pongsSent = 0
-
-   def onClose(self, wasClean, code, reason):
-      reactor.stop()
-
-   def onPing(self, payload):
-      self.pingsReceived += 1
-      print("Ping received from {} - {}".format(self.peer, self.pingsReceived))
-      self.sendPong(payload)
-      self.pongsSent += 1
-      print("Pong sent to {} - {}".format(self.peer, self.pongsSent))
-
-
-
 if __name__ == '__main__':
 
    log.startLogging(sys.stdout)
@@ -52,8 +34,8 @@ if __name__ == '__main__':
       print("Need the WebSocket server address, i.e. ws://localhost:9000")
       sys.exit(1)
 
-   factory = WebSocketClientFactory(sys.argv[1], debug = 'debug' in sys.argv)
-   factory.protocol = PingClientProtocol
+   factory = WebSocketClientFactory(sys.argv[1], debug = True)
+   factory.protocol = WebSocketClientProtocol
    connectWS(factory)
 
    reactor.run()
