@@ -34,7 +34,7 @@ from collections import deque
 
 try:
    import asyncio
-   from asyncio.tasks import iscoroutine
+   from asyncio import iscoroutine
    from asyncio import Future
 except ImportError:
    ## Trollius >= 0.3 was renamed
