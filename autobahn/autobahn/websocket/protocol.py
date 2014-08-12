@@ -3537,9 +3537,11 @@ class WebSocketServerFactory(WebSocketFactory):
       ##
       self.perMessageCompressionAccept = lambda _: None
 
-      self.autoPingInterval = None
-      self.autoPingTimeout = None
-      self.autoPingSize = 8
+      ## automatic ping/pong ("heartbearting")
+      ##
+      self.autoPingInterval = 0
+      self.autoPingTimeout = 0
+      self.autoPingSize = 4
 
 
    def setProtocolOptions(self,
@@ -3597,6 +3599,14 @@ class WebSocketServerFactory(WebSocketFactory):
       :type tcpNoDelay: bool
       :param perMessageCompressionAccept: Acceptor function for offers.
       :type perMessageCompressionAccept: callable
+      :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
+         in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+      :type autoPingInterval: float or None
+      :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
+         peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+      :type autoPingTimeout: float or None
+      :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+      :type autoPingSize: int
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -4301,9 +4311,11 @@ class WebSocketClientFactory(WebSocketFactory):
       self.perMessageCompressionOffers = []
       self.perMessageCompressionAccept = lambda _: None
 
-      self.autoPingInterval = None
-      self.autoPingTimeout = None
-      self.autoPingSize = 8
+      ## automatic ping/pong ("heartbearting")
+      ##
+      self.autoPingInterval = 0
+      self.autoPingTimeout = 0
+      self.autoPingSize = 4
 
 
    def setProtocolOptions(self,
@@ -4361,6 +4373,14 @@ class WebSocketClientFactory(WebSocketFactory):
       :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
       :param perMessageCompressionAccept: Acceptor function for responses.
       :type perMessageCompressionAccept: callable
+      :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
+         in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+      :type autoPingInterval: float or None
+      :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
+         peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+      :type autoPingTimeout: float or None
+      :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+      :type autoPingSize: int
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
