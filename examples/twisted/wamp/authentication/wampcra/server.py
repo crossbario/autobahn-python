@@ -112,17 +112,17 @@ class MyRouterSession(RouterSession):
 
                   ## send challenge to client
                   extra = {
-                     'challenge': self._pending_auth.challenge
+                     u'challenge': self._pending_auth.challenge
                   }
 
                   ## when using salted passwords, provide the client with
                   ## the salt and then PBKDF2 parameters used
                   if salt:
-                     extra['salt'] = salt
-                     extra['iterations'] = 1000
-                     extra['keylen'] = 32
+                     extra[u'salt'] = salt
+                     extra[u'iterations'] = 1000
+                     extra[u'keylen'] = 32
 
-                  defer.returnValue(types.Challenge('wampcra', extra))
+                  defer.returnValue(types.Challenge(u'wampcra', extra))
 
       ## deny client
       defer.returnValue(types.Deny())
@@ -135,16 +135,23 @@ class MyRouterSession(RouterSession):
       print("onAuthenticate: {} {}".format(signature, extra))
 
       ## if there is a pending auth, and the signature provided by client matches ..
-      if self._pending_auth and signature == self._pending_auth.signature:
+      if self._pending_auth:
 
-         ## accept the client
-         return types.Accept(authid = self._pending_auth.authid,
-            authrole = self._pending_auth.authrole,
-            authmethod = self._pending_auth.authmethod,
-            authprovider = self._pending_auth.authprovider)
+         if signature == self._pending_auth.signature:
 
-      ## deny client
-      return types.Deny()
+            ## accept the client
+            return types.Accept(authid = self._pending_auth.authid,
+               authrole = self._pending_auth.authrole,
+               authmethod = self._pending_auth.authmethod,
+               authprovider = self._pending_auth.authprovider)
+         else:
+
+            ## deny client
+            return types.Deny(message = u"signature is invalid")
+      else:
+
+         ## deny client
+         return types.Deny(message = u"no pending authentication")
 
 
 

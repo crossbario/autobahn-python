@@ -289,6 +289,16 @@ class ISession(object):
 
 
    @abc.abstractmethod
+   def onChallenge(self, challenge):
+      """
+      Callback fired when the peer demands authentication.
+
+      :param challenge: The authentication challenge.
+      :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
+      """
+
+
+   @abc.abstractmethod
    def onJoin(self, details):
       """
       Callback fired when WAMP session has been established.

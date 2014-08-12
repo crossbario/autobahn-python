@@ -7,9 +7,10 @@
       <h1>WAMP Challenge-Response Authentication</h1>
       <p>Open JavaScript console to watch output.</p>
 
-      <script src="autobahn.min.js"></script>
-
+      <script>AUTOBAHN_DEBUG = true;</script>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
       <script>
+         console.log("Ok, Autobahn loaded", autobahn.version);
 
          if (true) {
             var user = "peter";
@@ -21,7 +22,8 @@
 
          function onchallenge (session, method, extra) {
 
-            console.log(method, extra);
+            console.log(method);
+            console.log(extra);
 
             if (method === "wampcra") {
 
@@ -58,8 +60,8 @@
             );
          };
 
-         connection.onclose = function () {
-            console.log("disconnected", arguments);
+         connection.onclose = function (reason, details) {
+            console.log("disconnected", reason, details.reason);
          }
 
          connection.open();
