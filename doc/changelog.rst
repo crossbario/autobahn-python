@@ -5,6 +5,12 @@
 Changelog
 =========
 
+0.8.14
+------
+*Under development*
+
+* add automatic WebSocket ping/pong (#24)
+
 0.8.13
 --------
 `Published 2014-08-05 <https://pypi.python.org/pypi/autobahn/0.8.13>`__
@@ -12,7 +18,6 @@ Changelog
 * fix Application class (#240)
 * support WSS for Application class
 * remove implicit dependency on bzip2 (#244)
-
 
 0.8.12
 ------

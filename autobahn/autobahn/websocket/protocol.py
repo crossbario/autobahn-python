@@ -959,7 +959,7 @@ class WebSocketProtocol:
       did not reply in time to our ping. We drop the connection.
       """
       if self.debugCodePaths:
-         self.factory._log("onAutoPingTimeout fired")
+         self.factory._log("Auto ping/pong: onAutoPingTimeout fired")
 
       self.autoPingTimeoutCall = None
       self.dropConnection(abort = True)
@@ -1971,7 +1971,7 @@ class WebSocketProtocol:
                p = payload.decode('utf8')
                if p == self.autoPingPending:
                   if self.debugCodePaths:
-                     self.factory._log("Received pending pong for auto-ping/pong")
+                     self.factory._log("Auto ping/pong: received pending pong for auto-ping/pong")
 
                   if self.autoPingTimeoutCall:
                      self.autoPingTimeoutCall.cancel()
@@ -1982,7 +1982,7 @@ class WebSocketProtocol:
                   if self.autoPingInterval:
                      def send():
                         if self.debugCodePaths:
-                           self.factory._log("Sending ping auto-ping/pong")
+                           self.factory._log("Auto ping/pong: sending ping auto-ping/pong")
 
                         self.autoPingPendingCall = None
                         self.autoPingPending = newid(self.autoPingSize)
@@ -1990,12 +1990,16 @@ class WebSocketProtocol:
 
                         if self.autoPingTimeout:
                            if self.debugCodePaths:
-                              self.factory._log("Expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
+                              self.factory._log("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
                            self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
 
                      self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, send)
+               else:
+                  if self.debugCodePaths:
+                     self.factory._log("Auto ping/pong: received non-pending pong")
             except:
-               pass
+               if self.debugCodePaths:
+                  self.factory._log("Auto ping/pong: received non-pending pong")
 
          ## fire app-level callback
          ##
