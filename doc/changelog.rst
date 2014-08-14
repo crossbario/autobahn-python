@@ -7,9 +7,9 @@ Changelog
 
 0.8.14
 ------
-*Under development*
 
 * add automatic WebSocket ping/pong (#24)
+* WAMP-CRA client side (beta!)
 
 0.8.13
 --------
