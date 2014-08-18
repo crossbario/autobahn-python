@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+## this must be a list (not tuple), since we dynamically
+## extend it ..
 __all__ = [
    "PerMessageCompressOffer",
    "PerMessageCompressOfferAccept",

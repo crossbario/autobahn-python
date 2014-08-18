@@ -19,12 +19,14 @@
 from __future__ import absolute_import
 
 
-__all__ = ["PerMessageDeflateMixin",
-           "PerMessageDeflateOffer",
-           "PerMessageDeflateOfferAccept",
-           "PerMessageDeflateResponse",
-           "PerMessageDeflateResponseAccept",
-           "PerMessageDeflate"]
+__all__ = (
+   'PerMessageDeflateMixin',
+   'PerMessageDeflateOffer',
+   'PerMessageDeflateOfferAccept',
+   'PerMessageDeflateResponse',
+   'PerMessageDeflateResponseAccept',
+   'PerMessageDeflate',
+)
 
 
 import zlib
