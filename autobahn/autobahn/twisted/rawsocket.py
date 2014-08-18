@@ -19,10 +19,12 @@
 from __future__ import absolute_import
 
 
-__all__= ['WampRawSocketServerProtocol',
-          'WampRawSocketClientProtocol',
-          'WampRawSocketServerFactory',
-          'WampRawSocketClientFactory']
+__all__= (
+   'WampRawSocketServerProtocol',
+   'WampRawSocketClientProtocol',
+   'WampRawSocketServerFactory',
+   'WampRawSocketClientFactory'
+)
 
 from twisted.python import log
 from twisted.internet.protocol import Factory
@@ -37,7 +39,7 @@ import binascii
 
 class WampRawSocketProtocol(Int32StringReceiver):
    """
-   Base class for WAMP-over-Raw transport mixins.
+   Base class for Twisted-based WAMP-over-RawSocket protocols.
    """
 
    def connectionMade(self):
@@ -140,26 +142,25 @@ class WampRawSocketProtocol(Int32StringReceiver):
 
 class WampRawSocketServerProtocol(WampRawSocketProtocol):
    """
-   Mixin for WAMP-over-RawSocket server transports.
+   Base class for Twisted-based WAMP-over-RawSocket server protocols.
    """
 
 
 
 class WampRawSocketClientProtocol(WampRawSocketProtocol):
    """
-   Mixin for WAMP-over-RawSocket client transports.
+   Base class for Twisted-based WAMP-over-RawSocket client protocols.
    """
 
 
 
 class WampRawSocketFactory(Factory):
    """
-   Base class for WAMP-over-RawSocket transport factory mixins.
+   Base class for Twisted-based WAMP-over-RawSocket factories.
    """
 
    def __init__(self, factory, serializer, debug = False):
       """
-      Ctor.
 
       :param factory: A callable that produces instances that implement
           :class:`autobahn.wamp.interfaces.ITransportHandler`
@@ -177,7 +178,7 @@ class WampRawSocketFactory(Factory):
 
 class WampRawSocketServerFactory(WampRawSocketFactory):
    """
-   Mixin for WAMP-over-RawSocket server transport factories.
+   Base class for Twisted-based WAMP-over-RawSocket server factories.
    """
    protocol = WampRawSocketServerProtocol
 
@@ -185,6 +186,6 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
 
 class WampRawSocketClientFactory(WampRawSocketFactory):
    """
-   Mixin for WAMP-over-RawSocket client transport factories.
+   Base class for Twisted-based WAMP-over-RawSocket client factories.
    """
    protocol = WampRawSocketClientProtocol

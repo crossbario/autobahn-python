@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+## note: __all__ must be a list here, since we dynamically
+## extdend it depending on availability of more serializers
 __all__ = ['Serializer',
            'JsonObjectSerializer',
            'JsonSerializer']

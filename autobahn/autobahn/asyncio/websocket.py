@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-__all__ = [
+__all__ = ()
    'WebSocketAdapterProtocol',
    'WebSocketServerProtocol',
    'WebSocketClientProtocol',
@@ -27,8 +27,8 @@ __all__ = [
    'WampWebSocketServerProtocol',
    'WampWebSocketClientProtocol',
    'WampWebSocketServerFactory',
-   'WampWebSocketClientFactory'
-]
+   'WampWebSocketClientFactory',
+)
 
 from collections import deque
 
@@ -49,9 +49,9 @@ from autobahn.websocket import http
 
 def yields(value):
    """
-   Return True iff the value yields.
+   Returns ``True`` iff the value yields.
 
-   See: http://stackoverflow.com/questions/20730248/maybedeferred-analog-with-asyncio
+   .. seealso:: http://stackoverflow.com/questions/20730248/maybedeferred-analog-with-asyncio
    """
    return isinstance(value, Future) or iscoroutine(value)
 
@@ -59,7 +59,7 @@ def yields(value):
 
 class WebSocketAdapterProtocol(asyncio.Protocol):
    """
-   Adapter class for Asyncio WebSocket client and server protocols.
+   Adapter class for asyncio-based WebSocket client and server protocols.
    """
 
    def connection_made(self, transport):
@@ -72,7 +72,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       try:
          self.peer = "%s:%d" % (peer[0], peer[1])
       except:
-         ## eg Unix Domain sockets don't have host/port
+         ## e.g. Unix Domain sockets don't have host/port
          self.peer = str(peer)
 
       self._connectionMade()
@@ -114,50 +114,60 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       if yields(res):
          asyncio.async(res)
 
+
    def _onMessageBegin(self, isBinary):
       res = self.onMessageBegin(isBinary)
       if yields(res):
          asyncio.async(res)
+
 
    def _onMessageFrameBegin(self, length):
       res = self.onMessageFrameBegin(length)
       if yields(res):
          asyncio.async(res)
 
+
    def _onMessageFrameData(self, payload):
       res = self.onMessageFrameData(payload)
       if yields(res):
          asyncio.async(res)
+
 
    def _onMessageFrameEnd(self):
       res = self.onMessageFrameEnd()
       if yields(res):
          asyncio.async(res)
 
+
    def _onMessageFrame(self, payload):
       res = self.onMessageFrame(payload)
       if yields(res):
          asyncio.async(res)
+
 
    def _onMessageEnd(self):
       res = self.onMessageEnd()
       if yields(res):
          asyncio.async(res)
 
+
    def _onMessage(self, payload, isBinary):
       res = self.onMessage(payload, isBinary)
       if yields(res):
          asyncio.async(res)
+
 
    def _onPing(self, payload):
       res = self.onPing(payload)
       if yields(res):
          asyncio.async(res)
 
+
    def _onPong(self, payload):
       res = self.onPong(payload)
       if yields(res):
          asyncio.async(res)
+
 
    def _onClose(self, wasClean, code, reason):
       res = self.onClose(wasClean, code, reason)
@@ -172,7 +182,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
    """
-   Base class for Asyncio WebSocket server protocols.
+   Base class for asyncio-based WebSocket server protocols.
    """
 
    def _onConnect(self, request):
@@ -194,7 +204,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
    """
-   Base class for Asyncio WebSocket client protocols.
+   Base class for asyncio-based WebSocket client protocols.
    """
 
    def _onConnect(self, response):
@@ -206,7 +216,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 class WebSocketAdapterFactory:
    """
-   Adapter class for Asyncio WebSocket client and server factories.
+   Adapter class for asyncio-based WebSocket client and server factories.
    """
 
    def _log(self, msg):
@@ -226,15 +236,15 @@ class WebSocketAdapterFactory:
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
    """
-   Base class for Asyncio WebSocket server factories.
+   Base class for asyncio-based WebSocket server factories.
    """
 
    def __init__(self, *args, **kwargs):
       """
       In addition to all arguments to the constructor of
       :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-      you can supply a `loop` keyword argument to specify the
-      Asyncio loop to be used.
+      you can supply a ``loop`` keyword argument to specify the
+      asyncio event loop to be used.
       """
       if 'loop' in kwargs:
          if kwargs['loop']:
@@ -251,15 +261,15 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
    """
-   Base class for Asyncio WebSocket client factories.
+   Base class for asyncio-baseed WebSocket client factories.
    """
 
    def __init__(self, *args, **kwargs):
       """
       In addition to all arguments to the constructor of
       :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-      you can supply a `loop` keyword argument to specify the
-      Asyncio loop to be used.
+      you can supply a ``loop`` keyword argument to specify the
+      asyncio event loop to be used.
       """
       if 'loop' in kwargs:
          if kwargs['loop']:
@@ -275,11 +285,16 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
 
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
-   pass
+   """
+   Base class for asyncio-based WAMP-over-WebSocket server protocols.
+   """
 
 
 
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+   """
+   Base class for asyncio-based WAMP-over-WebSocket server factories.
+   """
 
    protocol = WampWebSocketServerProtocol
 
@@ -307,11 +322,16 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
 
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
-   pass
+   """
+   Base class for asyncio-based WAMP-over-WebSocket client protocols.
+   """
 
 
 
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
+   """
+   Base class for asyncio-based WAMP-over-WebSocket client factories.
+   """
 
    protocol = WampWebSocketClientProtocol
 

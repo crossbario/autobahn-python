@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+##  Copyright 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 ##
 ###############################################################################
 
-__all__ = ("FlashPolicyProtocol", "FlashPolicyFactory",)
+__all__ = (
+   'FlashPolicyProtocol',
+   'FlashPolicyFactory'
+)
 
 
 import re
@@ -34,7 +37,7 @@ class FlashPolicyProtocol(Protocol):
    We want this to support the Flash WebSockets bridge which is needed for
    older browser, in particular MSIE9/8.
 
-   See:
+   .. seealso::
       * `Autobahn WebSocket fallbacks example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsfallbacks>`_
       * `Flash policy files background <http://www.lightsphere.com/dev/articles/flash_socket_policy.html>`_
    """
@@ -46,7 +49,6 @@ class FlashPolicyProtocol(Protocol):
 
    def __init__(self, allowedPort):
       """
-      Ctor.
 
       :param allowedPort: The port to which Flash player should be allowed to connect.
       :type allowedPort: int
@@ -92,7 +94,6 @@ class FlashPolicyFactory(Factory):
 
    def __init__(self, allowedPort, reactor = None):
       """
-      Ctor.
 
       :param allowedPort: The port to which Flash player should be allowed to connect.
       :type allowedPort: int

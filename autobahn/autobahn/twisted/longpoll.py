@@ -18,7 +18,9 @@
 
 from __future__ import absolute_import
 
-__all__ = ['WampLongPollResource']
+__all__ = (
+   'WampLongPollResource',
+)
 
 
 import json
@@ -51,7 +53,6 @@ class WampLongPollResourceSessionSend(Resource):
 
    def __init__(self, parent):
       """
-      Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
       :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResourceSession`.
@@ -65,8 +66,8 @@ class WampLongPollResourceSessionSend(Resource):
       """
       A client sends a message via WAMP-over-Longpoll by HTTP/POSTing
       to this Web resource. The body of the POST should contain a batch
-      ## of WAMP messages which are serialized according to the selected
-      serializer, and delimited by a single \0 byte in between two WAMP
+      of WAMP messages which are serialized according to the selected
+      serializer, and delimited by a single ``\0`` byte in between two WAMP
       messages in the batch.
       """
       payload = request.content.read()
@@ -95,7 +96,6 @@ class WampLongPollResourceSessionReceive(Resource):
 
    def __init__(self, parent):
       """
-      Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
       :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResourceSession`.
@@ -193,7 +193,6 @@ class WampLongPollResourceSessionClose(Resource):
 
    def __init__(self, parent):
       """
-      Ctor.
 
       :param parent: The Web parent resource for the WAMP session.
       :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResourceSession`.
@@ -232,10 +231,10 @@ class WampLongPollResourceSession(Resource):
       """
       Create a new Web resource representing a WAMP session.
 
-      :param parent: The WAMP Web base resource.
-      :type parent: Instance of WampLongPollResource.
+      :param parent: The parent Web resource.
+      :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResource`.
       :param serializer: The WAMP serializer in use for this session.
-      :type serializer: An instance of WampSerializer.
+      :type serializer: An object that implements :class:`autobahn.wamp.interfaces.ISerializer`.
       """
       Resource.__init__(self)
 
@@ -293,7 +292,7 @@ class WampLongPollResourceSession(Resource):
       Implements :func:`autobahn.wamp.interfaces.ITransport.close`
       """
       if self.isOpen():
-         self.onClose(True, 1000, "session closed")
+         self.onClose(True, 1000, u"session closed")
          self._receive._kill()
          del self._parent._transports[self._transportid]
       else:
@@ -305,7 +304,7 @@ class WampLongPollResourceSession(Resource):
       Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
       """
       if self.isOpen():
-         self.onClose(True, 1000, "session aborted")
+         self.onClose(True, 1000, u"session aborted")
          self._receive._kill()
          del self._parent._transports[self._transportid]
       else:
@@ -381,10 +380,9 @@ class WampLongPollResourceOpen(Resource):
 
    def __init__(self, parent):
       """
-      Ctor.
 
       :param parent: The parent Web resource.
-      :type parent: Instance of `WampLongPollResource`.
+      :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResource`.
       """
       Resource.__init__(self)
       self._parent = parent
@@ -493,9 +491,9 @@ class WampLongPollResource(Resource):
       Create new HTTP WAMP Web resource.
 
       :param factory: A (router) session factory.
-      :type factory: Instance of `RouterSessionFactory`.
+      :type factory: Instance of :class:`autobahn.twisted.wamp.RouterSessionFactory`.
       :param serializers: List of WAMP serializers.
-      :type serializers: List of WampSerializer objects.
+      :type serializers: list of obj (which implement :class:`autobahn.wamp.interfaces.ISerializer`)
       :param timeout: XHR polling timeout in seconds.
       :type timeout: int
       :param killAfter: Kill WAMP session after inactivity in seconds.
@@ -621,7 +619,7 @@ class WampLongPollResource(Resource):
 
       :param redirectUrl: Optional URL to redirect the user to.
       :type redirectUrl: str
-      :param redirectAfter: When `redirectUrl` is provided, redirect after this time (seconds).
+      :param redirectAfter: When ``redirectUrl`` is provided, redirect after this time (seconds).
       :type redirectAfter: int
       """
       from autobahn import __version__

@@ -16,7 +16,10 @@
 ##
 ###############################################################################
 
-__all__ = ['install_optimal_reactor','install_reactor']
+__all__ = (
+   'install_optimal_reactor',
+   'install_reactor'
+)
 
 
 def install_optimal_reactor():
@@ -83,7 +86,7 @@ def install_reactor(explicitReactor = None, verbose = False):
 
    :param explicitReactor: If provided, install this reactor. Else, install optimal reactor.
    :type explicitReactor: obj
-   :param verbose: If `True`, print what happens.
+   :param verbose: If ``True``, print what happens.
    :type verbose: bool
    """
    import sys

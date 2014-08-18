@@ -18,17 +18,19 @@
 
 from __future__ import absolute_import
 
-__all__ = ['ApplicationSession',
-           'ApplicationSessionFactory',
-           'ApplicationRunner',
-           'Application',
-           'RouterSession',
-           'RouterSessionFactory',
-           'Broker',
-           'Dealer',
-           'Router',
-           'RouterFactory',
-           'FutureMixin']
+__all__ = (
+   'ApplicationSession',
+   'ApplicationSessionFactory',
+   'ApplicationRunner',
+   'Application',
+   'RouterSession',
+   'RouterSessionFactory',
+   'Broker',
+   'Dealer',
+   'Router',
+   'RouterFactory',
+   'FutureMixin',
+)
 
 import sys
 import inspect
@@ -174,9 +176,9 @@ class ApplicationRunner:
       """
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-      :type url: str
+      :type url: unicode
       :param realm: The WAMP realm to join the application session to.
-      :type realm: str
+      :type realm: unicode
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
       :param debug: Turn on low-level debugging.
@@ -201,7 +203,7 @@ class ApplicationRunner:
       Run the application component.
 
       :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-                   when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+         when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
       :type make: callable
       """
       from twisted.internet import reactor
@@ -271,7 +273,7 @@ class _ApplicationSession(ApplicationSession):
       :param config: The component configuration.
       :type config: Instance of :class:`autobahn.wamp.types.ComponentConfig`
       :param app: The application this session is for.
-      :type app: Instance of :class:`autobahn.twisted.app.Application`.
+      :type app: Instance of :class:`autobahn.twisted.wamp.Application`.
       """
       # noinspection PyArgumentList
       ApplicationSession.__init__(self, config)
@@ -329,8 +331,8 @@ class Application:
       """
 
       :param prefix: The application URI prefix to use for procedures and topics,
-         e.g. `com.example.myapp`.
-      :type prefix: str
+         e.g. ``"com.example.myapp"``.
+      :type prefix: unicode
       """
       self._prefix = prefix
 
@@ -362,17 +364,17 @@ class Application:
       return self.session
 
 
-   def run(self, url = "ws://localhost:8080/ws", realm = "realm1", standalone = True,
+   def run(self, url = u"ws://localhost:8080/ws", realm = u"realm1", standalone = True,
       debug = False, debug_wamp = False, debug_app = False,
       start_reactor = True):
       """
       Run the application.
 
       :param url: The URL of the WAMP router to connect to.
-      :type url: str
+      :type url: unicode
       :param realm: The realm on the WAMP router to join.
-      :type realm: str
-      :param standalone: If `True`, run an embedded WAMP router instead of connecting
+      :type realm: unicode
+      :param standalone: If ``True``, run an embedded WAMP router instead of connecting
          to an external one. This is useful during development and debugging.
       :param debug: Turn on low-level debugging.
       :type debug: bool
@@ -436,7 +438,7 @@ class Application:
             returnValue(res)
 
       :param uri: The URI of the procedure to register under.
-      :type uri: str
+      :type uri: unicode
       """
       def decorator(func):
          if uri:
@@ -473,7 +475,7 @@ class Application:
             print("got event on topic1", x, y)
 
       :param uri: The URI of the topic to subscribe to.
-      :type uri: str
+      :type uri: unicode
       """
       def decorator(func):
          if uri:
@@ -514,7 +516,7 @@ class Application:
             # do after the app has join a realm
 
       :param name: The name of the signal to watch.
-      :type name: str
+      :type name: unicode
       """
       def decorator(func):
          if inspect.isgeneratorfunction(func):

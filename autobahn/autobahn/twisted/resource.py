@@ -16,9 +16,11 @@
 ##
 ###############################################################################
 
-__all__ = ("WebSocketResource",
-           "HTTPChannelHixie76Aware",
-           "WSGIRootResource",)
+__all__ = (
+   'WebSocketResource',
+   'HTTPChannelHixie76Aware',
+   'WSGIRootResource',
+)
 
 
 from six.moves.urllib import parse
@@ -50,11 +52,10 @@ class HTTPChannelHixie76Aware(HTTPChannel):
    HTTP header upon detecting Hixie-76. We need this since otherwise
    Twisted Web will silently ignore the body.
 
-   To use this, set `protocol = HTTPChannelHixie76Aware` on your
+   To use this, set ``protocol = HTTPChannelHixie76Aware`` on your
    `twisted.web.server.Site <http://twistedmatrix.com/documents/current/api/twisted.web.server.Site.html>`_ instance.
 
-   See:
-      * `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_site>`_
+   .. seealso: `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_site>`_
    """
 
    def headerReceived(self, line):
@@ -73,18 +74,18 @@ class WSGIRootResource(Resource):
 
    This is a hack needed since
    `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
-   does not provide a `putChild()` method.
+   does not provide a ``putChild()`` method.
 
-   See also:
+   .. seealso::
+
       * `Autobahn Twisted Web WSGI example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsgi>`_
       * `Original hack <http://blog.vrplumber.com/index.php?/archives/2426-Making-your-Twisted-resources-a-url-sub-tree-of-your-WSGI-resource....html>`_
    """
 
    def __init__(self, wsgiResource, children):
       """
-      Creates a Twisted Web root resource.
 
-      :param wsgiResource:
+      :param wsgiResource: The WSGI to serve as root resource.
       :type wsgiResource: Instance of `twisted.web.wsgi.WSGIResource <http://twistedmatrix.com/documents/current/api/twisted.web.wsgi.WSGIResource.html>`_.
       :param children: A dictionary with string keys constituting URL subpaths, and Twisted Web resources as values.
       :type children: dict
@@ -103,15 +104,13 @@ class WSGIRootResource(Resource):
 @implementer(IResource)
 class WebSocketResource(object):
    """
-   A Twisted Web resource for WebSocket. This resource needs to be instantiated
-   with a factory derived from WebSocketServerFactory.
+   A Twisted Web resource for WebSocket.
    """
 
    isLeaf = True
 
    def __init__(self, factory):
       """
-      Ctor.
 
       :param factory: An instance of :class:`autobahn.twisted.websocket.WebSocketServerFactory`.
       :type factory: obj
@@ -131,16 +130,14 @@ class WebSocketResource(object):
       """
       This resource cannot have children, hence this is always ignored.
       """
-      pass
 
 
    def render(self, request):
       """
       Render the resource. This will takeover the transport underlying
-      the request, create a WebSocketServerProtocol and let that do
-      any subsequent communication.
+      the request, create a :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
+      and let that do any subsequent communication.
       """
-
       ## Create Autobahn WebSocket protocol.
       ##
       protocol = self._factory.buildProtocol(request.transport.getPeer())

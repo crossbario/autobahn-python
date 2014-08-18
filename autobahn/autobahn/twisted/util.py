@@ -18,6 +18,10 @@
 
 from __future__ import absolute_import
 
+__all = (
+   'sleep',
+)
+
 from twisted.internet.defer import Deferred
 
 
@@ -32,7 +36,7 @@ def sleep(delay, reactor = None):
    :param delay: Time to sleep in seconds.
    :type delay: float
    :param reactor: The Twisted reactor to use.
-   :type reactor: None or provider of IReactorTime
+   :type reactor: None or provider of ``IReactorTime``.
    """
    if not reactor:
       from twisted.internet import reactor

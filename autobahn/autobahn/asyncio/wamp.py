@@ -18,16 +18,18 @@
 
 from __future__ import absolute_import
 
-__all__ = ['ApplicationSession',
-           'ApplicationSessionFactory',
-           'ApplicationRunner',
-           'RouterSession',
-           'RouterSessionFactory',
-           'Broker',
-           'Dealer',
-           'Router',
-           'RouterFactory',
-           'FutureMixin']
+__all__ = (
+   'ApplicationSession',
+   'ApplicationSessionFactory',
+   'ApplicationRunner',
+   'RouterSession',
+   'RouterSessionFactory',
+   'Broker',
+   'Dealer',
+   'Router',
+   'RouterFactory',
+   'FutureMixin',
+)
 
 import sys
 
@@ -195,9 +197,9 @@ class ApplicationRunner:
       """
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-      :type url: str
+      :type url: unicode
       :param realm: The WAMP realm to join the application session to.
-      :type realm: str
+      :type realm: unicode
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
       :param debug: Turn on low-level debugging.
@@ -221,7 +223,7 @@ class ApplicationRunner:
       Run the application component.
 
       :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-                   when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+         when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
       :type make: callable
       """
       ## 1) factory for use ApplicationSession

@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-__all__ = [
+__all__ = (
    'WebSocketAdapterProtocol',
    'WebSocketServerProtocol',
    'WebSocketClientProtocol',
@@ -39,7 +39,7 @@ __all__ = [
    'WampWebSocketServerFactory',
    'WampWebSocketClientProtocol',
    'WampWebSocketClientFactory',
-]
+)
 
 
 from base64 import b64encode, b64decode
@@ -109,32 +109,42 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
    def _onOpen(self):
       self.onOpen()
 
+ 
    def _onMessageBegin(self, isBinary):
       self.onMessageBegin(isBinary)
 
+ 
    def _onMessageFrameBegin(self, length):
       self.onMessageFrameBegin(length)
 
+ 
    def _onMessageFrameData(self, payload):
       self.onMessageFrameData(payload)
 
+ 
    def _onMessageFrameEnd(self):
       self.onMessageFrameEnd()
+
 
    def _onMessageFrame(self, payload):
       self.onMessageFrame(payload)
 
+
    def _onMessageEnd(self):
       self.onMessageEnd()
+
 
    def _onMessage(self, payload, isBinary):
       self.onMessage(payload, isBinary)
 
+
    def _onPing(self, payload):
       self.onPing(payload)
 
+
    def _onPong(self, payload):
       self.onPong(payload)
+
 
    def _onClose(self, wasClean, code, reason):
       self.onClose(wasClean, code, reason)
@@ -157,7 +167,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
    """
-   Base class for Twisted WebSocket server protocols.
+   Base class for Twisted-based WebSocket server protocols.
    """
 
    def _onConnect(self, request):
@@ -182,7 +192,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
    """
-   Base class for Twisted WebSocket client protocols.
+   Base class for Twisted-based WebSocket client protocols.
    """
 
    def _onConnect(self, response):
@@ -192,7 +202,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 class WebSocketAdapterFactory:
    """
-   Adapter class for Twisted WebSocket client and server factories.
+   Adapter class for Twisted-based WebSocket client and server factories.
    """
 
    def _log(self, msg):
@@ -206,7 +216,7 @@ class WebSocketAdapterFactory:
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
    """
-   Base class for Twisted WebSocket server factories.
+   Base class for Twisted-based WebSocket server factories.
 
    .. seealso:: `twisted.internet.protocol.ServerFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.protocol.ServerFactory.html>`_
    """
@@ -236,7 +246,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
    """
-   Base class for Twisted WebSocket client factories.
+   Base class for Twisted-based WebSocket client factories.
 
    .. seealso:: `twisted.internet.protocol.ClientFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.protocol.ClientFactory.html>`_
    """
@@ -269,18 +279,20 @@ class WrappingWebSocketAdapter:
    """
    An adapter for stream-based transport over WebSocket.
 
-   This follows "websockify" (https://github.com/kanaka/websockify)
+   This follows `websockify <https://github.com/kanaka/websockify>`_
    and should be compatible with that.
 
-   It uses WebSocket subprotocol negotiation and 2+ subprotocols:
-     - binary (or a compatible subprotocol)
-     - base64
+   It uses WebSocket subprotocol negotiation and supports the
+   following WebSocket subprotocols:
+
+     - ``binary`` (or a compatible subprotocol)
+     - ``base64``
 
    Octets are either transmitted as the payload of WebSocket binary
-   messages when using the 'binary' subprotocol (or an alternative
-   binary compatible subprotocol), or encoded with Base64
-   and then transmitted as the payload of WebSocket text messages when
-   using the 'base64' subprotocol.
+   messages when using the ``binary`` subprotocol (or an alternative
+   binary compatible subprotocol), or encoded with Base64 and then
+   transmitted as the payload of WebSocket text messages when using
+   the ``base64`` subprotocol.
    """
 
    def onConnect(self, requestOrResponse):
@@ -303,8 +315,10 @@ class WrappingWebSocketAdapter:
          ## should not arrive here
          raise Exception("logic error")
 
+
    def onOpen(self):
       self._proto.connectionMade()
+
 
    def onMessage(self, payload, isBinary):
       if isBinary != self._binaryMode:
@@ -318,8 +332,10 @@ class WrappingWebSocketAdapter:
          #print("forwarding payload: {}".format(binascii.hexlify(payload)))
          self._proto.dataReceived(payload)
 
+
    def onClose(self, wasClean, code, reason):
       self._proto.connectionLost(None)
+
 
    def write(self, data):
       #print("sending payload: {}".format(binascii.hexlify(data)))
@@ -331,18 +347,22 @@ class WrappingWebSocketAdapter:
          data = b64encode(data)
          self.sendMessage(data, isBinary = False)
 
+
    def writeSequence(self, data):
       ## part of ITransport
       for d in data:
          self.write(d)
 
+
    def loseConnection(self):
       ## part of ITransport
       self.sendClose()
 
+
    def getPeer(self):
       ## part of ITransport
       return self.transport.getPeer()
+
 
    def getHost(self):
       ## part of ITransport
@@ -378,12 +398,11 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
                 subprotocol = None,
                 debug = False):
       """
-      Constructor.
 
       :param factory: Stream-based factory to be wrapped.
-      :type factory: A subclass of `twisted.internet.protocol.Factory`
+      :type factory: A subclass of ``twisted.internet.protocol.Factory``
       :param url: WebSocket URL of the server this server factory will work for.
-      :type url: str
+      :type url: unicode
       """
       self._factory = factory
       self._subprotocols = ['binary', 'base64']
@@ -449,12 +468,11 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
                 subprotocol = None,
                 debug = False):
       """
-      Constructor.
 
       :param factory: Stream-based factory to be wrapped.
-      :type factory: A subclass of `twisted.internet.protocol.Factory`
+      :type factory: A subclass of ``twisted.internet.protocol.Factory``
       :param url: WebSocket URL of the server this client factory will connect to.
-      :type url: str
+      :type url: unicode
       """
       self._factory = factory
       self._subprotocols = ['binary', 'base64']
@@ -513,7 +531,8 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
    :param bindAddress: A (host, port) tuple of local address to bind to, or None.
    :type bindAddress: tuple
 
-   :returns: obj -- An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
+   :returns: The connector.
+   :rtype: An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
    """
    ## lazy import to avoid reactor install upon module import
    if hasattr(factory, 'reactor'):
@@ -553,7 +572,8 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
    :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
    :type interface: str
 
-   :returns: obj -- An object that implements `twisted.interface.IListeningPort <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IListeningPort.html>`_.
+   :returns: The listening port.
+   :rtype: An object that implements `twisted.interface.IListeningPort <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IListeningPort.html>`_.
    """
    ## lazy import to avoid reactor install upon module import
    if hasattr(factory, 'reactor'):
@@ -572,11 +592,16 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
 
 
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
-   pass
+   """
+   Base class for Twisted-based WAMP-over-WebSocket server protocols.
+   """
 
 
 
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+   """
+   Base class for Twisted-based WAMP-over-WebSocket server factories.
+   """
 
    protocol = WampWebSocketServerProtocol
 
@@ -604,11 +629,16 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
 
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
-   pass
+   """
+   Base class for Twisted-based WAMP-over-WebSocket client protocols.
+   """
 
 
 
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
+   """
+   Base class for Twisted-based WAMP-over-WebSocket client factories.
+   """
 
    protocol = WampWebSocketClientProtocol
 
