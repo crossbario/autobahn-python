@@ -18,6 +18,25 @@
 
 from __future__ import absolute_import
 
+__all__ = (
+   'ComponentConfig',
+   'RouterOptions',
+   'HelloReturn',
+   'Accept',
+   'Deny',
+   'Challenge',
+   'HelloDetails',
+   'SessionDetails',
+   'CloseDetails',
+   'SubscribeOptions',
+   'EventDetails',
+   'PublishOptions',
+   'RegisterOptions',
+   'CallDetails',
+   'CallOptions',
+   'CallResult',
+)
+
 import six
 
 
@@ -30,10 +49,9 @@ class ComponentConfig:
 
    def __init__(self, realm = None, extra = None):
       """
-      Ctor.
 
       :param realm: The realm the session should join.
-      :type realm: str
+      :type realm: unicode
       :param extra: Optional dictionary with extra configuration.
       :type extra: dict
       """
@@ -51,17 +69,18 @@ class RouterOptions:
    """
    Router options for creating routers.
    """
+
    URI_CHECK_LOOSE = "loose"
    URI_CHECK_STRICT = "strict"
 
    def __init__(self, uri_check = None):
       """
-      Ctor.
 
       :param uri_check: Method which should be applied to check WAMP URIs.
       :type uri_check: str
       """
       self.uri_check = uri_check or RouterOptions.URI_CHECK_STRICT
+
 
    def __str__(self):
       return "RouterOptions(uri_check = {})".format(self.uri_check)
@@ -70,28 +89,27 @@ class RouterOptions:
 
 class HelloReturn:
    """
-   Base class for `HELLO` return information.
+   Base class for ``HELLO`` return information.
    """
 
 
 
 class Accept(HelloReturn):
    """
-   Information to accept a `HELLO`.
+   Information to accept a ``HELLO``.
    """
 
    def __init__(self, authid = None, authrole = None, authmethod = None, authprovider = None):
       """
-      Ctor.
 
-      :param authid: The authentication ID the client is assigned, e.g. `"joe"` or `"joe@example.com"`.
-      :type authid: str
-      :param authrole: The authentication role the client is assigned, e.g. `"anonymous"`, `"user"` or `"com.myapp.user"`.
-      :type authrole: str
-      :param authmethod: The authentication method that was used to authenticate the client, e.g. `"cookie"` or `"wampcra"`.
-      :type authmethod: str
-      :param authprovider: The authentication provider that was used to authenticate the client, e.g. `"mozilla-persona"`.
-      :type authprovider: str
+      :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
+      :type authid: unicode
+      :param authrole: The authentication role the client is assigned, e.g. ``"anonymous"``, ``"user"`` or ``"com.myapp.user"``.
+      :type authrole: unicode
+      :param authmethod: The authentication method that was used to authenticate the client, e.g. ``"cookie"`` or ``"wampcra"``.
+      :type authmethod: unicode
+      :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
+      :type authprovider: unicode
       """
       if six.PY2:
          if type(authid) == str:
@@ -121,17 +139,16 @@ class Accept(HelloReturn):
 
 class Deny(HelloReturn):
    """
-   Information to deny a `HELLO`.
+   Information to deny a ``HELLO``.
    """
 
    def __init__(self, reason = u"wamp.error.not_authorized", message = None):
       """
-      Ctor.
 
-      :param reason: The reason of denying the authentication (an URI, e.g. `wamp.error.not_authorized`)
-      :type reason: str
+      :param reason: The reason of denying the authentication (an URI, e.g. ``wamp.error.not_authorized``)
+      :type reason: unicode
       :param message: A human readable message (for logging purposes).
-      :type message: str
+      :type message: unicode
       """
       if six.PY2:
          if type(reason) == str:
@@ -153,15 +170,14 @@ class Deny(HelloReturn):
 
 class Challenge(HelloReturn):
    """
-   Information to challenge the client upon `HELLO`.
+   Information to challenge the client upon ``HELLO``.
    """
 
    def __init__(self, method, extra = None):
       """
-      Ctor.
 
-      :param method: The authentication method for the challenge (e.g. `"wampcra"`).
-      :type method: str
+      :param method: The authentication method for the challenge (e.g. ``"wampcra"``).
+      :type method: unicode
       :param extra: Any extra information for the authentication challenge. This is
          specific to the authentication method.
       :type extra: dict
@@ -186,7 +202,6 @@ class HelloDetails:
 
    def __init__(self, roles = None, authmethods = None, authid = None, pending_session = None):
       """
-      Ctor.
 
       :param roles: The WAMP roles and features supported by the attaching client.
       :type roles: dict
@@ -211,8 +226,8 @@ class HelloDetails:
 class SessionDetails:
    """
    Provides details for a WAMP session upon open.
-   
-   @see: :func:`autobahn.wamp.interfaces.ISession.onJoin`
+
+   .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
    """
 
    def __init__(self, realm, session, authid = None, authrole = None, authmethod = None, authprovider = None):
@@ -220,7 +235,7 @@ class SessionDetails:
       Ctor.
 
       :param realm: The realm this WAMP session is attached to.
-      :type realm: str
+      :type realm: unicode
       :param session: WAMP session ID of this session.
       :type session: int
       """
@@ -241,17 +256,16 @@ class CloseDetails:
    """
    Provides details for a WAMP session upon open.
    
-   @see: :func:`autobahn.wamp.interfaces.ISession.onLeave`
+   .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
    """
 
    def __init__(self, reason = None, message = None):
       """
-      Ctor.
 
-      :param reason: The close reason (an URI, e.g. `wamp.close.normal`)
-      :type reason: str
+      :param reason: The close reason (an URI, e.g. ``wamp.close.normal``)
+      :type reason: unicode
       :param message: Closing log message.
-      :type message: str
+      :type message: unicode
       """
       self.reason = reason
       self.message = message
@@ -271,9 +285,9 @@ class SubscribeOptions:
    def __init__(self, match = None, details_arg = None):
       """
       :param match: The topic matching method to be used for the subscription.
-      :type match: str
+      :type match: unicode
       :param details_arg: When invoking the handler, provide event details
-                          in this keyword argument to the callable.
+        in this keyword argument to the callable.
       :type details_arg: str
       """
       assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
@@ -329,20 +343,19 @@ class PublishOptions:
                 eligible = None,
                 discloseMe = None):
       """
-      Constructor.
 
-      :param acknowledge: If True, acknowledge the publication with a success or
-                          error response.
+      :param acknowledge: If ``True``, acknowledge the publication with a success or
+         error response.
       :type acknowledge: bool
-      :param excludeMe: If True, exclude the publisher from receiving the event, even
-                        if he is subscribed (and eligible).
+      :param excludeMe: If ``True``, exclude the publisher from receiving the event, even
+         if he is subscribed (and eligible).
       :type excludeMe: bool
       :param exclude: List of WAMP session IDs to exclude from receiving this event.
-      :type exclude: list
+      :type exclude: list of int
       :param eligible: List of WAMP session IDs eligible to receive this event.
-      :type eligible: list
-      :param discloseMe: If True, request to disclose the publisher of this event
-                         to subscribers.
+      :type eligible: list of int
+      :param discloseMe: If ``True``, request to disclose the publisher of this event
+         to subscribers.
       :type discloseMe: bool
       """
       assert(acknowledge is None or type(acknowledge) == bool)
@@ -380,10 +393,9 @@ class RegisterOptions:
 
    def __init__(self, details_arg = None, pkeys = None, discloseCaller = None):
       """
-      Ctor.
 
       :param details_arg: When invoking the endpoint, provide call details
-                          in this keyword argument to the callable.
+         in this keyword argument to the callable.
       :type details_arg: str
       """
       self.details_arg = details_arg
@@ -427,6 +439,7 @@ class CallDetails:
       self.authrole = authrole
       self.authmethod = authmethod
 
+
    def __str__(self):
       return "CallDetails(progress = {}, caller = {}, authid = {}, authrole = {}, authmethod = {})".format(self.progress, self.caller, self.authid, self.authrole, self.authmethod)
 
@@ -443,22 +456,21 @@ class CallOptions:
                 discloseMe = None,
                 runOn = None):
       """
-      Constructor.
 
       :param onProgress: A callback that will be called when the remote endpoint
-                         called yields interim call progress results.
-      :type onProgress: a callable
+         called yields interim call progress results.
+      :type onProgress: callable
       :param timeout: Time in seconds after which the call should be automatically canceled.
       :type timeout: float
       :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
-                         to Callees. Note that a Dealer, depending on Dealer configuration, might
-                         reject the request, or might disclose the Callee's identity without
-                         a request to do so.
+         to Callees. Note that a Dealer, depending on Dealer configuration, might
+         reject the request, or might disclose the Callee's identity without
+         a request to do so.
       :type discloseMe: bool
-      :param runOn: If present (non-None), indicates a distributed call. Distributed calls allows
-                    to run a call issued by a Caller on one or more endpoints implementing the
-                    called procedure. Permissible value are: "all", "any" and "partition".
-                    If `runOne == "partition"`, then `runPartitions` MUST be present.
+      :param runOn: If present, indicates a distributed call. Distributed calls allows
+         to run a call issued by a Caller on one or more endpoints implementing the
+         called procedure. Permissible value are: ``"all"``, ``"any"`` and ``"partition"``.
+         If ``runOne == "partition"``, then ``runPartitions`` MUST be present.
       :type runOn: str
       """
       assert(onProgress is None or callable(onProgress))

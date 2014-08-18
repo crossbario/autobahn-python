@@ -16,19 +16,23 @@
 ##
 ###############################################################################
 
+__all__ = ('Pattern',)
+
 import re
 import six
 
-# TODO:
-# suffix matches
-# args + kwargs
-# uuid converter
-# multiple URI patterns per decorated object
-# classes: Pattern, EndpointPattern, ..
+
 
 class Pattern:
    """
    A WAMP URI Pattern.
+
+   .. todo::
+      * suffix matches
+      * args + kwargs
+      * uuid converter
+      * multiple URI patterns per decorated object
+      * classes: Pattern, EndpointPattern, ..
    """
 
    URI_TARGET_ENDPOINT = 1
@@ -46,12 +50,12 @@ class Pattern:
 
    def __init__(self, uri, target):
       """
-      Constructor for WAMP URI pattern.
 
-      :param uri: The URI or URI pattern, e.g. `"com.myapp.product.<product:int>.update"`.
-      :type uri: str
+      :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
+      :type uri: unicode
       :param target: The target for this pattern: a procedure endpoint (a callable),
-                     an event handler (a callable) or an exception (a class).
+         an event handler (a callable) or an exception (a class).
+      :type target: callable or obj
       """
       assert(type(uri) == six.text_type)
       assert(target in [Pattern.URI_TARGET_ENDPOINT,
@@ -124,7 +128,8 @@ class Pattern:
       """
       Returns the original URI (pattern) for this pattern.
 
-      :returns: str -- The URI (pattern), e.g. `"com.myapp.product.<product:int>.update"`.
+      :returns: The URI (pattern), e.g. ``"com.myapp.product.<product:int>.update"``.
+      :rtype: unicode
       """
       return self._uri
 
@@ -134,10 +139,11 @@ class Pattern:
       Match the given (fully qualified) URI according to this pattern
       and return extracted args and kwargs.
 
-      :param uri: The URI to match, e.g. `"com.myapp.product.123456.update"`.
-      :type uri: str
+      :param uri: The URI to match, e.g. ``"com.myapp.product.123456.update"``.
+      :type uri: unicode
 
-      :returns: tuple -- A tuple `(args, kwargs)`
+      :returns: A tuple ``(args, kwargs)``
+      :rtype: tuple
       """
       args = []
       kwargs = {}
@@ -159,7 +165,8 @@ class Pattern:
       """
       Check if this pattern is for a procedure endpoint.
 
-      :returns: bool -- `True`, iff this pattern is for a procedure endpoint.
+      :returns: ``True``, iff this pattern is for a procedure endpoint.
+      :rtype: bool
       """
       return self._target == Pattern.URI_TARGET_ENDPOINT
 
@@ -168,7 +175,8 @@ class Pattern:
       """
       Check if this pattern is for an event handler.
 
-      :returns: bool -- `True`, iff this pattern is for an event handler.
+      :returns: ``True``, iff this pattern is for an event handler.
+      :rtype: bool
       """
       return self._target == Pattern.URI_TARGET_HANDLER
 
@@ -177,6 +185,7 @@ class Pattern:
       """
       Check if this pattern is for an exception.
 
-      :returns: bool -- `True`, iff this pattern is for an exception.
+      :returns: ``True``, iff this pattern is for an exception.
+      :rtype: bool
       """
       return self._target == Pattern.URI_TARGET_EXCEPTION

@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+__all__ = ('Broker',)
+
 from autobahn import util
 from autobahn.wamp import types
 from autobahn.wamp import role
@@ -31,12 +33,11 @@ from autobahn.wamp.message import _URI_PAT_STRICT_NON_EMPTY, _URI_PAT_LOOSE_NON_
 
 class Broker:
    """
-   Basic WAMP broker, implements :class:`autobahn.wamp.interfaces.IBroker`.
+   Basic WAMP broker. This class implements :class:`autobahn.wamp.interfaces.IBroker`.
    """
 
    def __init__(self, router, options = None):
       """
-      Constructor.
 
       :param router: The router this dealer is part of.
       :type router: Object that implements :class:`autobahn.wamp.interfaces.IRouter`.

@@ -33,7 +33,7 @@ if os.environ.get('USE_TWISTED', False):
    from autobahn.wamp import protocol
    from autobahn.wamp import role
    from autobahn import util
-   from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidTopic
+   from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidUri
    from autobahn.wamp import types
 
    from autobahn.twisted.wamp import ApplicationSession
@@ -193,8 +193,8 @@ if os.environ.get('USE_TWISTED', False):
          handler.define(NotAuthorized)
          yield self.assertFailure(handler.publish(u'de.myapp.topic1', options = options), NotAuthorized)
 
-         handler.define(InvalidTopic)
-         yield self.assertFailure(handler.publish(u'', options = options), InvalidTopic)
+         handler.define(InvalidUri)
+         yield self.assertFailure(handler.publish(u'', options = options), InvalidUri)
 
 
       @inlineCallbacks

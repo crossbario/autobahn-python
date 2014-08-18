@@ -18,6 +18,14 @@
 
 from __future__ import absolute_import
 
+__all__ = (
+   'Error',
+   'SessionNotReady',
+   'SerializationError',
+   'TransportLost',
+   'ApplicationError',
+)
+
 from autobahn.wamp import error
 
 
@@ -28,26 +36,25 @@ class Error(RuntimeError):
    """
    def __init__(self, reason):
       """
-      Constructor.
 
       :param reason: Description of WAMP error that occurred (for logging purposes).
-      :type reason: str
+      :type reason: unicode
       """
       RuntimeError.__init__(self, reason)
 
 
 
-
 class SessionNotReady(Error):
    """
+   The application tried to perform a WAMP interaction, but the
+   session is not yet fully established.
    """
-
 
 
 class SerializationError(Error):
    """
    Exception raised when the WAMP serializer could not serialize the
-   application payload (args or kwargs for `CALL`, `PUBLISH`, etc).
+   application payload (``args`` or ``kwargs`` for ``CALL``, ``PUBLISH``, etc).
    """
 
 
@@ -59,13 +66,13 @@ class ProtocolError(Error):
    """
 
 
-
 class TransportLost(Error):
    """
-   Exception raised when transport was lost or is not connected.
+   Exception raised when the transport underlying the WAMP session
+   was lost or is not connected.
    """
    def __init__(self):
-      Error.__init__(self, "WAMP transport lost")
+      Error.__init__(self, u"WAMP transport lost")
 
 
 
@@ -92,10 +99,9 @@ class ApplicationError(Error):
 
    def __init__(self, error, *args, **kwargs):
       """
-      Constructor.
 
-      :param error: The URI of the error that occurred, e.g. `wamp.error.not_authorized`.
-      :type error: str
+      :param error: The URI of the error that occurred, e.g. ``wamp.error.not_authorized``.
+      :type error: unicode
       """
       Exception.__init__(self, *args)
       self.kwargs = kwargs
@@ -112,48 +118,15 @@ class ApplicationError(Error):
 
 
 
-#class GenericException(Exception)
-
-@error("wamp.error.not_authorized")
+@error(ApplicationError.NOT_AUTHORIZED)
 class NotAuthorized(Exception):
    """
    Not authorized to perform the respective action.
    """
 
 
-@error("wamp.error.invalid_topic")
-class InvalidTopic(Exception):
+@error(ApplicationError.INVALID_URI)
+class InvalidUri(Exception):
    """
-   The topic to publish or subscribe to is invalid.
+   The URI for a topic, procedure or error is not a valid WAMP URI.
    """
-
-
-class CallError(ApplicationError):
-   """
-   Remote procedure call errors.
-   """
-
-   def __init__(self, error, problem):
-      """
-      Constructor.
-
-      :param error: The URI of the error that occurred, e.g. "com.myapp.error.no_such_user".
-      :type error: str
-      :param problem: Any application-level details for the error that occurred.
-      :type problem: obj
-      """
-      ApplicationError.__init__(self, error)
-      self.problem = problem
-
-
-
-class CanceledError(ApplicationError):
-   """
-   Error for canceled calls.
-   """
-
-   def __init__(self):
-      """
-      Constructor.
-      """
-      ApplicationError.__init__(self, ApplicationError.CANCELED)
