@@ -5,8 +5,16 @@
 Changelog
 =========
 
+0.8.15
+------
+`Published 2014-08-23 <https://pypi.python.org/pypi/autobahn/0.8.15>`__
+
+* docs polishing
+* small fixes (unicode handling and such)
+
 0.8.14
 ------
+`Published 2014-08-14 <https://pypi.python.org/pypi/autobahn/0.8.14>`__
 
 * add automatic WebSocket ping/pong (#24)
 * WAMP-CRA client side (beta!)
