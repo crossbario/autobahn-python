@@ -84,8 +84,8 @@ class ApplicationError(Error):
 
    INVALID_URI                = u"wamp.error.invalid_uri"
    """
-   Peer provided an incorrect URI for any URI-based attribute of WAMP message,
-   such as realm, topic or procedure.
+   Peer provided an incorrect URI for a URI-based attribute of a WAMP message
+   such as a realm, topic or procedure.
    """
 
    NO_SUCH_PROCEDURE          = u"wamp.error.no_such_procedure"
@@ -114,26 +114,26 @@ class ApplicationError(Error):
    """
    A call failed, since the given argument types or values are not acceptable to the
    called procedure - in which case the *Callee* may throw this error. Or a Router
-   performing *payload validation* checked the payload (`args` / `kwargs`) of a call,
+   performing *payload validation* checked the payload (``args`` / ``kwargs``) of a call,
    call result, call error or publish, and the payload did not conform.
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
    SYSTEM_SHUTDOWN            = u"wamp.error.system_shutdown"
    """
-   The *Peer* is shutting down completely - used as a `GOODBYE` (or `ABORT`) reason.
+   The *Peer* is shutting down completely - used as a ``GOODBYE`` (or ``ABORT``) reason.
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
    CLOSE_REALM                = u"wamp.error.close_realm"
    """
-   The *Peer* want to leave the realm - used as a `GOODBYE` reason.
+   The *Peer* want to leave the realm - used as a ``GOODBYE`` reason.
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
    GOODBYE_AND_OUT            = u"wamp.error.goodbye_and_out"
    """
-   A *Peer* acknowledges ending of a session - used as a `GOOBYE` reply reason.
+   A *Peer* acknowledges ending of a session - used as a ``GOOBYE`` reply reason.
    """
    
    NOT_AUTHORIZED             = u"wamp.error.not_authorized"
@@ -165,7 +165,7 @@ class ApplicationError(Error):
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
    CANCELED                   = u"wamp.error.canceled"
    """
-   A Dealer or Callee canceled a call previously issued (WAMP AP).
+   A Dealer or Callee canceled a call previously issued (WAMP AP).
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!

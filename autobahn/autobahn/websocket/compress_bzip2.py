@@ -20,11 +20,11 @@ from __future__ import absolute_import
 
 
 __all__ = (
-   'PerMessageBzip2Mixin2',
-   'PerMessageBzip2Offer2',
-   'PerMessageBzip2OfferAccept2',
-   'PerMessageBzip2Response2',
-   'PerMessageBzip2ResponseAccept2',
+   'PerMessageBzip2Mixin',
+   'PerMessageBzip2Offer',
+   'PerMessageBzip2OfferAccept',
+   'PerMessageBzip2Response',
+   'PerMessageBzip2ResponseAccept',
    'PerMessageBzip2',
 )
 

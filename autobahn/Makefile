@@ -26,6 +26,9 @@ publish: clean
 	python setup.py register
 	python setup.py sdist upload
 
+test:
+	USE_TWISTED=1 trial autobahn
+
 test1:
 	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
 #	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
@@ -42,4 +45,3 @@ test2:
 #	trial autobahn.wamp.test.test_protocol_peer
 #	trial autobahn.wamp.test.test_serializer
 #	trial autobahn.wamp.test.test_uri_pattern
-
