@@ -82,35 +82,35 @@ class ApplicationError(Error):
    at the application level.
    """
 
-   INVALID_URI                = u"wamp.error.invalid_uri"
+   INVALID_URI = u"wamp.error.invalid_uri"
    """
    Peer provided an incorrect URI for a URI-based attribute of a WAMP message
    such as a realm, topic or procedure.
    """
 
-   NO_SUCH_PROCEDURE          = u"wamp.error.no_such_procedure"
+   NO_SUCH_PROCEDURE = u"wamp.error.no_such_procedure"
    """
    A Dealer could not perform a call, since not procedure is currently registered
    under the given URI.
    """
 
-   PROCEDURE_ALREADY_EXISTS   = u"wamp.error.procedure_already_exists"
+   PROCEDURE_ALREADY_EXISTS = u"wamp.error.procedure_already_exists"
    """
    A procedure could not be registered, since a procedure with the given URI is
    already registered.
    """
 
-   NO_SUCH_REGISTRATION       = u"wamp.error.no_such_registration"
+   NO_SUCH_REGISTRATION = u"wamp.error.no_such_registration"
    """
    A Dealer could not perform a unregister, since the given registration is not active.
    """
 
-   NO_SUCH_SUBSCRIPTION       = u"wamp.error.no_such_subscription"
+   NO_SUCH_SUBSCRIPTION = u"wamp.error.no_such_subscription"
    """
    A Broker could not perform a unsubscribe, since the given subscription is not active.
    """
 
-   INVALID_ARGUMENT           = u"wamp.error.invalid_argument"
+   INVALID_ARGUMENT = u"wamp.error.invalid_argument"
    """
    A call failed, since the given argument types or values are not acceptable to the
    called procedure - in which case the *Callee* may throw this error. Or a Router
@@ -119,43 +119,43 @@ class ApplicationError(Error):
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   SYSTEM_SHUTDOWN            = u"wamp.error.system_shutdown"
+   SYSTEM_SHUTDOWN = u"wamp.error.system_shutdown"
    """
    The *Peer* is shutting down completely - used as a ``GOODBYE`` (or ``ABORT``) reason.
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   CLOSE_REALM                = u"wamp.error.close_realm"
+   CLOSE_REALM = u"wamp.error.close_realm"
    """
    The *Peer* want to leave the realm - used as a ``GOODBYE`` reason.
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   GOODBYE_AND_OUT            = u"wamp.error.goodbye_and_out"
+   GOODBYE_AND_OUT = u"wamp.error.goodbye_and_out"
    """
    A *Peer* acknowledges ending of a session - used as a ``GOOBYE`` reply reason.
    """
    
-   NOT_AUTHORIZED             = u"wamp.error.not_authorized"
+   NOT_AUTHORIZED = u"wamp.error.not_authorized"
    """
    A call, register, publish or subscribe failed, since the session is not authorized
    to perform the operation.
    """
 
-   AUTHORIZATION_FAILED       = u"wamp.error.authorization_failed"
+   AUTHORIZATION_FAILED = u"wamp.error.authorization_failed"
    """
    A Dealer or Broker could not determine if the *Peer* is authorized to perform
    a join, call, register, publish or subscribe, since the authorization operation
    *itself* failed. E.g. a custom authorizer did run into an error.
    """
 
-   NO_SUCH_REALM              = u"wamp.error.no_such_realm"
+   NO_SUCH_REALM = u"wamp.error.no_such_realm"
    """
    Peer wanted to join a non-existing realm (and the *Router* did not allow to auto-create
    the realm).
    """
 
-   NO_SUCH_ROLE               = u"wamp.error.no_such_role"
+   NO_SUCH_ROLE = u"wamp.error.no_such_role"
    """
    A *Peer* was to be authenticated under a Role that does not (or no longer) exists on the Router.
    For example, the *Peer* was successfully authenticated, but the Role configured does not
@@ -163,19 +163,19 @@ class ApplicationError(Error):
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   CANCELED                   = u"wamp.error.canceled"
+   CANCELED = u"wamp.error.canceled"
    """
    A Dealer or Callee canceled a call previously issued (WAMP AP).
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   OPTION_NOT_ALLOWED         = u"wamp.error.option_not_allowed"
+   OPTION_DISALLOWED_DISCLOSE_ME = u"wamp.error.option_disallowed.disclose_me"
    """
-   A *Peer* requested an interaction with an option that was disallowed by the *Router* (WAMP AP).
+   A Router rejected client request to disclose its identity (WAMP AP).
    """
 
    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-   NO_ELIGIBLE_CALLEE         = u"wamp.error.no_eligible_callee"
+   NO_ELIGIBLE_CALLEE = u"wamp.error.no_eligible_callee"
    """
    A *Dealer* could not perform a call, since a procedure with the given URI is registered,
    but *Callee Black- and Whitelisting* and/or *Caller Exclusion* lead to the
