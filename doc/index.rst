@@ -198,7 +198,7 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
 
    installation
    asynchronous-programming
-   websocket/programming   
+   websocket/programming
    wamp/programming
    websocket/examples
    wamp/examples
