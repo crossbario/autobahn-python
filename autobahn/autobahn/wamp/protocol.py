@@ -29,7 +29,6 @@ from autobahn.wamp.interfaces import ISession, \
                                      ISubscriber, \
                                      ICaller, \
                                      IRegistration, \
-                                     ICallee, \
                                      ITransportHandler
 
 from autobahn import util

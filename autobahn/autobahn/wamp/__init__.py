@@ -18,8 +18,6 @@
 
 from __future__ import absolute_import
 
-import six
-
 from autobahn.wamp.uri import Pattern
 
 

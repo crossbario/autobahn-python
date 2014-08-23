@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import sys
 
 if sys.version_info < (2,7):
+   # noinspection PyUnresolvedReferences
    import unittest2 as unittest
 else:
    #from twisted.trial import unittest

@@ -40,8 +40,7 @@ from autobahn.util import newid
 
 from autobahn.wamp.websocket import parseSubprotocolIdentifier
 
-from autobahn.wamp.exception import ProtocolError, \
-                                    SerializationError, \
+from autobahn.wamp.exception import SerializationError, \
                                     TransportLost
 
 

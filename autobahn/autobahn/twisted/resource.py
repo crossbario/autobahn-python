@@ -22,13 +22,11 @@ __all__ = (
    'WSGIRootResource',
 )
 
-
-from six.moves.urllib import parse
-
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
 try:
+   # noinspection PyUnresolvedReferences
    from twisted.web.error import NoResource
 except:
    ## starting from Twisted 12.2, NoResource has moved

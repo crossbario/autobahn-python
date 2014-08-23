@@ -19,11 +19,8 @@
 from __future__ import absolute_import
 
 from autobahn.wamp import types
-from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
-from autobahn.wamp.broker import Broker
-from autobahn.wamp.dealer import Dealer
 from autobahn.wamp.interfaces import IRouter, IRouterFactory
 
 

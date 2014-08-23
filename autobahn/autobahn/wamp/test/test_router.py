@@ -37,7 +37,6 @@ if USE_TWISTED:
    from twisted.trial import unittest
    #import unittest
 
-   from twisted.internet.defer import inlineCallbacks, Deferred
    from autobahn.twisted.wamp import FutureMixin, \
                                      RouterFactory, \
                                      RouterSessionFactory, \
@@ -55,6 +54,7 @@ elif USE_ASYNCIO:
    try:
       import asyncio
    except ImportError:
+      # noinspection PyUnresolvedReferences
       import trollius as asyncio
 
    import gc

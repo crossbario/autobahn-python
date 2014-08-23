@@ -55,6 +55,9 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 ##
 try:
    import bz2
+except ImportError:
+   bz2 = None
+else:
    from autobahn.websocket.compress_bzip2 import *
 
    PMCE = {
@@ -72,14 +75,15 @@ try:
                    "PerMessageBzip2ResponseAccept",
                    "PerMessageBzip2"])
 
-except ImportError:
-   pass
-
 
 ## include "permessage-snappy" classes if Snappy is available
 ##
 try:
+   # noinspection PyPackageRequirements
    import snappy
+except ImportError:
+   snappy = None
+else:
    from autobahn.websocket.compress_snappy import *
 
    PMCE = {
@@ -96,6 +100,3 @@ try:
                    "PerMessageSnappyResponse",
                    "PerMessageSnappyResponseAccept",
                    "PerMessageSnappy"])
-
-except ImportError:
-   pass

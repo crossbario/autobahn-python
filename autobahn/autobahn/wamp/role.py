@@ -28,7 +28,7 @@ __all__ = ['RoleFeatures',
            'ROLE_NAME_TO_CLASS']
 
 
-import json, types
+import json
 from autobahn import util
 from autobahn.wamp.exception import ProtocolError
 

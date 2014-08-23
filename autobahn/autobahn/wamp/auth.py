@@ -27,8 +27,6 @@ __all__ = (
 
 import os
 import base64
-import hashlib
-import hmac
 import six
 import struct
 import time
@@ -94,7 +92,6 @@ import hashlib
 import random
 from struct import Struct
 from operator import xor
-from itertools import starmap
 
 if PY3:
    izip = zip

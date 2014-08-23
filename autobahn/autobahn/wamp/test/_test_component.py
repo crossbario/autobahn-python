@@ -21,26 +21,15 @@ from __future__ import absolute_import
 from twisted.trial import unittest
 #import unittest
 
-from autobahn import wamp
-from autobahn.wamp import message
-from autobahn.wamp import role
-from autobahn.wamp import serializer
 
-
-import sys
 import io
-import six
-import datetime
 
-from twisted.python import log
 from twisted.internet.defer import inlineCallbacks, Deferred, DeferredList
 from twisted.internet.endpoints import serverFromString
 from twisted.internet.endpoints import clientFromString
-from autobahn.twisted.util import sleep
 
-from autobahn.wamp import router
 from autobahn.twisted.util import sleep
-from autobahn.twisted import wamp, websocket
+from autobahn.twisted import wamp
 
 from autobahn.wamp.router import RouterFactory
 from autobahn.twisted.wamp import RouterSessionFactory
@@ -54,16 +43,11 @@ from autobahn.twisted.wamp import ApplicationSessionFactory
 
 
 from autobahn.twisted.rawsocket import WampRawSocketServerFactory, \
-                                       WampRawSocketClientFactory, \
-                                       WampRawSocketServerProtocol, \
-                                       WampRawSocketClientProtocol
+                                       WampRawSocketClientFactory
 
 from autobahn.twisted.websocket import WampWebSocketServerFactory, \
                                        WampWebSocketClientFactory, \
-                                       WampWebSocketClientProtocol, \
-                                       WampWebSocketServerProtocol
-
-
+                                       WampWebSocketClientProtocol
 
 
 class CaseComponent(wamp.ApplicationSession):

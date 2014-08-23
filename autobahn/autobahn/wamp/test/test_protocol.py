@@ -25,12 +25,10 @@ if os.environ.get('USE_TWISTED', False):
    from twisted.trial import unittest
    #import unittest
 
-   from twisted.internet.defer import Deferred, inlineCallbacks
+   from twisted.internet.defer import inlineCallbacks
 
-   from autobahn import wamp
    from autobahn.wamp import message
    from autobahn.wamp import serializer
-   from autobahn.wamp import protocol
    from autobahn.wamp import role
    from autobahn import util
    from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidUri

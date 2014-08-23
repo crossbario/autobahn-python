@@ -52,7 +52,6 @@ import hmac
 import hashlib
 from struct import Struct
 from operator import xor
-from itertools import starmap
 
 if PY3:
    izip = zip
