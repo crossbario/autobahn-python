@@ -18,20 +18,11 @@
 
 from __future__ import absolute_import
 
-from distutils import log
-
-try:
-   from ez_setup import use_setuptools
-   use_setuptools()
-except Exception as e:
-   log.warn("ez_setup failed: {0}".format(e))
-finally:
-   from setuptools import setup
-
-import platform
-CPY = platform.python_implementation() == 'CPython'
-
 import sys
+import platform
+from setuptools import setup
+
+CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
 PY33 = sys.version_info >= (3,3) and sys.version_info < (3,4)
 
@@ -161,7 +152,7 @@ setup(
 
 try:
    from twisted.internet import reactor
-except:
+except ImportError:
    pass
 else:
    # Make Twisted regenerate the dropin.cache, if possible. This is necessary
@@ -171,6 +162,6 @@ else:
       from twisted.plugin import IPlugin, getPlugins
       list(getPlugins(IPlugin))
    except Exception as e:
-      log.warn("Failed to update Twisted plugin cache: {}".format(e))
+      print("Failed to update Twisted plugin cache: {}".format(e))
    else:
-      log.info("Twisted dropin.cache regenerated.")
+      print("Twisted dropin.cache regenerated.")
