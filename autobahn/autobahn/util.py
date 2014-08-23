@@ -82,7 +82,7 @@ def parseutc(datestr):
    """
    try:
       return datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%SZ")
-   except:
+   except ValueError:
       return None
 
 

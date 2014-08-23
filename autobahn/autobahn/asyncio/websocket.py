@@ -190,6 +190,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
       ## onConnect() will return the selected subprotocol or None
       ## or a pair (protocol, headers) or raise an HttpException
       ##
+      # noinspection PyBroadException
       try:
          res = self.onConnect(request)
          #if yields(res):

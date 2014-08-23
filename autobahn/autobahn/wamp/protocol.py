@@ -662,6 +662,7 @@ class ApplicationSession(BaseSession):
             if msg.request not in self._invocations:
                raise ProtocolError("INTERRUPT received for non-pending invocation {}".format(msg.request))
             else:
+               # noinspection PyBroadException
                try:
                   self._invocations[msg.request].cancel()
                except Exception:

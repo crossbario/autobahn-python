@@ -2863,7 +2863,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             (h, p) = self.http_request_host.split(":")
             try:
                port = int(str(p.strip()))
-            except:
+            except ValueError:
                return self.failHandshake("invalid port '%s' in HTTP Host header '%s'" % (str(p.strip()), str(self.http_request_host)))
 
             ## do port checking only if externalPort or URL was set
@@ -2961,7 +2961,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
             try:
                version = int(self.http_headers["sec-websocket-version"])
-            except:
+            except ValueError:
                return self.failHandshake("could not parse HTTP Sec-WebSocket-Version header '%s' in opening handshake request" % self.http_headers["sec-websocket-version"])
 
          if version not in self.versions:
@@ -3792,7 +3792,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ##
          try:
             status_code = int(sl[1].strip())
-         except:
+         except ValueError:
             return self.failProxyConnect("Bad HTTP status code ('%s')" % sl[1].strip())
 
          if not (status_code >= 200 and status_code < 300):
@@ -3993,7 +3993,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ##
          try:
             status_code = int(sl[1].strip())
-         except:
+         except ValueError:
             return self.failHandshake("Bad HTTP status code ('%s')" % sl[1].strip())
          if status_code != http.SWITCHING_PROTOCOLS[0]:
 

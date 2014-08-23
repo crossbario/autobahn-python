@@ -57,7 +57,7 @@ UTF8_REJECT = 1
 try:
    from wsaccel.utf8validator import Utf8Validator
 
-except:
+except ImportError:
    ##
    ## Fallback to pure Python implementation - also for PyPy.
    ##

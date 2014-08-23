@@ -24,7 +24,7 @@ import six
 try:
    from wsaccel.xormask import XorMaskerNull, createXorMasker
 
-except:
+except ImportError:
    ## fallback to pure Python implementation
 
    ## http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts

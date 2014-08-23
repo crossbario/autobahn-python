@@ -28,7 +28,7 @@ from twisted.protocols.policies import ProtocolWrapper
 try:
    # noinspection PyUnresolvedReferences
    from twisted.web.error import NoResource
-except:
+except ImportError:
    ## starting from Twisted 12.2, NoResource has moved
    from twisted.web.resource import NoResource
 from twisted.web.resource import IResource, Resource

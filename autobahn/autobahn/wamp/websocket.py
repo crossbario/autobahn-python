@@ -68,6 +68,7 @@ class WampWebSocketProtocol:
       """
       ## WebSocket connection lost - fire off the WAMP
       ## session close callback
+      # noinspection PyBroadException
       try:
          if self.factory.debug_wamp:
             print("WAMP-over-WebSocket transport lost: wasClean = {}, code = {}, reason = '{}'".format(wasClean, code, reason))

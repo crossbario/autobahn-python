@@ -328,8 +328,9 @@ class WampLongPollResourceSession(Resource):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
       """
+      self._session = self._parent._factory()
+      # noinspection PyBroadException
       try:
-         self._session = self._parent._factory()
          self._session.onOpen(self)
       except Exception:
          if self._debug:

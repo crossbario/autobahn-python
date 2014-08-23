@@ -104,6 +104,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                acceptMaxWindowBits = True
 
          elif p == 'client_no_context_takeover':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
@@ -121,6 +122,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                   requestMaxWindowBits = val
 
          elif p == 'server_no_context_takeover':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
@@ -372,6 +374,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                   client_max_window_bits = val
 
          elif p == 'client_no_context_takeover':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
@@ -389,6 +392,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                   server_max_window_bits = val
 
          elif p == 'server_no_context_takeover':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:

@@ -70,13 +70,13 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
       ## the peer we are connected to
       try:
          peer = self.transport.getPeer()
-      except:
+      except AttributeError:
          ## ProcessProtocols lack getPeer()
          self.peer = "?"
       else:
          try:
             self.peer = "%s:%d" % (peer.host, peer.port)
-         except:
+         except AttributeError:
             ## eg Unix Domain sockets don't have host/port
             self.peer = str(peer)
 
@@ -85,7 +85,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
       ## Set "Nagle"
       try:
          self.transport.setTcpNoDelay(self.tcpNoDelay)
-      except:
+      except AttributeError:
          ## eg Unix Domain sockets throw Errno 22 on this
          pass
 
