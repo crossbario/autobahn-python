@@ -16,7 +16,7 @@
 ##
 ###############################################################################
 
-__all__ = ()
+__all__ = (
    'WebSocketAdapterProtocol',
    'WebSocketServerProtocol',
    'WebSocketClientProtocol',
