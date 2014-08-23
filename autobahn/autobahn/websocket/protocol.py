@@ -3076,8 +3076,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## store WS key
          ##
          if self.websocket_version == 0:
+            # noinspection PyUnboundLocalVariable
             self._wskey = (key1, key2, key3)
          else:
+            # noinspection PyUnboundLocalVariable
             self._wskey = key
 
          ## WebSocket handshake validated => produce opening handshake response
@@ -3228,6 +3230,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          ## compute accept body
          ##
+         # noinspection PyUnboundLocalVariable
          accept_val = struct.pack(">II", key1, key2) + key3
          response_body = hashlib.md5(accept_val).digest()
 
@@ -3235,6 +3238,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
          ## compute Sec-WebSocket-Accept
          ##
          sha1 = hashlib.sha1()
+         # noinspection PyUnboundLocalVariable
          sha1.update(key.encode('utf8') + WebSocketProtocol._WS_MAGIC)
          sec_websocket_accept = base64.b64encode(sha1.digest())
 

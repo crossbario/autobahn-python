@@ -333,6 +333,7 @@ class WrappingWebSocketAdapter:
          self._proto.dataReceived(payload)
 
 
+   # noinspection PyUnusedLocal
    def onClose(self, wasClean, code, reason):
       self._proto.connectionLost(None)
 

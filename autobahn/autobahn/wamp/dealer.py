@@ -252,6 +252,7 @@ class Dealer:
             session._transport.send(reply)
 
 
+   # noinspection PyUnusedLocal
    def processCancel(self, session, cancel):
       """
       Implements :func:`autobahn.wamp.interfaces.IDealer.processCancel`

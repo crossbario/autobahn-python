@@ -75,16 +75,16 @@ else:
 
 ## Autobahn core packages
 ##
-packages = ['autobahn',
-            'autobahn.wamp',
-            'autobahn.wamp.test',
-            'autobahn.websocket',
-            'autobahn.websocket.test',
-            'autobahn.asyncio',
-            'autobahn.twisted',
-            'twisted.plugins',
-            'autobahn.wamp1', # WAMPv1 - remove this later
-            ]
+packages = [
+   'autobahn',
+   'autobahn.wamp',
+   'autobahn.wamp.test',
+   'autobahn.websocket',
+   'autobahn.websocket.test',
+   'autobahn.asyncio',
+   'autobahn.twisted',
+   'twisted.plugins'
+]
 
 if PY3:
    if PY33:

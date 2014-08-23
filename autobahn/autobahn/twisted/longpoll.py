@@ -310,6 +310,7 @@ class WampLongPollResourceSession(Resource):
          raise TransportLost()
 
 
+   # noinspection PyUnusedLocal
    def onClose(self, wasClean, code, reason):
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`

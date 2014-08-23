@@ -740,6 +740,7 @@ class ApplicationSession(BaseSession):
             raise ProtocolError("Unexpected message {}".format(msg.__class__))
 
 
+   # noinspection PyUnusedLocal
    def onClose(self, wasClean):
       """
       Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`

@@ -121,6 +121,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(update_product._wampuris[0].uri(), u"com.myapp.product.<product:int>.update")
       self.assertEqual(update_product._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
+      # noinspection PyUnusedLocal
       @wamp.register(u"com.myapp.<category:string>.<id:int>.update")
       def update(category = None, id = None):
          pass
@@ -431,6 +432,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
    def test_decorate_endpoint_multiple(self):
 
+      # noinspection PyUnusedLocal
       @wamp.register(u"com.oldapp.oldproc")
       @wamp.register(u"com.calculator.square")
       def square(x):
