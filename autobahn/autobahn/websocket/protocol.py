@@ -1789,6 +1789,7 @@ class WebSocketProtocol:
          ## process frame data
          ##
          fr = self.onFrameData(payload)
+         # noinspection PySimplifyBooleanCheck
          if fr == False:
             return False
 
@@ -1796,6 +1797,7 @@ class WebSocketProtocol:
          ##
          if self.current_frame_masker.pointer() == self.current_frame.length:
             fr = self.onFrameEnd()
+            # noinspection PySimplifyBooleanCheck
             if fr == False:
                return False
 

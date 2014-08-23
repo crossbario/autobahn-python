@@ -97,6 +97,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
          val = params[p][0]
 
          if p == 'client_max_window_bits':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:

@@ -82,6 +82,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
          val = params[p][0]
 
          if p == 'client_no_context_takeover':
+            # noinspection PySimplifyBooleanCheck
             if val != True:
                raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
             else:
