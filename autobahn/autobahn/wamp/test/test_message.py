@@ -32,6 +32,38 @@ from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 
 
+
+class TestIds(unittest.TestCase):
+
+   def test_valid_ids(self):
+      for val in [0, 1, 23, 42, 9007199254740992]:
+         self.assertEqual(val, message.check_or_raise_id(val))
+
+   def test_invalid_ids(self):
+      class Foo:
+         pass
+      for val in [-1, -9007199254740992, None, b"", b"abc", u"", u"abc", 0.9, Foo(), False, True, [], {}]:
+         self.assertRaises(ProtocolError, message.check_or_raise_id, val)
+
+
+
+class TestUris(unittest.TestCase):
+
+   def test_valid_uris(self):
+      for u in [u"com.myapp.topic1",
+                u"com.myapp.product.123",
+                u"com.myapp.product.1.delete",
+                ]:
+         self.assertEqual(u, message.check_or_raise_uri(u))
+
+   def test_invalid_uris(self):
+      for u in [0, None, True, False,
+                #u"",
+                ]:
+         self.assertRaises(ProtocolError, message.check_or_raise_uri, u)
+
+
+
 class TestErrorMessage(unittest.TestCase):
 
    def test_ctor(self):

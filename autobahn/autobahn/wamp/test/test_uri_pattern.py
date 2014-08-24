@@ -42,7 +42,6 @@ class TestUris(unittest.TestCase):
 
    def test_invalid_uris(self):
       for u in [u"",
-                u"123",
                 u"com.myapp.<product:foo>.update",
                 u"com.myapp.<123:int>.update",
                 u"com.myapp.<:product>.update",
@@ -53,6 +52,7 @@ class TestUris(unittest.TestCase):
 
    def test_valid_uris(self):
       for u in [u"com.myapp.proc1",
+                u"123",
                 u"com.myapp.<product:int>.update",
                 ]:
          p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)

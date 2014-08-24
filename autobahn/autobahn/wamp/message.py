@@ -62,6 +62,7 @@ _URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,})?$")
 ## loose URI check allowing empty URI components
 _URI_PAT_LOOSE = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
 
+# ^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+[0-9a-z_]$
 
 ## strict URI check disallowing empty URI components
 _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]{2,}\.)*([0-9a-z_]{2,})?$")
@@ -71,7 +72,7 @@ _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)?$")
 
 
 
-def check_or_raise_uri(value, message):
+def check_or_raise_uri(value, message = "WAMP message invalid"):
    if type(value) != six.text_type:
       raise ProtocolError("{0}: invalid type {1} for URI".format(message, type(value)))
    if not _URI_PAT_LOOSE.match(value):
@@ -80,7 +81,7 @@ def check_or_raise_uri(value, message):
 
 
 
-def check_or_raise_id(value, message):
+def check_or_raise_id(value, message = "WAMP message invalid"):
    if type(value) not in six.integer_types:
       raise ProtocolError("{0}: invalid type {1} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
@@ -89,7 +90,7 @@ def check_or_raise_id(value, message):
 
 
 
-def check_or_raise_extra(value, message):
+def check_or_raise_extra(value, message = "WAMP message invalid"):
    if type(value) != dict:
       raise ProtocolError("{0}: invalid type {1}".format(message, type(value)))
    for k in value.keys():

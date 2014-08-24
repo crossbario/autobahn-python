@@ -43,9 +43,26 @@ class Pattern:
    URI_TYPE_PREFIX = 2
    URI_TYPE_WILDCARD = 3
 
-   _URI_COMPONENT = re.compile(r"^[a-z][a-z0-9_]*$")
+   _URI_COMPONENT = re.compile(r"^[a-z0-9][a-z0-9_\-]*$")
+   """
+   Compiled regular expression for a WAMP URI component.
+   """
+
    _URI_NAMED_COMPONENT = re.compile(r"^<([a-z][a-z0-9_]*)>$")
+   """
+   Compiled regular expression for a named WAMP URI component.
+
+   .. note::
+      This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
+   """
+
    _URI_NAMED_CONVERTED_COMPONENT = re.compile(r"^<([a-z][a-z0-9_]*):([a-z]*)>$")
+   """
+   Compiled regular expression for a named and type-converted WAMP URI component.
+
+   .. note::
+      This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.   
+   """
 
 
    def __init__(self, uri, target):
