@@ -104,17 +104,17 @@ def id():
 
 
 
-def newid(len = 16):
+def newid(length = 16):
    """
    Generate a new random object ID.
 
-   :param len: The length (in chars) of the ID to generate.
-   :type len: int
+   :param length: The length (in chars) of the ID to generate.
+   :type length: int
 
    :returns: A random object ID.
    :rtype: str
    """
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(len)])
+   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(length)])
 
 
 
@@ -254,7 +254,7 @@ class Tracker:
       self._timings[key] = rtime()
 
 
-   def diff(self, startKey, endKey, format = True):
+   def diff(self, startKey, endKey, formatted = True):
       """
       Get elapsed difference between two previously tracked keys.
 
@@ -262,15 +262,15 @@ class Tracker:
       :type startKey: str
       :param endKey: Second key for interval (younger timestamp).
       :type endKey: str
-      :param format: If ``True``, format computed time period and return string.
-      :type format: bool
+      :param formatted: If ``True``, format computed time period and return string.
+      :type formatted: bool
 
       :returns: Computed time period in seconds (or formatted string).
       :rtype: float or str
       """
       if endKey in self._timings and startKey in self._timings:
          d = self._timings[endKey] - self._timings[startKey]
-         if format:
+         if formatted:
             if d < 0.00001: # 10us
                s = "%d ns" % round(d * 1000000000.)
             elif d < 0.01: # 10ms
@@ -283,7 +283,7 @@ class Tracker:
          else:
             return d
       else:
-         if format:
+         if formatted:
             return "n.a.".rjust(8)
          else:
             return None

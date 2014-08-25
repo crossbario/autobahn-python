@@ -60,8 +60,8 @@ if os.environ.get('USE_TWISTED', False):
 
       def send(self, msg):
          if self._log:
-            bytes, isbinary = self._serializer.serialize(msg)
-            print("Send: {}".format(bytes))
+            payload, isbinary = self._serializer.serialize(msg)
+            print("Send: {}".format(payload))
 
          reply = None
 
@@ -111,8 +111,8 @@ if os.environ.get('USE_TWISTED', False):
 
          if reply:
             if self._log:
-               bytes, isbinary = self._serializer.serialize(reply)
-               print("Receive: {}".format(bytes))
+               payload, isbinary = self._serializer.serialize(reply)
+               print("Receive: {}".format(payload))
             self._handler.onMessage(reply)
 
       def isOpen(self):

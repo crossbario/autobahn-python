@@ -96,14 +96,14 @@ class WampRawSocketProtocol(Int32StringReceiver):
          if self.factory.debug:
             log.msg("TX WAMP message: {}".format(msg))
          try:
-            bytes, _ = self.factory._serializer.serialize(msg)
+            payload, _ = self.factory._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
             raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
          else:            
-            self.sendString(bytes)
+            self.sendString(payload)
             if self.factory.debug:
-               log.msg("TX octets: {}".format(binascii.hexlify(bytes)))
+               log.msg("TX octets: {}".format(binascii.hexlify(payload)))
       else:
          raise TransportLost()
 

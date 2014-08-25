@@ -346,15 +346,15 @@ if False:
                            self.rxcnt = 0
                            WampWebSocketClientProtocol.onOpen(self)
 
-                        def sendMessage(self, bytes, isBinary):
+                        def sendMessage(self, payload, isBinary):
                            self.txcnt += 1
-                           print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, bytes))
-                           WampWebSocketClientProtocol.sendMessage(self, bytes, isBinary)
+                           print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, payload))
+                           WampWebSocketClientProtocol.sendMessage(self, payload, isBinary)
 
-                        def onMessage(self, bytes, isBinary):
+                        def onMessage(self, payload, isBinary):
                            self.rxcnt += 1
-                           print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, bytes))
-                           WampWebSocketClientProtocol.onMessage(self, bytes, isBinary)
+                           print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, payload))
+                           WampWebSocketClientProtocol.onMessage(self, payload, isBinary)
                      return TestClientProtocol
 
                   transport_factory.protocol = maker(C)

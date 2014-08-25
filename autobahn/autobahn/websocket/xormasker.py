@@ -32,6 +32,7 @@ except ImportError:
       xrange
    except NameError:
       ## Python 3
+      # noinspection PyShadowingBuiltins
       xrange = range
 
    from array import array
@@ -110,8 +111,8 @@ except ImportError:
          return payload.tostring()
 
 
-   def createXorMasker(mask, len = None):
-      if len is None or len < 128:
+   def createXorMasker(mask, length = None):
+      if length is None or length < 128:
          return XorMaskerSimple(mask)
       else:
          return XorMaskerShifted1(mask)

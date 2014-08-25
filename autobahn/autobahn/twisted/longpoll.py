@@ -356,12 +356,12 @@ class WampLongPollResourceSession(Resource):
          try:
             if self._debug:
                print("WampLongPoll: TX {0}".format(msg))
-            bytes, isBinary = self._serializer.serialize(msg)
+            payload, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
             raise SerializationError("unable to serialize WAMP application payload ({0})".format(e))
          else:
-            self._receive.queue(bytes)
+            self._receive.queue(payload)
       else:
          raise TransportLost()
 
@@ -445,12 +445,12 @@ class WampLongPollResourceOpen(Resource):
          'protocol': protocol
       }
 
-      bytes = json.dumps(result)
+      payload = json.dumps(result)
 
       if self._debug:
          log.msg("WampLongPoll: new session created on transport '{0}'".format(transport))
 
-      return bytes
+      return payload
 
 
 

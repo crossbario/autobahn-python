@@ -92,10 +92,10 @@ class TestSerializer(unittest.TestCase):
          for serializer in self.serializers:
 
             ## serialize message
-            bytes, binary = serializer.serialize(msg)
+            payload, binary = serializer.serialize(msg)
 
             ## unserialize message again
-            msg2 = serializer.unserialize(bytes, binary)
+            msg2 = serializer.unserialize(payload, binary)
 
             ## must be equal: message roundtrips via the serializer
             self.assertEqual([msg], msg2)
@@ -109,11 +109,11 @@ class TestSerializer(unittest.TestCase):
 
             ## verify message serialization is not yet cached
             self.assertFalse(serializer._serializer in msg._serialized)
-            bytes, binary = serializer.serialize(msg)
+            payload, binary = serializer.serialize(msg)
 
             ## now the message serialization must be cached
             self.assertTrue(serializer._serializer in msg._serialized)
-            self.assertEqual(msg._serialized[serializer._serializer], bytes)
+            self.assertEqual(msg._serialized[serializer._serializer], payload)
 
             ## and after resetting the serialization cache, message
             ## serialization is gone

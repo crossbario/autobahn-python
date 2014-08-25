@@ -434,7 +434,7 @@ class Timings:
       """
       self._timings[key] = self._stopwatch.elapsed()
 
-   def diff(self, startKey, endKey, format = True):
+   def diff(self, startKey, endKey, formatted = True):
       """
       Get elapsed difference between two previously tracked keys.
 
@@ -442,14 +442,14 @@ class Timings:
       :type startKey: str
       :param endKey: Second key for interval (younger timestamp).
       :type endKey: str
-      :param format: If `True`, format computed time period and return string.
-      :type format: bool
+      :param formatted: If ``True``, format computed time period and return string.
+      :type formatted: bool
 
       :returns: float or str -- Computed time period in seconds (or formatted string).
       """
       if endKey in self._timings and startKey in self._timings:
          d = self._timings[endKey] - self._timings[startKey]
-         if format:
+         if formatted:
             if d < 0.00001: # 10us
                s = "%d ns" % round(d * 1000000000.)
             elif d < 0.01: # 10ms
@@ -462,7 +462,7 @@ class Timings:
          else:
             return d
       else:
-         if format:
+         if formatted:
             return "n.a.".rjust(8)
          else:
             return None
@@ -687,7 +687,7 @@ class WebSocketProtocol:
       self.frame_data = []
       self.message_data_total_length += length
       if not self.failedByMe:
-         if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
+         if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
             self.wasMaxMessagePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
          elif 0 < self.maxFramePayloadSize < length:

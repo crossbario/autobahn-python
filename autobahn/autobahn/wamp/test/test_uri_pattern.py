@@ -122,8 +122,8 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(update_product._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
       # noinspection PyUnusedLocal
-      @wamp.register(u"com.myapp.<category:string>.<id:int>.update")
-      def update(category = None, id = None):
+      @wamp.register(u"com.myapp.<category:string>.<cid:int>.update")
+      def update(category = None, cid = None):
          pass
 
       self.assertTrue(hasattr(update, '_wampuris'))
@@ -133,7 +133,7 @@ class TestDecorators(unittest.TestCase):
       self.assertTrue(update._wampuris[0].is_endpoint())
       self.assertFalse(update._wampuris[0].is_handler())
       self.assertFalse(update._wampuris[0].is_exception())
-      self.assertEqual(update._wampuris[0].uri(), u"com.myapp.<category:string>.<id:int>.update")
+      self.assertEqual(update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.update")
       self.assertEqual(update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
 
@@ -167,8 +167,8 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(on_product_update._wampuris[0].uri(), u"com.myapp.product.<product:int>.on_update")
       self.assertEqual(on_product_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-      @wamp.subscribe(u"com.myapp.<category:string>.<id:int>.on_update")
-      def on_update(category = None, id = None, label = None):
+      @wamp.subscribe(u"com.myapp.<category:string>.<cid:int>.on_update")
+      def on_update(category = None, cid = None, label = None):
          pass
 
       self.assertTrue(hasattr(on_update, '_wampuris'))
@@ -178,7 +178,7 @@ class TestDecorators(unittest.TestCase):
       self.assertFalse(on_update._wampuris[0].is_endpoint())
       self.assertTrue(on_update._wampuris[0].is_handler())
       self.assertFalse(on_update._wampuris[0].is_exception())
-      self.assertEqual(on_update._wampuris[0].uri(), u"com.myapp.<category:string>.<id:int>.on_update")
+      self.assertEqual(on_update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.on_update")
       self.assertEqual(on_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
 
@@ -244,9 +244,9 @@ class TestDecorators(unittest.TestCase):
       kwargs['label'] = "foobar"
       self.assertEqual(update_product(**kwargs), (123456, "foobar"))
 
-      @wamp.register(u"com.myapp.<category:string>.<id:int>.update")
-      def update(category = None, id = None, label = None):
-         return category, id, label
+      @wamp.register(u"com.myapp.<category:string>.<cid:int>.update")
+      def update(category = None, cid = None, label = None):
+         return category, cid, label
 
       args, kwargs = update._wampuris[0].match(u"com.myapp.product.123456.update")
       kwargs['label'] = "foobar"
@@ -270,9 +270,9 @@ class TestDecorators(unittest.TestCase):
       kwargs['label'] = "foobar"
       self.assertEqual(on_product_update(**kwargs), (123456, "foobar"))
 
-      @wamp.subscribe(u"com.myapp.<category:string>.<id:int>.on_update")
-      def on_update(category = None, id = None, label = None):
-         return category, id, label
+      @wamp.subscribe(u"com.myapp.<category:string>.<cid:int>.on_update")
+      def on_update(category = None, cid = None, label = None):
+         return category, cid, label
 
       args, kwargs = on_update._wampuris[0].match(u"com.myapp.product.123456.on_update")
       kwargs['label'] = "foobar"

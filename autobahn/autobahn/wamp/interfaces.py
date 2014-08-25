@@ -50,12 +50,12 @@ class IObjectSerializer(object):
       """
 
    @abc.abstractmethod
-   def unserialize(self, bytes):
+   def unserialize(self, payload):
       """
       Unserialize objects from a byte string.
 
-      :param bytes: Objects to unserialize.
-      :type bytes: bytes
+      :param payload: Objects to unserialize.
+      :type payload: bytes
 
       :returns: list -- List of (raw) objects unserialized.
       """
@@ -175,12 +175,12 @@ class ISerializer(object):
 
 
    @abc.abstractmethod
-   def unserialize(self, bytes, isBinary):
+   def unserialize(self, payload, isBinary):
       """
       Deserialize bytes from a transport and parse into WAMP messages.
 
-      :param bytes: Byte string from wire.
-      :type bytes: bytes
+      :param payload: Byte string from wire.
+      :type payload: bytes
 
       :returns: list -- List of objects that implement :class:`autobahn.wamp.interfaces.IMessage`.
       """

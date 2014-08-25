@@ -111,12 +111,12 @@ class WampWebSocketProtocol:
          try:
             if self.factory.debug_wamp:
                print("TX {}".format(msg))
-            bytes, isBinary = self._serializer.serialize(msg)
+            payload, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
             raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
          else:
-            self.sendMessage(bytes, isBinary)
+            self.sendMessage(payload, isBinary)
       else:
          raise TransportLost()
 
