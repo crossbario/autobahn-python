@@ -225,7 +225,7 @@ if False:
 
       def setUp(self):
          self.debug = False
-         self.realm = "realm1"
+         self.realm = u"realm1"
          self.transport = "websocket"
          self.url = "ws://127.0.0.1:8080"
          self.client = "tcp:127.0.0.1:8080"
@@ -395,7 +395,7 @@ if False:
          d = DeferredList(config.all_done, consumeErrors = True)
          #d = config.components[1]._done
 
-         def done(res):
+         def done(_):
             log.flush()
             log.close()
             if config.port:

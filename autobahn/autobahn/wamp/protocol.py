@@ -246,7 +246,7 @@ class BaseSession:
       Create a user (or generic) exception from a WAMP error message.
 
       :param msg: A WAMP error message.
-      :type msg: Instance of :class:`autobahn.wamp.message.Error`
+      :type msg: instance of :class:`autobahn.wamp.message.Error`
       """
 
       # FIXME:
@@ -795,7 +795,7 @@ class ApplicationSession(BaseSession):
          self._transport.send(msg)
          self._goodbye_sent = True
       else:
-         raise SessionNotReady("Already requested to close the session")
+         raise SessionNotReady(u"Already requested to close the session")
 
 
    def publish(self, topic, *args, **kwargs):
@@ -1328,7 +1328,7 @@ class RouterSession(BaseSession):
       else:
 
          if isinstance(msg, message.Hello):
-            raise ProtocolError("HELLO message received, while session is already established")
+            raise ProtocolError(u"HELLO message received, while session is already established")
 
          elif isinstance(msg, message.Goodbye):
             if not self._goodbye_sent:
@@ -1404,7 +1404,7 @@ class RouterSession(BaseSession):
          self._transport.send(msg)
          self._goodbye_sent = True
       else:
-         raise SessionNotReady("Already requested to close the session")
+         raise SessionNotReady(u"Already requested to close the session")
 
 
 

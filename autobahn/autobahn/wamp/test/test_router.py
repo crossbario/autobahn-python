@@ -103,7 +103,7 @@ class TestEmbeddedSessions(unittest.TestCase):
          def onJoin(self, details):
             FutureMixin._resolve_future(d, None)
 
-      session = TestSession(types.ComponentConfig('realm1'))
+      session = TestSession(types.ComponentConfig(u'realm1'))
 
       self.session_factory.add(session)
 
@@ -125,6 +125,7 @@ class TestEmbeddedSessions(unittest.TestCase):
       class TestSession(ApplicationSession):
 
          def onJoin(self, details):
+            # noinspection PyUnusedLocal
             def on_event(*arg, **kwargs):
                pass
 
@@ -137,7 +138,7 @@ class TestEmbeddedSessions(unittest.TestCase):
 
             FutureMixin._add_future_callbacks(d2, ok, error)
 
-      session = TestSession(types.ComponentConfig('realm1'))
+      session = TestSession(types.ComponentConfig(u'realm1'))
 
       self.session_factory.add(session)
 

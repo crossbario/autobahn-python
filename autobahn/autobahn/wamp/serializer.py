@@ -113,7 +113,7 @@ class Serializer:
             raise ProtocolError("invalid type {} for WAMP message".format(type(raw_msg)))
 
          if len(raw_msg) == 0:
-            raise ProtocolError("missing message type in WAMP message")
+            raise ProtocolError(u"missing message type in WAMP message")
 
          message_type = raw_msg[0]
 

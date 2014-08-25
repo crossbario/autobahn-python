@@ -171,7 +171,7 @@ class WampLongPollResourceSessionReceive(Resource):
       self._parent._parent._setStandardHeaders(request)
       request.setHeader('content-type', self._parent._serializer.MIME_TYPE)
 
-      def cancel(err):
+      def cancel(_):
          if self._debug:
             log.msg("WampLongPoll: poll request for transport '{0}' has gone away".format(self._parent._transportid))
          self._request = None

@@ -167,7 +167,7 @@ class WampRawSocketFactory(Factory):
       :type factory: callable
       :param serializer: A WAMP serializer to use. A serializer must implement
           :class:`autobahn.wamp.interfaces.ISerializer`.
-      :type serializer: list
+      :type serializer: obj
       """
       assert(callable(factory))
       self._factory = factory

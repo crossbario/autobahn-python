@@ -290,11 +290,9 @@ class SubscribeOptions:
         in this keyword argument to the callable.
       :type details_arg: str
       """
-      assert(match is None or (type(match) == str and match in ['exact', 'prefix', 'wildcard']))
+      assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
       assert(details_arg is None or type(details_arg) == str)
 
-      if match and six.PY2 and type(match) == str:
-         match = six.u(match)
       self.match = match
       self.details_arg = details_arg
 

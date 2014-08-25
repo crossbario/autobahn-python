@@ -243,7 +243,7 @@ if os.environ.get('USE_TWISTED', False):
          subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
          self.assertTrue(type(subscription.id) in (int, long))
 
-         subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options = types.SubscribeOptions(match = 'wildcard'))
+         subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options = types.SubscribeOptions(match = u'wildcard'))
          self.assertTrue(type(subscription.id) in (int, long))
 
 

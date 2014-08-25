@@ -153,6 +153,7 @@ class TestDecorators(unittest.TestCase):
       self.assertEqual(on_shutdown._wampuris[0].uri(), u"com.myapp.on_shutdown")
       self.assertEqual(on_shutdown._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
+      # noinspection PyUnusedLocal
       @wamp.subscribe(u"com.myapp.product.<product:int>.on_update")
       def on_product_update(product = None, label = None):
          pass

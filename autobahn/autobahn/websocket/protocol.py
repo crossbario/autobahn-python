@@ -302,9 +302,9 @@ class ConnectionRequest:
       :param origin: The WebSocket origin header or None. Note that this only a reliable source of information for browser clients!
       :type origin: str
       :param protocols: The WebSocket (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
-      :type protocols: array of strings
+      :type protocols: list of str
       :param extensions: The WebSocket extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
-      :type extensions: array of strings
+      :type extensions: list of str
       """
       self.peer = peer
       self.headers = headers
@@ -353,7 +353,7 @@ class ConnectionResponse:
       :param protocol: The WebSocket (sub)protocol in use.
       :type protocol: str
       :param extensions: The WebSocket extensions in use.
-      :type extensions: array of strings
+      :type extensions: list of str
       """
       self.peer = peer
       self.headers = headers
@@ -801,10 +801,10 @@ class WebSocketProtocol:
         - For Hixie mode, this method is slightly misnamed for historic reasons.
         - For Hixie mode, code and reasonRaw are silently ignored.
 
-      :param code: None or close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-      :type code: int
-      :param reason: None or close reason (when present, a status code MUST have been also be present).
-      :type reason: str
+      :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
+      :type code: int or None
+      :param reason: Close reason (when present, a status code MUST have been also be present).
+      :type reason: str or None
       """
       if self.debugCodePaths:
          self.factory._log("WebSocketProtocol.onCloseFrame")
@@ -4146,7 +4146,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          try:
             response = ConnectionResponse(self.peer,
                                           self.http_headers,
-                                          None, # FIXME
+                                          self.websocket_version,
                                           self.websocket_protocol_in_use,
                                           self.websocket_extensions_in_use)
 

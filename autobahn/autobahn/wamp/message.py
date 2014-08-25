@@ -139,12 +139,27 @@ def check_or_raise_id(value, message = u"WAMP message invalid"):
 
 
 
-def check_or_raise_extra(value, message = "WAMP message invalid"):
+def check_or_raise_extra(value, message = u"WAMP message invalid"):
+   """
+   Check a value for being a valid WAMP extra dictionary.
+
+   If the value is not a valid WAMP extra dictionary, raises :class:`autobahn.wamp.exception.ProtocolError`.
+   Otherwise return the value.
+
+   :param value: The value to check.
+   :type value: dict
+   :param message: Prefix for message in exception raised when value is invalid.
+   :type message: unicode
+
+   :returns: The extra dictionary (if valid).
+   :rtype: dict
+   :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
+   """
    if type(value) != dict:
-      raise ProtocolError("{0}: invalid type {1}".format(message, type(value)))
+      raise ProtocolError(u"{0}: invalid type {1}".format(message, type(value)))
    for k in value.keys():
       if type(k) != six.text_type:
-         raise ProtocolError("{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
+         raise ProtocolError(u"{0}: invalid type {1} for key '{2}'".format(message, type(k), k))
    return value
 
 
@@ -242,18 +257,18 @@ class Hello(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for HELLO".format(len(wmsg)))
 
-      realm = check_or_raise_uri(wmsg[1], "'realm' in HELLO")
-      details = check_or_raise_extra(wmsg[2], "'details' in HELLO")
+      realm = check_or_raise_uri(wmsg[1], u"'realm' in HELLO")
+      details = check_or_raise_extra(wmsg[2], u"'details' in HELLO")
 
       roles = []
 
       if not u'roles' in details:
-         raise ProtocolError("missing mandatory roles attribute in options in HELLO")
+         raise ProtocolError(u"missing mandatory roles attribute in options in HELLO")
 
-      details_roles = check_or_raise_extra(details[u'roles'], "'roles' in 'details' in HELLO")
+      details_roles = check_or_raise_extra(details[u'roles'], u"'roles' in 'details' in HELLO")
 
       if len(details_roles) == 0:
-         raise ProtocolError("empty 'roles' in 'details' in HELLO")
+         raise ProtocolError(u"empty 'roles' in 'details' in HELLO")
 
       for role in details_roles:
          if role not in ROLE_NAME_TO_CLASS:
@@ -393,8 +408,8 @@ class Welcome(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for WELCOME".format(len(wmsg)))
 
-      session = check_or_raise_id(wmsg[1], "'session' in WELCOME")
-      details = check_or_raise_extra(wmsg[2], "'details' in WELCOME")
+      session = check_or_raise_id(wmsg[1], u"'session' in WELCOME")
+      details = check_or_raise_extra(wmsg[2], u"'details' in WELCOME")
 
       authid = details.get(u'authid', None)
       authrole = details.get(u'authrole', None)
@@ -404,12 +419,12 @@ class Welcome(Message):
       roles = []
 
       if not u'roles' in details:
-         raise ProtocolError("missing mandatory roles attribute in options in WELCOME")
+         raise ProtocolError(u"missing mandatory roles attribute in options in WELCOME")
 
-      details_roles = check_or_raise_extra(details['roles'], "'roles' in 'details' in WELCOME")
+      details_roles = check_or_raise_extra(details['roles'], u"'roles' in 'details' in WELCOME")
 
       if len(details_roles) == 0:
-         raise ProtocolError("empty 'roles' in 'details' in WELCOME")
+         raise ProtocolError(u"empty 'roles' in 'details' in WELCOME")
 
       for role in details_roles:
          if role not in ROLE_NAME_TO_CLASS:
@@ -517,8 +532,8 @@ class Abort(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for ABORT".format(len(wmsg)))
 
-      details = check_or_raise_extra(wmsg[1], "'details' in ABORT")
-      reason = check_or_raise_uri(wmsg[2], "'reason' in ABORT")
+      details = check_or_raise_extra(wmsg[1], u"'details' in ABORT")
+      reason = check_or_raise_uri(wmsg[2], u"'reason' in ABORT")
 
       message = None
 
@@ -604,7 +619,7 @@ class Challenge(Message):
       if type(method) != six.text_type:
          raise ProtocolError("invalid type {0} for 'method' in CHALLENGE".format(type(method)))
 
-      extra = check_or_raise_extra(wmsg[2], "'extra' in CHALLENGE")
+      extra = check_or_raise_extra(wmsg[2], u"'extra' in CHALLENGE")
 
       obj = Challenge(method, extra)
 
@@ -676,7 +691,7 @@ class Authenticate(Message):
       if type(signature) != six.text_type:
          raise ProtocolError("invalid type {0} for 'signature' in AUTHENTICATE".format(type(signature)))
 
-      extra = check_or_raise_extra(wmsg[2], "'extra' in AUTHENTICATE")
+      extra = check_or_raise_extra(wmsg[2], u"'extra' in AUTHENTICATE")
 
       obj = Authenticate(signature, extra)
 
@@ -749,8 +764,8 @@ class Goodbye(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for GOODBYE".format(len(wmsg)))
 
-      details = check_or_raise_extra(wmsg[1], "'details' in GOODBYE")
-      reason = check_or_raise_uri(wmsg[2], "'reason' in GOODBYE")
+      details = check_or_raise_extra(wmsg[1], u"'details' in GOODBYE")
+      reason = check_or_raise_uri(wmsg[2], u"'reason' in GOODBYE")
 
       message = None
 
@@ -961,9 +976,9 @@ class Error(Message):
                               Invocation.MESSAGE_TYPE]:
          raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
-      request = check_or_raise_id(wmsg[2], "'request' in ERROR")
-      _ = check_or_raise_extra(wmsg[3], "'details' in ERROR")
-      error = check_or_raise_uri(wmsg[4], "'error' in ERROR")
+      request = check_or_raise_id(wmsg[2], u"'request' in ERROR")
+      _ = check_or_raise_extra(wmsg[3], u"'details' in ERROR")
+      error = check_or_raise_uri(wmsg[4], u"'error' in ERROR")
 
       args = None
       if len(wmsg) > 5:
@@ -1096,9 +1111,9 @@ class Publish(Message):
       if len(wmsg) not in (4, 5, 6):
          raise ProtocolError("invalid message length {0} for PUBLISH".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in PUBLISH")
-      options = check_or_raise_extra(wmsg[2], "'options' in PUBLISH")
-      topic = check_or_raise_uri(wmsg[3], "'topic' in PUBLISH")
+      request = check_or_raise_id(wmsg[1], u"'request' in PUBLISH")
+      options = check_or_raise_extra(wmsg[2], u"'options' in PUBLISH")
+      topic = check_or_raise_uri(wmsg[3], u"'topic' in PUBLISH")
 
       args = None
       if len(wmsg) > 4:
@@ -1257,8 +1272,8 @@ class Published(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for PUBLISHED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in PUBLISHED")
-      publication = check_or_raise_id(wmsg[2], "'publication' in PUBLISHED")
+      request = check_or_raise_id(wmsg[1], u"'request' in PUBLISHED")
+      publication = check_or_raise_id(wmsg[2], u"'publication' in PUBLISHED")
 
       obj = Published(request, publication)
 
@@ -1334,9 +1349,9 @@ class Subscribe(Message):
       if len(wmsg) != 4:
          raise ProtocolError("invalid message length {0} for SUBSCRIBE".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
-      options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
-      topic = check_or_raise_uri(wmsg[3], "'topic' in SUBSCRIBE", allowEmptyComponents = True)
+      request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBE")
+      options = check_or_raise_extra(wmsg[2], u"'options' in SUBSCRIBE")
+      topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allowEmptyComponents = True)
 
       match = Subscribe.MATCH_EXACT
 
@@ -1421,8 +1436,8 @@ class Subscribed(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for SUBSCRIBED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBED")
-      subscription = check_or_raise_id(wmsg[2], "'subscription' in SUBSCRIBED")
+      request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBED")
+      subscription = check_or_raise_id(wmsg[2], u"'subscription' in SUBSCRIBED")
 
       obj = Subscribed(request, subscription)
 
@@ -1490,8 +1505,8 @@ class Unsubscribe(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for WAMP UNSUBSCRIBE".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBE")
-      subscription = check_or_raise_id(wmsg[2], "'subscription' in UNSUBSCRIBE")
+      request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBE")
+      subscription = check_or_raise_id(wmsg[2], u"'subscription' in UNSUBSCRIBE")
 
       obj = Unsubscribe(request, subscription)
 
@@ -1554,7 +1569,7 @@ class Unsubscribed(Message):
       if len(wmsg) != 2:
          raise ProtocolError("invalid message length {0} for UNSUBSCRIBED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in UNSUBSCRIBED")
+      request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBED")
 
       obj = Unsubscribed(request)
 
@@ -1640,9 +1655,9 @@ class Event(Message):
       if len(wmsg) not in (4, 5, 6):
          raise ProtocolError("invalid message length {0} for EVENT".format(len(wmsg)))
 
-      subscription = check_or_raise_id(wmsg[1], "'subscription' in EVENT")
-      publication = check_or_raise_id(wmsg[2], "'publication' in EVENT")
-      details = check_or_raise_extra(wmsg[3], "'details' in EVENT")
+      subscription = check_or_raise_id(wmsg[1], u"'subscription' in EVENT")
+      publication = check_or_raise_id(wmsg[2], u"'publication' in EVENT")
+      details = check_or_raise_extra(wmsg[3], u"'details' in EVENT")
 
       args = None
       if len(wmsg) > 4:
@@ -1779,9 +1794,9 @@ class Call(Message):
       if len(wmsg) not in (4, 5, 6):
          raise ProtocolError("invalid message length {0} for CALL".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in CALL")
-      options = check_or_raise_extra(wmsg[2], "'options' in CALL")
-      procedure = check_or_raise_uri(wmsg[3], "'procedure' in CALL")
+      request = check_or_raise_id(wmsg[1], u"'request' in CALL")
+      options = check_or_raise_extra(wmsg[2], u"'options' in CALL")
+      procedure = check_or_raise_uri(wmsg[3], u"'procedure' in CALL")
 
       args = None
       if len(wmsg) > 4:
@@ -1918,8 +1933,8 @@ class Cancel(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for CANCEL".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in CANCEL")
-      options = check_or_raise_extra(wmsg[2], "'options' in CANCEL")
+      request = check_or_raise_id(wmsg[1], u"'request' in CANCEL")
+      options = check_or_raise_extra(wmsg[2], u"'options' in CANCEL")
 
       ## options
       ##
@@ -2021,8 +2036,8 @@ class Result(Message):
       if len(wmsg) not in (3, 4, 5):
          raise ProtocolError("invalid message length {0} for RESULT".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in RESULT")
-      details = check_or_raise_extra(wmsg[2], "'details' in RESULT")
+      request = check_or_raise_id(wmsg[1], u"'request' in RESULT")
+      details = check_or_raise_extra(wmsg[2], u"'details' in RESULT")
 
       args = None
       if len(wmsg) > 3:
@@ -2133,9 +2148,9 @@ class Register(Message):
       if len(wmsg) != 4:
          raise ProtocolError("invalid message length {0} for REGISTER".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
-      options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
-      procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER", allowEmptyComponents = True)
+      request = check_or_raise_id(wmsg[1], u"'request' in REGISTER")
+      options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
+      procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allowEmptyComponents = True)
 
       pkeys = None
       discloseCaller = None
@@ -2234,8 +2249,8 @@ class Registered(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for REGISTERED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in REGISTERED")
-      registration = check_or_raise_id(wmsg[2], "'registration' in REGISTERED")
+      request = check_or_raise_id(wmsg[1], u"'request' in REGISTERED")
+      registration = check_or_raise_id(wmsg[2], u"'registration' in REGISTERED")
 
       obj = Registered(request, registration)
 
@@ -2303,8 +2318,8 @@ class Unregister(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for WAMP UNREGISTER".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
-      registration = check_or_raise_id(wmsg[2], "'registration' in UNREGISTER")
+      request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTER")
+      registration = check_or_raise_id(wmsg[2], u"'registration' in UNREGISTER")
 
       obj = Unregister(request, registration)
 
@@ -2367,7 +2382,7 @@ class Unregistered(Message):
       if len(wmsg) != 2:
          raise ProtocolError("invalid message length {0} for UNREGISTERED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in UNREGISTERED")
+      request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTERED")
 
       obj = Unregistered(request)
 
@@ -2484,9 +2499,9 @@ class Invocation(Message):
       if len(wmsg) not in (4, 5, 6):
          raise ProtocolError("invalid message length {0} for INVOCATION".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in INVOCATION")
-      registration = check_or_raise_id(wmsg[2], "'registration' in INVOCATION")
-      details = check_or_raise_extra(wmsg[3], "'details' in INVOCATION")
+      request = check_or_raise_id(wmsg[1], u"'request' in INVOCATION")
+      registration = check_or_raise_id(wmsg[2], u"'registration' in INVOCATION")
+      details = check_or_raise_extra(wmsg[3], u"'details' in INVOCATION")
 
       args = None
       if len(wmsg) > 4:
@@ -2661,8 +2676,8 @@ class Interrupt(Message):
       if len(wmsg) != 3:
          raise ProtocolError("invalid message length {0} for INTERRUPT".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in INTERRUPT")
-      options = check_or_raise_extra(wmsg[2], "'options' in INTERRUPT")
+      request = check_or_raise_id(wmsg[1], u"'request' in INTERRUPT")
+      options = check_or_raise_extra(wmsg[2], u"'options' in INTERRUPT")
 
       ## options
       ##
@@ -2765,8 +2780,8 @@ class Yield(Message):
       if len(wmsg) not in (3, 4, 5):
          raise ProtocolError("invalid message length {0} for YIELD".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in YIELD")
-      options = check_or_raise_extra(wmsg[2], "'options' in YIELD")
+      request = check_or_raise_id(wmsg[1], u"'request' in YIELD")
+      options = check_or_raise_extra(wmsg[2], u"'options' in YIELD")
 
       args = None
       if len(wmsg) > 3:
