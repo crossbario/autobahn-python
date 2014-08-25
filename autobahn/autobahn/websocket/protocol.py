@@ -690,7 +690,7 @@ class WebSocketProtocol:
          if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
             self.wasMaxMessagePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
-         elif self.maxFramePayloadSize > 0 and length > self.maxFramePayloadSize:
+         elif 0 < self.maxFramePayloadSize < length:
             self.wasMaxFramePayloadSizeExceeded = True
             self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
 
@@ -702,7 +702,7 @@ class WebSocketProtocol:
       if not self.failedByMe:
          if self.websocket_version == 0:
             self.message_data_total_length += len(payload)
-            if self.maxMessagePayloadSize > 0 and self.message_data_total_length > self.maxMessagePayloadSize:
+            if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                self.wasMaxMessagePayloadSizeExceeded = True
                self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
             self.message_data.append(payload)
@@ -813,7 +813,7 @@ class WebSocketProtocol:
 
       ## reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
       ##
-      if code is not None and (code < 1000 or (code >= 1000 and code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
+      if code is not None and (code < 1000 or (1000 <= code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
          if self.protocolViolation("invalid close code %d" % code):
             return True
 
@@ -2205,7 +2205,7 @@ class WebSocketProtocol:
       if code is not None:
          if type(code) != int:
             raise Exception("invalid type %s for close code" % type(code))
-         if code != 1000 and not (code >= 3000 and code <= 4999):
+         if code != 1000 and not (3000 <= code <= 4999):
             raise Exception("invalid close code %d" % code)
       if reason is not None:
          if code is None:
@@ -3676,7 +3676,7 @@ class WebSocketServerFactory(WebSocketFactory):
 
       if autoPingSize is not None and autoPingSize != self.autoPingSize:
          assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
-         assert(autoPingSize >= 4 and autoPingSize <= 125)
+         assert(4 <= autoPingSize <= 125)
          self.autoPingSize = autoPingSize
 
 
@@ -3799,7 +3799,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
          except ValueError:
             return self.failProxyConnect("Bad HTTP status code ('%s')" % sl[1].strip())
 
-         if not (status_code >= 200 and status_code < 300):
+         if not (200 <= status_code < 300):
 
             ## FIXME: handle redirects
             ## FIXME: handle authentication required
@@ -3851,7 +3851,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       number1 = random.randint(0, max1)
       product1 = number1 * spaces1
       key1 = str(product1)
-      rchars = filter(lambda x: (x >= 0x21 and x <= 0x2f) or (x >= 0x3a and x <= 0x7e), range(0,127))
+      rchars = filter(lambda x: (0x21 <= x <= 0x2f) or (0x3a <= x <= 0x7e), range(0,127))
       for i in xrange(random.randint(1, 12)):
          p = random.randint(0, len(key1) - 1)
          key1 = key1[:p] + chr(random.choice(rchars)) + key1[p:]
@@ -4458,5 +4458,5 @@ class WebSocketClientFactory(WebSocketFactory):
 
       if autoPingSize is not None and autoPingSize != self.autoPingSize:
          assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
-         assert(autoPingSize >= 4 and autoPingSize <= 125)
+         assert(4 <= autoPingSize <= 125)
          self.autoPingSize = autoPingSize
