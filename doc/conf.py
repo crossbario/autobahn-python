@@ -14,6 +14,7 @@ extensions = [
    'sphinx.ext.intersphinx',
    'sphinx.ext.viewcode',
    'sphinx.ext.ifconfig',
+   'sphinx.ext.todo',
    'sphinxcontrib.spelling',
    'txsphinx' # only needed for Autobahn|Python
 ]

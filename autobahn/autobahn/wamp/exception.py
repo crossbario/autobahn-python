@@ -22,8 +22,11 @@ __all__ = (
    'Error',
    'SessionNotReady',
    'SerializationError',
+   'ProtocolError',
    'TransportLost',
    'ApplicationError',
+   'NotAuthorized',
+   'InvalidUri',
 )
 
 from autobahn.wamp import error
@@ -51,11 +54,13 @@ class SessionNotReady(Error):
    """
 
 
+
 class SerializationError(Error):
    """
    Exception raised when the WAMP serializer could not serialize the
    application payload (``args`` or ``kwargs`` for ``CALL``, ``PUBLISH``, etc).
    """
+
 
 
 class ProtocolError(Error):
@@ -64,6 +69,7 @@ class ProtocolError(Error):
    are fatal and are handled by the WAMP implementation. They are
    not supposed to be handled at the application level.
    """
+
 
 
 class TransportLost(Error):

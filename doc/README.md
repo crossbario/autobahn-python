@@ -16,6 +16,11 @@ Then, to get help on available build targets, just type
 make
 ```
 
+## Cheetsheets
+
+* [How to document your Python docstrings](http://www.ctio.noao.edu/~fraga/pytemplate/pytemplate.html)
+
+
 ## Linking to Python objects
 
 To link to a Autobahn class:

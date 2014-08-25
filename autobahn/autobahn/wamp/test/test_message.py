@@ -33,6 +33,10 @@ from autobahn.wamp.exception import ProtocolError
 
 
 
+class Foo:
+   pass
+
+
 class TestIds(unittest.TestCase):
 
    def test_valid_ids(self):
@@ -40,27 +44,144 @@ class TestIds(unittest.TestCase):
          self.assertEqual(val, message.check_or_raise_id(val))
 
    def test_invalid_ids(self):
-      class Foo:
-         pass
       for val in [-1, -9007199254740992, None, b"", b"abc", u"", u"abc", 0.9, Foo(), False, True, [], {}]:
          self.assertRaises(ProtocolError, message.check_or_raise_id, val)
 
 
 
+
 class TestUris(unittest.TestCase):
 
-   def test_valid_uris(self):
+   def test_valid_uris_loose_nonempty(self):
+      for u in [u"com.myapp.topic1",
+                u"com.myapp.product.123",
+                u"com.myapp.product.1.delete",
+                u"Com-star.MyApp.**+$for",
+                u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+                u"hello\x24world",
+                u"hello\xC2\xA2world",
+                u"hello\xE2\x82\xACworld",
+                u"hello\xF0\xA4\xAD\xA2world",
+                ]:
+         self.assertEqual(u, message.check_or_raise_uri(u))
+
+   def test_invalid_uris_loose_nonempty(self):
+      for u in [0,
+                None,
+                True,
+                False,
+                0.8,
+                b"abc",
+                Foo(),
+                u"",
+                u".",
+                u"com.",
+                u"com..product",
+                u"com.my app.product",
+                u"com.my\tapp.product",
+                u"com.my\napp.product",
+                u"com.myapp.product#",
+                u"com.#.product",
+                ]:
+         self.assertRaises(ProtocolError, message.check_or_raise_uri, u)
+
+   def test_valid_uris_loose_empty(self):
+      for u in [u"com.myapp.topic1",
+                u"com.myapp..123",
+                u"com.myapp.product.1.",
+                u"com.",
+                u".",
+                u"",
+                u"Com-star.MyApp.**+$for..foo",
+                u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+                u"hello\x24world..foo",
+                u"hello\xC2\xA2world..foo",
+                u"hello\xE2\x82\xACworld..foo",
+                u"hello\xF0\xA4\xAD\xA2world..foo",
+                ]:
+         self.assertEqual(u, message.check_or_raise_uri(u, allowEmptyComponents = True))
+
+   def test_invalid_uris_loose_empty(self):
+      for u in [0,
+                None,
+                True,
+                False,
+                0.8,
+                b"abc",
+                Foo(),
+                u"com.my app.product",
+                u"com.my\tapp.product",
+                u"com.my\napp.product",
+                u"com.myapp.product#",
+                u"com.#.product",
+                ]:
+         self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allowEmptyComponents = True)
+
+
+   def test_valid_uris_strict_nonempty(self):
       for u in [u"com.myapp.topic1",
                 u"com.myapp.product.123",
                 u"com.myapp.product.1.delete",
                 ]:
-         self.assertEqual(u, message.check_or_raise_uri(u))
+         self.assertEqual(u, message.check_or_raise_uri(u, strict = True))
 
-   def test_invalid_uris(self):
-      for u in [0, None, True, False,
-                #u"",
+   def test_invalid_uris_strict_nonempty(self):
+      for u in [0,
+                None,
+                True,
+                False,
+                0.8,
+                b"abc",
+                Foo(),
+                u"",
+                u".",
+                u"com.",
+                u"com..product",
+                u"com.my app.product",
+                u"com.my\tapp.product",
+                u"com.my\napp.product",
+                u"com.myapp.product#",
+                u"com.#.product",
+                u"Com-star.MyApp.**+$for",
+                u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5",
+                u"hello\x24world",
+                u"hello\xC2\xA2world",
+                u"hello\xE2\x82\xACworld",
+                u"hello\xF0\xA4\xAD\xA2world",
                 ]:
-         self.assertRaises(ProtocolError, message.check_or_raise_uri, u)
+         self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict = True)
+
+   def test_valid_uris_strict_empty(self):
+      for u in [u"com.myapp.topic1",
+                u"com.myapp..123",
+                u"com.myapp.product.1.",
+                u"com.",
+                u".",
+                u"",
+                ]:
+         self.assertEqual(u, message.check_or_raise_uri(u, strict = True, allowEmptyComponents = True))
+
+   def test_invalid_uris_strict_empty(self):
+      for u in [0,
+                None,
+                True,
+                False,
+                0.8,
+                b"abc",
+                Foo(),
+                u"com.my app.product",
+                u"com.my\tapp.product",
+                u"com.my\napp.product",
+                u"com.myapp.product#",
+                u"com.#.product",
+                u"Com-star.MyApp.**+$for..foo",
+                u"\xce\xba\xe1\xbd\xb9\xcf\x83\xce\xbc\xce\xb5..foo",
+                u"hello\x24world..foo",
+                u"hello\xC2\xA2world..foo",
+                u"hello\xE2\x82\xACworld..foo",
+                u"hello\xF0\xA4\xAD\xA2world..foo",
+                ]:
+         self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict = True, allowEmptyComponents = True)
 
 
 

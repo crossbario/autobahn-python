@@ -43,7 +43,10 @@ __all__ = ('Message',
            'Unregistered',
            'Invocation',
            'Interrupt',
-           'Yield')
+           'Yield',
+           
+           'check_or_raise_uri',
+           'check_or_raise_id')
 
 
 import re
@@ -57,35 +60,81 @@ from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 
 ## strict URI check allowing empty URI components
-_URI_PAT_STRICT = re.compile(r"^(([0-9a-z_]{2,}\.)|\.)*([0-9a-z_]{2,})?$")
+_URI_PAT_STRICT_EMPTY = re.compile(r"^(([0-9a-z_]+\.)|\.)*([0-9a-z_]+)?$")
 
 ## loose URI check allowing empty URI components
-_URI_PAT_LOOSE = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
-
-# ^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+[0-9a-z_]$
+_URI_PAT_LOOSE_EMPTY = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
 
 ## strict URI check disallowing empty URI components
-_URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]{2,}\.)*([0-9a-z_]{2,})?$")
+_URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 
 ## loose URI check disallowing empty URI components
-_URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)?$")
+_URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
 
 
-def check_or_raise_uri(value, message = "WAMP message invalid"):
+def check_or_raise_uri(value, message = u"WAMP message invalid", strict = False, allowEmptyComponents = False):
+   """
+   Check a value for being a valid WAMP URI.
+
+   If the value is not a valid WAMP URI is invalid, raises :class:`autobahn.wamp.exception.ProtocolError`.
+   Otherwise return the value.
+
+   :param value: The value to check.
+   :type value: unicode
+   :param message: Prefix for message in exception raised when value is invalid.
+   :type message: unicode
+   :param strict: If ``True``, do a strict check on the URI (the WAMP spec SHOULD behavior).
+   :type strict: bool
+   :param allowEmptyComponents: If ``True``, allow empty URI components (for pattern based
+      subscriptions and registrations).
+   :type allowEmptyComponents: bool
+
+   :returns: The URI value (if valid).
+   :rtype: unicode
+   :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
+   """
    if type(value) != six.text_type:
-      raise ProtocolError("{0}: invalid type {1} for URI".format(message, type(value)))
-   if not _URI_PAT_LOOSE.match(value):
-      raise ProtocolError("{0}: invalid value '{1}' for URI".format(message, value))
-   return value
+      raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
+
+   if strict:
+      if allowEmptyComponents:
+         pat = _URI_PAT_STRICT_EMPTY
+      else:
+         pat = _URI_PAT_STRICT_NON_EMPTY
+   else:
+      if allowEmptyComponents:
+         pat = _URI_PAT_LOOSE_EMPTY
+      else:
+         pat = _URI_PAT_LOOSE_NON_EMPTY
+
+   if not pat.match(value):
+      raise ProtocolError(u"{0}: invalid value '{1}' for URI".format(message, value))
+   else:
+      return value
 
 
 
-def check_or_raise_id(value, message = "WAMP message invalid"):
+def check_or_raise_id(value, message = u"WAMP message invalid"):
+   """
+   Check a value for being a valid WAMP ID.
+
+   If the value is not a valid WAMP ID, raises :class:`autobahn.wamp.exception.ProtocolError`.
+   Otherwise return the value.
+
+   :param value: The value to check.
+   :type value: int
+   :param message: Prefix for message in exception raised when value is invalid.
+   :type message: unicode
+
+   :returns: The ID value (if valid).
+   :rtype: int
+   :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
+   """
    if type(value) not in six.integer_types:
-      raise ProtocolError("{0}: invalid type {1} for ID".format(message, type(value)))
+      raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
    if value < 0 or value > 9007199254740992: # 2**53
-      raise ProtocolError("{0}: invalid value {1} for ID".format(message, value))
+      raise ProtocolError(u"{0}: invalid value {1} for ID".format(message, value))
    return value
 
 
@@ -1287,7 +1336,7 @@ class Subscribe(Message):
 
       request = check_or_raise_id(wmsg[1], "'request' in SUBSCRIBE")
       options = check_or_raise_extra(wmsg[2], "'options' in SUBSCRIBE")
-      topic = check_or_raise_uri(wmsg[3], "'topic' in SUBSCRIBE")
+      topic = check_or_raise_uri(wmsg[3], "'topic' in SUBSCRIBE", allowEmptyComponents = True)
 
       match = Subscribe.MATCH_EXACT
 
@@ -2086,7 +2135,7 @@ class Register(Message):
 
       request = check_or_raise_id(wmsg[1], "'request' in REGISTER")
       options = check_or_raise_extra(wmsg[2], "'options' in REGISTER")
-      procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER")
+      procedure = check_or_raise_uri(wmsg[3], "'procedure' in REGISTER", allowEmptyComponents = True)
 
       pkeys = None
       discloseCaller = None

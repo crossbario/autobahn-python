@@ -28,6 +28,7 @@ class Pattern:
    A WAMP URI Pattern.
 
    .. todo::
+
       * suffix matches
       * args + kwargs
       * uuid converter
