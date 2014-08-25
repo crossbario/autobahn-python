@@ -203,4 +203,5 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    websocket/examples
    wamp/examples
    reference/autobahn
+   contribute
    changelog

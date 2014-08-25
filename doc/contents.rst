@@ -17,4 +17,5 @@ Site Contents
    websocket/examples
    wamp/examples
    reference/autobahn
+   contribute
    changelog
