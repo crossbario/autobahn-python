@@ -99,7 +99,7 @@ setup(
    author = 'Tavendo GmbH',
    author_email = 'autobahnws@googlegroups.com',
    url = 'http://autobahn.ws/python',
-   platforms = ('Any'),
+   platforms = 'Any',
    install_requires = ['six>=1.6.1'],
    extras_require = {
       ## asyncio is needed for Autobahn/asyncio

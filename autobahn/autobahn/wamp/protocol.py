@@ -880,7 +880,7 @@ class ApplicationSession(BaseSession):
       Called from :meth:`autobahn.wamp.protocol.Subscription.unsubscribe`
       """
       assert(isinstance(subscription, Subscription))
-      assert(subscription.active)
+      assert subscription.active
       assert(subscription.id in self._subscriptions)
 
       if not self._transport:
@@ -983,7 +983,7 @@ class ApplicationSession(BaseSession):
       Called from :meth:`autobahn.wamp.protocol.Registration.unregister`
       """
       assert(isinstance(registration, Registration))
-      assert(registration.active)
+      assert registration.active
       assert(registration.id in self._registrations)
 
       if not self._transport:

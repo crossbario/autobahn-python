@@ -166,7 +166,7 @@ def parseWsUrl(url):
    else:
       resource = ppath
       params = {}
-   return (parsed.scheme == "wss", parsed.hostname, port, resource, path, params)
+   return parsed.scheme == "wss", parsed.hostname, port, resource, path, params
 
 
 
@@ -411,7 +411,7 @@ def parseHttpHeader(data):
       else:
          # skip bad HTTP header
          pass
-   return (http_status_line, http_headers, http_headers_cnt)
+   return http_status_line, http_headers, http_headers_cnt
 
 
 
@@ -3858,7 +3858,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
       for i in xrange(spaces1):
          p = random.randint(1, len(key1) - 2)
          key1 = key1[:p] + ' ' + key1[p:]
-      return (key1, number1)
+      return key1, number1
 
 
    def startHandshake(self):
