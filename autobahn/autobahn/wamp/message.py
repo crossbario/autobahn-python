@@ -2365,9 +2365,9 @@ class Unregistered(Message):
       assert(len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE)
 
       if len(wmsg) != 2:
-         raise ProtocolError("invalid message length {0} for UNREGISTER".format(len(wmsg)))
+         raise ProtocolError("invalid message length {0} for UNREGISTERED".format(len(wmsg)))
 
-      request = check_or_raise_id(wmsg[1], "'request' in UNREGISTER")
+      request = check_or_raise_id(wmsg[1], "'request' in UNREGISTERED")
 
       obj = Unregistered(request)
 
@@ -2385,7 +2385,7 @@ class Unregistered(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP UNREGISTER Message (request = {0})".format(self.request)
+      return "WAMP UNREGISTERED Message (request = {0})".format(self.request)
 
 
 
