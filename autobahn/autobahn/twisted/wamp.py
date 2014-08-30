@@ -171,7 +171,7 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = None, standalone = False,
+   def __init__(self, url, realm, extra = None, serializers = None, standalone = False,
       debug = False, debug_wamp = False, debug_app = False):
       """
 
@@ -181,6 +181,10 @@ class ApplicationRunner:
       :type realm: unicode
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
+      :param serializers: A list of WAMP serializers to use (or None for default serializers).
+         Serializers must implement
+         :class:`autobahn.wamp.interfaces.ISerializer`.
+      :type serializers: list
       :param debug: Turn on low-level debugging.
       :type debug: bool
       :param debug_wamp: Turn on WAMP-level debugging.
@@ -196,6 +200,7 @@ class ApplicationRunner:
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
       self.make = None
+      self.serializers = serializers
 
 
    def run(self, make, start_reactor = True):
@@ -242,7 +247,7 @@ class ApplicationRunner:
             return session
 
       ## create a WAMP-over-WebSocket transport client factory
-      transport_factory = WampWebSocketClientFactory(create, url = self.url,
+      transport_factory = WampWebSocketClientFactory(create, url = self.url, serializers = self.serializers,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## start the client from a Twisted endpoint
@@ -252,7 +257,7 @@ class ApplicationRunner:
          endpoint_descriptor = "ssl:{}:{}".format(host, port)
       else:
          endpoint_descriptor = "tcp:{}:{}".format(host, port)
-      
+
       client = clientFromString(reactor, endpoint_descriptor)
       client.connect(transport_factory)
 
