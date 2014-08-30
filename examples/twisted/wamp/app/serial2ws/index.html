@@ -5,8 +5,10 @@
       <script src="smoothie.js"></script>
 
       <script>
+
+         // the WAMP session we'll be using
+         //
          var session = null;
-         var wsurl = "ws://127.0.0.1:8080/";
 
          var analog0 = null;
          var analog1 = null;
@@ -77,20 +79,26 @@
 
             smoothie.streamTo(document.getElementById("mycanvas"));
 
-            // turn on WAMP debug output
-            // ab.debug(true, false, false);
 
-            // use jQuery deferreds
-            //ab.Deferred = $.Deferred;
-
+            // the URL of the WAMP Router (e.g. Crossbar.io)
+            //
+            var wsuri;
+            if (document.location.origin == "file://") {
+               wsuri = "ws://localhost:9090/";
+            } else {
+               wsuri = "ws://" + document.location.hostname + ":9090";
+            }
+            
             // connect to WAMP server
+            //
             var connection = new autobahn.Connection({
-               url: wsurl,
+               url: wsuri,
                realm: 'realm1'
             });
 
             connection.onopen = function (new_session) {
-               console.log("connected to " + wsurl);
+               console.log("connected to " + wsuri);
+
                session = new_session;
 
                session.subscribe("com.myapp.mcu.on_analog_value", onAnalogValue);

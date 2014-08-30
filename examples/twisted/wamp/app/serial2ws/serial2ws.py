@@ -121,6 +121,9 @@ if __name__ == '__main__':
    parser.add_argument("--webport", type = int, default = 8080,
                        help = 'Web port to use for embedded Web server.')
 
+   parser.add_argument("--wampport", type = int, default = 9090,
+                       help = 'Port to use for embedded WAMP router.')
+
    args = parser.parse_args()
 
    try:
@@ -146,15 +149,6 @@ if __name__ == '__main__':
    print("Using Twisted reactor {0}".format(reactor.__class__))
 
 
-   ## run WAMP application component
-   ##
-   from autobahn.twisted.wamp import ApplicationRunner
-   runner = ApplicationRunner("ws://127.0.0.1:8080/", u"realm1",
-      extra = {'port': args.port, 'baudrate': args.baudrate, 'debug': args.debug},
-      standalone = True)
-   runner.run(McuComponent)
-
-
    ## create embedded web server for static files
    ##
    from twisted.web.server import Site
@@ -162,6 +156,13 @@ if __name__ == '__main__':
    reactor.listenTCP(args.webport, Site(File(".")))
 
 
-   ## start Twisted reactor ..
+   ## run WAMP application component
    ##
-   reactor.run()
+   from autobahn.twisted.wamp import ApplicationRunner
+   runner = ApplicationRunner("ws://localhost:{}/".format(args.wampport), u"realm1",
+      extra = {'port': args.port, 'baudrate': args.baudrate, 'debug': args.debug},
+      standalone = True)
+
+   ## start the component and the Twisted reactor ..
+   ##
+   runner.run(McuComponent)
