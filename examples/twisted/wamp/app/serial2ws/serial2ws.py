@@ -118,11 +118,11 @@ if __name__ == '__main__':
    parser.add_argument("--port", type = str, default = '2',
                        help = 'Serial port to use (e.g. 3 for a COM port on Windows, /dev/ttyATH0 for Arduino Yun, /dev/ttyACM0 for Serial-over-USB on RaspberryPi.')
 
-   parser.add_argument("--webport", type = int, default = 8080,
-                       help = 'Web port to use for embedded Web server.')
+   parser.add_argument("--web", type = int, default = 8000,
+                       help = 'Web port to use for embedded Web server. Use 0 to disable.')
 
-   parser.add_argument("--wampport", type = int, default = 9090,
-                       help = 'Port to use for embedded WAMP router.')
+   parser.add_argument("--router", type = str, default = None,
+                       help = 'If given, connect to this WAMP router. Else run an embedded router on 8080.')
 
    args = parser.parse_args()
 
@@ -151,17 +151,20 @@ if __name__ == '__main__':
 
    ## create embedded web server for static files
    ##
-   from twisted.web.server import Site
-   from twisted.web.static import File
-   reactor.listenTCP(args.webport, Site(File(".")))
+   if args.web:
+      from twisted.web.server import Site
+      from twisted.web.static import File
+      reactor.listenTCP(args.web, Site(File(".")))
 
 
    ## run WAMP application component
    ##
    from autobahn.twisted.wamp import ApplicationRunner
-   runner = ApplicationRunner("ws://localhost:{}/".format(args.wampport), u"realm1",
+   router = args.router or 'ws://localhost:8080'
+
+   runner = ApplicationRunner(router, u"realm1",
       extra = {'port': args.port, 'baudrate': args.baudrate, 'debug': args.debug},
-      standalone = True)
+      standalone = not args.router)
 
    ## start the component and the Twisted reactor ..
    ##

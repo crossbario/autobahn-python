@@ -1,116 +1,55 @@
-Bridging Arduino to AutobahnPython via Serial
-=============================================
+# Bridging an Arduino to WebSocket/WAMP
 
-This demo shows how to shuffle data between WAMP clients and a device connected
-via a serial port like Arduino to a machine hosting the WAMP server.
+This demo shows how to hook up an Arduino to a WAMP router and display real-time sensor readings in a browser, as well as control the Arduino from the browser.
 
-We use an *Arduino* device connected to a notebook, and a browser
-running somewhere.
+To give you an idea, here are some videos:
 
-Here are some videos - sorry, bad quality. But you should get the idea:
-
-   * http://www.youtube.com/watch?v=va7j86thW5M
-   * http://www.youtube.com/watch?v=aVJV2z-lQJE
+* [Arduino Yun + Browser](https://www.youtube.com/watch?v=Egvu4jL_Wlo)
+* [Arudino Mega + Browser](https://www.youtube.com/watch?v=va7j86thW5M)
 
 
-Overview
---------
+## How it works
 
-Here is how stuff is connected:
+The `serial2ws.py` program will open a serial port connection with your Arduino. It will communicate over a simple, ASCII based protocol with your device.
 
+### Control
 
-      Arduino,
-      other serial devices
+The `serial2ws` program exposes a WAMP procedure `com.myapp.mcu.control_led` which can be called remotely via WAMP. When the procedure is called, `serial2py` forwards the control command to the Arduino over serial. Turning on and off the LED is done by sending a `0` or `1` character over serial.
 
-         <= Serial over USB =>
+### Sense
 
-      PC / Autobahn
-
-         <= WebSocket/WAMP over Internet =>
-
-      Browser (AutobahnJS),
-      Python (AutobahnPython),
-      Smartphone (AutobahnAndroid),
-      ...
+The Arduino will send sensor analog values by sending ASCII lines over serial consisting of the sensor ID (int) and sensor value (int) delimited by whitespace (a tab character). The `serial2ws` will receive those lines, parse each line, and then publish WAMP events with the payload consisting of the sensor values to the topic `com.myapp.mcu.on_analog_value`.
 
 
-How it works
-------------
+## How to run
 
-*serial device => WebSocket/WAMP client*
+You will need to have the following installed in the host that connects over serial to your device:
 
-The Autobahn-based server will receive data from the device vi serial (over USB)
-and dispatch data received as *WAMP PubSub* events on topics upon which clients
-can subscribe.
+* Python
+* Twisted
+* AutobahnPython
+* PySerial
 
-*WebSocket/WAMP client => serial device*
-
-The Autobahn-based server provides *WAMP RPC* endpoints which clients can call.
-The server will then forward the commands to the device via serial (over USB)
-to the device.
-
-
-The protocol spoken on the serial wire is a very simple, small adhoc text based
-one.
-
-The protocol spoken on the internet connection is WAMP http://wamp.ws over
-WebSocket.
-
-We use *WAMP* running on top of standard WebSocket, since WAMP brings us
-simple *RPC* and *PubSub* .. higher level than raw WebSocket.
-
-
-
-Discussion
-----------
-
-Pros:
-
- * Using serial means you can connect a lot of devices .. serial support is widespread.
-
-Cons:
-
- * You need to invent some small custom protocol for the comms on serial wire
-
- * You must have a physical connection between the device and the PC/Autobahn server
-
-
-For the reasons above, we plan to have a *AutobahnAndroid* implementation!
-
-Thing is: there are (somewhat) emerging WebSocket implementations for Arduino
-already.
-
-But what we want to have is full WAMP: http://wamp.ws
-
-Now, to do it right, we want to use the binary message payload option that
-WebSocket brings, and not use JSON, but Bencode for payload format, since that
-is much more resource efficient, which matters on restricted devices (like
-Arduino). Therefor, we will first define a *Bencode payload format* binding
-for *WAMP*.
-
-
-
-How to do it yourself
----------------------
-
-You will need AutobahnPython as server + PySerial for serial support in
-Python/Twisted.
-
-Then, connect your serial device, run
+Connect your serial device and run
 
     python serial2ws.py
 
-and open
+Open
 
-    http://localhost:8080/
+    http://localhost:8000/
 
 in your browser.
 
-Note: The serial2ws.py has a number of command line options for setting
-COM port, baudrate etc. Simply do a
+> The `serial2ws.py` program has a number of command line options for setting COM port, baudrate etc.
+> Run `python serial2ws.py --help` to get information on those.
 
-    python serial2ws.py --help
 
-to get information on those.
+**Examples**
 
-	/opt/python/bin/python serial2ws.py -p /dev/ttyATH0 --debugserial
+Arudino Yun running an embedded Web server and WAMP router and enabling debug output:
+
+	python serial2ws.py --debug --port /dev/ttyATH0
+
+Arudino Yun running disabling the embedded Web server and connecting to an uplink WAMP router and enabling debug output:
+
+	python serial2ws.py --debug --port /dev/ttyATH0 --web 0 --router ws://192.168.1.130:8080/ws

@@ -84,9 +84,9 @@
             //
             var wsuri;
             if (document.location.origin == "file://") {
-               wsuri = "ws://localhost:9090/";
+               wsuri = "ws://localhost:8080/ws";
             } else {
-               wsuri = "ws://" + document.location.hostname + ":9090";
+               wsuri = "ws://" + document.location.hostname + ":8080";
             }
             
             // connect to WAMP server
