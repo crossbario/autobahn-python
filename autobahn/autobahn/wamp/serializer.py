@@ -157,17 +157,11 @@ class JsonObjectSerializer:
       """
       Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
       """
-      s = json.dumps(obj, separators = (',',':'))
-      if six.PY3:
-         if self._batched:
-            return s.encode('utf8') + b'\30'
-         else:
-            return s.encode('utf8')
+      s = json.dumps(obj, separators = (',',':'), ensure_ascii = False)
+      if self._batched:
+         return s.encode('utf8') + b'\30'
       else:
-         if self._batched:
-            return s + '\30'
-         else:
-            return s
+         return s.encode('utf8')
 
 
    def unserialize(self, payload):
@@ -180,10 +174,7 @@ class JsonObjectSerializer:
          chunks = [payload]
       if len(chunks) == 0:
          raise Exception("batch format error")
-      if six.PY3:
-         return [json.loads(data.decode('utf8')) for data in chunks]
-      else:
-         return [json.loads(data) for data in chunks]
+      return [json.loads(data.decode('utf8')) for data in chunks]
 
 
 
