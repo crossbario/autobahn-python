@@ -12,7 +12,7 @@
       <script>
          console.log("Ok, Autobahn loaded", autobahn.version);
 
-         if (true) {
+         if (false) {
             var user = "peter";
             var key = autobahn.auth_cra.derive_key("secret1", "salt123");
          } else {
@@ -61,7 +61,7 @@
          };
 
          connection.onclose = function (reason, details) {
-            console.log("disconnected", reason, details.reason);
+            console.log("disconnected", reason, details.reason, details);
          }
 
          connection.open();

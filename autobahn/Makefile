@@ -30,7 +30,9 @@ test:
 	USE_TWISTED=1 trial autobahn
 
 test1:
-	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
+	USE_TWISTED=1 trial autobahn.wamp.test.test_auth
+#	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_auth.py
+#	USE_TWISTED=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
 #	USE_ASYNCIO=1 python -m pytest -s -v autobahn/wamp/test/test_router.py
 
 test2:

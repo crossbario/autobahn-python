@@ -102,6 +102,9 @@ _pack_int = Struct('>I').pack
 
 
 def pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
+   """
+   Compute 
+   """
    hashfunc = hashfunc or hashlib.sha256
    mac = hmac.new(data, None, hashfunc)
    def _pseudorandom(x, mac=mac):
@@ -142,21 +145,17 @@ def derive_key(secret, salt, iterations = None, keylen = None):
 
 
 
-def generate_wcs(short = False):
+def generate_wcs(length = 12):
    """
    Generates a new random secret string for use with WAMP-CRA.
 
-   :param short: If ``True``, generate string of length 6, else 12
-   :type short: bool
+   :param length: The length of the secret to generate.
+   :type length: int
 
    :return: The generated secret.
-   :rtype: str
+   :rtype: unicode
    """
-   if short:
-      l = 6
-   else:
-      l = 12
-   return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(l)])
+   return u"".join([random.choice(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(length)])
 
 
 
@@ -166,12 +165,14 @@ def compute_wcs(key, challenge):
    challenge and a (derived) key.
 
    :param key: The key derived (via PBKDF2) from the secret.
-   :type key: str
+   :type key: bytes
    :param challenge: The authentication challenge to sign.
-   :type challenge: str
+   :type challenge: bytes
 
    :return: The authentication signature.
-   :rtype: str
+   :rtype: unicode
    """
+   assert(type(key) == bytes)
+   assert(type(challenge) == bytes)
    sig = hmac.new(key, challenge, hashlib.sha256).digest()
    return binascii.b2a_base64(sig).strip().decode('ascii')
