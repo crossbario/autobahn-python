@@ -19,9 +19,10 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'derive_key',
    'generate_totp_secret',
    'compute_totp',
+   'derive_key',
+   'WCS_SECRET_CHARSET',
    'generate_wcs',
    'compute_wcs')
 
@@ -34,21 +35,21 @@ import binascii
 
 
 
-def generate_totp_secret(short = False):
+def generate_totp_secret(length = 10):
    """
-   Generates a new base32 encoded, random secret.
+   Generates a new Base32 encoded, random secret.
 
-   :param short: If ``True``, generate 5 bytes entropy, else 10 bytes.
-   :type short: bool
+   .. seealso:: http://en.wikipedia.org/wiki/Base32
 
-   :returns: The generated secret.
+   :param length: The length of the entropy used to generate the secret.
+   :type length: int
+
+   :returns: The generated secret in Base32 (letters ``A-Z`` and digits ``2-7``).
+      The length of the generated secret is ``length * 8 / 5`` octets.
    :rtype: bytes
    """
-   assert(type(short) == bool)
-   if short:
-      return base64.b32encode(os.urandom(5))
-   else:
-      return base64.b32encode(os.urandom(10))
+   assert(type(length) in six.integer_types)
+   return base64.b32encode(os.urandom(length))
 
 
 
@@ -62,7 +63,7 @@ def compute_totp(secret, offset = 0):
    :type offset: int
 
    :returns: TOTP for current time (+/- offset).
-   :rtype: unicode
+   :rtype: bytes
    """
    assert(type(secret) == bytes)
    assert(type(offset) in six.integer_types)
@@ -75,7 +76,7 @@ def compute_totp(secret, offset = 0):
    digest = hmac.new(key, msg, hashlib.sha1).digest()
    o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
    token = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
-   return u'{:06d}'.format(token)
+   return '{:06d}'.format(token).encode('ascii')
 
 
 
@@ -146,18 +147,29 @@ def derive_key(secret, salt, iterations = 1000, keylen = 32):
 
 
 
+WCS_SECRET_CHARSET = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+"""
+The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
+"""
+
 def generate_wcs(length = 12):
    """
-   Generates a new random secret string for use with WAMP-CRA.
+   Generates a new random secret for use with WAMP-CRA.
+
+   The secret generated is a random character sequence drawn from
+
+   - upper and lower case latin letters
+   - digits
+   - 
 
    :param length: The length of the secret to generate.
    :type length: int
 
-   :return: The generated secret.
-   :rtype: unicode
+   :return: The generated secret. The length of the generated is ``length`` octets.
+   :rtype: bytes
    """
    assert(type(length) in six.integer_types)
-   return u"".join([random.choice(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(length)])
+   return b"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)])
 
 
 
@@ -172,9 +184,9 @@ def compute_wcs(key, challenge):
    :type challenge: bytes
 
    :return: The authentication signature.
-   :rtype: unicode
+   :rtype: bytes
    """
    assert(type(key) == bytes)
    assert(type(challenge) == bytes)
    sig = hmac.new(key, challenge, hashlib.sha256).digest()
-   return binascii.b2a_base64(sig).strip().decode('ascii')
+   return binascii.b2a_base64(sig).strip()

@@ -34,22 +34,35 @@ from autobahn.wamp.auth import generate_wcs, \
 
 class TestWampCra(unittest.TestCase):
 
-   def test_generate_wcs_default(self):
-      secret = generate_wcs()
-      self.assertEqual(type(secret), unicode)
-      self.assertEqual(len(secret), 12)
+   def test_generate_totp_secret_default(self):
+      secret = generate_totp_secret()
+      self.assertEqual(type(secret), bytes)
+      self.assertEqual(len(secret), 10*8/5)
 
-   def test_generate_wcs_length(self):
+
+   def test_generate_totp_secret_length(self):
       for length in [5, 10, 20, 30, 40, 50]:
-         secret = generate_wcs(length)
-         self.assertEqual(type(secret), unicode)
-         self.assertEqual(len(secret), length)
+         secret = generate_totp_secret(length)
+         self.assertEqual(type(secret), bytes)
+         self.assertEqual(len(secret), length*8/5)
 
-   def test_compute_wcs(self):
-      secret = u'L3L1YUE8Txlw'
-      challenge = json.dumps([1,2,3], ensure_ascii = False).encode('utf8')
-      signature = compute_wcs(secret.encode('utf8'), challenge)
-      self.assertEqual(signature, u"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
+
+   def test_compute_totp(self):
+      pat = re.compile(r"\d{6,6}")
+      secret = b"MFRGGZDFMZTWQ2LK"
+      signature = compute_totp(secret)
+      self.assertEqual(type(signature), bytes)
+      self.assertTrue(pat.match(signature) is not None)
+
+
+   def test_compute_totp_offset(self):
+      pat = re.compile(r"\d{6,6}")
+      secret = b"MFRGGZDFMZTWQ2LK"
+      for offset in range(-10, 10):
+         signature = compute_totp(secret, offset)
+         self.assertEqual(type(signature), bytes)
+         self.assertTrue(pat.match(signature) is not None)
+
 
    def test_derive_key(self):
       secret = u'L3L1YUE8Txlw'
@@ -58,25 +71,27 @@ class TestWampCra(unittest.TestCase):
       self.assertEqual(type(key), bytes)
       self.assertEqual(key, b"qzcdsr9uu/L5hnss3kjNTRe490ETgA70ZBaB5rvnJ5Y=")
 
-   def test_compute_totp(self):
-      pat = re.compile(r"\d{6,6}")
-      secret = b"MFRGGZDFMZTWQ2LK"
-      signature = compute_totp(secret)
-      self.assertEqual(type(signature), unicode)
-      self.assertTrue(pat.match(signature) is not None)
 
-   def test_compute_totp_offset(self):
-      pat = re.compile(r"\d{6,6}")
-      secret = b"MFRGGZDFMZTWQ2LK"
-      for offset in range(-10, 10):
-         signature = compute_totp(secret, offset)
-         self.assertEqual(type(signature), unicode)
-         self.assertTrue(pat.match(signature) is not None)
+   def test_generate_wcs_default(self):
+      secret = generate_wcs()
+      self.assertEqual(type(secret), bytes)
+      self.assertEqual(len(secret), 12)
 
-   def test_generate_totp_secret(self):
-      secret = generate_totp_secret()
-      self.assertEqual(type(secret), unicode)
-      self.assertEqual(len(secret), 5)
+
+   def test_generate_wcs_length(self):
+      for length in [5, 10, 20, 30, 40, 50]:
+         secret = generate_wcs(length)
+         self.assertEqual(type(secret), bytes)
+         self.assertEqual(len(secret), length)
+
+
+   def test_compute_wcs(self):
+      secret = u'L3L1YUE8Txlw'
+      challenge = json.dumps([1,2,3], ensure_ascii = False).encode('utf8')
+      signature = compute_wcs(secret.encode('utf8'), challenge)
+      self.assertEqual(type(signature), bytes)
+      self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
+
 
 
 if __name__ == '__main__':
