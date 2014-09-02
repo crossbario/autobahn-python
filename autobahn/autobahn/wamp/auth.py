@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 __all__ = (
+   'pbkdf2',
    'generate_totp_secret',
    'compute_totp',
    'derive_key',
@@ -83,9 +84,6 @@ def compute_totp(secret, offset = 0):
 ## Copyright 2011 by Armin Ronacher. Licensed under BSD license.
 ## @see: https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
 ##
-import sys
-PY3 = sys.version_info >= (3,)
-
 
 import hmac
 import hashlib
@@ -93,7 +91,7 @@ import random
 from struct import Struct
 from operator import xor
 
-if PY3:
+if six.PY3:
    izip = zip
    xrange = range
 else:
@@ -102,7 +100,27 @@ else:
 _pack_int = Struct('>I').pack
 
 
-def _pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
+def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
+   """
+   Returns a binary digest for the PBKDF2 hash algorithm of ``data``
+   with the given ``salt``. It iterates ``iterations`` time and produces a
+   key of ``keylen`` bytes. By default SHA-256 is used as hash function,
+   a different hashlib ``hashfunc`` can be provided.
+
+   :param data: The data for which to compute the PBKDF2 derived key.
+   :type data: bytes
+   :param salt: The salt to use for deriving the key.
+   :type salt: bytes
+   :param iterations: The number of iterations to perform in PBKDF2.
+   :type iterations: int
+   :param keylen: The length of the cryptographic key to derive.
+   :type keylen: int
+   :param hashfunc: The hash function to use, e.g. ``hashlib.sha1``.
+   :type hashfunc: callable
+
+   :returns: The derived cryptographic key.
+   :rtype: bytes
+   """
    hashfunc = hashfunc or hashlib.sha256
    mac = hmac.new(data, None, hashfunc)
    def _pseudorandom(x, mac=mac):
@@ -142,7 +160,7 @@ def derive_key(secret, salt, iterations = 1000, keylen = 32):
    assert(type(salt) == bytes)
    assert(type(iterations) in six.integer_types)
    assert(type(keylen) in six.integer_types)
-   key = _pbkdf2_bin(secret, salt, iterations, keylen)
+   key = pbkdf2(secret, salt, iterations, keylen)
    return binascii.b2a_base64(key).strip()
 
 
