@@ -1,8 +1,7 @@
 Decimal Calculator Service
 ==========================
 
-This example implements a AutobahnPython based WAMP server with RPC
-endpoints providing a decimal calculator service.
+This example demonstrates a WAMP component providing a decimal calculator service.
 
 A browser based UI is included which uses AutobahnJS to access
 the decimal calculator service.
@@ -28,7 +27,7 @@ in your browser.
 
 To activate debug output on the server, start it
 
-    python server.py debug
+    python server.py --debug
 
 This will show up all WAMP messages exchanged between clients and server.
 

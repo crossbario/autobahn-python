@@ -35,46 +35,44 @@
       </style>
 
       <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
 
       <script type="text/javascript">
+
          var sess = null;
          var clearFirst = false;
 
          $(document).ready(function()
          {
+            // the URL of the WAMP Router (e.g. Crossbar.io)
+            //
             var wsuri;
-            if (window.location.protocol === "file:") {
-               wsuri = "ws://127.0.0.1:9000";
+            if (document.location.origin == "file://") {
+               wsuri = "ws://localhost:9000";
             } else {
-               wsuri = "ws://" + window.location.hostname + ":9000";
+               wsuri = "ws://" + document.location.hostname + ":9000";
+            }
+            
+            // connect to WAMP server
+            //
+            var connection = new autobahn.Connection({
+               url: wsuri,
+               realm: 'realm1'
+            });
+
+            connection.onopen = function (session) {
+               console.log("connected to " + wsuri);
+               sess = session;
+            };
+
+            connection.onclose = function (reason, details) {
+               console.log("connection gone", reason, details);
+               sess = null;
             }
 
-            // connect to WAMP server
-            ab.connect(wsuri,
-
-               // WAMP session was established
-               function (session) {
-
-                  sess = session;
-                  console.log("Connected to " + wsuri);
-
-                  sess.prefix("calculator", "http://example.com/simple/calculator#");
-               },
-
-               // WAMP session is gone
-               function (code, reason) {
-
-                  sess = null;
-
-                  if (code == ab.CONNECTION_UNSUPPORTED) {
-                     window.location = "http://autobahn.ws/unsupportedbrowser";
-                  } else {
-                     alert(reason);
-                  }
-               }
-            );
+            connection.open();
          });
+
 
          function key_digit(d) {
 
@@ -107,13 +105,24 @@
 
          function key_op(op) {
 
-            arg = {op: op};
-            if (op != "C") {
-               arg.num = $('#calcdisplay').html();
+            var args = null;
+            var proc;
+
+            if (op == "C") {
+               proc = "com.example.calculator.clear";
+            } else {
+               proc = "com.example.calculator.calc";
+               args = [op, $('#calcdisplay').html()];
             }
 
-            sess.call("calculator:calc", arg).then(function (res) { $('#calcdisplay').html(res); },
-                                                   function (res) { alert("Error (" + res + ")"); });
+            sess.call(proc, args).then(
+               function (res) {
+                  $('#calcdisplay').html(res); 
+               },
+               function (err) {
+                  alert("Error (" + err.reason + ")");
+               }
+            );
 
             clearFirst = true;
          }

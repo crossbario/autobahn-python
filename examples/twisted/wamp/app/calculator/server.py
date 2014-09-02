@@ -16,42 +16,35 @@
 ##
 ###############################################################################
 
-import sys, decimal
+import sys
+import decimal
 
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.web.server import Site
-from twisted.web.static import File
+from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.websocket import listenWS
-
-from autobahn.wamp1.protocol import exportRpc, \
-                                    WampServerFactory, \
-                                    WampServerProtocol
+from autobahn import wamp
+from autobahn.twisted.wamp import ApplicationSession
 
 
-class CalculatorServerProtocol(WampServerProtocol):
 
-   def onSessionOpen(self):
-      self.registerForRpc(self, "http://example.com/simple/calculator#")
+class Calculator(ApplicationSession):
+
+   @inlineCallbacks
+   def onJoin(self, details):
       self.clear()
+      yield self.register(self)
+      print("Ok, calculator procedures registered!")
 
 
+   @wamp.register(u'com.example.calculator.clear')
    def clear(self, arg = None):
       self.op = None
       self.current = decimal.Decimal(0)
+      return str(self.current)
 
 
-   @exportRpc
-   def calc(self, arg):
-
-      op = arg["op"]
-
-      if op == "C":
-         self.clear()
-         return str(self.current)
-
-      num = decimal.Decimal(arg["num"])
+   @wamp.register(u'com.example.calculator.calc')
+   def calc(self, op, num):
+      num = decimal.Decimal(num)
       if self.op:
          if self.op == "+":
             self.current += num
@@ -73,23 +66,57 @@ class CalculatorServerProtocol(WampServerProtocol):
       return res
 
 
+
 if __name__ == '__main__':
 
    decimal.getcontext().prec = 20
 
-   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
+   import sys, argparse
 
-   factory = WampServerFactory("ws://localhost:9000", debugWamp = debug)
-   factory.protocol = CalculatorServerProtocol
-   factory.setProtocolOptions(allowHixie76 = True)
-   listenWS(factory)
+   ## parse command line arguments
+   ##
+   parser = argparse.ArgumentParser()
 
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
+   parser.add_argument("-d", "--debug", action = "store_true",
+                       help = "Enable debug output.")
 
-   reactor.run()
+   parser.add_argument("--web", type = int, default = 8080,
+                       help = 'Web port to use for embedded Web server. Use 0 to disable.')
+
+   parser.add_argument("--router", type = str, default = None,
+                       help = 'If given, connect to this WAMP router. Else run an embedded router on 9000.')
+
+   args = parser.parse_args()
+
+   if args.debug:
+      from twisted.python import log
+      log.startLogging(sys.stdout)     
+
+   ## import Twisted reactor
+   ##
+   from twisted.internet import reactor
+   print("Using Twisted reactor {0}".format(reactor.__class__))
+
+
+   ## create embedded web server for static files
+   ##
+   if args.web:
+      from twisted.web.server import Site
+      from twisted.web.static import File
+      reactor.listenTCP(args.web, Site(File(".")))
+
+
+   ## run WAMP application component
+   ##
+   from autobahn.twisted.wamp import ApplicationRunner
+   router = args.router or 'ws://localhost:9000'
+
+   runner = ApplicationRunner(router, u"realm1", standalone = not args.router,
+      debug = False,             # low-level logging
+      debug_wamp = args.debug,   # WAMP level logging
+      debug_app = args.debug     # app-level logging
+   )
+
+   ## start the component and the Twisted reactor ..
+   ##
+   runner.run(Calculator)
