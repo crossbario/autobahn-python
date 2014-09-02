@@ -1,7 +1,6 @@
 <!DOCTYPE html>
  <html>
    <head>
-
       <style type="text/css">
          .block {
             background-color: #ccc;
@@ -9,103 +8,6 @@
             margin: 1em;
          }
       </style>
-
-      <!-- include AutobahnJS .. that's all you need -->
-      <script src="http://autobahn.s3.amazonaws.com/js/autobahn.min.js"></script>
-
-      <script type="text/javascript">
-         var sess = null;
-         var ellog = null;
-
-         window.onload = function() {
-
-            ellog = document.getElementById('log');
-
-            var wsuri;
-            if (window.location.protocol === "file:") {
-               wsuri = "ws://127.0.0.1:8080/ws";
-            } else {
-               wsuri = "ws://" + window.location.hostname + ":8080/ws";
-            }
-
-            // connect to WAMP server
-            ab.connect(wsuri,
-
-               // WAMP session was established
-               function (session) {
-
-                  sess = session;
-                  log("Connected to " + wsuri);
-
-                  // establish a prefix, so we can abbreviate procedure URIs ..
-                  sess.prefix("keyvalue", "http://example.com/simple/keyvalue#");
-               },
-
-               // WAMP session is gone
-               function (code, reason) {
-
-                  sess = null;
-
-                  if (code == ab.CONNECTION_UNSUPPORTED) {
-                     window.location = "http://autobahn.ws/unsupportedbrowser";
-                  } else {
-                     alert(reason);
-                  }
-               }
-            );
-         };
-
-         function setKeyValue() {
-
-            var k = document.getElementById('form_key').value;
-            var v1 = document.getElementById('form_value1').value;
-            var v2 = document.getElementById('form_value2').value;
-            var v3 = document.getElementById('form_value3').checked;
-
-            sess.call("keyvalue:set",
-                      k,
-                      {value1: v1,
-                       value2: v2,
-                       value3: v3,
-                       modified: new Date()}).then(function () {
-               log("ok, value set");
-            });
-         }
-
-         function getValue() {
-
-            var k = document.getElementById('form_key').value;
-
-            sess.call("keyvalue:get", k).then(function (val) {
-               log(val);
-               document.getElementById('form_value1').value = val.value1;
-               document.getElementById('form_value2').value = val.value2;
-               document.getElementById('form_value3').checked = val.value3;
-            });
-         }
-
-         function deleteKey() {
-
-            var k = document.getElementById('form_key').value;
-
-            sess.call("keyvalue:set", k).then(function () {
-               log("ok, key gone");
-            });
-         }
-
-         function getAll() {
-            sess.call("keyvalue:get").then(log);
-         }
-
-         function deleteAll() {
-            sess.call("keyvalue:set").then(log);
-         }
-
-         function log(m) {
-            ellog.innerHTML += JSON.stringify(m) + '\n';
-            ellog.scrollTop = ellog.scrollHeight;
-         };
-     </script>
    </head>
    <body>
       <h1>Key-Value Store Client</h1>
@@ -118,15 +20,107 @@
       <div class="block"><button onclick="deleteAll()">Delete all</button> Delete all data from store.</div>
       <div class="block">
          <form>
-            <p>Key: <input id="form_key" type="text" size="50" maxlength="50"></p>
-            <p>Value 1: <input id="form_value1" type="text" size="50" maxlength="50"></p>
-            <p>Value 2: <input id="form_value2" type="text" size="50" maxlength="50"></p>
-            <p>Value 3: <input id="form_value3" type="checkbox"></p>
+            <p>Key: <input id="form_key" type="text" size="50" maxlength="50" value="key1"></p>
+            <p>Value 1: <input id="form_value1" type="text" size="50" maxlength="50" value="foobar"></p>
+            <p>Value 2: <input id="form_value2" type="text" size="50" maxlength="50" value="123"></p>
+            <p>Value 3: <input id="form_value3" type="checkbox" checked></p>
          </form>
          <p><button onclick="setKeyValue()">Set Value</button> Set key-value pair.</p>
          <p><button onclick="deleteKey()">Delete Key</button> Delete key-value by key.</p>
          <p><button onclick="getValue()">Get Key</button> Get key-value by key.</p>
       </div>
       <pre id="log" style="height: 20em; overflow-y: scroll; background-color: #faa;"></pre>
+
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
+
+      <script type="text/javascript">
+         var session = null;
+
+         // the URL of the WAMP Router (e.g. Crossbar.io)
+         //
+         var wsuri;
+         if (document.location.origin == "file://") {
+            wsuri = "ws://localhost:9000";
+         } else {
+            wsuri = "ws://" + document.location.hostname + ":9000";
+         }
+
+         // connect to WAMP server
+         //
+         var connection = new autobahn.Connection({
+            url: wsuri,
+            realm: 'realm1'
+         });
+
+         connection.onopen = function (new_session) {
+            console.log("connected to " + wsuri);
+            session = new_session;
+         };
+
+         connection.onclose = function (reason, details) {
+            console.log("connection gone", reason, details);
+            new_session = null;
+         }
+
+         connection.open();
+
+         function setKeyValue() {
+
+            var key = document.getElementById('form_key').value;
+            var value = {
+               value1: document.getElementById('form_value1').value,
+               value2: document.getElementById('form_value2').value,
+               value3: document.getElementById('form_value3').checked,
+               modified: new Date()
+            }
+
+            session.call("com.example.keyvalue.set", [key, value]).then(
+               function () {
+                  console.log("Value stored!");
+               }
+            );
+         }
+
+         function getValue() {
+
+            var key = document.getElementById('form_key').value;
+
+            session.call("com.example.keyvalue.get", [key]).then(
+               function (value) {
+                  console.log(value);
+                  document.getElementById('form_value1').value = value.value1;
+                  document.getElementById('form_value2').value = value.value2;
+                  document.getElementById('form_value3').checked = value.value3;
+               }
+            );
+         }
+
+         function deleteKey() {
+
+            var key = document.getElementById('form_key').value;
+
+            session.call("com.example.keyvalue.set", [key]).then(
+               function () {
+                  log("Key-Value deleted!");
+               }
+            );
+         }
+
+         function getAll() {
+            session.call("com.example.keyvalue.get").then(
+               function (res) {
+                  console.log(res);
+               }
+            );
+         }
+
+         function deleteAll() {
+            session.call("com.example.keyvalue.set").then(
+               function () {
+                  log("All Key-Values deleted!");
+               }
+            );
+         }
+     </script>
    </body>
  </html>

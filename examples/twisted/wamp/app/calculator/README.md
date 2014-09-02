@@ -15,9 +15,9 @@ client.
 Running
 -------
 
-Run the server by doing
+Run the calculator backend component by doing
 
-    python server.py
+    python calculator.py
 
 and open
 
@@ -25,11 +25,9 @@ and open
 
 in your browser.
 
-To activate debug output on the server, start it
+To activate debug output, start it
 
-    python server.py --debug
-
-This will show up all WAMP messages exchanged between clients and server.
+    python calculator.py --debug
 
 
 
