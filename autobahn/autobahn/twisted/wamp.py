@@ -182,8 +182,7 @@ class ApplicationRunner:
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
       :param serializers: A list of WAMP serializers to use (or None for default serializers).
-         Serializers must implement
-         :class:`autobahn.wamp.interfaces.ISerializer`.
+         Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
       :type serializers: list
       :param debug: Turn on low-level debugging.
       :type debug: bool
