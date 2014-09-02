@@ -37,7 +37,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 * runs under `Twisted`_ and `asyncio`_
 * implements WebSocket `RFC6455`_ (and older versions like Hybi-10+ and Hixie-76)
 * implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
-* implements `WAMPv2`_ (and `WAMPv1`_)
+* implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
 * Open-source (`Apache 2 license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
 
@@ -54,6 +54,7 @@ We do take those design and implementation goals quite serious. For example, |Ab
    In the following, we will just refer to |Ab| instead of the
    more precise term |AbL| and there is no
    ambiguity.
+
 
 What can I do with this stuff?
 ------------------------------

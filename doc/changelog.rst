@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.9.0
+------
+`Published 2014-09-02 <https://pypi.python.org/pypi/autobahn/0.9.0>`__
+
+* all WAMP v1 code removed
+* migrated various WAMP examples to WAMP v2
+* improved unicode/bytes handling
+* lots of code quality polishment
+* more unit test coverage
+
 0.8.15
 ------
 `Published 2014-08-23 <https://pypi.python.org/pypi/autobahn/0.8.15>`__

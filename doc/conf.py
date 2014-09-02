@@ -258,6 +258,7 @@ rst_epilog = """
 .. _CPython: http://python.org/
 .. _PyPy: http://pypy.org/
 .. _Jython: http://jython.org/
+.. _WAMP: http://wamp.ws/
 .. _WAMPv1: http://wamp.ws/spec/wamp1/
 .. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
 .. _AutobahnTestsuite: http://autobahn.ws/testsuite
