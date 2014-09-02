@@ -1987,13 +1987,7 @@ class WebSocketProtocol:
                            self.factory._log("Auto ping/pong: sending ping auto-ping/pong")
 
                         self.autoPingPendingCall = None
-                        self.autoPingPending = newid(self.autoPingSize)
-                        self.sendPing(self.autoPingPending.encode('utf8'))
-
-                        if self.autoPingTimeout:
-                           if self.debugCodePaths:
-                              self.factory._log("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
-                           self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
+                        self.sendPing()
 
                      self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, send)
                else:
@@ -2116,6 +2110,9 @@ class WebSocketProtocol:
       """
       Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
       """
+      if not payload:
+         self.autoPingPending = payload = newid(self.autoPingSize)
+
       if self.websocket_version == 0:
          raise Exception("function not supported in Hixie-76 mode")
       if self.state != WebSocketProtocol.STATE_OPEN:
@@ -2127,6 +2124,9 @@ class WebSocketProtocol:
          self.sendFrame(opcode = 9, payload = payload)
       else:
          self.sendFrame(opcode = 9)
+
+      if self.autoPingTimeout:
+         self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
 
 
    def sendPong(self, payload = None):
@@ -3289,11 +3289,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       ## automatic ping/pong
       ##
       if self.autoPingInterval:
-         self.autoPingPending = newid(self.autoPingSize)
-         self.sendPing(self.autoPingPending.encode('utf8'))
-         if self.autoPingTimeout:
-            self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
-
+         self.factory._callLater(self.autoPingInterval, self.sendPing)
 
       ## fire handler on derived class
       ##
