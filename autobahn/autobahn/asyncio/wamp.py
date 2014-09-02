@@ -191,7 +191,7 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = None,
+   def __init__(self, url, realm, extra = None, serializers = None
       debug = False, debug_wamp = False, debug_app = False):
       """
 
@@ -201,6 +201,10 @@ class ApplicationRunner:
       :type realm: unicode
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
+      :param serializers: A list of WAMP serializers to use (or None for default serializers).
+         Serializers must implement
+         :class:`autobahn.wamp.interfaces.ISerializer`.
+      :type serializers: list
       :param debug: Turn on low-level debugging.
       :type debug: bool
       :param debug_wamp: Turn on WAMP-level debugging.
@@ -215,6 +219,7 @@ class ApplicationRunner:
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
       self.make = None
+      self.serializers = serializers
 
 
    def run(self, make):
@@ -239,9 +244,9 @@ class ApplicationRunner:
             return session
 
       isSecure, host, port, resource, path, params = parseWsUrl(self.url)
-      
+
       ## 2) create a WAMP-over-WebSocket transport client factory
-      transport_factory = WampWebSocketClientFactory(create, url = self.url,
+      transport_factory = WampWebSocketClientFactory(create, url = self.url, serializers = self.serializers,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## 3) start the client
