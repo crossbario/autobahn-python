@@ -22,7 +22,6 @@ __all__ = (
    'generate_totp_secret',
    'compute_totp',
    'derive_key',
-   'WCS_SECRET_CHARSET',
    'generate_wcs',
    'compute_wcs')
 
@@ -76,7 +75,7 @@ def compute_totp(secret, offset = 0):
    digest = hmac.new(key, msg, hashlib.sha1).digest()
    o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
    token = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
-   return '{:06d}'.format(token).encode('ascii')
+   return '{0:06d}'.format(token).encode('ascii')
 
 
 
@@ -96,6 +95,7 @@ from operator import xor
 
 if PY3:
    izip = zip
+   xrange = range
 else:
    from itertools import izip, starmap
 
@@ -147,12 +147,12 @@ def derive_key(secret, salt, iterations = 1000, keylen = 32):
 
 
 
-WCS_SECRET_CHARSET = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+WCS_SECRET_CHARSET = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 """
 The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
 """
 
-def generate_wcs(length = 12):
+def generate_wcs(length = 14):
    """
    Generates a new random secret for use with WAMP-CRA.
 
@@ -169,7 +169,7 @@ def generate_wcs(length = 12):
    :rtype: bytes
    """
    assert(type(length) in six.integer_types)
-   return b"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)])
+   return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
 
 
 

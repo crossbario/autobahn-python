@@ -48,7 +48,7 @@ class TestWampCra(unittest.TestCase):
 
 
    def test_compute_totp(self):
-      pat = re.compile(r"\d{6,6}")
+      pat = re.compile(b"\d{6,6}")
       secret = b"MFRGGZDFMZTWQ2LK"
       signature = compute_totp(secret)
       self.assertEqual(type(signature), bytes)
@@ -56,7 +56,7 @@ class TestWampCra(unittest.TestCase):
 
 
    def test_compute_totp_offset(self):
-      pat = re.compile(r"\d{6,6}")
+      pat = re.compile(b"\d{6,6}")
       secret = b"MFRGGZDFMZTWQ2LK"
       for offset in range(-10, 10):
          signature = compute_totp(secret, offset)
