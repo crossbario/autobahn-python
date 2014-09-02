@@ -1982,20 +1982,7 @@ class WebSocketProtocol:
                   self.autoPingTimeoutCall = None
 
                   if self.autoPingInterval:
-                     def send():
-                        if self.debugCodePaths:
-                           self.factory._log("Auto ping/pong: sending ping auto-ping/pong")
-
-                        self.autoPingPendingCall = None
-                        self.autoPingPending = newid(self.autoPingSize)
-                        self.sendPing(self.autoPingPending.encode('utf8'))
-
-                        if self.autoPingTimeout:
-                           if self.debugCodePaths:
-                              self.factory._log("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
-                           self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
-
-                     self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, send)
+                     self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, self._sendAutoPing)
                else:
                   if self.debugCodePaths:
                      self.factory._log("Auto ping/pong: received non-pending pong")
@@ -2111,7 +2098,6 @@ class WebSocketProtocol:
       ##
       self.sendData(raw, sync, chopsize)
 
-
    def sendPing(self, payload = None):
       """
       Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
@@ -2128,6 +2114,21 @@ class WebSocketProtocol:
       else:
          self.sendFrame(opcode = 9)
 
+   def _sendAutoPing(self):
+      ## Sends an automatic ping and sets up a timeout.
+      if self.debugCodePaths:
+         self.factory._log("Auto ping/pong: sending ping auto-ping/pong")
+
+      self.autoPingPendingCall = None
+
+      self.autoPingPending = newid(self.autoPingSize)
+
+      self.sendPing(self.autoPingPending.encode('utf8'))
+
+      if self.autoPingTimeout:
+         if self.debugCodePaths:
+            self.factory._log("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
+         self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
 
    def sendPong(self, payload = None):
       """
@@ -3289,11 +3290,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       ## automatic ping/pong
       ##
       if self.autoPingInterval:
-         self.autoPingPending = newid(self.autoPingSize)
-         self.sendPing(self.autoPingPending.encode('utf8'))
-         if self.autoPingTimeout:
-            self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
-
+         self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, self._sendAutoPing)
 
       ## fire handler on derived class
       ##
