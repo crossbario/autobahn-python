@@ -75,7 +75,7 @@ class TestWampCra(unittest.TestCase):
    def test_generate_wcs_default(self):
       secret = generate_wcs()
       self.assertEqual(type(secret), bytes)
-      self.assertEqual(len(secret), 12)
+      self.assertEqual(len(secret), 14)
 
 
    def test_generate_wcs_length(self):
