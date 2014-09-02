@@ -62,9 +62,9 @@ def compute_totp(secret, offset = 0):
    :type offset: int
 
    :returns: TOTP for current time (+/- offset).
-   :rtype: bytes
+   :rtype: unicode
    """
-   assert(type(secret) == six.binary_type)
+   assert(type(secret) == bytes)
    assert(type(offset) in six.integer_types)
    try:
       key = base64.b32decode(secret)
@@ -75,7 +75,7 @@ def compute_totp(secret, offset = 0):
    digest = hmac.new(key, msg, hashlib.sha1).digest()
    o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
    token = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
-   return six.b('{:06d}'.format(token))
+   return u'{:06d}'.format(token)
 
 
 
@@ -101,10 +101,7 @@ else:
 _pack_int = Struct('>I').pack
 
 
-def pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
-   """
-   Compute 
-   """
+def _pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
    hashfunc = hashfunc or hashlib.sha256
    mac = hmac.new(data, None, hashfunc)
    def _pseudorandom(x, mac=mac):
@@ -122,16 +119,16 @@ def pbkdf2_bin(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
 
 
 
-def derive_key(secret, salt, iterations = None, keylen = None):
+def derive_key(secret, salt, iterations = 1000, keylen = 32):
    """
    Computes a derived cryptographic key from a password according to PBKDF2.
    
    .. seealso:: http://en.wikipedia.org/wiki/PBKDF2
 
    :param secret: The secret.
-   :type secret: str
+   :type secret: bytes
    :param salt: The salt to be used.
-   :type salt: str
+   :type salt: bytes
    :param iterations: Number of iterations of derivation algorithm to run.
    :type iterations: int
    :param keylen: Length of the key to derive in bits.
@@ -140,7 +137,11 @@ def derive_key(secret, salt, iterations = None, keylen = None):
    :return: The derived key in Base64 encoding.
    :rtype: bytes
    """
-   key = pbkdf2_bin(secret, salt, iterations or 1000, keylen or 32)
+   assert(type(secret) == bytes)
+   assert(type(salt) == bytes)
+   assert(type(iterations) in six.integer_types)
+   assert(type(keylen) in six.integer_types)
+   key = _pbkdf2_bin(secret, salt, iterations, keylen)
    return binascii.b2a_base64(key).strip()
 
 
@@ -155,6 +156,7 @@ def generate_wcs(length = 12):
    :return: The generated secret.
    :rtype: unicode
    """
+   assert(type(length) in six.integer_types)
    return u"".join([random.choice(u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in range(length)])
 
 
