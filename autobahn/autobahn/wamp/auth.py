@@ -80,24 +80,58 @@ def compute_totp(secret, offset = 0):
 
 
 
-## pbkdf2_bin() function taken from https://github.com/mitsuhiko/python-pbkdf2
-## Copyright 2011 by Armin Ronacher. Licensed under BSD license.
-## @see: https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
 ##
-
+## The following code is adapted from the pbkdf2_bin() function
+## in here https://github.com/mitsuhiko/python-pbkdf2
+## Copyright 2011 by Armin Ronacher. Licensed under BSD license.
+## https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
+##
 import hmac
 import hashlib
 import random
 from struct import Struct
 from operator import xor
-
-if six.PY3:
-   izip = zip
-   xrange = range
-else:
-   from itertools import izip, starmap
+from itertools import starmap
 
 _pack_int = Struct('>I').pack
+
+if six.PY3:
+
+   def _pseudorandom(x, mac):
+      h = mac.copy()
+      h.update(x)
+      return h.digest()
+
+   def _pbkdf2(data, salt, iterations, keylen, hashfunc):
+      mac = hmac.new(data, None, hashfunc)
+      buf = []
+      for block in range(1, -(-keylen // mac.digest_size) + 1):
+         rv = u = _pseudorandom(salt + _pack_int(block), mac)
+         for i in range(iterations - 1):
+            u = _pseudorandom(u, mac)
+            rv = starmap(xor, zip(rv, u))
+         buf.extend(rv)
+      return bytes(buf)[:keylen]
+
+else:
+   from itertools import izip
+
+   def _pseudorandom(x, mac):
+      h = mac.copy()
+      h.update(x)
+      return map(ord, h.digest())
+
+   def _pbkdf2(data, salt, iterations, keylen, hashfunc):
+      mac = hmac.new(data, None, hashfunc)
+      buf = []
+      for block in xrange(1, -(-keylen // mac.digest_size) + 1):
+         rv = u = _pseudorandom(salt + _pack_int(block), mac)
+         for i in xrange(iterations - 1):
+            u = _pseudorandom(''.join(map(chr, u)), mac)
+            rv = starmap(xor, izip(rv, u))
+         buf.extend(rv)
+      return ''.join(map(chr, buf))[:keylen]
+
 
 
 def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
@@ -121,20 +155,11 @@ def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
    :returns: The derived cryptographic key.
    :rtype: bytes
    """
-   hashfunc = hashfunc or hashlib.sha256
-   mac = hmac.new(data, None, hashfunc)
-   def _pseudorandom(x, mac=mac):
-      h = mac.copy()
-      h.update(x)
-      return map(ord, h.digest())
-   buf = []
-   for block in xrange(1, -(-keylen // mac.digest_size) + 1):
-      rv = u = _pseudorandom(salt + _pack_int(block))
-      for i in xrange(iterations - 1):
-         u = _pseudorandom(''.join(map(chr, u)))
-         rv = starmap(xor, izip(rv, u))
-      buf.extend(rv)
-   return ''.join(map(chr, buf))[:keylen]
+   assert(type(data) == bytes)
+   assert(type(salt) == bytes)
+   assert(type(iterations) in six.integer_types)
+   assert(type(keylen) in six.integer_types)
+   return _pbkdf2(data, salt, iterations, keylen, hashfunc or hashlib.sha256)
 
 
 
