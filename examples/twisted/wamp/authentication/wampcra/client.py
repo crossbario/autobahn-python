@@ -29,8 +29,8 @@ from autobahn.wamp import auth
 
 
 PASSWORDS = {
-   u'peter': 'secret1',
-   u'joe': "secret2"
+   u'peter': u'secret1',
+   u'joe': u'secret2'
 }
 
 USER = u'peter'
@@ -47,12 +47,14 @@ class MyFrontendComponent(wamp.ApplicationSession):
       print challenge
       if challenge.method == u"wampcra":
          if u'salt' in challenge.extra:
-            key = auth.derive_key(PASSWORDS[USER], challenge.extra['salt'],
-               challenge.extra.get('iterations', None), challenge.extra.get('keylen', None))
+            key = auth.derive_key(PASSWORDS[USER].encode('utf8'),
+               challenge.extra['salt'].encode('utf8'),
+               challenge.extra.get('iterations', None),
+               challenge.extra.get('keylen', None))
          else:
-            key = PASSWORDS[USER]
-         signature = auth.compute_wcs(key, challenge.extra['challenge'])
-         return signature
+            key = PASSWORDS[USER].encode('utf8')
+         signature = auth.compute_wcs(key, challenge.extra['challenge'].encode('utf8'))
+         return signature.decode('ascii')
       else:
          raise Exception("don't know how to compute challenge for authmethod {}".format(challenge.method))
 

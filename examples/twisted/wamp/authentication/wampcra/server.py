@@ -41,7 +41,7 @@ class UserDb:
 
    def add(self, authid, authrole, secret, salt = None):
       if salt:
-         key = auth.derive_key(secret, salt)
+         key = auth.derive_key(secret.encode('utf8'), salt.encode('utf8')).decode('ascii')
       else:
          key = secret
       self._creds[authid] = (salt, key, authrole)
@@ -77,8 +77,8 @@ class PendingAuth:
          'nonce': self.nonce,
          'timestamp': self.timestamp
       }
-      self.challenge = json.dumps(challenge_obj)
-      self.signature = auth.compute_wcs(key, self.challenge)
+      self.challenge = json.dumps(challenge_obj, ensure_ascii = False)
+      self.signature = auth.compute_wcs(key.encode('utf8'), self.challenge.encode('utf8')).decode('ascii')
 
 
 
@@ -108,7 +108,7 @@ class MyRouterSession(RouterSession):
 
                   ## setup pending auth
                   self._pending_auth = PendingAuth(key, details.pending_session,
-                     details.authid, role, authmethod, "userdb")
+                     details.authid, role, authmethod, u"userdb")
 
                   ## send challenge to client
                   extra = {
@@ -165,9 +165,9 @@ class TimeService(ApplicationSession):
 
       def utcnow():
          now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+         return now.strftime(u"%Y-%m-%dT%H:%M:%SZ")
 
-      self.register(utcnow, 'com.timeservice.now')
+      self.register(utcnow, u'com.timeservice.now')
 
 
 
@@ -218,8 +218,8 @@ if __name__ == '__main__':
    ## create a user DB
    ##
    userdb = UserDb()
-   userdb.add(authid = "peter", authrole = "user", secret = "secret1", salt = "salt123")
-   userdb.add(authid = "joe", authrole = "user", secret = "secret2")
+   userdb.add(authid = u"peter", authrole = u"user", secret = u"secret1", salt = u"salt123")
+   userdb.add(authid = u"joe", authrole = u"user", secret = u"secret2")
 
 
    ## create a WAMP router session factory
@@ -232,7 +232,7 @@ if __name__ == '__main__':
 
    ## start an embedded application component ..
    ##
-   component_config = types.ComponentConfig(realm = "realm1")
+   component_config = types.ComponentConfig(realm = u"realm1")
    component_session = TimeService(component_config)
    session_factory.add(component_session)
 
