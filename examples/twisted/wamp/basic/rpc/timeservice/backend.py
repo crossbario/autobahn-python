@@ -18,6 +18,7 @@
 
 import datetime
 
+from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.wamp import ApplicationSession
@@ -44,9 +45,13 @@ class Component(ApplicationSession):
       else:
          print("procedure registered")
 
+   def onDisconnect(self):
+      print("disconnected")
+      reactor.stop()
+
 
 
 if __name__ == '__main__':
    from autobahn.twisted.wamp import ApplicationRunner
-   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1", standalone = True, debug = False)
+   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
    runner.run(Component)
