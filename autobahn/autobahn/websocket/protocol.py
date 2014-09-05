@@ -1317,6 +1317,11 @@ class WebSocketProtocol:
       Modes: Hybi, Hixie
       """
 
+      # reset any autoPing counters if enabled
+      if self.autoPingPendingCall:
+         self.autoPingPendingCall.cancel()
+         self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, self._sendAutoPing)
+
       ## WebSocket is open (handshake was completed) or close was sent
       ##
       if self.state == WebSocketProtocol.STATE_OPEN or self.state == WebSocketProtocol.STATE_CLOSING:
