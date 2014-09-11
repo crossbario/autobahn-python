@@ -7,7 +7,7 @@
 ##  you may not use this file except in compliance with the License.
 ##  You may obtain a copy of the License at
 ##
-##        http://www.apache.org/licenses/LICENSE-2.0
+##      http://www.apache.org/licenses/LICENSE-2.0
 ##
 ##  Unless required by applicable law or agreed to in writing, software
 ##  distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,9 +32,9 @@ import postgres
 user = ''
 password = ''
 
-class DB(ApplicationSession):
+class Component(ApplicationSession):
     """
-    An application component providing db access
+    An application component demonstrating database action
     """
 
     def onConnect(self):
@@ -57,48 +57,12 @@ class DB(ApplicationSession):
 
     @inlineCallbacks
     def onJoin(self, details):
-        print("db:onJoin session attached")
-
-        # load the database module and register connect,disconnect,query
-        @inlineCallbacks
-        def dbstart(dbtype,dbtopicroot):
-            print("DB:dbstart: dbtype: {} dbtopicroot: {}").format(dbtype,dbtopicroot)
-            if not hasattr(self,'db'):
-                self.db = {}
-            if dbtopicroot in self.db:
-                raise Exception("dbtopicroot already running")
-            if dbtype == 'PG9_4':
-                dbo = postgres.PG9_4(self)
-            else:
-                raise Exception("Unsupported dbtype {} ".format(dbtype))
-            self.db[dbtopicroot] = { 'instance': dbo }
-            self.db[dbtopicroot]['registration'] = {}
-
-            self.db[dbtopicroot]['registration']['connect'] = yield self.register(dbo.connect, dbtopicroot+'.connect')
-            self.db[dbtopicroot]['registration']['disconnect'] = yield self.register(dbo.disconnect, dbtopicroot+'.disconnect')
-            self.db[dbtopicroot]['registration']['query'] = yield self.register(dbo.query, dbtopicroot+'.query')
-
-            return
-
-        @inlineCallbacks
-        def dbstop(dbtopicroot):
-            print("DB:dbstop: {}").format(dbtopicroot)
-
-            yield self.db[dbtopicroot]['registration']['connect'].unregister()
-            yield self.db[dbtopicroot]['registration']['disconnect'].unregister()
-            yield self.db[dbtopicroot]['registration']['query'].unregister()
-
-            del self.db[dbtopicroot]
-            return
-
-        def query(q):
-            print("DB:query: {}").format(q)
-            return
-
-        yield self.register(dbstart, u'adm.db.start')
-        yield self.register(dbstop, u'adm.db.stop')
-
-        print("db bootstrap procedures registered")
+        print("Component:onJoin details: {}").format(details)
+        yield self.call('adm.db.start', 'PG9_4', 'adm.db')
+        yield self.call('adm.db.connect', 'pgsql://abu:123test@localhost/autobahn')
+        yield self.call('adm.db.stop', 'adm.db')
+        print("Component:onJoin done here")
+        self.leave()
 
     def onLeave(self, details):
         print("onLeave: {}").format(details)
@@ -118,7 +82,7 @@ if __name__ == '__main__':
     def_secret = 'dbsecret'
     def_realm = 'realm1'
 
-    p = argparse.ArgumentParser(description="db admin manager for autobahn")
+    p = argparse.ArgumentParser(description="db client example for autobahn")
 
     p.add_argument('-w', '--websocket', action='store', dest='wsocket', default=def_wsocket,
                         help='web socket '+def_wsocket)
@@ -135,4 +99,4 @@ if __name__ == '__main__':
     password = args.password
 
     runner = ApplicationRunner(args.wsocket, args.realm)
-    runner.run(DB)
+    runner.run(Component)
