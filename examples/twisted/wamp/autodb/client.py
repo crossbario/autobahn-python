@@ -17,7 +17,7 @@
 ##
 ###############################################################################
 
-import sys,os,argparse,six
+import sys,os,argparse,six,json
 
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
@@ -58,9 +58,45 @@ class Component(ApplicationSession):
     @inlineCallbacks
     def onJoin(self, details):
         print("Component:onJoin details: {}").format(details)
-        yield self.call('adm.db.start', 'PG9_4', 'adm.db')
-        yield self.call('adm.db.connect', 'pgsql://abu:123test@localhost/autobahn')
-        yield self.call('adm.db.stop', 'adm.db')
+        # yield self.call('adm.db.start', 'PG9_4', 'com.db')
+        # this client assumes that a database was already installed at com.db, otherwise, we would need to install it ourselves.
+
+        try:
+            yield self.call('com.db.connect', 'dbname=autobahn host=localhost user=autouser')
+        except Exception as err:
+            print("Query connect(ERROR) : {}").format(err)
+            # we need to raise the error to exit here, connection didn't work, so
+            # no need to try the queries
+            raise err
+
+        print("Component:onJoin connect done")
+
+        try:
+            rv = yield self.call('com.db.operation', """
+                insert into
+                    login
+                        (password, fullname, login)
+                    values
+                        (%(password)s,%(fullname)s,%(login)s)""",
+                    {
+                        'password':'testpass',
+                        'fullname':'Test User',
+                        'login':'testuser'
+                    })
+        except Exception as err:
+            print("Operation result(ERROR) : {}").format(err)
+        else:
+            print("Operation result(SUCCESS)")
+
+        try:
+            rv = yield self.call('com.db.query', 'select * from login', None)
+        except Exception as err:
+            print("Query result(ERROR) : {}").format(err)
+        else:
+            print("Query result(SUCCESS) : {}").format(json.dumps(rv,indent=4))
+
+        yield self.call('com.db.disconnect')
+
         print("Component:onJoin done here")
         self.leave()
 

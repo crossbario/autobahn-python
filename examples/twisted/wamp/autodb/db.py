@@ -29,8 +29,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 import postgres
 
-user = ''
-password = ''
+args = {}
 
 class DB(ApplicationSession):
     """
@@ -38,18 +37,18 @@ class DB(ApplicationSession):
     """
 
     def onConnect(self):
-        self.join(self.config.realm, [u'wampcra'], six.u(user))
+        self.join(self.config.realm, [u'wampcra'], six.u(args.user))
 
     def onChallenge(self, challenge):
         print challenge
         if challenge.method == u'wampcra':
             if u'salt' in challenge.extra:
-                key = auth.derive_key(password.encode('utf8'),
+                key = auth.derive_key(args.password.encode('utf8'),
                     challenge.extra['salt'].encode('utf8'),
                     challenge.extra.get('iterations', None),
                     challenge.extra.get('keylen', None))
             else:
-                key = password.encode('utf8')
+                key = args.password.encode('utf8')
             signature = auth.compute_wcs(key, challenge.extra['challenge'].encode('utf8'))
             return signature.decode('ascii')
         else:
@@ -77,6 +76,7 @@ class DB(ApplicationSession):
             self.db[dbtopicroot]['registration']['connect'] = yield self.register(dbo.connect, dbtopicroot+'.connect')
             self.db[dbtopicroot]['registration']['disconnect'] = yield self.register(dbo.disconnect, dbtopicroot+'.disconnect')
             self.db[dbtopicroot]['registration']['query'] = yield self.register(dbo.query, dbtopicroot+'.query')
+            self.db[dbtopicroot]['registration']['operation'] = yield self.register(dbo.operation, dbtopicroot+'.operation')
 
             return
 
@@ -87,6 +87,7 @@ class DB(ApplicationSession):
             yield self.db[dbtopicroot]['registration']['connect'].unregister()
             yield self.db[dbtopicroot]['registration']['disconnect'].unregister()
             yield self.db[dbtopicroot]['registration']['query'].unregister()
+            yield self.db[dbtopicroot]['registration']['operation'].unregister()
 
             del self.db[dbtopicroot]
             return
@@ -97,6 +98,9 @@ class DB(ApplicationSession):
 
         yield self.register(dbstart, u'adm.db.start')
         yield self.register(dbstop, u'adm.db.stop')
+        if args.engine is not None:
+            print("db:onJoin engine {} and topic base {} activation").format(args.engine, args.topic_base)
+            yield self.call('adm.db.start', args.engine, args.topic_base)
 
         print("db bootstrap procedures registered")
 
@@ -104,7 +108,6 @@ class DB(ApplicationSession):
         print("onLeave: {}").format(details)
         self.disconnect()
 
-    @inlineCallbacks
     def onDisconnect(self):
         print("onDisconnect:")
         reactor.stop()
@@ -117,6 +120,7 @@ if __name__ == '__main__':
     def_user = 'db'
     def_secret = 'dbsecret'
     def_realm = 'realm1'
+    def_topic_base = 'com.db'
 
     p = argparse.ArgumentParser(description="db admin manager for autobahn")
 
@@ -127,12 +131,13 @@ if __name__ == '__main__':
     p.add_argument('-u', '--user', action='store', dest='user', default=def_user,
                         help='connect to websocket as "user" '+def_user)
     p.add_argument('-s', '--secret', action='store', dest='password', default=def_secret,
-                        help='users "secret" password'+def_secret)
+                        help='users "secret" password')
+    p.add_argument('-e', '--engine', action='store', dest='engine', default=None,
+                        help='if specified, a database engine will be attached. Note engine is rooted on --topic')
+    p.add_argument('-t', '--topic', action='store', dest='topic_base', default=def_topic_base,
+                        help='if you specify --dsn then you will need a topic to root it on, the default ' + def_topic_base + ' is fine.')
 
     args = p.parse_args()
-
-    user = args.user
-    password = args.password
 
     runner = ApplicationRunner(args.wsocket, args.realm)
     runner.run(DB)

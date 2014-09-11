@@ -16,9 +16,19 @@
 ##
 ###############################################################################
 
+import sys,os
 import psycopg2
 import psycopg2.extras
 from txpostgres import txpostgres
+
+from twisted.internet.defer import inlineCallbacks, returnValue
+
+def rdc(*args, **kwargs):
+    kwargs['connection_factory'] = psycopg2.extras.RealDictConnection
+    return psycopg2.connect(*args, **kwargs)
+
+class RDC(txpostgres.Connection):
+        connectionFactory = staticmethod(rdc)
 
 class PG9_4():
     """
@@ -27,18 +37,82 @@ class PG9_4():
 
     def __init__(self,pself):
         print("PG9_4:__init__()")
-        pself.connect=self.connect
-        pself.disconnect=self.disconnect
-        pself.query=self.query
+        self.conn = None
+        self.dsn = None
+        self.d = None
+        return
  
+    @inlineCallbacks
     def connect(self,dsn):
         print("PG9_4:connect({})").format(dsn)
+        self.dsn = dsn
+        self.conn = RDC()
+        try:
+            rv = yield self.conn.connect(self.dsn)
+        except Exception as err:
+            print("PG9_4:connect({}),error({})").format(dsn,err)
+            raise err
         return
 
     def disconnect(self):
         print("PG9_4:disconnect()")
+        if self.conn:
+            c = self.conn
+            self.conn = None
+            c.close()
+
         return
 
-    def query(self,s):
-        print("PG9_4:query({})").format(s)
+    #
+    # query:
+    #  s - query to run (with dictionary substitution embedded, like %(key)s
+    #  a - dictionary pointing to arguments.
+    # example:
+    #  s = 'select * from login where id = %(id)s'
+    #  a = { 'id': 100 }
+    # returns:
+    #  dictionary result of query
+    # note:
+    #  there MUST be a result, otherwise use the operation call!
+    #
+
+    @inlineCallbacks
+    def query(self,s,a):
+        print("PG9_4:query()")
+        if self.conn:
+            try:
+                print("PG9_4:query().running({} with args {})").format(s,a)
+                rv = yield self.conn.runQuery(s,a)
+                print("PG9_4:query().results({})").format(rv)
+                returnValue(rv)
+            except Exception as err:
+                print("PG9_4:query({}),error({})").format(s,err)
+                raise err
+
+        # error here, probably should raise exception
         return
+
+    #
+    # operation:
+    #  identical to query, except, there is no result returned.
+    # note:
+    #  it is important that your query does NOT return anything!  If it does,
+    #  use the query call!
+    #
+
+    @inlineCallbacks
+    def operation(self,s,a):
+        print("PG9_4:operation()")
+        if self.conn:
+            try:
+                print("PG9_4:query().running({} with args {})").format(s,a)
+                rv = yield self.conn.runOperation(s,a)
+                print("PG9_4:query().results({})").format(rv)
+                returnValue(rv)
+            except Exception as err:
+                print("PG9_4:query({}),error({})").format(s,err)
+                raise err
+
+        # error here, probably should raise exception
+        return
+
