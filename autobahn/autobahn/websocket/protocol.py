@@ -3706,6 +3706,19 @@ class WebSocketClientProtocol(WebSocketProtocol):
       pass
 
 
+   def succeedHandshake(self, res):
+      """
+      Callback after onConnect() returns successfully.
+      """
+      # # cancel any opening HS timer if present
+      ##
+      if self.openHandshakeTimeoutCall is not None:
+         if self.debugCodePaths:
+            self.factory._log("openHandshakeTimeoutCall.cancel")
+         self.openHandshakeTimeoutCall.cancel()
+         self.openHandshakeTimeoutCall = None
+
+
    def _connectionMade(self):
       """
       Called by network framework when new transport connection to server was established. Default
