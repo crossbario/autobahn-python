@@ -25,6 +25,8 @@ from twisted.internet.defer import inlineCallbacks, returnValue
 
 def rdc(*args, **kwargs):
     kwargs['connection_factory'] = psycopg2.extras.RealDictConnection
+    # this is to let everything pass through as strings
+    psycopg2.extensions.string_types.clear()
     return psycopg2.connect(*args, **kwargs)
 
 class RDC(txpostgres.Connection):
@@ -49,6 +51,7 @@ class PG9_4():
         self.conn = RDC()
         try:
             rv = yield self.conn.connect(self.dsn)
+            print("PG9_4:connect() established")
         except Exception as err:
             print("PG9_4:connect({}),error({})").format(dsn,err)
             raise err
