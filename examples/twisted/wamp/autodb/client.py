@@ -29,8 +29,7 @@ from autobahn.twisted.wamp import ApplicationSession
 
 import postgres
 
-user = ''
-password = ''
+args = {}
 
 class Component(ApplicationSession):
     """
@@ -38,18 +37,18 @@ class Component(ApplicationSession):
     """
 
     def onConnect(self):
-        self.join(self.config.realm, [u'wampcra'], six.u(user))
+        self.join(self.config.realm, [u'wampcra'], six.u(args.user))
 
     def onChallenge(self, challenge):
         print challenge
         if challenge.method == u'wampcra':
             if u'salt' in challenge.extra:
-                key = auth.derive_key(password.encode('utf8'),
+                key = auth.derive_key(args.password.encode('utf8'),
                     challenge.extra['salt'].encode('utf8'),
                     challenge.extra.get('iterations', None),
                     challenge.extra.get('keylen', None))
             else:
-                key = password.encode('utf8')
+                key = args.password.encode('utf8')
             signature = auth.compute_wcs(key, challenge.extra['challenge'].encode('utf8'))
             return signature.decode('ascii')
         else:
@@ -61,13 +60,13 @@ class Component(ApplicationSession):
         # yield self.call('adm.db.start', 'PG9_4', 'com.db')
         # this client assumes that a database was already installed at com.db, otherwise, we would need to install it ourselves.
 
-        try:
-            yield self.call('com.db.connect', 'dbname=autobahn host=localhost user=autouser')
-        except Exception as err:
-            print("Query connect(ERROR) : {}").format(err)
-            # we need to raise the error to exit here, connection didn't work, so
-            # no need to try the queries
-            raise err
+        #try:
+        #    yield self.call('com.db.connect', 'dbname=autobahn host=localhost user=autouser')
+        #except Exception as err:
+        #    print("Query connect(ERROR) : {}").format(err)
+        #    # we need to raise the error to exit here, connection didn't work, so
+        #    # no need to try the queries
+        #    raise err
 
         print("Component:onJoin connect done")
 
@@ -95,7 +94,7 @@ class Component(ApplicationSession):
         else:
             print("Query result(SUCCESS) : {}").format(json.dumps(rv,indent=4))
 
-        yield self.call('com.db.disconnect')
+        #yield self.call('com.db.disconnect')
 
         print("Component:onJoin done here")
         self.leave()
@@ -131,8 +130,7 @@ if __name__ == '__main__':
 
     args = p.parse_args()
 
-    user = args.user
-    password = args.password
+    args = p.parse_args()
 
     runner = ApplicationRunner(args.wsocket, args.realm)
     runner.run(Component)
