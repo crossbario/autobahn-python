@@ -31,6 +31,10 @@ from twisted.internet import defer
 from autobahn.twisted.wamp import ApplicationSession
 
 import postgres
+import mylog
+import logging
+
+lg = None
 
 #
 # this is the database controller which is connected to the router
@@ -41,6 +45,7 @@ class ROUTERDB(ApplicationSession):
     """
     def __init__(self, c, rd):
         print("ROUTERDB:__init__")
+        logger.debug("Here I am")
         ApplicationSession.__init__(self,c)
         self.routerdb = rd
         # we give the routerdb a hook so it can publish add/delete, rpc
@@ -51,10 +56,6 @@ class ROUTERDB(ApplicationSession):
         print("ROUTERDB:onConnect")
         self.join(self.config.realm, [u"wampcra"], u'routerdb')
 
-#    def onChallenge(self, challenge):
-#        print("ROUTERDB:onChallenge")
-#        print challenge
-#
     @inlineCallbacks
     def onJoin(self, details):
         print("db:onJoin session attached")
@@ -364,6 +365,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     log.startLogging(sys.stdout)
+
+    ## setup mylogging
+    ##
+    lg = mylog.mylog()
+    lg.set_level(logging.DEBUG)
+    logger = lg.get_logger()
+    logger.error('error this is a test')
+    logger.debug('debug this is a test')
+    logger.warning('warning this is a test')
+    logger.info('info this is a test')
+    logger.debug('HEY HEY MY MY this is a test')
 
     ## we use an Autobahn utility to install the "best" available Twisted reactor
     ##
