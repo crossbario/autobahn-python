@@ -646,7 +646,9 @@ class WebSocketProtocol:
                           'webStatus',
                           'requireMaskedClientFrames',
                           'maskServerFrames',
-                          'perMessageCompressionAccept']
+                          'perMessageCompressionAccept',
+                          'serveFlashSocketPolicy',
+                          'flashSocketPolicy']
    """
    Configuration attributes specific to servers.
    """
@@ -1172,6 +1174,10 @@ class WebSocketProtocol:
       # time, this gets True
       self.wasCloseHandshakeTimeout = False
 
+      # True, iff I dropped the TCP connection because we fully served the 
+      # Flash Socket Policy File after a policy file request.
+      self.wasServingFlashSocketPolicyFile = False
+
       # The close code I sent in close frame (if any)
       self.localCloseCode = None
 
@@ -1229,12 +1235,16 @@ class WebSocketProtocol:
          self.autoPingTimeoutCall = None
 
       self.state = WebSocketProtocol.STATE_CLOSED
-      if not self.wasClean:
-         if not self.droppedByMe and self.wasNotCleanReason is None:
-            self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
-         self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
+      if self.wasServingFlashSocketPolicyFile:
+        if self.debug:
+          self.factory._log("connection dropped after serving Flash Socket Policy File")
       else:
-         self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+        if not self.wasClean:
+           if not self.droppedByMe and self.wasNotCleanReason is None:
+              self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
+           self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
+        else:
+           self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def logRxOctets(self, data):
@@ -2800,6 +2810,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       ## only proceed when we have fully received the HTTP request line and all headers
       ##
       end_of_header = self.data.find(b"\x0d\x0a\x0d\x0a")
+      flash_policy_file_request = self.data.find(b"<policy-file-request/>\x00")
       if end_of_header >= 0:
 
          self.http_request_data = self.data[:end_of_header + 4]
@@ -3099,6 +3110,23 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                      self.websocket_protocols,
                                      self.websocket_extensions)
          self._onConnect(request)
+
+      elif flash_policy_file_request >= 0:
+        if self.debug:
+          self.factory._log("received Flash Socket Policy File request")
+
+        if self.serveFlashSocketPolicy:
+          if self.debug:
+            self.factory._log("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
+
+          self.sendData(self.flashSocketPolicy.encode('utf8'))
+
+          self.wasServingFlashSocketPolicyFile = True
+
+          self.dropConnection()
+        else:
+          if self.debug:
+            self.factory._log("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
 
 
    def succeedHandshake(self, res):
@@ -3535,6 +3563,10 @@ class WebSocketServerFactory(WebSocketFactory):
       self.openHandshakeTimeout = 5
       self.closeHandshakeTimeout = 1
       self.tcpNoDelay = True
+      self.serveFlashSocketPolicy = False
+      self.flashSocketPolicy = '''<cross-domain-policy>
+     <allow-access-from domain="*" to-ports="*" />
+</cross-domain-policy>\x00'''
 
       ## permessage-XXX extension
       ##
@@ -3566,7 +3598,9 @@ class WebSocketServerFactory(WebSocketFactory):
                           perMessageCompressionAccept = None,
                           autoPingInterval = None,
                           autoPingTimeout = None,
-                          autoPingSize = None):
+                          autoPingSize = None,
+                          serveFlashSocketPolicy = None,
+                          flashSocketPolicy = None):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
@@ -3610,6 +3644,12 @@ class WebSocketServerFactory(WebSocketFactory):
       :type autoPingTimeout: float or None
       :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
       :type autoPingSize: int
+      :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
+      :type flashSocketPolicy: bool
+      :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol and when Flash tried to connect to the destination port. (default: `<cross-domain-policy>
+     <allow-access-from domain="*" to-ports="*" />
+</cross-domain-policy>\\x00`).
+      :type flashSocketPolicy: str
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -3675,6 +3715,12 @@ class WebSocketServerFactory(WebSocketFactory):
          assert(type(autoPingSize) == float or type(autoPingSize) in six.integer_types)
          assert(4 <= autoPingSize <= 125)
          self.autoPingSize = autoPingSize
+
+      if serveFlashSocketPolicy is not None and serveFlashSocketPolicy != self.serveFlashSocketPolicy:
+        self.serveFlashSocketPolicy = serveFlashSocketPolicy
+
+      if flashSocketPolicy is not None and flashSocketPolicy != self.flashSocketPolicy:
+        self.flashSocketPolicy = flashSocketPolicy
 
 
    def getConnectionCount(self):
