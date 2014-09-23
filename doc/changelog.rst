@@ -5,6 +5,12 @@
 Changelog
 =========
 
+0.9.1
+------
+`Published 2014-09-22 <https://pypi.python.org/pypi/autobahn/0.9.1>`__
+
+* maintenance release with some smaller bug fixes
+
 0.9.0
 ------
 `Published 2014-09-02 <https://pypi.python.org/pypi/autobahn/0.9.0>`__

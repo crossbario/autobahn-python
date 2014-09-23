@@ -260,25 +260,32 @@ class WampLongPollResourceSession(Resource):
       self.putChild("receive", self._receive)
       self.putChild("close", self._close)
 
-      killAfter = self._parent._killAfter
       self._isalive = False
 
-      def killIfDead():
-         if not self._isalive:
-            if self._debug:
-               log.msg("WampLongPoll: killing inactive WAMP session with transport '{0}'".format(self._transportid))
+      ## kill inactive sessions after this timeout
+      ##
+      killAfter = self._parent._killAfter
+      if killAfter > 0:
+         def killIfDead():
+            if not self._isalive:
+               if self._debug:
+                  log.msg("WampLongPoll: killing inactive WAMP session with transport '{0}'".format(self._transportid))
 
-            self.onClose(False, 5000, "session inactive")
-            self._receive._kill()
-            del self._parent._transports[self._transportid]
-         else:
-            if self._debug:
-               log.msg("WampLongPoll: transport '{0}'' is still alive".format(self._transportid))
+               self.onClose(False, 5000, "session inactive")
+               self._receive._kill()
+               if self._transportid in self._parent._transports:
+                  del self._parent._transports[self._transportid]
+            else:
+               if self._debug:
+                  log.msg("WampLongPoll: transport '{0}' is still alive".format(self._transportid))
 
-            self._isalive = False
-            self.reactor.callLater(killAfter, killIfDead)
+               self._isalive = False
+               self.reactor.callLater(killAfter, killIfDead)
 
-      self.reactor.callLater(killAfter, killIfDead)
+         self.reactor.callLater(killAfter, killIfDead)
+      else:
+         if self._debug:
+            log.msg("WampLongPoll: transport '{0}' automatic killing of inactive session disabled".format(self._transportid))
 
       if self._debug:
          log.msg("WampLongPoll: session resource for transport '{0}' initialized)".format(self._transportid))
