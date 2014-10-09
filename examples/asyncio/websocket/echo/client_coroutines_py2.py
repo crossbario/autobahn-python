@@ -19,8 +19,7 @@
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory
 
-import asyncio
-
+import trollius
 
 
 class MyClientProtocol(WebSocketClientProtocol):
@@ -28,7 +27,7 @@ class MyClientProtocol(WebSocketClientProtocol):
    def onConnect(self, response):
       print("Server connected: {0}".format(response.peer))
 
-   @asyncio.coroutine
+   @trollius.coroutine
    def onOpen(self):
       print("WebSocket connection open.")
 
@@ -36,7 +35,7 @@ class MyClientProtocol(WebSocketClientProtocol):
       while True:
          self.sendMessage(u"Hello, world!".encode('utf8'))
          self.sendMessage(b"\x00\x01\x03\x04", isBinary = True)
-         yield asyncio.sleep(1)
+         yield trollius.sleep(1)
 
    def onMessage(self, payload, isBinary):
       if isBinary:
@@ -51,16 +50,10 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-   try:
-      import asyncio
-   except ImportError:
-      ## Trollius >= 0.3 was renamed
-      import trollius as asyncio
-
    factory = WebSocketClientFactory("ws://localhost:9000", debug = False)
    factory.protocol = MyClientProtocol
 
-   loop = asyncio.get_event_loop()
+   loop = trollius.get_event_loop()
    coro = loop.create_connection(factory, '127.0.0.1', 9000)
    loop.run_until_complete(coro)
    loop.run_forever()
