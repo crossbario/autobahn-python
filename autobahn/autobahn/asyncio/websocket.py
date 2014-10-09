@@ -34,13 +34,13 @@ from collections import deque
 
 try:
    import asyncio
-   from asyncio.tasks import iscoroutine
+   from asyncio import iscoroutine
    from asyncio import Future
 except ImportError:
    ## Trollius >= 0.3 was renamed
    # noinspection PyUnresolvedReferences
    import trollius as asyncio
-   from trollius.tasks import iscoroutine
+   from trollius import iscoroutine
    from trollius import Future
 
 from autobahn.wamp import websocket
