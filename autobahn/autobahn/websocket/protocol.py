@@ -3653,10 +3653,9 @@ class WebSocketServerFactory(WebSocketFactory):
       :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
       :type autoPingSize: int
       :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
-      :type flashSocketPolicy: bool
-      :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol and when Flash tried to connect to the destination port. It must ends with a null character (\\x00). (default: `<cross-domain-policy>
-     <allow-access-from domain="*" to-ports="*" />
-</cross-domain-policy>\\x00`).
+      :type serveFlashSocketPolicy: bool
+      :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
+         and when Flash tried to connect to the destination port. It must end with a null character.
       :type flashSocketPolicy: str
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
