@@ -18,6 +18,9 @@ You will need at least one of those.
 
 For Twisted installation, please see `here <http://twistedmatrix.com/>`__. Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`__. For Python 2, `trollius`_ will work.
 
+Supported Configurations
+........................
+
 Here are the configurations supported by |ab|:
 
 +---------------+-----------+---------+---------------------------------+
@@ -39,7 +42,8 @@ Here are the configurations supported by |ab|:
 .. _1: http://twistedmatrix.com/trac/ticket/3413
 .. _2: http://twistedmatrix.com/trac/ticket/6746
 
-*Performance Note*
+Performance Note
+................
 
 |ab| is portable, well tuned code. You can further accelerate performance by
 
@@ -53,7 +57,7 @@ Installing Autobahn
 -------------------
 
 Install from PyPI
-~~~~~~~~~~~~~~~~~
+.................
 
 To install |ab| from the `Python Package Index <http://pypi.python.org/pypi/autobahn>`_ using `Pip <http://www.pip-installer.org/en/latest/installing.html>`_
 
@@ -75,7 +79,7 @@ And to install asyncio backports automatically when required
 
 
 Install from Sources
-~~~~~~~~~~~~~~~~~~~~
+....................
 
 To install from sources, clone the repository
 
@@ -88,7 +92,7 @@ checkout a tagged release
 .. code-block:: sh
 
    cd AutobahnPython
-   git checkout v0.8.12
+   git checkout v0.9.1
 
 .. warning::
    You should only use *tagged* releases, not *trunk*. The latest code from *trunk* might be broken, unfinished and untested. So you have been warned;)
@@ -108,7 +112,7 @@ You can also use Pip for the last step, which allows to specify install variants
 
 
 Install Variants
-~~~~~~~~~~~~~~~~
+................
 
 |Ab| has the following install variants:
 
@@ -133,6 +137,17 @@ Install variants can be combined, e.g. to install |ab| with all optional package
    pip install autobahn[twisted,accelerate,compress,serialization]
 
 
+Windows Installation
+....................
+
+For convenience, here are minimal instructions to install both Python and Autobahn/Twisted on Windows:
+
+1. Go to the `Python web site <https://www.python.org/downloads/>`_ and install Python 2.7 32-Bit
+2. Add ``C:\Python27;C:\Python27\Scripts;`` to your ``PATH``
+3. Download the `Pip install script <https://bootstrap.pypa.io/get-pip.py>`_ and double click it (or run ``python get-pip.py`` from a command shell)
+4. Open a command shell and run ``pip install autobahn[twisted]``
+
+
 Check the Installation
 ----------------------
 
@@ -142,7 +157,7 @@ To check the installation, fire up the Python and run
 
    >>> from autobahn import __version__
    >>> print(__version__)
-   0.8.12
+   0.9.1
 
 
 Depending on Autobahn
@@ -152,13 +167,13 @@ To require |Ab| as a dependency of your package, include the following in your `
 
 .. code-block:: python
 
-   install_requires = ["autobahn>=0.8.12"]
+   install_requires = ["autobahn>=0.9.1"]
 
 You can also depend on an *install variant* which automatically installs dependent packages
 
 .. code-block:: python
 
-   install_requires = ["autobahn[twisted]>=0.8.12"]
+   install_requires = ["autobahn[twisted]>=0.9.1"]
 
 The latter will automatically install Twisted as a dependency.
 
