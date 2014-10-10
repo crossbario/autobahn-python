@@ -55,6 +55,9 @@ class IWebSocketChannel(object):
             also may be ``None``) and set the given HTTP ``headers`` (e.g. cookies). ``headers``
             must be a ``dict`` with ``str`` keys and values for the HTTP header values to set.
 
+            If a given header value is a non-string iterable (e.g. list or tuple), a separate 
+            header line will be sent for each item in the iterable.
+
          If the client announced one or multiple subprotocols, the server MUST select
          one of the given list.
       """

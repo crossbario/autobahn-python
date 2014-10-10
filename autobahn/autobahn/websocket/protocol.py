@@ -3214,12 +3214,19 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
       ## optional, user supplied additional HTTP headers
       ##
-      ## headers from factory
-      for uh in self.factory.headers.items():
-         response += "%s: %s\x0d\x0a" % (uh[0], uh[1])
-      ## headers from onConnect
-      for uh in headers.items():
-         response += "%s: %s\x0d\x0a" % (uh[0], uh[1])
+      ## headers from factory, headers from onConnect
+      for headers_source in (self.factory.headers.items(), headers.items()):
+         for uh in headers_source:
+            if isinstance(uh[1], six.string_types):
+               header_values = [uh[1]]
+            else:
+               try:
+                  header_values = iter(uh[1])
+               except TypeError:
+                  header_values = [uh[1]]
+
+            for header_value in header_values:
+               response += "%s: %s\x0d\x0a" % (uh[0], header_value)
 
       if self.websocket_protocol_in_use is not None:
          response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
