@@ -19,8 +19,10 @@
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
                                        WebSocketClientFactory
 
-import asyncio
-
+try:
+  import asyncio
+except ImportError:
+  import trollius as asyncio
 
 
 class MyClientProtocol(WebSocketClientProtocol):
@@ -50,12 +52,6 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == '__main__':
-
-   try:
-      import asyncio
-   except ImportError:
-      ## Trollius >= 0.3 was renamed
-      import trollius as asyncio
 
    factory = WebSocketClientFactory("ws://localhost:9000", debug = False)
    factory.protocol = MyClientProtocol
