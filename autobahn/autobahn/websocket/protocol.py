@@ -3111,23 +3111,23 @@ class WebSocketServerProtocol(WebSocketProtocol):
          self._onConnect(request)
 
       elif self.serveFlashSocketPolicy or self.debug:
-        flash_policy_file_request = self.data.find(b"<policy-file-request/>\x00")
-        if flash_policy_file_request >= 0:
-          if self.debug:
-            self.factory._log("received Flash Socket Policy File request")
-
-          if self.serveFlashSocketPolicy:
+         flash_policy_file_request = self.data.find(b"<policy-file-request/>\x00")
+         if flash_policy_file_request >= 0:
             if self.debug:
-              self.factory._log("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
+               self.factory._log("received Flash Socket Policy File request")
 
-            self.sendData(self.flashSocketPolicy.encode('utf8'))
+            if self.serveFlashSocketPolicy:
+               if self.debug:
+                  self.factory._log("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
 
-            self.wasServingFlashSocketPolicyFile = True
+               self.sendData(self.flashSocketPolicy.encode('utf8'))
 
-            self.dropConnection()
-          else:
-            if self.debug:
-              self.factory._log("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
+               self.wasServingFlashSocketPolicyFile = True
+
+               self.dropConnection()
+            else:
+               if self.debug:
+                  self.factory._log("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
 
 
    def succeedHandshake(self, res):
