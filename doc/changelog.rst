@@ -5,6 +5,18 @@
 Changelog
 =========
 
+0.9.2
+------
+`Published 2014-10-17 <https://pypi.python.org/pypi/autobahn/0.9.2>`__
+
+* fix: permessage-deflate "client_max_window_bits" parameter handling
+* fix: cancel opening handshake timeouts also for WebSocket clients
+* feature: add more control parameters to Flash policy file factory
+* feature: update AutobahnJS in examples
+* feature: allow to set WebSocket HTTP headers via dict
+* fix: ayncio imports for Python 3.4.2
+* feature: added reconnecting WebSocket client example
+
 0.9.1
 ------
 `Published 2014-09-22 <https://pypi.python.org/pypi/autobahn/0.9.1>`__
