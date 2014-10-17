@@ -97,9 +97,27 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
          val = params[p][0]
 
          if p == 'client_max_window_bits':
+            ##
+            ## see: https://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-18
+            ## 8.1.2.2. client_max_window_bits
+            ##
+            ## ".. This parameter has no value or a decimal integer value without
+            ## leading zeroes between 8 to 15 inclusive ..""
+            ##
+
             # noinspection PySimplifyBooleanCheck
             if val != True:
-               raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
+               try:
+                  val = int(val)
+               except:
+                  raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
+               else:
+                  if val not in PerMessageDeflateMixin.WINDOW_SIZE_PERMISSIBLE_VALUES:
+                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
+                  else:
+                     # FIXME (maybe): possibly forward/process the client hint!
+                     #acceptMaxWindowBits = val
+                     acceptMaxWindowBits = True
             else:
                acceptMaxWindowBits = True
 
