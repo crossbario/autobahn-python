@@ -4185,6 +4185,17 @@ class WebSocketClientProtocol(WebSocketProtocol):
          ## opening handshake completed, move WebSocket connection into OPEN state
          ##
          self.state = WebSocketProtocol.STATE_OPEN
+
+         ## cancel any opening HS timer if present
+         ##
+         if self.openHandshakeTimeoutCall is not None:
+            if self.debugCodePaths:
+               self.factory._log("openHandshakeTimeoutCall.cancel")
+            self.openHandshakeTimeoutCall.cancel()
+            self.openHandshakeTimeoutCall = None
+
+         ## init state
+         ##
          self.inside_message = False
          if self.version != 0:
             self.current_frame = None
