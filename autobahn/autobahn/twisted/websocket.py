@@ -197,6 +197,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
    def _onConnect(self, response):
       self.onConnect(response)
+      self.succeedHandshake()
 
 
 
