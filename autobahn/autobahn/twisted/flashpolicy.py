@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright 2013-2014 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -45,15 +45,16 @@ class FlashPolicyProtocol(Protocol):
    REQUESTPAT = re.compile("^\s*<policy-file-request\s*/>")
    REQUESTMAXLEN = 200
    REQUESTTIMEOUT = 5
-   POLICYFILE = """<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" to-ports="%d" /></cross-domain-policy>"""
+   POLICYFILE = """<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="%s" to-ports="%s" /></cross-domain-policy>"""
 
-   def __init__(self, allowedPort):
+   def __init__(self, allowedDomain, allowedPorts):
       """
 
       :param allowedPort: The port to which Flash player should be allowed to connect.
       :type allowedPort: int
       """
-      self.allowedPort = allowedPort
+      self._allowedDomain = allowedDomain
+      self._allowedPorts = allowedPorts
       self.received = ""
       self.dropConnection = None
 
@@ -78,7 +79,7 @@ class FlashPolicyProtocol(Protocol):
       if FlashPolicyProtocol.REQUESTPAT.match(self.received):
          ## got valid request: send policy file
          ##
-         self.transport.write(FlashPolicyProtocol.POLICYFILE % self.allowedPort)
+         self.transport.write(FlashPolicyProtocol.POLICYFILE % (self._allowedDomain, self._allowedPorts))
          self.transport.loseConnection()
       elif len(self.received) > FlashPolicyProtocol.REQUESTMAXLEN:
          ## possible DoS attack
@@ -90,13 +91,18 @@ class FlashPolicyProtocol(Protocol):
          pass
 
 
+
 class FlashPolicyFactory(Factory):
 
-   def __init__(self, allowedPort, reactor = None):
+   def __init__(self, allowedDomain = None, allowedPorts = None, reactor = None):
       """
 
-      :param allowedPort: The port to which Flash player should be allowed to connect.
-      :type allowedPort: int
+      :param allowedDomain: The domain from which to allow Flash to connect from.
+         If ``None``, allow from anywhere.
+      :type allowedDomain: str or None
+      :param allowedPorts: The ports to which Flash player should be allowed to connect.
+         If ``None``, allow any ports.
+      :type allowedPorts: list of int or None
       :param reactor: Twisted reactor to use. If not given, autoimport.
       :type reactor: obj
       """
@@ -105,10 +111,15 @@ class FlashPolicyFactory(Factory):
          from twisted.internet import reactor
       self.reactor = reactor
 
-      self.allowedPort = allowedPort
+      self._allowedDomain = str(allowedDomain) or "*"
+
+      if allowedPorts:
+         self._allowedPorts = ",".join([str(port) for port in allowedPorts])
+      else:
+         self._allowedPorts = "*"
 
 
    def buildProtocol(self, addr):
-      proto = FlashPolicyProtocol(self.allowedPort)
+      proto = FlashPolicyProtocol(self._allowedDomain, self._allowedPorts)
       proto.factory = self
       return proto

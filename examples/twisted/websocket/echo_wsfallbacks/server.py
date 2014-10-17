@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+##  Copyright (C) 2013-2014 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ if __name__ == '__main__':
    ## which Adobe Flash player will contact to check if
    ## it is allowed to connect to the WebSocket port.
    ##
-   flashPolicyFactory = FlashPolicyFactory(wsPort)
+   flashPolicyFactory = FlashPolicyFactory()
    reactor.listenTCP(843, flashPolicyFactory)
 
    ## Static Web server
