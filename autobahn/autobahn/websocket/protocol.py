@@ -1242,15 +1242,15 @@ class WebSocketProtocol:
 
       self.state = WebSocketProtocol.STATE_CLOSED
       if self.wasServingFlashSocketPolicyFile:
-        if self.debug:
-          self.factory._log("connection dropped after serving Flash Socket Policy File")
+         if self.debug:
+            self.factory._log("connection dropped after serving Flash Socket Policy File")
       else:
-        if not self.wasClean:
-           if not self.droppedByMe and self.wasNotCleanReason is None:
-              self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
-           self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
-        else:
-           self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
+         if not self.wasClean:
+            if not self.droppedByMe and self.wasNotCleanReason is None:
+               self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
+            self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
+         else:
+            self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
 
    def logRxOctets(self, data):
