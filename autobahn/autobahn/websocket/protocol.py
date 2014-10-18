@@ -831,6 +831,8 @@ class WebSocketProtocol:
                return True
          self.remoteCloseReason = reasonRaw.decode('utf8')
 
+      ## handle receive of close frame depending on protocol state
+      ##
       if self.state == WebSocketProtocol.STATE_CLOSING:
          ## We already initiated the closing handshake, so this
          ## is the peer's reply to our close frame.
@@ -878,8 +880,12 @@ class WebSocketProtocol:
             ## will set wasClean = False back again.
             pass
 
+      elif self.state == WebSocketProtocol.STATE_CLOSED:
+         ## The peer initiated a closing handshake but dropped the TCP immediately.
+         self.wasClean = False
+
       else:
-         ## STATE_PROXY_CONNECTING, STATE_CONNECTING, STATE_CLOSED
+         ## STATE_PROXY_CONNECTING, STATE_CONNECTING
          raise Exception("logic error")
 
 
