@@ -8,7 +8,10 @@ all:
 	@echo ""
 
 install:
-	python setup.py install
+	#python setup.py install
+#	pip install -e .[twisted]
+#	pip install -e .[asyncio,twisted,accelerate,compress,serialization]
+	pip install -e .[asyncio,twisted,accelerate,serialization]
 
 clean:
 	rm -rf ./autobahn.egg-info

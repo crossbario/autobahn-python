@@ -106,7 +106,7 @@ setup(
       'asyncio': asyncio_packages,
 
       ## you need Twisted for Autobahn/Twisted - obviously
-      'twisted': ["Twisted>=11.1"],
+      'twisted': ["zope.interface>=3.6", "Twisted>=11.1"],
 
       ## native WebSocket and JSON acceleration: this should ONLY be used on CPython
       'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
