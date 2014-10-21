@@ -358,7 +358,7 @@ def getargs(fun):
          # cannot be reflected upon.
          argspec = inspect.ArgSpec(args = ['self'], varargs = 'args', keywords = None, defaults = None)
       else:
-         raise Exception("could not inspect function {}".format(fun))
+         raise Exception("could not inspect function {0}".format(fun))
 
    args = argspec.args[:-len(argspec.defaults)]
    kwargs = argspec.args[-len(argspec.defaults):]

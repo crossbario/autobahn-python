@@ -112,7 +112,7 @@ class Broker:
          (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(publish.topic)):
 
          if publish.acknowledge:
-            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_URI, ["publish with invalid topic URI '{}'".format(publish.topic)])
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_URI, ["publish with invalid topic URI '{0}'".format(publish.topic)])
             session._transport.send(reply)
 
          return
@@ -124,7 +124,7 @@ class Broker:
          try:
             self._router.validate('event', publish.topic, publish.args, publish.kwargs)
          except Exception as e:
-            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_ARGUMENT, ["publish to topic URI '{}' with invalid application payload: {}".format(publish.topic, e)])
+            reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.INVALID_ARGUMENT, ["publish to topic URI '{0}' with invalid application payload: {1}".format(publish.topic, e)])
             session._transport.send(reply)
             return
 
@@ -137,7 +137,7 @@ class Broker:
             if not authorized:
 
                if publish.acknowledge:
-                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic '{}'".format(publish.topic)])
+                  reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.NOT_AUTHORIZED, ["session not authorized to publish to topic '{0}'".format(publish.topic)])
                   session._transport.send(reply)
 
             else:
@@ -209,7 +209,7 @@ class Broker:
 
          def on_authorize_error(err):
             if publish.acknowledge:
-               reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for publishing to topic URI '{}': {}".format(publish.topic, err.value)])
+               reply = message.Error(message.Publish.MESSAGE_TYPE, publish.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for publishing to topic URI '{0}': {1}".format(publish.topic, err.value)])
                session._transport.send(reply)
 
          self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
@@ -226,7 +226,7 @@ class Broker:
       if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(subscribe.topic)) or \
          (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(subscribe.topic)):
 
-         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_URI, ["subscribe for invalid topic URI '{}'".format(subscribe.topic)])
+         reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.INVALID_URI, ["subscribe for invalid topic URI '{0}'".format(subscribe.topic)])
          session._transport.send(reply)
 
       else:
@@ -238,7 +238,7 @@ class Broker:
          def on_authorize_success(authorized):
             if not authorized:
 
-               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic '{}'".format(subscribe.topic)])
+               reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to subscribe to topic '{0}'".format(subscribe.topic)])
 
             else:
 
@@ -266,7 +266,7 @@ class Broker:
             session._transport.send(reply)
 
          def on_authorize_error(err):
-            reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for subscribing to topic URI '{}': {}".format(subscribe.topic, err.value)])
+            reply = message.Error(message.Subscribe.MESSAGE_TYPE, subscribe.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for subscribing to topic URI '{0}': {1}".format(subscribe.topic, err.value)])
             session._transport.send(reply)
 
          self._add_future_callbacks(d, on_authorize_success, on_authorize_error)

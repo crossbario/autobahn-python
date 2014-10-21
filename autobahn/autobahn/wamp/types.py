@@ -61,7 +61,7 @@ class ComponentConfig:
       self.extra = extra
 
    def __str__(self):
-      return "ComponentConfig(realm = {}, extra = {})".format(self.realm, self.extra)
+      return "ComponentConfig(realm = {0}, extra = {1})".format(self.realm, self.extra)
 
 
 
@@ -83,7 +83,7 @@ class RouterOptions:
 
 
    def __str__(self):
-      return "RouterOptions(uri_check = {})".format(self.uri_check)
+      return "RouterOptions(uri_check = {0})".format(self.uri_check)
 
 
 
@@ -133,7 +133,7 @@ class Accept(HelloReturn):
 
 
    def __str__(self):
-      return "Accept(authid = {}, authrole = {}, authmethod = {}, authprovider = {})".format(self.authid, self.authrole, self.authmethod, self.authprovider)
+      return "Accept(authid = {0}, authrole = {1}, authmethod = {2}, authprovider = {3})".format(self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 
@@ -164,7 +164,7 @@ class Deny(HelloReturn):
 
 
    def __str__(self):
-      return "Deny(reason = {}, message = '{}'')".format(self.reason, self.message)
+      return "Deny(reason = {0}, message = '{1}')".format(self.reason, self.message)
 
 
 
@@ -191,7 +191,7 @@ class Challenge(HelloReturn):
 
 
    def __str__(self):
-      return "Challenge(method = {}, extra = {})".format(self.method, self.extra)
+      return "Challenge(method = {0}, extra = {1})".format(self.method, self.extra)
 
 
 
@@ -219,7 +219,7 @@ class HelloDetails:
 
 
    def __str__(self):
-      return "HelloDetails(roles = {}, authmethods = {}, authid = {}, pending_session = {})".format(self.roles, self.authmethods, self.authid, self.pending_session)
+      return "HelloDetails(roles = {0}, authmethods = {1}, authid = {2}, pending_session = {3})".format(self.roles, self.authmethods, self.authid, self.pending_session)
 
 
 
@@ -248,7 +248,7 @@ class SessionDetails:
 
 
    def __str__(self):
-      return "SessionDetails(realm = {}, session = {}, authid = {}, authrole = {}, authmethod = {})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
+      return "SessionDetails(realm = {0}, session = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
 
 
 
@@ -272,7 +272,7 @@ class CloseDetails:
 
 
    def __str__(self):
-      return "CloseDetails(reason = {}, message = '{}'')".format(self.reason, self.message)
+      return "CloseDetails(reason = {0}, message = '{1}'')".format(self.reason, self.message)
 
 
 
@@ -301,7 +301,7 @@ class SubscribeOptions:
 
 
    def __str__(self):
-      return "SubscribeOptions(match = {}, details_arg = {})".format(self.match, self.details_arg)
+      return "SubscribeOptions(match = {0}, details_arg = {1})".format(self.match, self.details_arg)
 
 
 
@@ -324,7 +324,7 @@ class EventDetails:
 
 
    def __str__(self):
-      return "EventDetails(publication = {}, publisher = {})".format(self.publication, self.publisher)
+      return "EventDetails(publication = {0}, publisher = {1})".format(self.publication, self.publisher)
 
 
 
@@ -379,7 +379,7 @@ class PublishOptions:
 
 
    def __str__(self):
-      return "PublishOptions(acknowledge = {}, excludeMe = {}, exclude = {}, eligible = {}, discloseMe = {})".format(self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+      return "PublishOptions(acknowledge = {0}, excludeMe = {1}, exclude = {2}, eligible = {3}, discloseMe = {4})".format(self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
 
 
 
@@ -408,7 +408,7 @@ class RegisterOptions:
 
 
    def __str__(self):
-      return "RegisterOptions(details_arg = {}, pkeys = {}, discloseCaller = {})".format(self.details_arg, self.pkeys, self.discloseCaller)
+      return "RegisterOptions(details_arg = {0}, pkeys = {1}, discloseCaller = {2})".format(self.details_arg, self.pkeys, self.discloseCaller)
 
 
 
@@ -439,7 +439,7 @@ class CallDetails:
 
 
    def __str__(self):
-      return "CallDetails(progress = {}, caller = {}, authid = {}, authrole = {}, authmethod = {})".format(self.progress, self.caller, self.authid, self.authrole, self.authmethod)
+      return "CallDetails(progress = {0}, caller = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.progress, self.caller, self.authid, self.authrole, self.authmethod)
 
 
 
@@ -491,7 +491,7 @@ class CallOptions:
 
 
    def __str__(self):
-      return "CallOptions(onProgress = {}, timeout = {}, discloseMe = {}, runOn = {})".format(self.onProgress, self.timeout, self.discloseMe, self.runOn)
+      return "CallOptions(onProgress = {0}, timeout = {1}, discloseMe = {2}, runOn = {3})".format(self.onProgress, self.timeout, self.discloseMe, self.runOn)
 
 
 
@@ -515,4 +515,4 @@ class CallResult:
 
 
    def __str__(self):
-      return "CallResult(results = {}, kwresults = {})".format(self.results, self.kwresults)
+      return "CallResult(results = {0}, kwresults = {1})".format(self.results, self.kwresults)

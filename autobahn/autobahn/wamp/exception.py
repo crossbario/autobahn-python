@@ -206,7 +206,7 @@ class ApplicationError(Error):
          self.kwargs['traceback'] = '...'
       else:
          tb = ''
-      return "ApplicationError('{}', args = {}, kwargs = {}){}".format(self.error, self.args, self.kwargs, tb)
+      return "ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(self.error, self.args, self.kwargs, tb)
 
 
 

@@ -229,7 +229,7 @@ class ApplicationRunner:
          transport_factory = WampWebSocketServerFactory(session_factory, debug = self.debug, debug_wamp = self.debug_wamp)
          transport_factory.setProtocolOptions(failByDrop = False)
 
-         server = serverFromString(reactor, "tcp:{}".format(port))
+         server = serverFromString(reactor, "tcp:{0}".format(port))
          server.listen(transport_factory)
 
       ## factory for use ApplicationSession
@@ -253,9 +253,9 @@ class ApplicationRunner:
       from twisted.internet.endpoints import clientFromString
 
       if isSecure:
-         endpoint_descriptor = "ssl:{}:{}".format(host, port)
+         endpoint_descriptor = "ssl:{0}:{1}".format(host, port)
       else:
-         endpoint_descriptor = "tcp:{}:{}".format(host, port)
+         endpoint_descriptor = "tcp:{0}:{1}".format(host, port)
 
       client = clientFromString(reactor, endpoint_descriptor)
       client.connect(transport_factory)
@@ -388,7 +388,7 @@ class Application:
       :type debug_app: bool
       """
       if standalone:
-         print("Running on {} ..".format(url))
+         print("Running on {0} ..".format(url))
       runner = ApplicationRunner(url, realm, standalone = standalone,
          debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
       runner.run(self.__call__, start_reactor)
@@ -449,7 +449,7 @@ class Application:
             _uri = uri
          else:
             assert(self._prefix is not None)
-            _uri = "{}.{}".format(self._prefix, func.__name__)
+            _uri = "{0}.{1}".format(self._prefix, func.__name__)
 
          if inspect.isgeneratorfunction(func):
             func = inlineCallbacks(func)
@@ -486,7 +486,7 @@ class Application:
             _uri = uri
          else:
             assert(self._prefix is not None)
-            _uri = "{}.{}".format(self._prefix, func.__name__)
+            _uri = "{0}.{1}".format(self._prefix, func.__name__)
 
          if inspect.isgeneratorfunction(func):
             func = inlineCallbacks(func)

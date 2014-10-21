@@ -45,7 +45,7 @@ class RoleFeatures(util.EqualityMixin):
       for k in self.__dict__:
          if not k.startswith('_') and k != 'ROLE':
             if getattr(self, k) is not None and type(getattr(self, k)) != bool:
-               raise ProtocolError("invalid type {} for feature '{}' for role '{}'".format(getattr(self, k), k, self.ROLE))
+               raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
 
 
 

@@ -161,6 +161,6 @@ else:
       from twisted.plugin import IPlugin, getPlugins
       list(getPlugins(IPlugin))
    except Exception as e:
-      print("Failed to update Twisted plugin cache: {}".format(e))
+      print("Failed to update Twisted plugin cache: {0}".format(e))
    else:
       print("Twisted dropin.cache regenerated.")

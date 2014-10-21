@@ -328,8 +328,8 @@ class WrappingWebSocketAdapter:
             try:
                payload = b64decode(payload)
             except Exception as e:
-               self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {}".format(e))
-         #print("forwarding payload: {}".format(binascii.hexlify(payload)))
+               self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {0}".format(e))
+         #print("forwarding payload: {0}".format(binascii.hexlify(payload)))
          self._proto.dataReceived(payload)
 
 
@@ -339,7 +339,7 @@ class WrappingWebSocketAdapter:
 
 
    def write(self, data):
-      #print("sending payload: {}".format(binascii.hexlify(data)))
+      #print("sending payload: {0}".format(binascii.hexlify(data)))
       ## part of ITransport
       assert(type(data) == bytes)
       if self._binaryMode:

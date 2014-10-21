@@ -51,40 +51,40 @@ class WampRawSocketProtocol(Int32StringReceiver):
       except Exception as e:
          ## Exceptions raised in onOpen are fatal ..
          if self.factory.debug:
-            log.msg("ApplicationSession constructor / onOpen raised ({})".format(e))
+            log.msg("ApplicationSession constructor / onOpen raised ({0})".format(e))
          self.abort()
 
 
    def connectionLost(self, reason):
       if self.factory.debug:
-         log.msg("WAMP-over-RawSocket connection lost: reason = '{}'".format(reason))
+         log.msg("WAMP-over-RawSocket connection lost: reason = '{0}'".format(reason))
       try:
          wasClean = isinstance(reason.value, ConnectionDone)
          self._session.onClose(wasClean)
       except Exception as e:
          ## silently ignore exceptions raised here ..
          if self.factory.debug:
-            log.msg("ApplicationSession.onClose raised ({})".format(e))
+            log.msg("ApplicationSession.onClose raised ({0})".format(e))
       self._session = None
 
 
    def stringReceived(self, payload):
       if self.factory.debug:
-         log.msg("RX octets: {}".format(binascii.hexlify(payload)))
+         log.msg("RX octets: {0}".format(binascii.hexlify(payload)))
       try:
          for msg in self.factory._serializer.unserialize(payload):
             if self.factory.debug:
-               log.msg("RX WAMP message: {}".format(msg))
+               log.msg("RX WAMP message: {0}".format(msg))
             self._session.onMessage(msg)
 
       except ProtocolError as e:
          if self.factory.debug:
-            log.msg("WAMP Protocol Error ({}) - aborting connection".format(e))
+            log.msg("WAMP Protocol Error ({0}) - aborting connection".format(e))
          self.abort()
 
       except Exception as e:
          if self.factory.debug:
-            log.msg("WAMP Internal Error ({}) - aborting connection".format(e))
+            log.msg("WAMP Internal Error ({0}) - aborting connection".format(e))
          self.abort()
 
 
@@ -94,16 +94,16 @@ class WampRawSocketProtocol(Int32StringReceiver):
       """
       if self.isOpen():
          if self.factory.debug:
-            log.msg("TX WAMP message: {}".format(msg))
+            log.msg("TX WAMP message: {0}".format(msg))
          try:
             payload, _ = self.factory._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
-            raise SerializationError("Unable to serialize WAMP application payload ({})".format(e))
+            raise SerializationError("Unable to serialize WAMP application payload ({0})".format(e))
          else:            
             self.sendString(payload)
             if self.factory.debug:
-               log.msg("TX octets: {}".format(binascii.hexlify(payload)))
+               log.msg("TX octets: {0}".format(binascii.hexlify(payload)))
       else:
          raise TransportLost()
 

@@ -72,7 +72,7 @@ class CaseComponent(wamp.ApplicationSession):
       else:
          sargs = "-"
 
-      msg = u'= : {:>3} : {:<20} : {}'.format(self._logline, self.__class__.__name__, sargs)
+      msg = u'= : {0:>3} : {1:<20} : {2}'.format(self._logline, self.__class__.__name__, sargs)
       self._logline += 1
       print(msg)
       self.config.dlog.append(msg)
@@ -100,7 +100,7 @@ class Case1_Backend(CaseComponent):
       self.log("joined")
 
       def add2(x, y):
-         self.log("add2 invoked: {}, {}".format(x, y))
+         self.log("add2 invoked: {0}, {1}".format(x, y))
          return x + y
 
       yield self.register(add2, 'com.mathservice.add2')
@@ -120,9 +120,9 @@ class Case1_Frontend(CaseComponent):
       try:
          res = yield self.call('com.mathservice.add2', 2, 3)
       except Exception as e:
-         self.log("call error: {}".format(e))
+         self.log("call error: {0}".format(e))
       else:
-         self.log("call result: {}".format(res))
+         self.log("call result: {0}".format(res))
 
       self.finish()
 
@@ -145,11 +145,11 @@ class Case2_Backend(CaseComponent):
 
       def stars(nick = "somebody", stars = 0):
          self.log("stars() is invoked", nick, stars)
-         return u"{} starred {}x".format(nick, stars)
+         return u"{0} starred {1}x".format(nick, stars)
 
       def orders(product, limit = 5):
          self.log("orders() is invoked", product, limit)
-         return [u"Product {}".format(i) for i in range(50)][:limit]
+         return [u"Product {0}".format(i) for i in range(50)][:limit]
 
       def arglen(*args, **kwargs):
          self.log("arglen() is invoked", args, kwargs)
@@ -183,37 +183,37 @@ class Case2_Frontend(CaseComponent):
       self.log("Pinged!")
 
       res = yield self.call(u'com.arguments.add2', 2, 3)
-      self.log("Add2: {}".format(res))
+      self.log("Add2: {0}".format(res))
 
       starred = yield self.call(u'com.arguments.stars')
-      self.log("Starred 1: {}".format(starred))
+      self.log("Starred 1: {0}".format(starred))
 
       starred = yield self.call(u'com.arguments.stars', nick = u'Homer')
-      self.log("Starred 2: {}".format(starred))
+      self.log("Starred 2: {0}".format(starred))
 
       starred = yield self.call(u'com.arguments.stars', stars = 5)
-      self.log("Starred 3: {}".format(starred))
+      self.log("Starred 3: {0}".format(starred))
 
       starred = yield self.call(u'com.arguments.stars', nick = u'Homer', stars = 5)
-      self.log("Starred 4: {}".format(starred))
+      self.log("Starred 4: {0}".format(starred))
 
       orders = yield self.call(u'com.arguments.orders', u'coffee')
-      self.log("Orders 1: {}".format(orders))
+      self.log("Orders 1: {0}".format(orders))
 
       orders = yield self.call(u'com.arguments.orders', u'coffee', limit = 10)
-      self.log("Orders 2: {}".format(orders))
+      self.log("Orders 2: {0}".format(orders))
 
       arglengths = yield self.call(u'com.arguments.arglen')
-      self.log("Arglen 1: {}".format(arglengths))
+      self.log("Arglen 1: {0}".format(arglengths))
 
       arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3)
-      self.log("Arglen 1: {}".format(arglengths))
+      self.log("Arglen 1: {0}".format(arglengths))
 
       arglengths = yield self.call(u'com.arguments.arglen', a = 1, b = 2, c = 3)
-      self.log("Arglen 2: {}".format(arglengths))
+      self.log("Arglen 2: {0}".format(arglengths))
 
       arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
-      self.log("Arglen 3: {}".format(arglengths))
+      self.log("Arglen 3: {0}".format(arglengths))
 
       self.log("finishing")
 
@@ -348,12 +348,12 @@ if False:
 
                         def sendMessage(self, payload, isBinary):
                            self.txcnt += 1
-                           print("> : {:>3} : {:<20} : {}".format(self.txcnt, Klass.__name__, payload))
+                           print("> : {0:>3} : {1:<20} : {3}".format(self.txcnt, Klass.__name__, payload))
                            WampWebSocketClientProtocol.sendMessage(self, payload, isBinary)
 
                         def onMessage(self, payload, isBinary):
                            self.rxcnt += 1
-                           print("< : {:>3} : {:<20} : {}".format(self.rxcnt, Klass.__name__, payload))
+                           print("< : {0:>3} : {1:<20} : {2}".format(self.rxcnt, Klass.__name__, payload))
                            WampWebSocketClientProtocol.onMessage(self, payload, isBinary)
                      return TestClientProtocol
 
@@ -403,7 +403,7 @@ if False:
             if config.connected_clients:
                for proto in config.connected_clients:
                   proto.transport.abortConnection()
-            print("Log length: {}".format(len(config.dlog)))
+            print("Log length: {0}".format(len(config.dlog)))
             print(config.dlog)
             #from twisted.internet import reactor
             #reactor.callLater(1, reactor.stop)

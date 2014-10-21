@@ -47,16 +47,16 @@ def _parseOptions(options):
       elif value == 'false':
          opts['enableCompression'] = False
       else:
-         raise Exception("invalid value '{}' for compression".format(value))
+         raise Exception("invalid value '{0}' for compression".format(value))
 
    if 'autofrag' in options:
       try:
          value = int(options['autofrag'])
       except:
-         raise Exception("invalid value '{}' for autofrag".format(options['autofrag']))
+         raise Exception("invalid value '{0}' for autofrag".format(options['autofrag']))
 
       if value < 0:
-         raise Exception("negative value '{}' for autofrag".format(value))
+         raise Exception("negative value '{0}' for autofrag".format(value))
 
       opts['autoFragmentSize'] = value
 
@@ -71,7 +71,7 @@ def _parseOptions(options):
       elif value == 'false':
          opts['debug'] = False
       else:
-         raise Exception("invalid value '{}' for debug".format(value))
+         raise Exception("invalid value '{0}' for debug".format(value))
 
    return opts
 

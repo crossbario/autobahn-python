@@ -77,7 +77,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.process`
       """
       if self.debug:
-         print("Router.process: {}".format(msg))
+         print("Router.process: {0}".format(msg))
 
       ## Broker
       ##
@@ -111,7 +111,7 @@ class Router:
          self._dealer.processInvocationError(session, msg)
 
       else:
-         raise ProtocolError("Unexpected message {}".format(msg.__class__))
+         raise ProtocolError("Unexpected message {0}".format(msg.__class__))
 
 
    def authorize(self, session, uri, action):
@@ -119,7 +119,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
       if self.debug:
-         print("Router.authorize: {} {} {}".format(session, uri, action))
+         print("Router.authorize: {0} {1} {2}".format(session, uri, action))
       return True
 
 
@@ -128,7 +128,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.validate`
       """
       if self.debug:
-         print("Router.validate: {} {} {} {}".format(payload_type, uri, args, kwargs))
+         print("Router.validate: {0} {1} {2} {3}".format(payload_type, uri, args, kwargs))
 
 
 
@@ -167,7 +167,7 @@ class RouterFactory:
       if not realm in self._routers:
          self._routers[realm] = self.router(self, realm, self._options)
          if self.debug:
-            print("Router created for realm '{}'".format(realm))
+            print("Router created for realm '{0}'".format(realm))
       return self._routers[realm]
 
 
@@ -175,7 +175,7 @@ class RouterFactory:
       assert(router.realm in self._routers)
       del self._routers[router.realm]
       if self.debug:
-         print("Router destroyed for realm '{}'".format(router.realm))
+         print("Router destroyed for realm '{0}'".format(router.realm))
 
 
 

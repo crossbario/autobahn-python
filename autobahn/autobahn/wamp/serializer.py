@@ -98,19 +98,19 @@ class Serializer:
       """
       if isBinary is not None:
          if isBinary != self._serializer.BINARY:
-            raise ProtocolError("invalid serialization of WAMP message (binary {}, but expected {})".format(isBinary, self._serializer.BINARY))
+            raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
 
       try:
          raw_msgs = self._serializer.unserialize(payload)
       except Exception as e:
-         raise ProtocolError("invalid serialization of WAMP message ({})".format(e))
+         raise ProtocolError("invalid serialization of WAMP message ({0})".format(e))
 
       msgs = []
 
       for raw_msg in raw_msgs:
 
          if type(raw_msg) != list:
-            raise ProtocolError("invalid type {} for WAMP message".format(type(raw_msg)))
+            raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
 
          if len(raw_msg) == 0:
             raise ProtocolError(u"missing message type in WAMP message")
@@ -118,12 +118,12 @@ class Serializer:
          message_type = raw_msg[0]
 
          if type(message_type) != int:
-            raise ProtocolError("invalid type {} for WAMP message type".format(type(message_type)))
+            raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
          Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
          if Klass is None:
-            raise ProtocolError("invalid WAMP message type {}".format(message_type))
+            raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
          ## this might again raise `ProtocolError` ..
          msg = Klass.parse(raw_msg)

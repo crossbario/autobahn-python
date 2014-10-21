@@ -106,7 +106,7 @@ class Dealer:
       if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(register.procedure)) or \
          (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(register.procedure)):
 
-         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI, ["register for invalid procedure URI '{}'".format(register.procedure)])
+         reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.INVALID_URI, ["register for invalid procedure URI '{0}'".format(register.procedure)])
          session._transport.send(reply)
 
       else:
@@ -127,18 +127,18 @@ class Dealer:
 
                   reply = message.Registered(register.request, registration_id)
                else:
-                  reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to register procedure '{}'".format(register.procedure)])
+                  reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to register procedure '{0}'".format(register.procedure)])
 
                session._transport.send(reply)
 
             def on_authorize_error(err):
-               reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure '{}': {}".format(register.procedure, err.value)])
+               reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure '{0}': {1}".format(register.procedure, err.value)])
                session._transport.send(reply)
 
             self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
-            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure '{}'".format(register.procedure)])
+            reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure '{0}'".format(register.procedure)])
             session._transport.send(reply)
 
 
@@ -187,7 +187,7 @@ class Dealer:
       if (not self._option_uri_strict and not  _URI_PAT_LOOSE_NON_EMPTY.match(call.procedure)) or \
          (    self._option_uri_strict and not _URI_PAT_STRICT_NON_EMPTY.match(call.procedure)):
 
-         reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.INVALID_URI, ["call with invalid procedure URI '{}'".format(call.procedure)])
+         reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.INVALID_URI, ["call with invalid procedure URI '{0}'".format(call.procedure)])
          session._transport.send(reply)
 
       else:
@@ -199,7 +199,7 @@ class Dealer:
             try:
                self._router.validate('call', call.procedure, call.args, call.kwargs)
             except Exception as e:
-               reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.INVALID_ARGUMENT, ["call of procedure '{}' with invalid application payload: {}".format(call.procedure, e)])
+               reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.INVALID_ARGUMENT, ["call of procedure '{0}' with invalid application payload: {1}".format(call.procedure, e)])
                session._transport.send(reply)
                return
 
@@ -238,17 +238,17 @@ class Dealer:
                   self._invocations[request_id] = (call, session)
                   endpoint_session._transport.send(invocation)
                else:
-                  reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to call procedure '{}'".format(call.procedure)])
+                  reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NOT_AUTHORIZED, ["session is not authorized to call procedure '{0}'".format(call.procedure)])
                   session._transport.send(reply)                 
 
             def on_authorize_error(err):
-               reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for calling procedure '{}': {}".format(call.procedure, err.value)])
+               reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for calling procedure '{0}': {1}".format(call.procedure, err.value)])
                session._transport.send(reply)
 
             self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
-            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{}' registered".format(call.procedure)])
+            reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{0}' registered".format(call.procedure)])
             session._transport.send(reply)
 
 
@@ -281,7 +281,7 @@ class Dealer:
             self._router.validate('call_result', call_msg.procedure, yield_.args, yield_.kwargs)
          except Exception as e:
             is_valid = False
-            reply = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, ApplicationError.INVALID_ARGUMENT, ["call result from procedure '{}' with invalid application payload: {}".format(call_msg.procedure, e)])
+            reply = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, ApplicationError.INVALID_ARGUMENT, ["call result from procedure '{0}' with invalid application payload: {1}".format(call_msg.procedure, e)])
          else:
             reply = message.Result(call_msg.request, args = yield_.args, kwargs = yield_.kwargs, progress = yield_.progress)
 
@@ -296,7 +296,7 @@ class Dealer:
             del self._invocations[yield_.request]
 
       else:
-         raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {}".format(yield_.request))
+         raise ProtocolError("Dealer.onYield(): YIELD received for non-pending request ID {0}".format(yield_.request))
 
 
    def processInvocationError(self, session, error):
@@ -316,7 +316,7 @@ class Dealer:
          try:
             self._router.validate('call_error', call_msg.procedure, error.args, error.kwargs)
          except Exception as e:
-            reply = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, ApplicationError.INVALID_ARGUMENT, ["call error from procedure '{}' with invalid application payload: {}".format(call_msg.procedure, e)])
+            reply = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, ApplicationError.INVALID_ARGUMENT, ["call error from procedure '{0}' with invalid application payload: {1}".format(call_msg.procedure, e)])
          else:
             reply = message.Error(message.Call.MESSAGE_TYPE, call_msg.request, error.error, args = error.args, kwargs = error.kwargs)
 
@@ -331,7 +331,7 @@ class Dealer:
          del self._invocations[error.request]
 
       else:
-         raise ProtocolError("Dealer.onInvocationError(): ERROR received for non-pending request_type {} and request ID {}".format(error.request_type, error.request))
+         raise ProtocolError("Dealer.onInvocationError(): ERROR received for non-pending request_type {0} and request ID {1}".format(error.request_type, error.request))
 
 
 

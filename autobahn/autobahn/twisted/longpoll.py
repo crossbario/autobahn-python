@@ -428,7 +428,7 @@ class WampLongPollResourceOpen(Resource):
             break
 
       if protocol is None:
-         return self.__failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{}".format(s) for s in self._parent._serializers.keys()]))
+         return self.__failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{0}".format(s) for s in self._parent._serializers.keys()]))
 
       ## make up new transport ID
       ##
@@ -572,7 +572,7 @@ class WampLongPollResource(Resource):
 
    def render_GET(self, request):
       request.setHeader('content-type', 'text/html; charset=UTF-8')
-      peer = "{}:{}".format(request.client.host, request.client.port)
+      peer = "{0}:{1}".format(request.client.host, request.client.port)
       return self.getNotice(peer = peer)
 
 
@@ -586,10 +586,10 @@ class WampLongPollResource(Resource):
          * :class:`zipfile.ZipFile`
       """
       if name not in self._transports:
-         return NoResource("no WAMP transport '{}'".format(name))
+         return NoResource("no WAMP transport '{0}'".format(name))
 
       if len(request.postpath) != 1 or request.postpath[0] not in ['send', 'receive', 'close']:
-         return NoResource("invalid WAMP transport operation '{}'".format(request.postpath))
+         return NoResource("invalid WAMP transport operation '{0}'".format(request.postpath))
 
       return self._transports[name]
 

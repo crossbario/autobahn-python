@@ -426,7 +426,7 @@ class ApplicationSession(BaseSession):
             self._add_future_callbacks(d, success, error)
 
          else:
-            raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
+            raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
 
       else:
 
@@ -480,10 +480,10 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     print("Failure while firing event handler {} subscribed under '{}' ({}): {}".format(handler.fn, handler.topic, msg.subscription, e))
+                     print("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e))
 
             else:
-               raise ProtocolError("EVENT received for non-subscribed subscription ID {}".format(msg.subscription))
+               raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
 
          elif isinstance(msg, message.Published):
 
@@ -492,7 +492,7 @@ class ApplicationSession(BaseSession):
                p = Publication(msg.publication)
                self._resolve_future(d, p)
             else:
-               raise ProtocolError("PUBLISHED received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("PUBLISHED received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Subscribed):
 
@@ -505,7 +505,7 @@ class ApplicationSession(BaseSession):
                s = Subscription(self, msg.subscription)
                self._resolve_future(d, s)
             else:
-               raise ProtocolError("SUBSCRIBED received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Unsubscribed):
 
@@ -516,7 +516,7 @@ class ApplicationSession(BaseSession):
                subscription.active = False
                self._resolve_future(d, None)
             else:
-               raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Result):
 
@@ -542,7 +542,7 @@ class ApplicationSession(BaseSession):
                      except Exception as e:
                         ## silently drop exceptions raised in progressive results handlers
                         if self.debug:
-                           print("Exception raised in progressive results handler: {}".format(e))
+                           print("Exception raised in progressive results handler: {0}".format(e))
                   else:
                      ## silently ignore progressive results
                      pass
@@ -567,19 +567,19 @@ class ApplicationSession(BaseSession):
                      else:
                         self._resolve_future(d, None)
             else:
-               raise ProtocolError("RESULT received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Invocation):
 
             if msg.request in self._invocations:
 
-               raise ProtocolError("INVOCATION received for request ID {} already invoked".format(msg.request))
+               raise ProtocolError("INVOCATION received for request ID {0} already invoked".format(msg.request))
 
             else:
 
                if msg.registration not in self._registrations:
 
-                  raise ProtocolError("INVOCATION received for non-registered registration ID {}".format(msg.registration))
+                  raise ProtocolError("INVOCATION received for non-registered registration ID {0}".format(msg.registration))
 
                else:
                   endpoint = self._registrations[msg.registration]
@@ -641,7 +641,7 @@ class ApplicationSession(BaseSession):
                         tb = None
 
                      if self.debug_app:
-                        print("Failure while invoking procedure {} registered under '{}' ({}):".format(endpoint.fn, endpoint.procedure, msg.registration))
+                        print("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration))
                         print(err)
 
                      del self._invocations[msg.request]
@@ -660,14 +660,14 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Interrupt):
 
             if msg.request not in self._invocations:
-               raise ProtocolError("INTERRUPT received for non-pending invocation {}".format(msg.request))
+               raise ProtocolError("INTERRUPT received for non-pending invocation {0}".format(msg.request))
             else:
                # noinspection PyBroadException
                try:
                   self._invocations[msg.request].cancel()
                except Exception:
                   if self.debug:
-                     print("could not cancel call {}".format(msg.request))
+                     print("could not cancel call {0}".format(msg.request))
                finally:
                   del self._invocations[msg.request]
 
@@ -679,7 +679,7 @@ class ApplicationSession(BaseSession):
                r = Registration(self, msg.registration)
                self._resolve_future(d, r)
             else:
-               raise ProtocolError("REGISTERED received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("REGISTERED received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Unregistered):
 
@@ -690,7 +690,7 @@ class ApplicationSession(BaseSession):
                registration.active = False
                self._resolve_future(d, None)
             else:
-               raise ProtocolError("UNREGISTERED received for non-pending request ID {}".format(msg.request))
+               raise ProtocolError("UNREGISTERED received for non-pending request ID {0}".format(msg.request))
 
          elif isinstance(msg, message.Error):
 
@@ -729,7 +729,7 @@ class ApplicationSession(BaseSession):
             if d:
                self._reject_future(d, self._exception_from_message(msg))
             else:
-               raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {} and request ID {}".format(msg.request_type, msg.request))
+               raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
 
          elif isinstance(msg, message.Heartbeat):
 
@@ -737,7 +737,7 @@ class ApplicationSession(BaseSession):
 
          else:
 
-            raise ProtocolError("Unexpected message {}".format(msg.__class__))
+            raise ProtocolError("Unexpected message {0}".format(msg.__class__))
 
 
    # noinspection PyUnusedLocal
@@ -754,7 +754,7 @@ class ApplicationSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {}".format(e))
+               print("exception raised in onLeave callback: {0}".format(e))
 
          self._session_id = None
 
@@ -1176,7 +1176,7 @@ class RouterApplicationSession:
       else:
          ## should not arrive here
          ##
-         raise Exception("RouterApplicationSession.send: unhandled message {}".format(msg))
+         raise Exception("RouterApplicationSession.send: unhandled message {0}".format(msg))
 
 
 
@@ -1323,7 +1323,7 @@ class RouterSession(BaseSession):
             #self._transport.close()
 
          else:
-            raise ProtocolError("Received {} message, and session is not yet established".format(msg.__class__))
+            raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
 
       else:
 
@@ -1369,7 +1369,7 @@ class RouterSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {}".format(e))
+               print("exception raised in onLeave callback: {0}".format(e))
 
          self._router.detach(self)
 
