@@ -142,9 +142,10 @@ Here is an example using **Twisted**
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
 
-   @inlineCallbacks
-   class MyComponent(ApplicationSession):
 
+   class MyComponent(ApplicationSession):
+   
+      @inlineCallbacks
       def onJoin(self, details):
          print("session ready")
 
@@ -176,9 +177,9 @@ Using **asyncio**, the example looks like this
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import coroutine
 
-   @coroutine
    class MyComponent(ApplicationSession):
 
+      @coroutine
       def onJoin(self, details):
          print("session ready")
 
@@ -214,9 +215,10 @@ Here is how you would call the procedure ``add2`` that we registered in :ref:`re
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
 
-   @inlineCallbacks
+
    class MyComponent(ApplicationSession):
 
+      @inlineCallbacks
       def onJoin(self, details):
          print("session ready")
 
@@ -235,9 +237,10 @@ And here is the same done on **asyncio**
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import coroutine
 
-   @coroutine
+
    class MyComponent(ApplicationSession):
 
+      @coroutine
       def onJoin(self, details):
          print("session ready")
 
@@ -284,9 +287,10 @@ Here is a **Twisted** example
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
 
-   @inlineCallbacks
+
    class MyComponent(ApplicationSession):
 
+      @inlineCallbacks
       def onJoin(self, details):
          print("session ready")
 
@@ -314,9 +318,10 @@ The corresponding **asyncio** code looks like this
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import coroutine
 
-   @coroutine
+
    class MyComponent(ApplicationSession):
 
+      @coroutine
       def onJoin(self, details):
          print("session ready")
 
@@ -351,9 +356,10 @@ Here is a **Twisted** example that will publish an event to topic ``u'com.myapp.
    from autobahn.twisted.util import sleep
    from twisted.internet.defer import inlineCallbacks
 
-   @inlineCallbacks
+
    class MyComponent(ApplicationSession):
 
+      @inlineCallbacks
       def onJoin(self, details):
          print("session ready")
 
@@ -373,9 +379,10 @@ The corresponding **asyncio** code looks like this
    from asyncio import sleep
    from asyncio import coroutine
 
-   @coroutine
+
    class MyComponent(ApplicationSession):
 
+      @coroutine
       def onJoin(self, details):
          print("session ready")
 
