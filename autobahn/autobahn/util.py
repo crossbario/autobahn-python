@@ -32,6 +32,7 @@ __all__ = ("utcnow",
 import time
 import random
 import sys
+import re
 from datetime import datetime, timedelta
 from pprint import pformat
 
@@ -362,3 +363,17 @@ class EqualityMixin:
       :rtype: bool
       """
       return not self.__eq__(other)
+
+
+def wildcards2patterns(wildcards):
+   """
+   Compute a list of regular expression patterns from a list of
+   wildcard strings. A wildcard string uses '*' as a wildcard character
+   matching anything.
+
+   :param wildcards: List of wildcard strings to compute regular expression patterns for.
+   :type wildcards: list of str
+   :returns: Computed regular expressions.
+   :rtype: list of obj
+   """
+   return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]

@@ -52,7 +52,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
                                           IWebSocketChannelFrameApi, \
                                           IWebSocketChannelStreamingApi
 
-from autobahn.util import Stopwatch, newid
+from autobahn.util import Stopwatch, newid, wildcards2patterns
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import *
@@ -648,7 +648,9 @@ class WebSocketProtocol:
                           'maskServerFrames',
                           'perMessageCompressionAccept',
                           'serveFlashSocketPolicy',
-                          'flashSocketPolicy']
+                          'flashSocketPolicy',
+                          'allowedOrigins',
+                          'allowedOriginsPatterns']
    """
    Configuration attributes specific to servers.
    """
@@ -3021,7 +3023,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             # RFC6455, >= Hybi-13 and Hixie
             websocket_origin_header_key = "origin"
 
-         self.websocket_origin = None
+         self.websocket_origin = ""
          if websocket_origin_header_key in self.http_headers:
             if http_headers_cnt[websocket_origin_header_key] > 1:
                return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
@@ -3029,6 +3031,16 @@ class WebSocketServerProtocol(WebSocketProtocol):
          else:
             # non-browser clients are allowed to omit this header
             pass
+
+         ## check allowed WebSocket origins
+         ##
+         origin_is_allowed = False
+         for origin_pattern in self.allowedOriginsPatterns:
+            if origin_pattern.match(self.websocket_origin):
+               origin_is_allowed = True
+               break
+         if not origin_is_allowed:
+            return self.failHandshake("WebSocket connection denied: origin '{0}' not allowed".format(self.websocket_origin))
 
          ## Sec-WebSocket-Key (Hybi) or Sec-WebSocket-Key1/Sec-WebSocket-Key2 (Hixie-76)
          ##
@@ -3592,6 +3604,10 @@ class WebSocketServerFactory(WebSocketFactory):
       self.autoPingTimeout = 0
       self.autoPingSize = 4
 
+      ## check WebSocket origin against this list
+      self.allowedOrigins = ["*"]
+      self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
+
 
    def setProtocolOptions(self,
                           versions = None,
@@ -3614,42 +3630,43 @@ class WebSocketServerFactory(WebSocketFactory):
                           autoPingTimeout = None,
                           autoPingSize = None,
                           serveFlashSocketPolicy = None,
-                          flashSocketPolicy = None):
+                          flashSocketPolicy = None,
+                          allowedOrigins = None):
       """
       Set WebSocket protocol options used as defaults for new protocol instances.
 
       :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
-      :type versions: list of ints
+      :type versions: list of ints or None
       :param allowHixie76: Allow to speak Hixie76 protocol version.
-      :type allowHixie76: bool
+      :type allowHixie76: bool or None
       :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
-      :type webStatus: bool
+      :type webStatus: bool or None
       :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
-      :type utf8validateIncoming: bool
+      :type utf8validateIncoming: bool or None
       :param maskServerFrames: Mask server-to-client frames (default: `False`).
-      :type maskServerFrames: bool
+      :type maskServerFrames: bool or None
       :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: `True`).
-      :type requireMaskedClientFrames: bool
+      :type requireMaskedClientFrames: bool or None
       :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
-      :type applyMask: bool
+      :type applyMask: bool or None
       :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
-      :type maxFramePayloadSize: int
+      :type maxFramePayloadSize: int or None
       :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
-      :type maxMessagePayloadSize: int
+      :type maxMessagePayloadSize: int or None
       :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
-      :type autoFragmentSize: int
+      :type autoFragmentSize: int or None
       :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
-      :type failbyDrop: bool
+      :type failbyDrop: bool or None
       :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
-      :type echoCloseCodeReason: bool
+      :type echoCloseCodeReason: bool or None
       :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
-      :type openHandshakeTimeout: float
+      :type openHandshakeTimeout: float or None
       :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
-      :type closeHandshakeTimeout: float
+      :type closeHandshakeTimeout: float or None
       :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: `True`).
-      :type tcpNoDelay: bool
+      :type tcpNoDelay: bool or None
       :param perMessageCompressionAccept: Acceptor function for offers.
-      :type perMessageCompressionAccept: callable
+      :type perMessageCompressionAccept: callable or None
       :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
          in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
       :type autoPingInterval: float or None
@@ -3657,12 +3674,14 @@ class WebSocketServerFactory(WebSocketFactory):
          peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
       :type autoPingTimeout: float or None
       :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
-      :type autoPingSize: int
+      :type autoPingSize: int or None
       :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
-      :type serveFlashSocketPolicy: bool
+      :type serveFlashSocketPolicy: bool or None
       :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
          and when Flash tried to connect to the destination port. It must end with a null character.
-      :type flashSocketPolicy: str
+      :type flashSocketPolicy: str or None
+      :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
+      :type allowedOrigins: list or None
       """
       if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
          self.allowHixie76 = allowHixie76
@@ -3734,6 +3753,10 @@ class WebSocketServerFactory(WebSocketFactory):
 
       if flashSocketPolicy is not None and flashSocketPolicy != self.flashSocketPolicy:
         self.flashSocketPolicy = flashSocketPolicy
+
+      if allowedOrigins is not None and allowedOrigins != self.allowedOrigins:
+         self.allowedOrigins = allowedOrigins
+         self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
 
 
    def getConnectionCount(self):
