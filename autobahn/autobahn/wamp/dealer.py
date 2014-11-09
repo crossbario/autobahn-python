@@ -215,11 +215,13 @@ class Dealer:
 
                   if discloseCaller or call.discloseMe:
                      caller = session._session_id
+                     caller_transport = getattr(session._transport, '_transport_info', None)
                      authid = session._authid
                      authrole = session._authrole
                      authmethod = session._authmethod
                   else:
                      caller = None
+                     caller_transport = None
                      authid = None
                      authrole = None
                      authmethod = None
@@ -231,6 +233,7 @@ class Dealer:
                                                   timeout = call.timeout,
                                                   receive_progress = call.receive_progress,
                                                   caller = caller,
+                                                  caller_transport = caller_transport,
                                                   authid = authid,
                                                   authrole = authrole,
                                                   authmethod = authmethod)

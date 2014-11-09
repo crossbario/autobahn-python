@@ -596,7 +596,9 @@ class ApplicationSession(BaseSession):
                      else:
                         progress = None
 
-                     msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller, authid = msg.authid, authrole = msg.authrole, authmethod = msg.authmethod)
+                     msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller,
+                        caller_transport = msg.caller_transport, authid = msg.authid, authrole = msg.authrole,
+                        authmethod = msg.authmethod)
 
                   if endpoint.obj:
                      if msg.kwargs:

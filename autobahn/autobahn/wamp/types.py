@@ -418,7 +418,7 @@ class CallDetails:
    registered is being called and opted to receive call details.
    """
 
-   def __init__(self, progress = None, caller = None, authid = None, authrole = None, authmethod = None):
+   def __init__(self, progress = None, caller = None, caller_transport = None, authid = None, authrole = None, authmethod = None):
       """
       Ctor.
 
@@ -426,6 +426,8 @@ class CallDetails:
       :type progress: callable
       :param caller: The WAMP session ID of the caller, if the latter is disclosed.
       :type caller: int
+      :param caller_transport: Information from the WAMP transport of the caller.
+      :type caller_transport: dict or None
       :param authid: The authentication ID of the caller.
       :type authid: str
       :param authrole: The authentication role of the caller.
@@ -433,13 +435,14 @@ class CallDetails:
       """
       self.progress = progress
       self.caller = caller
+      self.caller_transport = caller_transport
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
 
 
    def __str__(self):
-      return "CallDetails(progress = {0}, caller = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.progress, self.caller, self.authid, self.authrole, self.authmethod)
+      return "CallDetails(progress = {0}, caller = {1}, caller_transport = {2}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
 
 
 

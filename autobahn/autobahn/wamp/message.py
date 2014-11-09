@@ -2429,6 +2429,7 @@ class Invocation(Message):
                 timeout = None,
                 receive_progress = None,
                 caller = None,
+                caller_transport = None,
                 authid = None,
                 authrole = None,
                 authmethod = None):
@@ -2451,6 +2452,8 @@ class Invocation(Message):
       :type receive_progress: bool or None
       :param caller: The WAMP session ID of the caller.
       :type caller: int or None
+      :param caller_transport: WAMP transport level information of the caller.
+      :type caller_transport: dict or None
       :param authid: The authentication ID of the caller.
       :type authid: unicode or None
       :param authrole: The authentication role of the caller.
@@ -2465,6 +2468,7 @@ class Invocation(Message):
       assert(timeout is None or type(timeout) in six.integer_types)
       assert(receive_progress is None or type(receive_progress) == bool)
       assert(caller is None or type(caller) in six.integer_types)
+      assert(caller_transport is None or type(caller_transport) == dict)
       assert(authid is None or type(authid) == six.text_type)
       assert(authrole is None or type(authrole) == six.text_type)
       assert(authmethod is None or type(authmethod) == six.text_type)
@@ -2477,6 +2481,7 @@ class Invocation(Message):
       self.timeout = timeout
       self.receive_progress = receive_progress
       self.caller = caller
+      self.caller_transport = caller_transport
       self.authid = authid
       self.authrole = authrole
       self.authmethod = authmethod
@@ -2545,6 +2550,15 @@ class Invocation(Message):
 
          caller = detail_caller
 
+      caller_transport = None
+      if u'caller_transport' in details:
+
+         detail_caller_transport = details[u'caller_transport']
+         if type(detail_caller_transport) != dict:
+            raise ProtocolError("invalid type {0} for 'caller_transport' detail in INVOCATION".format(type(caller_transport)))
+
+         caller_transport = detail_caller_transport
+
       authid = None
       if u'authid' in details:
 
@@ -2579,6 +2593,7 @@ class Invocation(Message):
                        timeout = timeout,
                        receive_progress = receive_progress,
                        caller = caller,
+                       caller_transport = caller_transport,
                        authid = authid,
                        authrole = authrole,
                        authmethod = authmethod)
@@ -2601,6 +2616,9 @@ class Invocation(Message):
       if self.caller is not None:
          options[u'caller'] = self.caller
 
+      if self.caller_transport is not None:
+         options[u'caller_transport'] = self.caller_transport
+
       if self.authid is not None:
          options[u'authid'] = self.authid
 
@@ -2622,7 +2640,7 @@ class Invocation(Message):
       """
       Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
       """
-      return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, authid = {7}, authrole = {8}, authmethod = {9})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.authid, self.authrole, self.authmethod)
+      return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_transport = {7}, authid = {8}, authrole = {9}, authmethod = {10})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
 
 
 
