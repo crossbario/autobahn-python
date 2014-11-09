@@ -31,6 +31,7 @@ from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
 
+from autobahn.twisted.util import peer2str
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
 import binascii
@@ -45,6 +46,17 @@ class WampRawSocketProtocol(Int32StringReceiver):
    def connectionMade(self):
       if self.factory.debug:
          log.msg("WAMP-over-RawSocket connection made")
+
+      ## the peer we are connected to
+      ##
+      try:
+         peer = self.transport.getPeer()
+      except AttributeError:
+         ## ProcessProtocols lack getPeer()
+         self.peer = "?"
+      else:
+         self.peer = peer2str(peer)
+
       try:
          self._session = self.factory._factory()
          self._session.onOpen(self)

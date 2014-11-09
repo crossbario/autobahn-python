@@ -69,12 +69,16 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
       self.receive_queue = deque()
       self._consume()
 
-      peer = transport.get_extra_info('peername')
       try:
-         self.peer = "%s:%d" % (peer[0], peer[1])
+         peer = transport.get_extra_info('peername')
+         try:
+            ## FIXME: tcp4 vs tcp6
+            self.peer = "tcp:%s:%d" % (peer[0], peer[1])
+         except:
+            ## e.g. Unix Domain sockets don't have host/port
+            self.peer = "unix:{0}".format(peer)
       except:
-         ## e.g. Unix Domain sockets don't have host/port
-         self.peer = str(peer)
+         self.peer = "?"
 
       self._connectionMade()
 

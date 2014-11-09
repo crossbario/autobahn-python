@@ -54,6 +54,7 @@ from twisted.internet.interfaces import ITransport
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket import http
+from autobahn.twisted.util import peer2str
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
                                         PerMessageDeflateOfferAccept, \
@@ -68,17 +69,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
    def connectionMade(self):
       ## the peer we are connected to
+      ##
       try:
          peer = self.transport.getPeer()
       except AttributeError:
          ## ProcessProtocols lack getPeer()
          self.peer = "?"
       else:
-         try:
-            self.peer = "%s:%d" % (peer.host, peer.port)
-         except AttributeError:
-            ## eg Unix Domain sockets don't have host/port
-            self.peer = str(peer)
+         self.peer = peer2str(peer)
 
       self._connectionMade()
 

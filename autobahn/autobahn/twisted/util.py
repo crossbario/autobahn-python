@@ -23,6 +23,7 @@ __all = (
 )
 
 from twisted.internet.defer import Deferred
+from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
 
 
 def sleep(delay, reactor = None):
@@ -43,3 +44,20 @@ def sleep(delay, reactor = None):
    d = Deferred()
    reactor.callLater(delay, d.callback, None)
    return d
+
+
+def peer2str(addr):
+   """
+   Convert a Twisted address, as returned from ``self.transport.getPeer()`` to a string
+   """
+   if isinstance(addr, IPv4Address):
+      res = "tcp4:{0}:{1}".format(addr.host, addr.port)
+   elif isinstance(addr, IPv6Address):
+      res = "tcp6:{0}:{1}".format(addr.host, addr.port)
+   elif isinstance(addr, UNIXAddress):
+      res = "unix:{0}".format(addr.name)
+   else:
+      # gracefully fallback if we can't map the peer's address
+      res = "?:{0}".format(addr)
+
+   return res
