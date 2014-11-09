@@ -2103,7 +2103,7 @@ class Register(Message):
    The WAMP message code for this type of message.
    """
 
-   def __init__(self, request, procedure, pkeys = None, discloseCaller = None):
+   def __init__(self, request, procedure, pkeys = None, discloseCaller = None, discloseCallerTransport = None):
       """
 
       :param request: The WAMP request ID of this request.
@@ -2115,6 +2115,9 @@ class Register(Message):
       :param discloseCaller: If ``True``, the (registering) callee requests to disclose
          the identity of callers whenever called.
       :type discloseCaller: bool or None
+      :param discloseCallerTransport: If ``True``, the (registering) calle requests to disclose
+         transport level information of caller whenever called. This only takes effect if ``discloseCaller == True``.
+      :type discloseCallerTransport: bool
       """
       assert(type(request) in six.integer_types)
       assert(type(procedure) == six.text_type)
@@ -2123,12 +2126,14 @@ class Register(Message):
          for k in pkeys:
             assert(type(k) in six.integer_types)
       assert(discloseCaller is None or type(discloseCaller) == bool)
+      assert(discloseCallerTransport is None or type(discloseCallerTransport) == bool)
 
       Message.__init__(self)
       self.request = request
       self.procedure = procedure
       self.pkeys = pkeys
       self.discloseCaller = discloseCaller
+      self.discloseCallerTransport = discloseCallerTransport
 
 
    @staticmethod
@@ -2154,6 +2159,7 @@ class Register(Message):
 
       pkeys = None
       discloseCaller = None
+      discloseCallerTransport = None
 
       if u'pkeys' in options:
 
@@ -2176,7 +2182,17 @@ class Register(Message):
 
          discloseCaller = option_discloseCaller
 
-      obj = Register(request, procedure, pkeys = pkeys, discloseCaller = discloseCaller)
+
+      if u'disclose_caller_transport' in options:
+
+         option_discloseCallerTransport = options[u'disclose_caller_transport']
+         if type(option_discloseCallerTransport) != bool:
+            raise ProtocolError("invalid type {0} for 'disclose_caller_transport' option in REGISTER".format(type(option_discloseCallerTransport)))
+
+         discloseCallerTransport = option_discloseCallerTransport
+
+
+      obj = Register(request, procedure, pkeys = pkeys, discloseCaller = discloseCaller, discloseCallerTransport = discloseCallerTransport)
 
       return obj
 
@@ -2192,6 +2208,9 @@ class Register(Message):
 
       if self.discloseCaller is not None:
          options[u'disclose_caller'] = self.discloseCaller
+
+      if self.discloseCallerTransport is not None:
+         options[u'disclose_caller_transport'] = self.discloseCallerTransport
 
       return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 

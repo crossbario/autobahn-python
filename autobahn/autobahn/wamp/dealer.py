@@ -120,7 +120,7 @@ class Dealer:
             def on_authorize_success(authorized):
                if authorized:
                   registration_id = util.id()
-                  self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller)
+                  self._procs_to_regs[register.procedure] = (registration_id, session, register.discloseCaller, register.discloseCallerTransport)
                   self._regs_to_procs[registration_id] = register.procedure
 
                   self._session_to_registrations[session].add(registration_id)
@@ -209,16 +209,18 @@ class Dealer:
 
             def on_authorize_success(authorized):
                if authorized:
-                  registration_id, endpoint_session, discloseCaller = self._procs_to_regs[call.procedure]
+                  registration_id, endpoint_session, discloseCaller, discloseCallerTransport = self._procs_to_regs[call.procedure]
 
                   request_id = util.id()
 
                   if discloseCaller or call.discloseMe:
                      caller = session._session_id
-                     caller_transport = getattr(session._transport, '_transport_info', None)
+                     caller_transport = None
                      authid = session._authid
                      authrole = session._authrole
                      authmethod = session._authmethod
+                     if discloseCallerTransport and hasattr(session._transport, '_transport_info'):
+                        caller_transport = session._transport._transport_info
                   else:
                      caller = None
                      caller_transport = None
