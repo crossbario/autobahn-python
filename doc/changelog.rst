@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.9.3
+------
+`Published 2014-11-10 <https://pypi.python.org/pypi/autobahn/0.9.3>`__
+
+* feature: WebSocket origin checking
+* feature: allow to disclose caller transport level info
+* fix: Python 2.6 compatibility
+* fix: handling of WebSocket close frame in a corner-case
+
 0.9.2
 ------
 `Published 2014-10-17 <https://pypi.python.org/pypi/autobahn/0.9.2>`__
