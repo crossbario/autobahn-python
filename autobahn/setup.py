@@ -149,18 +149,22 @@ setup(
 )
 
 
-try:
-   from twisted.internet import reactor
-except ImportError:
-   pass
-else:
-   # Make Twisted regenerate the dropin.cache, if possible. This is necessary
-   # because in a site-wide install, dropin.cache cannot be rewritten by
-   # normal users.
+## deactivate that for now, since it produces errs/warns when "six"
+## wasn't already installed _before_ installing AutobahnPython
+##
+if False:
    try:
-      from twisted.plugin import IPlugin, getPlugins
-      list(getPlugins(IPlugin))
-   except Exception as e:
-      print("Failed to update Twisted plugin cache: {0}".format(e))
+      from twisted.internet import reactor
+   except ImportError:
+      pass
    else:
-      print("Twisted dropin.cache regenerated.")
+      # Make Twisted regenerate the dropin.cache, if possible. This is necessary
+      # because in a site-wide install, dropin.cache cannot be rewritten by
+      # normal users.
+      try:
+         from twisted.plugin import IPlugin, getPlugins
+         list(getPlugins(IPlugin))
+      except Exception as e:
+         print("Failed to update Twisted plugin cache: {0}".format(e))
+      else:
+         print("Twisted dropin.cache regenerated.")
