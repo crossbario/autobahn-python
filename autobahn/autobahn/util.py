@@ -101,8 +101,8 @@ def id():
    :returns: A random object ID.
    :rtype: int
    """
-   #return random.randint(0, 9007199254740992)
-   return random.randint(0, 2147483648 - 1) # 2**31-1
+   #return random.randint(0, 9007199254740992) # this is what the WAMP spec says
+   return random.randint(0, 2147483647) # use a reduced ID space for now (2**31-1)
 
 
 
