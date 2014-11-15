@@ -138,13 +138,15 @@ class Serializer:
 ##
 try:
    ## try import accelerated JSON implementation
+   ##
    import ujson
    _json = ujson
-   _loads = ujson.loads
-   _dumps = lambda obj: ujson.dumps(obj, ensure_ascii = False)
+   _loads = lambda val: ujson.loads(val, precise_float = True)
+   _dumps = lambda obj: ujson.dumps(obj, double_precision = 15, ensure_ascii = False)
 
 except ImportError:
    ## fallback to stdlib implementation
+   ##
    import json
    _json = json
    _loads = json.loads
