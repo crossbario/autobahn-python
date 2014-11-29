@@ -177,10 +177,12 @@ finally:
          Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
          """
          s = _dumps(obj)
+         if isinstance(s, six.text_type):
+             s = s.encode('utf8')
          if self._batched:
-            return s.encode('utf8') + b'\30'
+            return s + b'\30'
          else:
-            return s.encode('utf8')
+            return s
 
 
       def unserialize(self, payload):
