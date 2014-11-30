@@ -65,7 +65,9 @@ def generate_test_messages():
       message.Subscribe(123456, u'com.myapp.topic1'),
       message.Subscribe(123456, u'com.myapp.topic1', match = message.Subscribe.MATCH_PREFIX),
       message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1'),
-      message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'})
+      message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
+      message.Call(123456, u'com.myapp.\u4f60\u597d\u4e16\u754c', args=[1, 2, 3]),
+      message.Result(123456, args=[1, 2, 3], kwargs={u'en': u'Hello World', u'jp': u'\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'})
    ]
 
 
