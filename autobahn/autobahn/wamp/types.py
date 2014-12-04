@@ -444,7 +444,7 @@ class CallDetails:
 
 
    def __str__(self):
-      return "CallDetails(progress = {0}, caller = {1}, caller_transport = {2}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
+      return "CallDetails(progress = {0}, caller = {1}, caller_transport = {2}, authid = {3}, authrole = {4}, authmethod = {5})".format(self.progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
 
 
 
