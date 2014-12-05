@@ -77,7 +77,7 @@ IM_USED                  = (226, "IM Used (RFC 3229)",
 ## The client must take additional action to complete the request.
 ##
 ## This class of status code indicates that further action needs to be taken
-## by the user agent in order to fulfil the request. The action required may
+## by the user agent in order to fulfill the request. The action required may
 ## be carried out by the user agent without interaction with the user if and
 ## only if the method used in the second request is GET or HEAD. A user agent
 ## should not automatically redirect a request more than five times, since such
