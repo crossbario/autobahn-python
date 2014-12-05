@@ -58,7 +58,7 @@ CREATED                  = (201, "Created",
                             "The request has been fulfilled and resulted in a new resource being created.")
 ACCEPTED                 = (202, "Accepted",
                             "The request has been accepted for processing, but the processing has not been completed. The request might or might not eventually be acted upon, as it might be disallowed when processing actually takes place.")
-NON_AUTHORATIVE          = (203, "Non-Authoritative Information (since HTTP/1.1)",
+NON_AUTHORATATIVE        = (203, "Non-Authoritative Information (since HTTP/1.1)",
                             "The server successfully processed the request, but is returning information that may be from another source.")
 NO_CONTENT               = (204, "No Content",
                             "The server successfully processed the request, but is not returning any content.")
