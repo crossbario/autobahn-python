@@ -79,7 +79,7 @@ class Stats:
       ## currently connected client
       self.clients = 0
 
-      ## total (runnning) stats
+      ## total (running) stats
       self.tMsgs = 0
       self.tOctets = 0
       self.tHandshakes = 0
