@@ -89,7 +89,7 @@ WebUtil.getQueryVar = function(name, defVal) {
 
 
 /*
- * Cookie handling. Dervied from: http://www.quirksmode.org/js/cookies.html
+ * Cookie handling. Derived from: http://www.quirksmode.org/js/cookies.html
  */
 
 // No days means only for this browser session
