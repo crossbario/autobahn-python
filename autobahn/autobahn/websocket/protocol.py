@@ -2911,7 +2911,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ##
             if self.webStatus:
                if 'redirect' in self.http_request_params and len(self.http_request_params['redirect']) > 0:
-                  ## To specifiy an URL for redirection, encode the URL, i.e. from JavaScript:
+                  ## To specify an URL for redirection, encode the URL, i.e. from JavaScript:
                   ##
                   ##    var url = encodeURIComponent("http://autobahn.ws/python");
                   ##
