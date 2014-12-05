@@ -26,7 +26,7 @@ Detailed usage:
 	  --port PORT          Port to listen on for embedded Web server. Set to 0 to
 	                       disable.
 	  --workers WORKERS    Number of workers to spawn - should fit the number of
-	                       (phyisical) CPU cores.
+	                       (physical) CPU cores.
 	  --noaffinity         Do not set worker/CPU affinity.
 	  --backlog BACKLOG    TCP accept queue depth. You must tune your OS also as
 	                       this is just advisory!
