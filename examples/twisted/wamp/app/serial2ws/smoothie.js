@@ -31,7 +31,7 @@
  * v1.4: Set minimum, top-scale padding, remove timeseries, add optional timer to reset bounds, by Kelley Reynolds
  * v1.5: Set default frames per second to 50... smoother.
  *       .start(), .stop() methods for conserving CPU, by Dmitry Vyal
- *       options.iterpolation = 'bezier' or 'line', by Dmitry Vyal
+ *       options.interpolation = 'bezier' or 'line', by Dmitry Vyal
  *       options.maxValue to fix scale, by Dmitry Vyal
  */
 
