@@ -50,7 +50,7 @@ class CustomPort(tcp.Port):
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
          else:
-            raise Exception("don't know how to set SO_RESUSEPORT on platform {}".format(sys.platform))
+            raise Exception("don't know how to set SO_REUSEPORT on platform {}".format(sys.platform))
 
       return s
 
