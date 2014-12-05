@@ -698,13 +698,13 @@ VT100.prototype.write = function(stuff)
 				this.debug("write:: set escape state: 2");
 				break;
 			    case '=':
-				/* Set keypade mode (ignored) */
-				this.debug("write:: set keypade mode: ignored");
+				/* Set keypad mode (ignored) */
+				this.debug("write:: set keypad mode: ignored");
 				this.esc_state_ = 0;
 				break;
 			    case '>':
-				/* Reset keypade mode (ignored) */
-				this.debug("write:: reset keypade mode: ignored");
+				/* Reset keypad mode (ignored) */
+				this.debug("write:: reset keypad mode: ignored");
 				this.esc_state_ = 0;
 				break;
 			    case 'H':
