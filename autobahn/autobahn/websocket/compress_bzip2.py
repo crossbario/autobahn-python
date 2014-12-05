@@ -151,7 +151,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'acceptMaxCompressLevel': self.acceptMaxCompressLevel,
@@ -229,7 +229,7 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'offer': self.offer.__json__(),
@@ -311,7 +311,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'client_max_compress_level': self.client_max_compress_level,
@@ -364,7 +364,7 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'response': self.response.__json__(),

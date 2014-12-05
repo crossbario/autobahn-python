@@ -143,7 +143,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'acceptNoContextTakeover': self.acceptNoContextTakeover,
@@ -221,7 +221,7 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'offer': self.offer.__json__(),
@@ -297,7 +297,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'client_no_context_takeover': self.client_no_context_takeover,
@@ -350,7 +350,7 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'response': self.response.__json__(),
