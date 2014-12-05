@@ -3598,7 +3598,7 @@ class WebSocketServerFactory(WebSocketFactory):
       ##
       self.perMessageCompressionAccept = lambda _: None
 
-      ## automatic ping/pong ("heartbearting")
+      ## automatic ping/pong ("heartbeating")
       ##
       self.autoPingInterval = 0
       self.autoPingTimeout = 0
@@ -4407,7 +4407,7 @@ class WebSocketClientFactory(WebSocketFactory):
       self.perMessageCompressionOffers = []
       self.perMessageCompressionAccept = lambda _: None
 
-      ## automatic ping/pong ("heartbearting")
+      ## automatic ping/pong ("heartbeating")
       ##
       self.autoPingInterval = 0
       self.autoPingTimeout = 0
