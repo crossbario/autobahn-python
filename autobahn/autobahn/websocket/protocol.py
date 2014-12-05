@@ -1691,7 +1691,7 @@ class WebSocketProtocol:
                ## continuation data frames MUST NOT have the compressed bit set
                ##
                if self._perMessageCompress is not None and frame_rsv == 4 and self.inside_message:
-                  if self.protocolViolation("received continution data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
+                  if self.protocolViolation("received continuation data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
                      return False
 
             ## compute complete header length
