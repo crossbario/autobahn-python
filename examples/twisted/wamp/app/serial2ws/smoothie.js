@@ -128,7 +128,7 @@ SmoothieChart.prototype.render = function(canvas, time) {
   
   // Create a clipped rectangle - anything we draw will be constrained to this rectangle.
   // This prevents the occasional pixels from curves near the edges overrunning and creating
-  // screen cheese (that phrase should neeed no explanation).
+  // screen cheese (that phrase should need no explanation).
   canvasContext.beginPath();
   canvasContext.rect(0, 0, dimensions.width, dimensions.height);
   canvasContext.clip();
