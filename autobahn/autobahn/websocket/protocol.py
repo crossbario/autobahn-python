@@ -2891,7 +2891,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
             else:
                if self.debugCodePaths:
-                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
+                  self.factory._log("skipping opening handshake port checking - neither WS URL nor external port set")
 
             self.http_request_host = h
 
@@ -2902,7 +2902,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
             else:
                if self.debugCodePaths:
-                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
+                  self.factory._log("skipping opening handshake port checking - neither WS URL nor external port set")
 
          ## Upgrade
          ##
