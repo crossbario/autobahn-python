@@ -4158,7 +4158,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
                   if self._perMessageCompress is not None:
-                     return self.failHandshake("multiple occurence of a permessage-compress extension")
+                     return self.failHandshake("multiple occurrence of a permessage-compress extension")
 
                   PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 

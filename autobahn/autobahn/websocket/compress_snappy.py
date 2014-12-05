@@ -77,7 +77,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
+            raise Exception("multiple occurrence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
@@ -260,7 +260,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
+            raise Exception("multiple occurrence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
