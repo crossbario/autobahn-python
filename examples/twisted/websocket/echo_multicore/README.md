@@ -8,7 +8,7 @@ Run the server with 4 workers:
 
 	pypy server.py --wsuri ws://localhost:9000 --workers 4
 
-In general, using more workers than CPU cores avaiable will not improve performance, likely to the contrary.
+In general, using more workers than CPU cores available will not improve performance, likely to the contrary.
 
 Detailed usage:
 
