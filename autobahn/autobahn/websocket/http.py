@@ -190,7 +190,7 @@ CLIENT_CLOSED_REQUEST    = (499, "Client Closed Request",
 INTERNAL_SERVER_ERROR    = (500, "Internal Server Error",
                             "A generic error message, given when no more specific message is suitable.")
 NOT_IMPLEMENTED          = (501, "Not Implemented",
-                            "The server either does not recognise the request method, or it lacks the ability to fulfill the request.")
+                            "The server either does not recognize the request method, or it lacks the ability to fulfill the request.")
 BAD_GATEWAY              = (502, "Bad Gateway",
                             "The server was acting as a gateway or proxy and received an invalid response from the upstream server.")
 SERVICE_UNAVAILABLE      = (503, "Service Unavailable",
