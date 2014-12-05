@@ -100,7 +100,7 @@ class AutobahnServerParser(object):
       ##   options == {'url': 'ws://localhost:9000', 'compress': 'false'}
       ##
       ## Essentially, we are using the `\:` escape to coerce the endpoint descriptor
-      ## of the underyling stream transport into one (first) positional argument.
+      ## of the underlying stream transport into one (first) positional argument.
       ##
       ## Note that the `\:` within "url" is another form of escaping!
       ##
