@@ -305,7 +305,7 @@ function constructor() {
             case 65364: // Down arrow 
                 str = '\x1b[B'; break;
             default:
-                Util.Info("Unrecoginized keysym " + keysym);
+                Util.Info("Unrecognized keysym " + keysym);
             }
         }
 
