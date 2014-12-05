@@ -12,7 +12,7 @@
  *   http://www.networksorcery.com/enp/protocol/telnet.htm
  *   http://www.networksorcery.com/enp/rfc/rfc1091.txt
  *
- * ANSI escape sequeneces:
+ * ANSI escape sequences:
  *   http://en.wikipedia.org/wiki/ANSI_escape_code
  *   http://ascii-table.com/ansi-escape-sequences-vt-100.php
  *   http://www.termsys.demon.co.uk/vtansi.htm
@@ -305,7 +305,7 @@ function constructor() {
             case 65364: // Down arrow 
                 str = '\x1b[B'; break;
             default:
-                Util.Info("Unrecoginized keysym " + keysym);
+                Util.Info("Unrecognized keysym " + keysym);
             }
         }
 

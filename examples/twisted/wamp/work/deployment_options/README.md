@@ -18,7 +18,7 @@ All demos use the same two example application routers to host the application c
  * [A WAMP/WebSocket server container](server.py)
  * [A WAMP/WebSocket client container](client.py)
 
-The application components of the demos are separate from the example application routres, and each application component demonstrates a different RPC or PubSub feature.
+The application components of the demos are separate from the example application routers, and each application component demonstrates a different RPC or PubSub feature.
 
 ### Router with embedded application backend component
 

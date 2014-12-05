@@ -16,7 +16,7 @@ Then, to get help on available build targets, just type
 make
 ```
 
-## Cheetsheets
+## Cheatsheets
 
 * [How to document your Python docstrings](http://www.ctio.noao.edu/~fraga/pytemplate/pytemplate.html)
 

@@ -13,7 +13,7 @@ Changelog
 * maintenance release with some smaller bug fixes
 * use ujson for WAMP when available
 * reduce WAMP ID space to [0, 2**31-1]
-* deactive Twisted plugin cache recaching in `setup.py`
+* deactivate Twisted plugin cache recaching in `setup.py`
 
 0.9.3
 ------

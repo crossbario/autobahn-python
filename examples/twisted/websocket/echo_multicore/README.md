@@ -8,7 +8,7 @@ Run the server with 4 workers:
 
 	pypy server.py --wsuri ws://localhost:9000 --workers 4
 
-In general, using more workers than CPU cores avaiable will not improve performance, likely to the contrary.
+In general, using more workers than CPU cores available will not improve performance, likely to the contrary.
 
 Detailed usage:
 
@@ -26,7 +26,7 @@ Detailed usage:
 	  --port PORT          Port to listen on for embedded Web server. Set to 0 to
 	                       disable.
 	  --workers WORKERS    Number of workers to spawn - should fit the number of
-	                       (phyisical) CPU cores.
+	                       (physical) CPU cores.
 	  --noaffinity         Do not set worker/CPU affinity.
 	  --backlog BACKLOG    TCP accept queue depth. You must tune your OS also as
 	                       this is just advisory!

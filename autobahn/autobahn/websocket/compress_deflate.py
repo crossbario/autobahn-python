@@ -92,7 +92,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
+            raise Exception("multiple occurrence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
@@ -216,7 +216,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'acceptNoContextTakeover': self.acceptNoContextTakeover,
@@ -332,7 +332,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'offer': self.offer.__json__(),
@@ -376,7 +376,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
       for p in params:
 
          if len(params[p]) > 1:
-            raise Exception("multiple occurence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
+            raise Exception("multiple occurrence of extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
          val = params[p][0]
 
@@ -441,7 +441,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'client_max_window_bits': self.client_max_window_bits,
@@ -516,7 +516,7 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
       """
       Returns a JSON serializable object representation.
 
-      :returns: object -- JSON serializable represention.
+      :returns: object -- JSON serializable representation.
       """
       return {'extension': self.EXTENSION_NAME,
               'response': self.response.__json__(),

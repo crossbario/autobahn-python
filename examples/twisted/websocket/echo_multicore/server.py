@@ -79,7 +79,7 @@ class Stats:
       ## currently connected client
       self.clients = 0
 
-      ## total (runnning) stats
+      ## total (running) stats
       self.tMsgs = 0
       self.tOctets = 0
       self.tHandshakes = 0
@@ -353,7 +353,7 @@ if __name__ == '__main__':
    parser = argparse.ArgumentParser(description = 'Autobahn WebSocket Echo Multicore Server')
    parser.add_argument('--wsuri', dest = 'wsuri', type = str, default = 'ws://localhost:9000', help = 'The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
    parser.add_argument('--port', dest = 'port', type = int, default = 8080, help = 'Port to listen on for embedded Web server. Set to 0 to disable.')
-   parser.add_argument('--workers', dest = 'workers', type = int, default = DEFAULT_WORKERS, help = 'Number of workers to spawn - should fit the number of (phyisical) CPU cores.')
+   parser.add_argument('--workers', dest = 'workers', type = int, default = DEFAULT_WORKERS, help = 'Number of workers to spawn - should fit the number of (physical) CPU cores.')
    parser.add_argument('--noaffinity', dest = 'noaffinity', action = "store_true", default = False, help = 'Do not set worker/CPU affinity.')
    parser.add_argument('--backlog', dest = 'backlog', type = int, default = 8192, help = 'TCP accept queue depth. You must tune your OS also as this is just advisory!')
    parser.add_argument('--silence', dest = 'silence', action = "store_true", default = False, help = 'Silence log output.')

@@ -58,7 +58,7 @@ CREATED                  = (201, "Created",
                             "The request has been fulfilled and resulted in a new resource being created.")
 ACCEPTED                 = (202, "Accepted",
                             "The request has been accepted for processing, but the processing has not been completed. The request might or might not eventually be acted upon, as it might be disallowed when processing actually takes place.")
-NON_AUTHORATIVE          = (203, "Non-Authoritative Information (since HTTP/1.1)",
+NON_AUTHORATATIVE        = (203, "Non-Authoritative Information (since HTTP/1.1)",
                             "The server successfully processed the request, but is returning information that may be from another source.")
 NO_CONTENT               = (204, "No Content",
                             "The server successfully processed the request, but is not returning any content.")
@@ -77,7 +77,7 @@ IM_USED                  = (226, "IM Used (RFC 3229)",
 ## The client must take additional action to complete the request.
 ##
 ## This class of status code indicates that further action needs to be taken
-## by the user agent in order to fulfil the request. The action required may
+## by the user agent in order to fulfill the request. The action required may
 ## be carried out by the user agent without interaction with the user if and
 ## only if the method used in the second request is GET or HEAD. A user agent
 ## should not automatically redirect a request more than five times, since such
@@ -190,7 +190,7 @@ CLIENT_CLOSED_REQUEST    = (499, "Client Closed Request",
 INTERNAL_SERVER_ERROR    = (500, "Internal Server Error",
                             "A generic error message, given when no more specific message is suitable.")
 NOT_IMPLEMENTED          = (501, "Not Implemented",
-                            "The server either does not recognise the request method, or it lacks the ability to fulfill the request.")
+                            "The server either does not recognize the request method, or it lacks the ability to fulfill the request.")
 BAD_GATEWAY              = (502, "Bad Gateway",
                             "The server was acting as a gateway or proxy and received an invalid response from the upstream server.")
 SERVICE_UNAVAILABLE      = (503, "Service Unavailable",

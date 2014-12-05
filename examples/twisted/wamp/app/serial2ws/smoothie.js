@@ -31,7 +31,7 @@
  * v1.4: Set minimum, top-scale padding, remove timeseries, add optional timer to reset bounds, by Kelley Reynolds
  * v1.5: Set default frames per second to 50... smoother.
  *       .start(), .stop() methods for conserving CPU, by Dmitry Vyal
- *       options.iterpolation = 'bezier' or 'line', by Dmitry Vyal
+ *       options.interpolation = 'bezier' or 'line', by Dmitry Vyal
  *       options.maxValue to fix scale, by Dmitry Vyal
  */
 
@@ -128,7 +128,7 @@ SmoothieChart.prototype.render = function(canvas, time) {
   
   // Create a clipped rectangle - anything we draw will be constrained to this rectangle.
   // This prevents the occasional pixels from curves near the edges overrunning and creating
-  // screen cheese (that phrase should neeed no explanation).
+  // screen cheese (that phrase should need no explanation).
   canvasContext.beginPath();
   canvasContext.rect(0, 0, dimensions.width, dimensions.height);
   canvasContext.clip();

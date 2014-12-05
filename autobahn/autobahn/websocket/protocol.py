@@ -1691,7 +1691,7 @@ class WebSocketProtocol:
                ## continuation data frames MUST NOT have the compressed bit set
                ##
                if self._perMessageCompress is not None and frame_rsv == 4 and self.inside_message:
-                  if self.protocolViolation("received continution data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
+                  if self.protocolViolation("received continuation data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
                      return False
 
             ## compute complete header length
@@ -2891,7 +2891,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
             else:
                if self.debugCodePaths:
-                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
+                  self.factory._log("skipping opening handshake port checking - neither WS URL nor external port set")
 
             self.http_request_host = h
 
@@ -2902,7 +2902,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                   return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
             else:
                if self.debugCodePaths:
-                  self.factory._log("skipping openening handshake port checking - neither WS URL nor external port set")
+                  self.factory._log("skipping opening handshake port checking - neither WS URL nor external port set")
 
          ## Upgrade
          ##
@@ -2911,7 +2911,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             ##
             if self.webStatus:
                if 'redirect' in self.http_request_params and len(self.http_request_params['redirect']) > 0:
-                  ## To specifiy an URL for redirection, encode the URL, i.e. from JavaScript:
+                  ## To specify an URL for redirection, encode the URL, i.e. from JavaScript:
                   ##
                   ##    var url = encodeURIComponent("http://autobahn.ws/python");
                   ##
@@ -3598,7 +3598,7 @@ class WebSocketServerFactory(WebSocketFactory):
       ##
       self.perMessageCompressionAccept = lambda _: None
 
-      ## automatic ping/pong ("heartbearting")
+      ## automatic ping/pong ("heartbeating")
       ##
       self.autoPingInterval = 0
       self.autoPingTimeout = 0
@@ -4158,7 +4158,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                   ## check that server only responded with 1 configuration ("PMCE")
                   ##
                   if self._perMessageCompress is not None:
-                     return self.failHandshake("multiple occurence of a permessage-compress extension")
+                     return self.failHandshake("multiple occurrence of a permessage-compress extension")
 
                   PMCE = PERMESSAGE_COMPRESSION_EXTENSION[extension]
 
@@ -4407,7 +4407,7 @@ class WebSocketClientFactory(WebSocketFactory):
       self.perMessageCompressionOffers = []
       self.perMessageCompressionAccept = lambda _: None
 
-      ## automatic ping/pong ("heartbearting")
+      ## automatic ping/pong ("heartbeating")
       ##
       self.autoPingInterval = 0
       self.autoPingTimeout = 0
