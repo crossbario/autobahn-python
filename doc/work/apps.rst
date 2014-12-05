@@ -79,7 +79,7 @@ a more convincing demo.
 
 If you use "yield" inside any of the callbacks, `@inlineCallbacks` will
 be applied automatically. It means every yielded line will be be added in
-a Deferred so they execute sequencially, in regards to the other yielded
+a Deferred so they execute sequentially, in regards to the other yielded
 lines in the same function. In that case, you should not `return`, but use
 `returnValue`.
 
