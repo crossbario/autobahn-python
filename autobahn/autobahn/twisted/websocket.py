@@ -83,7 +83,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
       ## Set "Nagle"
       try:
          self.transport.setTcpNoDelay(self.tcpNoDelay)
-      except AttributeError:
+      except AttributeError, OSError:
          ## eg Unix Domain sockets throw Errno 22 on this
          pass
 
