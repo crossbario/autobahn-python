@@ -19,17 +19,11 @@
 from __future__ import absolute_import
 
 __all__ = (
+   'FutureMixin',
    'ApplicationSession',
    'ApplicationSessionFactory',
    'ApplicationRunner',
-   'Application',
-   'RouterSession',
-   'RouterSessionFactory',
-   'Broker',
-   'Dealer',
-   'Router',
-   'RouterFactory',
-   'FutureMixin',
+   'Application'
 )
 
 import sys
@@ -43,10 +37,8 @@ from twisted.internet.defer import Deferred, \
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
-from autobahn.twisted.websocket import WampWebSocketClientFactory, \
-                                       WampWebSocketServerFactory
+from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 
 
@@ -81,49 +73,6 @@ class FutureMixin:
 
 
 
-class Broker(FutureMixin, broker.Broker):
-   """
-   Basic WAMP broker for Twisted-based applications.
-   """
-
-
-
-class Dealer(FutureMixin, dealer.Dealer):
-   """
-   Basic WAMP dealer for Twisted-based applications.
-   """
-
-
-
-class Router(FutureMixin, router.Router):
-   """
-   Basic WAMP router for Twisted-based applications.
-   """
-
-   broker = Broker
-   """
-   The broker class this router will use. Defaults to :class:`autobahn.twisted.wamp.Broker`
-   """
-
-   dealer = Dealer
-   """
-   The dealer class this router will use. Defaults to :class:`autobahn.twisted.wamp.Dealer`
-   """
-
-
-
-class RouterFactory(FutureMixin, router.RouterFactory):
-   """
-   Basic WAMP router factory for Twisted-based applications.
-   """
-
-   router = Router
-   """
-   The router class this router factory will use. Defaults to :class:`autobahn.twisted.wamp.Router`
-   """
-
-
-
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
@@ -143,25 +92,6 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
 
 
 
-class RouterSession(FutureMixin, protocol.RouterSession):
-   """
-   WAMP router session for Twisted-based applications.
-   """
-
-
-
-class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
-   """
-   WAMP router session factory for Twisted-based applications.
-   """
-
-   session = RouterSession
-   """
-   The router session class this router session factory will use. Defaults to :class:`autobahn.asyncio.wamp.RouterSession`.
-   """
-
-
-
 class ApplicationRunner:
    """
    This class is a convenience tool mainly for development and quick hosting
@@ -171,8 +101,7 @@ class ApplicationRunner:
    connecting to a WAMP router.
    """
 
-   def __init__(self, url, realm, extra = None, serializers = None, standalone = False,
-      debug = False, debug_wamp = False, debug_app = False):
+   def __init__(self, url, realm, extra = None, debug = False, debug_wamp = False, debug_app = False):
       """
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -181,9 +110,6 @@ class ApplicationRunner:
       :type realm: unicode
       :param extra: Optional extra configuration to forward to the application component.
       :type extra: dict
-      :param serializers: A list of WAMP serializers to use (or None for default serializers).
-         Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
-      :type serializers: list
       :param debug: Turn on low-level debugging.
       :type debug: bool
       :param debug_wamp: Turn on WAMP-level debugging.
@@ -199,7 +125,6 @@ class ApplicationRunner:
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
       self.make = None
-      self.serializers = serializers
 
 
    def run(self, make, start_reactor = True):
@@ -218,20 +143,6 @@ class ApplicationRunner:
       if self.debug or self.debug_wamp or self.debug_app:
          log.startLogging(sys.stdout)
 
-      ## run an embedded router if ask to start standalone
-      if self.standalone:
-
-         from twisted.internet.endpoints import serverFromString
-
-         router_factory = RouterFactory()
-         session_factory = RouterSessionFactory(router_factory)
-
-         transport_factory = WampWebSocketServerFactory(session_factory, debug = self.debug, debug_wamp = self.debug_wamp)
-         transport_factory.setProtocolOptions(failByDrop = False)
-
-         server = serverFromString(reactor, "tcp:{0}".format(port))
-         server.listen(transport_factory)
-
       ## factory for use ApplicationSession
       def create():
          cfg = ComponentConfig(self.realm, self.extra)
@@ -246,7 +157,7 @@ class ApplicationRunner:
             return session
 
       ## create a WAMP-over-WebSocket transport client factory
-      transport_factory = WampWebSocketClientFactory(create, url = self.url, serializers = self.serializers,
+      transport_factory = WampWebSocketClientFactory(create, url = self.url,
          debug = self.debug, debug_wamp = self.debug_wamp)
 
       ## start the client from a Twisted endpoint
@@ -368,7 +279,7 @@ class Application:
       return self.session
 
 
-   def run(self, url = u"ws://localhost:8080/ws", realm = u"realm1", standalone = True,
+   def run(self, url = u"ws://localhost:8080/ws", realm = u"realm1",
       debug = False, debug_wamp = False, debug_app = False,
       start_reactor = True):
       """

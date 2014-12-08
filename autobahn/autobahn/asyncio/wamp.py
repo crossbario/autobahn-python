@@ -19,16 +19,10 @@
 from __future__ import absolute_import
 
 __all__ = (
+   'FutureMixin',
    'ApplicationSession',
    'ApplicationSessionFactory',
-   'ApplicationRunner',
-   'RouterSession',
-   'RouterSessionFactory',
-   'Broker',
-   'Dealer',
-   'Router',
-   'RouterFactory',
-   'FutureMixin',
+   'ApplicationRunner'
 )
 
 try:
@@ -44,7 +38,6 @@ except ImportError:
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
@@ -101,49 +94,6 @@ class FutureMixin:
 
 
 
-class Broker(FutureMixin, broker.Broker):
-   """
-   Basic WAMP broker for asyncio-based applications.
-   """
-
-
-
-class Dealer(FutureMixin, dealer.Dealer):
-   """
-   Basic WAMP dealer for asyncio-based applications.
-   """
-
-
-
-class Router(FutureMixin, router.Router):
-   """
-   Basic WAMP router for asyncio-based applications.
-   """
-
-   broker = Broker
-   """
-   The broker class this router will use. Defaults to :class:`autobahn.asyncio.wamp.Broker`
-   """
-
-   dealer = Dealer
-   """
-   The dealer class this router will use. Defaults to :class:`autobahn.asyncio.wamp.Dealer`
-   """
-
-
-
-class RouterFactory(FutureMixin, router.RouterFactory):
-   """
-   Basic WAMP router factory for asyncio-based applications.
-   """
-
-   router = Router
-   """
-   The router class this router factory will use. Defaults to :class:`autobahn.asyncio.wamp.Router`
-   """
-
-
-
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
    """
    WAMP application session for asyncio-based applications.
@@ -159,25 +109,6 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    session = ApplicationSession
    """
    The application session class this application session factory will use. Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
-   """
-
-
-
-class RouterSession(FutureMixin, protocol.RouterSession):
-   """
-   WAMP router session for asyncio-based applications.
-   """
-
-
-
-class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
-   """
-   WAMP router session factory for asyncio-based applications.
-   """
-
-   session = RouterSession
-   """
-   The router session class this router session factory will use. Defaults to :class:`autobahn.asyncio.wamp.RouterSession`.
    """
 
 
