@@ -55,6 +55,7 @@ from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
+from autobahn.twisted.util import LoopMixin
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
                                         PerMessageDeflateOfferAccept, \
@@ -62,7 +63,7 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
                                         PerMessageDeflateResponseAccept
 
 
-class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
+class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol, LoopMixin):
    """
    Adapter class for Twisted WebSocket client and server protocols.
    """
@@ -107,19 +108,19 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
    def _onOpen(self):
       self.onOpen()
 
- 
+
    def _onMessageBegin(self, isBinary):
       self.onMessageBegin(isBinary)
 
- 
+
    def _onMessageFrameBegin(self, length):
       self.onMessageFrameBegin(length)
 
- 
+
    def _onMessageFrameData(self, payload):
       self.onMessageFrameData(payload)
 
- 
+
    def _onMessageFrameEnd(self):
       self.onMessageFrameEnd()
 
@@ -198,13 +199,13 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 
 
-class WebSocketAdapterFactory:
+class WebSocketAdapterFactory(LoopMixin):
    """
    Adapter class for Twisted-based WebSocket client and server factories.
    """
 
    def _log(self, msg):
-      log.msg(msg)
+      self.logInfo(msg)
 
 
    def _callLater(self, delay, fun):
@@ -597,7 +598,7 @@ class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSock
 
 
 
-class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
+class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory, LoopMixin):
    """
    Base class for Twisted-based WAMP-over-WebSocket server factories.
    """

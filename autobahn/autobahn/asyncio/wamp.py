@@ -47,75 +47,24 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
+from autobahn.asyncio.util import LoopMixin
 
 
-
-class FutureMixin:
-   """
-   Mixin for Asyncio style Futures.
-   """
-
-   @staticmethod
-   def _create_future():
-      return Future()
-
-   @staticmethod
-   def _as_future(fun, *args, **kwargs):
-      try:
-         res = fun(*args, **kwargs)
-      except Exception as e:
-         f = Future()
-         f.set_exception(e)
-         return f
-      else:
-         if isinstance(res, Future):
-            return res
-         elif iscoroutine(res):
-            return asyncio.Task(res)
-         else:
-            f = Future()
-            f.set_result(res)
-            return f
-
-   @staticmethod
-   def _resolve_future(future, value):
-      future.set_result(value)
-
-   @staticmethod
-   def _reject_future(future, value):
-      future.set_exception(value)
-
-   @staticmethod
-   def _add_future_callbacks(future, callback, errback):
-      def done(f):
-         try:
-            res = f.result()
-            callback(res)
-         except Exception as e:
-            errback(e)
-      return future.add_done_callback(done)
-
-   @staticmethod
-   def _gather_futures(futures, consume_exceptions = True):
-      return asyncio.gather(*futures, return_exceptions = consume_exceptions)
-
-
-
-class Broker(FutureMixin, broker.Broker):
+class Broker(LoopMixin, broker.Broker):
    """
    Basic WAMP broker for asyncio-based applications.
    """
 
 
 
-class Dealer(FutureMixin, dealer.Dealer):
+class Dealer(LoopMixin, dealer.Dealer):
    """
    Basic WAMP dealer for asyncio-based applications.
    """
 
 
 
-class Router(FutureMixin, router.Router):
+class Router(LoopMixin, router.Router):
    """
    Basic WAMP router for asyncio-based applications.
    """
@@ -132,7 +81,7 @@ class Router(FutureMixin, router.Router):
 
 
 
-class RouterFactory(FutureMixin, router.RouterFactory):
+class RouterFactory(LoopMixin, router.RouterFactory):
    """
    Basic WAMP router factory for asyncio-based applications.
    """
@@ -144,14 +93,14 @@ class RouterFactory(FutureMixin, router.RouterFactory):
 
 
 
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(LoopMixin, protocol.ApplicationSession):
    """
    WAMP application session for asyncio-based applications.
    """
 
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(LoopMixin, protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for asyncio-based applications.
    """
@@ -163,14 +112,14 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
 
 
 
-class RouterSession(FutureMixin, protocol.RouterSession):
+class RouterSession(LoopMixin, protocol.RouterSession):
    """
    WAMP router session for asyncio-based applications.
    """
 
 
 
-class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
+class RouterSessionFactory(LoopMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for asyncio-based applications.
    """
@@ -182,7 +131,7 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
 
 
 
-class ApplicationRunner:
+class ApplicationRunner(LoopMixin):
    """
    This class is a convenience tool mainly for development and quick hosting
    of WAMP application components.
@@ -192,7 +141,7 @@ class ApplicationRunner:
    """
 
    def __init__(self, url, realm, extra = None, serializers = None,
-      debug = False, debug_wamp = False, debug_app = False):
+      debug = True, debug_wamp = True, debug_app = True):
       """
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -204,19 +153,19 @@ class ApplicationRunner:
       :param serializers: A list of WAMP serializers to use (or None for default serializers).
          Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
       :type serializers: list
-      :param debug: Turn on low-level debugging.
+      :param debug: Turn on low-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug: bool
-      :param debug_wamp: Turn on WAMP-level debugging.
+      :param debug_wamp: Turn on WAMP-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug_wamp: bool
-      :param debug_app: Turn on app-level debugging.
+      :param debug_app: Turn on app-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug_app: bool
       """
       self.url = url
       self.realm = realm
       self.extra = extra or dict()
-      self.debug = debug
-      self.debug_wamp = debug_wamp
-      self.debug_app = debug_app
+      self.debug = True
+      self.debug_wamp = True
+      self.debug_app = True
       self.make = None
       self.serializers = serializers
 
@@ -236,7 +185,7 @@ class ApplicationRunner:
             session = make(cfg)
          except Exception as e:
             ## the app component could not be created .. fatal
-            print(e)
+            self.logException(e)
             asyncio.get_event_loop().stop()
          else:
             session.debug_app = self.debug_app

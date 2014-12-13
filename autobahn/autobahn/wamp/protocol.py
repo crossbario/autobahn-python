@@ -401,7 +401,7 @@ class ApplicationSession(BaseSession):
             self._session_id = msg.session
 
             details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-            self._as_future(self.onJoin, details)
+            self.as_future(self.onJoin, details)
 
          elif isinstance(msg, message.Abort):
 
@@ -411,7 +411,7 @@ class ApplicationSession(BaseSession):
          elif isinstance(msg, message.Challenge):
 
             challenge = types.Challenge(msg.method, msg.extra)
-            d = self._as_future(self.onChallenge, challenge)
+            d = self.as_future(self.onChallenge, challenge)
 
             def success(signature):
                reply = message.Authenticate(signature)
@@ -423,7 +423,7 @@ class ApplicationSession(BaseSession):
                ## fire callback and close the transport
                self.onLeave(types.CloseDetails(reply.reason, reply.message))
 
-            self._add_future_callbacks(d, success, error)
+            self.add_future_callbacks(d, success, error)
 
          else:
             raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
@@ -480,7 +480,7 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     print("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e))
+                     self.logDebug("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e), exc_info=True)
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -490,7 +490,7 @@ class ApplicationSession(BaseSession):
             if msg.request in self._publish_reqs:
                d, opts = self._publish_reqs.pop(msg.request)
                p = Publication(msg.publication)
-               self._resolve_future(d, p)
+               self.resolve_future(d, p)
             else:
                raise ProtocolError("PUBLISHED received for non-pending request ID {0}".format(msg.request))
 
@@ -503,7 +503,7 @@ class ApplicationSession(BaseSession):
                else:
                   self._subscriptions[msg.subscription] = Handler(obj, fn, topic)
                s = Subscription(self, msg.subscription)
-               self._resolve_future(d, s)
+               self.resolve_future(d, s)
             else:
                raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -514,7 +514,7 @@ class ApplicationSession(BaseSession):
                if subscription.id in self._subscriptions:
                   del self._subscriptions[subscription.id]
                subscription.active = False
-               self._resolve_future(d, None)
+               self.resolve_future(d, None)
             else:
                raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -542,7 +542,7 @@ class ApplicationSession(BaseSession):
                      except Exception as e:
                         ## silently drop exceptions raised in progressive results handlers
                         if self.debug:
-                           print("Exception raised in progressive results handler: {0}".format(e))
+                           self.logDebug("Exception raised in progressive results handler: {0}".format(e), exc_info=True)
                   else:
                      ## silently ignore progressive results
                      pass
@@ -556,16 +556,16 @@ class ApplicationSession(BaseSession):
                         res = types.CallResult(*msg.args, **msg.kwargs)
                      else:
                         res = types.CallResult(**msg.kwargs)
-                     self._resolve_future(d, res)
+                     self.resolve_future(d, res)
                   else:
                      if msg.args:
                         if len(msg.args) > 1:
                            res = types.CallResult(*msg.args)
-                           self._resolve_future(d, res)
+                           self.resolve_future(d, res)
                         else:
-                           self._resolve_future(d, msg.args[0])
+                           self.resolve_future(d, msg.args[0])
                      else:
-                        self._resolve_future(d, None)
+                        self.resolve_future(d, None)
             else:
                raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
@@ -603,25 +603,25 @@ class ApplicationSession(BaseSession):
                   if endpoint.obj:
                      if msg.kwargs:
                         if msg.args:
-                           d = self._as_future(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
+                           d = self.as_future(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
                         else:
-                           d = self._as_future(endpoint.fn, endpoint.obj, **msg.kwargs)
+                           d = self.as_future(endpoint.fn, endpoint.obj, **msg.kwargs)
                      else:
                         if msg.args:
-                           d = self._as_future(endpoint.fn, endpoint.obj, *msg.args)
+                           d = self.as_future(endpoint.fn, endpoint.obj, *msg.args)
                         else:
-                           d = self._as_future(endpoint.fn, endpoint.obj)
+                           d = self.as_future(endpoint.fn, endpoint.obj)
                   else:
                      if msg.kwargs:
                         if msg.args:
-                           d = self._as_future(endpoint.fn, *msg.args, **msg.kwargs)
+                           d = self.as_future(endpoint.fn, *msg.args, **msg.kwargs)
                         else:
-                           d = self._as_future(endpoint.fn, **msg.kwargs)
+                           d = self.as_future(endpoint.fn, **msg.kwargs)
                      else:
                         if msg.args:
-                           d = self._as_future(endpoint.fn, *msg.args)
+                           d = self.as_future(endpoint.fn, *msg.args)
                         else:
-                           d = self._as_future(endpoint.fn)
+                           d = self.as_future(endpoint.fn)
 
                   def success(res):
                      del self._invocations[msg.request]
@@ -643,8 +643,7 @@ class ApplicationSession(BaseSession):
                         tb = None
 
                      if self.debug_app:
-                        print("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration))
-                        print(err)
+                        self.logDebug("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration), exc_info=True)
 
                      del self._invocations[msg.request]
 
@@ -657,7 +656,7 @@ class ApplicationSession(BaseSession):
 
                   self._invocations[msg.request] = d
 
-                  self._add_future_callbacks(d, success, error)
+                  self.add_future_callbacks(d, success, error)
 
          elif isinstance(msg, message.Interrupt):
 
@@ -669,7 +668,7 @@ class ApplicationSession(BaseSession):
                   self._invocations[msg.request].cancel()
                except Exception:
                   if self.debug:
-                     print("could not cancel call {0}".format(msg.request))
+                     self.logDebug("could not cancel call {0}".format(msg.request), exc_info=True)
                finally:
                   del self._invocations[msg.request]
 
@@ -679,7 +678,7 @@ class ApplicationSession(BaseSession):
                d, obj, fn, procedure, options = self._register_reqs.pop(msg.request)
                self._registrations[msg.registration] = Endpoint(obj, fn, procedure, options)
                r = Registration(self, msg.registration)
-               self._resolve_future(d, r)
+               self.resolve_future(d, r)
             else:
                raise ProtocolError("REGISTERED received for non-pending request ID {0}".format(msg.request))
 
@@ -690,7 +689,7 @@ class ApplicationSession(BaseSession):
                if registration.id in self._registrations:
                   del self._registrations[registration.id]
                registration.active = False
-               self._resolve_future(d, None)
+               self.resolve_future(d, None)
             else:
                raise ProtocolError("UNREGISTERED received for non-pending request ID {0}".format(msg.request))
 
@@ -729,7 +728,7 @@ class ApplicationSession(BaseSession):
                d = self._call_reqs.pop(msg.request)[0]
 
             if d:
-               self._reject_future(d, self._exception_from_message(msg))
+               self.reject_future(d, self._exception_from_message(msg))
             else:
                raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
 
@@ -756,7 +755,7 @@ class ApplicationSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {0}".format(e))
+               self.logDebug("exception raised in onLeave callback: {0}".format(e), exc_info=True)
 
          self._session_id = None
 
@@ -821,7 +820,7 @@ class ApplicationSession(BaseSession):
          msg = message.Publish(request, topic, args = args, kwargs = kwargs)
 
       if opts and opts.options['acknowledge'] == True:
-         d = self._create_future()
+         d = self.create_future()
          self._publish_reqs[request] = d, opts
          self._transport.send(msg)
          return d
@@ -846,7 +845,7 @@ class ApplicationSession(BaseSession):
       def _subscribe(obj, handler, topic, options):
          request = util.id()
 
-         d = self._create_future()
+         d = self.create_future()
          self._subscribe_reqs[request] = (d, obj, handler, topic, options)
 
          if options is not None:
@@ -874,7 +873,7 @@ class ApplicationSession(BaseSession):
                if pat.is_handler():
                   uri = pat.uri()
                   dl.append(_subscribe(handler, proc, uri, options))
-         return self._gather_futures(dl, consume_exceptions = True)
+         return self.gather_futures(dl, consume_exceptions = True)
 
 
    def _unsubscribe(self, subscription):
@@ -890,7 +889,7 @@ class ApplicationSession(BaseSession):
 
       request = util.id()
 
-      d = self._create_future()
+      d = self.create_future()
       self._unsubscribe_reqs[request] = (d, subscription)
 
       msg = message.Unsubscribe(request, subscription.id)
@@ -924,7 +923,7 @@ class ApplicationSession(BaseSession):
       #   cancel_msg = message.Cancel(request)
       #   self._transport.send(cancel_msg)
       #d = Deferred(canceller)
-      d = self._create_future()
+      d = self.create_future()
       self._call_reqs[request] = d, opts
 
       self._transport.send(msg)
@@ -947,7 +946,7 @@ class ApplicationSession(BaseSession):
       def _register(obj, endpoint, procedure, options):
          request = util.id()
 
-         d = self._create_future()
+         d = self.create_future()
          self._register_reqs[request] = (d, obj, endpoint, procedure, options)
 
          if options is not None:
@@ -977,7 +976,7 @@ class ApplicationSession(BaseSession):
                if pat.is_endpoint():
                   uri = pat.uri()
                   dl.append(_register(endpoint, proc, uri, options))
-         return self._gather_futures(dl, consume_exceptions = True)
+         return self.gather_futures(dl, consume_exceptions = True)
 
 
    def _unregister(self, registration):
@@ -993,7 +992,7 @@ class ApplicationSession(BaseSession):
 
       request = util.id()
 
-      d = self._create_future()
+      d = self.create_future()
       self._unregister_reqs[request] = (d, registration)
 
       msg = message.Unregister(request, registration.id)
@@ -1131,7 +1130,7 @@ class RouterApplicationSession:
             self._session._authid, self._session._authrole, self._session._authmethod,
             self._session._authprovider)
 
-         self._session._as_future(self._session.onJoin, details)
+         self._session.as_future(self._session.onJoin, details)
          #self._session.onJoin(details)
 
 
@@ -1265,7 +1264,7 @@ class RouterSession(BaseSession):
 
             details = types.HelloDetails(msg.roles, msg.authmethods, msg.authid, self._pending_session_id)
 
-            d = self._as_future(self.onHello, self._realm, details)
+            d = self.as_future(self.onHello, self._realm, details)
 
             def success(res):
                msg = None
@@ -1286,13 +1285,13 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               print(err.value)
+               self.logError(err.value)
 
-            self._add_future_callbacks(d, success, failed)
+            self.add_future_callbacks(d, success, failed)
 
          elif isinstance(msg, message.Authenticate):
 
-            d = self._as_future(self.onAuthenticate, msg.signature, {})
+            d = self.as_future(self.onAuthenticate, msg.signature, {})
 
             def success(res):
                msg = None
@@ -1310,9 +1309,9 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               print(err.value)
+               logger.error(err.value)
 
-            self._add_future_callbacks(d, success, failed)
+            self.add_future_callbacks(d, success, failed)
 
          elif isinstance(msg, message.Abort):
 
@@ -1371,7 +1370,7 @@ class RouterSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {0}".format(e))
+               self.logDebug("exception raised in onLeave callback: {0}".format(e), exc_info=True)
 
          self._router.detach(self)
 

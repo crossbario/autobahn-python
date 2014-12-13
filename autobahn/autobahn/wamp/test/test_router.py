@@ -37,7 +37,7 @@ if USE_TWISTED:
    from twisted.trial import unittest
    #import unittest
 
-   from autobahn.twisted.wamp import FutureMixin, \
+   from autobahn.twisted.wamp import LoopMixin, \
                                      RouterFactory, \
                                      RouterSessionFactory, \
                                      ApplicationSession
@@ -59,7 +59,7 @@ elif USE_ASYNCIO:
 
    import gc
 
-   from autobahn.asyncio.wamp import FutureMixin, \
+   from autobahn.asyncio.wamp import LoopMixin, \
                                      RouterFactory, \
                                      RouterSessionFactory, \
                                      ApplicationSession
@@ -96,12 +96,12 @@ class TestEmbeddedSessions(unittest.TestCase):
       Create an application session and add it to a router to
       run embedded.
       """
-      d = FutureMixin._create_future()
+      d = LoopMixin.create_future()
 
       class TestSession(ApplicationSession):
 
          def onJoin(self, details):
-            FutureMixin._resolve_future(d, None)
+            LoopMixin.resolve_future(d, None)
 
       session = TestSession(types.ComponentConfig(u'realm1'))
 
@@ -120,7 +120,7 @@ class TestEmbeddedSessions(unittest.TestCase):
       Create an application session that subscribes to some
       topic and add it to a router to run embedded.
       """
-      d = FutureMixin._create_future()
+      d = LoopMixin.create_future()
 
       class TestSession(ApplicationSession):
 
@@ -132,11 +132,11 @@ class TestEmbeddedSessions(unittest.TestCase):
             d2 = self.subscribe(on_event, u'com.example.topic1')
 
             def ok(_):
-               FutureMixin._resolve_future(d, None)
+               LoopMixin.resolve_future(d, None)
             def error(err):
-               FutureMixin._reject_future(d, err)
+               LoopMixin.reject_future(d, err)
 
-            FutureMixin._add_future_callbacks(d2, ok, error)
+            LoopMixin.add_future_callbacks(d2, ok, error)
 
       session = TestSession(types.ComponentConfig(u'realm1'))
 

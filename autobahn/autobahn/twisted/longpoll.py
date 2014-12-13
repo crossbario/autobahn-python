@@ -351,7 +351,7 @@ class WampLongPollResourceSession(Resource):
       """
       for msg in self._serializer.unserialize(payload, isBinary):
          if self._debug:
-            print("WampLongPoll: RX {0}".format(msg))
+            log.msg("WampLongPoll: RX {0}".format(msg))
          self._session.onMessage(msg)
 
 
@@ -362,7 +362,7 @@ class WampLongPollResourceSession(Resource):
       if self.isOpen():
          try:
             if self._debug:
-               print("WampLongPoll: TX {0}".format(msg))
+               log.msg("WampLongPoll: TX {0}".format(msg))
             payload, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..

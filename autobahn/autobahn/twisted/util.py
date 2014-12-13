@@ -20,11 +20,12 @@ from __future__ import absolute_import
 
 __all = (
    'sleep',
+   'LoopMixin'
 )
 
-from twisted.internet.defer import Deferred
+from twisted.internet.defer import Deferred, DeferredList, maybeDeferred
 from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
-
+from autobahn.twisted.log import LogMixin
 
 def sleep(delay, reactor = None):
    """
@@ -61,3 +62,89 @@ def peer2str(addr):
       res = "?:{0}".format(addr)
 
    return res
+
+
+
+class FutureMixin:
+   """
+   Mixin for Twisted style Futures ("Deferreds").
+   """
+
+   @staticmethod
+   def create_future():
+      """"
+      Creates a new twisted Deferred
+      """
+      return Deferred()
+
+   @staticmethod
+   def as_future(fun, *args, **kwargs):
+      """
+      Executes a function with the given arguments
+      and wraps the result into a Deferred.
+      :param fun: The function to be called.
+      :type fun: func
+      :param args: The argument list for the supplied function.
+      :type args: list
+      :param kwargs: The keyword argument dict for the supplied function.
+      :type kwargs: dict
+      :return: The functions result wrapped in a Deferred
+      :rtype: twisted.internet.defer.Deferred
+      """
+      return maybeDeferred(fun, *args, **kwargs)
+
+   @staticmethod
+   def resolve_future(deferred, value):
+      """
+      Resolve a Deferred sucessfully with a given value.
+      :param deferred: The Deferred to be resolved.
+      :type deferred: twisted.internet.defer.Deferred
+      :param value: The value to resolve the Deferred with.
+      :type value: any
+      """
+      deferred.callback(value)
+
+   @staticmethod
+   def reject_future(deferred, value):
+      """
+      Rejects a Deferred with a given exception.
+      :param deferred: The Deferred to be rejected.
+      :type deferred: twisted.internet.defer.Deferred
+      :param exception: The exception to reject the Deferred with.
+      :type exception: Exception
+      """
+      deferred.errback(value)
+
+   @staticmethod
+   def add_future_callbacks(deferred, callback, errback):
+      """
+      Register callback and errback functions with a Deferred.
+      :param deferred: The Deferred to register callbacks with.
+      :type deferred: twisted.internet.defer.Deferred
+      :param callback: The callback function to register with the Deferred.
+      :type callback: func
+      :param errback: The errback function to register with the Deferred.
+      :type errback: func
+      """
+      return deferred.addCallbacks(callback, errback)
+
+   @staticmethod
+   def gather_futures(deferreds, consume_exceptions=True):
+      """
+      Returns a DeferredList that gathers the results of a list of Deferreds.
+      :param deferreds: The list of Deferreds to gather results from.
+      :type deferreds: list
+      :param consume_exceptions: If True, exceptions in the tasks are treated the same as successful results, and gathered in the result list; otherwise, the first raised exception will be immediately propagated to the returned future.
+      :type consume_exceptions: bool
+      :returns: A DeferredList fired with the result of all supplied Deferreds.
+      :rtype: twisted.internet.defer.DeferredList
+      """
+      return DeferredList(deferreds, consumeErrors=consume_exceptions)
+
+
+
+class LoopMixin(FutureMixin, LogMixin):
+    """
+    A mixin that pulls in all loop-specific mixins for the twisted loop.
+    """
+    pass

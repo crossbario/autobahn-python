@@ -41,7 +41,7 @@ class WampWebSocketProtocol:
 
    def _bailout(self, code, reason = None):
       if self.factory.debug_wamp:
-         print("Failing WAMP-over-WebSocket transport: code = {0}, reason = '{1}'".format(code, reason))
+         self.logError("Failing WAMP-over-WebSocket transport: code = {0}, reason = '{1}'".format(code, reason))
       self.failConnection(code, reason)
 
 
@@ -56,7 +56,7 @@ class WampWebSocketProtocol:
          self._session.onOpen(self)
       except Exception as e:
          if self.factory.debug_wamp:
-            traceback.print_exc()
+            self.logDebug(e, exc_info=True)
          ## Exceptions raised in onOpen are fatal ..
          reason = "WAMP Internal Error ({0})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
@@ -71,12 +71,12 @@ class WampWebSocketProtocol:
       # noinspection PyBroadException
       try:
          if self.factory.debug_wamp:
-            print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
+            self.logDebug("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
          self._session.onClose(wasClean)
-      except Exception:
+      except Exception as e:
          ## silently ignore exceptions raised here ..
          if self.factory.debug_wamp:
-            traceback.print_exc()
+            self.logDebug(e, exc_info=True)
       self._session = None
 
 
@@ -87,18 +87,18 @@ class WampWebSocketProtocol:
       try:
          for msg in self._serializer.unserialize(payload, isBinary):
             if self.factory.debug_wamp:
-               print("RX {0}".format(msg))
+               self.logDebug("RX {0}".format(msg))
             self._session.onMessage(msg)
 
       except ProtocolError as e:
          if self.factory.debug_wamp:
-            traceback.print_exc()
+            self.logDebug(e, exc_info=True)
          reason = "WAMP Protocol Error ({0})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason = reason)
 
       except Exception as e:
          if self.factory.debug_wamp:
-            traceback.print_exc()
+            self.logDebug(e, exc_info=True)
          reason = "WAMP Internal Error ({0})".format(e)
          self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
@@ -110,7 +110,7 @@ class WampWebSocketProtocol:
       if self.isOpen():
          try:
             if self.factory.debug_wamp:
-               print("TX {0}".format(msg))
+               self.logDebug("TX {0}".format(msg))
             payload, isBinary = self._serializer.serialize(msg)
          except Exception as e:
             ## all exceptions raised from above should be serialization errors ..
@@ -212,7 +212,7 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
             serializerId = 'json'
       else:
          version, serializerId = parseSubprotocolIdentifier(response.protocol)
-      
+
       self._serializer = self.factory._serializers[serializerId]
 
 

@@ -47,55 +47,24 @@ from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory, \
                                        WampWebSocketServerFactory
+from autobahn.twisted.util import LoopMixin
 
 
-
-class FutureMixin:
-   """
-   Mixin for Twisted style Futures ("Deferreds").
-   """
-
-   @staticmethod
-   def _create_future():
-      return Deferred()
-
-   @staticmethod
-   def _as_future(fun, *args, **kwargs):
-      return maybeDeferred(fun, *args, **kwargs)
-
-   @staticmethod
-   def _resolve_future(future, value):
-      future.callback(value)
-
-   @staticmethod
-   def _reject_future(future, value):
-      future.errback(value)
-
-   @staticmethod
-   def _add_future_callbacks(future, callback, errback):
-      return future.addCallbacks(callback, errback)
-
-   @staticmethod
-   def _gather_futures(futures, consume_exceptions = True):
-      return DeferredList(futures, consumeErrors = consume_exceptions)
-
-
-
-class Broker(FutureMixin, broker.Broker):
+class Broker(LoopMixin, broker.Broker):
    """
    Basic WAMP broker for Twisted-based applications.
    """
 
 
 
-class Dealer(FutureMixin, dealer.Dealer):
+class Dealer(LoopMixin, dealer.Dealer):
    """
    Basic WAMP dealer for Twisted-based applications.
    """
 
 
 
-class Router(FutureMixin, router.Router):
+class Router(LoopMixin, router.Router):
    """
    Basic WAMP router for Twisted-based applications.
    """
@@ -112,7 +81,7 @@ class Router(FutureMixin, router.Router):
 
 
 
-class RouterFactory(FutureMixin, router.RouterFactory):
+class RouterFactory(LoopMixin, router.RouterFactory):
    """
    Basic WAMP router factory for Twisted-based applications.
    """
@@ -124,14 +93,14 @@ class RouterFactory(FutureMixin, router.RouterFactory):
 
 
 
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(LoopMixin, protocol.ApplicationSession):
    """
    WAMP application session for Twisted-based applications.
    """
 
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(LoopMixin, protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for Twisted-based applications.
    """
@@ -143,14 +112,14 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
 
 
 
-class RouterSession(FutureMixin, protocol.RouterSession):
+class RouterSession(LoopMixin, protocol.RouterSession):
    """
    WAMP router session for Twisted-based applications.
    """
 
 
 
-class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
+class RouterSessionFactory(LoopMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for Twisted-based applications.
    """
@@ -162,7 +131,7 @@ class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
 
 
 
-class ApplicationRunner:
+class ApplicationRunner(LoopMixin):
    """
    This class is a convenience tool mainly for development and quick hosting
    of WAMP application components.

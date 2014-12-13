@@ -115,7 +115,7 @@ class Dealer:
 
             ## authorize action
             ##
-            d = self._as_future(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
+            d = self.as_future(self._router.authorize, session, register.procedure, IRouter.ACTION_REGISTER)
 
             def on_authorize_success(authorized):
                if authorized:
@@ -135,7 +135,7 @@ class Dealer:
                reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for registering procedure '{0}': {1}".format(register.procedure, err.value)])
                session._transport.send(reply)
 
-            self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
+            self.add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Register.MESSAGE_TYPE, register.request, ApplicationError.PROCEDURE_ALREADY_EXISTS, ["register for already registered procedure '{0}'".format(register.procedure)])
@@ -205,7 +205,7 @@ class Dealer:
 
             ## authorize action
             ##
-            d = self._as_future(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
+            d = self.as_future(self._router.authorize, session, call.procedure, IRouter.ACTION_CALL)
 
             def on_authorize_success(authorized):
                if authorized:
@@ -250,7 +250,7 @@ class Dealer:
                reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.AUTHORIZATION_FAILED, ["failed to authorize session for calling procedure '{0}': {1}".format(call.procedure, err.value)])
                session._transport.send(reply)
 
-            self._add_future_callbacks(d, on_authorize_success, on_authorize_error)
+            self.add_future_callbacks(d, on_authorize_success, on_authorize_error)
 
          else:
             reply = message.Error(message.Call.MESSAGE_TYPE, call.request, ApplicationError.NO_SUCH_PROCEDURE, ["no procedure '{0}' registered".format(call.procedure)])
