@@ -47,75 +47,24 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.wamp import router, broker, dealer
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
+from autobahn.asyncio.util import LoopMixin
 
 
-
-class FutureMixin:
-   """
-   Mixin for Asyncio style Futures.
-   """
-
-   @staticmethod
-   def _create_future():
-      return Future()
-
-   @staticmethod
-   def _as_future(fun, *args, **kwargs):
-      try:
-         res = fun(*args, **kwargs)
-      except Exception as e:
-         f = Future()
-         f.set_exception(e)
-         return f
-      else:
-         if isinstance(res, Future):
-            return res
-         elif iscoroutine(res):
-            return asyncio.Task(res)
-         else:
-            f = Future()
-            f.set_result(res)
-            return f
-
-   @staticmethod
-   def _resolve_future(future, value):
-      future.set_result(value)
-
-   @staticmethod
-   def _reject_future(future, value):
-      future.set_exception(value)
-
-   @staticmethod
-   def _add_future_callbacks(future, callback, errback):
-      def done(f):
-         try:
-            res = f.result()
-            callback(res)
-         except Exception as e:
-            errback(e)
-      return future.add_done_callback(done)
-
-   @staticmethod
-   def _gather_futures(futures, consume_exceptions = True):
-      return asyncio.gather(*futures, return_exceptions = consume_exceptions)
-
-
-
-class Broker(FutureMixin, broker.Broker):
+class Broker(LoopMixin, broker.Broker):
    """
    Basic WAMP broker for asyncio-based applications.
    """
 
 
 
-class Dealer(FutureMixin, dealer.Dealer):
+class Dealer(LoopMixin, dealer.Dealer):
    """
    Basic WAMP dealer for asyncio-based applications.
    """
 
 
 
-class Router(FutureMixin, router.Router):
+class Router(LoopMixin, router.Router):
    """
    Basic WAMP router for asyncio-based applications.
    """
@@ -132,7 +81,7 @@ class Router(FutureMixin, router.Router):
 
 
 
-class RouterFactory(FutureMixin, router.RouterFactory):
+class RouterFactory(LoopMixin, router.RouterFactory):
    """
    Basic WAMP router factory for asyncio-based applications.
    """
@@ -144,14 +93,14 @@ class RouterFactory(FutureMixin, router.RouterFactory):
 
 
 
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(LoopMixin, protocol.ApplicationSession):
    """
    WAMP application session for asyncio-based applications.
    """
 
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(LoopMixin, protocol.ApplicationSessionFactory):
    """
    WAMP application session factory for asyncio-based applications.
    """
@@ -163,14 +112,14 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
 
 
 
-class RouterSession(FutureMixin, protocol.RouterSession):
+class RouterSession(LoopMixin, protocol.RouterSession):
    """
    WAMP router session for asyncio-based applications.
    """
 
 
 
-class RouterSessionFactory(FutureMixin, protocol.RouterSessionFactory):
+class RouterSessionFactory(LoopMixin, protocol.RouterSessionFactory):
    """
    WAMP router session factory for asyncio-based applications.
    """
