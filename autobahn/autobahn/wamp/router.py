@@ -77,7 +77,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.process`
       """
       if self.debug:
-         print("Router.process: {0}".format(msg))
+         self.logDebug("Router.process: {0}".format(msg))
 
       ## Broker
       ##
@@ -119,7 +119,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.authorize`
       """
       if self.debug:
-         print("Router.authorize: {0} {1} {2}".format(session, uri, action))
+         self.logDebug("Router.authorize: {0} {1} {2}".format(session, uri, action))
       return True
 
 
@@ -128,7 +128,7 @@ class Router:
       Implements :func:`autobahn.wamp.interfaces.IRouter.validate`
       """
       if self.debug:
-         print("Router.validate: {0} {1} {2} {3}".format(payload_type, uri, args, kwargs))
+         self.logDebug("Router.validate: {0} {1} {2} {3}".format(payload_type, uri, args, kwargs))
 
 
 
@@ -153,7 +153,7 @@ class RouterFactory:
       """
 
       :param options: Default router options.
-      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.      
+      :type options: Instance of :class:`autobahn.wamp.types.RouterOptions`.
       """
       self._routers = {}
       self.debug = debug
@@ -167,7 +167,7 @@ class RouterFactory:
       if not realm in self._routers:
          self._routers[realm] = self.router(self, realm, self._options)
          if self.debug:
-            print("Router created for realm '{0}'".format(realm))
+            self.logDebug("Router created for realm '{0}'".format(realm))
       return self._routers[realm]
 
 
@@ -175,7 +175,7 @@ class RouterFactory:
       assert(router.realm in self._routers)
       del self._routers[router.realm]
       if self.debug:
-         print("Router destroyed for realm '{0}'".format(router.realm))
+         self.logDebug("Router destroyed for realm '{0}'".format(router.realm))
 
 
 

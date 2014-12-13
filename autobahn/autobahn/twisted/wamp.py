@@ -131,7 +131,7 @@ class RouterSessionFactory(LoopMixin, protocol.RouterSessionFactory):
 
 
 
-class ApplicationRunner:
+class ApplicationRunner(LoopMixin):
    """
    This class is a convenience tool mainly for development and quick hosting
    of WAMP application components.

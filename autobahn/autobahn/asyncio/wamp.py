@@ -131,7 +131,7 @@ class RouterSessionFactory(LoopMixin, protocol.RouterSessionFactory):
 
 
 
-class ApplicationRunner:
+class ApplicationRunner(LoopMixin):
    """
    This class is a convenience tool mainly for development and quick hosting
    of WAMP application components.
@@ -141,7 +141,7 @@ class ApplicationRunner:
    """
 
    def __init__(self, url, realm, extra = None, serializers = None,
-      debug = False, debug_wamp = False, debug_app = False):
+      debug = True, debug_wamp = True, debug_app = True):
       """
 
       :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -153,19 +153,19 @@ class ApplicationRunner:
       :param serializers: A list of WAMP serializers to use (or None for default serializers).
          Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
       :type serializers: list
-      :param debug: Turn on low-level debugging.
+      :param debug: Turn on low-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug: bool
-      :param debug_wamp: Turn on WAMP-level debugging.
+      :param debug_wamp: Turn on WAMP-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug_wamp: bool
-      :param debug_app: Turn on app-level debugging.
+      :param debug_app: Turn on app-level debugging. This parameter is kept for twisted compatability, but is always true for asyncio. Debugging should be handled using logging levels.
       :type debug_app: bool
       """
       self.url = url
       self.realm = realm
       self.extra = extra or dict()
-      self.debug = debug
-      self.debug_wamp = debug_wamp
-      self.debug_app = debug_app
+      self.debug = True
+      self.debug_wamp = True
+      self.debug_app = True
       self.make = None
       self.serializers = serializers
 
@@ -185,7 +185,7 @@ class ApplicationRunner:
             session = make(cfg)
          except Exception as e:
             ## the app component could not be created .. fatal
-            print(e)
+            self.logException(e)
             asyncio.get_event_loop().stop()
          else:
             session.debug_app = self.debug_app

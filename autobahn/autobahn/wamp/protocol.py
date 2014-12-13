@@ -480,7 +480,7 @@ class ApplicationSession(BaseSession):
 
                except Exception as e:
                   if self.debug_app:
-                     print("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e))
+                     self.logDebug("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e), exc_info=True)
 
             else:
                raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -542,7 +542,7 @@ class ApplicationSession(BaseSession):
                      except Exception as e:
                         ## silently drop exceptions raised in progressive results handlers
                         if self.debug:
-                           print("Exception raised in progressive results handler: {0}".format(e))
+                           self.logDebug("Exception raised in progressive results handler: {0}".format(e), exc_info=True)
                   else:
                      ## silently ignore progressive results
                      pass
@@ -643,8 +643,7 @@ class ApplicationSession(BaseSession):
                         tb = None
 
                      if self.debug_app:
-                        print("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration))
-                        print(err)
+                        self.logDebug("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration), exc_info=True)
 
                      del self._invocations[msg.request]
 
@@ -669,7 +668,7 @@ class ApplicationSession(BaseSession):
                   self._invocations[msg.request].cancel()
                except Exception:
                   if self.debug:
-                     print("could not cancel call {0}".format(msg.request))
+                     self.logDebug("could not cancel call {0}".format(msg.request), exc_info=True)
                finally:
                   del self._invocations[msg.request]
 
@@ -756,7 +755,7 @@ class ApplicationSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {0}".format(e))
+               self.logDebug("exception raised in onLeave callback: {0}".format(e), exc_info=True)
 
          self._session_id = None
 
@@ -1286,7 +1285,7 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               print(err.value)
+               self.logError(err.value)
 
             self.add_future_callbacks(d, success, failed)
 
@@ -1310,7 +1309,7 @@ class RouterSession(BaseSession):
                   self._transport.send(msg)
 
             def failed(err):
-               print(err.value)
+               logger.error(err.value)
 
             self.add_future_callbacks(d, success, failed)
 
@@ -1371,7 +1370,7 @@ class RouterSession(BaseSession):
             self.onLeave(types.CloseDetails())
          except Exception as e:
             if self.debug:
-               print("exception raised in onLeave callback: {0}".format(e))
+               self.logDebug("exception raised in onLeave callback: {0}".format(e), exc_info=True)
 
          self._router.detach(self)
 

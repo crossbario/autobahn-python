@@ -20,11 +20,12 @@ from __future__ import absolute_import
 
 __all = (
    'sleep',
+   'LoopMixin'
 )
 
 from twisted.internet.defer import Deferred, DeferredList, maybeDeferred
 from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
-
+from autobahn.twisted.log import LogMixin
 
 def sleep(delay, reactor = None):
    """
@@ -142,7 +143,7 @@ class FutureMixin:
 
 
 
-class LoopMixin(FutureMixin):
+class LoopMixin(FutureMixin, LogMixin):
     """
     A mixin that pulls in all loop-specific mixins for the twisted loop.
     """

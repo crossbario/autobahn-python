@@ -46,7 +46,7 @@ except ImportError:
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 from autobahn.websocket import http
-
+from autobahn.asyncio.util import LoopMixin
 
 def yields(value):
    """
@@ -58,7 +58,7 @@ def yields(value):
 
 
 
-class WebSocketAdapterProtocol(asyncio.Protocol):
+class WebSocketAdapterProtocol(asyncio.Protocol, LoopMixin):
    """
    Adapter class for asyncio-based WebSocket client and server protocols.
    """
@@ -97,7 +97,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
             if self.transport:
                self._dataReceived(data)
             else:
-               print("WebSocketAdapterProtocol._consume: no transport")
+               self.logInfo("WebSocketAdapterProtocol._consume: no transport")
          self._consume()
 
       self.waiter.add_done_callback(process)
@@ -220,13 +220,13 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
 
 
-class WebSocketAdapterFactory:
+class WebSocketAdapterFactory(LoopMixin):
    """
    Adapter class for asyncio-based WebSocket client and server factories.
    """
 
    def _log(self, msg):
-      print(msg)
+      self.logInfo(msg)
 
 
    def _callLater(self, delay, fun):
@@ -312,11 +312,12 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
       else:
          serializers = None
 
-      if 'debug_wamp' in kwargs:
-         debug_wamp = kwargs['debug_wamp']
-         del kwargs['debug_wamp']
-      else:
-         debug_wamp = False
+      # asyncio uses python logging which allows filtering debug
+      # on the log level. That makes it desirable to have debug
+      # always enabled on the server level.
+      if "debug_wamp" in kwargs:
+         del kwargs["debug_wamp"]
+      debug_wamp = True
 
       websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
 
@@ -349,11 +350,12 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
       else:
          serializers = None
 
-      if 'debug_wamp' in kwargs:
-         debug_wamp = kwargs['debug_wamp']
-         del kwargs['debug_wamp']
-      else:
-         debug_wamp = False
+      # asyncio uses python logging which allows filtering debug
+      # on the log level. That makes it desirable to have debug
+      # always enabled on the server level.
+      if "debug_wamp" in kwargs:
+         del kwargs["debug_wamp"]
+      debug_wamp = True
 
       websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
 
