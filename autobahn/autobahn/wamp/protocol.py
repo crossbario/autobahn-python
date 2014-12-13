@@ -149,6 +149,10 @@ class BaseSession:
       ## procedures)
       self.traceback_app = False
 
+      # Callback for handling errors in the application. Return False if you
+      # do want to not propagate to the client.
+      self.error_handler = False
+
       ## mapping of exception classes to WAMP error URIs
       self._ecls_to_uri_pat = {}
 
@@ -633,6 +637,10 @@ class ApplicationSession(BaseSession):
                      self._transport.send(reply)
 
                   def error(err):
+                     if self.error_handler:
+                        if not self.error_handler(err):
+                           return
+
                      if self.traceback_app:
                         ## if asked to marshal the traceback within the WAMP error message, extract it
                         # noinspection PyCallingNonCallable
