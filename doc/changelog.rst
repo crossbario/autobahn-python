@@ -5,6 +5,17 @@
 Changelog
 =========
 
+0.9.4
+-----
+
+`Published 2014-12-15 <https://pypi.python.org/pypi/autobahn/0.9.4>`__
+
+* refactor router code to Crossbar.io
+* fix: catch error when Nagle cannot be set on stream transport (UDS)
+* fix: spelling in doc strings / docs
+* fix: WAMP JSON serialization of Unicode for ujson
+* fix: Twisted plugins issue
+
 0.9.3-2
 -------
 
