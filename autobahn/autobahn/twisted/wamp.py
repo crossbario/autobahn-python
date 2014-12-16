@@ -120,7 +120,6 @@ class ApplicationRunner:
       self.url = url
       self.realm = realm
       self.extra = extra or dict()
-      self.standalone = standalone
       self.debug = debug
       self.debug_wamp = debug_wamp
       self.debug_app = debug_app
@@ -289,8 +288,6 @@ class Application:
       :type url: unicode
       :param realm: The realm on the WAMP router to join.
       :type realm: unicode
-      :param standalone: If ``True``, run an embedded WAMP router instead of connecting
-         to an external one. This is useful during development and debugging.
       :param debug: Turn on low-level debugging.
       :type debug: bool
       :param debug_wamp: Turn on WAMP-level debugging.
@@ -298,9 +295,7 @@ class Application:
       :param debug_app: Turn on app-level debugging.
       :type debug_app: bool
       """
-      if standalone:
-         print("Running on {0} ..".format(url))
-      runner = ApplicationRunner(url, realm, standalone = standalone,
+      runner = ApplicationRunner(url, realm,
          debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
       runner.run(self.__call__, start_reactor)
 
