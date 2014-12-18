@@ -83,8 +83,8 @@ class Pattern:
       components = uri.split('.')
       pl = []
       nc = {}
-      i = 0
-      for component in components:
+      for i in range(len(components)):
+         component = components[i]
 
          match = Pattern._URI_NAMED_CONVERTED_COMPONENT.match(component)
          if match:
