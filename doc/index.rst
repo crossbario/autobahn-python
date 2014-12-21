@@ -31,7 +31,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 
 |AbL| features
 
-* framework for `WebSocket`_ / `WAMP`_ clients and servers
+* framework for `WebSocket`_ / `WAMP`_ clients
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
@@ -68,6 +68,8 @@ And WebSocket works great not only on the Web, but also as a protocol for wiring
 While WebSocket already is quite awesome, it is still low-level. Which is why we have WAMP. WAMP allows you to **compose your application from loosely coupled components** that talk in real-time with each other - using nice high-level communication patterns ("Remote Procedure Calls" and "Publish & Subscribe").
 
 WAMP enables application architectures with application code **distributed freely across processes and devices** according to functional aspects. Since WAMP implementations exist for **multiple languages**, WAMP applications can be **polyglot**. Application components can be implemented in a language and run on a device which best fit the particular use case.
+
+WAMP is a routed protocol, so you need a WAMP router. We suggest using `Crossbar.io <http://crossbar.io>`_, but there are also `other implementations <http://wamp.ws/implementations/>`_ available.
 
 More:
 
@@ -144,8 +146,7 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* **server**, which provides a remote procedure endpoint and publishes to a topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/server.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/server.py>`__
-* **client**, which calls the procedure and subscribes to the topic - `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
+* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - * `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
 
 Introduction to WAMP Programming with |ab|:
 

@@ -108,6 +108,26 @@ There are two mandatory arguments to ``ApplicationRunner``:
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
 
 
+Running a WAMP Router
+---------------------
+
+The component we've created attempts to connect to a WAMP locally running router which accepts connections on port 8080, and for a realm "realm1".
+
+Our suggested way of running such a router is to use `Crossbar.io <http://crossbar.io>`_. There are other routers (see the `list of WAMP implementations <http://wamp.ws/implementations/>`_) if you want to take a look.
+
+Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, initialize an instance of it with the default settings, which will accept WAMP connections on `8080/ws` and has a `realm1` pre-configured. To do this, do
+
+.. code-block:: sh
+
+crossbar init
+
+This will create the default config in the directory `.crossbar`. You can then start Crossbar.io by doing 
+
+.. code-block:: sh
+
+crossbar start
+
+
 .. _remote-procedure-calls:
 
 Remote Procedure Calls
