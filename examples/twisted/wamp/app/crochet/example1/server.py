@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+##  Copyright (C) 2014-2015 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -61,10 +61,10 @@ if __name__ == '__main__':
    ##
    @run_in_reactor
    def start_wamp():
-      wapp.run("ws://localhost:9000", "realm1", standalone = True, start_reactor = False)
+      wapp.run("ws://127.0.0.1:8080/ws", "realm1", start_reactor = False)
 
    start_wamp()
 
    ## now start the Flask dev server (which is a regular blocking WSGI server)
    ##
-   app.run(port = 8080)
+   app.run(port = 8050)
