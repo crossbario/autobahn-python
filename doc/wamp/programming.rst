@@ -146,17 +146,23 @@ Here are quick templates for you to copy/paste for creating and running a WAMP c
 Running a WAMP Router
 ---------------------
 
-The component we've created attempts to connect to a WAMP locally running router which accepts connections on port 8080, and for a realm "realm1".
+The component we've created attempts to connect to a **WAMP router** running locally which accepts connections on port ``8080``, and for a realm ``realm1``.
 
-Our suggested way of running such a router is to use `Crossbar.io <http://crossbar.io>`_. There are other routers (see the `list of WAMP implementations <http://wamp.ws/implementations/>`_) if you want to take a look.
+Our suggested way is to use `Crossbar.io <http://crossbar.io>`_ as your WAMP router.
 
-Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, initialize an instance of it with the default settings, which will accept WAMP connections on `8080/ws` and has a `realm1` pre-configured. To do this, do
+.. tip::
+
+   There are other WAMP routers besides Crossbar.io as well. Please see this `list <http://wamp.ws/implementations#routers>`__.
+
+Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, initialize an instance of it with the default settings, which will accept WAMP (over WebSocket) connections on ``ws://<hostname>:8080/ws`` and has a ``realm1`` pre-configured.
+
+To do this, do
 
 .. code-block:: sh
 
    crossbar init
 
-This will create the default config `.crossbar/config.json`. You can then start Crossbar.io by doing 
+This will create the default Crossbar.io node configuration ``.crossbar/config.json``. You can then start Crossbar.io by doing 
 
 .. code-block:: sh
 
