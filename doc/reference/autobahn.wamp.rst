@@ -12,22 +12,6 @@ autobahn.wamp.auth
     :undoc-members:
     :show-inheritance:
 
-autobahn.wamp.broker
---------------------
-
-.. automodule:: autobahn.wamp.broker
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.dealer
---------------------
-
-.. automodule:: autobahn.wamp.dealer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 autobahn.wamp.exception
 -----------------------
 
@@ -64,14 +48,6 @@ autobahn.wamp.role
 ------------------
 
 .. automodule:: autobahn.wamp.role
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.router
---------------------
-
-.. automodule:: autobahn.wamp.router
     :members:
     :undoc-members:
     :show-inheritance:

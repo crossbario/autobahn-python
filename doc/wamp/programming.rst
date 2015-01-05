@@ -119,13 +119,13 @@ Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, ini
 
 .. code-block:: sh
 
-crossbar init
+   crossbar init
 
 This will create the default config in the directory `.crossbar`. You can then start Crossbar.io by doing 
 
 .. code-block:: sh
 
-crossbar start
+   crossbar start
 
 
 .. _remote-procedure-calls:
@@ -157,7 +157,7 @@ Here is an example using **Twisted**
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 14
+   :emphasize-lines: 15
 
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
@@ -182,7 +182,7 @@ The procedure ``add2`` is registered (line 14) under the URI ``u"com.myapp.add2"
 
 .. tip::
 
-   You can register *local* functions like in above example, *global* functions as well as *methods* on class instances. Further, procedures can also be automatically registered using *decorators* (see :ref:`registering-procedure-using-decorators`)
+   You can register *local* functions like in above example, *global* functions as well as *methods* on class instances. Further, procedures can also be automatically registered using *decorators*.
 
 When the registration succeeds, authorized callers will immediately be able to call the procedure (see :ref:`calling-procedures`) using the URI under which it was registered (``u"com.myapp.add2"``).
 
@@ -230,7 +230,7 @@ Here is how you would call the procedure ``add2`` that we registered in :ref:`re
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 11
+   :emphasize-lines: 12
 
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
@@ -252,7 +252,7 @@ And here is the same done on **asyncio**
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 11
+   :emphasize-lines: 12
 
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import coroutine
@@ -302,7 +302,7 @@ Here is a **Twisted** example
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 14
+   :emphasize-lines: 15
 
    from autobahn.twisted.wamp import ApplicationSession
    from twisted.internet.defer import inlineCallbacks
@@ -325,7 +325,7 @@ Here is a **Twisted** example
 
 We create an event handler function ``oncounter`` (you can name that as you like) which will get called whenever an event for the topic is received.
 
-To subscribe (line 14), we provide the event handler function (``oncounter``) and the URI of the topic to which we want to subscribe (``u'com.myapp.oncounter'``).
+To subscribe (line 15), we provide the event handler function (``oncounter``) and the URI of the topic to which we want to subscribe (``u'com.myapp.oncounter'``).
 
 When the subscription succeeds, we will receive any events published to ``u'com.myapp.oncounter'``. Note that we won't receive events published *before* the subscription succeeds.
 
@@ -333,7 +333,7 @@ The corresponding **asyncio** code looks like this
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 14
+   :emphasize-lines: 15
 
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import coroutine
@@ -370,7 +370,7 @@ Here is a **Twisted** example that will publish an event to topic ``u'com.myapp.
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 13
+   :emphasize-lines: 14
 
    from autobahn.twisted.wamp import ApplicationSession
    from autobahn.twisted.util import sleep
@@ -393,7 +393,7 @@ The corresponding **asyncio** code looks like this
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 13
+   :emphasize-lines: 14
 
    from autobahn.asyncio.wamp import ApplicationSession
    from asyncio import sleep
@@ -418,6 +418,47 @@ The corresponding **asyncio** code looks like this
 
 .. tip::
    By default, publications are *unacknowledged*. This means, a ``publish()`` may fail *silently* (like when the session is not authorized to publish to the given topic). This behavior can be overridden.
+
+
+.. _session_lifecycle:
+
+Session Lifecycle
+-----------------
+
+A WAMP application component has this lifecycle:
+
+1. component created
+2. transport connected
+3. authentication challenge received (only for authenticated WAMP sessions)
+4. session established (realm joined)
+5. session closed (realm left)
+6. transport disconnected
+
+The `ApplicationSession` will fire the following events which you can handle by overriding the respective method (see :class:`autobahn.wamp.interfaces.ISession` for more information):
+
+.. code-block:: python
+
+   class MyComponent(ApplicationSession):
+
+      def __init__(self, config = None):
+         ApplicationSession.__init__(self, config)
+         print("component created")
+
+      def onConnect(self):
+         print("transport connected")
+         self.join(self.config.realm)
+
+      def onChallenge(self, challenge):
+         print("authentication challenge received")
+
+      def onJoin(self, details):
+         print("session joined")
+
+      def onLeave(self, details):
+         print("session left")
+
+      def onDisconnect(self):
+         print("transport disconnected")
 
 
 Upgrading
