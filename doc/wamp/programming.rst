@@ -84,7 +84,7 @@ Here is how you use :class:`autobahn.twisted.wamp.ApplicationRunner` with **Twis
 
    from autobahn.twisted.wamp import ApplicationRunner
 
-   runner = ApplicationRunner(url = "ws://localhost:8080/ws", realm = "realm1")
+   runner = ApplicationRunner(url = u"ws://localhost:8080/ws", realm = u"realm1")
    runner.run(MyComponent)
 
 and here is how you use :class:`autobahn.asyncio.wamp.ApplicationRunner` with **asyncio**
@@ -94,7 +94,7 @@ and here is how you use :class:`autobahn.asyncio.wamp.ApplicationRunner` with **
 
    from autobahn.asyncio.wamp import ApplicationRunner
 
-   runner = ApplicationRunner(url = "ws://localhost:8080/ws", realm = "realm1")
+   runner = ApplicationRunner(url = u"ws://localhost:8080/ws", realm = u"realm1")
    runner.run(MyComponent)
 
 As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical.
@@ -106,6 +106,41 @@ There are two mandatory arguments to ``ApplicationRunner``:
 
 .. tip::
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
+
+
+Here are quick templates for you to copy/paste for creating and running a WAMP component.
+
+**Twisted**:
+
+.. code-block:: python
+   :emphasize-lines: 1
+
+   from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+
+   class MyComponent(ApplicationSession):
+
+      def onJoin(self, details):
+         print("session joined")
+
+   if __name__ == '__main__':
+      runner = ApplicationRunner(url = u"ws://localhost:8080/ws", realm = u"realm1")
+      runner.run(MyComponent)
+
+**asyncio**:
+
+.. code-block:: python
+   :emphasize-lines: 1
+
+   from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+
+   class MyComponent(ApplicationSession):
+
+      def onJoin(self, details):
+         print("session joined")
+
+   if __name__ == '__main__':
+      runner = ApplicationRunner(url = u"ws://localhost:8080/ws", realm = u"realm1")
+      runner.run(MyComponent)
 
 
 Running a WAMP Router
@@ -121,7 +156,7 @@ Once you've `installed Crossbar.io <http://crossbar.io/docs/Quick-Start/>`_, ini
 
    crossbar init
 
-This will create the default config in the directory `.crossbar`. You can then start Crossbar.io by doing 
+This will create the default config `.crossbar/config.json`. You can then start Crossbar.io by doing 
 
 .. code-block:: sh
 
@@ -482,3 +517,9 @@ should be modified for |ab| **>= 0.8.0** for (using Twisted)
    from autobahn.wamp1.protocol import WampServerFactory
 
 .. warning:: WAMP v1 will be deprecated with the 0.9 release of |Ab| which is expected in Q4 2014.
+
+
+From < 0.9.4
+............
+
+Starting with release 0.9.4, all WAMP router code in |Ab| has been split out and moved to `Crossbar.io <http://crossbar.io>`_. Please see the announcement `here <https://groups.google.com/d/msg/autobahnws/bCj7O2G2sxA/6-pioJZ_S_MJ>`__.
