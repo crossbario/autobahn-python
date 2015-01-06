@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+##  Copyright (C) 2013-2015 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -66,18 +66,20 @@ class WampWebSocketProtocol:
       """
       Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
       """
-      ## WebSocket connection lost - fire off the WAMP
-      ## session close callback
-      # noinspection PyBroadException
-      try:
-         if self.factory.debug_wamp:
-            print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
-         self._session.onClose(wasClean)
-      except Exception:
-         ## silently ignore exceptions raised here ..
-         if self.factory.debug_wamp:
-            traceback.print_exc()
-      self._session = None
+      ## WAMP session might never have been established in the first place .. guard this!
+      if hasattr(self, '_session') and self._session:
+         ## WebSocket connection lost - fire off the WAMP
+         ## session close callback
+         # noinspection PyBroadException
+         try:
+            if self.factory.debug_wamp:
+               print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
+            self._session.onClose(wasClean)
+         except Exception:
+            ## silently ignore exceptions raised here ..
+            if self.factory.debug_wamp:
+               traceback.print_exc()
+         self._session = None
 
 
    def onMessage(self, payload, isBinary):
