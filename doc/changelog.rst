@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.9.5
+-----
+
+`Published 2015-01-11 <https://pypi.python.org/pypi/autobahn/0.9.5>`__
+
+* do not try to fire onClose on a session that never existed in the first place (fixes #316)
+* various doc fixes
+* fix URI decorator component handling (PR #309)
+* fix "standalone" argument to ApplicationRunner
+
 0.9.4
 -----
 
