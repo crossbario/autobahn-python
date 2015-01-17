@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+##  Copyright (C) 2011-2015 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -33,8 +33,14 @@ import time
 import random
 import sys
 import re
+import six
 from datetime import datetime, timedelta
 from pprint import pformat
+
+if six.PY3:
+   ## Python 3
+   # noinspection PyShadowingBuiltins
+   xrange = range
 
 
 
