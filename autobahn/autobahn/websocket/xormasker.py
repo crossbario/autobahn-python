@@ -1,6 +1,6 @@
 ###############################################################################
 ##
-##  Copyright (C) 2012-2013 Tavendo GmbH
+##  Copyright (C) 2012-2015 Tavendo GmbH
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -73,7 +73,10 @@ except ImportError:
          for k in xrange(dlen):
             payload[k] ^= self.msk[self.ptr & 3]
             self.ptr += 1
-         return payload.tostring()
+         if six.PY3:
+            return payload.tobytes()
+         else:
+            return payload.tostring()
 
 
    class XorMaskerShifted1:
@@ -108,7 +111,10 @@ except ImportError:
          for k in xrange(dlen):
             payload[k] ^= msk[k & 3]
          self.ptr += dlen
-         return payload.tostring()
+         if six.PY3:
+            return payload.tobytes()
+         else:
+            return payload.tostring()
 
 
    def createXorMasker(mask, length = None):
