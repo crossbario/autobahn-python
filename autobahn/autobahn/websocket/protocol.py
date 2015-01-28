@@ -2883,8 +2883,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
          self.http_request_host = self.http_headers["host"].strip()
 
-         if self.http_request_host.find(":") >= 0:
-            (h, p) = self.http_request_host.split(":")
+         if self.http_request_host.find(":") >= 0 and not self.http_request_host.endswith(']'):
+            (h, p) = self.http_request_host.rsplit(":", 1)
             try:
                port = int(str(p.strip()))
             except ValueError:
