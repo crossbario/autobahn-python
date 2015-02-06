@@ -92,6 +92,22 @@ class FutureMixin:
    def _gather_futures(futures, consume_exceptions = True):
       return asyncio.gather(*futures, return_exceptions = consume_exceptions)
 
+   def _call_later(self, delay, callback, *args, **kwargs):
+      if self._loop:
+         loop = self._loop
+      else:
+         loop = asyncio.get_event_loop()
+
+      f = Future()
+
+      def wrapper():
+         try:
+            result = callback(*args, **kwargs)
+            f.set_result(result)
+         except Exception as e:
+            f.set_exception(e)
+
+      return (loop.call_later(delay, wrapper), f)
 
 
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):

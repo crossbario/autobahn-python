@@ -71,6 +71,22 @@ class FutureMixin:
    def _gather_futures(futures, consume_exceptions = True):
       return DeferredList(futures, consumeErrors = consume_exceptions)
 
+   def _call_later(self, delay, callback, *args, **kwargs):
+      if self._reactor:
+         reactor = self._reactor
+      else:
+         from twister.internet.defer import reactor
+
+      d = Deferred()
+
+      def wrapper():
+         try:
+            result = callback(*args, **kwargs)
+            d.callback(result)
+         except Exception as e:
+            d.errback()
+
+      return (reactor.callLater(delay, wrapper), d)
 
 
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
