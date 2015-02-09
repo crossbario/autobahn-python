@@ -23,13 +23,15 @@ __all__ = (
    'ApplicationSession',
    'ApplicationSessionFactory',
    'ApplicationRunner',
-   'Application'
+   'Application',
+   'Service'
 )
 
 import sys
 import inspect
 
 from twisted.python import log
+from twisted.application import service, internet
 from twisted.internet.defer import Deferred, \
                                    maybeDeferred, \
                                    DeferredList, \
@@ -452,3 +454,78 @@ class Application:
          except Exception as e:
             ## FIXME
             log.msg("Warning: exception in signal handler swallowed", e)
+
+
+class Service(service.MultiService):
+   """
+   A WAMP application as a twisted service.
+   The application object provides a simple way of creating, debugging and running WAMP application
+   components inside a traditional twisted application
+
+   This manages application lifecycle of the wamp connection using startService and stopService
+   Using services also allows to create integration tests that properly terminates their connections
+
+   It can host a WAMP application component in a WAMP-over-WebSocket client
+   connecting to a WAMP router.
+   """
+   def __init__(self, url, realm, make, extra = None,
+                debug = False, debug_wamp = False, debug_app = False):
+      """
+
+      :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
+      :type url: unicode
+      :param realm: The WAMP realm to join the application session to.
+      :type realm: unicode
+      :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+         when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+      :type make: callable
+      :param extra: Optional extra configuration to forward to the application component.
+      :type extra: dict
+      :param debug: Turn on low-level debugging.
+      :type debug: bool
+      :param debug_wamp: Turn on WAMP-level debugging.
+      :type debug_wamp: bool
+      :param debug_app: Turn on app-level debugging.
+      :type debug_app: bool
+      """
+      self.url = url
+      self.realm = realm
+      self.extra = extra or dict()
+      self.debug = debug
+      self.debug_wamp = debug_wamp
+      self.debug_app = debug_app
+      self.make = make
+      service.MultiService.__init__(self)
+      self.setupService()
+
+   def setupService(self):
+      """
+      Setup the application component.
+
+      """
+      from twisted.internet import reactor
+
+      isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+
+      ## factory for use ApplicationSession
+      def create():
+         cfg = ComponentConfig(self.realm, self.extra)
+         session = self.make(cfg)
+         session.debug_app = self.debug_app
+         return session
+
+      ## create a WAMP-over-WebSocket transport client factory
+      transport_factory = WampWebSocketClientFactory(create, url = self.url,
+         debug = self.debug, debug_wamp = self.debug_wamp)
+
+      ## setup the client from a Twisted endpoint
+
+      if isSecure:
+         from twisted.application.internet import SSLClient
+         clientClass = SSLClient
+      else:
+         from twisted.application.internet import TCPClient
+         clientClass = TCPClient
+
+      client = clientClass(host, port, transport_factory)
+      client.setServiceParent(self)
