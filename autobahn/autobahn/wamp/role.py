@@ -40,6 +40,14 @@ class RoleFeatures(util.EqualityMixin):
     def __str__(self):
         return json.dumps(self.__dict__)
 
+    def __repr__(self):
+        configured_options = {}
+        for k, v in self.__dict__.iteritems():
+            if v is not None:
+                configured_options[k] = v
+        return "{}({})".format(self.ROLE, ", ".join([k + '=' + str(v)
+                                                     for k, v in configured_options.items()]))
+
     def _check_all_bool(self):
         # check feature attributes
         for k in self.__dict__:
