@@ -18,6 +18,7 @@
 
 import re
 import six
+from autobahn.wamp.types import SubscribeOptions
 
 __all__ = ('Pattern',)
 
@@ -147,6 +148,12 @@ class Pattern:
         :rtype: unicode
         """
         return self._uri
+
+    def subscribe_options(self):
+        if self._type == Pattern.URI_TYPE_WILDCARD:
+            return SubscribeOptions(match=u"wildcard")
+        else:
+            return SubscribeOptions(match=u"exact")
 
     def match(self, uri):
         """
