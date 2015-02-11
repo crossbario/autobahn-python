@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2015 Tavendo GmbH
+# Copyright (C) 2011-2015 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -38,7 +38,7 @@ from datetime import datetime, timedelta
 from pprint import pformat
 
 if six.PY3:
-    ## Python 3
+    # Python 3
     # noinspection PyShadowingBuiltins
     xrange = range
 
@@ -103,7 +103,7 @@ def id():
     :returns: A random object ID.
     :rtype: int
     """
-    #return random.randint(0, 9007199254740992) # this is what the WAMP spec says
+    # return random.randint(0, 9007199254740992) # this is what the WAMP spec says
     return random.randint(0, 2147483647) # use a reduced ID space for now (2**31-1)
 
 
@@ -120,21 +120,21 @@ def newid(length=16):
     return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(length)])
 
 
-## Select the most precise walltime measurement function available
-## on the platform
+# Select the most precise walltime measurement function available
+# on the platform
 ##
 if sys.platform.startswith('win'):
-    ## On Windows, this function returns wall-clock seconds elapsed since the
-    ## first call to this function, as a floating point number, based on the
-    ## Win32 function QueryPerformanceCounter(). The resolution is typically
-    ## better than one microsecond
+    # On Windows, this function returns wall-clock seconds elapsed since the
+    # first call to this function, as a floating point number, based on the
+    # Win32 function QueryPerformanceCounter(). The resolution is typically
+    # better than one microsecond
     _rtime = time.clock
     _ = _rtime() # this starts wallclock
 else:
-    ## On Unix-like platforms, this used the first available from this list:
-    ## (1) gettimeofday() -- resolution in microseconds
-    ## (2) ftime() -- resolution in milliseconds
-    ## (3) time() -- resolution in seconds
+    # On Unix-like platforms, this used the first available from this list:
+    # (1) gettimeofday() -- resolution in microseconds
+    # (2) ftime() -- resolution in milliseconds
+    # (3) time() -- resolution in seconds
     _rtime = time.time
 
 
@@ -343,7 +343,7 @@ class EqualityMixin:
                 if not self.__dict__[k] == other.__dict__[k]:
                     return False
         return True
-        #return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
+        # return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
 
     def __ne__(self, other):
         """

@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+# Copyright (C) 2011-2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -119,9 +119,9 @@ UA_HPWEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
 
 
 def _lookupWsSupport(ua):
-    ## Internet Explorer
+    # Internet Explorer
     ##
-    ## FIXME: handle Windows Phone
+    # FIXME: handle Windows Phone
     ##
     if ua.find("MSIE") >= 0:
         # IE10 has native support
@@ -150,35 +150,35 @@ def _lookupWsSupport(ua):
         # unsupported
         return False, False, True
 
-    ## iOS
+    # iOS
     ##
     if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
-        ## native Hixie76 (as of March 2012), no Flash, no alternative browsers
+        # native Hixie76 (as of March 2012), no Flash, no alternative browsers
         return True, False, True
 
-    ## Android
+    # Android
     ##
     if ua.find("Android") >= 0:
 
-        ## Firefox Mobile
+        # Firefox Mobile
         ##
         if ua.find("Firefox") >= 0:
             # Hybi-10+ for FF Mobile 8+
             return True, False, True
 
-        ## Opera Mobile
+        # Opera Mobile
         ##
         if ua.find("Opera") >= 0:
             # Hixie76 for Opera 11+
             return True, False, True
 
-        ## Chrome for Android
+        # Chrome for Android
         ##
         if ua.find("CrMo") >= 0:
             # http://code.google.com/chrome/mobile/docs/faq.html
             return True, False, True
 
-        ## Android builtin Browser (ooold WebKit)
+        # Android builtin Browser (ooold WebKit)
         ##
         if ua.find("AppleWebKit") >= 0:
 
@@ -191,7 +191,7 @@ def _lookupWsSupport(ua):
         # detection problem
         return False, False, False
 
-    ## webOS
+    # webOS
     ##
     if ua.find("hpwOS") >= 0 or ua.find("webos") >= 0:
         try:
@@ -210,13 +210,13 @@ def _lookupWsSupport(ua):
             # unsupported
             return False, False, True
 
-    ## Opera
+    # Opera
     ##
     if ua.find("Opera") >= 0:
         # Opera 11+ has Hixie76 (needs to be manually activated though)
         return True, False, True
 
-    ## Firefox
+    # Firefox
     ##
     if ua.find("Firefox") >= 0:
         r = UA_FIREFOX.match(ua)
@@ -235,14 +235,14 @@ def _lookupWsSupport(ua):
             # detection problem
             return False, False, False
 
-    ## Safari
+    # Safari
     ##
     if ua.find("Safari") >= 0 and not ua.find("Chrome") >= 0:
 
         # rely on at least Hixie76
         return True, False, True
 
-    ## Chrome
+    # Chrome
     ##
     if ua.find("Chrome") >= 0:
         r = UA_CHROME.match(ua)

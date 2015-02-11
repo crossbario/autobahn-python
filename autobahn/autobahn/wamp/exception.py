@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -118,19 +118,19 @@ class ApplicationError(Error):
    call result, call error or publish, and the payload did not conform.
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     SYSTEM_SHUTDOWN = u"wamp.error.system_shutdown"
     """
    The *Peer* is shutting down completely - used as a ``GOODBYE`` (or ``ABORT``) reason.
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     CLOSE_REALM = u"wamp.error.close_realm"
     """
    The *Peer* want to leave the realm - used as a ``GOODBYE`` reason.
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     GOODBYE_AND_OUT = u"wamp.error.goodbye_and_out"
     """
    A *Peer* acknowledges ending of a session - used as a ``GOOBYE`` reply reason.
@@ -162,19 +162,19 @@ class ApplicationError(Error):
    exists - hence there is some misconfiguration in the Router.
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     CANCELED = u"wamp.error.canceled"
     """
    A Dealer or Callee canceled a call previously issued (WAMP AP).
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     OPTION_DISALLOWED_DISCLOSE_ME = u"wamp.error.option_disallowed.disclose_me"
     """
    A Router rejected client request to disclose its identity (WAMP AP).
    """
 
-    ## FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
+    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     NO_ELIGIBLE_CALLEE = u"wamp.error.no_eligible_callee"
     """
    A *Dealer* could not perform a call, since a procedure with the given URI is registered,

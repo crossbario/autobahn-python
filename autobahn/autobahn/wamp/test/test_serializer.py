@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -84,37 +84,37 @@ class TestSerializer(unittest.TestCase):
             self.serializers.append(serializer.MsgPackSerializer())
             self.serializers.append(serializer.MsgPackSerializer(batched=True))
         except ImportError:
-            ## MsgPack not installed
+            # MsgPack not installed
             pass
 
     def test_roundtrip(self):
         for msg in generate_test_messages():
             for serializer in self.serializers:
 
-                ## serialize message
+                # serialize message
                 payload, binary = serializer.serialize(msg)
 
-                ## unserialize message again
+                # unserialize message again
                 msg2 = serializer.unserialize(payload, binary)
 
-                ## must be equal: message roundtrips via the serializer
+                # must be equal: message roundtrips via the serializer
                 self.assertEqual([msg], msg2)
 
     def test_caching(self):
         for msg in generate_test_messages():
-            ## message serialization cache is initially empty
+            # message serialization cache is initially empty
             self.assertEqual(msg._serialized, {})
             for serializer in self.serializers:
 
-                ## verify message serialization is not yet cached
+                # verify message serialization is not yet cached
                 self.assertFalse(serializer._serializer in msg._serialized)
                 payload, binary = serializer.serialize(msg)
 
-                ## now the message serialization must be cached
+                # now the message serialization must be cached
                 self.assertTrue(serializer._serializer in msg._serialized)
                 self.assertEqual(msg._serialized[serializer._serializer], payload)
 
-                ## and after resetting the serialization cache, message
+                # and after resetting the serialization cache, message
                 ## serialization is gone
                 msg.uncache()
                 self.assertFalse(serializer._serializer in msg._serialized)

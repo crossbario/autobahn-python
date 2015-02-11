@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+# Copyright (C) 2011-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -49,8 +49,8 @@ More information:
 * `Source Code <https://github.com/tavendo/AutobahnPython>`__
 """
 
-## get version string from "autobahn/__init__.py"
-## See: http://stackoverflow.com/a/7071358/884770
+# get version string from "autobahn/__init__.py"
+# See: http://stackoverflow.com/a/7071358/884770
 ##
 import re
 VERSIONFILE="autobahn/__init__.py"
@@ -63,7 +63,7 @@ else:
     raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 
-## Autobahn core packages
+# Autobahn core packages
 ##
 packages = [
    'autobahn',
@@ -78,17 +78,17 @@ packages = [
 
 if PY3:
     if PY33:
-        ## "Tulip"
+        # "Tulip"
         asyncio_packages = ["asyncio>=0.2.1"]
     else:
-        ## Python 3.4+ has asyncio builtin
+        # Python 3.4+ has asyncio builtin
         asyncio_packages = []
 else:
-    ## backport of asyncio
+    # backport of asyncio
     asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
 
 
-## Now install Autobahn ..
+# Now install Autobahn ..
 ##
 setup(
    name='autobahn',
@@ -102,25 +102,25 @@ setup(
    platforms='Any',
    install_requires=['six>=1.6.1'],
    extras_require={
-      ## asyncio is needed for Autobahn/asyncio
+      # asyncio is needed for Autobahn/asyncio
       'asyncio': asyncio_packages,
 
-      ## you need Twisted for Autobahn/Twisted - obviously
+      # you need Twisted for Autobahn/Twisted - obviously
       'twisted': ["zope.interface>=3.6", "Twisted>=11.1"],
 
-      ## native WebSocket and JSON acceleration: this should ONLY be used on CPython
+      # native WebSocket and JSON acceleration: this should ONLY be used on CPython
       'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
 
-      ## for (non-standard) WebSocket compression methods - not needed if you
-      ## only want standard WebSocket compression ("permessage-deflate")
+      # for (non-standard) WebSocket compression methods - not needed if you
+      # only want standard WebSocket compression ("permessage-deflate")
       'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
 
-      ## needed if you want WAMPv2 binary serialization support
+      # needed if you want WAMPv2 binary serialization support
       'serialization': ["msgpack-python>=0.4.0"]
    },
    packages=packages,
    zip_safe=False,
-   ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
+   # http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
    classifiers=["License :: OSI Approved :: Apache Software License",
                   "Development Status :: 5 - Production/Stable",
@@ -149,8 +149,8 @@ setup(
 )
 
 
-## deactivate that for now, since it produces errs/warns when "six"
-## wasn't already installed _before_ installing AutobahnPython
+# deactivate that for now, since it produces errs/warns when "six"
+# wasn't already installed _before_ installing AutobahnPython
 ##
 if False:
     try:

@@ -1,25 +1,25 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
 from __future__ import absolute_import
 
-## note: __all__ must be a list here, since we dynamically
-## extend it depending on availability of more serializers
+# note: __all__ must be a list here, since we dynamically
+# extend it depending on availability of more serializers
 __all__ = ['Serializer',
            'JsonObjectSerializer',
            'JsonSerializer']
@@ -121,7 +121,7 @@ class Serializer:
             if Klass is None:
                 raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
-            ## this might again raise `ProtocolError` ..
+            # this might again raise `ProtocolError` ..
             msg = Klass.parse(raw_msg)
 
             msgs.append(msg)
@@ -130,10 +130,10 @@ class Serializer:
 
 
 ##
-## JSON serialization is always supported
+# JSON serialization is always supported
 ##
 try:
-    ## try import accelerated JSON implementation
+    # try import accelerated JSON implementation
     ##
     import ujson
     _json = ujson
@@ -141,7 +141,7 @@ try:
     _dumps = lambda obj: ujson.dumps(obj, double_precision=15, ensure_ascii=False)
 
 except ImportError:
-    ## fallback to stdlib implementation
+    # fallback to stdlib implementation
     ##
     import json
     _json = json
@@ -216,7 +216,7 @@ ISerializer.register(JsonSerializer)
 
 
 ##
-## MsgPack serialization depends on the `msgpack` package being available
+# MsgPack serialization depends on the `msgpack` package being available
 ##
 try:
     import msgpack
@@ -265,20 +265,20 @@ else:
                 N = len(payload)
                 i = 0
                 while i < N:
-                    ## read message length prefix
+                    # read message length prefix
                     if i + 4 > N:
                         raise Exception("batch format error [1]")
                     l = struct.unpack("!L", payload[i:i+4])[0]
 
-                    ## read message data
+                    # read message data
                     if i + 4 + l > N:
                         raise Exception("batch format error [2]")
                     data = payload[i+4:i+4+l]
 
-                    ## append parsed raw message
+                    # append parsed raw message
                     msgs.append(msgpack.unpackb(data, encoding='utf-8'))
 
-                    ## advance until everything consumed
+                    # advance until everything consumed
                     i = i+4+l
 
                 if i != N:

@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2015 Tavendo GmbH
+# Copyright (C) 2013-2015 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -47,15 +47,15 @@ class WampWebSocketProtocol:
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
         """
-        ## WebSocket connection established. Now let the user WAMP session factory
-        ## create a new WAMP session and fire off session open callback.
+        # WebSocket connection established. Now let the user WAMP session factory
+        # create a new WAMP session and fire off session open callback.
         try:
             self._session = self.factory._factory()
             self._session.onOpen(self)
         except Exception as e:
             if self.factory.debug_wamp:
                 traceback.print_exc()
-            ## Exceptions raised in onOpen are fatal ..
+            # Exceptions raised in onOpen are fatal ..
             reason = "WAMP Internal Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
@@ -63,17 +63,17 @@ class WampWebSocketProtocol:
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
-        ## WAMP session might never have been established in the first place .. guard this!
+        # WAMP session might never have been established in the first place .. guard this!
         if hasattr(self, '_session') and self._session:
-            ## WebSocket connection lost - fire off the WAMP
-            ## session close callback
+            # WebSocket connection lost - fire off the WAMP
+            # session close callback
             # noinspection PyBroadException
             try:
                 if self.factory.debug_wamp:
                     print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
                 self._session.onClose(wasClean)
             except Exception:
-                ## silently ignore exceptions raised here ..
+                # silently ignore exceptions raised here ..
                 if self.factory.debug_wamp:
                     traceback.print_exc()
             self._session = None
@@ -110,7 +110,7 @@ class WampWebSocketProtocol:
                     print("TX {0}".format(msg))
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
-                ## all exceptions raised from above should be serialization errors ..
+                # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("Unable to serialize WAMP application payload ({0})".format(e))
             else:
                 self.sendMessage(payload, isBinary)
@@ -178,7 +178,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
         if self.STRICT_PROTOCOL_NEGOTIATION:
             raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
         else:
-            ## assume wamp.2.json
+            # assume wamp.2.json
             self._serializer = self.factory._serializers['json']
             return None, headers
 
@@ -198,7 +198,7 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
             if self.STRICT_PROTOCOL_NEGOTIATION:
                 raise Exception("Server does not speak any of the WebSocket subprotocols we requested (%s)." % ', '.join(self.factory.protocols))
             else:
-                ## assume wamp.2.json
+                # assume wamp.2.json
                 serializerId = 'json'
         else:
             version, serializerId = parseSubprotocolIdentifier(response.protocol)
@@ -231,7 +231,7 @@ class WampWebSocketFactory:
         if serializers is None:
             serializers = []
 
-            ## try MsgPack WAMP serializer
+            # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
                 serializers.append(MsgPackSerializer(batched=True))
@@ -239,7 +239,7 @@ class WampWebSocketFactory:
             except ImportError:
                 pass
 
-            ## try JSON WAMP serializer
+            # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
                 serializers.append(JsonSerializer(batched=True))

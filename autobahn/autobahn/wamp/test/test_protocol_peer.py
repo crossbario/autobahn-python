@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -49,7 +49,7 @@ class TestPeerExceptions(unittest.TestCase):
         session.define(AppError1)
         session.define(AppError2)
 
-        ## map defined errors to user exceptions
+        # map defined errors to user exceptions
         ##
         emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1')
         exc = session._exception_from_message(emsg)
@@ -61,7 +61,7 @@ class TestPeerExceptions(unittest.TestCase):
         self.assertIsInstance(exc, AppError2)
         self.assertEqual(exc.args, ())
 
-        ## map undefined error to (generic) exception
+        # map undefined error to (generic) exception
         ##
         emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3')
         exc = session._exception_from_message(emsg)

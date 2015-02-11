@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright 2013 Tavendo GmbH
+# Copyright 2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -78,16 +78,16 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         :returns: object -- A new instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
         """
 
-        ## extension parameter defaults
+        # extension parameter defaults
         ##
         acceptMaxWindowBits = False
         acceptNoContextTakeover = True
-        #acceptNoContextTakeover = False # FIXME: this may change in draft
+        # acceptNoContextTakeover = False # FIXME: this may change in draft
         requestMaxWindowBits = 0
         requestNoContextTakeover = False
 
         ##
-        ## verify/parse client ("client-to-server direction") parameters of permessage-deflate offer
+        # verify/parse client ("client-to-server direction") parameters of permessage-deflate offer
         ##
         for p in params:
 
@@ -98,11 +98,11 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
             if p == 'client_max_window_bits':
                 ##
-                ## see: https://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-18
-                ## 8.1.2.2. client_max_window_bits
+                # see: https://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-18
+                # 8.1.2.2. client_max_window_bits
                 ##
-                ## ".. This parameter has no value or a decimal integer value without
-                ## leading zeroes between 8 to 15 inclusive ..""
+                # ".. This parameter has no value or a decimal integer value without
+                # leading zeroes between 8 to 15 inclusive ..""
                 ##
 
                 # noinspection PySimplifyBooleanCheck
@@ -530,7 +530,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
     @classmethod
     def createFromResponseAccept(cls, isServer, accept):
-        ## accept: instance of PerMessageDeflateResponseAccept
+        # accept: instance of PerMessageDeflateResponseAccept
         pmce = cls(isServer,
                      accept.response.server_no_context_takeover,
                      accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover,
@@ -541,7 +541,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
 
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
-        ## accept: instance of PerMessageDeflateOfferAccept
+        # accept: instance of PerMessageDeflateOfferAccept
         pmce = cls(isServer,
                      accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
                      accept.requestNoContextTakeover,
@@ -613,7 +613,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         return self._decompressor.decompress(data)
 
     def endDecompressMessage(self):
-        ## Eat stripped LEN and NLEN field of a non-compressed block added
-        ## for Z_SYNC_FLUSH.
+        # Eat stripped LEN and NLEN field of a non-compressed block added
+        # for Z_SYNC_FLUSH.
         ##
         self._decompressor.decompress(b'\x00\x00\xff\xff')

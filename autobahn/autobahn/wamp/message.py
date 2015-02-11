@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -59,16 +59,16 @@ from autobahn.wamp.interfaces import IMessage
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 
-## strict URI check allowing empty URI components
+# strict URI check allowing empty URI components
 _URI_PAT_STRICT_EMPTY = re.compile(r"^(([0-9a-z_]+\.)|\.)*([0-9a-z_]+)?$")
 
-## loose URI check allowing empty URI components
+# loose URI check allowing empty URI components
 _URI_PAT_LOOSE_EMPTY = re.compile(r"^(([^\s\.#]+\.)|\.)*([^\s\.#]+)?$")
 
-## strict URI check disallowing empty URI components
+# strict URI check disallowing empty URI components
 _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 
-## loose URI check disallowing empty URI components
+# loose URI check disallowing empty URI components
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
 
@@ -168,7 +168,7 @@ class Message(util.EqualityMixin):
     """
 
     def __init__(self):
-        ## serialization cache: mapping from ISerializer instances to serialized bytes
+        # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
     def uncache(self):
@@ -181,7 +181,7 @@ class Message(util.EqualityMixin):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.serialize`
         """
-        ## only serialize if not cached ..
+        # only serialize if not cached ..
         if not serializer in self._serialized:
             self._serialized[serializer] = serializer.serialize(self.marshal())
         return self._serialized[serializer]
@@ -240,7 +240,7 @@ class Hello(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
@@ -271,7 +271,7 @@ class Hello(Message):
             if u'features' in details_role:
                 check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-                ## FIXME: skip unknown attributes
+                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_role[u'features'])
 
             else:
@@ -386,7 +386,7 @@ class Welcome(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE)
 
@@ -420,7 +420,7 @@ class Welcome(Message):
             if u'features' in details_roles[role]:
                 check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
-                ## FIXME: skip unknown attributes
+                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_roles[role][u'features'])
 
             else:
@@ -506,7 +506,7 @@ class Abort(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Abort.MESSAGE_TYPE)
 
@@ -584,7 +584,7 @@ class Challenge(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Challenge.MESSAGE_TYPE)
 
@@ -651,7 +651,7 @@ class Authenticate(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE)
 
@@ -723,7 +723,7 @@ class Goodbye(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE)
 
@@ -808,7 +808,7 @@ class Heartbeat(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
 
@@ -912,7 +912,7 @@ class Error(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE)
 
@@ -1056,7 +1056,7 @@ class Publish(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
@@ -1213,7 +1213,7 @@ class Published(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE)
 
@@ -1286,7 +1286,7 @@ class Subscribe(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
@@ -1369,7 +1369,7 @@ class Subscribed(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE)
 
@@ -1433,7 +1433,7 @@ class Unsubscribe(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
@@ -1493,7 +1493,7 @@ class Unsubscribed(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE)
 
@@ -1574,7 +1574,7 @@ class Event(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
@@ -1709,7 +1709,7 @@ class Call(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
@@ -1843,7 +1843,7 @@ class Cancel(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE)
 
@@ -1853,7 +1853,7 @@ class Cancel(Message):
         request = check_or_raise_id(wmsg[1], u"'request' in CANCEL")
         options = check_or_raise_extra(wmsg[2], u"'options' in CANCEL")
 
-        ## options
+        # options
         ##
         mode = None
 
@@ -1942,7 +1942,7 @@ class Result(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
 
@@ -2055,7 +2055,7 @@ class Register(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Register.MESSAGE_TYPE)
 
@@ -2163,7 +2163,7 @@ class Registered(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Registered.MESSAGE_TYPE)
 
@@ -2227,7 +2227,7 @@ class Unregister(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Unregister.MESSAGE_TYPE)
 
@@ -2287,7 +2287,7 @@ class Unregistered(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE)
 
@@ -2404,7 +2404,7 @@ class Invocation(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE)
 
@@ -2589,7 +2589,7 @@ class Interrupt(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE)
 
@@ -2599,7 +2599,7 @@ class Interrupt(Message):
         request = check_or_raise_id(wmsg[1], u"'request' in INTERRUPT")
         options = check_or_raise_extra(wmsg[2], u"'options' in INTERRUPT")
 
-        ## options
+        # options
         ##
         mode = None
 
@@ -2688,7 +2688,7 @@ class Yield(Message):
 
         :returns: An instance of this class.
         """
-        ## this should already be verified by WampSerializer.unserialize
+        # this should already be verified by WampSerializer.unserialize
         ##
         assert(len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE)
 

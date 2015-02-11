@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -37,7 +37,7 @@ try:
     from asyncio import iscoroutine
     from asyncio import Future
 except ImportError:
-    ## Trollius >= 0.3 was renamed
+    # Trollius >= 0.3 was renamed
     # noinspection PyUnresolvedReferences
     import trollius as asyncio
     from trollius import iscoroutine
@@ -71,10 +71,10 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         try:
             peer = transport.get_extra_info('peername')
             try:
-                ## FIXME: tcp4 vs tcp6
+                # FIXME: tcp4 vs tcp6
                 self.peer = "tcp:%s:%d" % (peer[0], peer[1])
             except:
-                ## e.g. Unix Domain sockets don't have host/port
+                # e.g. Unix Domain sockets don't have host/port
                 self.peer = "unix:{0}".format(peer)
         except:
             self.peer = "?"
@@ -173,13 +173,13 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
 
     def _onConnect(self, request):
-        ## onConnect() will return the selected subprotocol or None
-        ## or a pair (protocol, headers) or raise an HttpException
+        # onConnect() will return the selected subprotocol or None
+        # or a pair (protocol, headers) or raise an HttpException
         ##
         # noinspection PyBroadException
         try:
             res = self.onConnect(request)
-            #if yields(res):
+            # if yields(res):
             #  res = yield from res
         except http.HttpException as exc:
             self.failHandshake(exc.reason, exc.code)

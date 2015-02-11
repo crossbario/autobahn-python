@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2012-2014 Tavendo GmbH
+# Copyright (C) 2012-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -29,15 +29,15 @@ try:
     # noinspection PyUnresolvedReferences
     from twisted.web.error import NoResource
 except ImportError:
-    ## starting from Twisted 12.2, NoResource has moved
+    # starting from Twisted 12.2, NoResource has moved
     from twisted.web.resource import NoResource
 from twisted.web.resource import IResource, Resource
 
-## The following imports reactor at module level
-## See: https://twistedmatrix.com/trac/ticket/6849
+# The following imports reactor at module level
+# See: https://twistedmatrix.com/trac/ticket/6849
 from twisted.web.http import HTTPChannel
 
-## .. and this also, since it imports t.w.http
+# .. and this also, since it imports t.w.http
 ##
 from twisted.web.server import NOT_DONE_YET
 
@@ -130,33 +130,33 @@ class WebSocketResource(object):
         the request, create a :class:`autobahn.twisted.websocket.WebSocketServerProtocol`
         and let that do any subsequent communication.
         """
-        ## Create Autobahn WebSocket protocol.
+        # Create Autobahn WebSocket protocol.
         ##
         protocol = self._factory.buildProtocol(request.transport.getPeer())
         if not protocol:
-            ## If protocol creation fails, we signal "internal server error"
+            # If protocol creation fails, we signal "internal server error"
             request.setResponseCode(500)
             return ""
 
-        ## Take over the transport from Twisted Web
+        # Take over the transport from Twisted Web
         ##
         transport, request.transport = request.transport, None
 
-        ## Connect the transport to our protocol. Once #3204 is fixed, there
-        ## may be a cleaner way of doing this.
-        ## http://twistedmatrix.com/trac/ticket/3204
+        # Connect the transport to our protocol. Once #3204 is fixed, there
+        # may be a cleaner way of doing this.
+        # http://twistedmatrix.com/trac/ticket/3204
         ##
         if isinstance(transport, ProtocolWrapper):
-            ## i.e. TLS is a wrapping protocol
+            # i.e. TLS is a wrapping protocol
             transport.wrappedProtocol = protocol
         else:
             transport.protocol = protocol
         protocol.makeConnection(transport)
 
-        ## We recreate the request and forward the raw data. This is somewhat
-        ## silly (since Twisted Web already did the HTTP request parsing
-        ## which we will do a 2nd time), but it's totally non-invasive to our
-        ## code. Maybe improve this.
+        # We recreate the request and forward the raw data. This is somewhat
+        # silly (since Twisted Web already did the HTTP request parsing
+        # which we will do a 2nd time), but it's totally non-invasive to our
+        # code. Maybe improve this.
         ##
         data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.uri)
         for h in request.requestHeaders.getAllRawHeaders():

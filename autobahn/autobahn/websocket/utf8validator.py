@@ -1,36 +1,36 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+# Copyright (C) 2011-2014 Tavendo GmbH
 ##
-##  Note:
+# Note:
 ##
-##  This code is a Python implementation of the algorithm
+# This code is a Python implementation of the algorithm
 ##
 ##            "Flexible and Economical UTF-8 Decoder"
 ##
-##  by Bjoern Hoehrmann
+# by Bjoern Hoehrmann
 ##
-##       bjoern@hoehrmann.de
-##       http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
+# bjoern@hoehrmann.de
+# http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
 __all__ = ("Utf8Validator",)
 
 
-## DFA transitions
+# DFA transitions
 UTF8VALIDATOR_DFA = (
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, # 00..1f
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, # 20..3f
@@ -52,26 +52,26 @@ UTF8_ACCEPT = 0
 UTF8_REJECT = 1
 
 
-## use Cython implementation of UTF8 validator if available
+# use Cython implementation of UTF8 validator if available
 ##
 try:
     from wsaccel.utf8validator import Utf8Validator
 
 except ImportError:
     ##
-    ## Fallback to pure Python implementation - also for PyPy.
+    # Fallback to pure Python implementation - also for PyPy.
     ##
-    ## Do NOT touch this code unless you know what you are doing!
-    ## https://github.com/oberstet/scratchbox/tree/master/python/utf8
+    # Do NOT touch this code unless you know what you are doing!
+    # https://github.com/oberstet/scratchbox/tree/master/python/utf8
     ##
 
     import six
 
     if six.PY3:
 
-        ## Python 3 and above
+        # Python 3 and above
 
-        ## convert DFA table to bytes (performance)
+        # convert DFA table to bytes (performance)
         UTF8VALIDATOR_DFA_S = bytes(UTF8VALIDATOR_DFA)
 
         class Utf8Validator:
@@ -126,14 +126,14 @@ except ImportError:
                 total amount of consumed bytes.
                 """
                 ##
-                ## The code here is written for optimal JITting in PyPy, not for best
-                ## readability by your grandma or particular elegance. Do NOT touch!
+                # The code here is written for optimal JITting in PyPy, not for best
+                # readability by your grandma or particular elegance. Do NOT touch!
                 ##
                 l = len(ba)
                 i = 0
                 state = self.state
                 while i < l:
-                    ## optimized version of decode(), since we are not interested in actual code points
+                    # optimized version of decode(), since we are not interested in actual code points
                     state = UTF8VALIDATOR_DFA_S[256 + (state << 4) + UTF8VALIDATOR_DFA_S[ba[i]]]
                     if state == UTF8_REJECT:
                         self.state = state
@@ -146,7 +146,7 @@ except ImportError:
 
     else:
 
-        ## convert DFA table to string (performance)
+        # convert DFA table to string (performance)
         UTF8VALIDATOR_DFA_S = ''.join([chr(c) for c in UTF8VALIDATOR_DFA])
 
         class Utf8Validator:
@@ -201,14 +201,14 @@ except ImportError:
                 total amount of consumed bytes.
                 """
                 ##
-                ## The code here is written for optimal JITting in PyPy, not for best
-                ## readability by your grandma or particular elegance. Do NOT touch!
+                # The code here is written for optimal JITting in PyPy, not for best
+                # readability by your grandma or particular elegance. Do NOT touch!
                 ##
                 l = len(ba)
                 i = 0
                 state = self.state
                 while i < l:
-                    ## optimized version of decode(), since we are not interested in actual code points
+                    # optimized version of decode(), since we are not interested in actual code points
                     state = ord(UTF8VALIDATOR_DFA_S[256 + (state << 4) + ord(UTF8VALIDATOR_DFA_S[ord(ba[i])])])
                     if state == UTF8_REJECT:
                         self.state = state

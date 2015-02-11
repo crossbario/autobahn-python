@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+# Copyright (C) 2011-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -68,23 +68,23 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     """
 
     def connectionMade(self):
-        ## the peer we are connected to
+        # the peer we are connected to
         ##
         try:
             peer = self.transport.getPeer()
         except AttributeError:
-            ## ProcessProtocols lack getPeer()
+            # ProcessProtocols lack getPeer()
             self.peer = "?"
         else:
             self.peer = peer2str(peer)
 
         self._connectionMade()
 
-        ## Set "Nagle"
+        # Set "Nagle"
         try:
             self.transport.setTcpNoDelay(self.tcpNoDelay)
         except: ## don't touch this! does not work: AttributeError, OSError
-            ## eg Unix Domain sockets throw Errno 22 on this
+            # eg Unix Domain sockets throw Errno 22 on this
             pass
 
     def connectionLost(self, reason):
@@ -95,7 +95,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def _closeConnection(self, abort=False):
         if abort and hasattr(self.transport, 'abortConnection'):
-            ## ProcessProtocol lacks abortConnection()
+            # ProcessProtocol lacks abortConnection()
             self.transport.abortConnection()
         else:
             self.transport.loseConnection()
@@ -153,8 +153,8 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
 
     def _onConnect(self, request):
-        ## onConnect() will return the selected subprotocol or None
-        ## or a pair (protocol, headers) or raise an HttpException
+        # onConnect() will return the selected subprotocol or None
+        # or a pair (protocol, headers) or raise an HttpException
         ##
         res = maybeDeferred(self.onConnect, request)
 
@@ -206,7 +206,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         you can supply a `reactor` keyword argument to specify the
         Twisted reactor to be used.
         """
-        ## lazy import to avoid reactor install upon module import
+        # lazy import to avoid reactor install upon module import
         if 'reactor' in kwargs:
             if kwargs['reactor']:
                 self.reactor = kwargs['reactor']
@@ -235,7 +235,7 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         you can supply a `reactor` keyword argument to specify the
         Twisted reactor to be used.
         """
-        ## lazy import to avoid reactor install upon module import
+        # lazy import to avoid reactor install upon module import
         if 'reactor' in kwargs:
             if kwargs['reactor']:
                 self.reactor = kwargs['reactor']
@@ -273,7 +273,7 @@ class WrappingWebSocketAdapter:
 
     def onConnect(self, requestOrResponse):
 
-        ## Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
+        # Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
         ##
         if isinstance(requestOrResponse, protocol.ConnectionRequest):
             request = requestOrResponse
@@ -288,7 +288,7 @@ class WrappingWebSocketAdapter:
                 self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
             self._binaryMode = (response.protocol != 'base64')
         else:
-            ## should not arrive here
+            # should not arrive here
             raise Exception("logic error")
 
     def onOpen(self):
@@ -312,7 +312,7 @@ class WrappingWebSocketAdapter:
 
     def write(self, data):
         #print("sending payload: {0}".format(binascii.hexlify(data)))
-        ## part of ITransport
+        # part of ITransport
         assert(type(data) == bytes)
         if self._binaryMode:
             self.sendMessage(data, isBinary=True)
@@ -321,20 +321,20 @@ class WrappingWebSocketAdapter:
             self.sendMessage(data, isBinary=False)
 
     def writeSequence(self, data):
-        ## part of ITransport
+        # part of ITransport
         for d in data:
             self.write(d)
 
     def loseConnection(self):
-        ## part of ITransport
+        # part of ITransport
         self.sendClose()
 
     def getPeer(self):
-        ## part of ITransport
+        # part of ITransport
         return self.transport.getPeer()
 
     def getHost(self):
-        ## part of ITransport
+        # part of ITransport
         return self.transport.getHost()
 
 
@@ -381,18 +381,18 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
            protocols=self._subprotocols,
            debug=debug)
 
-        ## automatically fragment outgoing traffic into WebSocket frames
-        ## of this size
+        # automatically fragment outgoing traffic into WebSocket frames
+        # of this size
         self.setProtocolOptions(autoFragmentSize=autoFragmentSize)
 
-        ## play nice and perform WS closing handshake
+        # play nice and perform WS closing handshake
         self.setProtocolOptions(failByDrop=False)
 
         if enableCompression:
-            ## Enable WebSocket extension "permessage-deflate".
+            # Enable WebSocket extension "permessage-deflate".
             ##
 
-            ## Function to accept offers from the client ..
+            # Function to accept offers from the client ..
             def accept(offers):
                 for offer in offers:
                     if isinstance(offer, PerMessageDeflateOffer):
@@ -447,22 +447,22 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
            protocols=self._subprotocols,
            debug=debug)
 
-        ## automatically fragment outgoing traffic into WebSocket frames
-        ## of this size
+        # automatically fragment outgoing traffic into WebSocket frames
+        # of this size
         self.setProtocolOptions(autoFragmentSize=autoFragmentSize)
 
-        ## play nice and perform WS closing handshake
+        # play nice and perform WS closing handshake
         self.setProtocolOptions(failByDrop=False)
 
         if enableCompression:
-            ## Enable WebSocket extension "permessage-deflate".
+            # Enable WebSocket extension "permessage-deflate".
             ##
 
-            ## The extensions offered to the server ..
+            # The extensions offered to the server ..
             offers = [PerMessageDeflateOffer()]
             self.setProtocolOptions(perMessageCompressionOffers=offers)
 
-            ## Function to accept responses from the server ..
+            # Function to accept responses from the server ..
             def accept(response):
                 if isinstance(response, PerMessageDeflateResponse):
                     return PerMessageDeflateResponseAccept(response)
@@ -494,7 +494,7 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     :returns: The connector.
     :rtype: An object which implements `twisted.interface.IConnector <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IConnector.html>`_.
     """
-    ## lazy import to avoid reactor install upon module import
+    # lazy import to avoid reactor install upon module import
     if hasattr(factory, 'reactor'):
         reactor = factory.reactor
     else:
@@ -534,7 +534,7 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     :returns: The listening port.
     :rtype: An object that implements `twisted.interface.IListeningPort <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IListeningPort.html>`_.
     """
-    ## lazy import to avoid reactor install upon module import
+    # lazy import to avoid reactor install upon module import
     if hasattr(factory, 'reactor'):
         reactor = factory.reactor
     else:

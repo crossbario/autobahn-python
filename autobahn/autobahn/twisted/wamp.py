@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -135,28 +135,28 @@ class ApplicationRunner:
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        ## start logging to console
+        # start logging to console
         if self.debug or self.debug_wamp or self.debug_app:
             log.startLogging(sys.stdout)
 
-        ## factory for use ApplicationSession
+        # factory for use ApplicationSession
         def create():
             cfg = ComponentConfig(self.realm, self.extra)
             try:
                 session = make(cfg)
             except Exception:
-                ## the app component could not be created .. fatal
+                # the app component could not be created .. fatal
                 log.err()
                 reactor.stop()
             else:
                 session.debug_app = self.debug_app
                 return session
 
-        ## create a WAMP-over-WebSocket transport client factory
+        # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
            debug=self.debug, debug_wamp=self.debug_wamp)
 
-        ## start the client from a Twisted endpoint
+        # start the client from a Twisted endpoint
         from twisted.internet.endpoints import clientFromString
 
         if isSecure:
@@ -167,7 +167,7 @@ class ApplicationRunner:
         client = clientFromString(reactor, endpoint_descriptor)
         client.connect(transport_factory)
 
-        ## now enter the Twisted reactor loop
+        # now enter the Twisted reactor loop
         if start_reactor:
             reactor.run()
 
@@ -241,16 +241,16 @@ class Application:
         """
         self._prefix = prefix
 
-        ## procedures to be registered once the app session has joined the router/realm
+        # procedures to be registered once the app session has joined the router/realm
         self._procs = []
 
-        ## event handler to be subscribed once the app session has joined the router/realm
+        # event handler to be subscribed once the app session has joined the router/realm
         self._handlers = []
 
-        ## app lifecycle signal handlers
+        # app lifecycle signal handlers
         self._signals = {}
 
-        ## once an app session is connected, this will be here
+        # once an app session is connected, this will be here
         self.session = None
 
     def __call__(self, config):
@@ -431,11 +431,11 @@ class Application:
         """
         for handler in self._signals.get(name, []):
             try:
-                ## FIXME: what if the signal handler is not a coroutine?
-                ## Why run signal handlers synchronously?
+                # FIXME: what if the signal handler is not a coroutine?
+                # Why run signal handlers synchronously?
                 yield handler(*args, **kwargs)
             except Exception as e:
-                ## FIXME
+                # FIXME
                 log.msg("Warning: exception in signal handler swallowed", e)
 
 
@@ -490,18 +490,18 @@ class Service(service.MultiService):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        ## factory for use ApplicationSession
+        # factory for use ApplicationSession
         def create():
             cfg = ComponentConfig(self.realm, self.extra)
             session = self.make(cfg)
             session.debug_app = self.debug_app
             return session
 
-        ## create a WAMP-over-WebSocket transport client factory
+        # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
            debug=self.debug, debug_wamp=self.debug_wamp)
 
-        ## setup the client from a Twisted endpoint
+        # setup the client from a Twisted endpoint
 
         if isSecure:
             from twisted.application.internet import SSLClient

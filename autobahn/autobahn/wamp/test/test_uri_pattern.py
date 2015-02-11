@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -381,9 +381,9 @@ class MockSession:
         if error in self._uri_to_ecls:
             ecls = self._uri_to_ecls[error]
             try:
-                ## the following might fail, eg. TypeError when
-                ## signature of exception constructor is incompatible
-                ## with args/kwargs or when the exception constructor raises
+                # the following might fail, eg. TypeError when
+                # signature of exception constructor is incompatible
+                # with args/kwargs or when the exception constructor raises
                 if kwargs:
                     if args:
                         exc = ecls(*args, **kwargs)
@@ -395,10 +395,10 @@ class MockSession:
                     else:
                         exc = ecls()
             except Exception:
-                ## FIXME: log e
+                # FIXME: log e
                 exc = KwException(error, *args, **kwargs)
         else:
-            ## this never fails
+            # this never fails
             args = args or []
             kwargs = kwargs or {}
             exc = KwException(error, *args, **kwargs)
@@ -472,8 +472,8 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         class AppError(Exception):
             pass
 
-        ## defining an undecorated exception requires
-        ## an URI to be provided
+        # defining an undecorated exception requires
+        # an URI to be provided
         self.assertRaises(Exception, session.define, AppError)
 
         session.define(AppError, u"com.myapp.error")
@@ -489,8 +489,8 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         class AppError(Exception):
             pass
 
-        ## when defining a decorated exception
-        ## an URI must not be provided
+        # when defining a decorated exception
+        # an URI must not be provided
         self.assertRaises(Exception, session.define, AppError, u"com.myapp.error")
 
         session.define(AppError)
@@ -518,7 +518,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
             def __init__(self, product=None):
                 self.product = product
 
-        ## define exceptions in mock session
+        # define exceptions in mock session
         session.define(AppError)
         session.define(ProductInactiveError)
 

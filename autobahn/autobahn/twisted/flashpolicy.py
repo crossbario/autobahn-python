@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -59,7 +59,7 @@ class FlashPolicyProtocol(Protocol):
         self.dropConnection = None
 
     def connectionMade(self):
-        ## DoS protection
+        # DoS protection
         ##
         def dropConnection():
             self.transport.abortConnection()
@@ -74,16 +74,16 @@ class FlashPolicyProtocol(Protocol):
     def dataReceived(self, data):
         self.received += data
         if FlashPolicyProtocol.REQUESTPAT.match(self.received):
-            ## got valid request: send policy file
+            # got valid request: send policy file
             ##
             self.transport.write(FlashPolicyProtocol.POLICYFILE % (self._allowedDomain, self._allowedPorts))
             self.transport.loseConnection()
         elif len(self.received) > FlashPolicyProtocol.REQUESTMAXLEN:
-            ## possible DoS attack
+            # possible DoS attack
             ##
             self.transport.abortConnection()
         else:
-            ## need more data
+            # need more data
             ##
             pass
 
@@ -102,7 +102,7 @@ class FlashPolicyFactory(Factory):
         :param reactor: Twisted reactor to use. If not given, autoimport.
         :type reactor: obj
         """
-        ## lazy import to avoid reactor install upon module import
+        # lazy import to avoid reactor install upon module import
         if reactor is None:
             from twisted.internet import reactor
         self.reactor = reactor

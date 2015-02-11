@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -32,7 +32,7 @@ from collections import deque
 from twisted.python import log
 from twisted.web.resource import Resource, NoResource
 
-## Each of the following 2 trigger a reactor import at module level
+# Each of the following 2 trigger a reactor import at module level
 from twisted.web import http
 from twisted.web.server import NOT_DONE_YET
 
@@ -72,7 +72,7 @@ class WampLongPollResourceSessionSend(Resource):
             log.msg("WampLongPoll: receiving data for transport '{0}'\n{1}".format(self._parent._transportid, binascii.hexlify(payload)))
 
         try:
-            ## process (batch of) WAMP message(s)
+            # process (batch of) WAMP message(s)
             self._parent.onMessage(payload, None)
 
         except Exception as e:
@@ -138,12 +138,12 @@ class WampLongPollResourceSessionReceive(Resource):
         if self._request and len(self._queue):
 
             if self._parent._serializer._serializer._batched:
-                ## in batched mode, write all pending messages
+                # in batched mode, write all pending messages
                 while len(self._queue) > 0:
                     msg = self._queue.popleft()
                     self._request.write(msg)
             else:
-                ## in unbatched mode, only write 1 pending message
+                # in unbatched mode, only write 1 pending message
                 msg = self._queue.popleft()
                 self._request.write(msg)
 
@@ -158,7 +158,7 @@ class WampLongPollResourceSessionReceive(Resource):
         pending, the request will "just hang", until either a message
         arrives to be received or a timeout occurs.
         """
-        ## remember request, which marks the session as being polled
+        # remember request, which marks the session as being polled
         self._request = request
 
         self._parent._parent._setStandardHeaders(request)
@@ -200,7 +200,7 @@ class WampLongPollResourceSessionClose(Resource):
         if self._debug:
             log.msg("WampLongPoll: closing transport '{0}'".format(self._parent._transportid))
 
-        ## now actually close the session
+        # now actually close the session
         self._parent.close()
 
         if self._debug:
@@ -236,7 +236,7 @@ class WampLongPollResourceSession(Resource):
         self._serializer = serializer
         self._session = None
 
-        ## session authentication information
+        # session authentication information
         ##
         self._authid = None
         self._authrole = None
@@ -252,7 +252,7 @@ class WampLongPollResourceSession(Resource):
 
         self._isalive = False
 
-        ## kill inactive sessions after this timeout
+        # kill inactive sessions after this timeout
         ##
         killAfter = self._parent._killAfter
         if killAfter > 0:
@@ -313,7 +313,7 @@ class WampLongPollResourceSession(Resource):
             try:
                 self._session.onClose(wasClean)
             except Exception:
-                ## silently ignore exceptions raised here ..
+                # silently ignore exceptions raised here ..
                 if self._debug:
                     traceback.print_exc()
             self._session = None
@@ -349,7 +349,7 @@ class WampLongPollResourceSession(Resource):
                     print("WampLongPoll: TX {0}".format(msg))
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
-                ## all exceptions raised from above should be serialization errors ..
+                # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("unable to serialize WAMP application payload ({0})".format(e))
             else:
                 self._receive.queue(payload)
@@ -397,7 +397,7 @@ class WampLongPollResourceOpen(Resource):
         if not 'protocols' in options:
             return self._parent._failRequest(request, "missing attribute 'protocols' in WAMP session open request")
 
-        ## determine the protocol to speak
+        # determine the protocol to speak
         ##
         protocol = None
         serializer = None
@@ -411,19 +411,19 @@ class WampLongPollResourceOpen(Resource):
         if protocol is None:
             return self.__failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{0}".format(s) for s in self._parent._serializers.keys()]))
 
-        ## make up new transport ID
+        # make up new transport ID
         ##
         if self._parent._debug_transport_id:
-            ## use fixed transport ID for debugging purposes
+            # use fixed transport ID for debugging purposes
             transport = self._parent._debug_transport_id
         else:
             transport = newid()
 
-        ## create instance of WampLongPollResourceSession or subclass thereof ..
+        # create instance of WampLongPollResourceSession or subclass thereof ..
         ##
         self._parent._transports[transport] = self._parent.protocol(self._parent, transport, serializer)
 
-        ## create response
+        # create response
         ##
         self._parent._setStandardHeaders(request)
         request.setHeader('content-type', 'application/json; charset=utf-8')
@@ -498,10 +498,10 @@ class WampLongPollResource(Resource):
         """
         Resource.__init__(self)
 
-        ## RouterSessionFactory
+        # RouterSessionFactory
         self._factory = factory
 
-        ## lazy import to avoid reactor install upon module import
+        # lazy import to avoid reactor install upon module import
         if reactor is None:
             from twisted.internet import reactor
         self.reactor = reactor
@@ -516,7 +516,7 @@ class WampLongPollResource(Resource):
         if serializers is None:
             serializers = []
 
-            ## try MsgPack WAMP serializer
+            # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
                 serializers.append(MsgPackSerializer(batched=True))
@@ -524,7 +524,7 @@ class WampLongPollResource(Resource):
             except ImportError:
                 pass
 
-            ## try JSON WAMP serializer
+            # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
                 serializers.append(JsonSerializer(batched=True))
@@ -541,7 +541,7 @@ class WampLongPollResource(Resource):
 
         self._transports = {}
 
-        ## <Base URL>/open
+        # <Base URL>/open
         ##
         self.putChild("open", WampLongPollResourceOpen(self))
 

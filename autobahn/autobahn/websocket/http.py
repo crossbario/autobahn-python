@@ -1,37 +1,37 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+# Copyright (C) 2011-2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
 ##
-## HTTP Status Codes
+# HTTP Status Codes
 ##
-## Source: http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
-## Adapted on 2011/10/11
+# Source: http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
+# Adapted on 2011/10/11
 ##
 
 ##
-## 1xx Informational
+# 1xx Informational
 ##
-## Request received, continuing process.
+# Request received, continuing process.
 ##
-## This class of status code indicates a provisional response, consisting only of
-## the Status-Line and optional headers, and is terminated by an empty line.
-## Since HTTP/1.0 did not define any 1xx status codes, servers must not send
-## a 1xx response to an HTTP/1.0 client except under experimental conditions.
+# This class of status code indicates a provisional response, consisting only of
+# the Status-Line and optional headers, and is terminated by an empty line.
+# Since HTTP/1.0 did not define any 1xx status codes, servers must not send
+# a 1xx response to an HTTP/1.0 client except under experimental conditions.
 ##
 
 CONTINUE                 = (100, "Continue",
@@ -46,10 +46,10 @@ REQUEST_URI_TOO_LONG     = (122, "Request-URI too long",
                             "This is a non-standard IE7-only code which means the URI is longer than a maximum of 2083 characters.[5][6] (See code 414.)")
 
 ##
-## 2xx Success
+# 2xx Success
 ##
-## This class of status codes indicates the action requested by the client was
-## received, understood, accepted and processed successfully.
+# This class of status codes indicates the action requested by the client was
+# received, understood, accepted and processed successfully.
 ##
 
 OK                       = (200, "OK",
@@ -72,16 +72,16 @@ IM_USED                  = (226, "IM Used (RFC 3229)",
                             "The server has fulfilled a GET request for the resource, and the response is a representation of the result of one or more instance-manipulations applied to the current instance.")
 
 ##
-## 3xx Redirection
+# 3xx Redirection
 ##
-## The client must take additional action to complete the request.
+# The client must take additional action to complete the request.
 ##
-## This class of status code indicates that further action needs to be taken
-## by the user agent in order to fulfill the request. The action required may
-## be carried out by the user agent without interaction with the user if and
-## only if the method used in the second request is GET or HEAD. A user agent
-## should not automatically redirect a request more than five times, since such
-## redirections usually indicate an infinite loop.
+# This class of status code indicates that further action needs to be taken
+# by the user agent in order to fulfill the request. The action required may
+# be carried out by the user agent without interaction with the user if and
+# only if the method used in the second request is GET or HEAD. A user agent
+# should not automatically redirect a request more than five times, since such
+# redirections usually indicate an infinite loop.
 ##
 
 MULTIPLE_CHOICES         = (300, "Multiple Choices",
@@ -104,15 +104,15 @@ RESUME_INCOMPLETE        = (308, "Resume Incomplete",
                             "This code is used in the Resumable HTTP Requests Proposal to resume aborted PUT or POST requests.")
 
 ##
-## 4xx Client Error
+# 4xx Client Error
 ##
-## The 4xx class of status code is intended for cases in which the client
-## seems to have erred. Except when responding to a HEAD request, the server
-## should include an entity containing an explanation of the error situation,
-## and whether it is a temporary or permanent condition. These status codes are
-## applicable to any request method. User agents should display any included
-## entity to the user. These are typically the most common error codes
-## encountered while online.
+# The 4xx class of status code is intended for cases in which the client
+# seems to have erred. Except when responding to a HEAD request, the server
+# should include an entity containing an explanation of the error situation,
+# and whether it is a temporary or permanent condition. These status codes are
+# applicable to any request method. User agents should display any included
+# entity to the user. These are typically the most common error codes
+# encountered while online.
 ##
 
 BAD_REQUEST              = (400, "Bad Request",
@@ -174,17 +174,17 @@ CLIENT_CLOSED_REQUEST    = (499, "Client Closed Request",
 
 
 ##
-## 5xx Server Error
+# 5xx Server Error
 ##
-## The server failed to fulfill an apparently valid request.
+# The server failed to fulfill an apparently valid request.
 ##
-## Response status codes beginning with the digit "5" indicate cases in which
-## the server is aware that it has encountered an error or is otherwise incapable
-## of performing the request. Except when responding to a HEAD request, the server
-## should include an entity containing an explanation of the error situation, and
-## indicate whether it is a temporary or permanent condition. Likewise, user agents
-## should display any included entity to the user. These response codes are
-## applicable to any request method.
+# Response status codes beginning with the digit "5" indicate cases in which
+# the server is aware that it has encountered an error or is otherwise incapable
+# of performing the request. Except when responding to a HEAD request, the server
+# should include an entity containing an explanation of the error situation, and
+# indicate whether it is a temporary or permanent condition. Likewise, user agents
+# should display any included entity to the user. These response codes are
+# applicable to any request method.
 ##
 
 INTERNAL_SERVER_ERROR    = (500, "Internal Server Error",

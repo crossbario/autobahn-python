@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -46,12 +46,12 @@ class WampRawSocketProtocol(Int32StringReceiver):
         if self.factory.debug:
             log.msg("WAMP-over-RawSocket connection made")
 
-        ## the peer we are connected to
+        # the peer we are connected to
         ##
         try:
             peer = self.transport.getPeer()
         except AttributeError:
-            ## ProcessProtocols lack getPeer()
+            # ProcessProtocols lack getPeer()
             self.peer = "?"
         else:
             self.peer = peer2str(peer)
@@ -60,7 +60,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self._session = self.factory._factory()
             self._session.onOpen(self)
         except Exception as e:
-            ## Exceptions raised in onOpen are fatal ..
+            # Exceptions raised in onOpen are fatal ..
             if self.factory.debug:
                 log.msg("ApplicationSession constructor / onOpen raised ({0})".format(e))
             self.abort()
@@ -72,7 +72,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             wasClean = isinstance(reason.value, ConnectionDone)
             self._session.onClose(wasClean)
         except Exception as e:
-            ## silently ignore exceptions raised here ..
+            # silently ignore exceptions raised here ..
             if self.factory.debug:
                 log.msg("ApplicationSession.onClose raised ({0})".format(e))
         self._session = None
@@ -106,7 +106,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             try:
                 payload, _ = self.factory._serializer.serialize(msg)
             except Exception as e:
-                ## all exceptions raised from above should be serialization errors ..
+                # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("Unable to serialize WAMP application payload ({0})".format(e))
             else:            
                 self.sendString(payload)
@@ -136,7 +136,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         """
         if self.isOpen():
             if hasattr(self.transport, 'abortConnection'):
-                ## ProcessProtocol lacks abortConnection()
+                # ProcessProtocol lacks abortConnection()
                 self.transport.abortConnection()
             else:
                 self.transport.loseConnection()

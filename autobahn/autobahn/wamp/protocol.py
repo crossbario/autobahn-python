@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013-2014 Tavendo GmbH
+# Copyright (C) 2013-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -127,26 +127,26 @@ class BaseSession:
         """
 
         """
-        ## this is for library level debugging
+        # this is for library level debugging
         self.debug = False
 
-        ## this is for app level debugging. exceptions raised in user code
-        ## will get logged (that is, when invoking remoted procedures or
-        ## when invoking event handlers)
+        # this is for app level debugging. exceptions raised in user code
+        # will get logged (that is, when invoking remoted procedures or
+        # when invoking event handlers)
         self.debug_app = False
 
-        ## this is for marshalling traceback from exceptions thrown in user
-        ## code within WAMP error messages (that is, when invoking remoted
-        ## procedures)
+        # this is for marshalling traceback from exceptions thrown in user
+        # code within WAMP error messages (that is, when invoking remoted
+        # procedures)
         self.traceback_app = False
 
-        ## mapping of exception classes to WAMP error URIs
+        # mapping of exception classes to WAMP error URIs
         self._ecls_to_uri_pat = {}
 
-        ## mapping of WAMP error URIs to exception classes
+        # mapping of WAMP error URIs to exception classes
         self._uri_to_ecls = {}
 
-        ## session authentication information
+        # session authentication information
         ##
         self._authid = None
         self._authrole = None
@@ -242,9 +242,9 @@ class BaseSession:
         if msg.error in self._uri_to_ecls:
             ecls = self._uri_to_ecls[msg.error]
             try:
-                ## the following might fail, eg. TypeError when
-                ## signature of exception constructor is incompatible
-                ## with args/kwargs or when the exception constructor raises
+                # the following might fail, eg. TypeError when
+                # signature of exception constructor is incompatible
+                # with args/kwargs or when the exception constructor raises
                 if msg.kwargs:
                     if msg.args:
                         exc = ecls(*msg.args, **msg.kwargs)
@@ -256,11 +256,11 @@ class BaseSession:
                     else:
                         exc = ecls()
             except Exception:
-                ## FIXME: log e
+                # FIXME: log e
                 pass
 
         if not exc:
-            ## the following ctor never fails ..
+            # the following ctor never fails ..
             if msg.kwargs:
                 if msg.args:
                     exc = exception.ApplicationError(msg.error, *msg.args, **msg.kwargs)
@@ -304,7 +304,7 @@ class ApplicationSession(BaseSession):
         self._goodbye_sent = False
         self._transport_is_closing = False
 
-        ## outstanding requests
+        # outstanding requests
         self._publish_reqs = {}
         self._subscribe_reqs = {}
         self._unsubscribe_reqs = {}
@@ -318,7 +318,7 @@ class ApplicationSession(BaseSession):
         ## registrations in place
         self._registrations = {}
 
-        ## incoming invocations
+        # incoming invocations
         self._invocations = {}
 
     def onOpen(self, transport):
@@ -372,7 +372,7 @@ class ApplicationSession(BaseSession):
         """
         if self._session_id is None:
 
-            ## the first message must be WELCOME, ABORT or CHALLENGE ..
+            # the first message must be WELCOME, ABORT or CHALLENGE ..
             ##
             if isinstance(msg, message.Welcome):
                 self._session_id = msg.session
@@ -382,7 +382,7 @@ class ApplicationSession(BaseSession):
 
             elif isinstance(msg, message.Abort):
 
-                ## fire callback and close the transport
+                # fire callback and close the transport
                 self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
             elif isinstance(msg, message.Challenge):
@@ -397,7 +397,7 @@ class ApplicationSession(BaseSession):
                 def error(err):
                     reply = message.Abort(u"wamp.error.cannot_authenticate", u"{0}".format(err.value))
                     self._transport.send(reply)
-                    ## fire callback and close the transport
+                    # fire callback and close the transport
                     self.onLeave(types.CloseDetails(reply.reason, reply.message))
 
                 self._add_future_callbacks(d, success, error)
@@ -409,16 +409,16 @@ class ApplicationSession(BaseSession):
 
             if isinstance(msg, message.Goodbye):
                 if not self._goodbye_sent:
-                    ## the peer wants to close: send GOODBYE reply
+                    # the peer wants to close: send GOODBYE reply
                     reply = message.Goodbye()
                     self._transport.send(reply)
 
                 self._session_id = None
 
-                ## fire callback and close the transport
+                # fire callback and close the transport
                 self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
-            ## consumer messages
+            # consumer messages
             ##
             elif isinstance(msg, message.Event):
 
@@ -501,7 +501,7 @@ class ApplicationSession(BaseSession):
 
                     if msg.progress:
 
-                        ## progressive result
+                        # progressive result
                         ##
                         _, opts = self._call_reqs[msg.request]
                         if opts.onProgress:
@@ -517,15 +517,15 @@ class ApplicationSession(BaseSession):
                                     else:
                                         opts.onProgress()
                             except Exception as e:
-                                ## silently drop exceptions raised in progressive results handlers
+                                # silently drop exceptions raised in progressive results handlers
                                 if self.debug:
                                     print("Exception raised in progressive results handler: {0}".format(e))
                         else:
-                            ## silently ignore progressive results
+                            # silently ignore progressive results
                             pass
                     else:
 
-                        ## final result
+                        # final result
                         ##
                         d, opts = self._call_reqs.pop(msg.request)
                         if msg.kwargs:
@@ -611,7 +611,7 @@ class ApplicationSession(BaseSession):
 
                         def error(err):
                             if self.traceback_app:
-                                ## if asked to marshal the traceback within the WAMP error message, extract it
+                                # if asked to marshal the traceback within the WAMP error message, extract it
                                 # noinspection PyCallingNonCallable
                                 tb = StringIO()
                                 err.printTraceback(file=tb)
@@ -675,32 +675,32 @@ class ApplicationSession(BaseSession):
 
                 d = None
 
-                ## ERROR reply to PUBLISH
+                # ERROR reply to PUBLISH
                 ##
                 if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
                     d = self._publish_reqs.pop(msg.request)[0]
 
-                ## ERROR reply to SUBSCRIBE
+                # ERROR reply to SUBSCRIBE
                 ##
                 elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
                     d = self._subscribe_reqs.pop(msg.request)[0]
 
-                ## ERROR reply to UNSUBSCRIBE
+                # ERROR reply to UNSUBSCRIBE
                 ##
                 elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
                     d = self._unsubscribe_reqs.pop(msg.request)[0]
 
-                ## ERROR reply to REGISTER
+                # ERROR reply to REGISTER
                 ##
                 elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
                     d = self._register_reqs.pop(msg.request)[0]
 
-                ## ERROR reply to UNREGISTER
+                # ERROR reply to UNREGISTER
                 ##
                 elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
                     d = self._unregister_reqs.pop(msg.request)[0]
 
-                ## ERROR reply to CALL
+                # ERROR reply to CALL
                 ##
                 elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
                     d = self._call_reqs.pop(msg.request)[0]
@@ -727,7 +727,7 @@ class ApplicationSession(BaseSession):
 
         if self._session_id:
 
-            ## fire callback and close the transport
+            # fire callback and close the transport
             try:
                 self.onLeave(types.CloseDetails())
             except Exception as e:
@@ -829,12 +829,12 @@ class ApplicationSession(BaseSession):
 
         if callable(handler):
 
-            ## subscribe a single handler
+            # subscribe a single handler
             return _subscribe(None, handler, topic, options)
 
         else:
 
-            ## subscribe all methods on an object decorated with "wamp.subscribe"
+            # subscribe all methods on an object decorated with "wamp.subscribe"
             dl = []
             test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
             for k in inspect.getmembers(handler.__class__, test):
@@ -887,8 +887,8 @@ class ApplicationSession(BaseSession):
             opts = None
             msg = message.Call(request, procedure, args=args, kwargs=kwargs)
 
-        ## FIXME
-        #def canceller(_d):
+        # FIXME
+        # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
         #   self._transport.send(cancel_msg)
         #d = Deferred(canceller)
@@ -926,13 +926,13 @@ class ApplicationSession(BaseSession):
             return d
 
         if callable(endpoint):
-            ## register a single callable
+            # register a single callable
             ##
             return _register(None, endpoint, procedure, options)
 
         else:
-            ## register all methods on an object
-            ## decorated with "wamp.register"
+            # register all methods on an object
+            # decorated with "wamp.register"
             ##
             dl = []
 
@@ -971,7 +971,7 @@ class ApplicationSession(BaseSession):
 IPublisher.register(ApplicationSession)
 ISubscriber.register(ApplicationSession)
 ICaller.register(ApplicationSession)
-#ICallee.register(ApplicationSession) ## FIXME: ".register" collides with the ABC "register" method
+# ICallee.register(ApplicationSession) ## FIXME: ".register" collides with the ABC "register" method
 ITransportHandler.register(ApplicationSession)
 
 

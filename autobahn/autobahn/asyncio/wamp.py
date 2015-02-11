@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -30,7 +30,7 @@ try:
     from asyncio import iscoroutine
     from asyncio import Future
 except ImportError:
-    ## Trollius >= 0.3 was renamed
+    # Trollius >= 0.3 was renamed
     # noinspection PyUnresolvedReferences
     import trollius as asyncio
     from trollius import iscoroutine
@@ -155,13 +155,13 @@ class ApplicationRunner:
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
         """
-        ## 1) factory for use ApplicationSession
+        # 1) factory for use ApplicationSession
         def create():
             cfg = ComponentConfig(self.realm, self.extra)
             try:
                 session = make(cfg)
             except Exception as e:
-                ## the app component could not be created .. fatal
+                # the app component could not be created .. fatal
                 print(e)
                 asyncio.get_event_loop().stop()
             else:
@@ -170,15 +170,15 @@ class ApplicationRunner:
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        ## 2) create a WAMP-over-WebSocket transport client factory
+        # 2) create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
            debug=self.debug, debug_wamp=self.debug_wamp)
 
-        ## 3) start the client
+        # 3) start the client
         loop = asyncio.get_event_loop()
         coro = loop.create_connection(transport_factory, host, port, ssl=isSecure)
         loop.run_until_complete(coro)
 
-        ## 4) now enter the asyncio event loop
+        # 4) now enter the asyncio event loop
         loop.run_forever()
         loop.close()

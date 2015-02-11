@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+# Copyright (C) 2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -32,18 +32,18 @@ def install_optimal_reactor(verbose=False):
     import sys
     from twisted.python import reflect
 
-    ## determine currently installed reactor, if any
+    # determine currently installed reactor, if any
     ##
     if 'twisted.internet.reactor' in sys.modules:
         current_reactor = reflect.qual(sys.modules['twisted.internet.reactor'].__class__).split('.')[-1]
     else:
         current_reactor = None
 
-    ## depending on platform, install optimal reactor
+    # depending on platform, install optimal reactor
     ##
     if 'bsd' in sys.platform or sys.platform.startswith('darwin'):
 
-        ## *BSD and MacOSX
+        # *BSD and MacOSX
         ##
         if current_reactor != 'KQueueReactor':
             try:
@@ -63,7 +63,7 @@ def install_optimal_reactor(verbose=False):
 
     elif sys.platform in ['win32']:
 
-        ## Windows
+        # Windows
         ##
         if current_reactor != 'IOCPReactor':
             try:
@@ -80,7 +80,7 @@ def install_optimal_reactor(verbose=False):
 
     elif sys.platform.startswith('linux'):
 
-        ## Linux
+        # Linux
         ##
         if current_reactor != 'EPollReactor':
             try:
@@ -115,7 +115,7 @@ def install_reactor(explicitReactor=None, verbose=False):
     import sys
 
     if explicitReactor:
-        ## install explicitly given reactor
+        # install explicitly given reactor
         ##
         from twisted.application.reactors import installReactor
         print("Trying to install explicitly specified Twisted reactor '%s'" % explicitReactor)
@@ -125,13 +125,13 @@ def install_reactor(explicitReactor=None, verbose=False):
             print("Could not install Twisted reactor %s%s" % (explicitReactor, ' ["%s"]' % e if verbose else ''))
             sys.exit(1)
     else:
-        ## automatically choose optimal reactor
+        # automatically choose optimal reactor
         ##
         if verbose:
             print("Automatically choosing optimal Twisted reactor")
         install_optimal_reactor(verbose)
 
-    ## now the reactor is installed, import it
+    # now the reactor is installed, import it
     from twisted.internet import reactor
 
     if verbose:

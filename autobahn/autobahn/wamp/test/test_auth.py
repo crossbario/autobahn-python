@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -29,7 +29,7 @@ import hashlib
 
 from autobahn.wamp import auth
 
-## these test vectors are all for HMAC-SHA1
+# these test vectors are all for HMAC-SHA1
 ##
 PBKDF2_TEST_VECTORS = [
    # From RFC 6070
@@ -48,7 +48,7 @@ PBKDF2_TEST_VECTORS = [
 
 if platform.python_implementation() != 'PyPy':
 
-    ## the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
+    # the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
     ##
     PBKDF2_TEST_VECTORS.extend(
        [
