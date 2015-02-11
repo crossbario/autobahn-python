@@ -81,7 +81,7 @@ def parseutc(datestr):
     :param datestr: The datetime string to parse.
     :type datestr: unicode
 
-    :returns: The converted datetime object. 
+    :returns: The converted datetime object.
     :rtype: instance of :py:class:`datetime.datetime`
     """
     try:

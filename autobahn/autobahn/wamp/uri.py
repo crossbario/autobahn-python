@@ -61,7 +61,7 @@ class Pattern:
    Compiled regular expression for a named and type-converted WAMP URI component.
 
    .. note::
-      This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.   
+      This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.
    """
 
     def __init__(self, uri, target):

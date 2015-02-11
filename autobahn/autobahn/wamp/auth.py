@@ -198,7 +198,7 @@ def generate_wcs(length=14):
 
     - upper and lower case latin letters
     - digits
-    - 
+    -
 
     :param length: The length of the secret to generate.
     :type length: int

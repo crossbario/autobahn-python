@@ -86,7 +86,7 @@ class IMessage(object):
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
         of this class.
 
-        :returns: obj -- An instance of this class. 
+        :returns: obj -- An instance of this class.
         """
 
     @abc.abstractmethod
@@ -185,7 +185,7 @@ class ITransport(object):
         not open, this raises :class:`autobahn.wamp.exception.TransportLost`.
 
         :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-        :type message: obj      
+        :type message: obj
         """
 
     @abc.abstractmethod
@@ -223,7 +223,7 @@ class ITransportHandler(object):
         Callback fired when transport is open.
 
         :param transport: An instance that implements :class:`autobahn.wamp.interfaces.ITransport`
-        :type transport: obj      
+        :type transport: obj
         """
 
     @abc.abstractmethod

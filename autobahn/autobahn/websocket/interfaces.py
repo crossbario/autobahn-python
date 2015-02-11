@@ -55,7 +55,7 @@ class IWebSocketChannel(object):
               also may be ``None``) and set the given HTTP ``headers`` (e.g. cookies). ``headers``
               must be a ``dict`` with ``str`` keys and values for the HTTP header values to set.
 
-              If a given header value is a non-string iterable (e.g. list or tuple), a separate 
+              If a given header value is a non-string iterable (e.g. list or tuple), a separate
               header line will be sent for each item in the iterable.
 
            If the client announced one or multiple subprotocols, the server MUST select
@@ -90,7 +90,7 @@ class IWebSocketChannel(object):
         :type sync: bool
         :param doNotCompress: Iff ``True``, never compress this message. This only applies to
                               Hybi-Mode and only when WebSocket compression has been negotiated on
-                              the WebSocket connection. Use when you know the payload 
+                              the WebSocket connection. Use when you know the payload
                               incompressible (e.g. encrypted or already compressed).
         :type doNotCompress: bool
         """
