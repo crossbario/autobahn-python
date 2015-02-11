@@ -2536,7 +2536,7 @@ class WebSocketProtocol:
                                     value = value[:-1]
                         else:
                             value = True
-                        if not key in params:
+                        if key not in params:
                             params[key] = []
                         params[key].append(value)
                     extensions.append((extension, params))
@@ -2791,7 +2791,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # Host
             ##
-            if not 'host' in self.http_headers:
+            if 'host' not in self.http_headers:
                 return self.failHandshake("HTTP Host header missing in opening handshake request")
 
             if http_headers_cnt["host"] > 1:
@@ -2827,7 +2827,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # Upgrade
             ##
-            if not 'upgrade' in self.http_headers:
+            if 'upgrade' not in self.http_headers:
                 # When no WS upgrade, render HTML server status page
                 ##
                 if self.webStatus:
@@ -2875,7 +2875,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # Connection
             ##
-            if not 'connection' in self.http_headers:
+            if 'connection' not in self.http_headers:
                 return self.failHandshake("HTTP Connection header missing")
             connectionUpgrade = False
             for c in self.http_headers["connection"].split(","):
@@ -2887,7 +2887,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # Sec-WebSocket-Version PLUS determine mode: Hybi or Hixie
             ##
-            if not 'sec-websocket-version' in self.http_headers:
+            if 'sec-websocket-version' not in self.http_headers:
                 if self.debugCodePaths:
                     self.factory._log("Hixie76 protocol detected")
                 if self.allowHixie76:
@@ -2968,7 +2968,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if self.websocket_version == 0:
                 for kk in ['Sec-WebSocket-Key1', 'Sec-WebSocket-Key2']:
                     k = kk.lower()
-                    if not k in self.http_headers:
+                    if k not in self.http_headers:
                         return self.failHandshake("HTTP %s header missing" % kk)
                     if http_headers_cnt[k] > 1:
                         return self.failHandshake("HTTP %s header appears more than once in opening handshake request" % kk)
@@ -2978,7 +2978,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     except:
                         return self.failHandshake("could not parse Sec-WebSocket-Key1/2")
             else:
-                if not 'sec-websocket-key' in self.http_headers:
+                if 'sec-websocket-key' not in self.http_headers:
                     return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
                 if http_headers_cnt["sec-websocket-key"] > 1:
                     return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
@@ -3987,14 +3987,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # Upgrade
             ##
-            if not 'upgrade' in self.http_headers:
+            if 'upgrade' not in self.http_headers:
                 return self.failHandshake("HTTP Upgrade header missing")
             if self.http_headers["upgrade"].strip().lower() != "websocket":
                 return self.failHandshake("HTTP Upgrade header different from 'websocket' (case-insensitive) : %s" % self.http_headers["upgrade"])
 
             # Connection
             ##
-            if not 'connection' in self.http_headers:
+            if 'connection' not in self.http_headers:
                 return self.failHandshake("HTTP Connection header missing")
             connectionUpgrade = False
             for c in self.http_headers["connection"].split(","):
@@ -4007,7 +4007,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # compute Sec-WebSocket-Accept
             ##
             if self.version != 0:
-                if not 'sec-websocket-accept' in self.http_headers:
+                if 'sec-websocket-accept' not in self.http_headers:
                     return self.failHandshake("HTTP Sec-WebSocket-Accept header missing in opening handshake reply")
                 else:
                     if http_headers_cnt["sec-websocket-accept"] > 1:

@@ -394,7 +394,7 @@ class WampLongPollResourceOpen(Resource):
         if type(options) != dict:
             return self._parent._failRequest(request, "invalid type for WAMP session open request [was {0}, expected dictionary]".format(type(options)))
 
-        if not 'protocols' in options:
+        if 'protocols' not in options:
             return self._parent._failRequest(request, "missing attribute 'protocols' in WAMP session open request")
 
         # determine the protocol to speak

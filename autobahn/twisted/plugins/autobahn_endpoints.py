@@ -35,7 +35,7 @@ from autobahn.twisted.websocket import WrappingWebSocketServerFactory, \
 def _parseOptions(options):
     opts = {}
 
-    if not 'url' in options:
+    if 'url' not in options:
         raise Exception("URL needed")
     else:
         opts['url'] = options['url']

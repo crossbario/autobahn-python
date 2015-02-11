@@ -182,7 +182,7 @@ class Message(util.EqualityMixin):
         Implements :func:`autobahn.wamp.interfaces.IMessage.serialize`
         """
         # only serialize if not cached ..
-        if not serializer in self._serialized:
+        if serializer not in self._serialized:
             self._serialized[serializer] = serializer.serialize(self.marshal())
         return self._serialized[serializer]
 
@@ -252,7 +252,7 @@ class Hello(Message):
 
         roles = []
 
-        if not u'roles' in details:
+        if u'roles' not in details:
             raise ProtocolError(u"missing mandatory roles attribute in options in HELLO")
 
         details_roles = check_or_raise_extra(details[u'roles'], u"'roles' in 'details' in HELLO")
@@ -312,7 +312,7 @@ class Hello(Message):
             details[u'roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-                    if not u'features' in details[u'roles'][role.ROLE]:
+                    if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
                     details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
@@ -403,7 +403,7 @@ class Welcome(Message):
 
         roles = []
 
-        if not u'roles' in details:
+        if u'roles' not in details:
             raise ProtocolError(u"missing mandatory roles attribute in options in WELCOME")
 
         details_roles = check_or_raise_extra(details['roles'], u"'roles' in 'details' in WELCOME")
@@ -456,7 +456,7 @@ class Welcome(Message):
             details[u'roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
-                    if not u'features' in details[u'roles'][role.ROLE]:
+                    if u'features' not in details[u'roles'][role.ROLE]:
                         details[u'roles'][role.ROLE] = {u'features': {}}
                     details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
