@@ -42,6 +42,10 @@ from autobahn.wamp.exception import ProtocolError, SessionNotReady
 from autobahn.wamp.types import SessionDetails
 
 
+def is_method_or_function(f):
+    return inspect.ismethod(f) or inspect.isfunction(f)
+
+
 class Endpoint:
     """
     """
@@ -825,8 +829,7 @@ class ApplicationSession(BaseSession):
 
             # subscribe all methods on an object decorated with "wamp.subscribe"
             dl = []
-            test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
-            for k in inspect.getmembers(handler.__class__, test):
+            for k in inspect.getmembers(handler.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
                     pat = proc.__dict__["_wampuris"][0]
@@ -923,8 +926,7 @@ class ApplicationSession(BaseSession):
             # decorated with "wamp.register"
             dl = []
 
-            test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
-            for k in inspect.getmembers(endpoint.__class__, test):
+            for k in inspect.getmembers(endpoint.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
                     pat = proc.__dict__["_wampuris"][0]
