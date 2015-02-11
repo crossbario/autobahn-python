@@ -3935,7 +3935,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         number1 = random.randint(0, max1)
         product1 = number1 * spaces1
         key1 = str(product1)
-        rchars = filter(lambda x: (0x21 <= x <= 0x2f) or (0x3a <= x <= 0x7e), range(0,127))
+        rchars = filter(lambda x: (0x21 <= x <= 0x2f) or (0x3a <= x <= 0x7e), range(0, 127))
         for i in xrange(random.randint(1, 12)):
             p = random.randint(0, len(key1) - 1)
             key1 = key1[:p] + chr(random.choice(rchars)) + key1[p:]

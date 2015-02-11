@@ -229,7 +229,7 @@ if os.environ.get('USE_TWISTED', False):
             res = yield handler.call(u'com.myapp.procedure3')
             self.assertIsInstance(res, types.CallResult)
             self.assertEqual(res.results, (1, 2, 3))
-            self.assertEqual(res.kwresults, {'foo':'bar', 'baz': 23})
+            self.assertEqual(res.kwresults, {'foo': 'bar', 'baz': 23})
 
 
         @inlineCallbacks

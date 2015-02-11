@@ -125,7 +125,7 @@ class TestWampAuthHelpers(unittest.TestCase):
 
     def test_compute_wcs(self):
         secret = u'L3L1YUE8Txlw'
-        challenge = json.dumps([1,2,3], ensure_ascii = False).encode('utf8')
+        challenge = json.dumps([1, 2, 3], ensure_ascii = False).encode('utf8')
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")

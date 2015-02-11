@@ -24,7 +24,7 @@ from setuptools import setup
 
 CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
-PY33 = (3,3) <= sys.version_info < (3,4)
+PY33 = (3, 3) <= sys.version_info < (3, 4)
 
 LONGSDESC = """
 .. |ab| replace:: **Autobahn**\|Python

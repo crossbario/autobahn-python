@@ -105,7 +105,7 @@ class Options(usage.Options):
     longdesc = 'Endpoint Forwarder.'
     optParameters = [
        ["endpoint", "e", None, "Source endpoint."],
-       ["dest_endpoint", "d", None,"Destination endpoint."]
+       ["dest_endpoint", "d", None, "Destination endpoint."]
     ]
 
 

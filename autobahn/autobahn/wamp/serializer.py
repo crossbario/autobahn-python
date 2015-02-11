@@ -150,7 +150,7 @@ except ImportError:
     import json
     _json = json
     _loads = json.loads
-    _dumps = lambda obj: json.dumps(obj, separators = (',',':'), ensure_ascii = False)
+    _dumps = lambda obj: json.dumps(obj, separators = (',', ':'), ensure_ascii = False)
 
 finally:
     class JsonObjectSerializer:
