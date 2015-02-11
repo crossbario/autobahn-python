@@ -108,7 +108,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             except Exception as e:
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("Unable to serialize WAMP application payload ({0})".format(e))
-            else:            
+            else:
                 self.sendString(payload)
                 if self.factory.debug:
                     log.msg("TX octets: {0}".format(binascii.hexlify(payload)))

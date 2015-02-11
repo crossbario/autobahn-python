@@ -20,9 +20,9 @@ from __future__ import absolute_import
 
 
 __all__ = ['WampWebSocketServerProtocol',
-          'WampWebSocketClientProtocol',
-          'WampWebSocketServerFactory',
-          'WampWebSocketClientFactory']
+           'WampWebSocketClientProtocol',
+           'WampWebSocketServerFactory',
+           'WampWebSocketClientFactory']
 
 from autobahn.websocket import protocol
 from autobahn.websocket import http

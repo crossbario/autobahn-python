@@ -1148,7 +1148,7 @@ class WebSocketProtocol:
         # time, this gets True
         self.wasCloseHandshakeTimeout = False
 
-        # True, iff I dropped the TCP connection because we fully served the 
+        # True, iff I dropped the TCP connection because we fully served the
         # Flash Socket Policy File after a policy file request.
         self.wasServingFlashSocketPolicyFile = False
 

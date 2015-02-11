@@ -53,7 +53,7 @@ def install_optimal_reactor(verbose=False):
                 from twisted.internet import kqreactor
                 kqreactor.install()
             except Exception as e:
-                print("WARNING: Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor ({0}).".format(e))            
+                print("WARNING: Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor ({0}).".format(e))
             else:
                 if verbose:
                     print("Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.")

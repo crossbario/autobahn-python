@@ -144,7 +144,7 @@ class RoleDealerFeatures(RoleCommonRpcFeatures):
         self.callee_blackwhite_listing = callee_blackwhite_listing
         self.caller_exclusion = caller_exclusion
         self.call_trustlevels = call_trustlevels
-        self.pattern_based_registration = pattern_based_registration  
+        self.pattern_based_registration = pattern_based_registration
         RoleCommonRpcFeatures.__init__(self, **kwargs)
         self._check_all_bool()
 
@@ -172,7 +172,7 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
                  pattern_based_registration=None,
                  **kwargs):
         self.call_trustlevels = call_trustlevels
-        self.pattern_based_registration = pattern_based_registration  
+        self.pattern_based_registration = pattern_based_registration
         RoleCommonRpcFeatures.__init__(self, **kwargs)
         self._check_all_bool()
 
