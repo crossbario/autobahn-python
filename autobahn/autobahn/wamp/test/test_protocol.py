@@ -90,7 +90,7 @@ if os.environ.get('USE_TWISTED', False):
                     reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, u'wamp.error.no_such_procedure')
 
             elif isinstance(msg, message.Yield):
-                if self._invocations.has_key(msg.request):
+                if msg.request in self._invocations:
                     request = self._invocations[msg.request]
                     reply = message.Result(request, args=msg.args, kwargs=msg.kwargs)
 
