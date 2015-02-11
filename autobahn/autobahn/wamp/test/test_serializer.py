@@ -115,7 +115,7 @@ class TestSerializer(unittest.TestCase):
                 self.assertEqual(msg._serialized[serializer._serializer], payload)
 
                 # and after resetting the serialization cache, message
-                ## serialization is gone
+                # serialization is gone
                 msg.uncache()
                 self.assertFalse(serializer._serializer in msg._serialized)
 

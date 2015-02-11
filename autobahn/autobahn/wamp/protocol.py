@@ -147,7 +147,6 @@ class BaseSession:
         self._uri_to_ecls = {}
 
         # session authentication information
-        ##
         self._authid = None
         self._authrole = None
         self._authmethod = None
@@ -312,10 +311,10 @@ class ApplicationSession(BaseSession):
         self._register_reqs = {}
         self._unregister_reqs = {}
 
-        ## subscriptions in place
+        # subscriptions in place
         self._subscriptions = {}
 
-        ## registrations in place
+        # registrations in place
         self._registrations = {}
 
         # incoming invocations
@@ -373,7 +372,6 @@ class ApplicationSession(BaseSession):
         if self._session_id is None:
 
             # the first message must be WELCOME, ABORT or CHALLENGE ..
-            ##
             if isinstance(msg, message.Welcome):
                 self._session_id = msg.session
 
@@ -419,7 +417,6 @@ class ApplicationSession(BaseSession):
                 self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
             # consumer messages
-            ##
             elif isinstance(msg, message.Event):
 
                 if msg.subscription in self._subscriptions:
@@ -502,7 +499,6 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        ##
                         _, opts = self._call_reqs[msg.request]
                         if opts.onProgress:
                             try:
@@ -526,7 +522,6 @@ class ApplicationSession(BaseSession):
                     else:
 
                         # final result
-                        ##
                         d, opts = self._call_reqs.pop(msg.request)
                         if msg.kwargs:
                             if msg.args:
@@ -676,32 +671,26 @@ class ApplicationSession(BaseSession):
                 d = None
 
                 # ERROR reply to PUBLISH
-                ##
                 if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
                     d = self._publish_reqs.pop(msg.request)[0]
 
                 # ERROR reply to SUBSCRIBE
-                ##
                 elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
                     d = self._subscribe_reqs.pop(msg.request)[0]
 
                 # ERROR reply to UNSUBSCRIBE
-                ##
                 elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
                     d = self._unsubscribe_reqs.pop(msg.request)[0]
 
                 # ERROR reply to REGISTER
-                ##
                 elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
                     d = self._register_reqs.pop(msg.request)[0]
 
                 # ERROR reply to UNREGISTER
-                ##
                 elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
                     d = self._unregister_reqs.pop(msg.request)[0]
 
                 # ERROR reply to CALL
-                ##
                 elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
                     d = self._call_reqs.pop(msg.request)[0]
 
@@ -927,13 +916,11 @@ class ApplicationSession(BaseSession):
 
         if callable(endpoint):
             # register a single callable
-            ##
             return _register(None, endpoint, procedure, options)
 
         else:
             # register all methods on an object
             # decorated with "wamp.register"
-            ##
             dl = []
 
             test = lambda x: inspect.ismethod(x) or inspect.isfunction(x)
@@ -971,7 +958,7 @@ class ApplicationSession(BaseSession):
 IPublisher.register(ApplicationSession)
 ISubscriber.register(ApplicationSession)
 ICaller.register(ApplicationSession)
-# ICallee.register(ApplicationSession) ## FIXME: ".register" collides with the ABC "register" method
+# ICallee.register(ApplicationSession)  # FIXME: ".register" collides with the ABC "register" method
 ITransportHandler.register(ApplicationSession)
 
 

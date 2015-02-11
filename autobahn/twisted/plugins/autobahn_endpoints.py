@@ -87,23 +87,23 @@ class AutobahnServerParser(object):
         # The present endpoint plugin is intended to be used as in the
         # following for running a streaming protocol over WebSocket over
         # an underlying stream transport.
-        ##
+        #
         # endpoint = serverFromString(reactor,
         # "autobahn:tcp\:9000\:interface\=0.0.0.0:url=ws\://localhost\:9000:compress=false"
-        ##
+        #
         # This will result in `parseStreamServer` to be called will
-        ##
+        #
         # description == tcp:9000:interface=0.0.0.0
-        ##
+        #
         # and
-        ##
-        ##   options == {'url': 'ws://localhost:9000', 'compress': 'false'}
-        ##
+        #
+        # options == {'url': 'ws://localhost:9000', 'compress': 'false'}
+        #
         # Essentially, we are using the `\:` escape to coerce the endpoint descriptor
         # of the underlying stream transport into one (first) positional argument.
-        ##
+        #
         # Note that the `\:` within "url" is another form of escaping!
-        ##
+        #
         opts = _parseOptions(options)
         endpoint = serverFromString(reactor, description)
         return AutobahnServerEndpoint(reactor, endpoint, opts)
