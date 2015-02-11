@@ -19,26 +19,26 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'WebSocketAdapterProtocol',
-   'WebSocketServerProtocol',
-   'WebSocketClientProtocol',
-   'WebSocketAdapterFactory',
-   'WebSocketServerFactory',
-   'WebSocketClientFactory',
+    'WebSocketAdapterProtocol',
+    'WebSocketServerProtocol',
+    'WebSocketClientProtocol',
+    'WebSocketAdapterFactory',
+    'WebSocketServerFactory',
+    'WebSocketClientFactory',
 
-   'WrappingWebSocketAdapter',
-   'WrappingWebSocketServerProtocol',
-   'WrappingWebSocketClientProtocol',
-   'WrappingWebSocketServerFactory',
-   'WrappingWebSocketClientFactory',
+    'WrappingWebSocketAdapter',
+    'WrappingWebSocketServerProtocol',
+    'WrappingWebSocketClientProtocol',
+    'WrappingWebSocketServerFactory',
+    'WrappingWebSocketClientFactory',
 
-   'listenWS',
-   'connectWS',
+    'listenWS',
+    'connectWS',
 
-   'WampWebSocketServerProtocol',
-   'WampWebSocketServerFactory',
-   'WampWebSocketClientProtocol',
-   'WampWebSocketClientFactory',
+    'WampWebSocketServerProtocol',
+    'WampWebSocketServerFactory',
+    'WampWebSocketClientProtocol',
+    'WampWebSocketClientFactory',
 )
 
 
@@ -57,9 +57,9 @@ from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
-                                        PerMessageDeflateOfferAccept, \
-                                        PerMessageDeflateResponse, \
-                                        PerMessageDeflateResponseAccept
+    PerMessageDeflateOfferAccept, \
+    PerMessageDeflateResponse, \
+    PerMessageDeflateResponseAccept
 
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):

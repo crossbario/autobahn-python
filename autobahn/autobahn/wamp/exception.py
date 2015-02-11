@@ -19,14 +19,14 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'Error',
-   'SessionNotReady',
-   'SerializationError',
-   'ProtocolError',
-   'TransportLost',
-   'ApplicationError',
-   'NotAuthorized',
-   'InvalidUri',
+    'Error',
+    'SessionNotReady',
+    'SerializationError',
+    'ProtocolError',
+    'TransportLost',
+    'ApplicationError',
+    'NotAuthorized',
+    'InvalidUri',
 )
 
 from autobahn.wamp import error

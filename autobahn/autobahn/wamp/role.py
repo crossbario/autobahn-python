@@ -178,10 +178,10 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
 
 
 ROLE_NAME_TO_CLASS = {
-   u'broker': RoleBrokerFeatures,
-   u'subscriber': RoleSubscriberFeatures,
-   u'publisher': RolePublisherFeatures,
-   u'dealer': RoleDealerFeatures,
-   u'caller': RoleCallerFeatures,
-   u'callee': RoleCalleeFeatures,
+    u'broker': RoleBrokerFeatures,
+    u'subscriber': RoleSubscriberFeatures,
+    u'publisher': RolePublisherFeatures,
+    u'dealer': RoleDealerFeatures,
+    u'caller': RoleCallerFeatures,
+    u'callee': RoleCalleeFeatures,
 }

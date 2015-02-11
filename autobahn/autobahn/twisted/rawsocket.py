@@ -20,10 +20,10 @@ from __future__ import absolute_import
 
 
 __all__ = (
-   'WampRawSocketServerProtocol',
-   'WampRawSocketClientProtocol',
-   'WampRawSocketServerFactory',
-   'WampRawSocketClientFactory'
+    'WampRawSocketServerProtocol',
+    'WampRawSocketClientProtocol',
+    'WampRawSocketServerFactory',
+    'WampRawSocketClientFactory'
 )
 
 from twisted.python import log

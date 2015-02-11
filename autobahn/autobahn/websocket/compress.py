@@ -21,17 +21,17 @@ from __future__ import absolute_import
 # this must be a list (not tuple), since we dynamically
 # extend it ..
 __all__ = [
-   "PerMessageCompressOffer",
-   "PerMessageCompressOfferAccept",
-   "PerMessageCompressResponse",
-   "PerMessageCompressResponseAccept",
-   "PerMessageCompress",
-   "PerMessageDeflateOffer",
-   "PerMessageDeflateOfferAccept",
-   "PerMessageDeflateResponse",
-   "PerMessageDeflateResponseAccept",
-   "PerMessageDeflate",
-   "PERMESSAGE_COMPRESSION_EXTENSION"
+    "PerMessageCompressOffer",
+    "PerMessageCompressOfferAccept",
+    "PerMessageCompressResponse",
+    "PerMessageCompressResponseAccept",
+    "PerMessageCompress",
+    "PerMessageDeflateOffer",
+    "PerMessageDeflateOfferAccept",
+    "PerMessageDeflateResponse",
+    "PerMessageDeflateResponseAccept",
+    "PerMessageDeflate",
+    "PERMESSAGE_COMPRESSION_EXTENSION"
 ]
 
 from autobahn.websocket.compress_base import *
@@ -41,13 +41,13 @@ from autobahn.websocket.compress_deflate import *
 # class for "permessage-deflate" is always available
 ##
 PERMESSAGE_COMPRESSION_EXTENSION = {
-   PerMessageDeflateMixin.EXTENSION_NAME: {
-      'Offer': PerMessageDeflateOffer,
-      'OfferAccept': PerMessageDeflateOfferAccept,
-      'Response': PerMessageDeflateResponse,
-      'ResponseAccept': PerMessageDeflateResponseAccept,
-      'PMCE': PerMessageDeflate
-   }
+    PerMessageDeflateMixin.EXTENSION_NAME: {
+        'Offer': PerMessageDeflateOffer,
+        'OfferAccept': PerMessageDeflateOfferAccept,
+        'Response': PerMessageDeflateResponse,
+        'ResponseAccept': PerMessageDeflateResponseAccept,
+        'PMCE': PerMessageDeflate
+    }
 }
 
 
@@ -61,11 +61,11 @@ else:
     from autobahn.websocket.compress_bzip2 import *
 
     PMCE = {
-       'Offer': PerMessageBzip2Offer,
-       'OfferAccept': PerMessageBzip2OfferAccept,
-       'Response': PerMessageBzip2Response,
-       'ResponseAccept': PerMessageBzip2ResponseAccept,
-       'PMCE': PerMessageBzip2
+        'Offer': PerMessageBzip2Offer,
+        'OfferAccept': PerMessageBzip2OfferAccept,
+        'Response': PerMessageBzip2Response,
+        'ResponseAccept': PerMessageBzip2ResponseAccept,
+        'PMCE': PerMessageBzip2
     }
     PERMESSAGE_COMPRESSION_EXTENSION[PerMessageBzip2Mixin.EXTENSION_NAME] = PMCE
 
@@ -87,11 +87,11 @@ else:
     from autobahn.websocket.compress_snappy import *
 
     PMCE = {
-       'Offer': PerMessageSnappyOffer,
-       'OfferAccept': PerMessageSnappyOfferAccept,
-       'Response': PerMessageSnappyResponse,
-       'ResponseAccept': PerMessageSnappyResponseAccept,
-       'PMCE': PerMessageSnappy
+        'Offer': PerMessageSnappyOffer,
+        'OfferAccept': PerMessageSnappyOfferAccept,
+        'Response': PerMessageSnappyResponse,
+        'ResponseAccept': PerMessageSnappyResponseAccept,
+        'PMCE': PerMessageSnappy
     }
     PERMESSAGE_COMPRESSION_EXTENSION[PerMessageSnappyMixin.EXTENSION_NAME] = PMCE
 

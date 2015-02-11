@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'WampLongPollResource',
+    'WampLongPollResource',
 )
 
 
@@ -41,7 +41,7 @@ from autobahn.util import newid
 from autobahn.wamp.websocket import parseSubprotocolIdentifier
 
 from autobahn.wamp.exception import SerializationError, \
-                                    TransportLost
+    TransportLost
 
 
 class WampLongPollResourceSessionSend(Resource):
@@ -429,8 +429,8 @@ class WampLongPollResourceOpen(Resource):
         request.setHeader('content-type', 'application/json; charset=utf-8')
 
         result = {
-           'transport': transport,
-           'protocol': protocol
+            'transport': transport,
+            'protocol': protocol
         }
 
         payload = json.dumps(result)

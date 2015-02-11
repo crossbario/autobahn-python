@@ -59,19 +59,19 @@ class TestUris(unittest.TestCase):
 
     def test_parse_uris(self):
         tests = [
-           (u"com.myapp.<product:int>.update", [
-              (u"com.myapp.0.update", {u'product': 0}),
-              (u"com.myapp.123456.update", {u'product': 123456}),
-              (u"com.myapp.aaa.update", None),
-              (u"com.myapp..update", None),
-              (u"com.myapp.0.delete", None),
-              ]
+            (u"com.myapp.<product:int>.update", [
+                (u"com.myapp.0.update", {u'product': 0}),
+                (u"com.myapp.123456.update", {u'product': 123456}),
+                (u"com.myapp.aaa.update", None),
+                (u"com.myapp..update", None),
+                (u"com.myapp.0.delete", None),
+            ]
             ),
-           (u"com.myapp.<product:string>.update", [
-              (u"com.myapp.box.update", {u'product': u'box'}),
-              (u"com.myapp.123456.update", {u'product': u'123456'}),
-              (u"com.myapp..update", None),
-              ]
+            (u"com.myapp.<product:string>.update", [
+                (u"com.myapp.box.update", {u'product': u'box'}),
+                (u"com.myapp.123456.update", {u'product': u'123456'}),
+                (u"com.myapp..update", None),
+            ]
             )
         ]
         for test in tests:
@@ -283,7 +283,7 @@ class TestDecorators(unittest.TestCase):
 
             def __eq__(self, other):
                 return self.__class__ == other.__class__ and \
-                       self.args == other.args
+                    self.args == other.args
 
         args, kwargs = AppError._wampuris[0].match(u"com.myapp.error")
         # noinspection PyArgumentList
@@ -298,8 +298,8 @@ class TestDecorators(unittest.TestCase):
 
             def __eq__(self, other):
                 return self.__class__ == other.__class__ and \
-                       self.args == other.args and \
-                       self.product == other.product
+                    self.args == other.args and \
+                    self.product == other.product
 
         args, kwargs = ProductInactiveError._wampuris[0].match(u"com.myapp.product.123456.product_inactive")
         self.assertEqual(ProductInactiveError("fuck", **kwargs), ProductInactiveError("fuck", 123456))
@@ -314,9 +314,9 @@ class TestDecorators(unittest.TestCase):
 
             def __eq__(self, other):
                 return self.__class__ == other.__class__ and \
-                       self.args == other.args and \
-                       self.category == other.category and \
-                       self.product == other.product
+                    self.args == other.args and \
+                    self.category == other.category and \
+                    self.product == other.product
 
         args, kwargs = ObjectInactiveError._wampuris[0].match(u"com.myapp.product.123456.inactive")
         self.assertEqual(ObjectInactiveError("fuck", **kwargs), ObjectInactiveError("fuck", "product", 123456))
@@ -523,14 +523,14 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         session.define(ProductInactiveError)
 
         for test in [
-           #(u"com.myapp.foo.error", [], {}, KwException),
-           (u"com.myapp.error", [], {}, AppError),
-           (u"com.myapp.error", ["you are doing it wrong"], {}, AppError),
-           (u"com.myapp.error", ["you are doing it wrong", 1, 2, 3], {}, AppError),
+            #(u"com.myapp.foo.error", [], {}, KwException),
+            (u"com.myapp.error", [], {}, AppError),
+            (u"com.myapp.error", ["you are doing it wrong"], {}, AppError),
+            (u"com.myapp.error", ["you are doing it wrong", 1, 2, 3], {}, AppError),
 
-           (u"com.myapp.error.product_inactive", [], {}, ProductInactiveError),
-           (u"com.myapp.error.product_inactive", [], {"product": 123456}, ProductInactiveError),
-           ]:
+            (u"com.myapp.error.product_inactive", [], {}, ProductInactiveError),
+            (u"com.myapp.error.product_inactive", [], {"product": 123456}, ProductInactiveError),
+        ]:
             error, args, kwargs, ecls = test
             exc = session.map_error(error, args, kwargs)
 

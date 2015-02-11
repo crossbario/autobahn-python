@@ -54,8 +54,8 @@ from collections import deque
 from autobahn import __version__
 
 from autobahn.websocket.interfaces import IWebSocketChannel, \
-                                          IWebSocketChannelFrameApi, \
-                                          IWebSocketChannelStreamingApi
+    IWebSocketChannelFrameApi, \
+    IWebSocketChannelStreamingApi
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns
 from autobahn.websocket.utf8validator import Utf8Validator
@@ -390,7 +390,7 @@ def parseHttpHeader(data):
             key = h[:i].strip().lower()
 
             # not sure if UTF-8 is allowed for HTTP header values..
-            value = h[i+1:].strip()
+            value = h[i + 1:].strip()
 
             # handle HTTP headers split across multiple lines
             if key in http_headers:
@@ -987,7 +987,7 @@ class WebSocketProtocol:
             else:
                 if self.state != WebSocketProtocol.STATE_CLOSING:
                     # perform WebSocket closing handshake
-                    self.sendCloseFrame(code=code, reasonUtf8=reason.encode("UTF-8")[:125-2], isReply=False)
+                    self.sendCloseFrame(code=code, reasonUtf8=reason.encode("UTF-8")[:125 - 2], isReply=False)
                 else:
                     # already performing closing handshake .. we now drop the TCP
                     # (this can happen e.g. if we encounter a 2nd protocol violation during closing HS)
@@ -1672,13 +1672,13 @@ class WebSocketProtocol:
                     # extract extended payload length
                     ##
                     if frame_payload_len1 == 126:
-                        frame_payload_len = struct.unpack("!H", self.data[i:i+2])[0]
+                        frame_payload_len = struct.unpack("!H", self.data[i:i + 2])[0]
                         if frame_payload_len < 126:
                             if self.protocolViolation("invalid data frame length (not using minimal length encoding)"):
                                 return False
                         i += 2
                     elif frame_payload_len1 == 127:
-                        frame_payload_len = struct.unpack("!Q", self.data[i:i+8])[0]
+                        frame_payload_len = struct.unpack("!Q", self.data[i:i + 8])[0]
                         if frame_payload_len > 0x7FFFFFFFFFFFFFFF:  # 2**63
                             if self.protocolViolation("invalid data frame length (>2^63)"):
                                 return False
@@ -1693,7 +1693,7 @@ class WebSocketProtocol:
                     ##
                     frame_mask = None
                     if frame_masked:
-                        frame_mask = self.data[i:i+4]
+                        frame_mask = self.data[i:i + 4]
                         i += 4
 
                     if frame_masked and frame_payload_len > 0 and self.applyMask:

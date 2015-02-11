@@ -214,14 +214,14 @@ class TestErrorMessage(unittest.TestCase):
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.error1', [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.error1', [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Error.parse(wmsg)
         self.assertIsInstance(msg, message.Error)
         self.assertEqual(msg.request_type, message.Call.MESSAGE_TYPE)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.error, u'com.myapp.error1')
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -328,7 +328,7 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.topic1')
 
-        e = message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
@@ -336,7 +336,7 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.topic1')
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[5], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Publish(123456, u'com.myapp.topic1', excludeMe=False, exclude=[300], eligible=[100, 200, 300], discloseMe=True)
         msg = e.marshal()
@@ -360,13 +360,13 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.discloseMe, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, u'com.myapp.topic1', [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, u'com.myapp.topic1', [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Publish.parse(wmsg)
         self.assertIsInstance(msg, message.Publish)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.topic, u'com.myapp.topic1')
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.excludeMe, None)
         self.assertEqual(msg.exclude, None)
         self.assertEqual(msg.eligible, None)
@@ -417,7 +417,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Event.MESSAGE_TYPE)
@@ -425,7 +425,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[5], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Event(123456, 789123, publisher=300)
         msg = e.marshal()
@@ -446,13 +446,13 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.publisher, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
         self.assertEqual(msg.subscription, 123456)
         self.assertEqual(msg.publication, 789123)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.publisher, None)
         self.assertEqual(msg.marshal(), wmsg)
 
@@ -570,7 +570,7 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
-        e = message.Call(123456, u'com.myapp.procedure1', args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Call(123456, u'com.myapp.procedure1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
@@ -578,7 +578,7 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[5], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Call(123456, u'com.myapp.procedure1', timeout=10000)
         msg = e.marshal()
@@ -599,13 +599,13 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.procedure1', [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.procedure1', [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Call.parse(wmsg)
         self.assertIsInstance(msg, message.Call)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.procedure, u'com.myapp.procedure1')
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
@@ -663,14 +663,14 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Result(123456, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Result(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], [1, 2, 3])
-        self.assertEqual(msg[4], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[4], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Result(123456, progress=True)
         msg = e.marshal()
@@ -689,12 +689,12 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Result.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Result.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Result.parse(wmsg)
         self.assertIsInstance(msg, message.Result)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
@@ -719,7 +719,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
@@ -727,7 +727,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
         self.assertEqual(msg[4], [1, 2, 3])
-        self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[5], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Invocation(123456, 789123, timeout=10000)
         msg = e.marshal()
@@ -748,13 +748,13 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}, [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Invocation.parse(wmsg)
         self.assertIsInstance(msg, message.Invocation)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.registration, 789123)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.timeout, None)
         self.assertEqual(msg.marshal(), wmsg)
 
@@ -812,14 +812,14 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
+        e = message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], [1, 2, 3])
-        self.assertEqual(msg[4], {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg[4], {u'foo': 23, u'bar': u'hello'})
 
         e = message.Yield(123456, progress=True)
         msg = e.marshal()
@@ -838,12 +838,12 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {u'foo': 23,  u'bar':  u'hello'}]
+        wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}, [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
         msg = message.Yield.parse(wmsg)
         self.assertIsInstance(msg, message.Yield)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.args, [1, 2, 3])
-        self.assertEqual(msg.kwargs, {u'foo': 23,  u'bar':  u'hello'})
+        self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
         self.assertEqual(msg.progress, None)
         self.assertEqual(msg.marshal(), wmsg)
 

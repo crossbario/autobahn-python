@@ -99,8 +99,8 @@ class Options(usage.Options):
     synopsis = "[options]"
     longdesc = 'Endpoint Forwarder.'
     optParameters = [
-       ["endpoint", "e", None, "Source endpoint."],
-       ["dest_endpoint", "d", None, "Destination endpoint."]
+        ["endpoint", "e", None, "Source endpoint."],
+        ["dest_endpoint", "d", None, "Destination endpoint."]
     ]
 
 

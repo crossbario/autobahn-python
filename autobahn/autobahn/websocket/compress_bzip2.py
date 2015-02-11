@@ -20,22 +20,22 @@ from __future__ import absolute_import
 
 
 __all__ = (
-   'PerMessageBzip2Mixin',
-   'PerMessageBzip2Offer',
-   'PerMessageBzip2OfferAccept',
-   'PerMessageBzip2Response',
-   'PerMessageBzip2ResponseAccept',
-   'PerMessageBzip2',
+    'PerMessageBzip2Mixin',
+    'PerMessageBzip2Offer',
+    'PerMessageBzip2OfferAccept',
+    'PerMessageBzip2Response',
+    'PerMessageBzip2ResponseAccept',
+    'PerMessageBzip2',
 )
 
 
 import bz2
 
 from autobahn.websocket.compress_base import PerMessageCompressOffer, \
-                                             PerMessageCompressOfferAccept, \
-                                             PerMessageCompressResponse, \
-                                             PerMessageCompressResponseAccept, \
-                                             PerMessageCompress
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
 
 
 class PerMessageBzip2Mixin:

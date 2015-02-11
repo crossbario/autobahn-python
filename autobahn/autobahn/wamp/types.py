@@ -19,21 +19,21 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'ComponentConfig',
-   'HelloReturn',
-   'Accept',
-   'Deny',
-   'Challenge',
-   'HelloDetails',
-   'SessionDetails',
-   'CloseDetails',
-   'SubscribeOptions',
-   'EventDetails',
-   'PublishOptions',
-   'RegisterOptions',
-   'CallDetails',
-   'CallOptions',
-   'CallResult',
+    'ComponentConfig',
+    'HelloReturn',
+    'Accept',
+    'Deny',
+    'Challenge',
+    'HelloDetails',
+    'SessionDetails',
+    'CloseDetails',
+    'SubscribeOptions',
+    'EventDetails',
+    'PublishOptions',
+    'RegisterOptions',
+    'CallDetails',
+    'CallOptions',
+    'CallResult',
 )
 
 import six
@@ -328,11 +328,11 @@ class PublishOptions:
 
         # options dict as sent within WAMP message
         self.options = {
-           'acknowledge': acknowledge,
-           'excludeMe': excludeMe,
-           'exclude': exclude,
-           'eligible': eligible,
-           'discloseMe': discloseMe
+            'acknowledge': acknowledge,
+            'excludeMe': excludeMe,
+            'exclude': exclude,
+            'eligible': eligible,
+            'discloseMe': discloseMe
         }
 
     def __str__(self):
@@ -359,9 +359,9 @@ class RegisterOptions:
 
         # options dict as sent within WAMP message
         self.options = {
-           'pkeys': pkeys,
-           'discloseCaller': discloseCaller,
-           'discloseCallerTransport': discloseCallerTransport
+            'pkeys': pkeys,
+            'discloseCaller': discloseCaller,
+            'discloseCallerTransport': discloseCallerTransport
         }
 
     def __str__(self):
@@ -440,8 +440,8 @@ class CallOptions:
 
         # options dict as sent within WAMP message
         self.options = {
-           'timeout': timeout,
-           'discloseMe': discloseMe
+            'timeout': timeout,
+            'discloseMe': discloseMe
         }
         if onProgress:
             self.options['receive_progress'] = True

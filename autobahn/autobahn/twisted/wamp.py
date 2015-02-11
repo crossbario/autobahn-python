@@ -19,12 +19,12 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'FutureMixin',
-   'ApplicationSession',
-   'ApplicationSessionFactory',
-   'ApplicationRunner',
-   'Application',
-   'Service'
+    'FutureMixin',
+    'ApplicationSession',
+    'ApplicationSessionFactory',
+    'ApplicationRunner',
+    'Application',
+    'Service'
 )
 
 import sys
@@ -33,9 +33,9 @@ import inspect
 from twisted.python import log
 from twisted.application import service, internet
 from twisted.internet.defer import Deferred, \
-                                   maybeDeferred, \
-                                   DeferredList, \
-                                   inlineCallbacks
+    maybeDeferred, \
+    DeferredList, \
+    inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig

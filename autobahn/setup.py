@@ -66,14 +66,14 @@ else:
 # Autobahn core packages
 ##
 packages = [
-   'autobahn',
-   'autobahn.wamp',
-   'autobahn.wamp.test',
-   'autobahn.websocket',
-   'autobahn.websocket.test',
-   'autobahn.asyncio',
-   'autobahn.twisted',
-   'twisted.plugins'
+    'autobahn',
+    'autobahn.wamp',
+    'autobahn.wamp.test',
+    'autobahn.websocket',
+    'autobahn.websocket.test',
+    'autobahn.asyncio',
+    'autobahn.twisted',
+    'twisted.plugins'
 ]
 
 if PY3:
@@ -91,61 +91,61 @@ else:
 # Now install Autobahn ..
 ##
 setup(
-   name='autobahn',
-   version=verstr,
-   description='WebSocket client & server library, WAMP real-time framework',
-   long_description=LONGSDESC,
-   license='Apache License 2.0',
-   author='Tavendo GmbH',
-   author_email='autobahnws@googlegroups.com',
-   url='http://autobahn.ws/python',
-   platforms='Any',
-   install_requires=['six>=1.6.1'],
-   extras_require={
-      # asyncio is needed for Autobahn/asyncio
-      'asyncio': asyncio_packages,
+    name='autobahn',
+    version=verstr,
+    description='WebSocket client & server library, WAMP real-time framework',
+    long_description=LONGSDESC,
+    license='Apache License 2.0',
+    author='Tavendo GmbH',
+    author_email='autobahnws@googlegroups.com',
+    url='http://autobahn.ws/python',
+    platforms='Any',
+    install_requires=['six>=1.6.1'],
+    extras_require={
+        # asyncio is needed for Autobahn/asyncio
+        'asyncio': asyncio_packages,
 
-      # you need Twisted for Autobahn/Twisted - obviously
-      'twisted': ["zope.interface>=3.6", "Twisted>=11.1"],
+        # you need Twisted for Autobahn/Twisted - obviously
+        'twisted': ["zope.interface>=3.6", "Twisted>=11.1"],
 
-      # native WebSocket and JSON acceleration: this should ONLY be used on CPython
-      'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
+        # native WebSocket and JSON acceleration: this should ONLY be used on CPython
+        'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
 
-      # for (non-standard) WebSocket compression methods - not needed if you
-      # only want standard WebSocket compression ("permessage-deflate")
-      'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
+        # for (non-standard) WebSocket compression methods - not needed if you
+        # only want standard WebSocket compression ("permessage-deflate")
+        'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
 
-      # needed if you want WAMPv2 binary serialization support
-      'serialization': ["msgpack-python>=0.4.0"]
-   },
-   packages=packages,
-   zip_safe=False,
-   # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-   ##
-   classifiers=["License :: OSI Approved :: Apache Software License",
-                "Development Status :: 5 - Production/Stable",
-                "Environment :: No Input/Output (Daemon)",
-                "Framework :: Twisted",
-                "Intended Audience :: Developers",
-                "Operating System :: OS Independent",
-                "Programming Language :: Python",
-                "Programming Language :: Python :: 2",
-                "Programming Language :: Python :: 2.6",
-                "Programming Language :: Python :: 2.7",
-                "Programming Language :: Python :: 3",
-                "Programming Language :: Python :: 3.3",
-                "Programming Language :: Python :: 3.4",
-                "Programming Language :: Python :: Implementation :: CPython",
-                "Programming Language :: Python :: Implementation :: PyPy",
-                "Programming Language :: Python :: Implementation :: Jython",
-                "Topic :: Internet",
-                "Topic :: Internet :: WWW/HTTP",
-                "Topic :: Communications",
-                "Topic :: System :: Distributed Computing",
-                "Topic :: Software Development :: Libraries",
-                "Topic :: Software Development :: Libraries :: Python Modules",
-                "Topic :: Software Development :: Object Brokering"],
-   keywords='autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
+        # needed if you want WAMPv2 binary serialization support
+        'serialization': ["msgpack-python>=0.4.0"]
+    },
+    packages=packages,
+    zip_safe=False,
+    # http://pypi.python.org/pypi?%3Aaction=list_classifiers
+    ##
+    classifiers=["License :: OSI Approved :: Apache Software License",
+                 "Development Status :: 5 - Production/Stable",
+                 "Environment :: No Input/Output (Daemon)",
+                 "Framework :: Twisted",
+                 "Intended Audience :: Developers",
+                 "Operating System :: OS Independent",
+                 "Programming Language :: Python",
+                 "Programming Language :: Python :: 2",
+                 "Programming Language :: Python :: 2.6",
+                 "Programming Language :: Python :: 2.7",
+                 "Programming Language :: Python :: 3",
+                 "Programming Language :: Python :: 3.3",
+                 "Programming Language :: Python :: 3.4",
+                 "Programming Language :: Python :: Implementation :: CPython",
+                 "Programming Language :: Python :: Implementation :: PyPy",
+                 "Programming Language :: Python :: Implementation :: Jython",
+                 "Topic :: Internet",
+                 "Topic :: Internet :: WWW/HTTP",
+                 "Topic :: Communications",
+                 "Topic :: System :: Distributed Computing",
+                 "Topic :: Software Development :: Libraries",
+                 "Topic :: Software Development :: Libraries :: Python Modules",
+                 "Topic :: Software Development :: Object Brokering"],
+    keywords='autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
 

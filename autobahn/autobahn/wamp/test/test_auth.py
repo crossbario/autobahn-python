@@ -32,18 +32,18 @@ from autobahn.wamp import auth
 # these test vectors are all for HMAC-SHA1
 ##
 PBKDF2_TEST_VECTORS = [
-   # From RFC 6070
-   (b'password', b'salt', 1, 20, u'0c60c80f961f0e71f3a9b524af6012062fe037a6'),
-   (b'password', b'salt', 2, 20, u'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'),
+    # From RFC 6070
+    (b'password', b'salt', 1, 20, u'0c60c80f961f0e71f3a9b524af6012062fe037a6'),
+    (b'password', b'salt', 2, 20, u'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'),
 
-   # From Crypt-PBKDF2
-   (b'password', b'ATHENA.MIT.EDUraeburn', 1, 16, u'cdedb5281bb2f801565a1122b2563515'),
-   (b'password', b'ATHENA.MIT.EDUraeburn', 1, 32, u'cdedb5281bb2f801565a1122b25635150ad1f7a04bb9f3a333ecc0e2e1f70837'),
-   (b'password', b'ATHENA.MIT.EDUraeburn', 2, 16, u'01dbee7f4a9e243e988b62c73cda935d'),
-   (b'password', b'ATHENA.MIT.EDUraeburn', 2, 32, u'01dbee7f4a9e243e988b62c73cda935da05378b93244ec8f48a99e61ad799d86'),
-   (b'password', b'ATHENA.MIT.EDUraeburn', 1200, 32, u'5c08eb61fdf71e4e4ec3cf6ba1f5512ba7e52ddbc5e5142f708a31e2e62b1e13'),
-   (b'X' * 64, b'pass phrase equals block size', 1200, 32, u'139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1'),
-   (b'X' * 65, b'pass phrase exceeds block size', 1200, 32, u'9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a'),
+    # From Crypt-PBKDF2
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 16, u'cdedb5281bb2f801565a1122b2563515'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1, 32, u'cdedb5281bb2f801565a1122b25635150ad1f7a04bb9f3a333ecc0e2e1f70837'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 16, u'01dbee7f4a9e243e988b62c73cda935d'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 2, 32, u'01dbee7f4a9e243e988b62c73cda935da05378b93244ec8f48a99e61ad799d86'),
+    (b'password', b'ATHENA.MIT.EDUraeburn', 1200, 32, u'5c08eb61fdf71e4e4ec3cf6ba1f5512ba7e52ddbc5e5142f708a31e2e62b1e13'),
+    (b'X' * 64, b'pass phrase equals block size', 1200, 32, u'139c30c0966bc32ba55fdbf212530ac9c5ec59f1a452f5cc9ad940fea0598ed1'),
+    (b'X' * 65, b'pass phrase exceeds block size', 1200, 32, u'9ccad6d468770cd51b10e6a68721be611a8b4d282601db3b36be9246915ec82a'),
 ]
 
 if platform.python_implementation() != 'PyPy':
@@ -51,15 +51,15 @@ if platform.python_implementation() != 'PyPy':
     # the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
     ##
     PBKDF2_TEST_VECTORS.extend(
-       [
-          # From RFC 6070
-          (b'password', b'salt', 4096, 20, u'4b007901b765489abead49d926f721d065a429c1'),
-          (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, u'3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
-          (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
+        [
+            # From RFC 6070
+            (b'password', b'salt', 4096, 20, u'4b007901b765489abead49d926f721d065a429c1'),
+            (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, u'3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
+            (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
 
-          # This one is from the RFC but it just takes for ages
-          #(b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
-       ]
+            # This one is from the RFC but it just takes for ages
+            #(b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
+        ]
     )
 
 
@@ -74,13 +74,13 @@ class TestWampAuthHelpers(unittest.TestCase):
     def test_generate_totp_secret_default(self):
         secret = auth.generate_totp_secret()
         self.assertEqual(type(secret), bytes)
-        self.assertEqual(len(secret), 10*8/5)
+        self.assertEqual(len(secret), 10 * 8 / 5)
 
     def test_generate_totp_secret_length(self):
         for length in [5, 10, 20, 30, 40, 50]:
             secret = auth.generate_totp_secret(length)
             self.assertEqual(type(secret), bytes)
-            self.assertEqual(len(secret), length*8/5)
+            self.assertEqual(len(secret), length * 8 / 5)
 
     def test_compute_totp(self):
         pat = re.compile(b"\d{6,6}")

@@ -20,22 +20,22 @@ from __future__ import absolute_import
 
 
 __all__ = (
-   'PerMessageSnappyMixin',
-   'PerMessageSnappyOffer',
-   'PerMessageSnappyOfferAccept',
-   'PerMessageSnappyResponse',
-   'PerMessageSnappyResponseAccept',
-   'PerMessageSnappy',
+    'PerMessageSnappyMixin',
+    'PerMessageSnappyOffer',
+    'PerMessageSnappyOfferAccept',
+    'PerMessageSnappyResponse',
+    'PerMessageSnappyResponseAccept',
+    'PerMessageSnappy',
 )
 
 
 import snappy
 
 from autobahn.websocket.compress_base import PerMessageCompressOffer, \
-                                             PerMessageCompressOfferAccept, \
-                                             PerMessageCompressResponse, \
-                                             PerMessageCompressResponseAccept, \
-                                             PerMessageCompress
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
 
 
 class PerMessageSnappyMixin:

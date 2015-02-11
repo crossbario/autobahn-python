@@ -39,35 +39,35 @@ class Serializer:
     """
 
     MESSAGE_TYPE_MAP = {
-       message.Hello.MESSAGE_TYPE:           message.Hello,
-       message.Welcome.MESSAGE_TYPE:         message.Welcome,
-       message.Abort.MESSAGE_TYPE:           message.Abort,
-       message.Challenge.MESSAGE_TYPE:       message.Challenge,
-       message.Authenticate.MESSAGE_TYPE:    message.Authenticate,
-       message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
-       message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
-       message.Error.MESSAGE_TYPE:           message.Error,
+        message.Hello.MESSAGE_TYPE: message.Hello,
+        message.Welcome.MESSAGE_TYPE: message.Welcome,
+        message.Abort.MESSAGE_TYPE: message.Abort,
+        message.Challenge.MESSAGE_TYPE: message.Challenge,
+        message.Authenticate.MESSAGE_TYPE: message.Authenticate,
+        message.Goodbye.MESSAGE_TYPE: message.Goodbye,
+        message.Heartbeat.MESSAGE_TYPE: message.Heartbeat,
+        message.Error.MESSAGE_TYPE: message.Error,
 
-       message.Publish.MESSAGE_TYPE:         message.Publish,
-       message.Published.MESSAGE_TYPE:       message.Published,
+        message.Publish.MESSAGE_TYPE: message.Publish,
+        message.Published.MESSAGE_TYPE: message.Published,
 
-       message.Subscribe.MESSAGE_TYPE:       message.Subscribe,
-       message.Subscribed.MESSAGE_TYPE:      message.Subscribed,
-       message.Unsubscribe.MESSAGE_TYPE:     message.Unsubscribe,
-       message.Unsubscribed.MESSAGE_TYPE:    message.Unsubscribed,
-       message.Event.MESSAGE_TYPE:           message.Event,
+        message.Subscribe.MESSAGE_TYPE: message.Subscribe,
+        message.Subscribed.MESSAGE_TYPE: message.Subscribed,
+        message.Unsubscribe.MESSAGE_TYPE: message.Unsubscribe,
+        message.Unsubscribed.MESSAGE_TYPE: message.Unsubscribed,
+        message.Event.MESSAGE_TYPE: message.Event,
 
-       message.Call.MESSAGE_TYPE:            message.Call,
-       message.Cancel.MESSAGE_TYPE:          message.Cancel,
-       message.Result.MESSAGE_TYPE:          message.Result,
+        message.Call.MESSAGE_TYPE: message.Call,
+        message.Cancel.MESSAGE_TYPE: message.Cancel,
+        message.Result.MESSAGE_TYPE: message.Result,
 
-       message.Register.MESSAGE_TYPE:        message.Register,
-       message.Registered.MESSAGE_TYPE:      message.Registered,
-       message.Unregister.MESSAGE_TYPE:      message.Unregister,
-       message.Unregistered.MESSAGE_TYPE:    message.Unregistered,
-       message.Invocation.MESSAGE_TYPE:      message.Invocation,
-       message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
-       message.Yield.MESSAGE_TYPE:           message.Yield
+        message.Register.MESSAGE_TYPE: message.Register,
+        message.Registered.MESSAGE_TYPE: message.Registered,
+        message.Unregister.MESSAGE_TYPE: message.Unregister,
+        message.Unregistered.MESSAGE_TYPE: message.Unregistered,
+        message.Invocation.MESSAGE_TYPE: message.Invocation,
+        message.Interrupt.MESSAGE_TYPE: message.Interrupt,
+        message.Yield.MESSAGE_TYPE: message.Yield
     }
     """
    Mapping of WAMP message type codes to WAMP message classes.
@@ -268,18 +268,18 @@ else:
                     # read message length prefix
                     if i + 4 > N:
                         raise Exception("batch format error [1]")
-                    l = struct.unpack("!L", payload[i:i+4])[0]
+                    l = struct.unpack("!L", payload[i:i + 4])[0]
 
                     # read message data
                     if i + 4 + l > N:
                         raise Exception("batch format error [2]")
-                    data = payload[i+4:i+4+l]
+                    data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
                     msgs.append(msgpack.unpackb(data, encoding='utf-8'))
 
                     # advance until everything consumed
-                    i = i+4+l
+                    i = i + 4 + l
 
                 if i != N:
                     raise Exception("batch format error [3]")

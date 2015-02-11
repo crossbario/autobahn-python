@@ -55,7 +55,7 @@ pyflakes:
 	pyflakes .
 
 pep8:
-	pep8 --statistics -qq
+	pep8 --statistics --ignore=E501 -qq
 # pep8 --select=E231 --show-source
 
 autopep8:

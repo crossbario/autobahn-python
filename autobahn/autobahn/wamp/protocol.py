@@ -23,13 +23,13 @@ import six
 from six import StringIO
 
 from autobahn.wamp.interfaces import ISession, \
-                                     IPublication, \
-                                     IPublisher, \
-                                     ISubscription, \
-                                     ISubscriber, \
-                                     ICaller, \
-                                     IRegistration, \
-                                     ITransportHandler
+    IPublication, \
+    IPublisher, \
+    ISubscription, \
+    ISubscriber, \
+    ICaller, \
+    IRegistration, \
+    ITransportHandler
 
 from autobahn import util
 from autobahn import wamp
@@ -347,10 +347,10 @@ class ApplicationSession(BaseSession):
         self._goodbye_sent = False
 
         roles = [
-           role.RolePublisherFeatures(),
-           role.RoleSubscriberFeatures(),
-           role.RoleCallerFeatures(),
-           role.RoleCalleeFeatures()
+            role.RolePublisherFeatures(),
+            role.RoleSubscriberFeatures(),
+            role.RoleCallerFeatures(),
+            role.RoleCalleeFeatures()
         ]
 
         msg = message.Hello(realm, roles, authmethods, authid)

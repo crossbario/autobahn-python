@@ -437,7 +437,7 @@ class Welcome(Message):
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         details = {
-           u'roles': {}
+            u'roles': {}
         }
 
         if self.authid:

@@ -17,9 +17,9 @@
 ###############################################################################
 
 __all__ = (
-   'WebSocketResource',
-   'HTTPChannelHixie76Aware',
-   'WSGIRootResource',
+    'WebSocketResource',
+    'HTTPChannelHixie76Aware',
+    'WSGIRootResource',
 )
 
 from zope.interface import implementer

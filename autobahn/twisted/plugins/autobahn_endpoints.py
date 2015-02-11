@@ -22,14 +22,14 @@ from zope.interface import implementer
 
 from twisted.plugin import IPlugin
 from twisted.internet.interfaces import IStreamServerEndpointStringParser, \
-                                        IStreamServerEndpoint, \
-                                        IStreamClientEndpointStringParser, \
-                                        IStreamClientEndpoint
+    IStreamServerEndpoint, \
+    IStreamClientEndpointStringParser, \
+    IStreamClientEndpoint
 
 from twisted.internet.endpoints import serverFromString, clientFromString
 
 from autobahn.twisted.websocket import WrappingWebSocketServerFactory, \
-                                       WrappingWebSocketClientFactory
+    WrappingWebSocketClientFactory
 
 
 def _parseOptions(options):

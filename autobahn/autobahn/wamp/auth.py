@@ -19,12 +19,12 @@
 from __future__ import absolute_import
 
 __all__ = (
-   'pbkdf2',
-   'generate_totp_secret',
-   'compute_totp',
-   'derive_key',
-   'generate_wcs',
-   'compute_wcs')
+    'pbkdf2',
+    'generate_totp_secret',
+    'compute_totp',
+    'derive_key',
+    'generate_wcs',
+    'compute_wcs')
 
 import os
 import base64
@@ -73,7 +73,7 @@ def compute_totp(secret, offset=0):
     msg = struct.pack('>Q', interval)
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
-    token = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
+    token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
     return '{0:06d}'.format(token).encode('ascii')
 
 

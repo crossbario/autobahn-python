@@ -17,11 +17,11 @@
 ###############################################################################
 
 __all__ = (
-   'PerMessageCompressOffer',
-   'PerMessageCompressOfferAccept',
-   'PerMessageCompressResponse',
-   'PerMessageCompressResponseAccept',
-   'PerMessageCompress',
+    'PerMessageCompressOffer',
+    'PerMessageCompressOfferAccept',
+    'PerMessageCompressResponse',
+    'PerMessageCompressResponseAccept',
+    'PerMessageCompress',
 )
 
 

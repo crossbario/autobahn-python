@@ -17,8 +17,8 @@
 ###############################################################################
 
 __all__ = (
-   'FlashPolicyProtocol',
-   'FlashPolicyFactory'
+    'FlashPolicyProtocol',
+    'FlashPolicyFactory'
 )
 
 

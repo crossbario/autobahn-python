@@ -195,13 +195,13 @@ if unittest is not None:
             app = service.MultiService()
             for component in components:
                 c = wamp.Service(
-                   url=self.url,
-                   extra=dict(test=self),
-                   realm=self.realm,
-                   make=component,
-                   debug=bool(os.environ.get('debug_websocket', False)),
-                   debug_wamp=bool(os.environ.get('debug_lowlevel', False)),
-                   debug_app=bool(os.environ.get('debug_app', False))
+                    url=self.url,
+                    extra=dict(test=self),
+                    realm=self.realm,
+                    make=component,
+                    debug=bool(os.environ.get('debug_websocket', False)),
+                    debug_wamp=bool(os.environ.get('debug_lowlevel', False)),
+                    debug_app=bool(os.environ.get('debug_app', False))
                 )
                 c.setServiceParent(app)
 
