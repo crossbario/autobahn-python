@@ -43,7 +43,6 @@ if six.PY3:
     xrange = range
 
 
-
 def utcnow():
     """
     Get current time in UTC as ISO 8601 string.
@@ -53,7 +52,6 @@ def utcnow():
     """
     now = datetime.utcnow()
     return now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-
 
 
 def utcstr(ts):
@@ -70,7 +68,6 @@ def utcstr(ts):
         return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     else:
         return ts
-
 
 
 def parseutc(datestr):
@@ -93,7 +90,6 @@ def parseutc(datestr):
         return None
 
 
-
 def id():
     """
     Generate a new random object ID from range **[0, 2**53]**.
@@ -111,7 +107,6 @@ def id():
     return random.randint(0, 2147483647) # use a reduced ID space for now (2**31-1)
 
 
-
 def newid(length = 16):
     """
     Generate a new random object ID.
@@ -123,7 +118,6 @@ def newid(length = 16):
     :rtype: str
     """
     return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(length)])
-
 
 
 ## Select the most precise walltime measurement function available
@@ -236,7 +230,6 @@ class Stopwatch:
         return elapsed
 
 
-
 class Tracker:
     """
     A key-based statistics tracker.
@@ -251,7 +244,6 @@ class Tracker:
         self._offset = rtime()
         self._dt_offset = datetime.utcnow()
 
-
     def track(self, key):
         """
         Track elapsed for key.
@@ -260,7 +252,6 @@ class Tracker:
         :type key: str
         """
         self._timings[key] = rtime()
-
 
     def diff(self, startKey, endKey, formatted = True):
         """
@@ -311,21 +302,17 @@ class Tracker:
             raise KeyError("No such key \"%s\"." % elapsed)
         return self._dt_offset + timedelta(seconds=elapsed)
 
-
     def __getitem__(self, key):
         if key in self._timings:
             return self._timings[key] - self._offset
         else:
             return None
 
-
     def __iter__(self):
         return self._timings.__iter__()
 
-
     def __str__(self):
         return pformat(self._timings)
-
 
 
 class EqualityMixin:
@@ -357,7 +344,6 @@ class EqualityMixin:
                     return False
         return True
         #return (isinstance(other, self.__class__) and self.__dict__ == other.__dict__)
-
 
     def __ne__(self, other):
         """

@@ -32,7 +32,6 @@ __all__ = (
 from autobahn.wamp import error
 
 
-
 class Error(RuntimeError):
     """
     Base class for all exceptions related to WAMP.
@@ -46,7 +45,6 @@ class Error(RuntimeError):
         RuntimeError.__init__(self, reason)
 
 
-
 class SessionNotReady(Error):
     """
     The application tried to perform a WAMP interaction, but the
@@ -54,13 +52,11 @@ class SessionNotReady(Error):
     """
 
 
-
 class SerializationError(Error):
     """
     Exception raised when the WAMP serializer could not serialize the
     application payload (``args`` or ``kwargs`` for ``CALL``, ``PUBLISH``, etc).
     """
-
 
 
 class ProtocolError(Error):
@@ -71,7 +67,6 @@ class ProtocolError(Error):
     """
 
 
-
 class TransportLost(Error):
     """
     Exception raised when the transport underlying the WAMP session
@@ -79,7 +74,6 @@ class TransportLost(Error):
     """
     def __init__(self):
         Error.__init__(self, u"WAMP transport lost")
-
 
 
 class ApplicationError(Error):
@@ -188,7 +182,6 @@ class ApplicationError(Error):
    exclusion of (any) *Callee* providing the procedure (WAMP AP).
    """
 
-
     def __init__(self, error, *args, **kwargs):
         """
 
@@ -199,7 +192,6 @@ class ApplicationError(Error):
         self.kwargs = kwargs
         self.error = error
 
-
     def __str__(self):
         if self.kwargs and 'traceback' in self.kwargs:
             tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
@@ -207,7 +199,6 @@ class ApplicationError(Error):
         else:
             tb = ''
         return "ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(self.error, self.args, self.kwargs, tb)
-
 
 
 @error(ApplicationError.NOT_AUTHORIZED)

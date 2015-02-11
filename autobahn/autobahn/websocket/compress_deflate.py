@@ -155,7 +155,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                       requestMaxWindowBits)
         return offer
 
-
     def __init__(self,
                  acceptNoContextTakeover = True,
                  acceptMaxWindowBits = True,
@@ -193,7 +192,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
         self.requestMaxWindowBits = requestMaxWindowBits
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -211,7 +209,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
             pmceString += "; server_max_window_bits=%d" % self.requestMaxWindowBits
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -224,7 +221,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                 'requestNoContextTakeover': self.requestNoContextTakeover,
                 'requestMaxWindowBits': self.requestMaxWindowBits}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -232,7 +228,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         :returns: str -- Python string representation.
         """
         return "PerMessageDeflateOffer(acceptNoContextTakeover = %s, acceptMaxWindowBits = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.acceptNoContextTakeover, self.acceptMaxWindowBits, self.requestNoContextTakeover, self.requestMaxWindowBits)
-
 
 
 class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDeflateMixin):
@@ -309,7 +304,6 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
 
         self.memLevel = memLevel
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -327,7 +321,6 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
             pmceString += "; client_max_window_bits=%d" % self.requestMaxWindowBits
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -342,7 +335,6 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
                 'windowBits': self.windowBits,
                 'memLevel': self.memLevel}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -350,7 +342,6 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         :returns: str -- Python string representation.
         """
         return "PerMessageDeflateOfferAccept(offer = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s, noContextTakeover = %s, windowBits = %s, memLevel = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.requestMaxWindowBits, self.noContextTakeover, self.windowBits, self.memLevel)
-
 
 
 class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMixin):
@@ -425,7 +416,6 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                          server_no_context_takeover)
         return response
 
-
     def __init__(self,
                  client_max_window_bits,
                  client_no_context_takeover,
@@ -435,7 +425,6 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
         self.client_no_context_takeover = client_no_context_takeover
         self.server_max_window_bits = server_max_window_bits
         self.server_no_context_takeover = server_no_context_takeover
-
 
     def __json__(self):
         """
@@ -448,7 +437,6 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                 'client_no_context_takeover': self.client_no_context_takeover,
                 'server_max_window_bits': self.server_max_window_bits,
                 'server_no_context_takeover': self.server_no_context_takeover}
-
 
     def __repr__(self):
         """
@@ -511,7 +499,6 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
 
         self.memLevel = memLevel
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -523,7 +510,6 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
                 'noContextTakeover': self.noContextTakeover,
                 'windowBits': self.windowBits,
                 'memLevel': self.memLevel}
-
 
     def __repr__(self):
         """
@@ -542,7 +528,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     DEFAULT_WINDOW_BITS = zlib.MAX_WBITS
     DEFAULT_MEM_LEVEL = 8
 
-
     @classmethod
     def createFromResponseAccept(cls, isServer, accept):
         ## accept: instance of PerMessageDeflateResponseAccept
@@ -554,7 +539,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                      accept.memLevel)
         return pmce
 
-
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         ## accept: instance of PerMessageDeflateOfferAccept
@@ -565,7 +549,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                      accept.requestMaxWindowBits,
                      accept.memLevel)
         return pmce
-
 
     def __init__(self,
                  isServer,
@@ -587,7 +570,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         self._compressor = None
         self._decompressor = None
 
-
     def __json__(self):
         return {'extension': self.EXTENSION_NAME,
                 'isServer': self._isServer,
@@ -597,10 +579,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                 'client_max_window_bits': self.client_max_window_bits,
                 'mem_level': self.mem_level}
 
-
     def __repr__(self):
         return "PerMessageDeflate(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s, server_max_window_bits = %s, client_max_window_bits = %s, mem_level = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover, self.server_max_window_bits, self.client_max_window_bits, self.mem_level)
-
 
     def startCompressMessage(self):
         # compressobj([level[, method[, wbits[, memlevel[, strategy]]]]])
@@ -614,15 +594,12 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
             if self._compressor is None or self.client_no_context_takeover:
                 self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.client_max_window_bits, self.mem_level)
 
-
     def compressMessageData(self, data):
         return self._compressor.compress(data)
-
 
     def endCompressMessage(self):
         data = self._compressor.flush(zlib.Z_SYNC_FLUSH)
         return data[:-4]
-
 
     def startDecompressMessage(self):
         if self._isServer:
@@ -632,10 +609,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
             if self._decompressor is None or self.server_no_context_takeover:
                 self._decompressor = zlib.decompressobj(-self.server_max_window_bits)
 
-
     def decompressMessageData(self, data):
         return self._decompressor.decompress(data)
-
 
     def endDecompressMessage(self):
         ## Eat stripped LEN and NLEN field of a non-compressed block added

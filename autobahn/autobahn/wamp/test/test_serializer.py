@@ -71,7 +71,6 @@ def generate_test_messages():
     ]
 
 
-
 class TestSerializer(unittest.TestCase):
 
     def setUp(self):
@@ -88,7 +87,6 @@ class TestSerializer(unittest.TestCase):
             ## MsgPack not installed
             pass
 
-
     def test_roundtrip(self):
         for msg in generate_test_messages():
             for serializer in self.serializers:
@@ -101,7 +99,6 @@ class TestSerializer(unittest.TestCase):
 
                 ## must be equal: message roundtrips via the serializer
                 self.assertEqual([msg], msg2)
-
 
     def test_caching(self):
         for msg in generate_test_messages():
@@ -121,7 +118,6 @@ class TestSerializer(unittest.TestCase):
                 ## serialization is gone
                 msg.uncache()
                 self.assertFalse(serializer._serializer in msg._serialized)
-
 
 
 if __name__ == '__main__':

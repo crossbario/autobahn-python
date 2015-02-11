@@ -62,14 +62,12 @@ class IWebSocketChannel(object):
            one of the given list.
         """
 
-
     @abc.abstractmethod
     def onOpen(self):
         """
         Callback fired when the initial WebSocket opening handshake was completed.
         You now can send and receive WebSocket messages.
         """
-
 
     @abc.abstractmethod
     def sendMessage(self, payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
@@ -97,7 +95,6 @@ class IWebSocketChannel(object):
         :type doNotCompress: bool
         """
 
-
     @abc.abstractmethod
     def onMessage(self, payload, isBinary):
         """
@@ -109,7 +106,6 @@ class IWebSocketChannel(object):
         :param isBinary: ``True`` iff payload is binary, else the payload is UTF-8 encoded text.
         :type isBinary: bool
         """
-
 
     @abc.abstractmethod
     def sendClose(self, code = None, reason = None):
@@ -123,7 +119,6 @@ class IWebSocketChannel(object):
            code MUST also be present).
         :type reason: str
         """
-
 
     @abc.abstractmethod
     def onClose(self, wasClean, code, reason):
@@ -139,7 +134,6 @@ class IWebSocketChannel(object):
         :type reason: unicode or None
         """
 
-
     @abc.abstractmethod
     def sendPreparedMessage(self, preparedMsg):
         """
@@ -148,7 +142,6 @@ class IWebSocketChannel(object):
         :param prepareMessage: A previously prepared message.
         :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
         """
-
 
     @abc.abstractmethod
     def sendPing(self, payload = None):
@@ -162,7 +155,6 @@ class IWebSocketChannel(object):
         :type payload: bytes or None
         """
 
-
     @abc.abstractmethod
     def onPing(self, payload):
         """
@@ -172,7 +164,6 @@ class IWebSocketChannel(object):
         :param payload: Payload of ping (when there was any). Can be arbitrary, up to `125` octets.
         :type payload: bytes
         """
-
 
     @abc.abstractmethod
     def sendPong(self, payload = None):
@@ -186,7 +177,6 @@ class IWebSocketChannel(object):
         :type payload: bytes
         """
 
-
     @abc.abstractmethod
     def onPong(self, payload):
         """
@@ -195,7 +185,6 @@ class IWebSocketChannel(object):
         :param payload: Payload of pong (when there was any). Can be arbitrary, up to 125 octets.
         :type payload: bytes
         """
-
 
 
 class IWebSocketChannelFrameApi(IWebSocketChannel):
@@ -212,7 +201,6 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :type isBinary: bool
         """
 
-
     @abc.abstractmethod
     def onMessageFrame(self, payload):
         """
@@ -223,14 +211,12 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :type payload: list of bytes
         """
 
-
     @abc.abstractmethod
     def onMessageEnd(self):
         """
         Callback fired when a WebSocket message has been completely received (the last
         WebSocket frame for that message has been received).
         """
-
 
     @abc.abstractmethod
     def beginMessage(self, isBinary = False, doNotCompress = False):
@@ -245,7 +231,6 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
            already compressed).
         :type doNotCompress: bool
         """
-
 
     @abc.abstractmethod
     def sendMessageFrame(self, payload, sync = False):
@@ -264,14 +249,12 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         :type sync: bool
         """
 
-
     @abc.abstractmethod
     def endMessage(self):
         """
         End a message previously begun message. No more frames may be sent (for that message).
         You have to begin a new message before sending again.
         """
-
 
 
 class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
@@ -289,7 +272,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         :type length: int
         """
 
-
     @abc.abstractmethod
     def onMessageFrameData(self, payload):
         """
@@ -300,7 +282,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         :type payload: bytes
         """
 
-
     @abc.abstractmethod
     def onMessageFrameEnd(self):
         """
@@ -308,7 +289,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         A default implementation will flatten the buffered frame data and
         fire `onMessageFrame`.
         """
-
 
     @abc.abstractmethod
     def beginMessageFrame(self, length):
@@ -318,7 +298,6 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         :param length: Length of the frame which is to be started. Must be less or equal **2^63**.
         :type length: int
         """
-
 
     @abc.abstractmethod
     def sendMessageFrameData(self, payload, sync = False):

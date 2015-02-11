@@ -22,7 +22,6 @@ import re
 import six
 
 
-
 class Pattern:
     """
     A WAMP URI Pattern.
@@ -64,7 +63,6 @@ class Pattern:
    .. note::
       This pattern is stricter than a general WAMP URI component since a valid Python identifier is required.   
    """
-
 
     def __init__(self, uri, target):
         """
@@ -141,7 +139,6 @@ class Pattern:
         self._uri = uri
         self._target = target
 
-
     def uri(self):
         """
         Returns the original URI (pattern) for this pattern.
@@ -150,7 +147,6 @@ class Pattern:
         :rtype: unicode
         """
         return self._uri
-
 
     def match(self, uri):
         """
@@ -178,7 +174,6 @@ class Pattern:
             else:
                 raise Exception("no match")
 
-
     def is_endpoint(self):
         """
         Check if this pattern is for a procedure endpoint.
@@ -188,7 +183,6 @@ class Pattern:
         """
         return self._target == Pattern.URI_TARGET_ENDPOINT
 
-
     def is_handler(self):
         """
         Check if this pattern is for an event handler.
@@ -197,7 +191,6 @@ class Pattern:
         :rtype: bool
         """
         return self._target == Pattern.URI_TARGET_HANDLER
-
 
     def is_exception(self):
         """

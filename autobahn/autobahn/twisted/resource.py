@@ -42,7 +42,6 @@ from twisted.web.http import HTTPChannel
 from twisted.web.server import NOT_DONE_YET
 
 
-
 class HTTPChannelHixie76Aware(HTTPChannel):
     """
     Hixie-76 is deadly broken. It includes 8 bytes of body, but then does not
@@ -61,7 +60,6 @@ class HTTPChannelHixie76Aware(HTTPChannel):
         if header == "sec-websocket-key1" and not self._transferDecoder:
             HTTPChannel.headerReceived(self, "Content-Length: 8")
         HTTPChannel.headerReceived(self, line)
-
 
 
 class WSGIRootResource(Resource):
@@ -98,7 +96,6 @@ class WSGIRootResource(Resource):
         return self._wsgiResource
 
 
-
 @implementer(IResource)
 class WebSocketResource(object):
     """
@@ -115,7 +112,6 @@ class WebSocketResource(object):
         """
         self._factory = factory
 
-
     # noinspection PyUnusedLocal
     def getChildWithDefault(self, name, request):
         """
@@ -123,12 +119,10 @@ class WebSocketResource(object):
         """
         return NoResource("No such child resource.")
 
-
     def putChild(self, path, child):
         """
         This resource cannot have children, hence this is always ignored.
         """
-
 
     def render(self, request):
         """

@@ -72,7 +72,6 @@ _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
 
-
 def check_or_raise_uri(value, message = u"WAMP message invalid", strict = False, allowEmptyComponents = False):
     """
     Check a value for being a valid WAMP URI.
@@ -114,7 +113,6 @@ def check_or_raise_uri(value, message = u"WAMP message invalid", strict = False,
         return value
 
 
-
 def check_or_raise_id(value, message = u"WAMP message invalid"):
     """
     Check a value for being a valid WAMP ID.
@@ -136,7 +134,6 @@ def check_or_raise_id(value, message = u"WAMP message invalid"):
     if value < 0 or value > 9007199254740992: # 2**53
         raise ProtocolError(u"{0}: invalid value {1} for ID".format(message, value))
     return value
-
 
 
 def check_or_raise_extra(value, message = u"WAMP message invalid"):
@@ -163,7 +160,6 @@ def check_or_raise_extra(value, message = u"WAMP message invalid"):
     return value
 
 
-
 class Message(util.EqualityMixin):
     """
     WAMP message base class. Implements :class:`autobahn.wamp.interfaces.IMessage`.
@@ -175,13 +171,11 @@ class Message(util.EqualityMixin):
         ## serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
-
     def uncache(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.uncache`
         """
         self._serialized = {}
-
 
     def serialize(self, serializer):
         """
@@ -193,9 +187,7 @@ class Message(util.EqualityMixin):
         return self._serialized[serializer]
 
 
-
 IMessage.register(Message)
-
 
 
 class Hello(Message):
@@ -209,7 +201,6 @@ class Hello(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, realm, roles, authmethods = None, authid = None):
         """
@@ -238,7 +229,6 @@ class Hello(Message):
         self.roles = roles
         self.authmethods = authmethods
         self.authid = authid
-
 
     @staticmethod
     def parse(wmsg):
@@ -313,7 +303,6 @@ class Hello(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -335,13 +324,11 @@ class Hello(Message):
 
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3})".format(self.realm, self.roles, self.authmethods, self.authid)
-
 
 
 class Welcome(Message):
@@ -355,7 +342,6 @@ class Welcome(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, session, roles, authid = None, authrole = None, authmethod = None, authprovider = None):
         """
@@ -389,7 +375,6 @@ class Welcome(Message):
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
-
 
     @staticmethod
     def parse(wmsg):
@@ -447,7 +432,6 @@ class Welcome(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -478,13 +462,11 @@ class Welcome(Message):
 
         return [Welcome.MESSAGE_TYPE, self.session, details]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP WELCOME Message (session = {0}, roles = {1}, authid = {2}, authrole = {3}, authmethod = {4}, authprovider = {5})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
-
 
 
 class Abort(Message):
@@ -513,7 +495,6 @@ class Abort(Message):
         Message.__init__(self)
         self.reason = reason
         self.message = message
-
 
     @staticmethod
     def parse(wmsg):
@@ -549,7 +530,6 @@ class Abort(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -560,13 +540,11 @@ class Abort(Message):
 
         return [Abort.MESSAGE_TYPE, details, self.reason]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP ABORT Message (message = {0}, reason = {1})".format(self.message, self.reason)
-
 
 
 class Challenge(Message):
@@ -580,7 +558,6 @@ class Challenge(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, method, extra = None):
         """
@@ -596,7 +573,6 @@ class Challenge(Message):
         Message.__init__(self)
         self.method = method
         self.extra = extra or {}
-
 
     @staticmethod
     def parse(wmsg):
@@ -625,20 +601,17 @@ class Challenge(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Challenge.MESSAGE_TYPE, self.method, self.extra]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP CHALLENGE Message (method = {0}, extra = {1})".format(self.method, self.extra)
-
 
 
 class Authenticate(Message):
@@ -652,7 +625,6 @@ class Authenticate(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, signature, extra = None):
         """
@@ -668,7 +640,6 @@ class Authenticate(Message):
         Message.__init__(self)
         self.signature = signature
         self.extra = extra or {}
-
 
     @staticmethod
     def parse(wmsg):
@@ -697,20 +668,17 @@ class Authenticate(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Authenticate.MESSAGE_TYPE, self.signature, self.extra]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP AUTHENTICATE Message (signature = {0}, extra = {1})".format(self.signature, self.extra)
-
 
 
 class Goodbye(Message):
@@ -730,7 +698,6 @@ class Goodbye(Message):
    Default WAMP closing reason.
    """
 
-
     def __init__(self, reason = DEFAULT_REASON, message = None):
         """
 
@@ -745,7 +712,6 @@ class Goodbye(Message):
         Message.__init__(self)
         self.reason = reason
         self.message = message
-
 
     @staticmethod
     def parse(wmsg):
@@ -781,7 +747,6 @@ class Goodbye(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -792,13 +757,11 @@ class Goodbye(Message):
 
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP GOODBYE Message (message = {0}, reason = {1})".format(self.message, self.reason)
-
 
 
 class Heartbeat(Message):
@@ -815,7 +778,6 @@ class Heartbeat(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, incoming, outgoing, discard = None):
         """
@@ -835,7 +797,6 @@ class Heartbeat(Message):
         self.incoming = incoming
         self.outgoing = outgoing
         self.discard = discard
-
 
     @staticmethod
     def parse(wmsg):
@@ -880,7 +841,6 @@ class Heartbeat(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -890,13 +850,11 @@ class Heartbeat(Message):
         else:
             return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP HEARTBEAT Message (incoming {0}, outgoing = {1}, len(discard) = {2})".format(self.incoming, self.outgoing, len(self.discard) if self.discard else None)
-
 
 
 class Error(Message):
@@ -914,7 +872,6 @@ class Error(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, request_type, request, error, args = None, kwargs = None):
         """
@@ -944,7 +901,6 @@ class Error(Message):
         self.error = error
         self.args = args
         self.kwargs = kwargs
-
 
     @staticmethod
     def parse(wmsg):
@@ -996,7 +952,6 @@ class Error(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1010,13 +965,11 @@ class Error(Message):
         else:
             return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
-
 
 
 class Publish(Message):
@@ -1092,7 +1045,6 @@ class Publish(Message):
         self.exclude = exclude
         self.eligible = eligible
         self.discloseMe = discloseMe
-
 
     @staticmethod
     def parse(wmsg):
@@ -1193,7 +1145,6 @@ class Publish(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1218,13 +1169,11 @@ class Publish(Message):
         else:
             return [Publish.MESSAGE_TYPE, self.request, options, self.topic]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, excludeMe = {5}, exclude = {6}, eligible = {7}, discloseMe = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
-
 
 
 class Published(Message):
@@ -1254,7 +1203,6 @@ class Published(Message):
         self.request = request
         self.publication = publication
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -1279,20 +1227,17 @@ class Published(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Published.MESSAGE_TYPE, self.request, self.publication]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP PUBLISHED Message (request = {0}, publication = {1})".format(self.request, self.publication)
-
 
 
 class Subscribe(Message):
@@ -1330,7 +1275,6 @@ class Subscribe(Message):
         self.request = request
         self.topic = topic
         self.match = match
-
 
     @staticmethod
     def parse(wmsg):
@@ -1370,7 +1314,6 @@ class Subscribe(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1382,13 +1325,11 @@ class Subscribe(Message):
 
         return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP SUBSCRIBE Message (request = {0}, topic = {1}, match = {2})".format(self.request, self.topic, self.match)
-
 
 
 class Subscribed(Message):
@@ -1418,7 +1359,6 @@ class Subscribed(Message):
         self.request = request
         self.subscription = subscription
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -1443,20 +1383,17 @@ class Subscribed(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP SUBSCRIBED Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
-
 
 
 class Unsubscribe(Message):
@@ -1470,7 +1407,6 @@ class Unsubscribe(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, request, subscription):
         """
@@ -1486,7 +1422,6 @@ class Unsubscribe(Message):
         Message.__init__(self)
         self.request = request
         self.subscription = subscription
-
 
     @staticmethod
     def parse(wmsg):
@@ -1512,20 +1447,17 @@ class Unsubscribe(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP UNSUBSCRIBE Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
-
 
 
 class Unsubscribed(Message):
@@ -1551,7 +1483,6 @@ class Unsubscribed(Message):
         Message.__init__(self)
         self.request = request
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -1575,20 +1506,17 @@ class Unsubscribed(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Unsubscribed.MESSAGE_TYPE, self.request]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP UNSUBSCRIBED Message (request = {0})".format(self.request)
-
 
 
 class Event(Message):
@@ -1606,7 +1534,6 @@ class Event(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, subscription, publication, args = None, kwargs = None, publisher = None):
         """
@@ -1636,7 +1563,6 @@ class Event(Message):
         self.args = args
         self.kwargs = kwargs
         self.publisher = publisher
-
 
     @staticmethod
     def parse(wmsg):
@@ -1688,7 +1614,6 @@ class Event(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1705,13 +1630,11 @@ class Event(Message):
         else:
             return [Event.MESSAGE_TYPE, self.subscription, self.publication, details]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher)
-
 
 
 class Call(Message):
@@ -1775,7 +1698,6 @@ class Call(Message):
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.discloseMe = discloseMe
-
 
     @staticmethod
     def parse(wmsg):
@@ -1850,7 +1772,6 @@ class Call(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1873,13 +1794,11 @@ class Call(Message):
         else:
             return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, discloseMe = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.discloseMe)
-
 
 
 class Cancel(Message):
@@ -1898,7 +1817,6 @@ class Cancel(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
-
     def __init__(self, request, mode = None):
         """
 
@@ -1914,7 +1832,6 @@ class Cancel(Message):
         Message.__init__(self)
         self.request = request
         self.mode = mode
-
 
     @staticmethod
     def parse(wmsg):
@@ -1955,7 +1872,6 @@ class Cancel(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -1967,13 +1883,11 @@ class Cancel(Message):
 
         return [Cancel.MESSAGE_TYPE, self.request, options]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP CANCEL Message (request = {0}, mode = '{1}'')".format(self.request, self.mode)
-
 
 
 class Result(Message):
@@ -2017,7 +1931,6 @@ class Result(Message):
         self.args = args
         self.kwargs = kwargs
         self.progress = progress
-
 
     @staticmethod
     def parse(wmsg):
@@ -2065,7 +1978,6 @@ class Result(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2082,13 +1994,11 @@ class Result(Message):
         else:
             return [Result.MESSAGE_TYPE, self.request, details]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
-
 
 
 class Register(Message):
@@ -2135,7 +2045,6 @@ class Register(Message):
         self.discloseCaller = discloseCaller
         self.discloseCallerTransport = discloseCallerTransport
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -2173,7 +2082,6 @@ class Register(Message):
 
             pkeys = option_pkeys
 
-
         if u'disclose_caller' in options:
 
             option_discloseCaller = options[u'disclose_caller']
@@ -2181,7 +2089,6 @@ class Register(Message):
                 raise ProtocolError("invalid type {0} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
 
             discloseCaller = option_discloseCaller
-
 
         if u'disclose_caller_transport' in options:
 
@@ -2191,11 +2098,9 @@ class Register(Message):
 
             discloseCallerTransport = option_discloseCallerTransport
 
-
         obj = Register(request, procedure, pkeys = pkeys, discloseCaller = discloseCaller, discloseCallerTransport = discloseCallerTransport)
 
         return obj
-
 
     def marshal(self):
         """
@@ -2214,13 +2119,11 @@ class Register(Message):
 
         return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP REGISTER Message (request = {0}, procedure = {1}, pkeys = {2}, discloseCaller = {3})".format(self.request, self.procedure, self.pkeys, self.discloseCaller)
-
 
 
 class Registered(Message):
@@ -2250,7 +2153,6 @@ class Registered(Message):
         self.request = request
         self.registration = registration
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -2275,20 +2177,17 @@ class Registered(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Registered.MESSAGE_TYPE, self.request, self.registration]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP REGISTERED Message (request = {0}, registration = {1})".format(self.request, self.registration)
-
 
 
 class Unregister(Message):
@@ -2302,7 +2201,6 @@ class Unregister(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, request, registration):
         """
@@ -2318,7 +2216,6 @@ class Unregister(Message):
         Message.__init__(self)
         self.request = request
         self.registration = registration
-
 
     @staticmethod
     def parse(wmsg):
@@ -2344,20 +2241,17 @@ class Unregister(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP UNREGISTER Message (request = {0}, registration = {1})".format(self.request, self.registration)
-
 
 
 class Unregistered(Message):
@@ -2383,7 +2277,6 @@ class Unregistered(Message):
         Message.__init__(self)
         self.request = request
 
-
     @staticmethod
     def parse(wmsg):
         """
@@ -2407,20 +2300,17 @@ class Unregistered(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         return [Unregistered.MESSAGE_TYPE, self.request]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP UNREGISTERED Message (request = {0})".format(self.request)
-
 
 
 class Invocation(Message):
@@ -2438,7 +2328,6 @@ class Invocation(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self,
                  request,
@@ -2504,7 +2393,6 @@ class Invocation(Message):
         self.authid = authid
         self.authrole = authrole
         self.authmethod = authmethod
-
 
     @staticmethod
     def parse(wmsg):
@@ -2619,7 +2507,6 @@ class Invocation(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2654,13 +2541,11 @@ class Invocation(Message):
         else:
             return [Invocation.MESSAGE_TYPE, self.request, self.registration, options]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_transport = {7}, authid = {8}, authrole = {9}, authmethod = {10})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
-
 
 
 class Interrupt(Message):
@@ -2678,7 +2563,6 @@ class Interrupt(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
-
     def __init__(self, request, mode = None):
         """
 
@@ -2694,7 +2578,6 @@ class Interrupt(Message):
         Message.__init__(self)
         self.request = request
         self.mode = mode
-
 
     @staticmethod
     def parse(wmsg):
@@ -2735,7 +2618,6 @@ class Interrupt(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2747,13 +2629,11 @@ class Interrupt(Message):
 
         return [Interrupt.MESSAGE_TYPE, self.request, options]
 
-
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
         return "WAMP INTERRUPT Message (request = {0}, mode = '{1}')".format(self.request, self.mode)
-
 
 
 class Yield(Message):
@@ -2771,7 +2651,6 @@ class Yield(Message):
     """
    The WAMP message code for this type of message.
    """
-
 
     def __init__(self, request, args = None, kwargs = None, progress = None):
         """
@@ -2798,7 +2677,6 @@ class Yield(Message):
         self.args = args
         self.kwargs = kwargs
         self.progress = progress
-
 
     @staticmethod
     def parse(wmsg):
@@ -2846,7 +2724,6 @@ class Yield(Message):
 
         return obj
 
-
     def marshal(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
@@ -2862,7 +2739,6 @@ class Yield(Message):
             return [Yield.MESSAGE_TYPE, self.request, options, self.args]
         else:
             return [Yield.MESSAGE_TYPE, self.request, options]
-
 
     def __str__(self):
         """

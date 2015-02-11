@@ -53,7 +53,6 @@ except ImportError:
             self.ptr += len(data)
             return data
 
-
     class XorMaskerSimple:
 
         def __init__(self, mask):
@@ -77,7 +76,6 @@ except ImportError:
                 return payload.tobytes()
             else:
                 return payload.tostring()
-
 
     class XorMaskerShifted1:
 
@@ -115,7 +113,6 @@ except ImportError:
                 return payload.tobytes()
             else:
                 return payload.tostring()
-
 
     def createXorMasker(mask, length = None):
         if length is None or length < 128:

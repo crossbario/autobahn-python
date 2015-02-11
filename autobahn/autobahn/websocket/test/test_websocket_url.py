@@ -24,7 +24,6 @@ import unittest
 from autobahn.websocket.protocol import createWsUrl, parseWsUrl
 
 
-
 class TestCreateWsUrl(unittest.TestCase):
 
     def test_create_url01(self):
@@ -74,8 +73,6 @@ class TestCreateWsUrl(unittest.TestCase):
         self.assertEqual(createWsUrl("0:0:0:0:0:0:0:1", path = "ws"), "ws://0:0:0:0:0:0:0:1:80/ws")
 
 
-
-
 class TestParseWsUrl(unittest.TestCase):
 
     # parseWsUrl -> (isSecure, host, port, resource, path, params)
@@ -104,7 +101,6 @@ class TestParseWsUrl(unittest.TestCase):
     def test_parse_url08(self):
         self.assertEqual(parseWsUrl("wss://localhost/ws?foo=bar&moo=23&moo=44"), (True, 'localhost', 443, '/ws?foo=bar&moo=23&moo=44', '/ws', {'moo': ['23', '44'], 'foo': ['bar']}))
 
-
     def test_parse_url09(self):
         self.assertRaises(Exception, parseWsUrl, "http://localhost")
 
@@ -122,7 +118,6 @@ class TestParseWsUrl(unittest.TestCase):
 
     def test_parse_url14(self):
         self.assertRaises(Exception, parseWsUrl, "ws://")
-
 
 
 if __name__ == '__main__':

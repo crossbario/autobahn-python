@@ -87,14 +87,11 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             ## eg Unix Domain sockets throw Errno 22 on this
             pass
 
-
     def connectionLost(self, reason):
         self._connectionLost(reason)
 
-
     def dataReceived(self, data):
         self._dataReceived(data)
-
 
     def _closeConnection(self, abort = False):
         if abort and hasattr(self.transport, 'abortConnection'):
@@ -103,50 +100,38 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         else:
             self.transport.loseConnection()
 
-
     def _onOpen(self):
         self.onOpen()
-
 
     def _onMessageBegin(self, isBinary):
         self.onMessageBegin(isBinary)
 
-
     def _onMessageFrameBegin(self, length):
         self.onMessageFrameBegin(length)
-
 
     def _onMessageFrameData(self, payload):
         self.onMessageFrameData(payload)
 
-
     def _onMessageFrameEnd(self):
         self.onMessageFrameEnd()
-
 
     def _onMessageFrame(self, payload):
         self.onMessageFrame(payload)
 
-
     def _onMessageEnd(self):
         self.onMessageEnd()
-
 
     def _onMessage(self, payload, isBinary):
         self.onMessage(payload, isBinary)
 
-
     def _onPing(self, payload):
         self.onPing(payload)
-
 
     def _onPong(self, payload):
         self.onPong(payload)
 
-
     def _onClose(self, wasClean, code, reason):
         self.onClose(wasClean, code, reason)
-
 
     def registerProducer(self, producer, streaming):
         """
@@ -160,7 +145,6 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         :type streaming: bool
         """
         self.transport.registerProducer(producer, streaming)
-
 
 
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
@@ -187,7 +171,6 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         res.addErrback(forwardError)
 
 
-
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for Twisted-based WebSocket client protocols.
@@ -195,7 +178,6 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     def _onConnect(self, response):
         self.onConnect(response)
-
 
 
 class WebSocketAdapterFactory:
@@ -206,10 +188,8 @@ class WebSocketAdapterFactory:
     def _log(self, msg):
         log.msg(msg)
 
-
     def _callLater(self, delay, fun):
         return self.reactor.callLater(delay, fun)
-
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
@@ -241,7 +221,6 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
     """
     Base class for Twisted-based WebSocket client factories.
@@ -269,7 +248,6 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
             self.reactor = reactor
 
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
-
 
 
 @implementer(ITransport)
@@ -313,10 +291,8 @@ class WrappingWebSocketAdapter:
             ## should not arrive here
             raise Exception("logic error")
 
-
     def onOpen(self):
         self._proto.connectionMade()
-
 
     def onMessage(self, payload, isBinary):
         if isBinary != self._binaryMode:
@@ -330,11 +306,9 @@ class WrappingWebSocketAdapter:
             #print("forwarding payload: {0}".format(binascii.hexlify(payload)))
             self._proto.dataReceived(payload)
 
-
     # noinspection PyUnusedLocal
     def onClose(self, wasClean, code, reason):
         self._proto.connectionLost(None)
-
 
     def write(self, data):
         #print("sending payload: {0}".format(binascii.hexlify(data)))
@@ -346,27 +320,22 @@ class WrappingWebSocketAdapter:
             data = b64encode(data)
             self.sendMessage(data, isBinary = False)
 
-
     def writeSequence(self, data):
         ## part of ITransport
         for d in data:
             self.write(d)
 
-
     def loseConnection(self):
         ## part of ITransport
         self.sendClose()
-
 
     def getPeer(self):
         ## part of ITransport
         return self.transport.getPeer()
 
-
     def getHost(self):
         ## part of ITransport
         return self.transport.getHost()
-
 
 
 class WrappingWebSocketServerProtocol(WrappingWebSocketAdapter, WebSocketServerProtocol):
@@ -375,12 +344,10 @@ class WrappingWebSocketServerProtocol(WrappingWebSocketAdapter, WebSocketServerP
     """
 
 
-
 class WrappingWebSocketClientProtocol(WrappingWebSocketAdapter, WebSocketClientProtocol):
     """
     Client protocol for stream-based transport over WebSocket.
     """
-
 
 
 class WrappingWebSocketServerFactory(WebSocketServerFactory):
@@ -433,7 +400,6 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
 
             self.setProtocolOptions(perMessageCompressionAccept = accept)
 
-
     def buildProtocol(self, addr):
         proto = WrappingWebSocketServerProtocol()
         proto.factory = self
@@ -441,16 +407,13 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
         proto._proto.transport = proto
         return proto
 
-
     def startFactory(self):
         self._factory.startFactory()
         WebSocketServerFactory.startFactory(self)
 
-
     def stopFactory(self):
         self._factory.stopFactory()
         WebSocketServerFactory.stopFactory(self)
-
 
 
 class WrappingWebSocketClientFactory(WebSocketClientFactory):
@@ -506,14 +469,12 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
 
             self.setProtocolOptions(perMessageCompressionAccept = accept)
 
-
     def buildProtocol(self, addr):
         proto = WrappingWebSocketClientProtocol()
         proto.factory = self
         proto._proto = self._factory.buildProtocol(addr)
         proto._proto.transport = proto
         return proto
-
 
 
 def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
@@ -556,7 +517,6 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
     return conn
 
 
-
 def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
     """
     Listen for incoming WebSocket connections from clients. The connection parameters like
@@ -589,12 +549,10 @@ def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
     return listener
 
 
-
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
     Base class for Twisted-based WAMP-over-WebSocket server protocols.
     """
-
 
 
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
@@ -626,12 +584,10 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
     Base class for Twisted-based WAMP-over-WebSocket client protocols.
     """
-
 
 
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):

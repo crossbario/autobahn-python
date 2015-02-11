@@ -33,7 +33,6 @@ from autobahn.wamp import exception
 from autobahn.wamp import protocol
 
 
-
 class TestPeerExceptions(unittest.TestCase):
 
     def test_exception_from_message(self):
@@ -84,7 +83,6 @@ class TestPeerExceptions(unittest.TestCase):
         self.assertEqual(exc.error, u'com.myapp.error3')
         self.assertEqual(exc.args, (1, 2, u'hello'))
         self.assertEqual(exc.kwargs, {u'foo': 23, u'bar': u'baz'})
-
 
     def test_message_from_exception(self):
         session = protocol.BaseSession()

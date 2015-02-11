@@ -54,7 +54,6 @@ class PerMessageBzip2Mixin:
    """
 
 
-
 class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
     """
     Set of extension parameters for `permessage-bzip2` WebSocket extension
@@ -110,7 +109,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                       requestMaxCompressLevel)
         return offer
 
-
     def __init__(self,
                  acceptMaxCompressLevel = True,
                  requestMaxCompressLevel = 0):
@@ -132,7 +130,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
         self.requestMaxCompressLevel = requestMaxCompressLevel
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -146,7 +143,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
             pmceString += "; server_max_compress_level=%d" % self.requestMaxCompressLevel
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -157,7 +153,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                 'acceptMaxCompressLevel': self.acceptMaxCompressLevel,
                 'requestMaxCompressLevel': self.requestMaxCompressLevel}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -165,7 +160,6 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         :returns: str -- Python string representation.
         """
         return "PerMessageBzip2Offer(acceptMaxCompressLevel = %s, requestMaxCompressLevel = %s)" % (self.acceptMaxCompressLevel, self.requestMaxCompressLevel)
-
 
 
 class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2Mixin):
@@ -210,7 +204,6 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
 
         self.compressLevel = compressLevel
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -224,7 +217,6 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
             pmceString += "; client_max_compress_level=%d" % self.requestMaxCompressLevel
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -236,7 +228,6 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
                 'requestMaxCompressLevel': self.requestMaxCompressLevel,
                 'compressLevel': self.compressLevel}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -244,7 +235,6 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
         :returns: str -- Python string representation.
         """
         return "PerMessageBzip2Accept(offer = %s, requestMaxCompressLevel = %s, compressLevel = %s)" % (self.offer.__repr__(), self.requestMaxCompressLevel, self.compressLevel)
-
 
 
 class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
@@ -299,13 +289,11 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
                          server_max_compress_level)
         return response
 
-
     def __init__(self,
                  client_max_compress_level,
                  server_max_compress_level):
         self.client_max_compress_level = client_max_compress_level
         self.server_max_compress_level = server_max_compress_level
-
 
     def __json__(self):
         """
@@ -317,7 +305,6 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
                 'client_max_compress_level': self.client_max_compress_level,
                 'server_max_compress_level': self.server_max_compress_level}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -325,7 +312,6 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         :returns: str -- Python string representation.
         """
         return "PerMessageBzip2Response(client_max_compress_level = %s, server_max_compress_level = %s)" % (self.client_max_compress_level, self.server_max_compress_level)
-
 
 
 class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessageBzip2Mixin):
@@ -359,7 +345,6 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
 
         self.compressLevel = compressLevel
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -370,7 +355,6 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
                 'response': self.response.__json__(),
                 'compressLevel': self.compressLevel}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -378,7 +362,6 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
         :returns: str -- Python string representation.
         """
         return "PerMessageBzip2ResponseAccept(response = %s, compressLevel = %s)" % (self.response.__repr__(), self.compressLevel)
-
 
 
 class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
@@ -394,14 +377,12 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
                      accept.compressLevel if accept.compressLevel is not None else accept.response.client_max_compress_level)
         return pmce
 
-
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         pmce = cls(isServer,
                      accept.compressLevel if accept.compressLevel is not None else accept.offer.requestMaxCompressLevel,
                      accept.requestMaxCompressLevel)
         return pmce
-
 
     def __init__(self,
                  isServer,
@@ -414,17 +395,14 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
         self.server_max_compress_level = server_max_compress_level if server_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
         self.client_max_compress_level = client_max_compress_level if client_max_compress_level != 0 else self.DEFAULT_COMPRESS_LEVEL
 
-
     def __json__(self):
         return {'extension': self.EXTENSION_NAME,
                 'isServer': self._isServer,
                 'server_max_compress_level': self.server_max_compress_level,
                 'client_max_compress_level': self.client_max_compress_level}
 
-
     def __repr__(self):
         return "PerMessageBzip2(isServer = %s, server_max_compress_level = %s, client_max_compress_level = %s)" % (self._isServer, self.server_max_compress_level, self.client_max_compress_level)
-
 
     def startCompressMessage(self):
         if self._isServer:
@@ -434,10 +412,8 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
             if self._compressor is None:
                 self._compressor = bz2.BZ2Compressor(self.client_max_compress_level)
 
-
     def compressMessageData(self, data):
         return self._compressor.compress(data)
-
 
     def endCompressMessage(self):
         data = self._compressor.flush()
@@ -448,15 +424,12 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 
         return data
 
-
     def startDecompressMessage(self):
         if self._decompressor is None:
             self._decompressor = bz2.BZ2Decompressor()
 
-
     def decompressMessageData(self, data):
         return self._decompressor.decompress(data)
-
 
     def endDecompressMessage(self):
         self._decompressor = None

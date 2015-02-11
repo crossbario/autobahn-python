@@ -213,7 +213,6 @@ NETWORK_CONNECT_TIMEOUT  = (599, "Network connect timeout error (Informal conven
                             "This status code is not specified in any RFCs, but is used by some HTTP proxies to signal a network connect timeout behind the proxy to a client in front of the proxy.")
 
 
-
 class HttpException(Exception):
     """
     Throw an instance of this class to deny a WebSocket connection

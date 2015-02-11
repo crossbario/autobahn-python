@@ -88,7 +88,6 @@ urlparse.uses_query.extend(wsschemes)
 urlparse.uses_fragment.extend(wsschemes)
 
 
-
 def createWsUrl(hostname, port = None, isSecure = False, path = None, params = None):
     """
     Create a WebSocket URL from components.
@@ -126,7 +125,6 @@ def createWsUrl(hostname, port = None, isSecure = False, path = None, params = N
     else:
         query = None
     return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
-
 
 
 def parseWsUrl(url):
@@ -174,12 +172,10 @@ def parseWsUrl(url):
     return parsed.scheme == "wss", parsed.hostname, port, resource, path, params
 
 
-
 class TrafficStats:
 
     def __init__(self):
         self.reset()
-
 
     def reset(self):
         ## all of the following only tracks data messages, not control frames, not handshaking
@@ -202,7 +198,6 @@ class TrafficStats:
         ##
         self.preopenOutgoingOctetsWireLevel = 0
         self.preopenIncomingOctetsWireLevel = 0
-
 
     def __json__(self):
 
@@ -246,10 +241,8 @@ class TrafficStats:
                 'incomingWebSocketMessages': self.incomingWebSocketMessages,
                 'preopenIncomingOctetsWireLevel': self.preopenIncomingOctetsWireLevel}
 
-
     def __str__(self):
         return json.dumps(self.__json__())
-
 
 
 class FrameHeader:
@@ -279,7 +272,6 @@ class FrameHeader:
         self.rsv = rsv
         self.length = length
         self.mask = mask
-
 
 
 class ConnectionRequest:
@@ -321,7 +313,6 @@ class ConnectionRequest:
         self.protocols = protocols
         self.extensions = extensions
 
-
     def __json__(self):
         return {'peer': self.peer,
                 'headers': self.headers,
@@ -333,10 +324,8 @@ class ConnectionRequest:
                 'protocols': self.protocols,
                 'extensions': self.extensions}
 
-
     def __str__(self):
         return json.dumps(self.__json__())
-
 
 
 class ConnectionResponse:
@@ -366,7 +355,6 @@ class ConnectionResponse:
         self.protocol = protocol
         self.extensions = extensions
 
-
     def __json__(self):
         return {'peer': self.peer,
                 'headers': self.headers,
@@ -374,10 +362,8 @@ class ConnectionResponse:
                 'protocol': self.protocol,
                 'extensions': self.extensions}
 
-
     def __str__(self):
         return json.dumps(self.__json__())
-
 
 
 def parseHttpHeader(data):
@@ -417,7 +403,6 @@ def parseHttpHeader(data):
             # skip bad HTTP header
             pass
     return http_status_line, http_headers, http_headers_cnt
-
 
 
 class Timings:
@@ -480,7 +465,6 @@ class Timings:
 
     def __str__(self):
         return pformat(self._timings)
-
 
 
 class WebSocketProtocol:
@@ -623,7 +607,6 @@ class WebSocketProtocol:
                                   CLOSE_STATUS_CODE_INTERNAL_ERROR]
     """Status codes allowed to send in close."""
 
-
     CONFIG_ATTRS_COMMON = ['debug',
                            'debugCodePaths',
                            'logOctets',
@@ -670,14 +653,12 @@ class WebSocketProtocol:
    Configuration attributes specific to clients.
    """
 
-
     def onOpen(self):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
         """
         if self.debugCodePaths:
             self.factory._log("WebSocketProtocol.onOpen")
-
 
     def onMessageBegin(self, isBinary):
         """
@@ -686,7 +667,6 @@ class WebSocketProtocol:
         self.message_is_binary = isBinary
         self.message_data = []
         self.message_data_total_length = 0
-
 
     def onMessageFrameBegin(self, length):
         """
@@ -703,7 +683,6 @@ class WebSocketProtocol:
                 self.wasMaxFramePayloadSizeExceeded = True
                 self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
 
-
     def onMessageFrameData(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameData`
@@ -718,7 +697,6 @@ class WebSocketProtocol:
             else:
                 self.frame_data.append(payload)
 
-
     def onMessageFrameEnd(self):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrameEnd`
@@ -728,14 +706,12 @@ class WebSocketProtocol:
 
         self.frame_data = None
 
-
     def onMessageFrame(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessageFrame`
         """
         if not self.failedByMe:
             self.message_data.extend(payload)
-
 
     def onMessageEnd(self):
         """
@@ -749,14 +725,12 @@ class WebSocketProtocol:
 
         self.message_data = None
 
-
     def onMessage(self, payload, isBinary):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
         if self.debug:
             self.factory._log("WebSocketProtocol.onMessage")
-
 
     def onPing(self, payload):
         """
@@ -767,14 +741,12 @@ class WebSocketProtocol:
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.sendPong(payload)
 
-
     def onPong(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
         if self.debug:
             self.factory._log("WebSocketProtocol.onPong")
-
 
     def onClose(self, wasClean, code, reason):
         """
@@ -795,7 +767,6 @@ class WebSocketProtocol:
             s += "self.remoteCloseCode=%s\n" % self.remoteCloseCode
             s += "self.remoteCloseReason=%s\n" % self.remoteCloseReason
             self.factory._log(s)
-
 
     def onCloseFrame(self, code, reasonRaw):
         """
@@ -895,7 +866,6 @@ class WebSocketProtocol:
             ## STATE_PROXY_CONNECTING, STATE_CONNECTING
             raise Exception("logic error")
 
-
     def onServerConnectionDropTimeout(self):
         """
         We (a client) expected the peer (a server) to drop the connection,
@@ -915,7 +885,6 @@ class WebSocketProtocol:
         else:
             if self.debugCodePaths:
                 self.factory._log("skipping onServerConnectionDropTimeout since connection is already closed")
-
 
     def onOpenHandshakeTimeout(self):
         """
@@ -946,7 +915,6 @@ class WebSocketProtocol:
             # should not arrive here
             raise Exception("logic error")
 
-
     def onCloseHandshakeTimeout(self):
         """
         We expected the peer to respond to us initiating a close handshake. It didn't
@@ -967,7 +935,6 @@ class WebSocketProtocol:
             if self.debugCodePaths:
                 self.factory._log("skipping onCloseHandshakeTimeout since connection is already closed")
 
-
     def onAutoPingTimeout(self):
         """
         When doing automatic ping/pongs to detect broken connection, the peer
@@ -978,7 +945,6 @@ class WebSocketProtocol:
 
         self.autoPingTimeoutCall = None
         self.dropConnection(abort = True)
-
 
     def dropConnection(self, abort = False):
         """
@@ -996,7 +962,6 @@ class WebSocketProtocol:
         else:
             if self.debugCodePaths:
                 self.factory._log("skipping dropConnection since connection is already closed")
-
 
     def failConnection(self, code = CLOSE_STATUS_CODE_GOING_AWAY, reason = "Going Away"):
         """
@@ -1032,7 +997,6 @@ class WebSocketProtocol:
             if self.debugCodePaths:
                 self.factory._log("skipping failConnection since connection is already closed")
 
-
     def protocolViolation(self, reason):
         """
         Fired when a WebSocket protocol violation/error occurs.
@@ -1056,7 +1020,6 @@ class WebSocketProtocol:
             ## if we don't immediately drop the TCP, we need to skip the invalid frame
             ## to continue to later receive the closing handshake reply
             return False
-
 
     def invalidPayload(self, reason):
         """
@@ -1084,7 +1047,6 @@ class WebSocketProtocol:
             ## to continue to later receive the closing handshake reply
             return False
 
-
     def setTrackTimings(self, enable):
         """
         Enable/disable tracking of detailed timings.
@@ -1098,7 +1060,6 @@ class WebSocketProtocol:
                 self.trackedTimings = Timings()
             else:
                 self.trackedTimings = None
-
 
     def _connectionMade(self):
         """
@@ -1218,7 +1179,6 @@ class WebSocketProtocol:
         self.autoPingPending = None
         self.autoPingPendingCall = None
 
-
     def _connectionLost(self, reason):
         """
         This is called by network framework when a transport connection was lost.
@@ -1259,7 +1219,6 @@ class WebSocketProtocol:
             else:
                 self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
 
-
     def logRxOctets(self, data):
         """
         Hook fired right after raw octets have been received, but only when self.logOctets == True.
@@ -1268,7 +1227,6 @@ class WebSocketProtocol:
         """
         self.factory._log("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
 
-
     def logTxOctets(self, data, sync):
         """
         Hook fired right after raw octets have been sent, but only when self.logOctets == True.
@@ -1276,7 +1234,6 @@ class WebSocketProtocol:
         Modes: Hybi, Hixie
         """
         self.factory._log("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
-
 
     def logRxFrame(self, frameHeader, payload):
         """
@@ -1294,7 +1251,6 @@ class WebSocketProtocol:
                 data if frameHeader.opcode == 1 else binascii.b2a_hex(data))
 
         self.factory._log("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
-
 
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
         """
@@ -1315,7 +1271,6 @@ class WebSocketProtocol:
 
         self.factory._log("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
 
-
     def _dataReceived(self, data):
         """
         This is called by network framework upon receiving data on transport connection.
@@ -1331,7 +1286,6 @@ class WebSocketProtocol:
             self.logRxOctets(data)
         self.data += data
         self.consumeData()
-
 
     def consumeData(self):
         """
@@ -1379,7 +1333,6 @@ class WebSocketProtocol:
         else:
             raise Exception("invalid state")
 
-
     def processProxyConnect(self):
         """
         Process proxy connect.
@@ -1388,7 +1341,6 @@ class WebSocketProtocol:
         """
         raise Exception("must implement proxy connect (client or server) in derived class")
 
-
     def processHandshake(self):
         """
         Process WebSocket handshake.
@@ -1396,7 +1348,6 @@ class WebSocketProtocol:
         Modes: Hybi, Hixie
         """
         raise Exception("must implement handshake (client or server) in derived class")
-
 
     def _trigger(self):
         """
@@ -1407,7 +1358,6 @@ class WebSocketProtocol:
         if not self.triggered:
             self.triggered = True
             self._send()
-
 
     def _send(self):
         """
@@ -1441,7 +1391,6 @@ class WebSocketProtocol:
             self.factory._callLater(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
         else:
             self.triggered = False
-
 
     def sendData(self, data, sync = False, chopsize = None):
         """
@@ -1481,7 +1430,6 @@ class WebSocketProtocol:
                 if self.logOctets:
                     self.logTxOctets(data, False)
 
-
     def sendPreparedMessage(self, preparedMsg):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
@@ -1494,7 +1442,6 @@ class WebSocketProtocol:
         else:
             self.sendData(preparedMsg.payloadHixie)
 
-
     def processData(self):
         """
         After WebSocket handshake has been completed, this procedure will do all
@@ -1506,7 +1453,6 @@ class WebSocketProtocol:
             return self.processDataHixie76()
         else:
             return self.processDataHybi()
-
 
     def processDataHixie76(self):
         """
@@ -1579,7 +1525,6 @@ class WebSocketProtocol:
             self._onMessageEnd()
 
         return len(self.data) > 0
-
 
     def processDataHybi(self):
         """
@@ -1756,7 +1701,6 @@ class WebSocketProtocol:
                     else:
                         self.current_frame_masker = XorMaskerNull()
 
-
                     ## remember rest (payload of current frame after header and everything thereafter)
                     ##
                     self.data = self.data[i:]
@@ -1828,7 +1772,6 @@ class WebSocketProtocol:
             ##
             return len(self.data) > 0
 
-
     def onFrameBegin(self):
         """
         Begin of receive new frame.
@@ -1872,7 +1815,6 @@ class WebSocketProtocol:
 
             self._onMessageFrameBegin(self.current_frame.length)
 
-
     def onFrameData(self, payload):
         """
         New data received within frame.
@@ -1909,7 +1851,6 @@ class WebSocketProtocol:
                         return False
 
             self._onMessageFrameData(payload)
-
 
     def onFrameEnd(self):
         """
@@ -1953,7 +1894,6 @@ class WebSocketProtocol:
                 self.inside_message = False
 
         self.current_frame = None
-
 
     def processControlFrame(self):
         """
@@ -2023,7 +1963,6 @@ class WebSocketProtocol:
             pass
 
         return True
-
 
     def sendFrame(self,
                   opcode,
@@ -2169,7 +2108,6 @@ class WebSocketProtocol:
         else:
             self.sendFrame(opcode = 10)
 
-
     def sendCloseFrame(self, code = None, reasonUtf8 = None, isReply = False):
         """
         Send a close frame and update protocol state. Note, that this is
@@ -2221,7 +2159,6 @@ class WebSocketProtocol:
         else:
             raise Exception("logic error")
 
-
     def sendClose(self, code = None, reason = None):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
@@ -2242,7 +2179,6 @@ class WebSocketProtocol:
         else:
             reasonUtf8 = None
         self.sendCloseFrame(code = code, reasonUtf8 = reasonUtf8, isReply = False)
-
 
     def beginMessage(self, isBinary = False, doNotCompress = False):
         """
@@ -2275,7 +2211,6 @@ class WebSocketProtocol:
                 self.send_compressed = False
 
         self.trafficStats.outgoingWebSocketMessages += 1
-
 
     def beginMessageFrame(self, length):
         """
@@ -2367,7 +2302,6 @@ class WebSocketProtocol:
         ##
         self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME
 
-
     def sendMessageFrameData(self, payload, sync = False):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrameData`
@@ -2422,7 +2356,6 @@ class WebSocketProtocol:
             ##
             return rest
 
-
     def endMessage(self):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.endMessage`
@@ -2448,7 +2381,6 @@ class WebSocketProtocol:
 
         self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
-
     def sendMessageFrame(self, payload, sync = False):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrame`
@@ -2465,7 +2397,6 @@ class WebSocketProtocol:
 
         self.beginMessageFrame(len(payload))
         self.sendMessageFrameData(payload, sync)
-
 
     def sendMessage(self,
                     payload,
@@ -2493,7 +2424,6 @@ class WebSocketProtocol:
         else:
             self.sendMessageHybi(payload, isBinary, fragmentSize, sync, doNotCompress)
 
-
     def sendMessageHixie76(self, payload, sync = False):
         """
         Hixie76-Variant of sendMessage().
@@ -2501,7 +2431,6 @@ class WebSocketProtocol:
         Modes: Hixie
         """
         self.sendData(b'\x00' + payload + b'\xff', sync = sync)
-
 
     def sendMessageHybi(self,
                         payload,
@@ -2583,7 +2512,6 @@ class WebSocketProtocol:
         #if self.debug:
         #   self.factory._log("Traffic statistics:\n" + str(self.trafficStats))
 
-
     def _parseExtensionsHeader(self, header, removeQuotes = True):
         """
         Parse the Sec-WebSocket-Extensions header.
@@ -2617,11 +2545,9 @@ class WebSocketProtocol:
         return extensions
 
 
-
 IWebSocketChannel.register(WebSocketProtocol)
 IWebSocketChannelFrameApi.register(WebSocketProtocol)
 IWebSocketChannelStreamingApi.register(WebSocketProtocol)
-
 
 
 class PreparedMessage:
@@ -2661,7 +2587,6 @@ class PreparedMessage:
         ## store pre-framed octets to be sent to Hybi peers
         self._initHybi(payload, isBinary, applyMask)
 
-
     def _initHixie(self, payload, binary):
         if binary:
             # silently filter out .. probably do something else:
@@ -2670,7 +2595,6 @@ class PreparedMessage:
             self.payloadHixie = ''
         else:
             self.payloadHixie = '\x00' + payload + '\xff'
-
 
     def _initHybi(self, payload, binary, masked):
         l = len(payload)
@@ -2715,7 +2639,6 @@ class PreparedMessage:
             self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])
 
 
-
 class WebSocketFactory:
     """
     Mixin for
@@ -2749,14 +2672,12 @@ class WebSocketFactory:
         return PreparedMessage(payload, isBinary, applyMask, doNotCompress)
 
 
-
 class WebSocketServerProtocol(WebSocketProtocol):
     """
     Protocol base class for WebSocket servers.
     """
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
-
 
     def onConnect(self, request):
         """
@@ -2778,7 +2699,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         return None
 
-
     def _connectionMade(self):
         """
         Called by network framework when new transport connection from client was
@@ -2790,7 +2710,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         self.factory.countConnections += 1
         if self.debug:
             self.factory._log("connection accepted from peer %s" % self.peer)
-
 
     def _connectionLost(self, reason):
         """
@@ -2804,17 +2723,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if self.debug:
             self.factory._log("connection from %s lost" % self.peer)
 
-
     def processProxyConnect(self):
         raise Exception("Autobahn isn't a proxy server")
-
 
     def parseHixie76Key(self, key):
         """
         Parse Hixie76 opening handshake key provided by client.
         """
         return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
-
 
     def processHandshake(self):
         """
@@ -3152,7 +3068,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     if self.debug:
                         self.factory._log("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
 
-
     def succeedHandshake(self, res):
         """
         Callback after onConnect() returns successfully. Generates the response for the handshake.
@@ -3176,7 +3091,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
             key1, key2, key3 = self._wskey
         else:
             key = self._wskey
-
 
         ## extensions effectively in use for this connection
         ##
@@ -3223,7 +3137,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
             else:
                 if self.debug:
                     self.factory._log("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
-
 
         ## build response to complete WebSocket handshake
         ##
@@ -3362,7 +3275,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if len(self.data) > 0:
             self.consumeData()
 
-
     def failHandshake(self, reason, code = http.BAD_REQUEST[0], responseHeaders = None):
         """
         During opening handshake the client request was invalid, we send a HTTP
@@ -3372,7 +3284,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
             self.factory._log("failing WebSocket opening handshake ('%s')" % reason)
         self.sendHttpErrorResponse(code, reason, responseHeaders)
         self.dropConnection(abort = False)
-
 
     def sendHttpErrorResponse(self, code, reason, responseHeaders = None):
         """
@@ -3384,7 +3295,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
         response += "\x0d\x0a"
         self.sendData(response.encode('utf8'))
-
 
     def sendHtml(self, html):
         """
@@ -3400,7 +3310,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         self.sendData(response.encode('utf8'))
         self.sendData(responseBody)
 
-
     def sendRedirect(self, url):
         """
         Send HTTP Redirect (303) response.
@@ -3411,7 +3320,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         response += "Location: %s\x0d\x0a" % url
         response += "\x0d\x0a"
         self.sendData(response.encode('utf8'))
-
 
     def sendServerStatus(self, redirectUrl = None, redirectAfter = 0):
         """
@@ -3460,7 +3368,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         self.sendHtml(html)
 
 
-
 class WebSocketServerFactory(WebSocketFactory):
     """
     A protocol factory for WebSocket servers.
@@ -3475,7 +3382,6 @@ class WebSocketServerFactory(WebSocketFactory):
     """
    Flag indicating if this factory is client- or server-side.
    """
-
 
     def __init__(self,
                  url = None,
@@ -3528,7 +3434,6 @@ class WebSocketServerFactory(WebSocketFactory):
         ##
         self.countConnections = 0
 
-
     def setSessionParameters(self,
                              url = None,
                              protocols = None,
@@ -3574,7 +3479,6 @@ class WebSocketServerFactory(WebSocketFactory):
         else:
             self.externalPort = None
 
-
     def resetProtocolOptions(self):
         """
         Reset all WebSocket protocol options to defaults.
@@ -3612,7 +3516,6 @@ class WebSocketServerFactory(WebSocketFactory):
         ## check WebSocket origin against this list
         self.allowedOrigins = ["*"]
         self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
-
 
     def setProtocolOptions(self,
                            versions = None,
@@ -3763,7 +3666,6 @@ class WebSocketServerFactory(WebSocketFactory):
             self.allowedOrigins = allowedOrigins
             self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
 
-
     def getConnectionCount(self):
         """
         Get number of currently connected clients.
@@ -3773,14 +3675,12 @@ class WebSocketServerFactory(WebSocketFactory):
         return self.countConnections
 
 
-
 class WebSocketClientProtocol(WebSocketProtocol):
     """
     Protocol base class for WebSocket clients.
     """
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
-
 
     def onConnect(self, response):
         """
@@ -3791,7 +3691,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         :type response: instance of :class:`autobahn.websocket.protocol.ConnectionResponse`
         """
         pass
-
 
     def _connectionMade(self):
         """
@@ -3811,7 +3710,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ## immediately start with the WebSocket opening handshake
             self.startHandshake()
 
-
     def _connectionLost(self, reason):
         """
         Called by network framework when established transport connection to server was lost. Default
@@ -3822,7 +3720,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         WebSocketProtocol._connectionLost(self, reason)
         if self.debug:
             self.factory._log("connection to %s lost" % self.peer)
-
 
     def startProxyConnect(self):
         """
@@ -3839,7 +3736,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             self.factory._log(request)
 
         self.sendData(request)
-
 
     def processProxyConnect(self):
         """
@@ -3894,7 +3790,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
                     reason = ""
                 return self.failProxyConnect("HTTP proxy connect failed (%d%s)" % (status_code, reason))
 
-
             ## Ok, got complete response for HTTP/CONNECT, remember rest (if any)
             ##
             self.data = self.data[end_of_header + 4:]
@@ -3912,7 +3807,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             ##
             self.startHandshake()
 
-
     def failProxyConnect(self, reason):
         """
         During initial explicit proxy connect, the server response indicates some failure and we drop the
@@ -3921,7 +3815,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         if self.debug:
             self.factory._log("failing proxy connect ('%s')" % reason)
         self.dropConnection(abort = True)
-
 
     def createHixieKey(self):
         """
@@ -3943,7 +3836,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             p = random.randint(1, len(key1) - 2)
             key1 = key1[:p] + ' ' + key1[p:]
         return key1, number1
-
 
     def startHandshake(self):
         """
@@ -4040,7 +3932,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         if self.debug:
             self.factory._log(request)
-
 
     def processHandshake(self):
         """
@@ -4263,7 +4154,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             if len(self.data) > 0:
                 self.consumeData()
 
-
     def failHandshake(self, reason):
         """
         During opening handshake the server response is invalid and we drop the
@@ -4272,7 +4162,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         if self.debug:
             self.factory._log("failing WebSocket opening handshake ('%s')" % reason)
         self.dropConnection(abort = True)
-
 
 
 class WebSocketClientFactory(WebSocketFactory):
@@ -4289,7 +4178,6 @@ class WebSocketClientFactory(WebSocketFactory):
     """
    Flag indicating if this factory is client- or server-side.
    """
-
 
     def __init__(self,
                  url = None,
@@ -4345,7 +4233,6 @@ class WebSocketClientFactory(WebSocketFactory):
         ##
         self.resetProtocolOptions()
 
-
     def setSessionParameters(self,
                              url = None,
                              origin = None,
@@ -4386,7 +4273,6 @@ class WebSocketClientFactory(WebSocketFactory):
 
         self.proxy = proxy
 
-
     def resetProtocolOptions(self):
         """
         Reset all WebSocket protocol options to defaults.
@@ -4417,7 +4303,6 @@ class WebSocketClientFactory(WebSocketFactory):
         self.autoPingInterval = 0
         self.autoPingTimeout = 0
         self.autoPingSize = 4
-
 
     def setProtocolOptions(self,
                            version = None,

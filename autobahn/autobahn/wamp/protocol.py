@@ -42,7 +42,6 @@ from autobahn.wamp.exception import ProtocolError, SessionNotReady
 from autobahn.wamp.types import SessionDetails
 
 
-
 class Endpoint:
     """
     """
@@ -52,7 +51,6 @@ class Endpoint:
         self.fn = fn
         self.procedure = procedure
         self.options = options
-
 
 
 class Handler:
@@ -66,7 +64,6 @@ class Handler:
         self.details_arg = details_arg
 
 
-
 class Publication:
     """
     Object representing a publication.
@@ -76,9 +73,7 @@ class Publication:
         self.id = publicationId
 
 
-
 IPublication.register(Publication)
-
 
 
 class Subscription:
@@ -98,9 +93,7 @@ class Subscription:
         return self._session._unsubscribe(self)
 
 
-
 ISubscription.register(Subscription)
-
 
 
 class Registration:
@@ -120,9 +113,7 @@ class Registration:
         return self._session._unregister(self)
 
 
-
 IRegistration.register(Registration)
-
 
 
 class BaseSession:
@@ -162,30 +153,25 @@ class BaseSession:
         self._authmethod = None
         self._authprovider = None
 
-
     def onConnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
         """
-
 
     def onJoin(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
-
     def onLeave(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
 
-
     def onDisconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
-
 
     def define(self, exception, error = None):
         """
@@ -199,7 +185,6 @@ class BaseSession:
             assert(not hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[six.u(error)] = exception
-
 
     def _message_from_exception(self, request_type, request, exc, tb = None):
         """
@@ -239,7 +224,6 @@ class BaseSession:
         msg = message.Error(request_type, request, error, args, kwargs)
 
         return msg
-
 
     def _exception_from_message(self, msg):
         """
@@ -291,9 +275,7 @@ class BaseSession:
         return exc
 
 
-
 ISession.register(BaseSession)
-
 
 
 class ApplicationSession(BaseSession):
@@ -339,7 +321,6 @@ class ApplicationSession(BaseSession):
         ## incoming invocations
         self._invocations = {}
 
-
     def onOpen(self, transport):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
@@ -347,13 +328,11 @@ class ApplicationSession(BaseSession):
         self._transport = transport
         self.onConnect()
 
-
     def onConnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
         """
         self.join(self.config.realm)
-
 
     def join(self, realm, authmethods = None, authid = None):
         """
@@ -378,7 +357,6 @@ class ApplicationSession(BaseSession):
         self._realm = realm
         self._transport.send(msg)
 
-
     def disconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.disconnect`
@@ -387,7 +365,6 @@ class ApplicationSession(BaseSession):
             self._transport.close()
         else:
             raise Exception("transport disconnected")
-
 
     def onMessage(self, msg):
         """
@@ -741,7 +718,6 @@ class ApplicationSession(BaseSession):
 
                 raise ProtocolError("Unexpected message {0}".format(msg.__class__))
 
-
     # noinspection PyUnusedLocal
     def onClose(self, wasClean):
         """
@@ -762,26 +738,22 @@ class ApplicationSession(BaseSession):
 
         self.onDisconnect()
 
-
     def onChallenge(self, challenge):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onChallenge`
         """
         raise Exception("received authentication challenge, but onChallenge not implemented")
 
-
     def onJoin(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
-
 
     def onLeave(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         self.disconnect()
-
 
     def leave(self, reason = None, log_message = None):
         """
@@ -798,7 +770,6 @@ class ApplicationSession(BaseSession):
             self._goodbye_sent = True
         else:
             raise SessionNotReady(u"Already requested to close the session")
-
 
     def publish(self, topic, *args, **kwargs):
         """
@@ -828,7 +799,6 @@ class ApplicationSession(BaseSession):
         else:
             self._transport.send(msg)
             return
-
 
     def subscribe(self, handler, topic = None, options = None):
         """
@@ -876,7 +846,6 @@ class ApplicationSession(BaseSession):
                         dl.append(_subscribe(handler, proc, uri, options))
             return self._gather_futures(dl, consume_exceptions = True)
 
-
     def _unsubscribe(self, subscription):
         """
         Called from :meth:`autobahn.wamp.protocol.Subscription.unsubscribe`
@@ -897,7 +866,6 @@ class ApplicationSession(BaseSession):
 
         self._transport.send(msg)
         return d
-
 
     def call(self, procedure, *args, **kwargs):
         """
@@ -929,7 +897,6 @@ class ApplicationSession(BaseSession):
 
         self._transport.send(msg)
         return d
-
 
     def register(self, endpoint, procedure = None, options = None):
         """
@@ -979,7 +946,6 @@ class ApplicationSession(BaseSession):
                         dl.append(_register(endpoint, proc, uri, options))
             return self._gather_futures(dl, consume_exceptions = True)
 
-
     def _unregister(self, registration):
         """
         Called from :meth:`autobahn.wamp.protocol.Registration.unregister`
@@ -1002,13 +968,11 @@ class ApplicationSession(BaseSession):
         return d
 
 
-
 IPublisher.register(ApplicationSession)
 ISubscriber.register(ApplicationSession)
 ICaller.register(ApplicationSession)
 #ICallee.register(ApplicationSession) ## FIXME: ".register" collides with the ABC "register" method
 ITransportHandler.register(ApplicationSession)
-
 
 
 class ApplicationSessionFactory:
@@ -1028,7 +992,6 @@ class ApplicationSessionFactory:
         :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
         """
         self.config = config or types.ComponentConfig(realm = u"default")
-
 
     def __call__(self):
         """

@@ -71,12 +71,10 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertEqual(type(result), bytes)
             self.assertEqual(binascii.hexlify(result).decode('ascii'), tv[4])
 
-
     def test_generate_totp_secret_default(self):
         secret = auth.generate_totp_secret()
         self.assertEqual(type(secret), bytes)
         self.assertEqual(len(secret), 10*8/5)
-
 
     def test_generate_totp_secret_length(self):
         for length in [5, 10, 20, 30, 40, 50]:
@@ -84,14 +82,12 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertEqual(type(secret), bytes)
             self.assertEqual(len(secret), length*8/5)
 
-
     def test_compute_totp(self):
         pat = re.compile(b"\d{6,6}")
         secret = b"MFRGGZDFMZTWQ2LK"
         signature = auth.compute_totp(secret)
         self.assertEqual(type(signature), bytes)
         self.assertTrue(pat.match(signature) is not None)
-
 
     def test_compute_totp_offset(self):
         pat = re.compile(b"\d{6,6}")
@@ -101,7 +97,6 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertEqual(type(signature), bytes)
             self.assertTrue(pat.match(signature) is not None)
 
-
     def test_derive_key(self):
         secret = u'L3L1YUE8Txlw'
         salt = u'salt123'
@@ -109,12 +104,10 @@ class TestWampAuthHelpers(unittest.TestCase):
         self.assertEqual(type(key), bytes)
         self.assertEqual(key, b"qzcdsr9uu/L5hnss3kjNTRe490ETgA70ZBaB5rvnJ5Y=")
 
-
     def test_generate_wcs_default(self):
         secret = auth.generate_wcs()
         self.assertEqual(type(secret), bytes)
         self.assertEqual(len(secret), 14)
-
 
     def test_generate_wcs_length(self):
         for length in [5, 10, 20, 30, 40, 50]:
@@ -122,14 +115,12 @@ class TestWampAuthHelpers(unittest.TestCase):
             self.assertEqual(type(secret), bytes)
             self.assertEqual(len(secret), length)
 
-
     def test_compute_wcs(self):
         secret = u'L3L1YUE8Txlw'
         challenge = json.dumps([1, 2, 3], ensure_ascii = False).encode('utf8')
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
-
 
 
 if __name__ == '__main__':

@@ -20,7 +20,6 @@ import abc
 import six
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class IObjectSerializer(object):
     """
@@ -29,14 +28,12 @@ class IObjectSerializer(object):
     :class:`autobahn.wamp.interfaces.ISerializer`.
     """
 
-
     @abc.abstractproperty
     def BINARY(self):
         """
         Flag (read-only) to indicate if serializer requires a binary clean
         transport or if UTF8 transparency is sufficient.
         """
-
 
     @abc.abstractmethod
     def serialize(self, obj):
@@ -61,7 +58,6 @@ class IObjectSerializer(object):
         """
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class IMessage(object):
     """
@@ -74,7 +70,6 @@ class IMessage(object):
         WAMP message type code.
         """
 
-
     @abc.abstractmethod
     def marshal(self):
         """
@@ -82,7 +77,6 @@ class IMessage(object):
 
         :returns: list -- The serialized raw message.
         """
-
 
     #@abc.abstractstaticmethod ## FIXME: this is Python 3 only
     # noinspection PyMethodParameters
@@ -94,7 +88,6 @@ class IMessage(object):
 
         :returns: obj -- An instance of this class. 
         """
-
 
     @abc.abstractmethod
     def serialize(self, serializer):
@@ -109,13 +102,11 @@ class IMessage(object):
         :returns: bytes -- The serialized bytes.
         """
 
-
     @abc.abstractmethod
     def uncache(self):
         """
         Resets the serialization cache.
         """
-
 
     @abc.abstractmethod
     def __eq__(self, other):
@@ -124,13 +115,11 @@ class IMessage(object):
         that start with `_`).
         """
 
-
     @abc.abstractmethod
     def __ne__(self, other):
         """
         Message inequality (just the negate of message equality).
         """
-
 
     @abc.abstractmethod
     def __str__(self):
@@ -139,7 +128,6 @@ class IMessage(object):
 
         :returns: str -- Human readable representation (e.g. for logging or debugging purposes).
         """
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -154,13 +142,11 @@ class ISerializer(object):
         Mapping of WAMP message type codes to WAMP message classes.
         """
 
-
     @abc.abstractproperty
     def SERIALIZER_ID(self):
         """
         The WAMP serialization format ID.
         """
-
 
     @abc.abstractmethod
     def serialize(self, message):
@@ -173,7 +159,6 @@ class ISerializer(object):
         :returns: tuple -- A pair ``(bytes, isBinary)``.
         """
 
-
     @abc.abstractmethod
     def unserialize(self, payload, isBinary):
         """
@@ -184,7 +169,6 @@ class ISerializer(object):
 
         :returns: list -- List of objects that implement :class:`autobahn.wamp.interfaces.IMessage`.
         """
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -204,7 +188,6 @@ class ITransport(object):
         :type message: obj      
         """
 
-
     @abc.abstractmethod
     def isOpen(self):
         """
@@ -212,7 +195,6 @@ class ITransport(object):
 
         :returns: bool -- ``True``, if the transport is open.
         """
-
 
     @abc.abstractmethod
     def close(self):
@@ -222,7 +204,6 @@ class ITransport(object):
         application initiated closing.
         """
 
-
     @abc.abstractmethod
     def abort(self):
         """
@@ -231,7 +212,6 @@ class ITransport(object):
         only be used in case of fatal errors, protocol violations or possible
         detected attacks.
         """
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -246,7 +226,6 @@ class ITransportHandler(object):
         :type transport: obj      
         """
 
-
     @abc.abstractmethod
     def onMessage(self, message):
         """
@@ -256,7 +235,6 @@ class ITransportHandler(object):
         :type message: obj
         """
 
-
     @abc.abstractmethod
     def onClose(self, wasClean):
         """
@@ -265,7 +243,6 @@ class ITransportHandler(object):
         :param wasClean: Indicates if the transport has been closed regularly.
         :type wasClean: bool
         """
-
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -280,13 +257,11 @@ class ISession(object):
         Callback fired when the transport this session will run over has been established.
         """
 
-
     @abc.abstractmethod
     def join(self, realm):
         """
         Attach the session to the given realm. A session is open as soon as it is attached to a realm.
         """
-
 
     @abc.abstractmethod
     def onChallenge(self, challenge):
@@ -297,7 +272,6 @@ class ISession(object):
         :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
         """
 
-
     @abc.abstractmethod
     def onJoin(self, details):
         """
@@ -306,7 +280,6 @@ class ISession(object):
         :param details: Session information.
         :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
         """
-
 
     @abc.abstractmethod
     def leave(self, reason = None, message = None):
@@ -320,7 +293,6 @@ class ISession(object):
         :type message: str
         """
 
-
     @abc.abstractmethod
     def onLeave(self, details):
         """
@@ -330,20 +302,17 @@ class ISession(object):
         :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
         """
 
-
     @abc.abstractmethod
     def disconnect(self):
         """
         Close the underlying transport.
         """
 
-
     @abc.abstractmethod
     def onDisconnect(self):
         """
         Callback fired when underlying transport has been closed.
         """
-
 
     @abc.abstractmethod
     def define(self, exception, error = None):
@@ -356,7 +325,6 @@ class ISession(object):
                       Iff the ``exception`` class is decorated, this must be ``None``.
         :type error: str
         """
-
 
 
 class ICaller(ISession):
@@ -399,7 +367,6 @@ class ICaller(ISession):
         """
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class IRegistration(object):
     """
@@ -417,7 +384,6 @@ class IRegistration(object):
         """
         Flag indicating if registration is active.
         """
-
 
     @abc.abstractmethod
     def unregister(self):
@@ -441,7 +407,6 @@ class IRegistration(object):
         :returns: A Deferred/Future for the unregistration
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
-
 
 
 class ICallee(ISession):
@@ -483,7 +448,6 @@ class ICallee(ISession):
         """
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class IPublication(object):
     """
@@ -495,7 +459,6 @@ class IPublication(object):
         """
         The WAMP publication ID for this publication.
         """
-
 
 
 class IPublisher(ISession):
@@ -538,7 +501,6 @@ class IPublisher(ISession):
         """
 
 
-
 @six.add_metaclass(abc.ABCMeta)
 class ISubscription(object):
     """
@@ -551,13 +513,11 @@ class ISubscription(object):
         The WAMP subscription ID for this subscription.
         """
 
-
     @abc.abstractproperty
     def active(self):
         """
         Flag indicating if subscription is active.
         """
-
 
     @abc.abstractmethod
     def unsubscribe(self):
@@ -581,7 +541,6 @@ class ISubscription(object):
         :returns: A Deferred/Future for the unsubscription
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
-
 
 
 class ISubscriber(ISession):

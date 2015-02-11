@@ -42,7 +42,6 @@ from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 
-
 class FutureMixin:
     """
     Mixin for Asyncio style Futures.
@@ -93,12 +92,10 @@ class FutureMixin:
         return asyncio.gather(*futures, return_exceptions = consume_exceptions)
 
 
-
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
     """
     WAMP application session for asyncio-based applications.
     """
-
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
@@ -110,7 +107,6 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
     """
    The application session class this application session factory will use. Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
    """
-
 
 
 class ApplicationRunner:
@@ -150,7 +146,6 @@ class ApplicationRunner:
         self.debug_app = debug_app
         self.make = None
         self.serializers = serializers
-
 
     def run(self, make):
         """

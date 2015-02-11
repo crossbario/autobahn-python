@@ -25,7 +25,6 @@ from twisted.internet.endpoints import clientFromString, serverFromString
 from twisted.application import service
 
 
-
 class DestEndpointForwardingProtocol(Protocol):
 
     def connectionMade(self):
@@ -43,7 +42,6 @@ class DestEndpointForwardingProtocol(Protocol):
             self.factory._sourceProtocol.transport.loseConnection()
 
 
-
 class DestEndpointForwardingFactory(Factory):
 
     def __init__(self, sourceProtocol):
@@ -54,7 +52,6 @@ class DestEndpointForwardingFactory(Factory):
         self._proto = DestEndpointForwardingProtocol()
         self._proto.factory = self
         return self._proto
-
 
 
 class EndpointForwardingProtocol(Protocol):
@@ -78,7 +75,6 @@ class EndpointForwardingProtocol(Protocol):
             self._destFactory._proto.transport.loseConnection()
 
 
-
 class EndpointForwardingService(service.Service):
 
     def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor = None):
@@ -99,7 +95,6 @@ class EndpointForwardingService(service.Service):
         return self._endpointPort.stopListening()
 
 
-
 class Options(usage.Options):
     synopsis = "[options]"
     longdesc = 'Endpoint Forwarder.'
@@ -107,7 +102,6 @@ class Options(usage.Options):
        ["endpoint", "e", None, "Source endpoint."],
        ["dest_endpoint", "d", None, "Destination endpoint."]
     ]
-
 
 
 def makeService(config):

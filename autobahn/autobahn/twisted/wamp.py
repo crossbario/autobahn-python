@@ -43,7 +43,6 @@ from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 
-
 class FutureMixin:
     """
     Mixin for Twisted style Futures ("Deferreds").
@@ -74,12 +73,10 @@ class FutureMixin:
         return DeferredList(futures, consumeErrors = consume_exceptions)
 
 
-
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
     """
     WAMP application session for Twisted-based applications.
     """
-
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
@@ -91,7 +88,6 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
     """
    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
    """
-
 
 
 class ApplicationRunner:
@@ -126,7 +122,6 @@ class ApplicationRunner:
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.make = None
-
 
     def run(self, make, start_reactor = True):
         """
@@ -177,7 +172,6 @@ class ApplicationRunner:
             reactor.run()
 
 
-
 class _ApplicationSession(ApplicationSession):
     """
     WAMP application session class used internally with :class:`autobahn.twisted.app.Application`.
@@ -195,7 +189,6 @@ class _ApplicationSession(ApplicationSession):
         ApplicationSession.__init__(self, config)
         self.app = app
 
-
     @inlineCallbacks
     def onConnect(self):
         """
@@ -203,7 +196,6 @@ class _ApplicationSession(ApplicationSession):
         """
         yield self.app._fire_signal('onconnect')
         self.join(self.config.realm)
-
 
     @inlineCallbacks
     def onJoin(self, details):
@@ -218,7 +210,6 @@ class _ApplicationSession(ApplicationSession):
 
         yield self.app._fire_signal('onjoined')
 
-
     @inlineCallbacks
     def onLeave(self, details):
         """
@@ -227,14 +218,12 @@ class _ApplicationSession(ApplicationSession):
         yield self.app._fire_signal('onleave')
         self.disconnect()
 
-
     @inlineCallbacks
     def onDisconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
         yield self.app._fire_signal('ondisconnect')
-
 
 
 class Application:
@@ -264,7 +253,6 @@ class Application:
         ## once an app session is connected, this will be here
         self.session = None
 
-
     def __call__(self, config):
         """
         Factory creating a WAMP application session for the application.
@@ -278,7 +266,6 @@ class Application:
         assert(self.session is None)
         self.session = _ApplicationSession(config, self)
         return self.session
-
 
     def run(self, url = u"ws://localhost:8080/ws", realm = u"realm1",
        debug = False, debug_wamp = False, debug_app = False,
@@ -300,7 +287,6 @@ class Application:
         runner = ApplicationRunner(url, realm,
            debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
         runner.run(self.__call__, start_reactor)
-
 
     def register(self, uri = None):
         """
@@ -366,7 +352,6 @@ class Application:
             return func
         return decorator
 
-
     def subscribe(self, uri = None):
         """
         Decorator attaching a function as an event handler.
@@ -403,7 +388,6 @@ class Application:
             return func
         return decorator
 
-
     def signal(self, name):
         """
         Decorator attaching a function as handler for application signals.
@@ -436,7 +420,6 @@ class Application:
             self._signals.setdefault(name, []).append(func)
             return func
         return decorator
-
 
     @inlineCallbacks
     def _fire_signal(self, name, *args, **kwargs):

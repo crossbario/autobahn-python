@@ -31,12 +31,10 @@ class PerMessageCompressOffer:
     """
 
 
-
 class PerMessageCompressOfferAccept:
     """
     Base class for WebSocket compression parameter client offer accepts by the server.
     """
-
 
 
 class PerMessageCompressResponse:
@@ -45,12 +43,10 @@ class PerMessageCompressResponse:
     """
 
 
-
 class PerMessageCompressResponseAccept:
     """
     Base class for WebSocket compression parameter server response accepts by client.
     """
-
 
 
 class PerMessageCompress:

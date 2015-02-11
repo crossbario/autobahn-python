@@ -31,7 +31,6 @@ if unittest is not None:
     from twisted.internet import defer
     from twisted.application import service
 
-
     class CaseComponent(wamp.ApplicationSession):
         """
         Application code goes here. This is an example component that calls
@@ -65,8 +64,6 @@ if unittest is not None:
             else:
                 print("already finished")
 
-
-
     class Case1_Backend(CaseComponent):
 
         @defer.inlineCallbacks
@@ -83,8 +80,6 @@ if unittest is not None:
 
             self.finish()
 
-
-
     class Case1_Frontend(CaseComponent):
 
         @defer.inlineCallbacks
@@ -100,8 +95,6 @@ if unittest is not None:
                 self.log("call result: {0}".format(res))
 
             self.finish()
-
-
 
     class Case2_Backend(CaseComponent):
 
@@ -137,7 +130,6 @@ if unittest is not None:
             yield self.register(arglen, u'com.arguments.arglen')
 
             self.log("procedures registered")
-
 
     class Case2_Frontend(CaseComponent):
 
@@ -188,7 +180,6 @@ if unittest is not None:
 
             self.finish()
 
-
     class TestRpc(unittest.TestCase):
 
         def setUp(self):
@@ -197,7 +188,6 @@ if unittest is not None:
             self.realm = u"realm1"
             if self.url is None:
                 raise unittest.SkipTest("Please provide WAMP_ROUTER_URL environment with url to wamp router to run wamp integration tests")
-
 
         @defer.inlineCallbacks
         def runOneTest(self, components):

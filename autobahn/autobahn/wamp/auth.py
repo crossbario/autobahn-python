@@ -34,7 +34,6 @@ import time
 import binascii
 
 
-
 def generate_totp_secret(length = 10):
     """
     Generates a new Base32 encoded, random secret.
@@ -50,7 +49,6 @@ def generate_totp_secret(length = 10):
     """
     assert(type(length) in six.integer_types)
     return base64.b32encode(os.urandom(length))
-
 
 
 def compute_totp(secret, offset = 0):
@@ -77,7 +75,6 @@ def compute_totp(secret, offset = 0):
     o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
     token = (struct.unpack('>I', digest[o:o+4])[0] & 0x7fffffff) % 1000000
     return '{0:06d}'.format(token).encode('ascii')
-
 
 
 ##
@@ -133,7 +130,6 @@ else:
         return ''.join(map(chr, buf))[:keylen]
 
 
-
 def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
     """
     Returns a binary digest for the PBKDF2 hash algorithm of ``data``
@@ -162,7 +158,6 @@ def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
     return _pbkdf2(data, salt, iterations, keylen, hashfunc or hashlib.sha256)
 
 
-
 def derive_key(secret, salt, iterations = 1000, keylen = 32):
     """
     Computes a derived cryptographic key from a password according to PBKDF2.
@@ -189,7 +184,6 @@ def derive_key(secret, salt, iterations = 1000, keylen = 32):
     return binascii.b2a_base64(key).strip()
 
 
-
 WCS_SECRET_CHARSET = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 """
 The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
@@ -213,7 +207,6 @@ def generate_wcs(length = 14):
     """
     assert(type(length) in six.integer_types)
     return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
-
 
 
 def compute_wcs(key, challenge):

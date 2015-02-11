@@ -37,7 +37,6 @@ from autobahn.wamp.exception import ProtocolError, SerializationError, Transport
 import binascii
 
 
-
 class WampRawSocketProtocol(Int32StringReceiver):
     """
     Base class for Twisted-based WAMP-over-RawSocket protocols.
@@ -66,7 +65,6 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 log.msg("ApplicationSession constructor / onOpen raised ({0})".format(e))
             self.abort()
 
-
     def connectionLost(self, reason):
         if self.factory.debug:
             log.msg("WAMP-over-RawSocket connection lost: reason = '{0}'".format(reason))
@@ -78,7 +76,6 @@ class WampRawSocketProtocol(Int32StringReceiver):
             if self.factory.debug:
                 log.msg("ApplicationSession.onClose raised ({0})".format(e))
         self._session = None
-
 
     def stringReceived(self, payload):
         if self.factory.debug:
@@ -99,7 +96,6 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 log.msg("WAMP Internal Error ({0}) - aborting connection".format(e))
             self.abort()
 
-
     def send(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
@@ -119,13 +115,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
         else:
             raise TransportLost()
 
-
     def isOpen(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
         return self._session is not None
-
 
     def close(self):
         """
@@ -135,7 +129,6 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.transport.loseConnection()
         else:
             raise TransportLost()
-
 
     def abort(self):
         """
@@ -151,19 +144,16 @@ class WampRawSocketProtocol(Int32StringReceiver):
             raise TransportLost()
 
 
-
 class WampRawSocketServerProtocol(WampRawSocketProtocol):
     """
     Base class for Twisted-based WAMP-over-RawSocket server protocols.
     """
 
 
-
 class WampRawSocketClientProtocol(WampRawSocketProtocol):
     """
     Base class for Twisted-based WAMP-over-RawSocket client protocols.
     """
-
 
 
 class WampRawSocketFactory(Factory):
@@ -187,13 +177,11 @@ class WampRawSocketFactory(Factory):
         self.debug = debug
 
 
-
 class WampRawSocketServerFactory(WampRawSocketFactory):
     """
     Base class for Twisted-based WAMP-over-RawSocket server factories.
     """
     protocol = WampRawSocketServerProtocol
-
 
 
 class WampRawSocketClientFactory(WampRawSocketFactory):

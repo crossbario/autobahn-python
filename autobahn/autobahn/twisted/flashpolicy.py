@@ -58,7 +58,6 @@ class FlashPolicyProtocol(Protocol):
         self.received = ""
         self.dropConnection = None
 
-
     def connectionMade(self):
         ## DoS protection
         ##
@@ -67,12 +66,10 @@ class FlashPolicyProtocol(Protocol):
             self.dropConnection = None
         self.dropConnection = self.factory.reactor.callLater(FlashPolicyProtocol.REQUESTTIMEOUT, dropConnection)
 
-
     def connectionLost(self, reason):
         if self.dropConnection:
             self.dropConnection.cancel()
             self.dropConnection = None
-
 
     def dataReceived(self, data):
         self.received += data
@@ -89,7 +86,6 @@ class FlashPolicyProtocol(Protocol):
             ## need more data
             ##
             pass
-
 
 
 class FlashPolicyFactory(Factory):
@@ -117,7 +113,6 @@ class FlashPolicyFactory(Factory):
             self._allowedPorts = ",".join([str(port) for port in allowedPorts])
         else:
             self._allowedPorts = "*"
-
 
     def buildProtocol(self, addr):
         proto = FlashPolicyProtocol(self._allowedDomain, self._allowedPorts)

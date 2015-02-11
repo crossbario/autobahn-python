@@ -39,7 +39,6 @@ __all__ = (
 import six
 
 
-
 class ComponentConfig:
     """
     WAMP application component configuration. An instance of this class is
@@ -63,12 +62,10 @@ class ComponentConfig:
         return "ComponentConfig(realm = {0}, extra = {1})".format(self.realm, self.extra)
 
 
-
 class HelloReturn:
     """
     Base class for ``HELLO`` return information.
     """
-
 
 
 class Accept(HelloReturn):
@@ -108,10 +105,8 @@ class Accept(HelloReturn):
         self.authmethod = authmethod
         self.authprovider = authprovider
 
-
     def __str__(self):
         return "Accept(authid = {0}, authrole = {1}, authmethod = {2}, authprovider = {3})".format(self.authid, self.authrole, self.authmethod, self.authprovider)
-
 
 
 class Deny(HelloReturn):
@@ -139,10 +134,8 @@ class Deny(HelloReturn):
         self.reason = reason
         self.message = message
 
-
     def __str__(self):
         return "Deny(reason = {0}, message = '{1}')".format(self.reason, self.message)
-
 
 
 class Challenge(HelloReturn):
@@ -166,10 +159,8 @@ class Challenge(HelloReturn):
         self.method = method
         self.extra = extra or {}
 
-
     def __str__(self):
         return "Challenge(method = {0}, extra = {1})".format(self.method, self.extra)
-
 
 
 class HelloDetails:
@@ -194,10 +185,8 @@ class HelloDetails:
         self.authid = authid
         self.pending_session = pending_session
 
-
     def __str__(self):
         return "HelloDetails(roles = {0}, authmethods = {1}, authid = {2}, pending_session = {3})".format(self.roles, self.authmethods, self.authid, self.pending_session)
-
 
 
 class SessionDetails:
@@ -223,10 +212,8 @@ class SessionDetails:
         self.authmethod = authmethod
         self.authprovider = authprovider
 
-
     def __str__(self):
         return "SessionDetails(realm = {0}, session = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
-
 
 
 class CloseDetails:
@@ -247,10 +234,8 @@ class CloseDetails:
         self.reason = reason
         self.message = message
 
-
     def __str__(self):
         return "CloseDetails(reason = {0}, message = '{1}'')".format(self.reason, self.message)
-
 
 
 class SubscribeOptions:
@@ -276,10 +261,8 @@ class SubscribeOptions:
         ## options dict as sent within WAMP message
         self.options = {'match': match}
 
-
     def __str__(self):
         return "SubscribeOptions(match = {0}, details_arg = {1})".format(self.match, self.details_arg)
-
 
 
 class EventDetails:
@@ -299,10 +282,8 @@ class EventDetails:
         self.publication = publication
         self.publisher = publisher
 
-
     def __str__(self):
         return "EventDetails(publication = {0}, publisher = {1})".format(self.publication, self.publisher)
-
 
 
 class PublishOptions:
@@ -354,10 +335,8 @@ class PublishOptions:
            'discloseMe': discloseMe
         }
 
-
     def __str__(self):
         return "PublishOptions(acknowledge = {0}, excludeMe = {1}, exclude = {2}, eligible = {3}, discloseMe = {4})".format(self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
-
 
 
 class RegisterOptions:
@@ -385,10 +364,8 @@ class RegisterOptions:
            'discloseCallerTransport': discloseCallerTransport
         }
 
-
     def __str__(self):
         return "RegisterOptions(details_arg = {0}, pkeys = {1}, discloseCaller = {2}, discloseCallerTransport = {3})".format(self.details_arg, self.pkeys, self.discloseCaller, self.discloseCallerTransport)
-
 
 
 class CallDetails:
@@ -419,10 +396,8 @@ class CallDetails:
         self.authrole = authrole
         self.authmethod = authmethod
 
-
     def __str__(self):
         return "CallDetails(progress = {0}, caller = {1}, caller_transport = {2}, authid = {3}, authrole = {4}, authmethod = {5})".format(self.progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
-
 
 
 class CallOptions:
@@ -471,10 +446,8 @@ class CallOptions:
         if onProgress:
             self.options['receive_progress'] = True
 
-
     def __str__(self):
         return "CallOptions(onProgress = {0}, timeout = {1}, discloseMe = {2}, runOn = {3})".format(self.onProgress, self.timeout, self.discloseMe, self.runOn)
-
 
 
 class CallResult:
@@ -494,7 +467,6 @@ class CallResult:
         """
         self.results = results
         self.kwresults = kwresults
-
 
     def __str__(self):
         return "CallResult(results = {0}, kwresults = {1})".format(self.results, self.kwresults)

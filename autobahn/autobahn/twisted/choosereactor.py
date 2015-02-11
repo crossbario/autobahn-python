@@ -103,7 +103,6 @@ def install_optimal_reactor(verbose = False):
             print("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
 
 
-
 def install_reactor(explicitReactor = None, verbose = False):
     """
     Install Twisted reactor.

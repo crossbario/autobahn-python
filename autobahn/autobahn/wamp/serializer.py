@@ -32,7 +32,6 @@ from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
 
 
-
 class Serializer:
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
@@ -74,7 +73,6 @@ class Serializer:
    Mapping of WAMP message type codes to WAMP message classes.
    """
 
-
     def __init__(self, serializer):
         """
         Constructor.
@@ -84,13 +82,11 @@ class Serializer:
         """
         self._serializer = serializer
 
-
     def serialize(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
         """
         return msg.serialize(self._serializer), self._serializer.BINARY
-
 
     def unserialize(self, payload, isBinary = None):
         """
@@ -171,7 +167,6 @@ finally:
             """
             self._batched = batched
 
-
         def serialize(self, obj):
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
@@ -183,7 +178,6 @@ finally:
                 return s + b'\30'
             else:
                 return s
-
 
         def unserialize(self, payload):
             """
@@ -198,9 +192,7 @@ finally:
             return [_loads(data.decode('utf8')) for data in chunks]
 
 
-
 IObjectSerializer.register(JsonObjectSerializer)
-
 
 
 class JsonSerializer(Serializer):
@@ -220,10 +212,7 @@ class JsonSerializer(Serializer):
             self.SERIALIZER_ID = "json.batched"
 
 
-
 ISerializer.register(JsonSerializer)
-
-
 
 
 ##
@@ -257,7 +246,6 @@ else:
             """
             self._batched = batched
 
-
         def serialize(self, obj):
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
@@ -267,7 +255,6 @@ else:
                 return struct.pack("!L", len(data)) + data
             else:
                 return data
-
 
         def unserialize(self, payload):
             """
@@ -301,13 +288,9 @@ else:
             else:
                 return [msgpack.unpackb(payload, encoding = 'utf-8')]
 
-
     IObjectSerializer.register(MsgPackObjectSerializer)
 
-
     __all__.append('MsgPackObjectSerializer')
-
-
 
     class MsgPackSerializer(Serializer):
 
@@ -325,8 +308,6 @@ else:
             if batched:
                 self.SERIALIZER_ID = "msgpack.batched"
 
-
     ISerializer.register(MsgPackSerializer)
-
 
     __all__.append('MsgPackSerializer')

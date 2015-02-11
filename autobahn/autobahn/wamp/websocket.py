@@ -33,7 +33,6 @@ from autobahn.wamp.exception import ProtocolError, SerializationError, Transport
 import traceback
 
 
-
 class WampWebSocketProtocol:
     """
     Base class for WAMP-over-WebSocket transport mixins.
@@ -43,7 +42,6 @@ class WampWebSocketProtocol:
         if self.factory.debug_wamp:
             print("Failing WAMP-over-WebSocket transport: code = {0}, reason = '{1}'".format(code, reason))
         self.failConnection(code, reason)
-
 
     def onOpen(self):
         """
@@ -60,7 +58,6 @@ class WampWebSocketProtocol:
             ## Exceptions raised in onOpen are fatal ..
             reason = "WAMP Internal Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
-
 
     def onClose(self, wasClean, code, reason):
         """
@@ -80,7 +77,6 @@ class WampWebSocketProtocol:
                 if self.factory.debug_wamp:
                     traceback.print_exc()
             self._session = None
-
 
     def onMessage(self, payload, isBinary):
         """
@@ -104,7 +100,6 @@ class WampWebSocketProtocol:
             reason = "WAMP Internal Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
 
-
     def send(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
@@ -122,13 +117,11 @@ class WampWebSocketProtocol:
         else:
             raise TransportLost()
 
-
     def isOpen(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
         return self._session is not None
-
 
     def close(self):
         """
@@ -138,7 +131,6 @@ class WampWebSocketProtocol:
             self.sendClose(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
         else:
             raise TransportLost()
-
 
     def abort(self):
         """
@@ -150,9 +142,7 @@ class WampWebSocketProtocol:
             raise TransportLost()
 
 
-
 ITransport.register(WampWebSocketProtocol)
-
 
 
 def parseSubprotocolIdentifier(subprotocol):
@@ -165,7 +155,6 @@ def parseSubprotocolIdentifier(subprotocol):
         return version, serializerId
     except:
         return None, None
-
 
 
 class WampWebSocketServerProtocol(WampWebSocketProtocol):
@@ -194,7 +183,6 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
             return None, headers
 
 
-
 class WampWebSocketClientProtocol(WampWebSocketProtocol):
     """
     Mixin for WAMP-over-WebSocket client transports.
@@ -216,7 +204,6 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
             version, serializerId = parseSubprotocolIdentifier(response.protocol)
 
         self._serializer = self.factory._serializers[serializerId]
-
 
 
 class WampWebSocketFactory:
@@ -270,12 +257,10 @@ class WampWebSocketFactory:
         self._protocols = ["wamp.2.%s" % ser.SERIALIZER_ID for ser in serializers]
 
 
-
 class WampWebSocketServerFactory(WampWebSocketFactory):
     """
     Mixin for WAMP-over-WebSocket server transport factories.
     """
-
 
 
 class WampWebSocketClientFactory(WampWebSocketFactory):

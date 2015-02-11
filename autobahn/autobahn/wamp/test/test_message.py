@@ -32,7 +32,6 @@ from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 
 
-
 class Foo:
     pass
 
@@ -46,8 +45,6 @@ class TestIds(unittest.TestCase):
     def test_invalid_ids(self):
         for val in [-1, -9007199254740992, None, b"", b"abc", u"", u"abc", 0.9, Foo(), False, True, [], {}]:
             self.assertRaises(ProtocolError, message.check_or_raise_id, val)
-
-
 
 
 class TestUris(unittest.TestCase):
@@ -117,7 +114,6 @@ class TestUris(unittest.TestCase):
                   ]:
             self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allowEmptyComponents = True)
 
-
     def test_valid_uris_strict_nonempty(self):
         for u in [u"com.myapp.topic1",
                   u"com.myapp.product.123",
@@ -184,7 +180,6 @@ class TestUris(unittest.TestCase):
             self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict = True, allowEmptyComponents = True)
 
 
-
 class TestErrorMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -208,7 +203,6 @@ class TestErrorMessage(unittest.TestCase):
         self.assertEqual(msg[5], [1, 2, 3])
         self.assertEqual(msg[6], {u'foo': 23, u'bar': u'hello'})
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Error.MESSAGE_TYPE, message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.error1']
         msg = message.Error.parse(wmsg)
@@ -231,7 +225,6 @@ class TestErrorMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestSubscribeMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -251,7 +244,6 @@ class TestSubscribeMessage(unittest.TestCase):
         self.assertEqual(msg[2], {u'match': u'prefix'})
         self.assertEqual(msg[3], u'com.myapp.topic1')
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {}, u'com.myapp.topic1']
         msg = message.Subscribe.parse(wmsg)
@@ -270,7 +262,6 @@ class TestSubscribeMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestSubscribedMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -281,7 +272,6 @@ class TestSubscribedMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Subscribed.MESSAGE_TYPE, 123456, 789123]
         msg = message.Subscribed.parse(wmsg)
@@ -289,7 +279,6 @@ class TestSubscribedMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.subscription, 789123)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestUnsubscribeMessage(unittest.TestCase):
@@ -302,7 +291,6 @@ class TestUnsubscribeMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Unsubscribe.MESSAGE_TYPE, 123456, 789123]
         msg = message.Unsubscribe.parse(wmsg)
@@ -310,7 +298,6 @@ class TestUnsubscribeMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.subscription, 789123)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestUnsubscribedMessage(unittest.TestCase):
@@ -322,14 +309,12 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Unsubscribed.MESSAGE_TYPE, 123456]
         msg = message.Unsubscribed.parse(wmsg)
         self.assertIsInstance(msg, message.Unsubscribed)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestPublishMessage(unittest.TestCase):
@@ -360,7 +345,6 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'exclude_me': False, u'disclose_me': True, u'exclude': [300], u'eligible': [100, 200, 300]})
         self.assertEqual(msg[3], u'com.myapp.topic1')
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, u'com.myapp.topic1']
@@ -403,7 +387,6 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestPublishedMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -414,7 +397,6 @@ class TestPublishedMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Published.MESSAGE_TYPE, 123456, 789123]
         msg = message.Published.parse(wmsg)
@@ -422,7 +404,6 @@ class TestPublishedMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.publication, 789123)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestEventMessage(unittest.TestCase):
@@ -453,7 +434,6 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {u'publisher': 300})
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}]
@@ -487,7 +467,6 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestRegisterMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -507,7 +486,6 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertEqual(msg[2], {u'pkeys': [10, 11, 12]})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Register.MESSAGE_TYPE, 123456, {}, u'com.myapp.procedure1']
         msg = message.Register.parse(wmsg)
@@ -526,7 +504,6 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestRegisteredMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -537,7 +514,6 @@ class TestRegisteredMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Registered.MESSAGE_TYPE, 123456, 789123]
         msg = message.Registered.parse(wmsg)
@@ -545,7 +521,6 @@ class TestRegisteredMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.registration, 789123)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestUnregisterMessage(unittest.TestCase):
@@ -558,7 +533,6 @@ class TestUnregisterMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Unregister.MESSAGE_TYPE, 123456, 789123]
         msg = message.Unregister.parse(wmsg)
@@ -566,7 +540,6 @@ class TestUnregisterMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.registration, 789123)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestUnregisteredMessage(unittest.TestCase):
@@ -578,14 +551,12 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Unregistered.MESSAGE_TYPE, 123456]
         msg = message.Unregistered.parse(wmsg)
         self.assertIsInstance(msg, message.Unregistered)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestCallMessage(unittest.TestCase):
@@ -616,7 +587,6 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'timeout': 10000})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Call.MESSAGE_TYPE, 123456, {}, u'com.myapp.procedure1']
@@ -650,7 +620,6 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestCancelMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -668,7 +637,6 @@ class TestCancelMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'mode': message.Cancel.KILL})
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Cancel.MESSAGE_TYPE, 123456, {}]
         msg = message.Cancel.parse(wmsg)
@@ -683,7 +651,6 @@ class TestCancelMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.mode, message.Cancel.KILL)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestResultMessage(unittest.TestCase):
@@ -711,7 +678,6 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'progress': True})
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Result.MESSAGE_TYPE, 123456, {}]
@@ -742,7 +708,6 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestInvocationMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -771,7 +736,6 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {u'timeout': 10000})
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Invocation.MESSAGE_TYPE, 123456, 789123, {}]
@@ -805,7 +769,6 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestInterruptMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -823,7 +786,6 @@ class TestInterruptMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'mode': message.Interrupt.KILL})
 
-
     def test_parse_and_marshal(self):
         wmsg = [message.Interrupt.MESSAGE_TYPE, 123456, {}]
         msg = message.Interrupt.parse(wmsg)
@@ -838,7 +800,6 @@ class TestInterruptMessage(unittest.TestCase):
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.mode, message.Interrupt.KILL)
         self.assertEqual(msg.marshal(), wmsg)
-
 
 
 class TestYieldMessage(unittest.TestCase):
@@ -866,7 +827,6 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {u'progress': True})
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Yield.MESSAGE_TYPE, 123456, {}]
@@ -897,7 +857,6 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
 
-
 class TestHelloMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -914,7 +873,6 @@ class TestHelloMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], u"realm1")
         self.assertEqual(msg[2], {u'roles': {u'broker': {u'features': {u'subscriber_blackwhite_listing': True}}}})
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'broker': {}}}]
@@ -934,7 +892,6 @@ class TestHelloMessage(unittest.TestCase):
     def test_str(self):
         e = message.Hello(u"realm1", [role.RoleBrokerFeatures()])
         self.assertIsInstance(str(e), str)
-
 
 
 class TestGoodbyeMessage(unittest.TestCase):
@@ -963,7 +920,6 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
         self.assertEqual(msg[1], {u'message': reason_msg})
         self.assertEqual(msg[2], reason)
-
 
     def test_parse_and_marshal(self):
         reason = u'wamp.error.system_shutdown'
@@ -997,7 +953,6 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertIsInstance(str(e), str)
 
 
-
 class TestHeartbeatMessage(unittest.TestCase):
 
     def test_ctor(self):
@@ -1015,7 +970,6 @@ class TestHeartbeatMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123)
         self.assertEqual(msg[2], 456)
         self.assertEqual(msg[3], u"discard me")
-
 
     def test_parse_and_marshal(self):
         wmsg = [message.Heartbeat.MESSAGE_TYPE]
@@ -1052,7 +1006,6 @@ class TestHeartbeatMessage(unittest.TestCase):
     def test_str(self):
         e = message.Heartbeat(123, 456, u"discard me")
         self.assertIsInstance(str(e), str)
-
 
 
 if __name__ == '__main__':

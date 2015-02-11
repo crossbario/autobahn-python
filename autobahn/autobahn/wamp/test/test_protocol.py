@@ -36,7 +36,6 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn.twisted.wamp import ApplicationSession
 
-
     class MockTransport:
 
         def __init__(self, handler):
@@ -124,8 +123,6 @@ if os.environ.get('USE_TWISTED', False):
         def abort(self):
             pass
 
-
-
     class TestPublisher(unittest.TestCase):
 
         @inlineCallbacks
@@ -148,7 +145,6 @@ if os.environ.get('USE_TWISTED', False):
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(excludeMe = False, exclude = [100, 200, 300]))
             self.assertEqual(publication, None)
 
-
         @inlineCallbacks
         def test_publish_acknowledged(self):
             handler = ApplicationSession()
@@ -169,7 +165,6 @@ if os.environ.get('USE_TWISTED', False):
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo = 23, bar = 'hello', options = types.PublishOptions(excludeMe = False, exclude = [100, 200, 300], acknowledge = True))
             self.assertTrue(type(publication.id) in (int, long))
 
-
         @inlineCallbacks
         def test_publish_undefined_exception(self):
             handler = ApplicationSession()
@@ -179,7 +174,6 @@ if os.environ.get('USE_TWISTED', False):
 
             yield self.assertFailure(handler.publish(u'de.myapp.topic1', options = options), ApplicationError)
             yield self.assertFailure(handler.publish(u'', options = options), ApplicationError)
-
 
         @inlineCallbacks
         def test_publish_defined_exception(self):
@@ -193,7 +187,6 @@ if os.environ.get('USE_TWISTED', False):
 
             handler.define(InvalidUri)
             yield self.assertFailure(handler.publish(u'', options = options), InvalidUri)
-
 
         @inlineCallbacks
         def test_call(self):
@@ -215,7 +208,6 @@ if os.environ.get('USE_TWISTED', False):
             res = yield handler.call(u'com.myapp.procedure1', 1, 2, 3, foo = 23, bar = 'hello', options = types.CallOptions(timeout = 10000))
             self.assertEqual(res, 100)
 
-
         @inlineCallbacks
         def test_call_with_complex_result(self):
             handler = ApplicationSession()
@@ -231,7 +223,6 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(res.results, (1, 2, 3))
             self.assertEqual(res.kwresults, {'foo': 'bar', 'baz': 23})
 
-
         @inlineCallbacks
         def test_subscribe(self):
             handler = ApplicationSession()
@@ -246,7 +237,6 @@ if os.environ.get('USE_TWISTED', False):
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options = types.SubscribeOptions(match = u'wildcard'))
             self.assertTrue(type(subscription.id) in (int, long))
 
-
         @inlineCallbacks
         def test_unsubscribe(self):
             handler = ApplicationSession()
@@ -257,7 +247,6 @@ if os.environ.get('USE_TWISTED', False):
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
             yield subscription.unsubscribe()
-
 
         @inlineCallbacks
         def test_register(self):
@@ -273,7 +262,6 @@ if os.environ.get('USE_TWISTED', False):
             registration = yield handler.register(on_call, u'com.myapp.procedure1', options = types.RegisterOptions(pkeys = [0, 1, 2]))
             self.assertTrue(type(registration.id) in (int, long))
 
-
         @inlineCallbacks
         def test_unregister(self):
             handler = ApplicationSession()
@@ -284,7 +272,6 @@ if os.environ.get('USE_TWISTED', False):
 
             registration = yield handler.register(on_call, u'com.myapp.procedure1')
             yield registration.unregister()
-
 
         @inlineCallbacks
         def test_invoke(self):
@@ -298,7 +285,6 @@ if os.environ.get('USE_TWISTED', False):
 
             res = yield handler.call(u'com.myapp.myproc1')
             self.assertEqual(res, 23)
-
 
         # ## variant 1: works
         # def test_publish1(self):

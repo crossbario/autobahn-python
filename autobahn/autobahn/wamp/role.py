@@ -48,7 +48,6 @@ class RoleFeatures(util.EqualityMixin):
                     raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
 
 
-
 class RoleCommonPubSubFeatures(RoleFeatures):
 
     def __init__(self,
@@ -57,7 +56,6 @@ class RoleCommonPubSubFeatures(RoleFeatures):
 
         self.publisher_identification = publisher_identification
         self.partitioned_pubsub = partitioned_pubsub
-
 
 
 class RoleBrokerFeatures(RoleCommonPubSubFeatures):
@@ -84,7 +82,6 @@ class RoleBrokerFeatures(RoleCommonPubSubFeatures):
         self._check_all_bool()
 
 
-
 class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
 
     ROLE = u'subscriber'
@@ -105,7 +102,6 @@ class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
         self._check_all_bool()
 
 
-
 class RolePublisherFeatures(RoleCommonPubSubFeatures):
 
     ROLE = u'publisher'
@@ -118,7 +114,6 @@ class RolePublisherFeatures(RoleCommonPubSubFeatures):
         self.publisher_exclusion = publisher_exclusion
         RoleCommonPubSubFeatures.__init__(self, **kwargs)
         self._check_all_bool()
-
 
 
 class RoleCommonRpcFeatures(RoleFeatures):
@@ -134,7 +129,6 @@ class RoleCommonRpcFeatures(RoleFeatures):
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
-
 
 
 class RoleDealerFeatures(RoleCommonRpcFeatures):
@@ -155,7 +149,6 @@ class RoleDealerFeatures(RoleCommonRpcFeatures):
         self._check_all_bool()
 
 
-
 class RoleCallerFeatures(RoleCommonRpcFeatures):
 
     ROLE = u'caller'
@@ -170,7 +163,6 @@ class RoleCallerFeatures(RoleCommonRpcFeatures):
         self._check_all_bool()
 
 
-
 class RoleCalleeFeatures(RoleCommonRpcFeatures):
 
     ROLE = u'callee'
@@ -183,7 +175,6 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
         self.pattern_based_registration = pattern_based_registration  
         RoleCommonRpcFeatures.__init__(self, **kwargs)
         self._check_all_bool()
-
 
 
 ROLE_NAME_TO_CLASS = {

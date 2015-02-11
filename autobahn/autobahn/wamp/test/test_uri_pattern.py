@@ -31,7 +31,6 @@ from autobahn import wamp
 from autobahn.wamp.uri import Pattern
 
 
-
 class TestUris(unittest.TestCase):
 
     def setUp(self):
@@ -87,7 +86,6 @@ class TestUris(unittest.TestCase):
                     self.assertRaises(Exception, pat.match, uri)
 
 
-
 class TestDecorators(unittest.TestCase):
 
     def test_decorate_endpoint(self):
@@ -136,7 +134,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.update")
         self.assertEqual(update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-
     def test_decorate_handler(self):
 
         @wamp.subscribe(u"com.myapp.on_shutdown")
@@ -182,7 +179,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_update._wampuris[0].uri(), u"com.myapp.<category:string>.<cid:int>.on_update")
         self.assertEqual(on_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-
     def test_decorate_exception(self):
 
         @wamp.error(u"com.myapp.error")
@@ -227,7 +223,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(ObjectInactiveError._wampuris[0].uri(), u"com.myapp.<category:string>.<product:int>.inactive")
         self.assertEqual(ObjectInactiveError._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-
     def test_match_decorated_endpoint(self):
 
         @wamp.register(u"com.calculator.square")
@@ -252,7 +247,6 @@ class TestDecorators(unittest.TestCase):
         args, kwargs = update._wampuris[0].match(u"com.myapp.product.123456.update")
         kwargs['label'] = "foobar"
         self.assertEqual(update(**kwargs), ("product", 123456, "foobar"))
-
 
     def test_match_decorated_handler(self):
 
@@ -279,7 +273,6 @@ class TestDecorators(unittest.TestCase):
         kwargs['label'] = "foobar"
         self.assertEqual(on_update(**kwargs), ("product", 123456, "foobar"))
 
-
     def test_match_decorated_exception(self):
 
         @wamp.error(u"com.myapp.error")
@@ -296,7 +289,6 @@ class TestDecorators(unittest.TestCase):
         # noinspection PyArgumentList
         self.assertEqual(AppError(u"fuck", **kwargs), AppError(u"fuck"))
 
-
         @wamp.error(u"com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
 
@@ -311,7 +303,6 @@ class TestDecorators(unittest.TestCase):
 
         args, kwargs = ProductInactiveError._wampuris[0].match(u"com.myapp.product.123456.product_inactive")
         self.assertEqual(ProductInactiveError("fuck", **kwargs), ProductInactiveError("fuck", 123456))
-
 
         @wamp.error(u"com.myapp.<category:string>.<product:int>.inactive")
         class ObjectInactiveError(Exception):
@@ -329,7 +320,6 @@ class TestDecorators(unittest.TestCase):
 
         args, kwargs = ObjectInactiveError._wampuris[0].match(u"com.myapp.product.123456.inactive")
         self.assertEqual(ObjectInactiveError("fuck", **kwargs), ObjectInactiveError("fuck", "product", 123456))
-
 
 
 class KwException(Exception):
@@ -372,7 +362,6 @@ class MockSession:
         self._ecls_to_uri_pat = {}
         self._uri_to_ecls = {}
 
-
     def define(self, exception, error = None):
         if error is None:
             assert(hasattr(exception, '_wampuris'))
@@ -382,7 +371,6 @@ class MockSession:
             assert(not hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = [Pattern(error, Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[error] = exception
-
 
     def map_error(self, error, args = None, kwargs = None):
 
@@ -417,7 +405,6 @@ class MockSession:
         return exc
 
 
-
 class TestDecoratorsAdvanced(unittest.TestCase):
 
     def test_decorate_exception_non_exception(self):
@@ -429,7 +416,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
                 pass
 
         self.assertRaises(Exception, test)
-
 
     def test_decorate_endpoint_multiple(self):
 
@@ -453,7 +439,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         self.assertEqual(square._wampuris[0].uri(), u"com.calculator.square")
         self.assertEqual(square._wampuris[1].uri(), u"com.oldapp.oldproc")
 
-
     def test_marshal_decorated_exception(self):
 
         @wamp.error(u"com.myapp.error")
@@ -464,7 +449,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
             raise AppError("fuck")
         except Exception as e:
             self.assertEqual(e._wampuris[0].uri(), u"com.myapp.error")
-
 
         @wamp.error(u"com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
@@ -481,7 +465,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         session = MockSession()
         session.define(AppError)
 
-
     def test_define_exception_undecorated(self):
 
         session = MockSession()
@@ -497,7 +480,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
         exc = session.map_error(u"com.myapp.error")
         self.assertIsInstance(exc, AppError)
-
 
     def test_define_exception_decorated(self):
 
@@ -516,14 +498,12 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         exc = session.map_error(u"com.myapp.error")
         self.assertIsInstance(exc, AppError)
 
-
     def test_map_exception_undefined(self):
 
         session = MockSession()
 
         exc = session.map_error(u"com.myapp.error")
         self.assertIsInstance(exc, Exception)
-
 
     def test_map_exception_args(self):
 
@@ -556,7 +536,6 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
             self.assertIsInstance(exc, ecls)
             self.assertEqual(list(exc.args), args)
-
 
 
 if __name__ == '__main__':

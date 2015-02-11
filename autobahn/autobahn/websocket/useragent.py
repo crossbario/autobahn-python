@@ -29,7 +29,6 @@ UA_WEBOS = re.compile(".*webos/([0-9+\.]*)\w*.*")
 UA_HPWEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
 
 
-
 # Chrome =============================================================
 
 # Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11
@@ -151,13 +150,11 @@ def _lookupWsSupport(ua):
         # unsupported
         return False, False, True
 
-
     ## iOS
     ##
     if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
         ## native Hixie76 (as of March 2012), no Flash, no alternative browsers
         return True, False, True
-
 
     ## Android
     ##
@@ -194,7 +191,6 @@ def _lookupWsSupport(ua):
         # detection problem
         return False, False, False
 
-
     ## webOS
     ##
     if ua.find("hpwOS") >= 0 or ua.find("webos") >= 0:
@@ -214,13 +210,11 @@ def _lookupWsSupport(ua):
             # unsupported
             return False, False, True
 
-
     ## Opera
     ##
     if ua.find("Opera") >= 0:
         # Opera 11+ has Hixie76 (needs to be manually activated though)
         return True, False, True
-
 
     ## Firefox
     ##
@@ -241,14 +235,12 @@ def _lookupWsSupport(ua):
             # detection problem
             return False, False, False
 
-
     ## Safari
     ##
     if ua.find("Safari") >= 0 and not ua.find("Chrome") >= 0:
 
         # rely on at least Hixie76
         return True, False, True
-
 
     ## Chrome
     ##
@@ -268,7 +260,6 @@ def _lookupWsSupport(ua):
         except:
             # detection problem
             return False, False, False
-
 
     # detection problem
     return False, False, False

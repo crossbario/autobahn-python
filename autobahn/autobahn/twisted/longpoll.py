@@ -44,7 +44,6 @@ from autobahn.wamp.exception import SerializationError, \
                                     TransportLost
 
 
-
 class WampLongPollResourceSessionSend(Resource):
     """
     A Web resource for sending via XHR that is part of :class:`autobahn.twisted.longpoll.WampLongPollResourceSession`.
@@ -59,7 +58,6 @@ class WampLongPollResourceSessionSend(Resource):
         Resource.__init__(self)
         self._parent = parent
         self._debug = self._parent._parent._debug
-
 
     def render_POST(self, request):
         """
@@ -85,7 +83,6 @@ class WampLongPollResourceSessionSend(Resource):
             self._parent._parent._setStandardHeaders(request)
             self._parent._isalive = True
             return ""
-
 
 
 class WampLongPollResourceSessionReceive(Resource):
@@ -115,7 +112,6 @@ class WampLongPollResourceSessionReceive(Resource):
                     self.reactor.callLater(1, logqueue)
             logqueue()
 
-
     def queue(self, data):
         """
         Enqueue data to be received by client.
@@ -126,7 +122,6 @@ class WampLongPollResourceSessionReceive(Resource):
         self._queue.append(data)
         self._trigger()
 
-
     def _kill(self):
         """
         Kill any outstanding request.
@@ -135,7 +130,6 @@ class WampLongPollResourceSessionReceive(Resource):
             self._request.finish()
             self._request = None
         self._killed = True
-
 
     def _trigger(self):
         """
@@ -155,7 +149,6 @@ class WampLongPollResourceSessionReceive(Resource):
 
             self._request.finish()
             self._request = None
-
 
     def render_POST(self, request):
         """
@@ -184,7 +177,6 @@ class WampLongPollResourceSessionReceive(Resource):
         return NOT_DONE_YET
 
 
-
 class WampLongPollResourceSessionClose(Resource):
     """
     A Web resource for closing the Long-poll session WampLongPollResourceSession.
@@ -199,7 +191,6 @@ class WampLongPollResourceSessionClose(Resource):
         Resource.__init__(self)
         self._parent = parent
         self._debug = self._parent._parent._debug
-
 
     def render_POST(self, request):
         """
@@ -218,7 +209,6 @@ class WampLongPollResourceSessionClose(Resource):
         request.setResponseCode(http.NO_CONTENT)
         self._parent._parent._setStandardHeaders(request)
         return ""
-
 
 
 class WampLongPollResourceSession(Resource):
@@ -292,7 +282,6 @@ class WampLongPollResourceSession(Resource):
 
         self.onOpen()
 
-
     def close(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.close`
@@ -304,7 +293,6 @@ class WampLongPollResourceSession(Resource):
         else:
             raise TransportLost()
 
-
     def abort(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.abort`
@@ -315,7 +303,6 @@ class WampLongPollResourceSession(Resource):
             del self._parent._transports[self._transportid]
         else:
             raise TransportLost()
-
 
     # noinspection PyUnusedLocal
     def onClose(self, wasClean, code, reason):
@@ -331,7 +318,6 @@ class WampLongPollResourceSession(Resource):
                     traceback.print_exc()
             self._session = None
 
-
     def onOpen(self):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
@@ -344,7 +330,6 @@ class WampLongPollResourceSession(Resource):
             if self._debug:
                 traceback.print_exc()
 
-
     def onMessage(self, payload, isBinary):
         """
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
@@ -353,7 +338,6 @@ class WampLongPollResourceSession(Resource):
             if self._debug:
                 print("WampLongPoll: RX {0}".format(msg))
             self._session.onMessage(msg)
-
 
     def send(self, msg):
         """
@@ -372,13 +356,11 @@ class WampLongPollResourceSession(Resource):
         else:
             raise TransportLost()
 
-
     def isOpen(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.isOpen`
         """
         return self._session is not None
-
 
 
 class WampLongPollResourceOpen(Resource):
@@ -395,7 +377,6 @@ class WampLongPollResourceOpen(Resource):
         Resource.__init__(self)
         self._parent = parent
         self._debug = self._parent._debug
-
 
     def render_POST(self, request):
         """
@@ -460,7 +441,6 @@ class WampLongPollResourceOpen(Resource):
         return payload
 
 
-
 class WampLongPollResource(Resource):
     """
     A WAMP-over-Longpoll resource for use with Twisted Web Resource trees.
@@ -483,7 +463,6 @@ class WampLongPollResource(Resource):
     """
 
     protocol = WampLongPollResourceSession
-
 
     def __init__(self,
                  factory,
@@ -569,12 +548,10 @@ class WampLongPollResource(Resource):
         if self._debug:
             log.msg("WampLongPollResource initialized")
 
-
     def render_GET(self, request):
         request.setHeader('content-type', 'text/html; charset=UTF-8')
         peer = "{0}:{1}".format(request.client.host, request.client.port)
         return self.getNotice(peer = peer)
-
 
     def getChild(self, name, request):
         """
@@ -593,7 +570,6 @@ class WampLongPollResource(Resource):
 
         return self._transports[name]
 
-
     def _setStandardHeaders(self, request):
         """
         Set standard HTTP response headers.
@@ -609,7 +585,6 @@ class WampLongPollResource(Resource):
         if headers is not None:
             request.setHeader('access-control-allow-headers', headers)
 
-
     def _failRequest(self, request, msg):
         """
         Fails a request to the long-poll service.
@@ -618,7 +593,6 @@ class WampLongPollResource(Resource):
         request.setHeader('content-type', 'text/plain; charset=UTF-8')
         request.setResponseCode(http.BAD_REQUEST)
         return msg
-
 
     def getNotice(self, peer, redirectUrl = None, redirectAfter = 0):
         """

@@ -57,7 +57,6 @@ def yields(value):
     return isinstance(value, Future) or iscoroutine(value)
 
 
-
 class WebSocketAdapterProtocol(asyncio.Protocol):
     """
     Adapter class for asyncio-based WebSocket client and server protocols.
@@ -82,11 +81,9 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
         self._connectionMade()
 
-
     def connection_lost(self, exc):
         self._connectionLost(exc)
         self.transport = None
-
 
     def _consume(self):
         self.waiter = Future()
@@ -102,87 +99,72 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
         self.waiter.add_done_callback(process)
 
-
     def data_received(self, data):
         self.receive_queue.append(data)
         if not self.waiter.done():
             self.waiter.set_result(None)
 
-
     # noinspection PyUnusedLocal
     def _closeConnection(self, abort = False):
         self.transport.close()
-
 
     def _onOpen(self):
         res = self.onOpen()
         if yields(res):
             asyncio.async(res)
 
-
     def _onMessageBegin(self, isBinary):
         res = self.onMessageBegin(isBinary)
         if yields(res):
             asyncio.async(res)
-
 
     def _onMessageFrameBegin(self, length):
         res = self.onMessageFrameBegin(length)
         if yields(res):
             asyncio.async(res)
 
-
     def _onMessageFrameData(self, payload):
         res = self.onMessageFrameData(payload)
         if yields(res):
             asyncio.async(res)
-
 
     def _onMessageFrameEnd(self):
         res = self.onMessageFrameEnd()
         if yields(res):
             asyncio.async(res)
 
-
     def _onMessageFrame(self, payload):
         res = self.onMessageFrame(payload)
         if yields(res):
             asyncio.async(res)
-
 
     def _onMessageEnd(self):
         res = self.onMessageEnd()
         if yields(res):
             asyncio.async(res)
 
-
     def _onMessage(self, payload, isBinary):
         res = self.onMessage(payload, isBinary)
         if yields(res):
             asyncio.async(res)
-
 
     def _onPing(self, payload):
         res = self.onPing(payload)
         if yields(res):
             asyncio.async(res)
 
-
     def _onPong(self, payload):
         res = self.onPong(payload)
         if yields(res):
             asyncio.async(res)
-
 
     def _onClose(self, wasClean, code, reason):
         res = self.onClose(wasClean, code, reason)
         if yields(res):
             asyncio.async(res)
 
-
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
-
 
 
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
@@ -207,7 +189,6 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
             self.succeedHandshake(res)
 
 
-
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for asyncio-based WebSocket client protocols.
@@ -219,7 +200,6 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
             asyncio.async(res)
 
 
-
 class WebSocketAdapterFactory:
     """
     Adapter class for asyncio-based WebSocket client and server factories.
@@ -228,16 +208,13 @@ class WebSocketAdapterFactory:
     def _log(self, msg):
         print(msg)
 
-
     def _callLater(self, delay, fun):
         return self.loop.call_later(delay, fun)
-
 
     def __call__(self):
         proto = self.protocol()
         proto.factory = self
         return proto
-
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
@@ -264,7 +241,6 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
     """
     Base class for asyncio-baseed WebSocket client factories.
@@ -289,12 +265,10 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
 
-
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
     Base class for asyncio-based WAMP-over-WebSocket server protocols.
     """
-
 
 
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
@@ -326,12 +300,10 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
     Base class for asyncio-based WAMP-over-WebSocket client protocols.
     """
-
 
 
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):

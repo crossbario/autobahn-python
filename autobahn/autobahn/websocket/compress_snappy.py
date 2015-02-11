@@ -49,7 +49,6 @@ class PerMessageSnappyMixin:
    """
 
 
-
 class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
     """
     Set of extension parameters for `permessage-snappy` WebSocket extension
@@ -102,7 +101,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                       requestNoContextTakeover)
         return offer
 
-
     def __init__(self,
                  acceptNoContextTakeover = True,
                  requestNoContextTakeover = False):
@@ -124,7 +122,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
         self.requestNoContextTakeover = requestNoContextTakeover
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -138,7 +135,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
             pmceString += "; server_no_context_takeover"
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -149,7 +145,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                 'acceptNoContextTakeover': self.acceptNoContextTakeover,
                 'requestNoContextTakeover': self.requestNoContextTakeover}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -157,7 +152,6 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         :returns: str -- Python string representation.
         """
         return "PerMessageSnappyOffer(acceptNoContextTakeover = %s, requestNoContextTakeover = %s)" % (self.acceptNoContextTakeover, self.requestNoContextTakeover)
-
 
 
 class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnappyMixin):
@@ -202,7 +196,6 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
 
         self.noContextTakeover = noContextTakeover
 
-
     def getExtensionString(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
@@ -216,7 +209,6 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
             pmceString += "; client_no_context_takeover"
         return pmceString
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -228,7 +220,6 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
                 'requestNoContextTakeover': self.requestNoContextTakeover,
                 'noContextTakeover': self.noContextTakeover}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -236,7 +227,6 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
         :returns: str -- Python string representation.
         """
         return "PerMessageSnappyAccept(offer = %s, requestNoContextTakeover = %s, noContextTakeover = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.noContextTakeover)
-
 
 
 class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin):
@@ -285,13 +275,11 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
                          server_no_context_takeover)
         return response
 
-
     def __init__(self,
                  client_no_context_takeover,
                  server_no_context_takeover):
         self.client_no_context_takeover = client_no_context_takeover
         self.server_no_context_takeover = server_no_context_takeover
-
 
     def __json__(self):
         """
@@ -303,7 +291,6 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
                 'client_no_context_takeover': self.client_no_context_takeover,
                 'server_no_context_takeover': self.server_no_context_takeover}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -311,7 +298,6 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         :returns: str -- Python string representation.
         """
         return "PerMessageSnappyResponse(client_no_context_takeover = %s, server_no_context_takeover = %s)" % (self.client_no_context_takeover, self.server_no_context_takeover)
-
 
 
 class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessageSnappyMixin):
@@ -345,7 +331,6 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
 
         self.noContextTakeover = noContextTakeover
 
-
     def __json__(self):
         """
         Returns a JSON serializable object representation.
@@ -356,7 +341,6 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
                 'response': self.response.__json__(),
                 'noContextTakeover': self.noContextTakeover}
 
-
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
@@ -364,7 +348,6 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
         :returns: str -- Python string representation.
         """
         return "PerMessageSnappyResponseAccept(response = %s, noContextTakeover = %s)" % (self.response.__repr__(), self.noContextTakeover)
-
 
 
 class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
@@ -379,14 +362,12 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
                      accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
         return pmce
 
-
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         pmce = cls(isServer,
                      accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
                      accept.requestNoContextTakeover)
         return pmce
-
 
     def __init__(self,
                  isServer,
@@ -399,16 +380,13 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
         self._compressor = None
         self._decompressor = None
 
-
     def __json__(self):
         return {'extension': self.EXTENSION_NAME,
                 'server_no_context_takeover': self.server_no_context_takeover,
                 'client_no_context_takeover': self.client_no_context_takeover}
 
-
     def __repr__(self):
         return "PerMessageSnappy(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover)
-
 
     def startCompressMessage(self):
         if self._isServer:
@@ -418,14 +396,11 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
             if self._compressor is None or self.client_no_context_takeover:
                 self._compressor = snappy.StreamCompressor()
 
-
     def compressMessageData(self, data):
         return self._compressor.add_chunk(data)
 
-
     def endCompressMessage(self):
         return ""
-
 
     def startDecompressMessage(self):
         if self._isServer:
@@ -435,10 +410,8 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
             if self._decompressor is None or self.server_no_context_takeover:
                 self._decompressor = snappy.StreamDecompressor()
 
-
     def decompressMessageData(self, data):
         return self._decompressor.decompress(data)
-
 
     def endDecompressMessage(self):
         pass
