@@ -161,7 +161,7 @@ class WampRawSocketFactory(Factory):
     Base class for Twisted-based WAMP-over-RawSocket factories.
     """
 
-    def __init__(self, factory, serializer, debug = False):
+    def __init__(self, factory, serializer, debug=False):
         """
 
         :param factory: A callable that produces instances that implement

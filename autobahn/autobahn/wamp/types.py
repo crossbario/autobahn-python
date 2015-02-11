@@ -45,7 +45,7 @@ class ComponentConfig:
     provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
     """
 
-    def __init__(self, realm = None, extra = None):
+    def __init__(self, realm=None, extra=None):
         """
 
         :param realm: The realm the session should join.
@@ -73,7 +73,7 @@ class Accept(HelloReturn):
     Information to accept a ``HELLO``.
     """
 
-    def __init__(self, authid = None, authrole = None, authmethod = None, authprovider = None):
+    def __init__(self, authid=None, authrole=None, authmethod=None, authprovider=None):
         """
 
         :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
@@ -114,7 +114,7 @@ class Deny(HelloReturn):
     Information to deny a ``HELLO``.
     """
 
-    def __init__(self, reason = u"wamp.error.not_authorized", message = None):
+    def __init__(self, reason=u"wamp.error.not_authorized", message=None):
         """
 
         :param reason: The reason of denying the authentication (an URI, e.g. ``wamp.error.not_authorized``)
@@ -143,7 +143,7 @@ class Challenge(HelloReturn):
     Information to challenge the client upon ``HELLO``.
     """
 
-    def __init__(self, method, extra = None):
+    def __init__(self, method, extra=None):
         """
 
         :param method: The authentication method for the challenge (e.g. ``"wampcra"``).
@@ -168,7 +168,7 @@ class HelloDetails:
     Provides details of a WAMP session while still attaching.
     """
 
-    def __init__(self, roles = None, authmethods = None, authid = None, pending_session = None):
+    def __init__(self, roles=None, authmethods=None, authid=None, pending_session=None):
         """
 
         :param roles: The WAMP roles and features supported by the attaching client.
@@ -196,7 +196,7 @@ class SessionDetails:
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
     """
 
-    def __init__(self, realm, session, authid = None, authrole = None, authmethod = None, authprovider = None):
+    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None):
         """
         Ctor.
 
@@ -223,7 +223,7 @@ class CloseDetails:
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
     """
 
-    def __init__(self, reason = None, message = None):
+    def __init__(self, reason=None, message=None):
         """
 
         :param reason: The close reason (an URI, e.g. ``wamp.close.normal``)
@@ -244,7 +244,7 @@ class SubscribeOptions:
     :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
     """
 
-    def __init__(self, match = None, details_arg = None):
+    def __init__(self, match=None, details_arg=None):
         """
         :param match: The topic matching method to be used for the subscription.
         :type match: unicode
@@ -270,7 +270,7 @@ class EventDetails:
     Provides details on an event when calling an event handler
     previously registered.
     """
-    def __init__(self, publication, publisher = None):
+    def __init__(self, publication, publisher=None):
         """
         Ctor.
 
@@ -293,11 +293,11 @@ class PublishOptions:
     """
 
     def __init__(self,
-                 acknowledge = None,
-                 excludeMe = None,
-                 exclude = None,
-                 eligible = None,
-                 discloseMe = None):
+                 acknowledge=None,
+                 excludeMe=None,
+                 exclude=None,
+                 eligible=None,
+                 discloseMe=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -345,7 +345,7 @@ class RegisterOptions:
     :func:`autobahn.wamp.interfaces.ICallee.register`.
     """
 
-    def __init__(self, details_arg = None, pkeys = None, discloseCaller = None, discloseCallerTransport = None):
+    def __init__(self, details_arg=None, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -374,7 +374,7 @@ class CallDetails:
     registered is being called and opted to receive call details.
     """
 
-    def __init__(self, progress = None, caller = None, caller_transport = None, authid = None, authrole = None, authmethod = None):
+    def __init__(self, progress=None, caller=None, caller_transport=None, authid=None, authrole=None, authmethod=None):
         """
         Ctor.
 
@@ -406,10 +406,10 @@ class CallOptions:
     """
 
     def __init__(self,
-                 onProgress = None,
-                 timeout = None,
-                 discloseMe = None,
-                 runOn = None):
+                 onProgress=None,
+                 timeout=None,
+                 discloseMe=None,
+                 runOn=None):
         """
 
         :param onProgress: A callback that will be called when the remote endpoint

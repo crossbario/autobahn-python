@@ -40,7 +40,7 @@ except ImportError:
     class XorMaskerNull:
 
         # noinspection PyUnusedLocal
-        def __init__(self, mask = None):
+        def __init__(self, mask=None):
             self.ptr = 0
 
         def pointer(self):
@@ -114,7 +114,7 @@ except ImportError:
             else:
                 return payload.tostring()
 
-    def createXorMasker(mask, length = None):
+    def createXorMasker(mask, length=None):
         if length is None or length < 128:
             return XorMaskerSimple(mask)
         else:

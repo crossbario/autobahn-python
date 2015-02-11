@@ -156,10 +156,10 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         return offer
 
     def __init__(self,
-                 acceptNoContextTakeover = True,
-                 acceptMaxWindowBits = True,
-                 requestNoContextTakeover = False,
-                 requestMaxWindowBits = 0):
+                 acceptNoContextTakeover=True,
+                 acceptMaxWindowBits=True,
+                 requestNoContextTakeover=False,
+                 requestMaxWindowBits=0):
         """
         Constructor.
 
@@ -238,11 +238,11 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
 
     def __init__(self,
                  offer,
-                 requestNoContextTakeover = False,
-                 requestMaxWindowBits = 0,
-                 noContextTakeover = None,
-                 windowBits = None,
-                 memLevel = None):
+                 requestNoContextTakeover=False,
+                 requestMaxWindowBits=0,
+                 noContextTakeover=None,
+                 windowBits=None,
+                 memLevel=None):
         """
         Constructor.
 
@@ -455,9 +455,9 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
 
     def __init__(self,
                  response,
-                 noContextTakeover = None,
-                 windowBits = None,
-                 memLevel = None):
+                 noContextTakeover=None,
+                 windowBits=None,
+                 memLevel=None):
         """
         Constructor.
 

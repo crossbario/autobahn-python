@@ -282,7 +282,7 @@ class ISession(object):
         """
 
     @abc.abstractmethod
-    def leave(self, reason = None, message = None):
+    def leave(self, reason=None, message=None):
         """
         Actively close this WAMP session.
 
@@ -315,7 +315,7 @@ class ISession(object):
         """
 
     @abc.abstractmethod
-    def define(self, exception, error = None):
+    def define(self, exception, error=None):
         """
         Defines an exception for a WAMP error in the context of this WAMP session.
 
@@ -415,7 +415,7 @@ class ICallee(ISession):
     """
 
     @abc.abstractmethod
-    def register(self, endpoint, procedure = None, options = None):
+    def register(self, endpoint, procedure=None, options=None):
         """
         Register a procedure for remote calling.
 
@@ -549,7 +549,7 @@ class ISubscriber(ISession):
     """
 
     @abc.abstractmethod
-    def subscribe(self, handler, topic = None, options = None):
+    def subscribe(self, handler, topic=None, options=None):
         """
         Subscribe to a topic for receiving events.
 

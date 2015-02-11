@@ -267,7 +267,7 @@ def _lookupWsSupport(ua):
 
 UA_DETECT_WS_SUPPORT_DB = {}
 
-def lookupWsSupport(ua, debug = True):
+def lookupWsSupport(ua, debug=True):
     """
     Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
     and if not, whether the `web-socket-js <https://github.com/gimite/web-socket-js>`__

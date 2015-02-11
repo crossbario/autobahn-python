@@ -106,7 +106,7 @@ class TestDecorators(unittest.TestCase):
 
         # noinspection PyUnusedLocal
         @wamp.register(u"com.myapp.product.<product:int>.update")
-        def update_product(product = None, label = None):
+        def update_product(product=None, label=None):
             pass
 
         self.assertTrue(hasattr(update_product, '_wampuris'))
@@ -121,7 +121,7 @@ class TestDecorators(unittest.TestCase):
 
         # noinspection PyUnusedLocal
         @wamp.register(u"com.myapp.<category:string>.<cid:int>.update")
-        def update(category = None, cid = None):
+        def update(category=None, cid=None):
             pass
 
         self.assertTrue(hasattr(update, '_wampuris'))
@@ -152,7 +152,7 @@ class TestDecorators(unittest.TestCase):
 
         # noinspection PyUnusedLocal
         @wamp.subscribe(u"com.myapp.product.<product:int>.on_update")
-        def on_product_update(product = None, label = None):
+        def on_product_update(product=None, label=None):
             pass
 
         self.assertTrue(hasattr(on_product_update, '_wampuris'))
@@ -166,7 +166,7 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_product_update._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
         @wamp.subscribe(u"com.myapp.<category:string>.<cid:int>.on_update")
-        def on_update(category = None, cid = None, label = None):
+        def on_update(category=None, cid=None, label=None):
             pass
 
         self.assertTrue(hasattr(on_update, '_wampuris'))
@@ -233,7 +233,7 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(square(666, **kwargs), 666)
 
         @wamp.register(u"com.myapp.product.<product:int>.update")
-        def update_product(product = None, label = None):
+        def update_product(product=None, label=None):
             return product, label
 
         args, kwargs = update_product._wampuris[0].match(u"com.myapp.product.123456.update")
@@ -241,7 +241,7 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(update_product(**kwargs), (123456, "foobar"))
 
         @wamp.register(u"com.myapp.<category:string>.<cid:int>.update")
-        def update(category = None, cid = None, label = None):
+        def update(category=None, cid=None, label=None):
             return category, cid, label
 
         args, kwargs = update._wampuris[0].match(u"com.myapp.product.123456.update")
@@ -258,7 +258,7 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_shutdown(**kwargs), None)
 
         @wamp.subscribe(u"com.myapp.product.<product:int>.on_update")
-        def on_product_update(product = None, label = None):
+        def on_product_update(product=None, label=None):
             return product, label
 
         args, kwargs = on_product_update._wampuris[0].match(u"com.myapp.product.123456.on_update")
@@ -266,7 +266,7 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_product_update(**kwargs), (123456, "foobar"))
 
         @wamp.subscribe(u"com.myapp.<category:string>.<cid:int>.on_update")
-        def on_update(category = None, cid = None, label = None):
+        def on_update(category=None, cid=None, label=None):
             return category, cid, label
 
         args, kwargs = on_update._wampuris[0].match(u"com.myapp.product.123456.on_update")
@@ -292,7 +292,7 @@ class TestDecorators(unittest.TestCase):
         @wamp.error(u"com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
 
-            def __init__(self, msg, product = None):
+            def __init__(self, msg, product=None):
                 Exception.__init__(self, msg)
                 self.product = product
 
@@ -307,7 +307,7 @@ class TestDecorators(unittest.TestCase):
         @wamp.error(u"com.myapp.<category:string>.<product:int>.inactive")
         class ObjectInactiveError(Exception):
 
-            def __init__(self, msg, category = None, product = None):
+            def __init__(self, msg, category=None, product=None):
                 Exception.__init__(self, msg)
                 self.category = category
                 self.product = product
@@ -346,7 +346,7 @@ def getargs(fun):
             # `inspect.getargspec(Exception.__init__)` does work on PyPy, but not
             # on CPython, since `Exception.__init__` is C code in CPython that
             # cannot be reflected upon.
-            argspec = inspect.ArgSpec(args = ['self'], varargs = 'args', keywords = None, defaults = None)
+            argspec = inspect.ArgSpec(args=['self'], varargs='args', keywords=None, defaults=None)
         else:
             raise Exception("could not inspect function {0}".format(fun))
 
@@ -362,7 +362,7 @@ class MockSession:
         self._ecls_to_uri_pat = {}
         self._uri_to_ecls = {}
 
-    def define(self, exception, error = None):
+    def define(self, exception, error=None):
         if error is None:
             assert(hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = exception._wampuris
@@ -372,7 +372,7 @@ class MockSession:
             self._ecls_to_uri_pat[exception] = [Pattern(error, Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[error] = exception
 
-    def map_error(self, error, args = None, kwargs = None):
+    def map_error(self, error, args=None, kwargs=None):
 
         # FIXME:
         # 1. map to ecls based on error URI wildcard/prefix
@@ -453,7 +453,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         @wamp.error(u"com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
 
-            def __init__(self, msg, product = None):
+            def __init__(self, msg, product=None):
                 Exception.__init__(self, msg)
                 self.product = product
 
@@ -515,7 +515,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
         @wamp.error(u"com.myapp.error.product_inactive")
         class ProductInactiveError(Exception):
-            def __init__(self, product = None):
+            def __init__(self, product=None):
                 self.product = product
 
         ## define exceptions in mock session

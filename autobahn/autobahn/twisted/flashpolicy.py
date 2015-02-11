@@ -90,7 +90,7 @@ class FlashPolicyProtocol(Protocol):
 
 class FlashPolicyFactory(Factory):
 
-    def __init__(self, allowedDomain = None, allowedPorts = None, reactor = None):
+    def __init__(self, allowedDomain=None, allowedPorts=None, reactor=None):
         """
 
         :param allowedDomain: The domain from which to allow Flash to connect from.

@@ -96,7 +96,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld..foo",
                   u"hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, allowEmptyComponents = True))
+            self.assertEqual(u, message.check_or_raise_uri(u, allowEmptyComponents=True))
 
     def test_invalid_uris_loose_empty(self):
         for u in [0,
@@ -112,14 +112,14 @@ class TestUris(unittest.TestCase):
                   u"com.myapp.product#",
                   u"com.#.product",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allowEmptyComponents = True)
+            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allowEmptyComponents=True)
 
     def test_valid_uris_strict_nonempty(self):
         for u in [u"com.myapp.topic1",
                   u"com.myapp.product.123",
                   u"com.myapp.product.1.delete",
                   ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, strict = True))
+            self.assertEqual(u, message.check_or_raise_uri(u, strict=True))
 
     def test_invalid_uris_strict_nonempty(self):
         for u in [0,
@@ -145,7 +145,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld",
                   u"hello\xF0\xA4\xAD\xA2world",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict = True)
+            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True)
 
     def test_valid_uris_strict_empty(self):
         for u in [u"com.myapp.topic1",
@@ -155,7 +155,7 @@ class TestUris(unittest.TestCase):
                   u".",
                   u"",
                   ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, strict = True, allowEmptyComponents = True))
+            self.assertEqual(u, message.check_or_raise_uri(u, strict=True, allowEmptyComponents=True))
 
     def test_invalid_uris_strict_empty(self):
         for u in [0,
@@ -177,7 +177,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld..foo",
                   u"hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict = True, allowEmptyComponents = True)
+            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True, allowEmptyComponents=True)
 
 
 class TestErrorMessage(unittest.TestCase):
@@ -192,7 +192,7 @@ class TestErrorMessage(unittest.TestCase):
         self.assertEqual(msg[3], {})
         self.assertEqual(msg[4], u'com.myapp.error1')
 
-        e = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'})
+        e = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 7)
         self.assertEqual(msg[0], message.Error.MESSAGE_TYPE)
@@ -236,7 +236,7 @@ class TestSubscribeMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.topic1')
 
-        e = message.Subscribe(123456, u'com.myapp.topic1', match = message.Subscribe.MATCH_PREFIX)
+        e = message.Subscribe(123456, u'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Subscribe.MESSAGE_TYPE)
@@ -328,7 +328,7 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.topic1')
 
-        e = message.Publish(123456, u'com.myapp.topic1', args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
@@ -338,7 +338,7 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[4], [1, 2, 3])
         self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Publish(123456, u'com.myapp.topic1', excludeMe = False, exclude = [300], eligible = [100, 200, 300], discloseMe = True)
+        e = message.Publish(123456, u'com.myapp.topic1', excludeMe=False, exclude=[300], eligible=[100, 200, 300], discloseMe=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
@@ -417,7 +417,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Event(123456, 789123, args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Event.MESSAGE_TYPE)
@@ -427,7 +427,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg[4], [1, 2, 3])
         self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Event(123456, 789123, publisher = 300)
+        e = message.Event(123456, 789123, publisher=300)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Event.MESSAGE_TYPE)
@@ -478,7 +478,7 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
-        e = message.Register(123456, u'com.myapp.procedure1', pkeys = [10, 11, 12])
+        e = message.Register(123456, u'com.myapp.procedure1', pkeys=[10, 11, 12])
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
@@ -570,7 +570,7 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
-        e = message.Call(123456, u'com.myapp.procedure1', args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Call(123456, u'com.myapp.procedure1', args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
@@ -580,7 +580,7 @@ class TestCallMessage(unittest.TestCase):
         self.assertEqual(msg[4], [1, 2, 3])
         self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Call(123456, u'com.myapp.procedure1', timeout = 10000)
+        e = message.Call(123456, u'com.myapp.procedure1', timeout=10000)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Call.MESSAGE_TYPE)
@@ -630,7 +630,7 @@ class TestCancelMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Cancel(123456, mode = message.Cancel.KILL)
+        e = message.Cancel(123456, mode=message.Cancel.KILL)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Cancel.MESSAGE_TYPE)
@@ -663,7 +663,7 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Result(123456, args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Result(123456, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
@@ -672,7 +672,7 @@ class TestResultMessage(unittest.TestCase):
         self.assertEqual(msg[3], [1, 2, 3])
         self.assertEqual(msg[4], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Result(123456, progress = True)
+        e = message.Result(123456, progress=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Result.MESSAGE_TYPE)
@@ -719,7 +719,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[2], 789123)
         self.assertEqual(msg[3], {})
 
-        e = message.Invocation(123456, 789123, args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 6)
         self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
@@ -729,7 +729,7 @@ class TestInvocationMessage(unittest.TestCase):
         self.assertEqual(msg[4], [1, 2, 3])
         self.assertEqual(msg[5], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Invocation(123456, 789123, timeout = 10000)
+        e = message.Invocation(123456, 789123, timeout=10000)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Invocation.MESSAGE_TYPE)
@@ -779,7 +779,7 @@ class TestInterruptMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Interrupt(123456, mode = message.Interrupt.KILL)
+        e = message.Interrupt(123456, mode=message.Interrupt.KILL)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Interrupt.MESSAGE_TYPE)
@@ -812,7 +812,7 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg[1], 123456)
         self.assertEqual(msg[2], {})
 
-        e = message.Yield(123456, args = [1, 2, 3], kwargs = {u'foo': 23,  u'bar':  u'hello'})
+        e = message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23,  u'bar':  u'hello'})
         msg = e.marshal()
         self.assertEqual(len(msg), 5)
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
@@ -821,7 +821,7 @@ class TestYieldMessage(unittest.TestCase):
         self.assertEqual(msg[3], [1, 2, 3])
         self.assertEqual(msg[4], {u'foo': 23,  u'bar':  u'hello'})
 
-        e = message.Yield(123456, progress = True)
+        e = message.Yield(123456, progress=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Yield.MESSAGE_TYPE)
@@ -867,7 +867,7 @@ class TestHelloMessage(unittest.TestCase):
         self.assertEqual(msg[1], u"realm1")
         self.assertEqual(msg[2], {u'roles': {u'broker': {}}})
 
-        e = message.Hello(u"realm1", [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
+        e = message.Hello(u"realm1", [role.RoleBrokerFeatures(subscriber_blackwhite_listing=True)])
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
@@ -886,7 +886,7 @@ class TestHelloMessage(unittest.TestCase):
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, u"realm1")
-        self.assertEqual(msg.roles, [role.RoleBrokerFeatures(subscriber_blackwhite_listing = True)])
+        self.assertEqual(msg.roles, [role.RoleBrokerFeatures(subscriber_blackwhite_listing=True)])
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
@@ -907,14 +907,14 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertEqual(msg[1], {})
         self.assertEqual(msg[2], message.Goodbye.DEFAULT_REASON)
 
-        e = message.Goodbye(reason = reason)
+        e = message.Goodbye(reason=reason)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
         self.assertEqual(msg[1], {})
         self.assertEqual(msg[2], reason)
 
-        e = message.Goodbye(reason = reason, message = reason_msg)
+        e = message.Goodbye(reason=reason, message=reason_msg)
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Goodbye.MESSAGE_TYPE)
@@ -949,7 +949,7 @@ class TestGoodbyeMessage(unittest.TestCase):
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
-        e = message.Goodbye(reason = u'wamp.error.system_shutdown', message = u'The host is shutting down now.')
+        e = message.Goodbye(reason=u'wamp.error.system_shutdown', message=u'The host is shutting down now.')
         self.assertIsInstance(str(e), str)
 
 

@@ -91,17 +91,17 @@ else:
 ## Now install Autobahn ..
 ##
 setup(
-   name = 'autobahn',
-   version = verstr,
-   description = 'WebSocket client & server library, WAMP real-time framework',
-   long_description = LONGSDESC,
-   license = 'Apache License 2.0',
-   author = 'Tavendo GmbH',
-   author_email = 'autobahnws@googlegroups.com',
-   url = 'http://autobahn.ws/python',
-   platforms = 'Any',
-   install_requires = ['six>=1.6.1'],
-   extras_require = {
+   name='autobahn',
+   version=verstr,
+   description='WebSocket client & server library, WAMP real-time framework',
+   long_description=LONGSDESC,
+   license='Apache License 2.0',
+   author='Tavendo GmbH',
+   author_email='autobahnws@googlegroups.com',
+   url='http://autobahn.ws/python',
+   platforms='Any',
+   install_requires=['six>=1.6.1'],
+   extras_require={
       ## asyncio is needed for Autobahn/asyncio
       'asyncio': asyncio_packages,
 
@@ -118,11 +118,11 @@ setup(
       ## needed if you want WAMPv2 binary serialization support
       'serialization': ["msgpack-python>=0.4.0"]
    },
-   packages = packages,
-   zip_safe = False,
+   packages=packages,
+   zip_safe=False,
    ## http://pypi.python.org/pypi?%3Aaction=list_classifiers
    ##
-   classifiers = ["License :: OSI Approved :: Apache Software License",
+   classifiers=["License :: OSI Approved :: Apache Software License",
                   "Development Status :: 5 - Production/Stable",
                   "Environment :: No Input/Output (Daemon)",
                   "Framework :: Twisted",
@@ -145,7 +145,7 @@ setup(
                   "Topic :: Software Development :: Libraries",
                   "Topic :: Software Development :: Libraries :: Python Modules",
                   "Topic :: Software Development :: Object Brokering"],
-   keywords = 'autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
+   keywords='autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
 

@@ -110,8 +110,8 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         return offer
 
     def __init__(self,
-                 acceptMaxCompressLevel = True,
-                 requestMaxCompressLevel = 0):
+                 acceptMaxCompressLevel=True,
+                 requestMaxCompressLevel=0):
         """
         Constructor.
 
@@ -170,8 +170,8 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
 
     def __init__(self,
                  offer,
-                 requestMaxCompressLevel = 0,
-                 compressLevel = None):
+                 requestMaxCompressLevel=0,
+                 compressLevel=None):
         """
         Constructor.
 
@@ -322,7 +322,7 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
 
     def __init__(self,
                  response,
-                 compressLevel = None):
+                 compressLevel=None):
         """
         Constructor.
 

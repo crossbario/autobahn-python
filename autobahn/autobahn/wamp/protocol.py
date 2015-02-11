@@ -46,7 +46,7 @@ class Endpoint:
     """
     """
 
-    def __init__(self, obj, fn, procedure, options = None):
+    def __init__(self, obj, fn, procedure, options=None):
         self.obj = obj
         self.fn = fn
         self.procedure = procedure
@@ -57,7 +57,7 @@ class Handler:
     """
     """
 
-    def __init__(self, obj, fn, topic, details_arg = None):
+    def __init__(self, obj, fn, topic, details_arg=None):
         self.obj = obj
         self.fn = fn
         self.topic = topic
@@ -173,7 +173,7 @@ class BaseSession:
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
 
-    def define(self, exception, error = None):
+    def define(self, exception, error=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.define`
         """
@@ -186,7 +186,7 @@ class BaseSession:
             self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[six.u(error)] = exception
 
-    def _message_from_exception(self, request_type, request, exc, tb = None):
+    def _message_from_exception(self, request_type, request, exc, tb=None):
         """
         Create a WAMP error message from an exception.
 
@@ -289,12 +289,12 @@ class ApplicationSession(BaseSession):
     * :class:`autobahn.wamp.interfaces.ITransportHandler`
     """
 
-    def __init__(self, config = None):
+    def __init__(self, config=None):
         """
         Constructor.
         """
         BaseSession.__init__(self)
-        self.config = config or types.ComponentConfig(realm = u"default")
+        self.config = config or types.ComponentConfig(realm=u"default")
 
         self._transport = None
         self._session_id = None
@@ -334,7 +334,7 @@ class ApplicationSession(BaseSession):
         """
         self.join(self.config.realm)
 
-    def join(self, realm, authmethods = None, authid = None):
+    def join(self, realm, authmethods=None, authid=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
@@ -429,7 +429,7 @@ class ApplicationSession(BaseSession):
                     if handler.details_arg:
                         if not msg.kwargs:
                             msg.kwargs = {}
-                        msg.kwargs[handler.details_arg] = types.EventDetails(publication = msg.publication, publisher = msg.publisher)
+                        msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher)
 
                     try:
                         if handler.obj:
@@ -568,14 +568,14 @@ class ApplicationSession(BaseSession):
 
                             if msg.receive_progress:
                                 def progress(*args, **kwargs):
-                                    progress_msg = message.Yield(msg.request, args = args, kwargs = kwargs, progress = True)
+                                    progress_msg = message.Yield(msg.request, args=args, kwargs=kwargs, progress=True)
                                     self._transport.send(progress_msg)
                             else:
                                 progress = None
 
-                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller = msg.caller,
-                               caller_transport = msg.caller_transport, authid = msg.authid, authrole = msg.authrole,
-                               authmethod = msg.authmethod)
+                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller,
+                               caller_transport=msg.caller_transport, authid=msg.authid, authrole=msg.authrole,
+                               authmethod=msg.authmethod)
 
                         if endpoint.obj:
                             if msg.kwargs:
@@ -604,9 +604,9 @@ class ApplicationSession(BaseSession):
                             del self._invocations[msg.request]
 
                             if isinstance(res, types.CallResult):
-                                reply = message.Yield(msg.request, args = res.results, kwargs = res.kwresults)
+                                reply = message.Yield(msg.request, args=res.results, kwargs=res.kwresults)
                             else:
-                                reply = message.Yield(msg.request, args = [res])
+                                reply = message.Yield(msg.request, args=[res])
                             self._transport.send(reply)
 
                         def error(err):
@@ -614,7 +614,7 @@ class ApplicationSession(BaseSession):
                                 ## if asked to marshal the traceback within the WAMP error message, extract it
                                 # noinspection PyCallingNonCallable
                                 tb = StringIO()
-                                err.printTraceback(file = tb)
+                                err.printTraceback(file=tb)
                                 tb = tb.getvalue().splitlines()
                             else:
                                 tb = None
@@ -755,7 +755,7 @@ class ApplicationSession(BaseSession):
         """
         self.disconnect()
 
-    def leave(self, reason = None, log_message = None):
+    def leave(self, reason=None, log_message=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.leave`
         """
@@ -765,7 +765,7 @@ class ApplicationSession(BaseSession):
         if not self._goodbye_sent:
             if not reason:
                 reason = u"wamp.close.normal"
-            msg = wamp.message.Goodbye(reason = reason, message = log_message)
+            msg = wamp.message.Goodbye(reason=reason, message=log_message)
             self._transport.send(msg)
             self._goodbye_sent = True
         else:
@@ -786,10 +786,10 @@ class ApplicationSession(BaseSession):
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
             opts = kwargs.pop('options')
-            msg = message.Publish(request, topic, args = args, kwargs = kwargs, **opts.options)
+            msg = message.Publish(request, topic, args=args, kwargs=kwargs, **opts.options)
         else:
             opts = None
-            msg = message.Publish(request, topic, args = args, kwargs = kwargs)
+            msg = message.Publish(request, topic, args=args, kwargs=kwargs)
 
         if opts and opts.options['acknowledge'] == True:
             d = self._create_future()
@@ -800,7 +800,7 @@ class ApplicationSession(BaseSession):
             self._transport.send(msg)
             return
 
-    def subscribe(self, handler, topic = None, options = None):
+    def subscribe(self, handler, topic=None, options=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
@@ -844,7 +844,7 @@ class ApplicationSession(BaseSession):
                     if pat.is_handler():
                         uri = pat.uri()
                         dl.append(_subscribe(handler, proc, uri, options))
-            return self._gather_futures(dl, consume_exceptions = True)
+            return self._gather_futures(dl, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
         """
@@ -882,10 +882,10 @@ class ApplicationSession(BaseSession):
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
             opts = kwargs.pop('options')
-            msg = message.Call(request, procedure, args = args, kwargs = kwargs, **opts.options)
+            msg = message.Call(request, procedure, args=args, kwargs=kwargs, **opts.options)
         else:
             opts = None
-            msg = message.Call(request, procedure, args = args, kwargs = kwargs)
+            msg = message.Call(request, procedure, args=args, kwargs=kwargs)
 
         ## FIXME
         #def canceller(_d):
@@ -898,7 +898,7 @@ class ApplicationSession(BaseSession):
         self._transport.send(msg)
         return d
 
-    def register(self, endpoint, procedure = None, options = None):
+    def register(self, endpoint, procedure=None, options=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
@@ -944,7 +944,7 @@ class ApplicationSession(BaseSession):
                     if pat.is_endpoint():
                         uri = pat.uri()
                         dl.append(_register(endpoint, proc, uri, options))
-            return self._gather_futures(dl, consume_exceptions = True)
+            return self._gather_futures(dl, consume_exceptions=True)
 
     def _unregister(self, registration):
         """
@@ -985,13 +985,13 @@ class ApplicationSessionFactory:
    WAMP application session class to be used in this factory.
    """
 
-    def __init__(self, config = None):
+    def __init__(self, config=None):
         """
 
         :param config: The default component configuration.
         :type config: instance of :class:`autobahn.wamp.types.ComponentConfig`
         """
-        self.config = config or types.ComponentConfig(realm = u"default")
+        self.config = config or types.ComponentConfig(realm=u"default")
 
     def __call__(self):
         """

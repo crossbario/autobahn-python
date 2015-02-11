@@ -93,7 +93,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     def dataReceived(self, data):
         self._dataReceived(data)
 
-    def _closeConnection(self, abort = False):
+    def _closeConnection(self, abort=False):
         if abort and hasattr(self.transport, 'abortConnection'):
             ## ProcessProtocol lacks abortConnection()
             self.transport.abortConnection()
@@ -315,10 +315,10 @@ class WrappingWebSocketAdapter:
         ## part of ITransport
         assert(type(data) == bytes)
         if self._binaryMode:
-            self.sendMessage(data, isBinary = True)
+            self.sendMessage(data, isBinary=True)
         else:
             data = b64encode(data)
-            self.sendMessage(data, isBinary = False)
+            self.sendMessage(data, isBinary=False)
 
     def writeSequence(self, data):
         ## part of ITransport
@@ -358,11 +358,11 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
     def __init__(self,
                  factory,
                  url,
-                 reactor = None,
-                 enableCompression = True,
-                 autoFragmentSize = 0,
-                 subprotocol = None,
-                 debug = False):
+                 reactor=None,
+                 enableCompression=True,
+                 autoFragmentSize=0,
+                 subprotocol=None,
+                 debug=False):
         """
 
         :param factory: Stream-based factory to be wrapped.
@@ -376,17 +376,17 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
             self._subprotocols.append(subprotocol)
 
         WebSocketServerFactory.__init__(self,
-           url = url,
-           reactor = reactor,
-           protocols = self._subprotocols,
-           debug = debug)
+           url=url,
+           reactor=reactor,
+           protocols=self._subprotocols,
+           debug=debug)
 
         ## automatically fragment outgoing traffic into WebSocket frames
         ## of this size
-        self.setProtocolOptions(autoFragmentSize = autoFragmentSize)
+        self.setProtocolOptions(autoFragmentSize=autoFragmentSize)
 
         ## play nice and perform WS closing handshake
-        self.setProtocolOptions(failByDrop = False)
+        self.setProtocolOptions(failByDrop=False)
 
         if enableCompression:
             ## Enable WebSocket extension "permessage-deflate".
@@ -398,7 +398,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
                     if isinstance(offer, PerMessageDeflateOffer):
                         return PerMessageDeflateOfferAccept(offer)
 
-            self.setProtocolOptions(perMessageCompressionAccept = accept)
+            self.setProtocolOptions(perMessageCompressionAccept=accept)
 
     def buildProtocol(self, addr):
         proto = WrappingWebSocketServerProtocol()
@@ -424,11 +424,11 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
     def __init__(self,
                  factory,
                  url,
-                 reactor = None,
-                 enableCompression = True,
-                 autoFragmentSize = 0,
-                 subprotocol = None,
-                 debug = False):
+                 reactor=None,
+                 enableCompression=True,
+                 autoFragmentSize=0,
+                 subprotocol=None,
+                 debug=False):
         """
 
         :param factory: Stream-based factory to be wrapped.
@@ -442,17 +442,17 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
             self._subprotocols.append(subprotocol)
 
         WebSocketClientFactory.__init__(self,
-           url = url,
-           reactor = reactor,
-           protocols = self._subprotocols,
-           debug = debug)
+           url=url,
+           reactor=reactor,
+           protocols=self._subprotocols,
+           debug=debug)
 
         ## automatically fragment outgoing traffic into WebSocket frames
         ## of this size
-        self.setProtocolOptions(autoFragmentSize = autoFragmentSize)
+        self.setProtocolOptions(autoFragmentSize=autoFragmentSize)
 
         ## play nice and perform WS closing handshake
-        self.setProtocolOptions(failByDrop = False)
+        self.setProtocolOptions(failByDrop=False)
 
         if enableCompression:
             ## Enable WebSocket extension "permessage-deflate".
@@ -460,14 +460,14 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
 
             ## The extensions offered to the server ..
             offers = [PerMessageDeflateOffer()]
-            self.setProtocolOptions(perMessageCompressionOffers = offers)
+            self.setProtocolOptions(perMessageCompressionOffers=offers)
 
             ## Function to accept responses from the server ..
             def accept(response):
                 if isinstance(response, PerMessageDeflateResponse):
                     return PerMessageDeflateResponseAccept(response)
 
-            self.setProtocolOptions(perMessageCompressionAccept = accept)
+            self.setProtocolOptions(perMessageCompressionAccept=accept)
 
     def buildProtocol(self, addr):
         proto = WrappingWebSocketClientProtocol()
@@ -477,7 +477,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
         return proto
 
 
-def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
+def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     """
     Establish WebSocket connection to a server. The connection parameters like target
     host, port, resource and others are provided via the factory.
@@ -517,7 +517,7 @@ def connectWS(factory, contextFactory = None, timeout = 30, bindAddress = None):
     return conn
 
 
-def listenWS(factory, contextFactory = None, backlog = 50, interface = ''):
+def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     """
     Listen for incoming WebSocket connections from clients. The connection parameters like
     listening port and others are provided via the factory.
@@ -576,7 +576,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         else:
             debug_wamp = False
 
-        websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
+        websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
         kwargs['protocols'] = self._protocols
 
@@ -611,7 +611,7 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
         else:
             debug_wamp = False
 
-        websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
+        websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
         kwargs['protocols'] = self._protocols
 

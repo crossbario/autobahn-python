@@ -72,7 +72,7 @@ _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
 
-def check_or_raise_uri(value, message = u"WAMP message invalid", strict = False, allowEmptyComponents = False):
+def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
     """
     Check a value for being a valid WAMP URI.
 
@@ -113,7 +113,7 @@ def check_or_raise_uri(value, message = u"WAMP message invalid", strict = False,
         return value
 
 
-def check_or_raise_id(value, message = u"WAMP message invalid"):
+def check_or_raise_id(value, message=u"WAMP message invalid"):
     """
     Check a value for being a valid WAMP ID.
 
@@ -136,7 +136,7 @@ def check_or_raise_id(value, message = u"WAMP message invalid"):
     return value
 
 
-def check_or_raise_extra(value, message = u"WAMP message invalid"):
+def check_or_raise_extra(value, message=u"WAMP message invalid"):
     """
     Check a value for being a valid WAMP extra dictionary.
 
@@ -202,7 +202,7 @@ class Hello(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, realm, roles, authmethods = None, authid = None):
+    def __init__(self, realm, roles, authmethods=None, authid=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
@@ -343,7 +343,7 @@ class Welcome(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, session, roles, authid = None, authrole = None, authmethod = None, authprovider = None):
+    def __init__(self, session, roles, authid=None, authrole=None, authmethod=None, authprovider=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -481,7 +481,7 @@ class Abort(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, reason, message = None):
+    def __init__(self, reason, message=None):
         """
 
         :param reason: WAMP or application error URI for aborting reason.
@@ -559,7 +559,7 @@ class Challenge(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, method, extra = None):
+    def __init__(self, method, extra=None):
         """
 
         :param method: The authentication method.
@@ -626,7 +626,7 @@ class Authenticate(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, signature, extra = None):
+    def __init__(self, signature, extra=None):
         """
 
         :param signature: The signature for the authentication challenge.
@@ -698,7 +698,7 @@ class Goodbye(Message):
    Default WAMP closing reason.
    """
 
-    def __init__(self, reason = DEFAULT_REASON, message = None):
+    def __init__(self, reason=DEFAULT_REASON, message=None):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
@@ -779,7 +779,7 @@ class Heartbeat(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, incoming, outgoing, discard = None):
+    def __init__(self, incoming, outgoing, discard=None):
         """
 
         :param incoming: Last incoming heartbeat processed from peer.
@@ -837,7 +837,7 @@ class Heartbeat(Message):
             if type(discard) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'discard' in HEARTBEAT".format(type(discard)))
 
-        obj = Heartbeat(incoming, outgoing, discard = discard)
+        obj = Heartbeat(incoming, outgoing, discard=discard)
 
         return obj
 
@@ -873,7 +873,7 @@ class Error(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, request_type, request, error, args = None, kwargs = None):
+    def __init__(self, request_type, request, error, args=None, kwargs=None):
         """
 
         :param request_type: The WAMP message type code for the original request.
@@ -948,7 +948,7 @@ class Error(Message):
             if type(kwargs) != dict:
                 raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
 
-        obj = Error(request_type, request, error, args = args, kwargs = kwargs)
+        obj = Error(request_type, request, error, args=args, kwargs=kwargs)
 
         return obj
 
@@ -991,13 +991,13 @@ class Publish(Message):
     def __init__(self,
                  request,
                  topic,
-                 args = None,
-                 kwargs = None,
-                 acknowledge = None,
-                 excludeMe = None,
-                 exclude = None,
-                 eligible = None,
-                 discloseMe = None):
+                 args=None,
+                 kwargs=None,
+                 acknowledge=None,
+                 excludeMe=None,
+                 exclude=None,
+                 eligible=None,
+                 discloseMe=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1135,13 +1135,13 @@ class Publish(Message):
 
         obj = Publish(request,
                       topic,
-                      args = args,
-                      kwargs = kwargs,
-                      acknowledge = acknowledge,
-                      excludeMe = excludeMe,
-                      exclude = exclude,
-                      eligible = eligible,
-                      discloseMe = discloseMe)
+                      args=args,
+                      kwargs=kwargs,
+                      acknowledge=acknowledge,
+                      excludeMe=excludeMe,
+                      exclude=exclude,
+                      eligible=eligible,
+                      discloseMe=discloseMe)
 
         return obj
 
@@ -1256,7 +1256,7 @@ class Subscribe(Message):
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
 
-    def __init__(self, request, topic, match = MATCH_EXACT):
+    def __init__(self, request, topic, match=MATCH_EXACT):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1295,7 +1295,7 @@ class Subscribe(Message):
 
         request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBE")
         options = check_or_raise_extra(wmsg[2], u"'options' in SUBSCRIBE")
-        topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allowEmptyComponents = True)
+        topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allowEmptyComponents=True)
 
         match = Subscribe.MATCH_EXACT
 
@@ -1535,7 +1535,7 @@ class Event(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, subscription, publication, args = None, kwargs = None, publisher = None):
+    def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1608,9 +1608,9 @@ class Event(Message):
 
         obj = Event(subscription,
                     publication,
-                    args = args,
-                    kwargs = kwargs,
-                    publisher = publisher)
+                    args=args,
+                    kwargs=kwargs,
+                    publisher=publisher)
 
         return obj
 
@@ -1656,11 +1656,11 @@ class Call(Message):
     def __init__(self,
                  request,
                  procedure,
-                 args = None,
-                 kwargs = None,
-                 timeout = None,
-                 receive_progress = None,
-                 discloseMe = None):
+                 args=None,
+                 kwargs=None,
+                 timeout=None,
+                 receive_progress=None,
+                 discloseMe=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1764,11 +1764,11 @@ class Call(Message):
 
         obj = Call(request,
                    procedure,
-                   args = args,
-                   kwargs = kwargs,
-                   timeout = timeout,
-                   receive_progress = receive_progress,
-                   discloseMe = discloseMe)
+                   args=args,
+                   kwargs=kwargs,
+                   timeout=timeout,
+                   receive_progress=receive_progress,
+                   discloseMe=discloseMe)
 
         return obj
 
@@ -1817,7 +1817,7 @@ class Cancel(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
-    def __init__(self, request, mode = None):
+    def __init__(self, request, mode=None):
         """
 
         :param request: The WAMP request ID of the original `CALL` to cancel.
@@ -1868,7 +1868,7 @@ class Cancel(Message):
 
             mode = option_mode
 
-        obj = Cancel(request, mode = mode)
+        obj = Cancel(request, mode=mode)
 
         return obj
 
@@ -1906,7 +1906,7 @@ class Result(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, request, args = None, kwargs = None, progress = None):
+    def __init__(self, request, args=None, kwargs=None, progress=None):
         """
 
         :param request: The request ID of the original `CALL` request.
@@ -1974,7 +1974,7 @@ class Result(Message):
 
             progress = detail_progress
 
-        obj = Result(request, args = args, kwargs = kwargs, progress = progress)
+        obj = Result(request, args=args, kwargs=kwargs, progress=progress)
 
         return obj
 
@@ -2013,7 +2013,7 @@ class Register(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, request, procedure, pkeys = None, discloseCaller = None, discloseCallerTransport = None):
+    def __init__(self, request, procedure, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2064,7 +2064,7 @@ class Register(Message):
 
         request = check_or_raise_id(wmsg[1], u"'request' in REGISTER")
         options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
-        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allowEmptyComponents = True)
+        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allowEmptyComponents=True)
 
         pkeys = None
         discloseCaller = None
@@ -2098,7 +2098,7 @@ class Register(Message):
 
             discloseCallerTransport = option_discloseCallerTransport
 
-        obj = Register(request, procedure, pkeys = pkeys, discloseCaller = discloseCaller, discloseCallerTransport = discloseCallerTransport)
+        obj = Register(request, procedure, pkeys=pkeys, discloseCaller=discloseCaller, discloseCallerTransport=discloseCallerTransport)
 
         return obj
 
@@ -2332,15 +2332,15 @@ class Invocation(Message):
     def __init__(self,
                  request,
                  registration,
-                 args = None,
-                 kwargs = None,
-                 timeout = None,
-                 receive_progress = None,
-                 caller = None,
-                 caller_transport = None,
-                 authid = None,
-                 authrole = None,
-                 authmethod = None):
+                 args=None,
+                 kwargs=None,
+                 timeout=None,
+                 receive_progress=None,
+                 caller=None,
+                 caller_transport=None,
+                 authid=None,
+                 authrole=None,
+                 authmethod=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2495,15 +2495,15 @@ class Invocation(Message):
 
         obj = Invocation(request,
                          registration,
-                         args = args,
-                         kwargs = kwargs,
-                         timeout = timeout,
-                         receive_progress = receive_progress,
-                         caller = caller,
-                         caller_transport = caller_transport,
-                         authid = authid,
-                         authrole = authrole,
-                         authmethod = authmethod)
+                         args=args,
+                         kwargs=kwargs,
+                         timeout=timeout,
+                         receive_progress=receive_progress,
+                         caller=caller,
+                         caller_transport=caller_transport,
+                         authid=authid,
+                         authrole=authrole,
+                         authmethod=authmethod)
 
         return obj
 
@@ -2563,7 +2563,7 @@ class Interrupt(Message):
     ABORT = u'abort'
     KILL = u'kill'
 
-    def __init__(self, request, mode = None):
+    def __init__(self, request, mode=None):
         """
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
@@ -2614,7 +2614,7 @@ class Interrupt(Message):
 
             mode = option_mode
 
-        obj = Interrupt(request, mode = mode)
+        obj = Interrupt(request, mode=mode)
 
         return obj
 
@@ -2652,7 +2652,7 @@ class Yield(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, request, args = None, kwargs = None, progress = None):
+    def __init__(self, request, args=None, kwargs=None, progress=None):
         """
 
         :param request: The WAMP request ID of the original call.
@@ -2720,7 +2720,7 @@ class Yield(Message):
 
             progress = option_progress
 
-        obj = Yield(request, args = args, kwargs = kwargs, progress = progress)
+        obj = Yield(request, args=args, kwargs=kwargs, progress=progress)
 
         return obj
 

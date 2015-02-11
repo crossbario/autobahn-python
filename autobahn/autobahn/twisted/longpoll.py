@@ -466,14 +466,14 @@ class WampLongPollResource(Resource):
 
     def __init__(self,
                  factory,
-                 serializers = None,
-                 timeout = 10,
-                 killAfter = 30,
-                 queueLimitBytes = 128 * 1024,
-                 queueLimitMessages = 100,
-                 debug = False,
-                 debug_transport_id = None,
-                 reactor = None):
+                 serializers=None,
+                 timeout=10,
+                 killAfter=30,
+                 queueLimitBytes=128 * 1024,
+                 queueLimitMessages=100,
+                 debug=False,
+                 debug_transport_id=None,
+                 reactor=None):
         """
         Create new HTTP WAMP Web resource.
 
@@ -519,7 +519,7 @@ class WampLongPollResource(Resource):
             ## try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
-                serializers.append(MsgPackSerializer(batched = True))
+                serializers.append(MsgPackSerializer(batched=True))
                 serializers.append(MsgPackSerializer())
             except ImportError:
                 pass
@@ -527,7 +527,7 @@ class WampLongPollResource(Resource):
             ## try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
-                serializers.append(JsonSerializer(batched = True))
+                serializers.append(JsonSerializer(batched=True))
                 serializers.append(JsonSerializer())
             except ImportError:
                 pass
@@ -551,7 +551,7 @@ class WampLongPollResource(Resource):
     def render_GET(self, request):
         request.setHeader('content-type', 'text/html; charset=UTF-8')
         peer = "{0}:{1}".format(request.client.host, request.client.port)
-        return self.getNotice(peer = peer)
+        return self.getNotice(peer=peer)
 
     def getChild(self, name, request):
         """
@@ -594,7 +594,7 @@ class WampLongPollResource(Resource):
         request.setResponseCode(http.BAD_REQUEST)
         return msg
 
-    def getNotice(self, peer, redirectUrl = None, redirectAfter = 0):
+    def getNotice(self, peer, redirectUrl=None, redirectAfter=0):
         """
         Render a user notice (HTML page) when the Long-Poll root resource
         is accessed via HTTP/GET (by a user).

@@ -88,8 +88,8 @@ class FutureMixin:
         return future.add_done_callback(done)
 
     @staticmethod
-    def _gather_futures(futures, consume_exceptions = True):
-        return asyncio.gather(*futures, return_exceptions = consume_exceptions)
+    def _gather_futures(futures, consume_exceptions=True):
+        return asyncio.gather(*futures, return_exceptions=consume_exceptions)
 
 
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
@@ -118,8 +118,8 @@ class ApplicationRunner:
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra = None, serializers = None,
-       debug = False, debug_wamp = False, debug_app = False):
+    def __init__(self, url, realm, extra=None, serializers=None,
+       debug=False, debug_wamp=False, debug_app=False):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -171,12 +171,12 @@ class ApplicationRunner:
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
         ## 2) create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url = self.url, serializers = self.serializers,
-           debug = self.debug, debug_wamp = self.debug_wamp)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
+           debug=self.debug, debug_wamp=self.debug_wamp)
 
         ## 3) start the client
         loop = asyncio.get_event_loop()
-        coro = loop.create_connection(transport_factory, host, port, ssl = isSecure)
+        coro = loop.create_connection(transport_factory, host, port, ssl=isSecure)
         loop.run_until_complete(coro)
 
         ## 4) now enter the asyncio event loop

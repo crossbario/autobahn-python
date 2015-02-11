@@ -32,40 +32,40 @@ def generate_test_messages():
        message.Goodbye(),
        message.Heartbeat(123, 456),
        message.Yield(123456),
-       message.Yield(123456, args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Yield(123456, progress = True),
+       message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Yield(123456, progress=True),
        message.Interrupt(123456),
-       message.Interrupt(123456, mode = message.Interrupt.KILL),
+       message.Interrupt(123456, mode=message.Interrupt.KILL),
        message.Invocation(123456, 789123),
-       message.Invocation(123456, 789123, args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Invocation(123456, 789123, timeout = 10000),
+       message.Invocation(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Invocation(123456, 789123, timeout=10000),
        message.Result(123456),
-       message.Result(123456, args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Result(123456, progress = True),
+       message.Result(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Result(123456, progress=True),
        message.Cancel(123456),
-       message.Cancel(123456, mode = message.Cancel.KILL),
+       message.Cancel(123456, mode=message.Cancel.KILL),
        message.Call(123456, u'com.myapp.procedure1'),
-       message.Call(123456, u'com.myapp.procedure1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Call(123456, u'com.myapp.procedure1', timeout = 10000),
+       message.Call(123456, u'com.myapp.procedure1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Call(123456, u'com.myapp.procedure1', timeout=10000),
        message.Unregistered(123456),
        message.Unregister(123456, 789123),
        message.Registered(123456, 789123),
        message.Register(123456, u'com.myapp.procedure1'),
-       message.Register(123456, u'com.myapp.procedure1', pkeys = [10, 11, 12]),
+       message.Register(123456, u'com.myapp.procedure1', pkeys=[10, 11, 12]),
        message.Event(123456, 789123),
-       message.Event(123456, 789123, args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Event(123456, 789123, publisher = 300),
+       message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Event(123456, 789123, publisher=300),
        message.Published(123456, 789123),
        message.Publish(123456, u'com.myapp.topic1'),
-       message.Publish(123456, u'com.myapp.topic1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
-       message.Publish(123456, u'com.myapp.topic1', excludeMe = False, exclude = [300], eligible = [100, 200, 300], discloseMe = True),
+       message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+       message.Publish(123456, u'com.myapp.topic1', excludeMe=False, exclude=[300], eligible=[100, 200, 300], discloseMe=True),
        message.Unsubscribed(123456),
        message.Unsubscribe(123456, 789123),
        message.Subscribed(123456, 789123),
        message.Subscribe(123456, u'com.myapp.topic1'),
-       message.Subscribe(123456, u'com.myapp.topic1', match = message.Subscribe.MATCH_PREFIX),
+       message.Subscribe(123456, u'com.myapp.topic1', match=message.Subscribe.MATCH_PREFIX),
        message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1'),
-       message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args = [1, 2, 3], kwargs = {u'foo': 23, u'bar': u'hello'}),
+       message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
        message.Call(123456, u'com.myapp.\u4f60\u597d\u4e16\u754c', args=[1, 2, 3]),
        message.Result(123456, args=[1, 2, 3], kwargs={u'en': u'Hello World', u'jp': u'\u3053\u3093\u306b\u3061\u306f\u4e16\u754c'})
     ]
@@ -76,13 +76,13 @@ class TestSerializer(unittest.TestCase):
     def setUp(self):
         self.serializers = []
         self.serializers.append(serializer.JsonSerializer())
-        self.serializers.append(serializer.JsonSerializer(batched = True))
+        self.serializers.append(serializer.JsonSerializer(batched=True))
 
         self.serializers.append(serializer.MsgPackSerializer())
 
         try:
             self.serializers.append(serializer.MsgPackSerializer())
-            self.serializers.append(serializer.MsgPackSerializer(batched = True))
+            self.serializers.append(serializer.MsgPackSerializer(batched=True))
         except ImportError:
             ## MsgPack not installed
             pass

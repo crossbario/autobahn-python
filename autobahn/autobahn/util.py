@@ -107,7 +107,7 @@ def id():
     return random.randint(0, 2147483647) # use a reduced ID space for now (2**31-1)
 
 
-def newid(length = 16):
+def newid(length=16):
     """
     Generate a new random object ID.
 
@@ -157,7 +157,7 @@ class Stopwatch:
     so create/dispose is very cheap.
     """
 
-    def __init__(self, start = True):
+    def __init__(self, start=True):
         """
         :param start: If ``True``, immediately start the stopwatch.
         :type start: bool
@@ -253,7 +253,7 @@ class Tracker:
         """
         self._timings[key] = rtime()
 
-    def diff(self, startKey, endKey, formatted = True):
+    def diff(self, startKey, endKey, formatted=True):
         """
         Get elapsed difference between two previously tracked keys.
 

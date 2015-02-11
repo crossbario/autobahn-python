@@ -105,7 +105,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
             self.waiter.set_result(None)
 
     # noinspection PyUnusedLocal
-    def _closeConnection(self, abort = False):
+    def _closeConnection(self, abort=False):
         self.transport.close()
 
     def _onOpen(self):
@@ -292,7 +292,7 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         else:
             debug_wamp = False
 
-        websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
+        websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
         kwargs['protocols'] = self._protocols
 
@@ -327,7 +327,7 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
         else:
             debug_wamp = False
 
-        websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp = debug_wamp)
+        websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
         kwargs['protocols'] = self._protocols
 

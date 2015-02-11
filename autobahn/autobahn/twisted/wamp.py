@@ -69,8 +69,8 @@ class FutureMixin:
         return future.addCallbacks(callback, errback)
 
     @staticmethod
-    def _gather_futures(futures, consume_exceptions = True):
-        return DeferredList(futures, consumeErrors = consume_exceptions)
+    def _gather_futures(futures, consume_exceptions=True):
+        return DeferredList(futures, consumeErrors=consume_exceptions)
 
 
 class ApplicationSession(FutureMixin, protocol.ApplicationSession):
@@ -99,7 +99,7 @@ class ApplicationRunner:
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra = None, debug = False, debug_wamp = False, debug_app = False):
+    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -123,7 +123,7 @@ class ApplicationRunner:
         self.debug_app = debug_app
         self.make = None
 
-    def run(self, make, start_reactor = True):
+    def run(self, make, start_reactor=True):
         """
         Run the application component.
 
@@ -153,8 +153,8 @@ class ApplicationRunner:
                 return session
 
         ## create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url = self.url,
-           debug = self.debug, debug_wamp = self.debug_wamp)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url,
+           debug=self.debug, debug_wamp=self.debug_wamp)
 
         ## start the client from a Twisted endpoint
         from twisted.internet.endpoints import clientFromString
@@ -232,7 +232,7 @@ class Application:
     creating, debugging and running WAMP application components.
     """
 
-    def __init__(self, prefix = None):
+    def __init__(self, prefix=None):
         """
 
         :param prefix: The application URI prefix to use for procedures and topics,
@@ -267,9 +267,9 @@ class Application:
         self.session = _ApplicationSession(config, self)
         return self.session
 
-    def run(self, url = u"ws://localhost:8080/ws", realm = u"realm1",
-       debug = False, debug_wamp = False, debug_app = False,
-       start_reactor = True):
+    def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1",
+       debug=False, debug_wamp=False, debug_app=False,
+       start_reactor=True):
         """
         Run the application.
 
@@ -285,10 +285,10 @@ class Application:
         :type debug_app: bool
         """
         runner = ApplicationRunner(url, realm,
-           debug = debug, debug_wamp = debug_wamp, debug_app = debug_app)
+           debug=debug, debug_wamp=debug_wamp, debug_app=debug_app)
         runner.run(self.__call__, start_reactor)
 
-    def register(self, uri = None):
+    def register(self, uri=None):
         """
         Decorator exposing a function as a remote callable procedure.
 
@@ -352,7 +352,7 @@ class Application:
             return func
         return decorator
 
-    def subscribe(self, uri = None):
+    def subscribe(self, uri=None):
         """
         Decorator attaching a function as an event handler.
 
@@ -451,8 +451,8 @@ class Service(service.MultiService):
     It can host a WAMP application component in a WAMP-over-WebSocket client
     connecting to a WAMP router.
     """
-    def __init__(self, url, realm, make, extra = None,
-                 debug = False, debug_wamp = False, debug_app = False):
+    def __init__(self, url, realm, make, extra=None,
+                 debug=False, debug_wamp=False, debug_app=False):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -498,8 +498,8 @@ class Service(service.MultiService):
             return session
 
         ## create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url = self.url,
-           debug = self.debug, debug_wamp = self.debug_wamp)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url,
+           debug=self.debug, debug_wamp=self.debug_wamp)
 
         ## setup the client from a Twisted endpoint
 

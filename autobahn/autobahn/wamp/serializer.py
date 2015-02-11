@@ -88,7 +88,7 @@ class Serializer:
         """
         return msg.serialize(self._serializer), self._serializer.BINARY
 
-    def unserialize(self, payload, isBinary = None):
+    def unserialize(self, payload, isBinary=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
         """
@@ -137,8 +137,8 @@ try:
     ##
     import ujson
     _json = ujson
-    _loads = lambda val: ujson.loads(val, precise_float = True)
-    _dumps = lambda obj: ujson.dumps(obj, double_precision = 15, ensure_ascii = False)
+    _loads = lambda val: ujson.loads(val, precise_float=True)
+    _dumps = lambda obj: ujson.dumps(obj, double_precision=15, ensure_ascii=False)
 
 except ImportError:
     ## fallback to stdlib implementation
@@ -146,7 +146,7 @@ except ImportError:
     import json
     _json = json
     _loads = json.loads
-    _dumps = lambda obj: json.dumps(obj, separators = (',', ':'), ensure_ascii = False)
+    _dumps = lambda obj: json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
 
 finally:
     class JsonObjectSerializer:
@@ -158,7 +158,7 @@ finally:
 
         BINARY = False
 
-        def __init__(self, batched = False):
+        def __init__(self, batched=False):
             """
             Ctor.
 
@@ -200,14 +200,14 @@ class JsonSerializer(Serializer):
     SERIALIZER_ID = "json"
     MIME_TYPE = "application/json"
 
-    def __init__(self, batched = False):
+    def __init__(self, batched=False):
         """
         Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
         """
-        Serializer.__init__(self, JsonObjectSerializer(batched = batched))
+        Serializer.__init__(self, JsonObjectSerializer(batched=batched))
         if batched:
             self.SERIALIZER_ID = "json.batched"
 
@@ -237,7 +237,7 @@ else:
       between strings and binary).
       """
 
-        def __init__(self, batched = False):
+        def __init__(self, batched=False):
             """
             Ctor.
 
@@ -250,7 +250,7 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
             """
-            data = msgpack.packb(obj, use_bin_type = self.ENABLE_V5)
+            data = msgpack.packb(obj, use_bin_type=self.ENABLE_V5)
             if self._batched:
                 return struct.pack("!L", len(data)) + data
             else:
@@ -276,7 +276,7 @@ else:
                     data = payload[i+4:i+4+l]
 
                     ## append parsed raw message
-                    msgs.append(msgpack.unpackb(data, encoding = 'utf-8'))
+                    msgs.append(msgpack.unpackb(data, encoding='utf-8'))
 
                     ## advance until everything consumed
                     i = i+4+l
@@ -286,7 +286,7 @@ else:
                 return msgs
 
             else:
-                return [msgpack.unpackb(payload, encoding = 'utf-8')]
+                return [msgpack.unpackb(payload, encoding='utf-8')]
 
     IObjectSerializer.register(MsgPackObjectSerializer)
 
@@ -297,14 +297,14 @@ else:
         SERIALIZER_ID = "msgpack"
         MIME_TYPE = "application/x-msgpack"
 
-        def __init__(self, batched = False):
+        def __init__(self, batched=False):
             """
             Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
             """
-            Serializer.__init__(self, MsgPackObjectSerializer(batched = batched))
+            Serializer.__init__(self, MsgPackObjectSerializer(batched=batched))
             if batched:
                 self.SERIALIZER_ID = "msgpack.batched"
 

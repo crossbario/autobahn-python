@@ -111,11 +111,11 @@ if unittest is not None:
                 self.log("add2() is invoked", a, b)
                 return a + b
 
-            def stars(nick = "somebody", stars = 0):
+            def stars(nick="somebody", stars=0):
                 self.log("stars() is invoked", nick, stars)
                 return u"{0} starred {1}x".format(nick, stars)
 
-            def orders(product, limit = 5):
+            def orders(product, limit=5):
                 self.log("orders() is invoked", product, limit)
                 return [u"Product {0}".format(i) for i in range(50)][:limit]
 
@@ -149,19 +149,19 @@ if unittest is not None:
             starred = yield self.call(u'com.arguments.stars')
             self.log("Starred 1: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', nick = u'Homer')
+            starred = yield self.call(u'com.arguments.stars', nick=u'Homer')
             self.log("Starred 2: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', stars = 5)
+            starred = yield self.call(u'com.arguments.stars', stars=5)
             self.log("Starred 3: {0}".format(starred))
 
-            starred = yield self.call(u'com.arguments.stars', nick = u'Homer', stars = 5)
+            starred = yield self.call(u'com.arguments.stars', nick=u'Homer', stars=5)
             self.log("Starred 4: {0}".format(starred))
 
             orders = yield self.call(u'com.arguments.orders', u'coffee')
             self.log("Orders 1: {0}".format(orders))
 
-            orders = yield self.call(u'com.arguments.orders', u'coffee', limit = 10)
+            orders = yield self.call(u'com.arguments.orders', u'coffee', limit=10)
             self.log("Orders 2: {0}".format(orders))
 
             arglengths = yield self.call(u'com.arguments.arglen')
@@ -170,10 +170,10 @@ if unittest is not None:
             arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3)
             self.log("Arglen 1: {0}".format(arglengths))
 
-            arglengths = yield self.call(u'com.arguments.arglen', a = 1, b = 2, c = 3)
+            arglengths = yield self.call(u'com.arguments.arglen', a=1, b=2, c=3)
             self.log("Arglen 2: {0}".format(arglengths))
 
-            arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a = 1, b = 2, c = 3)
+            arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
             self.log("Arglen 3: {0}".format(arglengths))
 
             self.log("finishing")
@@ -195,7 +195,7 @@ if unittest is not None:
             app = service.MultiService()
             for component in components:
                 c = wamp.Service(
-                   url = self.url,
+                   url=self.url,
                    extra=dict(test=self),
                    realm=self.realm,
                    make=component,

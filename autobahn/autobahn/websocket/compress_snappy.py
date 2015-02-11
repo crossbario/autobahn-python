@@ -102,8 +102,8 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         return offer
 
     def __init__(self,
-                 acceptNoContextTakeover = True,
-                 requestNoContextTakeover = False):
+                 acceptNoContextTakeover=True,
+                 requestNoContextTakeover=False):
         """
         Constructor.
 
@@ -162,8 +162,8 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
 
     def __init__(self,
                  offer,
-                 requestNoContextTakeover = False,
-                 noContextTakeover = None):
+                 requestNoContextTakeover=False,
+                 noContextTakeover=None):
         """
         Constructor.
 
@@ -308,7 +308,7 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
 
     def __init__(self,
                  response,
-                 noContextTakeover = None):
+                 noContextTakeover=None):
         """
         Constructor.
 

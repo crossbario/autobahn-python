@@ -26,7 +26,7 @@ from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
 
 
-def sleep(delay, reactor = None):
+def sleep(delay, reactor=None):
     """
     Inline sleep for use in coroutines (Twisted ``inlineCallback`` decorated functions).
 

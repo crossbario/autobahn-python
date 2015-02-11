@@ -77,7 +77,7 @@ class EndpointForwardingProtocol(Protocol):
 
 class EndpointForwardingService(service.Service):
 
-    def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor = None):
+    def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor=None):
         if reactor is None:
             from twisted.internet import reactor
         self._reactor = reactor

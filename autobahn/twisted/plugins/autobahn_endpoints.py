@@ -119,7 +119,7 @@ class AutobahnServerEndpoint(object):
         self._options = options
 
     def listen(self, protocolFactory):
-        return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, reactor = self._reactor, **self._options))
+        return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, reactor=self._reactor, **self._options))
 
 
 @implementer(IPlugin)
@@ -153,7 +153,7 @@ class AutobahnClientEndpoint(object):
         self._options = options
 
     def connect(self, protocolFactory):
-        return self._endpoint.connect(WrappingWebSocketClientFactory(protocolFactory, reactor = self._reactor, **self._options))
+        return self._endpoint.connect(WrappingWebSocketClientFactory(protocolFactory, reactor=self._reactor, **self._options))
 
 
 autobahnServerParser = AutobahnServerParser()

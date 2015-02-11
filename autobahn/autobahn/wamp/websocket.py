@@ -38,7 +38,7 @@ class WampWebSocketProtocol:
     Base class for WAMP-over-WebSocket transport mixins.
     """
 
-    def _bailout(self, code, reason = None):
+    def _bailout(self, code, reason=None):
         if self.factory.debug_wamp:
             print("Failing WAMP-over-WebSocket transport: code = {0}, reason = '{1}'".format(code, reason))
         self.failConnection(code, reason)
@@ -57,7 +57,7 @@ class WampWebSocketProtocol:
                 traceback.print_exc()
             ## Exceptions raised in onOpen are fatal ..
             reason = "WAMP Internal Error ({0})".format(e)
-            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
+            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
     def onClose(self, wasClean, code, reason):
         """
@@ -92,13 +92,13 @@ class WampWebSocketProtocol:
             if self.factory.debug_wamp:
                 traceback.print_exc()
             reason = "WAMP Protocol Error ({0})".format(e)
-            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason = reason)
+            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason=reason)
 
         except Exception as e:
             if self.factory.debug_wamp:
                 traceback.print_exc()
             reason = "WAMP Internal Error ({0})".format(e)
-            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason = reason)
+            self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
     def send(self, msg):
         """
@@ -211,7 +211,7 @@ class WampWebSocketFactory:
     Base class for WAMP-over-WebSocket transport factory mixins.
     """
 
-    def __init__(self, factory, serializers = None, debug_wamp = False):
+    def __init__(self, factory, serializers=None, debug_wamp=False):
         """
         Ctor.
 
@@ -234,7 +234,7 @@ class WampWebSocketFactory:
             ## try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
-                serializers.append(MsgPackSerializer(batched = True))
+                serializers.append(MsgPackSerializer(batched=True))
                 serializers.append(MsgPackSerializer())
             except ImportError:
                 pass
@@ -242,7 +242,7 @@ class WampWebSocketFactory:
             ## try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
-                serializers.append(JsonSerializer(batched = True))
+                serializers.append(JsonSerializer(batched=True))
                 serializers.append(JsonSerializer())
             except ImportError:
                 pass

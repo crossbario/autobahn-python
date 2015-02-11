@@ -22,7 +22,7 @@ __all__ = (
 )
 
 
-def install_optimal_reactor(verbose = False):
+def install_optimal_reactor(verbose=False):
     """
     Try to install the optimal Twisted reactor for platform.
 
@@ -103,7 +103,7 @@ def install_optimal_reactor(verbose = False):
             print("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
 
 
-def install_reactor(explicitReactor = None, verbose = False):
+def install_reactor(explicitReactor=None, verbose=False):
     """
     Install Twisted reactor.
 

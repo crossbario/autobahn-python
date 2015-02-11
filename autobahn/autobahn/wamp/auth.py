@@ -34,7 +34,7 @@ import time
 import binascii
 
 
-def generate_totp_secret(length = 10):
+def generate_totp_secret(length=10):
     """
     Generates a new Base32 encoded, random secret.
 
@@ -51,7 +51,7 @@ def generate_totp_secret(length = 10):
     return base64.b32encode(os.urandom(length))
 
 
-def compute_totp(secret, offset = 0):
+def compute_totp(secret, offset=0):
     """
     Computes the current TOTP code.
 
@@ -130,7 +130,7 @@ else:
         return ''.join(map(chr, buf))[:keylen]
 
 
-def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
+def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     """
     Returns a binary digest for the PBKDF2 hash algorithm of ``data``
     with the given ``salt``. It iterates ``iterations`` time and produces a
@@ -158,7 +158,7 @@ def pbkdf2(data, salt, iterations = 1000, keylen = 32, hashfunc = None):
     return _pbkdf2(data, salt, iterations, keylen, hashfunc or hashlib.sha256)
 
 
-def derive_key(secret, salt, iterations = 1000, keylen = 32):
+def derive_key(secret, salt, iterations=1000, keylen=32):
     """
     Computes a derived cryptographic key from a password according to PBKDF2.
 
@@ -189,7 +189,7 @@ WCS_SECRET_CHARSET = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
 """
 
-def generate_wcs(length = 14):
+def generate_wcs(length=14):
     """
     Generates a new random secret for use with WAMP-CRA.
 

@@ -70,7 +70,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendMessage(self, payload, isBinary = False, fragmentSize = None, sync = False, doNotCompress = False):
+    def sendMessage(self, payload, isBinary=False, fragmentSize=None, sync=False, doNotCompress=False):
         """
         Send a WebSocket message over the connection to the peer.
 
@@ -108,7 +108,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendClose(self, code = None, reason = None):
+    def sendClose(self, code=None, reason=None):
         """
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
@@ -144,7 +144,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendPing(self, payload = None):
+    def sendPing(self, payload=None):
         """
         Send a WebSocket ping to the peer.
 
@@ -166,7 +166,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendPong(self, payload = None):
+    def sendPong(self, payload=None):
         """
         Send a WebSocket pong to the peer.
 
@@ -219,7 +219,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         """
 
     @abc.abstractmethod
-    def beginMessage(self, isBinary = False, doNotCompress = False):
+    def beginMessage(self, isBinary=False, doNotCompress=False):
         """
         Begin sending a new WebSocket message.
 
@@ -233,7 +233,7 @@ class IWebSocketChannelFrameApi(IWebSocketChannel):
         """
 
     @abc.abstractmethod
-    def sendMessageFrame(self, payload, sync = False):
+    def sendMessageFrame(self, payload, sync=False):
         """
         When a message has been previously begun, send a complete message frame in one go.
 
@@ -300,7 +300,7 @@ class IWebSocketChannelStreamingApi(IWebSocketChannelFrameApi):
         """
 
     @abc.abstractmethod
-    def sendMessageFrameData(self, payload, sync = False):
+    def sendMessageFrameData(self, payload, sync=False):
         """
         Send out data when within a message frame (message was begun, frame was begun).
         Note that the frame is automatically ended when enough data has been sent.

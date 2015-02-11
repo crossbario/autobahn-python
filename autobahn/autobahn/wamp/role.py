@@ -51,8 +51,8 @@ class RoleFeatures(util.EqualityMixin):
 class RoleCommonPubSubFeatures(RoleFeatures):
 
     def __init__(self,
-                 publisher_identification = None,
-                 partitioned_pubsub = None):
+                 publisher_identification=None,
+                 partitioned_pubsub=None):
 
         self.publisher_identification = publisher_identification
         self.partitioned_pubsub = partitioned_pubsub
@@ -63,13 +63,13 @@ class RoleBrokerFeatures(RoleCommonPubSubFeatures):
     ROLE = u'broker'
 
     def __init__(self,
-                 subscriber_blackwhite_listing = None,
-                 publisher_exclusion = None,
-                 publication_trustlevels = None,
-                 pattern_based_subscription = None,
-                 subscriber_metaevents = None,
-                 subscriber_list = None,
-                 event_history = None,
+                 subscriber_blackwhite_listing=None,
+                 publisher_exclusion=None,
+                 publication_trustlevels=None,
+                 pattern_based_subscription=None,
+                 subscriber_metaevents=None,
+                 subscriber_list=None,
+                 event_history=None,
                  **kwargs):
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
@@ -87,11 +87,11 @@ class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
     ROLE = u'subscriber'
 
     def __init__(self,
-                 publication_trustlevels = None,
-                 pattern_based_subscription = None,
-                 subscriber_metaevents = None,
-                 subscriber_list = None,
-                 event_history = None,
+                 publication_trustlevels=None,
+                 pattern_based_subscription=None,
+                 subscriber_metaevents=None,
+                 subscriber_list=None,
+                 event_history=None,
                  **kwargs):
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
@@ -107,8 +107,8 @@ class RolePublisherFeatures(RoleCommonPubSubFeatures):
     ROLE = u'publisher'
 
     def __init__(self,
-                 subscriber_blackwhite_listing = None,
-                 publisher_exclusion = None,
+                 subscriber_blackwhite_listing=None,
+                 publisher_exclusion=None,
                  **kwargs):
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
@@ -119,11 +119,11 @@ class RolePublisherFeatures(RoleCommonPubSubFeatures):
 class RoleCommonRpcFeatures(RoleFeatures):
 
     def __init__(self,
-                 caller_identification = None,
-                 partitioned_rpc = None,
-                 call_timeout = None,
-                 call_canceling = None,
-                 progressive_call_results = None):
+                 caller_identification=None,
+                 partitioned_rpc=None,
+                 call_timeout=None,
+                 call_canceling=None,
+                 progressive_call_results=None):
         self.caller_identification = caller_identification
         self.partitioned_rpc = partitioned_rpc
         self.call_timeout = call_timeout
@@ -136,10 +136,10 @@ class RoleDealerFeatures(RoleCommonRpcFeatures):
     ROLE = u'dealer'
 
     def __init__(self,
-                 callee_blackwhite_listing = None,
-                 caller_exclusion = None,
-                 call_trustlevels = None,
-                 pattern_based_registration = None,
+                 callee_blackwhite_listing=None,
+                 caller_exclusion=None,
+                 call_trustlevels=None,
+                 pattern_based_registration=None,
                  **kwargs):
         self.callee_blackwhite_listing = callee_blackwhite_listing
         self.caller_exclusion = caller_exclusion
@@ -154,8 +154,8 @@ class RoleCallerFeatures(RoleCommonRpcFeatures):
     ROLE = u'caller'
 
     def __init__(self,
-                 callee_blackwhite_listing = None,
-                 caller_exclusion = None,
+                 callee_blackwhite_listing=None,
+                 caller_exclusion=None,
                  **kwargs):
         self.callee_blackwhite_listing = callee_blackwhite_listing
         self.caller_exclusion = caller_exclusion
@@ -168,8 +168,8 @@ class RoleCalleeFeatures(RoleCommonRpcFeatures):
     ROLE = u'callee'
 
     def __init__(self,
-                 call_trustlevels = None,
-                 pattern_based_registration = None,
+                 call_trustlevels=None,
+                 pattern_based_registration=None,
                  **kwargs):
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration  
