@@ -18,7 +18,7 @@
 
 from __future__ import absolute_import
 
-#from twisted.trial import unittest
+# from twisted.trial import unittest
 import unittest
 import platform
 
@@ -30,7 +30,6 @@ import hashlib
 from autobahn.wamp import auth
 
 # these test vectors are all for HMAC-SHA1
-##
 PBKDF2_TEST_VECTORS = [
     # From RFC 6070
     (b'password', b'salt', 1, 20, u'0c60c80f961f0e71f3a9b524af6012062fe037a6'),
@@ -49,7 +48,6 @@ PBKDF2_TEST_VECTORS = [
 if platform.python_implementation() != 'PyPy':
 
     # the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
-    ##
     PBKDF2_TEST_VECTORS.extend(
         [
             # From RFC 6070
@@ -58,7 +56,7 @@ if platform.python_implementation() != 'PyPy':
             (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
 
             # This one is from the RFC but it just takes for ages
-            #(b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
+            # (b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
         ]
     )
 

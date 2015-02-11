@@ -24,7 +24,7 @@ if sys.version_info < (2, 7):
     # noinspection PyUnresolvedReferences
     import unittest2 as unittest
 else:
-    #from twisted.trial import unittest
+    # from twisted.trial import unittest
     import unittest
 
 from autobahn import wamp
@@ -523,7 +523,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         session.define(ProductInactiveError)
 
         for test in [
-            #(u"com.myapp.foo.error", [], {}, KwException),
+            # (u"com.myapp.foo.error", [], {}, KwException),
             (u"com.myapp.error", [], {}, AppError),
             (u"com.myapp.error", ["you are doing it wrong"], {}, AppError),
             (u"com.myapp.error", ["you are doing it wrong", 1, 2, 3], {}, AppError),

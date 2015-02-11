@@ -78,7 +78,7 @@ class IMessage(object):
         :returns: list -- The serialized raw message.
         """
 
-    #@abc.abstractstaticmethod ## FIXME: this is Python 3 only
+    # @abc.abstractstaticmethod ## FIXME: this is Python 3 only
     # noinspection PyMethodParameters
     def parse(wmsg):
         """

@@ -891,7 +891,7 @@ class ApplicationSession(BaseSession):
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
         #   self._transport.send(cancel_msg)
-        #d = Deferred(canceller)
+        # d = Deferred(canceller)
         d = self._create_future()
         self._call_reqs[request] = d, opts
 

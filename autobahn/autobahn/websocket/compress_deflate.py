@@ -79,16 +79,13 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         """
 
         # extension parameter defaults
-        ##
         acceptMaxWindowBits = False
         acceptNoContextTakeover = True
         # acceptNoContextTakeover = False # FIXME: this may change in draft
         requestMaxWindowBits = 0
         requestNoContextTakeover = False
 
-        ##
         # verify/parse client ("client-to-server direction") parameters of permessage-deflate offer
-        ##
         for p in params:
 
             if len(params[p]) > 1:
@@ -100,10 +97,9 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                 ##
                 # see: https://tools.ietf.org/html/draft-ietf-hybi-permessage-compression-18
                 # 8.1.2.2. client_max_window_bits
-                ##
+
                 # ".. This parameter has no value or a decimal integer value without
                 # leading zeroes between 8 to 15 inclusive ..""
-                ##
 
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
@@ -116,7 +112,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                             raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                         else:
                             # FIXME (maybe): possibly forward/process the client hint!
-                            #acceptMaxWindowBits = val
+                            # acceptMaxWindowBits = val
                             acceptMaxWindowBits = True
                 else:
                     acceptMaxWindowBits = True
@@ -586,7 +582,6 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         # compressobj([level[, method[, wbits[, memlevel[, strategy]]]]])
         # http://bugs.python.org/issue19278
         # http://hg.python.org/cpython/rev/c54c8e71b79a
-        #
         if self._isServer:
             if self._compressor is None or self.server_no_context_takeover:
                 self._compressor = zlib.compressobj(zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -self.server_max_window_bits, self.mem_level)
@@ -615,5 +610,4 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     def endDecompressMessage(self):
         # Eat stripped LEN and NLEN field of a non-compressed block added
         # for Z_SYNC_FLUSH.
-        ##
         self._decompressor.decompress(b'\x00\x00\xff\xff')

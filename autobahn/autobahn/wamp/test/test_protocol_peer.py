@@ -24,7 +24,7 @@ if sys.version_info < (2, 7):
     # noinspection PyUnresolvedReferences
     import unittest2 as unittest
 else:
-    #from twisted.trial import unittest
+    # from twisted.trial import unittest
     import unittest
 
 from autobahn import wamp
@@ -50,7 +50,6 @@ class TestPeerExceptions(unittest.TestCase):
         session.define(AppError2)
 
         # map defined errors to user exceptions
-        ##
         emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error1')
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, AppError1)
@@ -62,7 +61,6 @@ class TestPeerExceptions(unittest.TestCase):
         self.assertEqual(exc.args, ())
 
         # map undefined error to (generic) exception
-        ##
         emsg = message.Error(message.Call.MESSAGE_TYPE, 123456, u'com.myapp.error3')
         exc = session._exception_from_message(emsg)
         self.assertIsInstance(exc, exception.ApplicationError)

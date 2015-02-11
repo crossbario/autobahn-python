@@ -23,7 +23,7 @@ import os
 if os.environ.get('USE_TWISTED', False):
 
     from twisted.trial import unittest
-    #import unittest
+    # import unittest
 
     from twisted.internet.defer import inlineCallbacks
 

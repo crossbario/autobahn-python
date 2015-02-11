@@ -69,7 +69,6 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def connectionMade(self):
         # the peer we are connected to
-        ##
         try:
             peer = self.transport.getPeer()
         except AttributeError:
@@ -155,7 +154,6 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     def _onConnect(self, request):
         # onConnect() will return the selected subprotocol or None
         # or a pair (protocol, headers) or raise an HttpException
-        ##
         res = maybeDeferred(self.onConnect, request)
 
         res.addCallback(self.succeedHandshake)
@@ -274,7 +272,6 @@ class WrappingWebSocketAdapter:
     def onConnect(self, requestOrResponse):
 
         # Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
-        ##
         if isinstance(requestOrResponse, protocol.ConnectionRequest):
             request = requestOrResponse
             for p in request.protocols:
@@ -303,7 +300,7 @@ class WrappingWebSocketAdapter:
                     payload = b64decode(payload)
                 except Exception as e:
                     self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {0}".format(e))
-            #print("forwarding payload: {0}".format(binascii.hexlify(payload)))
+            # print("forwarding payload: {0}".format(binascii.hexlify(payload)))
             self._proto.dataReceived(payload)
 
     # noinspection PyUnusedLocal
@@ -311,7 +308,7 @@ class WrappingWebSocketAdapter:
         self._proto.connectionLost(None)
 
     def write(self, data):
-        #print("sending payload: {0}".format(binascii.hexlify(data)))
+        # print("sending payload: {0}".format(binascii.hexlify(data)))
         # part of ITransport
         assert(type(data) == bytes)
         if self._binaryMode:
@@ -390,7 +387,6 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
 
         if enableCompression:
             # Enable WebSocket extension "permessage-deflate".
-            ##
 
             # Function to accept offers from the client ..
             def accept(offers):
@@ -456,7 +452,6 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
 
         if enableCompression:
             # Enable WebSocket extension "permessage-deflate".
-            ##
 
             # The extensions offered to the server ..
             offers = [PerMessageDeflateOffer()]
