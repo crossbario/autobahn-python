@@ -267,6 +267,7 @@ def _lookupWsSupport(ua):
 
 UA_DETECT_WS_SUPPORT_DB = {}
 
+
 def lookupWsSupport(ua, debug=True):
     """
     Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,

@@ -85,13 +85,13 @@ except ImportError:
             self.mskarray = [array('B'), array('B'), array('B'), array('B')]
             if six.PY3:
                 for j in xrange(4):
-                    self.mskarray[0].append(mask[ j & 3])
+                    self.mskarray[0].append(mask[j & 3])
                     self.mskarray[1].append(mask[(j + 1) & 3])
                     self.mskarray[2].append(mask[(j + 2) & 3])
                     self.mskarray[3].append(mask[(j + 3) & 3])
             else:
                 for j in xrange(4):
-                    self.mskarray[0].append(ord(mask[ j & 3]))
+                    self.mskarray[0].append(ord(mask[j & 3]))
                     self.mskarray[1].append(ord(mask[(j + 1) & 3]))
                     self.mskarray[2].append(ord(mask[(j + 2) & 3]))
                     self.mskarray[3].append(ord(mask[(j + 3) & 3]))

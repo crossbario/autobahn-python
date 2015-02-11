@@ -189,6 +189,7 @@ WCS_SECRET_CHARSET = u"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234
 The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secrets.
 """
 
+
 def generate_wcs(length=14):
     """
     Generates a new random secret for use with WAMP-CRA.

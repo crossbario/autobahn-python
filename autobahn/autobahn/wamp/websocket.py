@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 
 
-__all__= ['WampWebSocketServerProtocol',
+__all__ = ['WampWebSocketServerProtocol',
           'WampWebSocketClientProtocol',
           'WampWebSocketServerFactory',
           'WampWebSocketClientFactory']

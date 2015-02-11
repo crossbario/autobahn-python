@@ -1651,7 +1651,7 @@ class WebSocketProtocol:
                 else:
                     mask_len = 0
 
-                if frame_payload_len1 <  126:
+                if frame_payload_len1 < 126:
                     frame_header_len = 2 + mask_len
                 elif frame_payload_len1 == 126:
                     frame_header_len = 2 + 2 + mask_len
@@ -3012,7 +3012,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 if len(self.data) < end_of_header + 4 + 8:
                     return
                 else:
-                    key3 =  self.data[end_of_header + 4:end_of_header + 4 + 8]
+                    key3 = self.data[end_of_header + 4:end_of_header + 4 + 8]
                     if self.debug:
                         self.factory._log("received HTTP request body containing key3 for Hixie-76: %s" % key3)
 
@@ -3289,7 +3289,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         Send out HTTP error response.
         """
-        response  = "HTTP/1.1 {0} {1}\x0d\x0a".format(code, reason)
+        response = "HTTP/1.1 {0} {1}\x0d\x0a".format(code, reason)
         if responseHeaders:
             for h in responseHeaders:
                 response += "{0}: {1}\x0d\x0a".format(h[0], h[1])
@@ -3301,7 +3301,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         Send HTML page HTTP response.
         """
         responseBody = html.encode('utf8')
-        response  = "HTTP/1.1 %d %s\x0d\x0a" % (http.OK[0], http.OK[1])
+        response = "HTTP/1.1 %d %s\x0d\x0a" % (http.OK[0], http.OK[1])
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
         response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
@@ -3314,7 +3314,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         Send HTTP Redirect (303) response.
         """
-        response  = "HTTP/1.1 %d\x0d\x0a" % http.SEE_OTHER[0]
+        response = "HTTP/1.1 %d\x0d\x0a" % http.SEE_OTHER[0]
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
         response += "Location: %s\x0d\x0a" % url
@@ -3728,7 +3728,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # construct proxy connect HTTP request
         ##
-        request  = "CONNECT %s:%d HTTP/1.1\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
+        request = "CONNECT %s:%d HTTP/1.1\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
         request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
         request += "\x0d\x0a"
 
@@ -3844,7 +3844,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # construct WS opening handshake HTTP header
         ##
-        request  = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource
+        request = "GET %s HTTP/1.1\x0d\x0a" % self.factory.resource
 
         if self.factory.useragent is not None and self.factory.useragent != "":
             request += "User-Agent: %s\x0d\x0a" % self.factory.useragent
@@ -4096,7 +4096,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 if len(self.data) < end_of_header + 4 + 16:
                     return
                 else:
-                    challenge_response =  self.data[end_of_header + 4:end_of_header + 4 + 16]
+                    challenge_response = self.data[end_of_header + 4:end_of_header + 4 + 16]
                     if challenge_response != self.websocket_expected_challenge_response:
                         return self.failHandshake("invalid challenge response received from server (Hixie-76)")
 

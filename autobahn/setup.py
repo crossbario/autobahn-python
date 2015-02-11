@@ -53,7 +53,7 @@ More information:
 # See: http://stackoverflow.com/a/7071358/884770
 ##
 import re
-VERSIONFILE="autobahn/__init__.py"
+VERSIONFILE = "autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
