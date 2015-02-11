@@ -50,3 +50,12 @@ test2:
 #	trial autobahn.wamp.test.test_protocol_peer
 #	trial autobahn.wamp.test.test_serializer
 #	trial autobahn.wamp.test.test_uri_pattern
+
+pyflakes:
+	pyflakes .
+
+pep8:
+	pep8 --statistics -qq
+
+autopep8:
+	autopep8 -ri --aggressive .

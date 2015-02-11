@@ -55,166 +55,166 @@ UTF8_REJECT = 1
 ## use Cython implementation of UTF8 validator if available
 ##
 try:
-   from wsaccel.utf8validator import Utf8Validator
+    from wsaccel.utf8validator import Utf8Validator
 
 except ImportError:
-   ##
-   ## Fallback to pure Python implementation - also for PyPy.
-   ##
-   ## Do NOT touch this code unless you know what you are doing!
-   ## https://github.com/oberstet/scratchbox/tree/master/python/utf8
-   ##
+    ##
+    ## Fallback to pure Python implementation - also for PyPy.
+    ##
+    ## Do NOT touch this code unless you know what you are doing!
+    ## https://github.com/oberstet/scratchbox/tree/master/python/utf8
+    ##
 
-   import six
+    import six
 
-   if six.PY3:
+    if six.PY3:
 
-      ## Python 3 and above
+        ## Python 3 and above
 
-      ## convert DFA table to bytes (performance)
-      UTF8VALIDATOR_DFA_S = bytes(UTF8VALIDATOR_DFA)
+        ## convert DFA table to bytes (performance)
+        UTF8VALIDATOR_DFA_S = bytes(UTF8VALIDATOR_DFA)
 
-      class Utf8Validator:
-         """
-         Incremental UTF-8 validator with constant memory consumption (minimal state).
-
-         Implements the algorithm "Flexible and Economical UTF-8 Decoder" by
-         Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
-         """
-
-         def __init__(self):
-            self.reset()
-
-         def decode(self, b):
+        class Utf8Validator:
             """
-            Eat one UTF-8 octet, and validate on the fly.
+            Incremental UTF-8 validator with constant memory consumption (minimal state).
 
-            Returns ``UTF8_ACCEPT`` when enough octets have been consumed, in which case
-            ``self.codepoint`` contains the decoded Unicode code point.
-
-            Returns ``UTF8_REJECT`` when invalid UTF-8 was encountered.
-
-            Returns some other positive integer when more octets need to be eaten.
+            Implements the algorithm "Flexible and Economical UTF-8 Decoder" by
+            Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
             """
-            tt = UTF8VALIDATOR_DFA_S[b]
-            if self.state != UTF8_ACCEPT:
-               self.codepoint = (b & 0x3f) | (self.codepoint << 6)
-            else:
-               self.codepoint = (0xff >> tt) & b
-            self.state = UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt]
-            return self.state
 
-         def reset(self):
+            def __init__(self):
+                self.reset()
+
+            def decode(self, b):
+                """
+                Eat one UTF-8 octet, and validate on the fly.
+
+                Returns ``UTF8_ACCEPT`` when enough octets have been consumed, in which case
+                ``self.codepoint`` contains the decoded Unicode code point.
+
+                Returns ``UTF8_REJECT`` when invalid UTF-8 was encountered.
+
+                Returns some other positive integer when more octets need to be eaten.
+                """
+                tt = UTF8VALIDATOR_DFA_S[b]
+                if self.state != UTF8_ACCEPT:
+                    self.codepoint = (b & 0x3f) | (self.codepoint << 6)
+                else:
+                    self.codepoint = (0xff >> tt) & b
+                self.state = UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt]
+                return self.state
+
+            def reset(self):
+                """
+                Reset validator to start new incremental UTF-8 decode/validation.
+                """
+                self.state = UTF8_ACCEPT # the empty string is valid UTF8
+                self.codepoint = 0
+                self.i = 0
+
+            def validate(self, ba):
+                """
+                Incrementally validate a chunk of bytes provided as string.
+
+                Will return a quad ``(valid?, endsOnCodePoint?, currentIndex, totalIndex)``.
+
+                As soon as an octet is encountered which renders the octet sequence
+                invalid, a quad with ``valid? == False`` is returned. ``currentIndex`` returns
+                the index within the currently consumed chunk, and ``totalIndex`` the
+                index within the total consumed sequence that was the point of bail out.
+                When ``valid? == True``, currentIndex will be ``len(ba)`` and ``totalIndex`` the
+                total amount of consumed bytes.
+                """
+                ##
+                ## The code here is written for optimal JITting in PyPy, not for best
+                ## readability by your grandma or particular elegance. Do NOT touch!
+                ##
+                l = len(ba)
+                i = 0
+                state = self.state
+                while i < l:
+                    ## optimized version of decode(), since we are not interested in actual code points
+                    state = UTF8VALIDATOR_DFA_S[256 + (state << 4) + UTF8VALIDATOR_DFA_S[ba[i]]]
+                    if state == UTF8_REJECT:
+                        self.state = state
+                        self.i += i
+                        return False, False, i, self.i
+                    i += 1
+                self.state = state
+                self.i += l
+                return True, state == UTF8_ACCEPT, l, self.i
+
+    else:
+
+        ## convert DFA table to string (performance)
+        UTF8VALIDATOR_DFA_S = ''.join([chr(c) for c in UTF8VALIDATOR_DFA])
+
+        class Utf8Validator:
             """
-            Reset validator to start new incremental UTF-8 decode/validation.
+            Incremental UTF-8 validator with constant memory consumption (minimal state).
+
+            Implements the algorithm "Flexible and Economical UTF-8 Decoder" by
+            Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
             """
-            self.state = UTF8_ACCEPT # the empty string is valid UTF8
-            self.codepoint = 0
-            self.i = 0
 
-         def validate(self, ba):
-            """
-            Incrementally validate a chunk of bytes provided as string.
+            def __init__(self):
+                self.reset()
 
-            Will return a quad ``(valid?, endsOnCodePoint?, currentIndex, totalIndex)``.
+            def decode(self, b):
+                """
+                Eat one UTF-8 octet, and validate on the fly.
 
-            As soon as an octet is encountered which renders the octet sequence
-            invalid, a quad with ``valid? == False`` is returned. ``currentIndex`` returns
-            the index within the currently consumed chunk, and ``totalIndex`` the
-            index within the total consumed sequence that was the point of bail out.
-            When ``valid? == True``, currentIndex will be ``len(ba)`` and ``totalIndex`` the
-            total amount of consumed bytes.
-            """
-            ##
-            ## The code here is written for optimal JITting in PyPy, not for best
-            ## readability by your grandma or particular elegance. Do NOT touch!
-            ##
-            l = len(ba)
-            i = 0
-            state = self.state
-            while i < l:
-               ## optimized version of decode(), since we are not interested in actual code points
-               state = UTF8VALIDATOR_DFA_S[256 + (state << 4) + UTF8VALIDATOR_DFA_S[ba[i]]]
-               if state == UTF8_REJECT:
-                  self.state = state
-                  self.i += i
-                  return False, False, i, self.i
-               i += 1
-            self.state = state
-            self.i += l
-            return True, state == UTF8_ACCEPT, l, self.i
+                Returns ``UTF8_ACCEPT`` when enough octets have been consumed, in which case
+                ``self.codepoint`` contains the decoded Unicode code point.
 
-   else:
+                Returns ``UTF8_REJECT`` when invalid UTF-8 was encountered.
 
-      ## convert DFA table to string (performance)
-      UTF8VALIDATOR_DFA_S = ''.join([chr(c) for c in UTF8VALIDATOR_DFA])
+                Returns some other positive integer when more octets need to be eaten.
+                """
+                tt = ord(UTF8VALIDATOR_DFA_S[b])
+                if self.state != UTF8_ACCEPT:
+                    self.codepoint = (b & 0x3f) | (self.codepoint << 6)
+                else:
+                    self.codepoint = (0xff >> tt) & b
+                self.state = ord(UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt])
+                return self.state
 
-      class Utf8Validator:
-         """
-         Incremental UTF-8 validator with constant memory consumption (minimal state).
+            def reset(self):
+                """
+                Reset validator to start new incremental UTF-8 decode/validation.
+                """
+                self.state = UTF8_ACCEPT # the empty string is valid UTF8
+                self.codepoint = 0
+                self.i = 0
 
-         Implements the algorithm "Flexible and Economical UTF-8 Decoder" by
-         Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
-         """
+            def validate(self, ba):
+                """
+                Incrementally validate a chunk of bytes provided as string.
 
-         def __init__(self):
-            self.reset()
+                Will return a quad ``(valid?, endsOnCodePoint?, currentIndex, totalIndex)``.
 
-         def decode(self, b):
-            """
-            Eat one UTF-8 octet, and validate on the fly.
-
-            Returns ``UTF8_ACCEPT`` when enough octets have been consumed, in which case
-            ``self.codepoint`` contains the decoded Unicode code point.
-
-            Returns ``UTF8_REJECT`` when invalid UTF-8 was encountered.
-
-            Returns some other positive integer when more octets need to be eaten.
-            """
-            tt = ord(UTF8VALIDATOR_DFA_S[b])
-            if self.state != UTF8_ACCEPT:
-               self.codepoint = (b & 0x3f) | (self.codepoint << 6)
-            else:
-               self.codepoint = (0xff >> tt) & b
-            self.state = ord(UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt])
-            return self.state
-
-         def reset(self):
-            """
-            Reset validator to start new incremental UTF-8 decode/validation.
-            """
-            self.state = UTF8_ACCEPT # the empty string is valid UTF8
-            self.codepoint = 0
-            self.i = 0
-
-         def validate(self, ba):
-            """
-            Incrementally validate a chunk of bytes provided as string.
-
-            Will return a quad ``(valid?, endsOnCodePoint?, currentIndex, totalIndex)``.
-
-            As soon as an octet is encountered which renders the octet sequence
-            invalid, a quad with ``valid? == False`` is returned. ``currentIndex`` returns
-            the index within the currently consumed chunk, and ``totalIndex`` the
-            index within the total consumed sequence that was the point of bail out.
-            When ``valid? == True``, currentIndex will be ``len(ba)`` and ``totalIndex`` the
-            total amount of consumed bytes.
-            """
-            ##
-            ## The code here is written for optimal JITting in PyPy, not for best
-            ## readability by your grandma or particular elegance. Do NOT touch!
-            ##
-            l = len(ba)
-            i = 0
-            state = self.state
-            while i < l:
-               ## optimized version of decode(), since we are not interested in actual code points
-               state = ord(UTF8VALIDATOR_DFA_S[256 + (state << 4) + ord(UTF8VALIDATOR_DFA_S[ord(ba[i])])])
-               if state == UTF8_REJECT:
-                  self.state = state
-                  self.i += i
-                  return False, False, i, self.i
-               i += 1
-            self.state = state
-            self.i += l
-            return True, state == UTF8_ACCEPT, l, self.i
+                As soon as an octet is encountered which renders the octet sequence
+                invalid, a quad with ``valid? == False`` is returned. ``currentIndex`` returns
+                the index within the currently consumed chunk, and ``totalIndex`` the
+                index within the total consumed sequence that was the point of bail out.
+                When ``valid? == True``, currentIndex will be ``len(ba)`` and ``totalIndex`` the
+                total amount of consumed bytes.
+                """
+                ##
+                ## The code here is written for optimal JITting in PyPy, not for best
+                ## readability by your grandma or particular elegance. Do NOT touch!
+                ##
+                l = len(ba)
+                i = 0
+                state = self.state
+                while i < l:
+                    ## optimized version of decode(), since we are not interested in actual code points
+                    state = ord(UTF8VALIDATOR_DFA_S[256 + (state << 4) + ord(UTF8VALIDATOR_DFA_S[ord(ba[i])])])
+                    if state == UTF8_REJECT:
+                        self.state = state
+                        self.i += i
+                        return False, False, i, self.i
+                    i += 1
+                self.state = state
+                self.i += l
+                return True, state == UTF8_ACCEPT, l, self.i

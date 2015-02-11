@@ -54,49 +54,49 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 ## include "permessage-bzip2" classes if bzip2 is available
 ##
 try:
-   import bz2
+    import bz2
 except ImportError:
-   bz2 = None
+    bz2 = None
 else:
-   from autobahn.websocket.compress_bzip2 import *
+    from autobahn.websocket.compress_bzip2 import *
 
-   PMCE = {
-      'Offer': PerMessageBzip2Offer,
-      'OfferAccept': PerMessageBzip2OfferAccept,
-      'Response': PerMessageBzip2Response,
-      'ResponseAccept': PerMessageBzip2ResponseAccept,
-      'PMCE': PerMessageBzip2
-   }
-   PERMESSAGE_COMPRESSION_EXTENSION[PerMessageBzip2Mixin.EXTENSION_NAME] = PMCE
+    PMCE = {
+       'Offer': PerMessageBzip2Offer,
+       'OfferAccept': PerMessageBzip2OfferAccept,
+       'Response': PerMessageBzip2Response,
+       'ResponseAccept': PerMessageBzip2ResponseAccept,
+       'PMCE': PerMessageBzip2
+    }
+    PERMESSAGE_COMPRESSION_EXTENSION[PerMessageBzip2Mixin.EXTENSION_NAME] = PMCE
 
-   __all__.extend(["PerMessageBzip2Offer",
-                   "PerMessageBzip2OfferAccept",
-                   "PerMessageBzip2Response",
-                   "PerMessageBzip2ResponseAccept",
-                   "PerMessageBzip2"])
+    __all__.extend(["PerMessageBzip2Offer",
+                    "PerMessageBzip2OfferAccept",
+                    "PerMessageBzip2Response",
+                    "PerMessageBzip2ResponseAccept",
+                    "PerMessageBzip2"])
 
 
 ## include "permessage-snappy" classes if Snappy is available
 ##
 try:
-   # noinspection PyPackageRequirements
-   import snappy
+    # noinspection PyPackageRequirements
+    import snappy
 except ImportError:
-   snappy = None
+    snappy = None
 else:
-   from autobahn.websocket.compress_snappy import *
+    from autobahn.websocket.compress_snappy import *
 
-   PMCE = {
-      'Offer': PerMessageSnappyOffer,
-      'OfferAccept': PerMessageSnappyOfferAccept,
-      'Response': PerMessageSnappyResponse,
-      'ResponseAccept': PerMessageSnappyResponseAccept,
-      'PMCE': PerMessageSnappy
-   }
-   PERMESSAGE_COMPRESSION_EXTENSION[PerMessageSnappyMixin.EXTENSION_NAME] = PMCE
+    PMCE = {
+       'Offer': PerMessageSnappyOffer,
+       'OfferAccept': PerMessageSnappyOfferAccept,
+       'Response': PerMessageSnappyResponse,
+       'ResponseAccept': PerMessageSnappyResponseAccept,
+       'PMCE': PerMessageSnappy
+    }
+    PERMESSAGE_COMPRESSION_EXTENSION[PerMessageSnappyMixin.EXTENSION_NAME] = PMCE
 
-   __all__.extend(["PerMessageSnappyOffer",
-                   "PerMessageSnappyOfferAccept",
-                   "PerMessageSnappyResponse",
-                   "PerMessageSnappyResponseAccept",
-                   "PerMessageSnappy"])
+    __all__.extend(["PerMessageSnappyOffer",
+                    "PerMessageSnappyOfferAccept",
+                    "PerMessageSnappyResponse",
+                    "PerMessageSnappyResponseAccept",
+                    "PerMessageSnappy"])

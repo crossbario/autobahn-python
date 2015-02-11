@@ -48,89 +48,89 @@ PBKDF2_TEST_VECTORS = [
 
 if platform.python_implementation() != 'PyPy':
 
-   ## the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
-   ##
-   PBKDF2_TEST_VECTORS.extend(
-      [
-         # From RFC 6070
-         (b'password', b'salt', 4096, 20, u'4b007901b765489abead49d926f721d065a429c1'),
-         (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, u'3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
-         (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
+    ## the following fails on PyPy: "RuntimeError: maximum recursion depth exceeded"
+    ##
+    PBKDF2_TEST_VECTORS.extend(
+       [
+          # From RFC 6070
+          (b'password', b'salt', 4096, 20, u'4b007901b765489abead49d926f721d065a429c1'),
+          (b'passwordPASSWORDpassword', b'saltSALTsaltSALTsaltSALTsaltSALTsalt', 4096, 25, u'3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038'),
+          (b'pass\x00word', b'sa\x00lt', 4096, 16, u'56fa6aa75548099dcc37d7f03425e0c3'),
 
-         # This one is from the RFC but it just takes for ages
-         #(b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
-      ]
-   )
+          # This one is from the RFC but it just takes for ages
+          #(b'password', b'salt', 16777216, 20, u'eefe3d61cd4da4e4e9945b3d6ba2158c2634e984'),
+       ]
+    )
 
 
 class TestWampAuthHelpers(unittest.TestCase):
 
-   def test_pbkdf2(self):
-      for tv in PBKDF2_TEST_VECTORS:
-         result = auth.pbkdf2(tv[0], tv[1], tv[2], tv[3], hashlib.sha1)
-         self.assertEqual(type(result), bytes)
-         self.assertEqual(binascii.hexlify(result).decode('ascii'), tv[4])
+    def test_pbkdf2(self):
+        for tv in PBKDF2_TEST_VECTORS:
+            result = auth.pbkdf2(tv[0], tv[1], tv[2], tv[3], hashlib.sha1)
+            self.assertEqual(type(result), bytes)
+            self.assertEqual(binascii.hexlify(result).decode('ascii'), tv[4])
 
 
-   def test_generate_totp_secret_default(self):
-      secret = auth.generate_totp_secret()
-      self.assertEqual(type(secret), bytes)
-      self.assertEqual(len(secret), 10*8/5)
+    def test_generate_totp_secret_default(self):
+        secret = auth.generate_totp_secret()
+        self.assertEqual(type(secret), bytes)
+        self.assertEqual(len(secret), 10*8/5)
 
 
-   def test_generate_totp_secret_length(self):
-      for length in [5, 10, 20, 30, 40, 50]:
-         secret = auth.generate_totp_secret(length)
-         self.assertEqual(type(secret), bytes)
-         self.assertEqual(len(secret), length*8/5)
+    def test_generate_totp_secret_length(self):
+        for length in [5, 10, 20, 30, 40, 50]:
+            secret = auth.generate_totp_secret(length)
+            self.assertEqual(type(secret), bytes)
+            self.assertEqual(len(secret), length*8/5)
 
 
-   def test_compute_totp(self):
-      pat = re.compile(b"\d{6,6}")
-      secret = b"MFRGGZDFMZTWQ2LK"
-      signature = auth.compute_totp(secret)
-      self.assertEqual(type(signature), bytes)
-      self.assertTrue(pat.match(signature) is not None)
+    def test_compute_totp(self):
+        pat = re.compile(b"\d{6,6}")
+        secret = b"MFRGGZDFMZTWQ2LK"
+        signature = auth.compute_totp(secret)
+        self.assertEqual(type(signature), bytes)
+        self.assertTrue(pat.match(signature) is not None)
 
 
-   def test_compute_totp_offset(self):
-      pat = re.compile(b"\d{6,6}")
-      secret = b"MFRGGZDFMZTWQ2LK"
-      for offset in range(-10, 10):
-         signature = auth.compute_totp(secret, offset)
-         self.assertEqual(type(signature), bytes)
-         self.assertTrue(pat.match(signature) is not None)
+    def test_compute_totp_offset(self):
+        pat = re.compile(b"\d{6,6}")
+        secret = b"MFRGGZDFMZTWQ2LK"
+        for offset in range(-10, 10):
+            signature = auth.compute_totp(secret, offset)
+            self.assertEqual(type(signature), bytes)
+            self.assertTrue(pat.match(signature) is not None)
 
 
-   def test_derive_key(self):
-      secret = u'L3L1YUE8Txlw'
-      salt = u'salt123'
-      key = auth.derive_key(secret.encode('utf8'), salt.encode('utf8'))
-      self.assertEqual(type(key), bytes)
-      self.assertEqual(key, b"qzcdsr9uu/L5hnss3kjNTRe490ETgA70ZBaB5rvnJ5Y=")
+    def test_derive_key(self):
+        secret = u'L3L1YUE8Txlw'
+        salt = u'salt123'
+        key = auth.derive_key(secret.encode('utf8'), salt.encode('utf8'))
+        self.assertEqual(type(key), bytes)
+        self.assertEqual(key, b"qzcdsr9uu/L5hnss3kjNTRe490ETgA70ZBaB5rvnJ5Y=")
 
 
-   def test_generate_wcs_default(self):
-      secret = auth.generate_wcs()
-      self.assertEqual(type(secret), bytes)
-      self.assertEqual(len(secret), 14)
+    def test_generate_wcs_default(self):
+        secret = auth.generate_wcs()
+        self.assertEqual(type(secret), bytes)
+        self.assertEqual(len(secret), 14)
 
 
-   def test_generate_wcs_length(self):
-      for length in [5, 10, 20, 30, 40, 50]:
-         secret = auth.generate_wcs(length)
-         self.assertEqual(type(secret), bytes)
-         self.assertEqual(len(secret), length)
+    def test_generate_wcs_length(self):
+        for length in [5, 10, 20, 30, 40, 50]:
+            secret = auth.generate_wcs(length)
+            self.assertEqual(type(secret), bytes)
+            self.assertEqual(len(secret), length)
 
 
-   def test_compute_wcs(self):
-      secret = u'L3L1YUE8Txlw'
-      challenge = json.dumps([1,2,3], ensure_ascii = False).encode('utf8')
-      signature = auth.compute_wcs(secret.encode('utf8'), challenge)
-      self.assertEqual(type(signature), bytes)
-      self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
+    def test_compute_wcs(self):
+        secret = u'L3L1YUE8Txlw'
+        challenge = json.dumps([1,2,3], ensure_ascii = False).encode('utf8')
+        signature = auth.compute_wcs(secret.encode('utf8'), challenge)
+        self.assertEqual(type(signature), bytes)
+        self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
 
 
 
 if __name__ == '__main__':
-   unittest.main()
+    unittest.main()

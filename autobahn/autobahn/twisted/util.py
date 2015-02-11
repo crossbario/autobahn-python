@@ -27,37 +27,37 @@ from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
 
 
 def sleep(delay, reactor = None):
-   """
-   Inline sleep for use in coroutines (Twisted ``inlineCallback`` decorated functions).
+    """
+    Inline sleep for use in coroutines (Twisted ``inlineCallback`` decorated functions).
 
-   .. seealso::
-      * `twisted.internet.defer.inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`__
-      * `twisted.internet.interfaces.IReactorTime <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorTime.html>`__
+    .. seealso::
+       * `twisted.internet.defer.inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`__
+       * `twisted.internet.interfaces.IReactorTime <http://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorTime.html>`__
 
-   :param delay: Time to sleep in seconds.
-   :type delay: float
-   :param reactor: The Twisted reactor to use.
-   :type reactor: None or provider of ``IReactorTime``.
-   """
-   if not reactor:
-      from twisted.internet import reactor
-   d = Deferred()
-   reactor.callLater(delay, d.callback, None)
-   return d
+    :param delay: Time to sleep in seconds.
+    :type delay: float
+    :param reactor: The Twisted reactor to use.
+    :type reactor: None or provider of ``IReactorTime``.
+    """
+    if not reactor:
+        from twisted.internet import reactor
+    d = Deferred()
+    reactor.callLater(delay, d.callback, None)
+    return d
 
 
 def peer2str(addr):
-   """
-   Convert a Twisted address, as returned from ``self.transport.getPeer()`` to a string
-   """
-   if isinstance(addr, IPv4Address):
-      res = "tcp4:{0}:{1}".format(addr.host, addr.port)
-   elif isinstance(addr, IPv6Address):
-      res = "tcp6:{0}:{1}".format(addr.host, addr.port)
-   elif isinstance(addr, UNIXAddress):
-      res = "unix:{0}".format(addr.name)
-   else:
-      # gracefully fallback if we can't map the peer's address
-      res = "?:{0}".format(addr)
+    """
+    Convert a Twisted address, as returned from ``self.transport.getPeer()`` to a string
+    """
+    if isinstance(addr, IPv4Address):
+        res = "tcp4:{0}:{1}".format(addr.host, addr.port)
+    elif isinstance(addr, IPv6Address):
+        res = "tcp6:{0}:{1}".format(addr.host, addr.port)
+    elif isinstance(addr, UNIXAddress):
+        res = "unix:{0}".format(addr.name)
+    else:
+        # gracefully fallback if we can't map the peer's address
+        res = "?:{0}".format(addr)
 
-   return res
+    return res

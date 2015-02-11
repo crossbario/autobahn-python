@@ -28,88 +28,88 @@ from twisted.application import service
 
 class DestEndpointForwardingProtocol(Protocol):
 
-   def connectionMade(self):
-      #print("DestEndpointForwardingProtocol.connectionMade")
-      pass
+    def connectionMade(self):
+        #print("DestEndpointForwardingProtocol.connectionMade")
+        pass
 
-   def dataReceived(self, data):
-      #print("DestEndpointForwardingProtocol.dataReceived: {0}".format(data))
-      if self.factory._sourceProtocol:
-         self.factory._sourceProtocol.transport.write(data)
+    def dataReceived(self, data):
+        #print("DestEndpointForwardingProtocol.dataReceived: {0}".format(data))
+        if self.factory._sourceProtocol:
+            self.factory._sourceProtocol.transport.write(data)
 
-   def connectionLost(self, reason):
-      #print("DestEndpointForwardingProtocol.connectionLost")
-      if self.factory._sourceProtocol:
-         self.factory._sourceProtocol.transport.loseConnection()
+    def connectionLost(self, reason):
+        #print("DestEndpointForwardingProtocol.connectionLost")
+        if self.factory._sourceProtocol:
+            self.factory._sourceProtocol.transport.loseConnection()
 
 
 
 class DestEndpointForwardingFactory(Factory):
 
-   def __init__(self, sourceProtocol):
-      self._sourceProtocol = sourceProtocol
-      self._proto = None
+    def __init__(self, sourceProtocol):
+        self._sourceProtocol = sourceProtocol
+        self._proto = None
 
-   def buildProtocol(self, addr):
-      self._proto = DestEndpointForwardingProtocol()
-      self._proto.factory = self
-      return self._proto
+    def buildProtocol(self, addr):
+        self._proto = DestEndpointForwardingProtocol()
+        self._proto.factory = self
+        return self._proto
 
 
 
 class EndpointForwardingProtocol(Protocol):
 
-   @inlineCallbacks
-   def connectionMade(self):
-      #print("EndpointForwardingProtocol.connectionMade")
-      self._destFactory = DestEndpointForwardingFactory(self)
-      self._destEndpoint = clientFromString(self.factory.service._reactor,
-                                            self.factory.service._destEndpointDescriptor)
-      self._destEndpointPort = yield self._destEndpoint.connect(self._destFactory)
+    @inlineCallbacks
+    def connectionMade(self):
+        #print("EndpointForwardingProtocol.connectionMade")
+        self._destFactory = DestEndpointForwardingFactory(self)
+        self._destEndpoint = clientFromString(self.factory.service._reactor,
+                                              self.factory.service._destEndpointDescriptor)
+        self._destEndpointPort = yield self._destEndpoint.connect(self._destFactory)
 
-   def dataReceived(self, data):
-      #print("EndpointForwardingProtocol.dataReceived: {0}".format(data))
-      if self._destFactory._proto:
-         self._destFactory._proto.transport.write(data)
+    def dataReceived(self, data):
+        #print("EndpointForwardingProtocol.dataReceived: {0}".format(data))
+        if self._destFactory._proto:
+            self._destFactory._proto.transport.write(data)
 
-   def connectionLost(self, reason):
-      #print("EndpointForwardingProtocol.connectionLost")
-      if self._destFactory._proto:
-         self._destFactory._proto.transport.loseConnection()
+    def connectionLost(self, reason):
+        #print("EndpointForwardingProtocol.connectionLost")
+        if self._destFactory._proto:
+            self._destFactory._proto.transport.loseConnection()
 
 
 
 class EndpointForwardingService(service.Service):
 
-   def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor = None):
-      if reactor is None:
-         from twisted.internet import reactor
-      self._reactor = reactor
-      self._endpointDescriptor = endpointDescriptor
-      self._destEndpointDescriptor = destEndpointDescriptor
+    def __init__(self, endpointDescriptor, destEndpointDescriptor, reactor = None):
+        if reactor is None:
+            from twisted.internet import reactor
+        self._reactor = reactor
+        self._endpointDescriptor = endpointDescriptor
+        self._destEndpointDescriptor = destEndpointDescriptor
 
-   @inlineCallbacks
-   def startService(self):
-      factory = Factory.forProtocol(EndpointForwardingProtocol)
-      factory.service = self
-      self._endpoint = serverFromString(self._reactor, self._endpointDescriptor)
-      self._endpointPort = yield self._endpoint.listen(factory)
+    @inlineCallbacks
+    def startService(self):
+        factory = Factory.forProtocol(EndpointForwardingProtocol)
+        factory.service = self
+        self._endpoint = serverFromString(self._reactor, self._endpointDescriptor)
+        self._endpointPort = yield self._endpoint.listen(factory)
 
-   def stopService(self):
-      return self._endpointPort.stopListening()
+    def stopService(self):
+        return self._endpointPort.stopListening()
 
 
 
 class Options(usage.Options):
-   synopsis = "[options]"
-   longdesc = 'Endpoint Forwarder.'
-   optParameters = [
-      ["endpoint", "e", None, "Source endpoint."],
-      ["dest_endpoint", "d", None,"Destination endpoint."]
-   ]
+    synopsis = "[options]"
+    longdesc = 'Endpoint Forwarder.'
+    optParameters = [
+       ["endpoint", "e", None, "Source endpoint."],
+       ["dest_endpoint", "d", None,"Destination endpoint."]
+    ]
 
 
 
 def makeService(config):
-   service = EndpointForwardingService(config['endpoint'], config['dest_endpoint'])
-   return service
+    service = EndpointForwardingService(config['endpoint'], config['dest_endpoint'])
+    return service

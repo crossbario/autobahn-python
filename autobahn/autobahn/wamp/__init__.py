@@ -22,39 +22,39 @@ from autobahn.wamp.uri import Pattern
 
 
 def register(uri):
-   """
-   Decorator for WAMP procedure endpoints.
-   """
-   def decorate(f):
-      assert(callable(f))
-      if not hasattr(f, '_wampuris'):
-         f._wampuris = []
-      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
-      return f
-   return decorate
+    """
+    Decorator for WAMP procedure endpoints.
+    """
+    def decorate(f):
+        assert(callable(f))
+        if not hasattr(f, '_wampuris'):
+            f._wampuris = []
+        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
+        return f
+    return decorate
 
 
 def subscribe(uri):
-   """
-   Decorator for WAMP event handlers.
-   """
-   def decorate(f):
-      assert(callable(f))
-      if not hasattr(f, '_wampuris'):
-         f._wampuris = []
-      f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
-      return f
-   return decorate
+    """
+    Decorator for WAMP event handlers.
+    """
+    def decorate(f):
+        assert(callable(f))
+        if not hasattr(f, '_wampuris'):
+            f._wampuris = []
+        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
+        return f
+    return decorate
 
 
 def error(uri):
-   """
-   Decorator for WAMP error classes.
-   """
-   def decorate(cls):
-      assert(issubclass(cls, Exception))
-      if not hasattr(cls, '_wampuris'):
-         cls._wampuris = []
-      cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
-      return cls
-   return decorate
+    """
+    Decorator for WAMP error classes.
+    """
+    def decorate(cls):
+        assert(issubclass(cls, Exception))
+        if not hasattr(cls, '_wampuris'):
+            cls._wampuris = []
+        cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
+        return cls
+    return decorate

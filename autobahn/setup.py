@@ -58,9 +58,9 @@ verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
 if mo:
-   verstr = mo.group(1)
+    verstr = mo.group(1)
 else:
-   raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
+    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
 
 
 ## Autobahn core packages
@@ -77,15 +77,15 @@ packages = [
 ]
 
 if PY3:
-   if PY33:
-      ## "Tulip"
-      asyncio_packages = ["asyncio>=0.2.1"]
-   else:
-      ## Python 3.4+ has asyncio builtin
-      asyncio_packages = []
+    if PY33:
+        ## "Tulip"
+        asyncio_packages = ["asyncio>=0.2.1"]
+    else:
+        ## Python 3.4+ has asyncio builtin
+        asyncio_packages = []
 else:
-   ## backport of asyncio
-   asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
+    ## backport of asyncio
+    asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
 
 
 ## Now install Autobahn ..
@@ -153,18 +153,18 @@ setup(
 ## wasn't already installed _before_ installing AutobahnPython
 ##
 if False:
-   try:
-      from twisted.internet import reactor
-   except ImportError:
-      pass
-   else:
-      # Make Twisted regenerate the dropin.cache, if possible. This is necessary
-      # because in a site-wide install, dropin.cache cannot be rewritten by
-      # normal users.
-      try:
-         from twisted.plugin import IPlugin, getPlugins
-         list(getPlugins(IPlugin))
-      except Exception as e:
-         print("Failed to update Twisted plugin cache: {0}".format(e))
-      else:
-         print("Twisted dropin.cache regenerated.")
+    try:
+        from twisted.internet import reactor
+    except ImportError:
+        pass
+    else:
+        # Make Twisted regenerate the dropin.cache, if possible. This is necessary
+        # because in a site-wide install, dropin.cache cannot be rewritten by
+        # normal users.
+        try:
+            from twisted.plugin import IPlugin, getPlugins
+            list(getPlugins(IPlugin))
+        except Exception as e:
+            print("Failed to update Twisted plugin cache: {0}".format(e))
+        else:
+            print("Twisted dropin.cache regenerated.")

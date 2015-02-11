@@ -215,19 +215,19 @@ NETWORK_CONNECT_TIMEOUT  = (599, "Network connect timeout error (Informal conven
 
 
 class HttpException(Exception):
-   """
-   Throw an instance of this class to deny a WebSocket connection
-   during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
-   """
+    """
+    Throw an instance of this class to deny a WebSocket connection
+    during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
+    """
 
-   def __init__(self, code, reason):
-      """
-      Constructor.
+    def __init__(self, code, reason):
+        """
+        Constructor.
 
-      :param code: HTTP error code.
-      :type code: int
-      :param reason: HTTP error reason.
-      :type reason: str
-      """
-      self.code = code
-      self.reason = reason
+        :param code: HTTP error code.
+        :type code: int
+        :param reason: HTTP error reason.
+        :type reason: str
+        """
+        self.code = code
+        self.reason = reason

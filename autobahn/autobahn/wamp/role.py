@@ -35,154 +35,154 @@ from autobahn.wamp.exception import ProtocolError
 
 class RoleFeatures(util.EqualityMixin):
 
-   ROLE = None
+    ROLE = None
 
-   def __str__(self):
-      return json.dumps(self.__dict__)
+    def __str__(self):
+        return json.dumps(self.__dict__)
 
-   def _check_all_bool(self):
-      ## check feature attributes
-      for k in self.__dict__:
-         if not k.startswith('_') and k != 'ROLE':
-            if getattr(self, k) is not None and type(getattr(self, k)) != bool:
-               raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
+    def _check_all_bool(self):
+        ## check feature attributes
+        for k in self.__dict__:
+            if not k.startswith('_') and k != 'ROLE':
+                if getattr(self, k) is not None and type(getattr(self, k)) != bool:
+                    raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
 
 
 
 class RoleCommonPubSubFeatures(RoleFeatures):
 
-   def __init__(self,
-                publisher_identification = None,
-                partitioned_pubsub = None):
+    def __init__(self,
+                 publisher_identification = None,
+                 partitioned_pubsub = None):
 
-      self.publisher_identification = publisher_identification
-      self.partitioned_pubsub = partitioned_pubsub
+        self.publisher_identification = publisher_identification
+        self.partitioned_pubsub = partitioned_pubsub
 
 
 
 class RoleBrokerFeatures(RoleCommonPubSubFeatures):
-   
-   ROLE = u'broker'
 
-   def __init__(self,
-                subscriber_blackwhite_listing = None,
-                publisher_exclusion = None,
-                publication_trustlevels = None,
-                pattern_based_subscription = None,
-                subscriber_metaevents = None,
-                subscriber_list = None,
-                event_history = None,
-                **kwargs):
-      self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
-      self.publisher_exclusion = publisher_exclusion
-      self.publication_trustlevels = publication_trustlevels
-      self.pattern_based_subscription = pattern_based_subscription
-      self.subscriber_metaevents = subscriber_metaevents
-      self.subscriber_list = subscriber_list
-      self.event_history = event_history
-      RoleCommonPubSubFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    ROLE = u'broker'
+
+    def __init__(self,
+                 subscriber_blackwhite_listing = None,
+                 publisher_exclusion = None,
+                 publication_trustlevels = None,
+                 pattern_based_subscription = None,
+                 subscriber_metaevents = None,
+                 subscriber_list = None,
+                 event_history = None,
+                 **kwargs):
+        self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
+        self.publisher_exclusion = publisher_exclusion
+        self.publication_trustlevels = publication_trustlevels
+        self.pattern_based_subscription = pattern_based_subscription
+        self.subscriber_metaevents = subscriber_metaevents
+        self.subscriber_list = subscriber_list
+        self.event_history = event_history
+        RoleCommonPubSubFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 
 class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
-   
-   ROLE = u'subscriber'
 
-   def __init__(self,
-                publication_trustlevels = None,
-                pattern_based_subscription = None,
-                subscriber_metaevents = None,
-                subscriber_list = None,
-                event_history = None,
-                **kwargs):
-      self.publication_trustlevels = publication_trustlevels
-      self.pattern_based_subscription = pattern_based_subscription
-      self.subscriber_metaevents = subscriber_metaevents
-      self.subscriber_list = subscriber_list
-      self.event_history = event_history
-      RoleCommonPubSubFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    ROLE = u'subscriber'
+
+    def __init__(self,
+                 publication_trustlevels = None,
+                 pattern_based_subscription = None,
+                 subscriber_metaevents = None,
+                 subscriber_list = None,
+                 event_history = None,
+                 **kwargs):
+        self.publication_trustlevels = publication_trustlevels
+        self.pattern_based_subscription = pattern_based_subscription
+        self.subscriber_metaevents = subscriber_metaevents
+        self.subscriber_list = subscriber_list
+        self.event_history = event_history
+        RoleCommonPubSubFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 
 class RolePublisherFeatures(RoleCommonPubSubFeatures):
-   
-   ROLE = u'publisher'
 
-   def __init__(self,
-                subscriber_blackwhite_listing = None,
-                publisher_exclusion = None,
-                **kwargs):
-      self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
-      self.publisher_exclusion = publisher_exclusion
-      RoleCommonPubSubFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    ROLE = u'publisher'
+
+    def __init__(self,
+                 subscriber_blackwhite_listing = None,
+                 publisher_exclusion = None,
+                 **kwargs):
+        self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
+        self.publisher_exclusion = publisher_exclusion
+        RoleCommonPubSubFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 
 class RoleCommonRpcFeatures(RoleFeatures):
 
-   def __init__(self,
-                caller_identification = None,
-                partitioned_rpc = None,
-                call_timeout = None,
-                call_canceling = None,
-                progressive_call_results = None):
-      self.caller_identification = caller_identification
-      self.partitioned_rpc = partitioned_rpc
-      self.call_timeout = call_timeout
-      self.call_canceling = call_canceling
-      self.progressive_call_results = progressive_call_results
+    def __init__(self,
+                 caller_identification = None,
+                 partitioned_rpc = None,
+                 call_timeout = None,
+                 call_canceling = None,
+                 progressive_call_results = None):
+        self.caller_identification = caller_identification
+        self.partitioned_rpc = partitioned_rpc
+        self.call_timeout = call_timeout
+        self.call_canceling = call_canceling
+        self.progressive_call_results = progressive_call_results
 
 
 
 class RoleDealerFeatures(RoleCommonRpcFeatures):
 
-   ROLE = u'dealer'
+    ROLE = u'dealer'
 
-   def __init__(self,
-                callee_blackwhite_listing = None,
-                caller_exclusion = None,
-                call_trustlevels = None,
-                pattern_based_registration = None,
-                **kwargs):
-      self.callee_blackwhite_listing = callee_blackwhite_listing
-      self.caller_exclusion = caller_exclusion
-      self.call_trustlevels = call_trustlevels
-      self.pattern_based_registration = pattern_based_registration  
-      RoleCommonRpcFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    def __init__(self,
+                 callee_blackwhite_listing = None,
+                 caller_exclusion = None,
+                 call_trustlevels = None,
+                 pattern_based_registration = None,
+                 **kwargs):
+        self.callee_blackwhite_listing = callee_blackwhite_listing
+        self.caller_exclusion = caller_exclusion
+        self.call_trustlevels = call_trustlevels
+        self.pattern_based_registration = pattern_based_registration  
+        RoleCommonRpcFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 
 class RoleCallerFeatures(RoleCommonRpcFeatures):
 
-   ROLE = u'caller'
+    ROLE = u'caller'
 
-   def __init__(self,
-                callee_blackwhite_listing = None,
-                caller_exclusion = None,
-                **kwargs):
-      self.callee_blackwhite_listing = callee_blackwhite_listing
-      self.caller_exclusion = caller_exclusion
-      RoleCommonRpcFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    def __init__(self,
+                 callee_blackwhite_listing = None,
+                 caller_exclusion = None,
+                 **kwargs):
+        self.callee_blackwhite_listing = callee_blackwhite_listing
+        self.caller_exclusion = caller_exclusion
+        RoleCommonRpcFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 
 class RoleCalleeFeatures(RoleCommonRpcFeatures):
 
-   ROLE = u'callee'
+    ROLE = u'callee'
 
-   def __init__(self,
-                call_trustlevels = None,
-                pattern_based_registration = None,
-                **kwargs):
-      self.call_trustlevels = call_trustlevels
-      self.pattern_based_registration = pattern_based_registration  
-      RoleCommonRpcFeatures.__init__(self, **kwargs)
-      self._check_all_bool()
+    def __init__(self,
+                 call_trustlevels = None,
+                 pattern_based_registration = None,
+                 **kwargs):
+        self.call_trustlevels = call_trustlevels
+        self.pattern_based_registration = pattern_based_registration  
+        RoleCommonRpcFeatures.__init__(self, **kwargs)
+        self._check_all_bool()
 
 
 

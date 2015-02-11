@@ -120,193 +120,193 @@ UA_HPWEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
 
 
 def _lookupWsSupport(ua):
-   ## Internet Explorer
-   ##
-   ## FIXME: handle Windows Phone
-   ##
-   if ua.find("MSIE") >= 0:
-      # IE10 has native support
-      if ua.find("MSIE 10") >= 0:
-         # native Hybi-10+
-         return True, False, True
+    ## Internet Explorer
+    ##
+    ## FIXME: handle Windows Phone
+    ##
+    if ua.find("MSIE") >= 0:
+        # IE10 has native support
+        if ua.find("MSIE 10") >= 0:
+            # native Hybi-10+
+            return True, False, True
 
-      # first, check for Google Chrome Frame
-      # http://www.chromium.org/developers/how-tos/chrome-frame-getting-started/understanding-chrome-frame-user-agent
-      if ua.find("chromeframe") >= 0:
+        # first, check for Google Chrome Frame
+        # http://www.chromium.org/developers/how-tos/chrome-frame-getting-started/understanding-chrome-frame-user-agent
+        if ua.find("chromeframe") >= 0:
 
-         r = UA_CHROMEFRAME.match(ua)
-         try:
+            r = UA_CHROMEFRAME.match(ua)
+            try:
+                v = int(r.groups()[0])
+                if v >= 14:
+                    # native Hybi-10+
+                    return True, False, True
+            except:
+                # detection problem
+                return False, False, False
+
+        # Flash fallback
+        if ua.find("MSIE 8") >= 0 or ua.find("MSIE 9") >= 0:
+            return True, True, True
+
+        # unsupported
+        return False, False, True
+
+
+    ## iOS
+    ##
+    if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
+        ## native Hixie76 (as of March 2012), no Flash, no alternative browsers
+        return True, False, True
+
+
+    ## Android
+    ##
+    if ua.find("Android") >= 0:
+
+        ## Firefox Mobile
+        ##
+        if ua.find("Firefox") >= 0:
+            # Hybi-10+ for FF Mobile 8+
+            return True, False, True
+
+        ## Opera Mobile
+        ##
+        if ua.find("Opera") >= 0:
+            # Hixie76 for Opera 11+
+            return True, False, True
+
+        ## Chrome for Android
+        ##
+        if ua.find("CrMo") >= 0:
+            # http://code.google.com/chrome/mobile/docs/faq.html
+            return True, False, True
+
+        ## Android builtin Browser (ooold WebKit)
+        ##
+        if ua.find("AppleWebKit") >= 0:
+
+            # Though we return WS = True, and Flash = True here, when the device has no actual Flash support, that
+            # will get later detected in JS. This applies to i.e. ARMv6 devices like Samsung Galaxy ACE
+
+            # builtin browser, only works via Flash
+            return True, True, True
+
+        # detection problem
+        return False, False, False
+
+
+    ## webOS
+    ##
+    if ua.find("hpwOS") >= 0 or ua.find("webos") >= 0:
+        try:
+            if ua.find("hpwOS") >= 0:
+                vv = [int(x) for x in UA_HPWEBOS.match(ua).groups()[0].split('.')]
+                if vv[0] >= 3:
+                    return True, False, True
+            elif ua.find("webos") >= 0:
+                vv = [int(x) for x in UA_WEBOS.match(ua).groups()[0].split('.')]
+                if vv[0] >= 2:
+                    return True, False, True
+        except:
+            # detection problem
+            return False, False, False
+        else:
+            # unsupported
+            return False, False, True
+
+
+    ## Opera
+    ##
+    if ua.find("Opera") >= 0:
+        # Opera 11+ has Hixie76 (needs to be manually activated though)
+        return True, False, True
+
+
+    ## Firefox
+    ##
+    if ua.find("Firefox") >= 0:
+        r = UA_FIREFOX.match(ua)
+        try:
             v = int(r.groups()[0])
-            if v >= 14:
-               # native Hybi-10+
-               return True, False, True
-         except:
+            if v >= 7:
+                # native Hybi-10+
+                return True, False, True
+            elif v >= 3:
+                # works with Flash bridge
+                return True, True, True
+            else:
+                # unsupported
+                return False, False, True
+        except:
             # detection problem
             return False, False, False
 
-      # Flash fallback
-      if ua.find("MSIE 8") >= 0 or ua.find("MSIE 9") >= 0:
-         return True, True, True
 
-      # unsupported
-      return False, False, True
+    ## Safari
+    ##
+    if ua.find("Safari") >= 0 and not ua.find("Chrome") >= 0:
 
-
-   ## iOS
-   ##
-   if ua.find("iPhone") >= 0 or ua.find("iPad") >= 0 or ua.find("iPod") >= 0:
-      ## native Hixie76 (as of March 2012), no Flash, no alternative browsers
-      return True, False, True
+        # rely on at least Hixie76
+        return True, False, True
 
 
-   ## Android
-   ##
-   if ua.find("Android") >= 0:
-
-      ## Firefox Mobile
-      ##
-      if ua.find("Firefox") >= 0:
-         # Hybi-10+ for FF Mobile 8+
-         return True, False, True
-
-      ## Opera Mobile
-      ##
-      if ua.find("Opera") >= 0:
-         # Hixie76 for Opera 11+
-         return True, False, True
-
-      ## Chrome for Android
-      ##
-      if ua.find("CrMo") >= 0:
-         # http://code.google.com/chrome/mobile/docs/faq.html
-         return True, False, True
-
-      ## Android builtin Browser (ooold WebKit)
-      ##
-      if ua.find("AppleWebKit") >= 0:
-
-         # Though we return WS = True, and Flash = True here, when the device has no actual Flash support, that
-         # will get later detected in JS. This applies to i.e. ARMv6 devices like Samsung Galaxy ACE
-
-         # builtin browser, only works via Flash
-         return True, True, True
-
-      # detection problem
-      return False, False, False
+    ## Chrome
+    ##
+    if ua.find("Chrome") >= 0:
+        r = UA_CHROME.match(ua)
+        try:
+            v = int(r.groups()[0])
+            if v >= 14:
+                # native Hybi-10+
+                return True, False, True
+            elif v >= 4:
+                # works with Flash bridge
+                return True, True, True
+            else:
+                # unsupported
+                return False, False, True
+        except:
+            # detection problem
+            return False, False, False
 
 
-   ## webOS
-   ##
-   if ua.find("hpwOS") >= 0 or ua.find("webos") >= 0:
-      try:
-         if ua.find("hpwOS") >= 0:
-            vv = [int(x) for x in UA_HPWEBOS.match(ua).groups()[0].split('.')]
-            if vv[0] >= 3:
-               return True, False, True
-         elif ua.find("webos") >= 0:
-            vv = [int(x) for x in UA_WEBOS.match(ua).groups()[0].split('.')]
-            if vv[0] >= 2:
-               return True, False, True
-      except:
-         # detection problem
-         return False, False, False
-      else:
-         # unsupported
-         return False, False, True
-
-
-   ## Opera
-   ##
-   if ua.find("Opera") >= 0:
-      # Opera 11+ has Hixie76 (needs to be manually activated though)
-      return True, False, True
-
-
-   ## Firefox
-   ##
-   if ua.find("Firefox") >= 0:
-      r = UA_FIREFOX.match(ua)
-      try:
-         v = int(r.groups()[0])
-         if v >= 7:
-            # native Hybi-10+
-            return True, False, True
-         elif v >= 3:
-            # works with Flash bridge
-            return True, True, True
-         else:
-            # unsupported
-            return False, False, True
-      except:
-         # detection problem
-         return False, False, False
-
-
-   ## Safari
-   ##
-   if ua.find("Safari") >= 0 and not ua.find("Chrome") >= 0:
-
-      # rely on at least Hixie76
-      return True, False, True
-
-
-   ## Chrome
-   ##
-   if ua.find("Chrome") >= 0:
-      r = UA_CHROME.match(ua)
-      try:
-         v = int(r.groups()[0])
-         if v >= 14:
-            # native Hybi-10+
-            return True, False, True
-         elif v >= 4:
-            # works with Flash bridge
-            return True, True, True
-         else:
-            # unsupported
-            return False, False, True
-      except:
-         # detection problem
-         return False, False, False
-
-
-   # detection problem
-   return False, False, False
+    # detection problem
+    return False, False, False
 
 
 UA_DETECT_WS_SUPPORT_DB = {}
 
 def lookupWsSupport(ua, debug = True):
-   """
-   Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
-   and if not, whether the `web-socket-js <https://github.com/gimite/web-socket-js>`__
-   Flash bridge works to polyfill that.
+    """
+    Lookup if browser supports WebSocket (Hixie76, Hybi10+, RFC6455) natively,
+    and if not, whether the `web-socket-js <https://github.com/gimite/web-socket-js>`__
+    Flash bridge works to polyfill that.
 
-   Returns a tuple of booleans ``(ws_supported, needs_flash, detected)`` where
+    Returns a tuple of booleans ``(ws_supported, needs_flash, detected)`` where
 
-      * ``ws_supported``: WebSocket is supported
-      * ``needs_flash``: Flash Bridge is needed for support
-      * ``detected`` the code has explicitly mapped support
+       * ``ws_supported``: WebSocket is supported
+       * ``needs_flash``: Flash Bridge is needed for support
+       * ``detected`` the code has explicitly mapped support
 
-   :param ua: The browser user agent string as sent in the HTTP header, e.g. provided as `flask.request.user_agent.string` in Flask.
-   :type ua: str
+    :param ua: The browser user agent string as sent in the HTTP header, e.g. provided as `flask.request.user_agent.string` in Flask.
+    :type ua: str
 
-   :returns: tuple -- A tuple ``(ws_supported, needs_flash, detected)``.
-   """
-   ws = _lookupWsSupport(ua)
-   if debug:
-      if not UA_DETECT_WS_SUPPORT_DB.has_key(ua):
-         UA_DETECT_WS_SUPPORT_DB[ua] = ws
+    :returns: tuple -- A tuple ``(ws_supported, needs_flash, detected)``.
+    """
+    ws = _lookupWsSupport(ua)
+    if debug:
+        if not UA_DETECT_WS_SUPPORT_DB.has_key(ua):
+            UA_DETECT_WS_SUPPORT_DB[ua] = ws
 
-      if not ws[2]:
-         msg = "UNDETECTED"
-      elif ws[0]:
-         msg = "SUPPORTED"
-      elif not ws[0]:
-         msg = "UNSUPPORTED"
-      else:
-         msg = "ERROR"
+        if not ws[2]:
+            msg = "UNDETECTED"
+        elif ws[0]:
+            msg = "SUPPORTED"
+        elif not ws[0]:
+            msg = "UNSUPPORTED"
+        else:
+            msg = "ERROR"
 
-      print("DETECT_WS_SUPPORT: %s %s %s %s %s" % (ua, ws[0], ws[1], ws[2], msg))
+        print("DETECT_WS_SUPPORT: %s %s %s %s %s" % (ua, ws[0], ws[1], ws[2], msg))
 
-   return ws
+    return ws

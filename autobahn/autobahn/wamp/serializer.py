@@ -34,168 +34,168 @@ from autobahn.wamp import message
 
 
 class Serializer:
-   """
-   Base class for WAMP serializers. A WAMP serializer is the core glue between
-   parsed WAMP message objects and the bytes on wire (the transport).
-   """
+    """
+    Base class for WAMP serializers. A WAMP serializer is the core glue between
+    parsed WAMP message objects and the bytes on wire (the transport).
+    """
 
-   MESSAGE_TYPE_MAP = {
-      message.Hello.MESSAGE_TYPE:           message.Hello,
-      message.Welcome.MESSAGE_TYPE:         message.Welcome,
-      message.Abort.MESSAGE_TYPE:           message.Abort,
-      message.Challenge.MESSAGE_TYPE:       message.Challenge,
-      message.Authenticate.MESSAGE_TYPE:    message.Authenticate,
-      message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
-      message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
-      message.Error.MESSAGE_TYPE:           message.Error,
+    MESSAGE_TYPE_MAP = {
+       message.Hello.MESSAGE_TYPE:           message.Hello,
+       message.Welcome.MESSAGE_TYPE:         message.Welcome,
+       message.Abort.MESSAGE_TYPE:           message.Abort,
+       message.Challenge.MESSAGE_TYPE:       message.Challenge,
+       message.Authenticate.MESSAGE_TYPE:    message.Authenticate,
+       message.Goodbye.MESSAGE_TYPE:         message.Goodbye,
+       message.Heartbeat.MESSAGE_TYPE:       message.Heartbeat,
+       message.Error.MESSAGE_TYPE:           message.Error,
 
-      message.Publish.MESSAGE_TYPE:         message.Publish,
-      message.Published.MESSAGE_TYPE:       message.Published,
+       message.Publish.MESSAGE_TYPE:         message.Publish,
+       message.Published.MESSAGE_TYPE:       message.Published,
 
-      message.Subscribe.MESSAGE_TYPE:       message.Subscribe,
-      message.Subscribed.MESSAGE_TYPE:      message.Subscribed,
-      message.Unsubscribe.MESSAGE_TYPE:     message.Unsubscribe,
-      message.Unsubscribed.MESSAGE_TYPE:    message.Unsubscribed,
-      message.Event.MESSAGE_TYPE:           message.Event,
+       message.Subscribe.MESSAGE_TYPE:       message.Subscribe,
+       message.Subscribed.MESSAGE_TYPE:      message.Subscribed,
+       message.Unsubscribe.MESSAGE_TYPE:     message.Unsubscribe,
+       message.Unsubscribed.MESSAGE_TYPE:    message.Unsubscribed,
+       message.Event.MESSAGE_TYPE:           message.Event,
 
-      message.Call.MESSAGE_TYPE:            message.Call,
-      message.Cancel.MESSAGE_TYPE:          message.Cancel,
-      message.Result.MESSAGE_TYPE:          message.Result,
+       message.Call.MESSAGE_TYPE:            message.Call,
+       message.Cancel.MESSAGE_TYPE:          message.Cancel,
+       message.Result.MESSAGE_TYPE:          message.Result,
 
-      message.Register.MESSAGE_TYPE:        message.Register,
-      message.Registered.MESSAGE_TYPE:      message.Registered,
-      message.Unregister.MESSAGE_TYPE:      message.Unregister,
-      message.Unregistered.MESSAGE_TYPE:    message.Unregistered,
-      message.Invocation.MESSAGE_TYPE:      message.Invocation,
-      message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
-      message.Yield.MESSAGE_TYPE:           message.Yield
-   }
-   """
+       message.Register.MESSAGE_TYPE:        message.Register,
+       message.Registered.MESSAGE_TYPE:      message.Registered,
+       message.Unregister.MESSAGE_TYPE:      message.Unregister,
+       message.Unregistered.MESSAGE_TYPE:    message.Unregistered,
+       message.Invocation.MESSAGE_TYPE:      message.Invocation,
+       message.Interrupt.MESSAGE_TYPE:       message.Interrupt,
+       message.Yield.MESSAGE_TYPE:           message.Yield
+    }
+    """
    Mapping of WAMP message type codes to WAMP message classes.
    """
 
 
-   def __init__(self, serializer):
-      """
-      Constructor.
+    def __init__(self, serializer):
+        """
+        Constructor.
 
-      :param serializer: The object serializer to use for WAMP wire-level serialization.
-      :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
-      """
-      self._serializer = serializer
-
-
-   def serialize(self, msg):
-      """
-      Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
-      """
-      return msg.serialize(self._serializer), self._serializer.BINARY
+        :param serializer: The object serializer to use for WAMP wire-level serialization.
+        :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
+        """
+        self._serializer = serializer
 
 
-   def unserialize(self, payload, isBinary = None):
-      """
-      Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
-      """
-      if isBinary is not None:
-         if isBinary != self._serializer.BINARY:
-            raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
+    def serialize(self, msg):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISerializer.serialize`
+        """
+        return msg.serialize(self._serializer), self._serializer.BINARY
 
-      try:
-         raw_msgs = self._serializer.unserialize(payload)
-      except Exception as e:
-         raise ProtocolError("invalid serialization of WAMP message ({0})".format(e))
 
-      msgs = []
+    def unserialize(self, payload, isBinary = None):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
+        """
+        if isBinary is not None:
+            if isBinary != self._serializer.BINARY:
+                raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
 
-      for raw_msg in raw_msgs:
+        try:
+            raw_msgs = self._serializer.unserialize(payload)
+        except Exception as e:
+            raise ProtocolError("invalid serialization of WAMP message ({0})".format(e))
 
-         if type(raw_msg) != list:
-            raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
+        msgs = []
 
-         if len(raw_msg) == 0:
-            raise ProtocolError(u"missing message type in WAMP message")
+        for raw_msg in raw_msgs:
 
-         message_type = raw_msg[0]
+            if type(raw_msg) != list:
+                raise ProtocolError("invalid type {0} for WAMP message".format(type(raw_msg)))
 
-         if type(message_type) != int:
-            raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
+            if len(raw_msg) == 0:
+                raise ProtocolError(u"missing message type in WAMP message")
 
-         Klass = self.MESSAGE_TYPE_MAP.get(message_type)
+            message_type = raw_msg[0]
 
-         if Klass is None:
-            raise ProtocolError("invalid WAMP message type {0}".format(message_type))
+            if type(message_type) != int:
+                raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
-         ## this might again raise `ProtocolError` ..
-         msg = Klass.parse(raw_msg)
+            Klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
-         msgs.append(msg)
+            if Klass is None:
+                raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
-      return msgs
+            ## this might again raise `ProtocolError` ..
+            msg = Klass.parse(raw_msg)
+
+            msgs.append(msg)
+
+        return msgs
 
 
 ##
 ## JSON serialization is always supported
 ##
 try:
-   ## try import accelerated JSON implementation
-   ##
-   import ujson
-   _json = ujson
-   _loads = lambda val: ujson.loads(val, precise_float = True)
-   _dumps = lambda obj: ujson.dumps(obj, double_precision = 15, ensure_ascii = False)
+    ## try import accelerated JSON implementation
+    ##
+    import ujson
+    _json = ujson
+    _loads = lambda val: ujson.loads(val, precise_float = True)
+    _dumps = lambda obj: ujson.dumps(obj, double_precision = 15, ensure_ascii = False)
 
 except ImportError:
-   ## fallback to stdlib implementation
-   ##
-   import json
-   _json = json
-   _loads = json.loads
-   _dumps = lambda obj: json.dumps(obj, separators = (',',':'), ensure_ascii = False)
+    ## fallback to stdlib implementation
+    ##
+    import json
+    _json = json
+    _loads = json.loads
+    _dumps = lambda obj: json.dumps(obj, separators = (',',':'), ensure_ascii = False)
 
 finally:
-   class JsonObjectSerializer:
+    class JsonObjectSerializer:
 
-      JSON_MODULE = _json
-      """
+        JSON_MODULE = _json
+        """
       The JSON module used (either stdib builtin or ujson).
       """
 
-      BINARY = False
+        BINARY = False
 
-      def __init__(self, batched = False):
-         """
-         Ctor.
+        def __init__(self, batched = False):
+            """
+            Ctor.
 
-         :param batched: Flag that controls whether serializer operates in batched mode.
-         :type batched: bool
-         """
-         self._batched = batched
-
-
-      def serialize(self, obj):
-         """
-         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
-         """
-         s = _dumps(obj)
-         if isinstance(s, six.text_type):
-             s = s.encode('utf8')
-         if self._batched:
-            return s + b'\30'
-         else:
-            return s
+            :param batched: Flag that controls whether serializer operates in batched mode.
+            :type batched: bool
+            """
+            self._batched = batched
 
 
-      def unserialize(self, payload):
-         """
-         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
-         """
-         if self._batched:
-            chunks = payload.split(b'\30')[:-1]
-         else:
-            chunks = [payload]
-         if len(chunks) == 0:
-            raise Exception("batch format error")
-         return [_loads(data.decode('utf8')) for data in chunks]
+        def serialize(self, obj):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+            """
+            s = _dumps(obj)
+            if isinstance(s, six.text_type):
+                s = s.encode('utf8')
+            if self._batched:
+                return s + b'\30'
+            else:
+                return s
+
+
+        def unserialize(self, payload):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+            """
+            if self._batched:
+                chunks = payload.split(b'\30')[:-1]
+            else:
+                chunks = [payload]
+            if len(chunks) == 0:
+                raise Exception("batch format error")
+            return [_loads(data.decode('utf8')) for data in chunks]
 
 
 
@@ -205,19 +205,19 @@ IObjectSerializer.register(JsonObjectSerializer)
 
 class JsonSerializer(Serializer):
 
-   SERIALIZER_ID = "json"
-   MIME_TYPE = "application/json"
+    SERIALIZER_ID = "json"
+    MIME_TYPE = "application/json"
 
-   def __init__(self, batched = False):
-      """
-      Ctor.
+    def __init__(self, batched = False):
+        """
+        Ctor.
 
-      :param batched: Flag to control whether to put this serialized into batched mode.
-      :type batched: bool
-      """
-      Serializer.__init__(self, JsonObjectSerializer(batched = batched))
-      if batched:
-         self.SERIALIZER_ID = "json.batched"
+        :param batched: Flag to control whether to put this serialized into batched mode.
+        :type batched: bool
+        """
+        Serializer.__init__(self, JsonObjectSerializer(batched = batched))
+        if batched:
+            self.SERIALIZER_ID = "json.batched"
 
 
 
@@ -230,103 +230,103 @@ ISerializer.register(JsonSerializer)
 ## MsgPack serialization depends on the `msgpack` package being available
 ##
 try:
-   import msgpack
+    import msgpack
 except ImportError:
-   pass
+    pass
 else:
 
-   class MsgPackObjectSerializer:
+    class MsgPackObjectSerializer:
 
-      BINARY = True
-      """
+        BINARY = True
+        """
       Flag that indicates whether this serializer needs a binary clean transport.
       """
 
-      ENABLE_V5 = True
-      """
+        ENABLE_V5 = True
+        """
       Enable version 5 of the MsgPack specification (which differentiates
       between strings and binary).
       """
 
-      def __init__(self, batched = False):
-         """
-         Ctor.
+        def __init__(self, batched = False):
+            """
+            Ctor.
 
-         :param batched: Flag that controls whether serializer operates in batched mode.
-         :type batched: bool
-         """
-         self._batched = batched
-
-
-      def serialize(self, obj):
-         """
-         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
-         """
-         data = msgpack.packb(obj, use_bin_type = self.ENABLE_V5)
-         if self._batched:
-            return struct.pack("!L", len(data)) + data
-         else:
-            return data
+            :param batched: Flag that controls whether serializer operates in batched mode.
+            :type batched: bool
+            """
+            self._batched = batched
 
 
-      def unserialize(self, payload):
-         """
-         Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
-         """
-         if self._batched:
-            msgs = []
-            N = len(payload)
-            i = 0
-            while i < N:
-               ## read message length prefix
-               if i + 4 > N:
-                  raise Exception("batch format error [1]")
-               l = struct.unpack("!L", payload[i:i+4])[0]
-
-               ## read message data
-               if i + 4 + l > N:
-                  raise Exception("batch format error [2]")
-               data = payload[i+4:i+4+l]
-
-               ## append parsed raw message
-               msgs.append(msgpack.unpackb(data, encoding = 'utf-8'))
-
-               ## advance until everything consumed
-               i = i+4+l
-
-            if i != N:
-               raise Exception("batch format error [3]")
-            return msgs
-
-         else:
-            return [msgpack.unpackb(payload, encoding = 'utf-8')]
+        def serialize(self, obj):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+            """
+            data = msgpack.packb(obj, use_bin_type = self.ENABLE_V5)
+            if self._batched:
+                return struct.pack("!L", len(data)) + data
+            else:
+                return data
 
 
-   IObjectSerializer.register(MsgPackObjectSerializer)
+        def unserialize(self, payload):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+            """
+            if self._batched:
+                msgs = []
+                N = len(payload)
+                i = 0
+                while i < N:
+                    ## read message length prefix
+                    if i + 4 > N:
+                        raise Exception("batch format error [1]")
+                    l = struct.unpack("!L", payload[i:i+4])[0]
+
+                    ## read message data
+                    if i + 4 + l > N:
+                        raise Exception("batch format error [2]")
+                    data = payload[i+4:i+4+l]
+
+                    ## append parsed raw message
+                    msgs.append(msgpack.unpackb(data, encoding = 'utf-8'))
+
+                    ## advance until everything consumed
+                    i = i+4+l
+
+                if i != N:
+                    raise Exception("batch format error [3]")
+                return msgs
+
+            else:
+                return [msgpack.unpackb(payload, encoding = 'utf-8')]
 
 
-   __all__.append('MsgPackObjectSerializer')
+    IObjectSerializer.register(MsgPackObjectSerializer)
+
+
+    __all__.append('MsgPackObjectSerializer')
 
 
 
-   class MsgPackSerializer(Serializer):
+    class MsgPackSerializer(Serializer):
 
-      SERIALIZER_ID = "msgpack"
-      MIME_TYPE = "application/x-msgpack"
+        SERIALIZER_ID = "msgpack"
+        MIME_TYPE = "application/x-msgpack"
 
-      def __init__(self, batched = False):
-         """
-         Ctor.
+        def __init__(self, batched = False):
+            """
+            Ctor.
 
-         :param batched: Flag to control whether to put this serialized into batched mode.
-         :type batched: bool
-         """
-         Serializer.__init__(self, MsgPackObjectSerializer(batched = batched))
-         if batched:
-            self.SERIALIZER_ID = "msgpack.batched"
-
-   
-   ISerializer.register(MsgPackSerializer)
+            :param batched: Flag to control whether to put this serialized into batched mode.
+            :type batched: bool
+            """
+            Serializer.__init__(self, MsgPackObjectSerializer(batched = batched))
+            if batched:
+                self.SERIALIZER_ID = "msgpack.batched"
 
 
-   __all__.append('MsgPackSerializer')
+    ISerializer.register(MsgPackSerializer)
+
+
+    __all__.append('MsgPackSerializer')
