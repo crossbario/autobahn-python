@@ -17,4 +17,4 @@
 ###############################################################################
 
 __version__ = "0.9.5"
-version = __version__ # backward compat.
+version = __version__  # backward compat.

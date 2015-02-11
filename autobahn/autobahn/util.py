@@ -104,7 +104,7 @@ def id():
     :rtype: int
     """
     # return random.randint(0, 9007199254740992) # this is what the WAMP spec says
-    return random.randint(0, 2147483647) # use a reduced ID space for now (2**31-1)
+    return random.randint(0, 2147483647)  # use a reduced ID space for now (2**31-1)
 
 
 def newid(length=16):
@@ -129,7 +129,7 @@ if sys.platform.startswith('win'):
     # Win32 function QueryPerformanceCounter(). The resolution is typically
     # better than one microsecond
     _rtime = time.clock
-    _ = _rtime() # this starts wallclock
+    _ = _rtime()  # this starts wallclock
 else:
     # On Unix-like platforms, this used the first available from this list:
     # (1) gettimeofday() -- resolution in microseconds
@@ -270,11 +270,11 @@ class Tracker:
         if endKey in self._timings and startKey in self._timings:
             d = self._timings[endKey] - self._timings[startKey]
             if formatted:
-                if d < 0.00001: # 10us
+                if d < 0.00001:  # 10us
                     s = "%d ns" % round(d * 1000000000.)
-                elif d < 0.01: # 10ms
+                elif d < 0.01:  # 10ms
                     s = "%d us" % round(d * 1000000.)
-                elif d < 10: # 10s
+                elif d < 10:  # 10s
                     s = "%d ms" % round(d * 1000.)
                 else:
                     s = "%d s" % round(d)

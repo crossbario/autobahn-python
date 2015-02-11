@@ -440,11 +440,11 @@ class Timings:
         if endKey in self._timings and startKey in self._timings:
             d = self._timings[endKey] - self._timings[startKey]
             if formatted:
-                if d < 0.00001: # 10us
+                if d < 0.00001:  # 10us
                     s = "%d ns" % round(d * 1000000000.)
-                elif d < 0.01: # 10ms
+                elif d < 0.01:  # 10ms
                     s = "%d us" % round(d * 1000000.)
-                elif d < 10: # 10s
+                elif d < 10:  # 10s
                     s = "%d ms" % round(d * 1000.)
                 else:
                     s = "%d s" % round(d)
@@ -572,10 +572,10 @@ class WebSocketProtocol:
     CLOSE_STATUS_CODE_RESERVED1 = 1004
     """RESERVED"""
 
-    CLOSE_STATUS_CODE_NULL = 1005 # MUST NOT be set in close frame!
+    CLOSE_STATUS_CODE_NULL = 1005  # MUST NOT be set in close frame!
     """No status received. (MUST NOT be used as status code when sending a close)."""
 
-    CLOSE_STATUS_CODE_ABNORMAL_CLOSE = 1006 # MUST NOT be set in close frame!
+    CLOSE_STATUS_CODE_ABNORMAL_CLOSE = 1006  # MUST NOT be set in close frame!
     """Abnormal close of connection. (MUST NOT be used as status code when sending a close)."""
 
     CLOSE_STATUS_CODE_INVALID_PAYLOAD = 1007
@@ -593,7 +593,7 @@ class WebSocketProtocol:
     CLOSE_STATUS_CODE_INTERNAL_ERROR = 1011
     """The peer encountered an unexpected condition or internal error."""
 
-    CLOSE_STATUS_CODE_TLS_HANDSHAKE_FAILED = 1015 # MUST NOT be set in close frame!
+    CLOSE_STATUS_CODE_TLS_HANDSHAKE_FAILED = 1015  # MUST NOT be set in close frame!
     """TLS handshake failed, i.e. server certificate could not be verified. (MUST NOT be used as status code when sending a close)."""
 
     CLOSE_STATUS_CODES_ALLOWED = [CLOSE_STATUS_CODE_NORMAL,
@@ -1585,7 +1585,7 @@ class WebSocketProtocol:
 
                 # check frame
                 ##
-                if frame_opcode > 7: # control frame (have MSB in opcode set)
+                if frame_opcode > 7:  # control frame (have MSB in opcode set)
 
                     # control frames MUST NOT be fragmented
                     ##
@@ -1618,7 +1618,7 @@ class WebSocketProtocol:
                         if self.protocolViolation("received compressed control frame [%s]" % self._perMessageCompress.EXTENSION_NAME):
                             return False
 
-                else: # data frame
+                else:  # data frame
 
                     # check for reserved data frame opcodes
                     ##
@@ -1679,7 +1679,7 @@ class WebSocketProtocol:
                         i += 2
                     elif frame_payload_len1 == 127:
                         frame_payload_len = struct.unpack("!Q", self.data[i:i+8])[0]
-                        if frame_payload_len > 0x7FFFFFFFFFFFFFFF: # 2**63
+                        if frame_payload_len > 0x7FFFFFFFFFFFFFFF:  # 2**63
                             if self.protocolViolation("invalid data frame length (>2^63)"):
                                 return False
                         if frame_payload_len < 65536:
@@ -1722,9 +1722,9 @@ class WebSocketProtocol:
                     return frame_payload_len == 0 or len(self.data) > 0
 
                 else:
-                    return False # need more data
+                    return False  # need more data
             else:
-                return False # need more data
+                return False  # need more data
 
         # inside a started frame
         ##
@@ -2227,7 +2227,7 @@ class WebSocketProtocol:
         if self.send_state not in [WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN, WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE]:
             raise Exception("WebSocketProtocol.beginMessageFrame invalid in current sending state [%d]" % self.send_state)
 
-        if type(length) != int or length < 0 or length > 0x7FFFFFFFFFFFFFFF: # 2**63
+        if type(length) != int or length < 0 or length > 0x7FFFFFFFFFFFFFFF:  # 2**63
             raise Exception("invalid value for message frame length")
 
         self.send_message_frame_length = length
@@ -2266,7 +2266,7 @@ class WebSocketProtocol:
 
             self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
         else:
-            pass # message continuation frame
+            pass  # message continuation frame
 
         # second byte, payload len bytes and mask
         ##
@@ -2541,7 +2541,7 @@ class WebSocketProtocol:
                         params[key].append(value)
                     extensions.append((extension, params))
                 else:
-                    pass # should not arrive here
+                    pass  # should not arrive here
         return extensions
 
 
@@ -2983,9 +2983,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 if http_headers_cnt["sec-websocket-key"] > 1:
                     return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
                 key = self.http_headers["sec-websocket-key"].strip()
-                if len(key) != 24: # 16 bytes => (ceil(128/24)*24)/6 == 24
+                if len(key) != 24:  # 16 bytes => (ceil(128/24)*24)/6 == 24
                     return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
-                if key[-2:] != "==": # 24 - ceil(128/6) == 2
+                if key[-2:] != "==":  # 24 - ceil(128/6) == 2
                     return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
                 for c in key[:-2]:
                     if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":

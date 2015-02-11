@@ -131,7 +131,7 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
     """
     if type(value) not in six.integer_types:
         raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
-    if value < 0 or value > 9007199254740992: # 2**53
+    if value < 0 or value > 9007199254740992:  # 2**53
         raise ProtocolError(u"{0}: invalid value {1} for ID".format(message, value))
     return value
 
@@ -820,7 +820,7 @@ class Heartbeat(Message):
         if type(incoming) not in six.integer_types:
             raise ProtocolError("invalid type {0} for 'incoming' in HEARTBEAT".format(type(incoming)))
 
-        if incoming < 0: # must be non-negative
+        if incoming < 0:  # must be non-negative
             raise ProtocolError("invalid value {0} for 'incoming' in HEARTBEAT".format(incoming))
 
         outgoing = wmsg[2]
@@ -828,7 +828,7 @@ class Heartbeat(Message):
         if type(outgoing) not in six.integer_types:
             raise ProtocolError("invalid type {0} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
 
-        if outgoing <= 0: # must be positive
+        if outgoing <= 0:  # must be positive
             raise ProtocolError("invalid value {0} for 'outgoing' in HEARTBEAT".format(outgoing))
 
         discard = None

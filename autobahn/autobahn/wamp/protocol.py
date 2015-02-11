@@ -201,7 +201,7 @@ class BaseSession:
         """
         args = None
         if hasattr(exc, 'args'):
-            args = list(exc.args) # make sure tuples are made into lists
+            args = list(exc.args)  # make sure tuples are made into lists
 
         kwargs = None
         if hasattr(exc, 'kwargs'):
@@ -712,7 +712,7 @@ class ApplicationSession(BaseSession):
 
             elif isinstance(msg, message.Heartbeat):
 
-                pass ## FIXME
+                pass  # FIXME
 
             else:
 
