@@ -87,7 +87,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
 
             if p == 'client_max_compress_level':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     acceptMaxCompressLevel = True

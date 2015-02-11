@@ -82,14 +82,14 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
 
             if p == 'client_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     acceptNoContextTakeover = True
 
             elif p == 'server_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     requestNoContextTakeover = True
@@ -256,14 +256,14 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
 
             if p == 'client_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     client_no_context_takeover = True
 
             elif p == 'server_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     server_no_context_takeover = True

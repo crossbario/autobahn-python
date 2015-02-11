@@ -1757,7 +1757,7 @@ class WebSocketProtocol:
             ##
             fr = self.onFrameData(payload)
             # noinspection PySimplifyBooleanCheck
-            if fr == False:
+            if fr is False:
                 return False
 
             # fire frame end handler when frame payload is complete
@@ -1765,7 +1765,7 @@ class WebSocketProtocol:
             if self.current_frame_masker.pointer() == self.current_frame.length:
                 fr = self.onFrameEnd()
                 # noinspection PySimplifyBooleanCheck
-                if fr == False:
+                if fr is False:
                     return False
 
             # reprocess when no error occurred and buffered data left

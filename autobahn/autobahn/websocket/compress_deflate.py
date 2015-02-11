@@ -106,7 +106,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                 ##
 
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     try:
                         val = int(val)
                     except:
@@ -123,7 +123,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
             elif p == 'client_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     acceptNoContextTakeover = True
@@ -141,7 +141,7 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
             elif p == 'server_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     requestNoContextTakeover = True
@@ -384,7 +384,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
             elif p == 'client_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     client_no_context_takeover = True
@@ -402,7 +402,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
 
             elif p == 'server_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
-                if val != True:
+                if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
                     server_no_context_takeover = True
