@@ -154,7 +154,7 @@ class ApplicationRunner:
 
         # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
-           debug=self.debug, debug_wamp=self.debug_wamp)
+                                                       debug=self.debug, debug_wamp=self.debug_wamp)
 
         # start the client from a Twisted endpoint
         from twisted.internet.endpoints import clientFromString
@@ -268,8 +268,8 @@ class Application:
         return self.session
 
     def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1",
-       debug=False, debug_wamp=False, debug_app=False,
-       start_reactor=True):
+            debug=False, debug_wamp=False, debug_app=False,
+            start_reactor=True):
         """
         Run the application.
 
@@ -285,7 +285,7 @@ class Application:
         :type debug_app: bool
         """
         runner = ApplicationRunner(url, realm,
-           debug=debug, debug_wamp=debug_wamp, debug_app=debug_app)
+                                   debug=debug, debug_wamp=debug_wamp, debug_app=debug_app)
         runner.run(self.__call__, start_reactor)
 
     def register(self, uri=None):
@@ -499,7 +499,7 @@ class Service(service.MultiService):
 
         # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
-           debug=self.debug, debug_wamp=self.debug_wamp)
+                                                       debug=self.debug, debug_wamp=self.debug_wamp)
 
         # setup the client from a Twisted endpoint
 

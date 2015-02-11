@@ -98,7 +98,7 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         offer = cls(acceptNoContextTakeover,
-                      requestNoContextTakeover)
+                    requestNoContextTakeover)
         return offer
 
     def __init__(self,
@@ -272,7 +272,7 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         response = cls(client_no_context_takeover,
-                         server_no_context_takeover)
+                       server_no_context_takeover)
         return response
 
     def __init__(self,
@@ -358,15 +358,15 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
     @classmethod
     def createFromResponseAccept(cls, isServer, accept):
         pmce = cls(isServer,
-                     accept.response.server_no_context_takeover,
-                     accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
+                   accept.response.server_no_context_takeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
         return pmce
 
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         pmce = cls(isServer,
-                     accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
-                     accept.requestNoContextTakeover)
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
+                   accept.requestNoContextTakeover)
         return pmce
 
     def __init__(self,

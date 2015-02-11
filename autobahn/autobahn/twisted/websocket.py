@@ -376,10 +376,10 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
             self._subprotocols.append(subprotocol)
 
         WebSocketServerFactory.__init__(self,
-           url=url,
-           reactor=reactor,
-           protocols=self._subprotocols,
-           debug=debug)
+                                        url=url,
+                                        reactor=reactor,
+                                        protocols=self._subprotocols,
+                                        debug=debug)
 
         # automatically fragment outgoing traffic into WebSocket frames
         # of this size
@@ -442,10 +442,10 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
             self._subprotocols.append(subprotocol)
 
         WebSocketClientFactory.__init__(self,
-           url=url,
-           reactor=reactor,
-           protocols=self._subprotocols,
-           debug=debug)
+                                        url=url,
+                                        reactor=reactor,
+                                        protocols=self._subprotocols,
+                                        debug=debug)
 
         # automatically fragment outgoing traffic into WebSocket frames
         # of this size

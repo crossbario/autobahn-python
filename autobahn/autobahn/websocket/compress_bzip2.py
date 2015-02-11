@@ -106,7 +106,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         offer = cls(acceptMaxCompressLevel,
-                      requestMaxCompressLevel)
+                    requestMaxCompressLevel)
         return offer
 
     def __init__(self,
@@ -286,7 +286,7 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         response = cls(client_max_compress_level,
-                         server_max_compress_level)
+                       server_max_compress_level)
         return response
 
     def __init__(self,
@@ -373,15 +373,15 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
     @classmethod
     def createFromResponseAccept(cls, isServer, accept):
         pmce = cls(isServer,
-                     accept.response.server_max_compress_level,
-                     accept.compressLevel if accept.compressLevel is not None else accept.response.client_max_compress_level)
+                   accept.response.server_max_compress_level,
+                   accept.compressLevel if accept.compressLevel is not None else accept.response.client_max_compress_level)
         return pmce
 
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         pmce = cls(isServer,
-                     accept.compressLevel if accept.compressLevel is not None else accept.offer.requestMaxCompressLevel,
-                     accept.requestMaxCompressLevel)
+                   accept.compressLevel if accept.compressLevel is not None else accept.offer.requestMaxCompressLevel,
+                   accept.requestMaxCompressLevel)
         return pmce
 
     def __init__(self,

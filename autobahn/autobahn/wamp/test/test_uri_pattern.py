@@ -66,13 +66,13 @@ class TestUris(unittest.TestCase):
               (u"com.myapp..update", None),
               (u"com.myapp.0.delete", None),
               ]
-           ),
+            ),
            (u"com.myapp.<product:string>.update", [
               (u"com.myapp.box.update", {u'product': u'box'}),
               (u"com.myapp.123456.update", {u'product': u'123456'}),
               (u"com.myapp..update", None),
               ]
-           )
+            )
         ]
         for test in tests:
             pat = Pattern(test[0], Pattern.URI_TARGET_ENDPOINT)

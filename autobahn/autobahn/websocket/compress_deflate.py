@@ -150,9 +150,9 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         offer = cls(acceptNoContextTakeover,
-                      acceptMaxWindowBits,
-                      requestNoContextTakeover,
-                      requestMaxWindowBits)
+                    acceptMaxWindowBits,
+                    requestNoContextTakeover,
+                    requestMaxWindowBits)
         return offer
 
     def __init__(self,
@@ -411,9 +411,9 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
         response = cls(client_max_window_bits,
-                         client_no_context_takeover,
-                         server_max_window_bits,
-                         server_no_context_takeover)
+                       client_no_context_takeover,
+                       server_max_window_bits,
+                       server_no_context_takeover)
         return response
 
     def __init__(self,
@@ -532,22 +532,22 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
     def createFromResponseAccept(cls, isServer, accept):
         # accept: instance of PerMessageDeflateResponseAccept
         pmce = cls(isServer,
-                     accept.response.server_no_context_takeover,
-                     accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover,
-                     accept.response.server_max_window_bits,
-                     accept.windowBits if accept.windowBits is not None else accept.response.client_max_window_bits,
-                     accept.memLevel)
+                   accept.response.server_no_context_takeover,
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover,
+                   accept.response.server_max_window_bits,
+                   accept.windowBits if accept.windowBits is not None else accept.response.client_max_window_bits,
+                   accept.memLevel)
         return pmce
 
     @classmethod
     def createFromOfferAccept(cls, isServer, accept):
         # accept: instance of PerMessageDeflateOfferAccept
         pmce = cls(isServer,
-                     accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
-                     accept.requestNoContextTakeover,
-                     accept.windowBits if accept.windowBits is not None else accept.offer.requestMaxWindowBits,
-                     accept.requestMaxWindowBits,
-                     accept.memLevel)
+                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
+                   accept.requestNoContextTakeover,
+                   accept.windowBits if accept.windowBits is not None else accept.offer.requestMaxWindowBits,
+                   accept.requestMaxWindowBits,
+                   accept.memLevel)
         return pmce
 
     def __init__(self,
