@@ -21,28 +21,50 @@ from __future__ import absolute_import
 # from twisted.trial import unittest
 import unittest
 import platform
+from mock import patch
 
-from twisted.internet.error import DNSLookupError
 from twisted.internet.error import ConnectionRefusedError
 
 from autobahn.twisted.wamp import ApplicationRunner
+
+class FakeReactor:
+    '''
+    This just fakes out enough reactor methods so .run() can work.
+    '''
+    stop_called = False
+    def __init__(self, to_raise):
+        self.stop_called = False
+        self.to_raise = to_raise
+
+    def run(self, *args, **kw):
+        raise self.to_raise
+
+    def stop(self):
+        self.stop_called = True
+
+    def connectTCP(self, *args, **kw):
+        raise RuntimeError("ConnectTCP shouldn't get called")
+
 
 class TestWampTwistedRunner(unittest.TestCase):
 
     def test_connect_error(self):
         '''
-        Ensure the runner doesn't swallow errors, and exit the reactor
-        properly if there is one.
+        Ensure the runner doesn't swallow errors and that it exits the
+        reactor properly if there is one.
         '''
         runner = ApplicationRunner('ws://localhost:1', 'realm')
+        exception = ConnectionRefusedError("It's a trap!")
+        # the 'reactor' member doesn't exist until we import it
+        from twisted.internet import reactor
 
-        # FIXME: we're really running the reactor here; that's not so awesome...
-        # could we pass a reactor to the runner somehow?
-        self.assertRaises(
-            ConnectionRefusedError,
-            # pass a no-op session-creation method
-            runner.run, lambda _: None
-        )
+        with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
+            self.assertRaises(
+                ConnectionRefusedError,
+                # pass a no-op session-creation method
+                runner.run, lambda _: None, start_reactor=True
+            )
+            self.assertTrue(mockreactor.stop_called)
 
 if __name__ == '__main__':
     unittest.main()
