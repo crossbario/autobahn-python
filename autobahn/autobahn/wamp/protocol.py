@@ -835,7 +835,8 @@ class ApplicationSession(BaseSession):
                     pat = proc.__dict__["_wampuris"][0]
                     if pat.is_handler():
                         uri = pat.uri()
-                        dl.append(_subscribe(handler, proc, uri, options))
+                        subopts = options or pat.subscribe_options()
+                        dl.append(_subscribe(handler, proc, uri, subopts))
             return self._gather_futures(dl, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
