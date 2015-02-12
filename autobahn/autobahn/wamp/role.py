@@ -45,7 +45,7 @@ class RoleFeatures(util.EqualityMixin):
         for k, v in self.__dict__.iteritems():
             if v is not None:
                 configured_options[k] = v
-        return "{}({})".format(self.ROLE, ", ".join([k + '=' + str(v)
+        return "{0}({1})".format(self.ROLE, ", ".join([k + '=' + str(v)
                                                      for k, v in configured_options.items()]))
 
     def _check_all_bool(self):
