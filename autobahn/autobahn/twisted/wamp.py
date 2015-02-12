@@ -165,11 +165,29 @@ class ApplicationRunner:
             endpoint_descriptor = "tcp:{0}:{1}".format(host, port)
 
         client = clientFromString(reactor, endpoint_descriptor)
-        client.connect(transport_factory)
+        d = client.connect(transport_factory)
+
+        # if an error happens on the connect(), we save the underlying
+        # exception so that after the event-loop exits we can re-raise
+        # it to the caller.
+
+        class ErrorCollector:
+            exception = None
+            def __call__(self, failure):
+                self.exception = failure.value
+                # print(failure.getErrorMessage())
+                reactor.stop()
+        connect_error = ErrorCollector()
+        d.addErrback(connect_error)
 
         # now enter the Twisted reactor loop
         if start_reactor:
             reactor.run()
+
+        # if we exited due to a connection error, raise that to the
+        # caller
+        if connect_error.exception:
+            raise connect_error.exception
 
 
 class _ApplicationSession(ApplicationSession):
