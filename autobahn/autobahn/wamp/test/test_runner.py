@@ -20,14 +20,15 @@ from __future__ import absolute_import
 
 # from twisted.trial import unittest
 import unittest
-import platform
 from mock import patch
+
 
 class FakeReactor:
     '''
     This just fakes out enough reactor methods so .run() can work.
     '''
     stop_called = False
+
     def __init__(self, to_raise):
         self.stop_called = False
         self.to_raise = to_raise
@@ -53,7 +54,7 @@ class TestWampTwistedRunner(unittest.TestCase):
             from autobahn.twisted.wamp import ApplicationRunner
             from twisted.internet.error import ConnectionRefusedError
             # the 'reactor' member doesn't exist until we import it
-            from twisted.internet import reactor
+            from twisted.internet import reactor  # noqa: F401
         except ImportError:
             raise unittest.SkipTest('No twisted')
 
