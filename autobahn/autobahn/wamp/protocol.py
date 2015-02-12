@@ -101,6 +101,7 @@ class Publication:
 
 IPublication.register(Publication)
 
+
 class Subscription:
     """
     Object representing a subscription.
@@ -140,8 +141,8 @@ class Subscription:
                         self.fn()
 
         except Exception as e:
-            log.error(e, "While firing event handler {0} subscribed under '{1}' ({2}): {3}".format(
-                      self.fn, self.handler.topic, msg.subscription, e))
+            print("While firing event handler {0} subscribed under '{1}' ({2}): {3}".format(
+                  self.fn, self.handler.topic, msg.subscription, e))
 
     def unsubscribe(self):
         """

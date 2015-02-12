@@ -209,7 +209,7 @@ if unittest is not None:
             self.log("joined")
             self.subscribers = yield self.subscribe(self)
             yield sleep(1)
-            options = PublishOptions(excludeMe = False)
+            options = PublishOptions(excludeMe=False)
             yield self.publish(u'mytopic', options=options)
             self.log("published message")
 
@@ -242,7 +242,8 @@ if unittest is not None:
             self.url = os.environ.get("WAMP_ROUTER_URL")
             self.realm = u"realm1"
             if self.url is None:
-                raise unittest.SkipTest("Please provide WAMP_ROUTER_URL environment with url to wamp router to run wamp integration tests")
+                raise unittest.SkipTest("Please provide WAMP_ROUTER_URL environment "
+                                        "with url to wamp router to run wamp integration tests")
 
         @defer.inlineCallbacks
         def runOneTest(self, components):
