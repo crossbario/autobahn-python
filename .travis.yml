@@ -1,7 +1,7 @@
 language: python
 
 install:
-  - pip install tox 
+  - pip install tox mock
 
 env:
   - TOX_ENV=flake8
