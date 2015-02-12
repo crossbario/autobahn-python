@@ -18,18 +18,18 @@
 
 from __future__ import absolute_import
 
-# note: __all__ must be a list here, since we dynamically
-# extend it depending on availability of more serializers
-__all__ = ['Serializer',
-           'JsonObjectSerializer',
-           'JsonSerializer']
-
 import six
 import struct
 
 from autobahn.wamp.interfaces import IObjectSerializer, ISerializer
 from autobahn.wamp.exception import ProtocolError
 from autobahn.wamp import message
+
+# note: __all__ must be a list here, since we dynamically
+# extend it depending on availability of more serializers
+__all__ = ['Serializer',
+           'JsonObjectSerializer',
+           'JsonSerializer']
 
 
 class Serializer:

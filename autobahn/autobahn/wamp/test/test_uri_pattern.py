@@ -20,15 +20,15 @@ from __future__ import absolute_import
 
 import sys
 
+from autobahn import wamp
+from autobahn.wamp.uri import Pattern
+
 if sys.version_info < (2, 7):
     # noinspection PyUnresolvedReferences
     import unittest2 as unittest
 else:
     # from twisted.trial import unittest
     import unittest
-
-from autobahn import wamp
-from autobahn.wamp.uri import Pattern
 
 
 class TestUris(unittest.TestCase):

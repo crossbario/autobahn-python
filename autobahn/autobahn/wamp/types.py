@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+import six
+
 __all__ = (
     'ComponentConfig',
     'HelloReturn',
@@ -35,8 +37,6 @@ __all__ = (
     'CallOptions',
     'CallResult',
 )
-
-import six
 
 
 class ComponentConfig:

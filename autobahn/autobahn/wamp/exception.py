@@ -18,6 +18,8 @@
 
 from __future__ import absolute_import
 
+from autobahn.wamp import error
+
 __all__ = (
     'Error',
     'SessionNotReady',
@@ -28,8 +30,6 @@ __all__ = (
     'NotAuthorized',
     'InvalidUri',
 )
-
-from autobahn.wamp import error
 
 
 class Error(RuntimeError):

@@ -18,6 +18,19 @@
 
 from __future__ import absolute_import
 
+import os
+import base64
+import six
+import struct
+import time
+import binascii
+import hmac
+import hashlib
+import random
+from struct import Struct
+from operator import xor
+from itertools import starmap
+
 __all__ = (
     'pbkdf2',
     'generate_totp_secret',
@@ -25,13 +38,6 @@ __all__ = (
     'derive_key',
     'generate_wcs',
     'compute_wcs')
-
-import os
-import base64
-import six
-import struct
-import time
-import binascii
 
 
 def generate_totp_secret(length=10):
@@ -83,13 +89,6 @@ def compute_totp(secret, offset=0):
 # Copyright 2011 by Armin Ronacher. Licensed under BSD license.
 # https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
 ##
-import hmac
-import hashlib
-import random
-from struct import Struct
-from operator import xor
-from itertools import starmap
-
 _pack_int = Struct('>I').pack
 
 if six.PY3:

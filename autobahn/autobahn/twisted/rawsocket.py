@@ -18,13 +18,7 @@
 
 from __future__ import absolute_import
 
-
-__all__ = (
-    'WampRawSocketServerProtocol',
-    'WampRawSocketClientProtocol',
-    'WampRawSocketServerFactory',
-    'WampRawSocketClientFactory'
-)
+import binascii
 
 from twisted.python import log
 from twisted.internet.protocol import Factory
@@ -34,7 +28,12 @@ from twisted.internet.error import ConnectionDone
 from autobahn.twisted.util import peer2str
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
-import binascii
+__all__ = (
+    'WampRawSocketServerProtocol',
+    'WampRawSocketClientProtocol',
+    'WampRawSocketServerFactory',
+    'WampRawSocketClientFactory'
+)
 
 
 class WampRawSocketProtocol(Int32StringReceiver):

@@ -18,6 +18,13 @@
 
 from __future__ import absolute_import
 
+import bz2
+
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
 
 __all__ = (
     'PerMessageBzip2Mixin',
@@ -27,15 +34,6 @@ __all__ = (
     'PerMessageBzip2ResponseAccept',
     'PerMessageBzip2',
 )
-
-
-import bz2
-
-from autobahn.websocket.compress_base import PerMessageCompressOffer, \
-    PerMessageCompressOfferAccept, \
-    PerMessageCompressResponse, \
-    PerMessageCompressResponseAccept, \
-    PerMessageCompress
 
 
 class PerMessageBzip2Mixin:

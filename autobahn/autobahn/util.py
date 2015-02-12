@@ -18,17 +18,6 @@
 
 from __future__ import absolute_import
 
-__all__ = ("utcnow",
-           "parseutc",
-           "utcstr",
-           "id",
-           "newid",
-           "rtime",
-           "Stopwatch",
-           "Tracker",
-           "EqualityMixin")
-
-
 import time
 import random
 import sys
@@ -41,6 +30,16 @@ if six.PY3:
     # Python 3
     # noinspection PyShadowingBuiltins
     xrange = range
+
+__all__ = ("utcnow",
+           "parseutc",
+           "utcstr",
+           "id",
+           "newid",
+           "rtime",
+           "Stopwatch",
+           "Tracker",
+           "EqualityMixin")
 
 
 def utcnow():

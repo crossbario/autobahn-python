@@ -18,19 +18,19 @@
 
 from __future__ import absolute_import
 
-__all__ = ['RoleFeatures',
+import json
+
+from autobahn import util
+from autobahn.wamp.exception import ProtocolError
+
+__all__ = ('RoleFeatures',
            'RoleBrokerFeatures',
            'RoleSubscriberFeatures',
            'RolePublisherFeatures',
            'RoleDealerFeatures',
            'RoleCallerFeatures',
            'RoleCalleeFeatures',
-           'ROLE_NAME_TO_CLASS']
-
-
-import json
-from autobahn import util
-from autobahn.wamp.exception import ProtocolError
+           'ROLE_NAME_TO_CLASS')
 
 
 class RoleFeatures(util.EqualityMixin):

@@ -18,19 +18,17 @@
 
 from __future__ import absolute_import
 
-
-__all__ = ['WampWebSocketServerProtocol',
-           'WampWebSocketClientProtocol',
-           'WampWebSocketServerFactory',
-           'WampWebSocketClientFactory']
+import traceback
 
 from autobahn.websocket import protocol
 from autobahn.websocket import http
-
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
-import traceback
+__all__ = ('WampWebSocketServerProtocol',
+           'WampWebSocketClientProtocol',
+           'WampWebSocketServerFactory',
+           'WampWebSocketClientFactory')
 
 
 class WampWebSocketProtocol:

@@ -16,12 +16,12 @@
 ##
 ###############################################################################
 
-__all__ = ['IWebSocketChannel',
-           'IWebSocketChannelFrameApi',
-           'IWebSocketChannelStreamingApi']
-
 import abc
 import six
+
+__all__ = ('IWebSocketChannel',
+           'IWebSocketChannelFrameApi',
+           'IWebSocketChannelStreamingApi')
 
 
 @six.add_metaclass(abc.ABCMeta)

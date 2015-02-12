@@ -16,6 +16,23 @@
 ##
 ###############################################################################
 
+from collections import deque
+
+from autobahn.wamp import websocket
+from autobahn.websocket import protocol
+from autobahn.websocket import http
+
+try:
+    import asyncio
+    from asyncio import iscoroutine
+    from asyncio import Future
+except ImportError:
+    # Trollius >= 0.3 was renamed
+    # noinspection PyUnresolvedReferences
+    import trollius as asyncio
+    from trollius import iscoroutine
+    from trollius import Future
+
 __all__ = (
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
@@ -29,23 +46,6 @@ __all__ = (
     'WampWebSocketServerFactory',
     'WampWebSocketClientFactory',
 )
-
-from collections import deque
-
-try:
-    import asyncio
-    from asyncio import iscoroutine
-    from asyncio import Future
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    # noinspection PyUnresolvedReferences
-    import trollius as asyncio
-    from trollius import iscoroutine
-    from trollius import Future
-
-from autobahn.wamp import websocket
-from autobahn.websocket import protocol
-from autobahn.websocket import http
 
 
 def yields(value):

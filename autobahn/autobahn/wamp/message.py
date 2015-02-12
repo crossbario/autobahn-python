@@ -18,6 +18,15 @@
 
 from __future__ import absolute_import
 
+import re
+import six
+
+import autobahn
+from autobahn import util
+from autobahn.wamp.exception import ProtocolError
+from autobahn.wamp.interfaces import IMessage
+from autobahn.wamp.role import ROLE_NAME_TO_CLASS
+
 __all__ = ('Message',
            'Hello',
            'Welcome',
@@ -44,19 +53,8 @@ __all__ = ('Message',
            'Invocation',
            'Interrupt',
            'Yield',
-
            'check_or_raise_uri',
            'check_or_raise_id')
-
-
-import re
-import six
-
-import autobahn
-from autobahn import util
-from autobahn.wamp.exception import ProtocolError
-from autobahn.wamp.interfaces import IMessage
-from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 
 # strict URI check allowing empty URI components

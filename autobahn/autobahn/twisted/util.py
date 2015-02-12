@@ -18,12 +18,12 @@
 
 from __future__ import absolute_import
 
+from twisted.internet.defer import Deferred
+from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
+
 __all = (
     'sleep',
 )
-
-from twisted.internet.defer import Deferred
-from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
 
 
 def sleep(delay, reactor=None):

@@ -18,6 +18,25 @@
 
 from __future__ import absolute_import
 
+from base64 import b64encode, b64decode
+
+from zope.interface import implementer
+
+import twisted.internet.protocol
+from twisted.internet.defer import maybeDeferred
+from twisted.python import log
+from twisted.internet.interfaces import ITransport
+
+from autobahn.wamp import websocket
+from autobahn.websocket import protocol
+from autobahn.websocket import http
+from autobahn.twisted.util import peer2str
+
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateOfferAccept, \
+    PerMessageDeflateResponse, \
+    PerMessageDeflateResponseAccept
+
 __all__ = (
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
@@ -40,26 +59,6 @@ __all__ = (
     'WampWebSocketClientProtocol',
     'WampWebSocketClientFactory',
 )
-
-
-from base64 import b64encode, b64decode
-
-from zope.interface import implementer
-
-import twisted.internet.protocol
-from twisted.internet.defer import maybeDeferred
-from twisted.python import log
-from twisted.internet.interfaces import ITransport
-
-from autobahn.wamp import websocket
-from autobahn.websocket import protocol
-from autobahn.websocket import http
-from autobahn.twisted.util import peer2str
-
-from autobahn.websocket.compress import PerMessageDeflateOffer, \
-    PerMessageDeflateOfferAccept, \
-    PerMessageDeflateResponse, \
-    PerMessageDeflateResponseAccept
 
 
 class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):

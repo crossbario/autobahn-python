@@ -18,20 +18,6 @@
 
 from __future__ import absolute_import
 
-__all__ = ["createWsUrl",
-           "parseWsUrl",
-
-           "ConnectionRequest",
-           "ConnectionResponse",
-           "Timings",
-
-           "WebSocketProtocol",
-           "WebSocketFactory",
-           "WebSocketServerProtocol",
-           "WebSocketServerFactory",
-           "WebSocketClientProtocol",
-           "WebSocketClientFactory"]
-
 import binascii
 import hashlib
 import base64
@@ -42,11 +28,6 @@ import pickle
 import copy
 import json
 import six
-
-if six.PY3:
-    # Python 3
-    # noinspection PyShadowingBuiltins
-    xrange = range
 
 from pprint import pformat
 from collections import deque
@@ -64,6 +45,11 @@ from autobahn.websocket.compress import *
 from autobahn.websocket import http
 
 from six.moves import urllib
+
+if six.PY3:
+    # Python 3
+    # noinspection PyShadowingBuiltins
+    xrange = range
 
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
@@ -86,6 +72,18 @@ urlparse.uses_netloc.extend(wsschemes)
 urlparse.uses_params.extend(wsschemes)
 urlparse.uses_query.extend(wsschemes)
 urlparse.uses_fragment.extend(wsschemes)
+
+__all__ = ("createWsUrl",
+           "parseWsUrl",
+           "ConnectionRequest",
+           "ConnectionResponse",
+           "Timings",
+           "WebSocketProtocol",
+           "WebSocketFactory",
+           "WebSocketServerProtocol",
+           "WebSocketServerFactory",
+           "WebSocketClientProtocol",
+           "WebSocketClientFactory")
 
 
 def createWsUrl(hostname, port=None, isSecure=False, path=None, params=None):

@@ -18,15 +18,6 @@
 
 from __future__ import absolute_import
 
-__all__ = (
-    'FutureMixin',
-    'ApplicationSession',
-    'ApplicationSessionFactory',
-    'ApplicationRunner',
-    'Application',
-    'Service'
-)
-
 import sys
 import inspect
 
@@ -41,6 +32,15 @@ from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+
+__all__ = (
+    'FutureMixin',
+    'ApplicationSession',
+    'ApplicationSessionFactory',
+    'ApplicationRunner',
+    'Application',
+    'Service'
+)
 
 
 class FutureMixin:

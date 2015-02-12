@@ -20,16 +20,16 @@ from __future__ import absolute_import
 
 import sys
 
+from autobahn.wamp import role
+from autobahn.wamp import message
+from autobahn.wamp.exception import ProtocolError
+
 if sys.version_info < (2, 7):
     # noinspection PyUnresolvedReferences
     import unittest2 as unittest
 else:
     # from twisted.trial import unittest
     import unittest
-
-from autobahn.wamp import role
-from autobahn.wamp import message
-from autobahn.wamp.exception import ProtocolError
 
 
 class Foo:

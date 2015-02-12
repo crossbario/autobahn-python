@@ -18,6 +18,9 @@
 
 from __future__ import absolute_import
 
+from autobahn.websocket.compress_base import *
+from autobahn.websocket.compress_deflate import *
+
 # this must be a list (not tuple), since we dynamically
 # extend it ..
 __all__ = [
@@ -33,10 +36,6 @@ __all__ = [
     "PerMessageDeflate",
     "PERMESSAGE_COMPRESSION_EXTENSION"
 ]
-
-from autobahn.websocket.compress_base import *
-from autobahn.websocket.compress_deflate import *
-
 
 # class for "permessage-deflate" is always available
 ##

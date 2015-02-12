@@ -18,6 +18,13 @@
 
 from __future__ import absolute_import
 
+import zlib
+
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
 
 __all__ = (
     'PerMessageDeflateMixin',
@@ -27,15 +34,6 @@ __all__ = (
     'PerMessageDeflateResponseAccept',
     'PerMessageDeflate',
 )
-
-
-import zlib
-
-from autobahn.websocket.compress_base import PerMessageCompressOffer, \
-    PerMessageCompressOfferAccept, \
-    PerMessageCompressResponse, \
-    PerMessageCompressResponseAccept, \
-    PerMessageCompress
 
 
 class PerMessageDeflateMixin:

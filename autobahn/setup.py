@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+import re
 import sys
 import platform
 from setuptools import setup
@@ -52,7 +53,6 @@ More information:
 # get version string from "autobahn/__init__.py"
 # See: http://stackoverflow.com/a/7071358/884770
 ##
-import re
 VERSIONFILE = "autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"

@@ -16,15 +16,14 @@
 ##
 ###############################################################################
 
+import re
+
+from twisted.internet.protocol import Protocol, Factory
+
 __all__ = (
     'FlashPolicyProtocol',
     'FlashPolicyFactory'
 )
-
-
-import re
-
-from twisted.internet.protocol import Protocol, Factory
 
 
 class FlashPolicyProtocol(Protocol):

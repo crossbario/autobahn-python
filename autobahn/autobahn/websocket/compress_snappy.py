@@ -18,6 +18,13 @@
 
 from __future__ import absolute_import
 
+import snappy
+
+from autobahn.websocket.compress_base import PerMessageCompressOffer, \
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
 
 __all__ = (
     'PerMessageSnappyMixin',
@@ -27,15 +34,6 @@ __all__ = (
     'PerMessageSnappyResponseAccept',
     'PerMessageSnappy',
 )
-
-
-import snappy
-
-from autobahn.websocket.compress_base import PerMessageCompressOffer, \
-    PerMessageCompressOfferAccept, \
-    PerMessageCompressResponse, \
-    PerMessageCompressResponseAccept, \
-    PerMessageCompress
 
 
 class PerMessageSnappyMixin:

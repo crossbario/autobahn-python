@@ -16,12 +16,6 @@
 ##
 ###############################################################################
 
-__all__ = (
-    'WebSocketResource',
-    'HTTPChannelHixie76Aware',
-    'WSGIRootResource',
-)
-
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
@@ -40,6 +34,12 @@ from twisted.web.http import HTTPChannel
 # .. and this also, since it imports t.w.http
 ##
 from twisted.web.server import NOT_DONE_YET
+
+__all__ = (
+    'WebSocketResource',
+    'HTTPChannelHixie76Aware',
+    'WSGIRootResource',
+)
 
 
 class HTTPChannelHixie76Aware(HTTPChannel):

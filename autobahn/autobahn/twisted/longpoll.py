@@ -18,11 +18,6 @@
 
 from __future__ import absolute_import
 
-__all__ = (
-    'WampLongPollResource',
-)
-
-
 import json
 import traceback
 import binascii
@@ -42,6 +37,10 @@ from autobahn.wamp.websocket import parseSubprotocolIdentifier
 
 from autobahn.wamp.exception import SerializationError, \
     TransportLost
+
+__all__ = (
+    'WampLongPollResource',
+)
 
 
 class WampLongPollResourceSessionSend(Resource):

@@ -16,10 +16,9 @@
 ##
 ###############################################################################
 
-__all__ = ("lookupWsSupport",)
-
-
 import re
+
+__all__ = ("lookupWsSupport",)
 
 UA_FIREFOX = re.compile(".*Firefox/(\d*).*")
 UA_CHROME = re.compile(".*Chrome/(\d*).*")
@@ -27,6 +26,8 @@ UA_CHROMEFRAME = re.compile(".*chromeframe/(\d*).*")
 UA_WEBKIT = re.compile(".*AppleWebKit/([0-9+\.]*)\w*.*")
 UA_WEBOS = re.compile(".*webos/([0-9+\.]*)\w*.*")
 UA_HPWEBOS = re.compile(".*hpwOS/([0-9+\.]*)\w*.*")
+
+UA_DETECT_WS_SUPPORT_DB = {}
 
 
 # Chrome =============================================================
@@ -263,9 +264,6 @@ def _lookupWsSupport(ua):
 
     # detection problem
     return False, False, False
-
-
-UA_DETECT_WS_SUPPORT_DB = {}
 
 
 def lookupWsSupport(ua, debug=True):

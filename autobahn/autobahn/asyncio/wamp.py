@@ -18,12 +18,10 @@
 
 from __future__ import absolute_import
 
-__all__ = (
-    'FutureMixin',
-    'ApplicationSession',
-    'ApplicationSessionFactory',
-    'ApplicationRunner'
-)
+from autobahn.wamp import protocol
+from autobahn.wamp.types import ComponentConfig
+from autobahn.websocket.protocol import parseWsUrl
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 try:
     import asyncio
@@ -36,10 +34,12 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
-from autobahn.wamp import protocol
-from autobahn.wamp.types import ComponentConfig
-from autobahn.websocket.protocol import parseWsUrl
-from autobahn.asyncio.websocket import WampWebSocketClientFactory
+__all__ = (
+    'FutureMixin',
+    'ApplicationSession',
+    'ApplicationSessionFactory',
+    'ApplicationRunner'
+)
 
 
 class FutureMixin:
