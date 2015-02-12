@@ -18,8 +18,10 @@
 
 from __future__ import absolute_import
 
-# from twisted.trial import unittest
-import unittest2
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
 from mock import patch
 
 
@@ -43,7 +45,7 @@ class FakeReactor:
         raise RuntimeError("ConnectTCP shouldn't get called")
 
 
-class TestWampTwistedRunner(unittest2.TestCase):
+class TestWampTwistedRunner(unittest.TestCase):
 
     def test_connect_error(self):
         '''
@@ -56,7 +58,7 @@ class TestWampTwistedRunner(unittest2.TestCase):
             # the 'reactor' member doesn't exist until we import it
             from twisted.internet import reactor  # noqa: F401
         except ImportError:
-            raise unittest2.SkipTest('No twisted')
+            raise unittest.SkipTest('No twisted')
 
         runner = ApplicationRunner('ws://localhost:1', 'realm')
         exception = ConnectionRefusedError("It's a trap!")
