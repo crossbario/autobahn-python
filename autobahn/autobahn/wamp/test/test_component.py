@@ -132,10 +132,14 @@ if unittest is not None:
             self.log("procedures registered")
 
     class Case2_Frontend(CaseComponent):
+        test_running = False
 
         @defer.inlineCallbacks
         def onJoin(self, details):
+            if self.test_running:
+                return
 
+            self.test_running = True
             self.log("joined")
 
             yield sleep(1)
@@ -176,6 +180,14 @@ if unittest is not None:
             arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
             self.log("Arglen 3: {0}".format(arglengths))
 
+            while True:
+                try:
+                    arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
+                except Exception as e:
+                    print e
+                self.log("Arglen 3: {0}".format(arglengths))
+                yield sleep(1)
+
             self.log("finishing")
 
             self.finish()
@@ -207,7 +219,7 @@ if unittest is not None:
 
             app.startService()
             yield self.deferred
-            app.stopService()
+            yield app.stopService()
 
         @defer.inlineCallbacks
         def test_case1(self):

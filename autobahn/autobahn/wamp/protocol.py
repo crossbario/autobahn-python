@@ -303,6 +303,9 @@ class ApplicationSession(BaseSession):
         self._session_id = None
         self._realm = None
 
+        self._leaveFuture = None
+        self._transportFuture = None
+
         self._session_id = None
         self._goodbye_sent = False
         self._transport_is_closing = False
@@ -323,6 +326,32 @@ class ApplicationSession(BaseSession):
 
         # incoming invocations
         self._invocations = {}
+
+    def getTransport(self):
+        """
+        get _transport when it will be available.
+        For reconnecting case this allows to make rpc calls and publish even if
+        the connection is currently lost.
+
+        The deferred is called after onJoin has been called
+        """
+        f = self._create_future()
+        if self._transport is not None:
+            self._resolve_future(f, self._transport)
+        else:
+            if self._transportFuture is None:
+                self._transportFuture = self._create_future()
+
+                def call_first(res):
+                    self._transportFuture = None
+                    return res
+                self._add_future_callbacks(self._transportFuture, call_first, None)
+
+            def call(res):
+                self._resolve_future(f, res)
+                return res
+            self._add_future_callbacks(self._transportFuture, call, None)
+        return f
 
     def onOpen(self, transport):
         """
@@ -366,6 +395,7 @@ class ApplicationSession(BaseSession):
         """
         if self._transport:
             self._transport.close()
+            self._transport = None
         else:
             raise Exception("transport disconnected")
 
@@ -380,8 +410,15 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-                self._as_future(self.onJoin, details)
+                f = self._as_future(self.onJoin, details)
 
+                def joined(res):
+                    if self._transportFuture is not None:
+                        self._resolve_future(self._transportFuture, self._transport)
+                self._add_future_callbacks(
+                    f,
+                    joined,
+                    None)
             elif isinstance(msg, message.Abort):
 
                 # fire callback and close the transport
@@ -717,7 +754,6 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
         """
         self._transport = None
-
         if self._session_id:
 
             # fire callback and close the transport
@@ -730,6 +766,10 @@ class ApplicationSession(BaseSession):
             self._session_id = None
 
         self.onDisconnect()
+        if self._leaveFuture is not None:
+            self._resolve_future(self._leaveFuture, None)
+            self._leaveFuture = None
+            self._transport.closedByMe = self.closedByMe
 
     def onChallenge(self, challenge):
         """
@@ -761,6 +801,8 @@ class ApplicationSession(BaseSession):
             msg = wamp.message.Goodbye(reason=reason, message=log_message)
             self._transport.send(msg)
             self._goodbye_sent = True
+            self._leaveFuture = self._create_future()
+            return self._leaveFuture
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
@@ -771,6 +813,13 @@ class ApplicationSession(BaseSession):
         if six.PY2 and type(topic) == str:
             topic = six.u(topic)
         assert(type(topic) == six.text_type)
+        f = self.getTransport()
+        self._add_future_callbacks(f,
+                                   lambda _: self._publish(topic, *args, **kwargs),
+                                   None)
+        return f
+
+    def _publish(self, topic, *args, **kwargs):
 
         if not self._transport:
             raise exception.TransportLost()
@@ -866,7 +915,13 @@ class ApplicationSession(BaseSession):
         if six.PY2 and type(procedure) == str:
             procedure = six.u(procedure)
         assert(isinstance(procedure, six.text_type))
+        f = self.getTransport()
+        self._add_future_callbacks(f,
+                                   lambda _: self._call(procedure, *args, **kwargs),
+                                   None)
+        return f
 
+    def _call(self, procedure, *args, **kwargs):
         if not self._transport:
             raise exception.TransportLost()
 
