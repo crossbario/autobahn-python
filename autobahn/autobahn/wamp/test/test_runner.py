@@ -23,10 +23,6 @@ import unittest
 import platform
 from mock import patch
 
-from twisted.internet.error import ConnectionRefusedError
-
-from autobahn.twisted.wamp import ApplicationRunner
-
 class FakeReactor:
     '''
     This just fakes out enough reactor methods so .run() can work.
@@ -53,10 +49,16 @@ class TestWampTwistedRunner(unittest.TestCase):
         Ensure the runner doesn't swallow errors and that it exits the
         reactor properly if there is one.
         '''
+        try:
+            from autobahn.twisted.wamp import ApplicationRunner
+            from twisted.internet.error import ConnectionRefusedError
+            # the 'reactor' member doesn't exist until we import it
+            from twisted.internet import reactor
+        except ImportError:
+            raise unittest.SkipTest('No twisted')
+
         runner = ApplicationRunner('ws://localhost:1', 'realm')
         exception = ConnectionRefusedError("It's a trap!")
-        # the 'reactor' member doesn't exist until we import it
-        from twisted.internet import reactor
 
         with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
             self.assertRaises(
