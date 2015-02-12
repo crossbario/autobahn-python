@@ -173,6 +173,7 @@ class ApplicationRunner:
 
         class ErrorCollector:
             exception = None
+
             def __call__(self, failure):
                 self.exception = failure.value
                 # print(failure.getErrorMessage())
