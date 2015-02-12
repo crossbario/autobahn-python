@@ -4,6 +4,7 @@ install:
   - pip install tox 
 
 env:
+  - TOX_ENV=flake8
   - TOX_ENV=py26twisted
   - TOX_ENV=py26asyncio
   - TOX_ENV=py27twisted

@@ -5,6 +5,7 @@ all:
 	@echo "   install          Local install"
 	@echo "   publish          Clean build, register and publish to PyPi"
 	@echo "   test             Run unit tests"
+	@echo "   flake8           Run flake8 code checking"
 	@echo ""
 
 install:
@@ -63,4 +64,7 @@ autopep8:
 
 # This will run pep8, pyflakes and can skip lines that end with # noqa
 flake8:
-	flake8 --ignore=E501 autobahn
+	flake8 -v --ignore=E501 autobahn
+
+pylint:
+	pylint -d line-too-long,invalid-name autobahn
