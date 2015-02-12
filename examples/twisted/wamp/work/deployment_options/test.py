@@ -18,15 +18,13 @@
 
 import sys
 import io
-import six
-import datetime
+import argparse
 
 from twisted.python import log
 from twisted.internet.defer import inlineCallbacks, Deferred, DeferredList
-from twisted.internet.endpoints import serverFromString
+from twisted.internet.endpoints import serverFromString, clientFromString
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted import wamp, websocket
+from autobahn.twisted import wamp
 
 
 class CaseComponent(wamp.ApplicationSession):
@@ -196,13 +194,6 @@ class Case2_Frontend(CaseComponent):
 #
 
 if __name__ == '__main__':
-
-    import sys
-    import argparse
-
-    from twisted.python import log
-    from twisted.internet.endpoints import serverFromString
-    from twisted.internet.endpoints import clientFromString
 
     # parse command line arguments
     #
