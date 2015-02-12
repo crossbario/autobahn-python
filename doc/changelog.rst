@@ -5,6 +5,17 @@
 Changelog
 =========
 
+0.9.6
+-----
+
+Not yet published.
+
+* PEP8 code conformance
+* PyFlakes code quality
+* fix: warning for xrange on Python 3
+* fix: parsing of IPv6 host headers
+* add WAMP/Twisted service
+
 0.9.5
 -----
 
