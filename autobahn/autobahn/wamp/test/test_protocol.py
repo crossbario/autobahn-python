@@ -232,10 +232,10 @@ if os.environ.get('USE_TWISTED', False):
                 print("got event", args, kwargs)
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1')
-            self.assertTrue(type(subscription.id) in (int, long))
+            self.assertTrue(type(subscription.handler.id) in (int, long))
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard'))
-            self.assertTrue(type(subscription.id) in (int, long))
+            self.assertTrue(type(subscription.handler.id) in (int, long))
 
         @inlineCallbacks
         def test_unsubscribe(self):
