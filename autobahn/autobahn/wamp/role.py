@@ -42,7 +42,7 @@ class RoleFeatures(util.EqualityMixin):
 
     def __repr__(self):
         configured_options = {}
-        for k, v in self.__dict__.iteritems():
+        for k, v in self.__dict__.items():
             if v is not None:
                 configured_options[k] = v
         return "{0}({1})".format(self.ROLE, ", ".join([k + '=' + str(v)
