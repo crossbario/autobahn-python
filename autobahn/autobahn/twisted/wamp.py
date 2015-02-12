@@ -22,7 +22,7 @@ import sys
 import inspect
 
 from twisted.python import log
-from twisted.application import service, internet
+from twisted.application import service
 from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
@@ -484,10 +484,7 @@ class Service(service.MultiService):
     def setupService(self):
         """
         Setup the application component.
-
         """
-        from twisted.internet import reactor
-
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
         # factory for use ApplicationSession

@@ -18,8 +18,8 @@
 
 from __future__ import absolute_import
 
-from autobahn.websocket.compress_base import *
-from autobahn.websocket.compress_deflate import *
+from autobahn.websocket.compress_base import *  # noqa
+from autobahn.websocket.compress_deflate import *  # noqa
 
 # this must be a list (not tuple), since we dynamically
 # extend it ..
@@ -57,7 +57,7 @@ try:
 except ImportError:
     bz2 = None
 else:
-    from autobahn.websocket.compress_bzip2 import *
+    from autobahn.websocket.compress_bzip2 import *  # noqa
 
     PMCE = {
         'Offer': PerMessageBzip2Offer,
@@ -83,7 +83,7 @@ try:
 except ImportError:
     snappy = None
 else:
-    from autobahn.websocket.compress_snappy import *
+    from autobahn.websocket.compress_snappy import *  # noqa
 
     PMCE = {
         'Offer': PerMessageSnappyOffer,

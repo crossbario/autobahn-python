@@ -161,6 +161,7 @@ if False:
         # Make Twisted regenerate the dropin.cache, if possible. This is necessary
         # because in a site-wide install, dropin.cache cannot be rewritten by
         # normal users.
+        print("Twisted found (default reactor is {})".format(reactor.__class__))
         try:
             from twisted.plugin import IPlugin, getPlugins
             list(getPlugins(IPlugin))

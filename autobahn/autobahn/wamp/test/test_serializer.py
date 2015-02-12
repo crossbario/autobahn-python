@@ -89,13 +89,13 @@ class TestSerializer(unittest.TestCase):
 
     def test_roundtrip(self):
         for msg in generate_test_messages():
-            for serializer in self.serializers:
+            for ser in self.serializers:
 
                 # serialize message
-                payload, binary = serializer.serialize(msg)
+                payload, binary = ser.serialize(msg)
 
                 # unserialize message again
-                msg2 = serializer.unserialize(payload, binary)
+                msg2 = ser.unserialize(payload, binary)
 
                 # must be equal: message roundtrips via the serializer
                 self.assertEqual([msg], msg2)
@@ -104,20 +104,20 @@ class TestSerializer(unittest.TestCase):
         for msg in generate_test_messages():
             # message serialization cache is initially empty
             self.assertEqual(msg._serialized, {})
-            for serializer in self.serializers:
+            for ser in self.serializers:
 
                 # verify message serialization is not yet cached
-                self.assertFalse(serializer._serializer in msg._serialized)
-                payload, binary = serializer.serialize(msg)
+                self.assertFalse(ser._serializer in msg._serialized)
+                payload, binary = ser.serialize(msg)
 
                 # now the message serialization must be cached
-                self.assertTrue(serializer._serializer in msg._serialized)
-                self.assertEqual(msg._serialized[serializer._serializer], payload)
+                self.assertTrue(ser._serializer in msg._serialized)
+                self.assertEqual(msg._serialized[ser._serializer], payload)
 
                 # and after resetting the serialization cache, message
                 # serialization is gone
                 msg.uncache()
-                self.assertFalse(serializer._serializer in msg._serialized)
+                self.assertFalse(ser._serializer in msg._serialized)
 
 
 if __name__ == '__main__':

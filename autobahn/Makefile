@@ -60,3 +60,7 @@ pep8:
 
 autopep8:
 	autopep8 -ri --aggressive .
+
+# This will run pep8, pyflakes and can skip lines that end with # noqa
+flake8:
+	flake8 --ignore=E501 autobahn

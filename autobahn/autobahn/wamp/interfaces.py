@@ -380,7 +380,7 @@ class IRegistration(object):
         """
 
     @abc.abstractproperty
-    def id(self):
+    def active(self):
         """
         Flag indicating if registration is active.
         """

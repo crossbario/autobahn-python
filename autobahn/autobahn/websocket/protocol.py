@@ -41,7 +41,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.util import Stopwatch, newid, wildcards2patterns
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
-from autobahn.websocket.compress import *
+from autobahn.websocket.compress import *  # noqa
 from autobahn.websocket import http
 
 from six.moves import urllib

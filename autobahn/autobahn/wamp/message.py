@@ -931,7 +931,7 @@ class Error(Message):
             raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
         request = check_or_raise_id(wmsg[2], u"'request' in ERROR")
-        _ = check_or_raise_extra(wmsg[3], u"'details' in ERROR")
+        check_or_raise_extra(wmsg[3], u"'details' in ERROR")
         error = check_or_raise_uri(wmsg[4], u"'error' in ERROR")
 
         args = None
