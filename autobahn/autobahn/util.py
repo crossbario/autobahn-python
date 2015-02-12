@@ -89,6 +89,7 @@ def parseutc(datestr):
         return None
 
 
+# noinspection PyShadowingBuiltins
 def id():
     """
     Generate a new random object ID from range **[0, 2**53]**.

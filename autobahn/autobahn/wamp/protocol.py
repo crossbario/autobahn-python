@@ -784,7 +784,7 @@ class ApplicationSession(BaseSession):
             opts = None
             msg = message.Publish(request, topic, args=args, kwargs=kwargs)
 
-        if opts and opts.options['acknowledge'] == True:
+        if opts and opts.options['acknowledge'] is True:
             d = self._create_future()
             self._publish_reqs[request] = d, opts
             self._transport.send(msg)
