@@ -27,6 +27,8 @@ from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
     inlineCallbacks
+from twisted.internet.protocol import ReconnectingClientFactory
+from twisted.internet.error import ConnectionDone
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -88,6 +90,22 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
     """
    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
    """
+
+
+class ReconnectingWampWebSocketClientFactory(WampWebSocketClientFactory, ReconnectingClientFactory):
+
+    def clientConnectionFailed(self, connector, reason):
+        print("failed to connect", reason.getErrorMessage())
+        print("retrying...")
+        ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+
+    def clientConnectionLost(self, connector, reason):
+        WampWebSocketClientFactory.clientConnectionLost(self, connector, reason)
+        if reason.check(ConnectionDone):
+            return
+        print("disconnected", reason.getErrorMessage())
+        print("reconnecting...")
+        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 
 class ApplicationRunner:
@@ -153,8 +171,8 @@ class ApplicationRunner:
                 return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+        transport_factory = ReconnectingWampWebSocketClientFactory(
+            create, url=self.url, debug=self.debug, debug_wamp=self.debug_wamp)
 
         # start the client from a Twisted endpoint
         from twisted.internet.endpoints import clientFromString
@@ -495,8 +513,8 @@ class Service(service.MultiService):
             return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+        transport_factory = ReconnectingWampWebSocketClientFactory(
+            create, url=self.url, debug=self.debug, debug_wamp=self.debug_wamp)
 
         # setup the client from a Twisted endpoint
 
