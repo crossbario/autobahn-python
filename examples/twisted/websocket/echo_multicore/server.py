@@ -1,62 +1,29 @@
 ###############################################################################
 ##
-##  Copyright (C) 2013 Tavendo GmbH
+# Copyright (C) 2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
 import sys
-
-## make sure we run a capable OS/reactor
-##
-startupMsgs = []
-if 'bsd' in sys.platform:
-   from twisted.internet import kqreactor
-   kqreactor.install()
-   startupMsgs.append("Alrighty: you run a capable kqueue platform - good job!")
-elif sys.platform.startswith('linux'):
-   from twisted.internet import epollreactor
-   epollreactor.install()
-   startupMsgs.append("Alrighty: you run a capable epoll platform - good job!")
-elif sys.platform.startswith('darwin'):
-   from twisted.internet import kqreactor
-   kqreactor.install()
-   startupMsgs.append("Huh, you run OSX and have kqueue, but don't be disappointed when performance sucks;)")
-elif sys.platform == 'win32':
-   raise Exception("Sorry dude, Twisted/Windows select/iocp reactors lack the necessary bits.")
-else:
-   raise Exception("Hey man, what OS are you using?")
-
+import os
 import pkg_resources
-from twisted.internet import reactor
-startupMsgs.append("Using Twisted reactor class %s on Twisted %s" % (str(reactor.__class__), pkg_resources.require("Twisted")[0].version))
-
-
-hasStatprof = False
-try:
-   import statprof
-   startupMsgs.append("statprof found! you may enable statistical profiling") 
-   hasStatprof = True
-except ImportError:
-   startupMsgs.append("statprof not installed - no profiling available")
-
-
-import sys, os
 import StringIO
 from sys import argv, executable
 from socket import AF_INET
 
+from twisted.internet import reactor
 from twisted.python import log
 from twisted.internet import reactor
 from twisted.internet.protocol import Factory
@@ -66,265 +33,294 @@ from twisted.web.static import File
 from autobahn.websocket import parseWsUrl
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
-                                       WebSocketServerProtocol
+    WebSocketServerProtocol
 
 from autobahn.util import Stopwatch
 
 
+# make sure we run a capable OS/reactor
+##
+startupMsgs = []
+if 'bsd' in sys.platform:
+    from twisted.internet import kqreactor
+    kqreactor.install()
+    startupMsgs.append("Alrighty: you run a capable kqueue platform - good job!")
+elif sys.platform.startswith('linux'):
+    from twisted.internet import epollreactor
+    epollreactor.install()
+    startupMsgs.append("Alrighty: you run a capable epoll platform - good job!")
+elif sys.platform.startswith('darwin'):
+    from twisted.internet import kqreactor
+    kqreactor.install()
+    startupMsgs.append("Huh, you run OSX and have kqueue, but don't be disappointed when performance sucks;)")
+elif sys.platform == 'win32':
+    raise Exception("Sorry dude, Twisted/Windows select/iocp reactors lack the necessary bits.")
+else:
+    raise Exception("Hey man, what OS are you using?")
+
+startupMsgs.append("Using Twisted reactor class %s on Twisted %s" % (str(reactor.__class__), pkg_resources.require("Twisted")[0].version))
+
+
+hasStatprof = False
+try:
+    import statprof
+    startupMsgs.append("statprof found! you may enable statistical profiling")
+    hasStatprof = True
+except ImportError:
+    startupMsgs.append("statprof not installed - no profiling available")
+
+
 class Stats:
-   def __init__(self):
-      ## stats period
-      self.period = 0
 
-      ## currently connected client
-      self.clients = 0
+    def __init__(self):
+        # stats period
+        self.period = 0
 
-      ## total (running) stats
-      self.tMsgs = 0
-      self.tOctets = 0
-      self.tHandshakes = 0
-      self.tOctetsWireIn = 0
-      self.tOctetsWireOut = 0
+        # currently connected client
+        self.clients = 0
 
-      self.stopwatch = Stopwatch(start = False)
+        # total (running) stats
+        self.tMsgs = 0
+        self.tOctets = 0
+        self.tHandshakes = 0
+        self.tOctetsWireIn = 0
+        self.tOctetsWireOut = 0
 
-      ## period stats
-      self._advance()
+        self.stopwatch = Stopwatch(start=False)
 
-   def _advance(self):
-      self.period += 1
-      self.pMsgs = 0
-      self.pOctets = 0
-      self.pHandshakes = 0
-      self.pOctetsWireIn = 0
-      self.pOctetsWireOut = 0
-      self.stopwatch.resume()
+        # period stats
+        self._advance()
 
-   def trackHandshake(self):
-      self.tHandshakes += 1
-      self.pHandshakes += 1
+    def _advance(self):
+        self.period += 1
+        self.pMsgs = 0
+        self.pOctets = 0
+        self.pHandshakes = 0
+        self.pOctetsWireIn = 0
+        self.pOctetsWireOut = 0
+        self.stopwatch.resume()
 
-   def trackMsg(self, length):
-      self.tMsgs += 1
-      self.pMsgs += 1
-      self.tOctets += length
-      self.pOctets += length
+    def trackHandshake(self):
+        self.tHandshakes += 1
+        self.pHandshakes += 1
 
-   def trackOctetsWireIn(self, count):
-      self.tOctetsWireIn += count
-      self.pOctetsWireIn += count
+    def trackMsg(self, length):
+        self.tMsgs += 1
+        self.pMsgs += 1
+        self.tOctets += length
+        self.pOctets += length
 
-   def trackOctetsWireOut(self, count):
-      self.tOctetsWireOut += count
-      self.pOctetsWireOut += count
+    def trackOctetsWireIn(self, count):
+        self.tOctetsWireIn += count
+        self.pOctetsWireIn += count
 
+    def trackOctetsWireOut(self, count):
+        self.tOctetsWireOut += count
+        self.pOctetsWireOut += count
 
-   def stats(self, advance = True):
-      elapsed = self.stopwatch.stop()
+    def stats(self, advance=True):
+        elapsed = self.stopwatch.stop()
 
-      s =    ("Period No.        : %d\n" +
-              "Period duration   : %.3f s\n" +
-              "Connected clients : %d\n" +
-              "\n" +
+        s = ("Period No.        : %d\n" +
+             "Period duration   : %.3f s\n" +
+             "Connected clients : %d\n" +
+             "\n" +
 
-              "Period\n" +
-              "  Handshakes      : %20d # %20d #/s\n" +
-              "  Echo'ed msgs    : %20d # %20d #/s\n" +
-              "  Echo'ed octets  : %20d B %20d B/s\n" +
-              "  Wire octets in  : %20d B %20d B/s\n" +
-              "  Wire octets out : %20d B %20d B/s\n" +
-              "\n" +
+             "Period\n" +
+             "  Handshakes      : %20d # %20d #/s\n" +
+             "  Echo'ed msgs    : %20d # %20d #/s\n" +
+             "  Echo'ed octets  : %20d B %20d B/s\n" +
+             "  Wire octets in  : %20d B %20d B/s\n" +
+             "  Wire octets out : %20d B %20d B/s\n" +
+             "\n" +
 
-              "Total\n" +
-              "  Handshakes      : %20d #\n" +
-              "  Echo'ed msgs    : %20d #\n" +
-              "  Echo'ed octets  : %20d B\n" +
-              "  Wire octets in  : %20d B\n" +
-              "  Wire octets out : %20d B\n" +
+             "Total\n" +
+             "  Handshakes      : %20d #\n" +
+             "  Echo'ed msgs    : %20d #\n" +
+             "  Echo'ed octets  : %20d B\n" +
+             "  Wire octets in  : %20d B\n" +
+             "  Wire octets out : %20d B\n" +
 
-              ""
-              ) % (self.period,
-                   round(elapsed, 3),
-                   self.clients,
+             ""
+             ) % (self.period,
+                  round(elapsed, 3),
+                  self.clients,
 
-                   self.pHandshakes,
-                   round(float(self.pHandshakes) / elapsed),
+                  self.pHandshakes,
+                  round(float(self.pHandshakes) / elapsed),
 
-                   self.pMsgs,
-                   round(float(self.pMsgs) / elapsed),
+                  self.pMsgs,
+                  round(float(self.pMsgs) / elapsed),
 
-                   self.pOctets,
-                   round(float(self.pOctets) / elapsed),
+                  self.pOctets,
+                  round(float(self.pOctets) / elapsed),
 
-                   self.pOctetsWireIn,
-                   round(float(self.pOctetsWireIn) / elapsed),
+                  self.pOctetsWireIn,
+                  round(float(self.pOctetsWireIn) / elapsed),
 
-                   self.pOctetsWireOut,
-                   round(float(self.pOctetsWireOut) / elapsed),
+                  self.pOctetsWireOut,
+                  round(float(self.pOctetsWireOut) / elapsed),
 
-                   self.tHandshakes,
-                   self.tMsgs,
-                   self.tOctets,
-                   self.tOctetsWireIn,
-                   self.tOctetsWireOut,
-                   )
-      self._advance()
-      return s
-
+                  self.tHandshakes,
+                  self.tMsgs,
+                  self.tOctets,
+                  self.tOctetsWireIn,
+                  self.tOctetsWireOut,
+                  )
+        self._advance()
+        return s
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
-   def onOpen(self):
-      self.factory.stats.clients += 1
-      self.factory.stats.trackHandshake()
+    def onOpen(self):
+        self.factory.stats.clients += 1
+        self.factory.stats.trackHandshake()
 
-   def onMessage(self, msg, binary):
-      self.sendMessage(msg, binary)
-      self.factory.stats.trackMsg(len(msg))
+    def onMessage(self, msg, binary):
+        self.sendMessage(msg, binary)
+        self.factory.stats.trackMsg(len(msg))
 
-   def onClose(self, wasClean, code, reason):
-      self.factory.stats.clients -= 1
+    def onClose(self, wasClean, code, reason):
+        self.factory.stats.clients -= 1
 
-   def connectionLost(self, reason):
-      WebSocketServerProtocol.connectionLost(self, reason)
+    def connectionLost(self, reason):
+        WebSocketServerProtocol.connectionLost(self, reason)
 
-      self.factory.stats.trackOctetsWireIn(self.trafficStats.preopenIncomingOctetsWireLevel + \
-                                           self.trafficStats.incomingOctetsWireLevel)
+        self.factory.stats.trackOctetsWireIn(self.trafficStats.preopenIncomingOctetsWireLevel +
+                                             self.trafficStats.incomingOctetsWireLevel)
 
-      self.factory.stats.trackOctetsWireOut(self.trafficStats.preopenOutgoingOctetsWireLevel + \
-                                            self.trafficStats.outgoingOctetsWireLevel)
-
+        self.factory.stats.trackOctetsWireOut(self.trafficStats.preopenOutgoingOctetsWireLevel +
+                                              self.trafficStats.outgoingOctetsWireLevel)
 
 
 class EchoServerFactory(WebSocketServerFactory):
 
-   protocol = EchoServerProtocol
+    protocol = EchoServerProtocol
 
-   def __init__(self, wsuri, debug = False):
-      WebSocketServerFactory.__init__(self, wsuri, debug = debug, debugCodePaths = debug)
-      self.stats = Stats()
+    def __init__(self, wsuri, debug=False):
+        WebSocketServerFactory.__init__(self, wsuri, debug=debug, debugCodePaths=debug)
+        self.stats = Stats()
 
 
-## export PYPYLOG="jit-log-opt,jit-backend:pypy.log"
+# export PYPYLOG="jit-log-opt,jit-backend:pypy.log"
 
-## Run under "perf" and enable PyPy JIT logging
+# Run under "perf" and enable PyPy JIT logging
 ##
-## Notes:
+# Notes:
 ##
-##  - setting an env var (outside root) will NOT work (not propagated)
-##  - setting in code also will NOT work
+# - setting an env var (outside root) will NOT work (not propagated)
+# - setting in code also will NOT work
 ##
-## sudo PYPYLOG="jit-log-opt,jit-backend:pypy.log" perf record ~/pypy-20131102/bin/pypy server.py --workers 4
-
+# sudo PYPYLOG="jit-log-opt,jit-backend:pypy.log" perf record ~/pypy-20131102/bin/pypy server.py --workers 4
 
 
 def master(options):
-   """
-   Start of the master process.
-   """
-   if not options.silence:
-      print "Master started on PID %s" % os.getpid()
+    """
+    Start of the master process.
+    """
+    if not options.silence:
+        print "Master started on PID %s" % os.getpid()
 
-   ## start embedded Web server if asked for (this only runs on master)
-   ##
-   if options.port:
-      webdir = File(".")
-      web = Site(webdir)
-      web.log = lambda _: None # disable annoyingly verbose request logging
-      reactor.listenTCP(options.port, web)
+    # start embedded Web server if asked for (this only runs on master)
+    ##
+    if options.port:
+        webdir = File(".")
+        web = Site(webdir)
+        web.log = lambda _: None  # disable annoyingly verbose request logging
+        reactor.listenTCP(options.port, web)
 
-   ## we just need some factory like thing .. it won't be used on master anyway
-   ## for actual socket accept
-   ##
-   factory = Factory()
+    # we just need some factory like thing .. it won't be used on master anyway
+    # for actual socket accept
+    ##
+    factory = Factory()
 
-   ## create socket, bind and listen ..
-   port = reactor.listenTCP(options.wsport, factory, backlog = options.backlog)
+    # create socket, bind and listen ..
+    port = reactor.listenTCP(options.wsport, factory, backlog=options.backlog)
 
-   ## .. but immediately stop reading: we only want to accept on workers, not master
-   port.stopReading()
+    # .. but immediately stop reading: we only want to accept on workers, not master
+    port.stopReading()
 
-   ## fire off background workers
-   ##
-   for i in range(options.workers):
+    # fire off background workers
+    ##
+    for i in range(options.workers):
 
-      args = [executable, "-u", __file__, "--fd", str(port.fileno()), "--cpuid", str(i)]
+        args = [executable, "-u", __file__, "--fd", str(port.fileno()), "--cpuid", str(i)]
 
-      ## pass on cmd line args to worker ..
-      args.extend(sys.argv[1:])
+        # pass on cmd line args to worker ..
+        args.extend(sys.argv[1:])
 
-      reactor.spawnProcess(
-         None, executable, args,
-         childFDs = {0: 0, 1: 1, 2: 2, port.fileno(): port.fileno()},
-         env = os.environ)
+        reactor.spawnProcess(
+            None, executable, args,
+            childFDs={0: 0, 1: 1, 2: 2, port.fileno(): port.fileno()},
+            env=os.environ)
 
-   reactor.run()
+    reactor.run()
 
 
 PROFILER_FREQ = 2000
 
+
 def worker(options):
-   """
-   Start background worker process.
-   """
-   workerPid = os.getpid()
+    """
+    Start background worker process.
+    """
+    workerPid = os.getpid()
 
-   if not options.noaffinity:
-      p = psutil.Process(workerPid)
-      print "affinity [before]", p.get_cpu_affinity()
-      p.set_cpu_affinity([options.cpuid])
-      print "affinity [after]", p.get_cpu_affinity()
+    if not options.noaffinity:
+        p = psutil.Process(workerPid)
+        print "affinity [before]", p.get_cpu_affinity()
+        p.set_cpu_affinity([options.cpuid])
+        print "affinity [after]", p.get_cpu_affinity()
 
+    factory = EchoServerFactory(options.wsuri, debug=options.debug)
 
-   factory = EchoServerFactory(options.wsuri, debug = options.debug)
+    # The master already created the socket, just start listening and accepting
+    ##
+    reactor.adoptStreamPort(options.fd, AF_INET, factory)
 
-   ## The master already created the socket, just start listening and accepting
-   ##
-   reactor.adoptStreamPort(options.fd, AF_INET, factory)
+    if not options.silence:
+        print "Worker started on PID %s using factory %s and protocol %s" % (workerPid, factory, factory.protocol)
+        # print "Worker %d PYPYLOG=%s" % (workerPid, os.environ.get('PYPYLOG', None))
 
-   if not options.silence:
-      print "Worker started on PID %s using factory %s and protocol %s" % (workerPid, factory, factory.protocol)
-      #print "Worker %d PYPYLOG=%s" % (workerPid, os.environ.get('PYPYLOG', None))
+    if options.profile:
+        statprof.reset(PROFILER_FREQ)
+        statprof.start()
 
-   if options.profile:
-      statprof.reset(PROFILER_FREQ)
-      statprof.start()
+    if not options.silence:
+        def stat():
+            if options.profile:
+                statprof.stop()
 
-   if not options.silence:
-      def stat():
-         if options.profile:
-            statprof.stop()
+            output = StringIO.StringIO()
+            output.write("-" * 80 + "\n")
+            output.write("Worker Statistics (PID %s)\n\n%s" % (workerPid, factory.stats.stats()))
 
-         output = StringIO.StringIO()
-         output.write("-" * 80 + "\n")
-         output.write("Worker Statistics (PID %s)\n\n%s"  % (workerPid, factory.stats.stats()))
+            if options.profile:
+                output.write("\n")
+                # format = statprof.DisplayFormats.ByLine
+                # format = statprof.DisplayFormats.ByMethod
+                # statprof.display(output, format = format)
+                statprof.display(output)
 
-         if options.profile:
-            output.write("\n")
-            #format = statprof.DisplayFormats.ByLine
-            #format = statprof.DisplayFormats.ByMethod
-            #statprof.display(output, format = format)
-            statprof.display(output)
+            output.write("-" * 80 + "\n\n")
 
-         output.write("-" * 80 + "\n\n")
+            sys.stdout.write(output.getvalue())
 
-         sys.stdout.write(output.getvalue())
+            if options.profile:
+                statprof.reset(PROFILER_FREQ)
+                statprof.start()
 
-         if options.profile:
-            statprof.reset(PROFILER_FREQ)
-            statprof.start()
+            reactor.callLater(options.interval, stat)
 
-         reactor.callLater(options.interval, stat)
+        reactor.callLater(options.interval, stat)
 
-      reactor.callLater(options.interval, stat)
-
-   if False:
-      import cProfile
-      print "RUNNING cProfile"
-      cProfile.run('reactor.run()')
-   else:
-      reactor.run()
+    if False:
+        import cProfile
+        print "RUNNING cProfile"
+        cProfile.run('reactor.run()')
+    else:
+        reactor.run()
 
 # /usr/include/valgrind/valgrind.h
 # valgrind --tool=callgrind python server.py --wsuri ws://127.0.0.1:9000
@@ -345,46 +341,44 @@ def worker(options):
 
 if __name__ == '__main__':
 
-   import argparse
-   import psutil
+    import argparse
+    import psutil
 
-   DEFAULT_WORKERS = psutil.NUM_CPUS
+    DEFAULT_WORKERS = psutil.NUM_CPUS
 
-   parser = argparse.ArgumentParser(description = 'Autobahn WebSocket Echo Multicore Server')
-   parser.add_argument('--wsuri', dest = 'wsuri', type = str, default = 'ws://localhost:9000', help = 'The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
-   parser.add_argument('--port', dest = 'port', type = int, default = 8080, help = 'Port to listen on for embedded Web server. Set to 0 to disable.')
-   parser.add_argument('--workers', dest = 'workers', type = int, default = DEFAULT_WORKERS, help = 'Number of workers to spawn - should fit the number of (physical) CPU cores.')
-   parser.add_argument('--noaffinity', dest = 'noaffinity', action = "store_true", default = False, help = 'Do not set worker/CPU affinity.')
-   parser.add_argument('--backlog', dest = 'backlog', type = int, default = 8192, help = 'TCP accept queue depth. You must tune your OS also as this is just advisory!')
-   parser.add_argument('--silence', dest = 'silence', action = "store_true", default = False, help = 'Silence log output.')
-   parser.add_argument('--debug', dest = 'debug', action = "store_true", default = False, help = 'Enable WebSocket debug output.')
-   parser.add_argument('--interval', dest = 'interval', type = int, default = 5, help = 'Worker stats update interval.')
-   parser.add_argument('--profile', dest = 'profile', action = "store_true", default = False, help = 'Enable profiling.')
+    parser = argparse.ArgumentParser(description='Autobahn WebSocket Echo Multicore Server')
+    parser.add_argument('--wsuri', dest='wsuri', type=str, default='ws://localhost:9000', help='The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
+    parser.add_argument('--port', dest='port', type=int, default=8080, help='Port to listen on for embedded Web server. Set to 0 to disable.')
+    parser.add_argument('--workers', dest='workers', type=int, default=DEFAULT_WORKERS, help='Number of workers to spawn - should fit the number of (physical) CPU cores.')
+    parser.add_argument('--noaffinity', dest='noaffinity', action="store_true", default=False, help='Do not set worker/CPU affinity.')
+    parser.add_argument('--backlog', dest='backlog', type=int, default=8192, help='TCP accept queue depth. You must tune your OS also as this is just advisory!')
+    parser.add_argument('--silence', dest='silence', action="store_true", default=False, help='Silence log output.')
+    parser.add_argument('--debug', dest='debug', action="store_true", default=False, help='Enable WebSocket debug output.')
+    parser.add_argument('--interval', dest='interval', type=int, default=5, help='Worker stats update interval.')
+    parser.add_argument('--profile', dest='profile', action="store_true", default=False, help='Enable profiling.')
 
-   parser.add_argument('--fd', dest = 'fd', type = int, default = None, help = 'If given, this is a worker which will use provided FD and all other options are ignored.')
-   parser.add_argument('--cpuid', dest = 'cpuid', type = int, default = None, help = 'If given, this is a worker which will use provided CPU core to set its affinity.')
+    parser.add_argument('--fd', dest='fd', type=int, default=None, help='If given, this is a worker which will use provided FD and all other options are ignored.')
+    parser.add_argument('--cpuid', dest='cpuid', type=int, default=None, help='If given, this is a worker which will use provided CPU core to set its affinity.')
 
-   options = parser.parse_args()
+    options = parser.parse_args()
 
-   if options.profile and not hasStatprof:
-      raise Exception("profiling requested, but statprof not installed")
+    if options.profile and not hasStatprof:
+        raise Exception("profiling requested, but statprof not installed")
 
-   ## parse WS URI into components and forward via options
-   ## FIXME: add TLS support
-   isSecure, host, wsport, resource, path, params = parseWsUrl(options.wsuri)
-   options.wsport = wsport
+    # parse WS URI into components and forward via options
+    # FIXME: add TLS support
+    isSecure, host, wsport, resource, path, params = parseWsUrl(options.wsuri)
+    options.wsport = wsport
 
-   #if not options.silence:
-   #   log.startLogging(sys.stdout)
+    # if not options.silence:
+    #   log.startLogging(sys.stdout)
 
-   if options.fd is not None:
-      # run worker
-      worker(options)
-   else:
-      if not options.silence:
-         for m in startupMsgs:
-            print m
-      # run master
-      master(options)
-
-
+    if options.fd is not None:
+        # run worker
+        worker(options)
+    else:
+        if not options.silence:
+            for m in startupMsgs:
+                print m
+        # run master
+        master(options)

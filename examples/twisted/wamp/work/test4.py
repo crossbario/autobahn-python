@@ -7,29 +7,27 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 class Component1(ApplicationSession):
 
-   @inlineCallbacks
-   def onJoin(self, details):
+    @inlineCallbacks
+    def onJoin(self, details):
 
-      from twisted.internet import reactor
-      self._agent = Agent(reactor)
+        from twisted.internet import reactor
+        self._agent = Agent(reactor)
 
-      yield self.register(self)
-      print("Procedures registered")
+        yield self.register(self)
+        print("Procedures registered")
 
+    @wamp.register('com.myapp.httpget')
+    def httpget(self, url):
+        d = self._agent.request('GET', str(url))
 
-   @wamp.register('com.myapp.httpget')
-   def httpget(self, url):
-      d = self._agent.request('GET', str(url))
+        def cbResponse(_):
+            return "got response"
+        d.addCallback(cbResponse)
 
-      def cbResponse(_):
-         return "got response"
-      d.addCallback(cbResponse)
-
-      return d
-
+        return d
 
 
 if __name__ == '__main__':
 
-   runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
-   runner.run(Component1)
+    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner.run(Component1)

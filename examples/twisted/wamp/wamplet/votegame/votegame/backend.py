@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2014 Tavendo GmbH
+# Copyright (C) 2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -30,132 +30,123 @@ from autobahn.wamp.exception import ApplicationError
 from autobahn.wamp.types import PublishOptions
 
 
-## WAMP application component with our app code.
+# WAMP application component with our app code.
 ##
 class VoteGameBackend(ApplicationSession):
 
-   def __init__(self, config):
-      ApplicationSession.__init__(self)
-      self.config = config
-      self.init_db()
+    def __init__(self, config):
+        ApplicationSession.__init__(self)
+        self.config = config
+        self.init_db()
 
+    def init_db(self):
+        if not os.path.isfile(self.config.extra['dbfile']):
+            log.msg("Initializing database ..")
 
-   def init_db(self):
-      if not os.path.isfile(self.config.extra['dbfile']):
-         log.msg("Initializing database ..")
+            db = sqlite3.connect(self.config.extra['dbfile'])
+            cur = db.cursor()
 
-         db = sqlite3.connect(self.config.extra['dbfile'])
-         cur = db.cursor()
-
-         cur.execute("""
+            cur.execute("""
                      CREATE TABLE votes (
                         item              TEXT     NOT NULL,
                         count             NUMBER   NOT NULL,
                         PRIMARY KEY (item))
                      """)
 
-         for item in self.config.extra['items']:
-            cur.execute("INSERT INTO votes (item, count) VALUES (?, ?)", [item, 0])
-         db.commit()
+            for item in self.config.extra['items']:
+                cur.execute("INSERT INTO votes (item, count) VALUES (?, ?)", [item, 0])
+            db.commit()
 
-         db.close()
-         log.msg("Database initialized.")
+            db.close()
+            log.msg("Database initialized.")
 
-      else:
-         log.msg("Database already exists.")
+        else:
+            log.msg("Database already exists.")
 
-      self.db = adbapi.ConnectionPool('sqlite3', self.config.extra['dbfile'], check_same_thread = False)
-      log.msg("Database opened.")
+        self.db = adbapi.ConnectionPool('sqlite3', self.config.extra['dbfile'], check_same_thread=False)
+        log.msg("Database opened.")
 
+    @wamp.register("com.votegame.get_votes")
+    def get_votes(self):
+        def run(txn):
+            txn.execute("SELECT item, count FROM votes")
+            res = {}
+            for row in txn.fetchall():
+                res[row[0]] = row[1]
+            return res
+        return self.db.runInteraction(run)
 
-   @wamp.register("com.votegame.get_votes")
-   def get_votes(self):
-      def run(txn):
-         txn.execute("SELECT item, count FROM votes")
-         res = {}
-         for row in txn.fetchall():
-            res[row[0]] = row[1]
-         return res
-      return self.db.runInteraction(run)
+    @wamp.register("com.votegame.vote")
+    def vote(self, item):
+        if item not in self.config.extra['items']:
+            raise ApplicationError("com.votegame.error.no_such_item", "no item '{}' to vote on".format(item))
 
+        def run(txn):
+            # FIXME: make the following into 1 (atomic) SQL statement
+            # => does SQLite feature "UPDATE .. RETURNING"?
+            txn.execute("UPDATE votes SET count = count + 1 WHERE item = ?", [item])
+            txn.execute("SELECT count FROM votes WHERE item = ?", [item])
+            count = int(txn.fetchone()[0])
 
-   @wamp.register("com.votegame.vote")
-   def vote(self, item):
-      if not item in self.config.extra['items']:
-         raise ApplicationError("com.votegame.error.no_such_item", "no item '{}' to vote on".format(item))
+            self.publish("com.votegame.onvote", item, count,
+                         options=PublishOptions(excludeMe=False))
 
-      def run(txn):
-         ## FIXME: make the following into 1 (atomic) SQL statement
-         ## => does SQLite feature "UPDATE .. RETURNING"?
-         txn.execute("UPDATE votes SET count = count + 1 WHERE item = ?", [item])
-         txn.execute("SELECT count FROM votes WHERE item = ?", [item])
-         count = int(txn.fetchone()[0])
+            return count
 
-         self.publish("com.votegame.onvote", item, count,
-            options = PublishOptions(excludeMe = False))
+        return self.db.runInteraction(run)
 
-         return count
+    @inlineCallbacks
+    def onJoin(self, details):
 
-      return self.db.runInteraction(run)
+        def onvote(item, count):
+            print("New vote on '{}': {}".format(item, count))
 
+        yield self.subscribe(onvote, 'com.votegame.onvote')
 
+        try:
+            regs = yield self.register(self)
+            print("Ok, registered {} procedures.".format(len(regs)))
+        except Exception as e:
+            print("Failed to register procedures: {}".format(e))
 
-   @inlineCallbacks
-   def onJoin(self, details):
+        print("VoteGame Backend ready!")
 
-      def onvote(item, count):
-         print("New vote on '{}': {}".format(item, count))
-
-      yield self.subscribe(onvote, 'com.votegame.onvote')
-
-      try:
-         regs = yield self.register(self)
-         print("Ok, registered {} procedures.".format(len(regs)))
-      except Exception as e:
-         print("Failed to register procedures: {}".format(e))
-
-      print("VoteGame Backend ready!")
-
-
-
-   def onDisconnect(self):
-      reactor.stop()
-
+    def onDisconnect(self):
+        reactor.stop()
 
 
 def make(config):
-   ##
-   ## This component factory creates instances of the
-   ## application component to run.
-   ##
-   ## The function will get called either during development
-   ## using the ApplicationRunner below, or as  a plugin running
-   ## hosted in a WAMPlet container such as a Crossbar.io worker.
-   ##
-   if config:
-      return VoteGameBackend(config)
-   else:
-      ## if no config given, return a description of this WAMPlet ..
-      return {'label': 'VoteGame Service WAMPlet',
-              'description': 'This is the backend WAMP application component of VoteGame.'}
-
+    ##
+    # This component factory creates instances of the
+    # application component to run.
+    ##
+    # The function will get called either during development
+    # using the ApplicationRunner below, or as  a plugin running
+    # hosted in a WAMPlet container such as a Crossbar.io worker.
+    ##
+    if config:
+        return VoteGameBackend(config)
+    else:
+        # if no config given, return a description of this WAMPlet ..
+        return {'label': 'VoteGame Service WAMPlet',
+                'description': 'This is the backend WAMP application component of VoteGame.'}
 
 
 if __name__ == '__main__':
-   from autobahn.twisted.wamp import ApplicationRunner
+    from autobahn.twisted.wamp import ApplicationRunner
 
-   extra = {
-      "dbfile": "votegame.db",
-      "items": ["banana", "lemon", "grapefruit"]
-   }
+    extra = {
+        "dbfile": "votegame.db",
+        "items": ["banana", "lemon", "grapefruit"]
+    }
 
-   ## test drive the component during development ..
-   runner = ApplicationRunner(
-      url = "ws://127.0.0.1:8080/ws",
-      realm = "realm1",
-      extra = extra,
-      debug = False,       ## low-level WebSocket debugging
-      debug_wamp = False,  ## WAMP protocol-level debugging
-      debug_app = True)    ## app-level debugging
+    # test drive the component during development ..
+    runner = ApplicationRunner(
+        url="ws://127.0.0.1:8080/ws",
+        realm="realm1",
+        extra=extra,
+        debug=False,  # low-level WebSocket debugging
+        debug_wamp=False,  # WAMP protocol-level debugging
+        debug_app=True)  # app-level debugging
 
-   runner.run(make)
+    runner.run(make)

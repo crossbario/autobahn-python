@@ -1,313 +1,294 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2014 Tavendo GmbH
+# Copyright (C) 2011-2014 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
 import datetime
+import json
+import urllib
+import Cookie
 
 from autobahn.twisted.wamp import ApplicationSession
 
 from twisted.python import log
-from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
 from twisted.internet.defer import Deferred
 
-import json
-import urllib
-import Cookie
+from autobahn.twisted.websocket import WampWebSocketServerProtocol, WampWebSocketServerFactory
+from autobahn.twisted.wamp import RouterSession
+from autobahn.wamp import types
 
 from autobahn.util import newid, utcnow
 from autobahn.websocket import http
 
 
-
-
 class TimeService(ApplicationSession):
-   """
-   A simple time service application component.
-   """
 
-   def onJoin(self, details):
-      print("session attached")
+    """
+    A simple time service application component.
+    """
 
-      def utcnow():
-         now = datetime.datetime.utcnow()
-         return now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    def onJoin(self, details):
+        print("session attached")
 
-      self.register(utcnow, 'com.timeservice.now')
+        def utcnow():
+            now = datetime.datetime.utcnow()
+            return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-
-
+        self.register(utcnow, 'com.timeservice.now')
 
 
 class ServerProtocol(WampWebSocketServerProtocol):
-   """
-   A WAMP-WebSocket transport that supports Cookie based authentication.
-   """
 
-   ## authid -> cookie -> set(connection)
+    """
+    A WAMP-WebSocket transport that supports Cookie based authentication.
+    """
 
-   def onConnect(self, request):
-      protocol, headers = WampWebSocketServerProtocol.onConnect(self, request)
+    # authid -> cookie -> set(connection)
 
-      ## our cookie tracking ID
-      self._cbtid = None
+    def onConnect(self, request):
+        protocol, headers = WampWebSocketServerProtocol.onConnect(self, request)
 
-      ## see if there already is a cookie set ..
-      if request.headers.has_key('cookie'):
-         try:
-            cookie = Cookie.SimpleCookie()
-            cookie.load(str(request.headers['cookie']))
-         except Cookie.CookieError:
-            pass
-         else:
-            if cookie.has_key('cbtid'):
-               cbtid = cookie['cbtid'].value
-               if self.factory._cookies.has_key(cbtid):
-                  self._cbtid = cbtid
-                  log.msg("Cookie already set: %s" % self._cbtid)
+        # our cookie tracking ID
+        self._cbtid = None
 
-      ## if no cookie is set, create a new one ..
-      if self._cbtid is None:
+        # see if there already is a cookie set ..
+        if 'cookie' in request.headers:
+            try:
+                cookie = Cookie.SimpleCookie()
+                cookie.load(str(request.headers['cookie']))
+            except Cookie.CookieError:
+                pass
+            else:
+                if 'cbtid' in cookie:
+                    cbtid = cookie['cbtid'].value
+                    if cbtid in self.factory._cookies:
+                        self._cbtid = cbtid
+                        log.msg("Cookie already set: %s" % self._cbtid)
 
-         self._cbtid = newid()
-         maxAge = 86400
+        # if no cookie is set, create a new one ..
+        if self._cbtid is None:
 
-         cbtData = {'created': utcnow(),
-                    'authenticated': None,
-                    'maxAge': maxAge,
-                    'connections': set()}
+            self._cbtid = newid()
+            maxAge = 86400
 
-         self.factory._cookies[self._cbtid] = cbtData
+            cbtData = {'created': utcnow(),
+                       'authenticated': None,
+                       'maxAge': maxAge,
+                       'connections': set()}
 
-         ## do NOT add the "secure" cookie attribute! "secure" refers to the
-         ## scheme of the Web page that triggered the WS, not WS itself!!
-         ##
-         headers['Set-Cookie'] = 'cbtid=%s;max-age=%d' % (self._cbtid, maxAge)
-         log.msg("Setting new cookie: %s" % self._cbtid)
+            self.factory._cookies[self._cbtid] = cbtData
 
-      ## add this WebSocket connection to the set of connections
-      ## associated with the same cookie
-      self.factory._cookies[self._cbtid]['connections'].add(self)
+            # do NOT add the "secure" cookie attribute! "secure" refers to the
+            # scheme of the Web page that triggered the WS, not WS itself!!
+            ##
+            headers['Set-Cookie'] = 'cbtid=%s;max-age=%d' % (self._cbtid, maxAge)
+            log.msg("Setting new cookie: %s" % self._cbtid)
 
-      self._authenticated = self.factory._cookies[self._cbtid]['authenticated']
+        # add this WebSocket connection to the set of connections
+        # associated with the same cookie
+        self.factory._cookies[self._cbtid]['connections'].add(self)
 
-      ## accept the WebSocket connection, speaking subprotocol `protocol`
-      ## and setting HTTP headers `headers`
-      return (protocol, headers)
+        self._authenticated = self.factory._cookies[self._cbtid]['authenticated']
 
-
-
-from autobahn.twisted.wamp import RouterSession
-from autobahn.wamp import types
+        # accept the WebSocket connection, speaking subprotocol `protocol`
+        # and setting HTTP headers `headers`
+        return (protocol, headers)
 
 
 class MyRouterSession(RouterSession):
 
-   def onOpen(self, transport):
-      """
-      Callback fired when transport (WebSocket connection) was established.
-      """
-      RouterSession.onOpen(self, transport)
-      print("MyRouterSession.onOpen: transport authenticated = {}".format(self._transport._authenticated))
+    def onOpen(self, transport):
+        """
+        Callback fired when transport (WebSocket connection) was established.
+        """
+        RouterSession.onOpen(self, transport)
+        print("MyRouterSession.onOpen: transport authenticated = {}".format(self._transport._authenticated))
 
+    def onHello(self, realm, details):
+        """
+        Callback fired when client wants to attach session.
+        """
+        print("MyRouterSession.onHello: {} {}".format(realm, details))
 
-   def onHello(self, realm, details):
-      """
-      Callback fired when client wants to attach session.
-      """
-      print("MyRouterSession.onHello: {} {}".format(realm, details))
+        for authmethod in details.authmethods:
+            if authmethod == u"cookie" and self._transport._authenticated is not None:
+                # already authenticated via Cookie on transport
+                return types.Accept(authid=self._transport._authenticated, authrole="user", authmethod="cookie")
+            elif authmethod == u"mozilla-persona":
+                # not yet authenticated: send challenge
+                return types.Challenge("mozilla-persona")
 
-      for authmethod in details.authmethods:
-         if authmethod == u"cookie" and self._transport._authenticated is not None:
-            ## already authenticated via Cookie on transport
-            return types.Accept(authid = self._transport._authenticated, authrole = "user", authmethod = "cookie")
-         elif authmethod == u"mozilla-persona":
-            ## not yet authenticated: send challenge
-            return types.Challenge("mozilla-persona")
+        return types.Deny()
 
-      return types.Deny()
+    def onLeave(self, details):
+        """
+        Callback fired when a client session leaves.
+        """
+        if details.reason == "wamp.close.logout":
+            # if asked to logout, set cookie to "not authenticated" ..
+            cookie = self._transport.factory._cookies[self._transport._cbtid]
+            cookie['authenticated'] = None
 
+            # .. and kill all currently connected clients (for the cookie)
+            for proto in cookie['connections']:
+                proto.sendClose()
 
-   def onLeave(self, details):
-      """
-      Callback fired when a client session leaves.
-      """
-      if details.reason == "wamp.close.logout":
-         ## if asked to logout, set cookie to "not authenticated" ..
-         cookie = self._transport.factory._cookies[self._transport._cbtid]
-         cookie['authenticated'] = None
+    def onAuthenticate(self, signature, extra):
+        """
+        Callback fired when a client responds to an authentication challenge.
+        """
+        print("onAuthenticate: {} {}".format(signature, extra))
 
-         ## .. and kill all currently connected clients (for the cookie)
-         for proto in cookie['connections']:
-            proto.sendClose()
+        dres = Deferred()
 
+        # The client did it's Mozilla Persona authentication thing
+        # and now wants to verify the authentication and login.
+        assertion = signature
+        audience = 'http://127.0.0.1:8080/'
 
-   def onAuthenticate(self, signature, extra):
-      """
-      Callback fired when a client responds to an authentication challenge.
-      """
-      print("onAuthenticate: {} {}".format(signature, extra))
+        # To verify the authentication, we need to send a HTTP/POST
+        # to Mozilla Persona. When successful, Persona will send us
+        # back something like:
 
-      dres = Deferred()
+        # {
+        #    "audience": "http://192.168.1.130:8080/",
+        #    "expires": 1393681951257,
+        #    "issuer": "gmail.login.persona.org",
+        #    "email": "tobias.oberstein@gmail.com",
+        #    "status": "okay"
+        # }
 
-      ## The client did it's Mozilla Persona authentication thing
-      ## and now wants to verify the authentication and login.
-      assertion = signature
-      audience = 'http://127.0.0.1:8080/'
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        body = urllib.urlencode({'audience': audience, 'assertion': assertion})
 
-      ## To verify the authentication, we need to send a HTTP/POST
-      ## to Mozilla Persona. When successful, Persona will send us
-      ## back something like:
+        from twisted.web.client import getPage
+        d = getPage(url="https://verifier.login.persona.org/verify",
+                    method='POST',
+                    postdata=body,
+                    headers=headers)
 
-      # {
-      #    "audience": "http://192.168.1.130:8080/",
-      #    "expires": 1393681951257,
-      #    "issuer": "gmail.login.persona.org",
-      #    "email": "tobias.oberstein@gmail.com",
-      #    "status": "okay"
-      # }
+        log.msg("Authentication request sent.")
 
-      headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-      body = urllib.urlencode({'audience': audience, 'assertion': assertion})
+        def done(res):
+            res = json.loads(res)
+            try:
+                if res['status'] == 'okay':
+                    # Mozilla Persona successfully authenticated the user
 
-      from twisted.web.client import getPage
-      d = getPage(url = "https://verifier.login.persona.org/verify",
-                  method = 'POST',
-                  postdata = body,
-                  headers = headers)
+                    # remember the user's email address. this marks the cookie as
+                    # authenticated
+                    self._transport.factory._cookies[self._transport._cbtid]['authenticated'] = res['email']
 
-      log.msg("Authentication request sent.")
+                    log.msg("Authenticated user {}".format(res['email']))
+                    dres.callback(types.Accept(authid=res['email'], authrole="user", authmethod="mozilla-persona"))
+                else:
+                    log.msg("Authentication failed!")
+                    dres.callback(types.Deny())
+            except Exception as e:
+                print "ERRR", e
 
-      def done(res):
-         res = json.loads(res)
-         try:
-            if res['status'] == 'okay':
-               ## Mozilla Persona successfully authenticated the user
+        def error(err):
+            log.msg("Authentication request failed: {}".format(err.value))
+            dres.callback(types.Deny())
 
-               ## remember the user's email address. this marks the cookie as
-               ## authenticated
-               self._transport.factory._cookies[self._transport._cbtid]['authenticated'] = res['email']
+        d.addCallbacks(done, error)
 
-               log.msg("Authenticated user {}".format(res['email']))
-               dres.callback(types.Accept(authid = res['email'], authrole = "user", authmethod = "mozilla-persona"))
-            else:
-               log.msg("Authentication failed!")
-               dres.callback(types.Deny())
-         except Exception as e:
-            print "ERRR", e
-
-      def error(err):
-         log.msg("Authentication request failed: {}".format(err.value))
-         dres.callback(types.Deny())
-
-      d.addCallbacks(done, error)
-
-      return dres
-
-
+        return dres
 
 
 if __name__ == '__main__':
 
-   import sys, argparse
+    import sys
+    import argparse
 
-   from twisted.python import log
-   from twisted.internet.endpoints import serverFromString
+    from twisted.python import log
+    from twisted.internet.endpoints import serverFromString
 
+    # parse command line arguments
+    ##
+    parser = argparse.ArgumentParser()
 
-   ## parse command line arguments
-   ##
-   parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="Enable debug output.")
 
-   parser.add_argument("-d", "--debug", action = "store_true",
-                       help = "Enable debug output.")
+    parser.add_argument("-c", "--component", type=str, default=None,
+                        help="Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
 
-   parser.add_argument("-c", "--component", type = str, default = None,
-                       help = "Start WAMP-WebSocket server with this application component, e.g. 'timeservice.TimeServiceBackend', or None.")
+    parser.add_argument("--websocket", type=str, default="tcp:8080",
+                        help='WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
 
-   parser.add_argument("--websocket", type = str, default = "tcp:8080",
-                       help = 'WebSocket server Twisted endpoint descriptor, e.g. "tcp:9000" or "unix:/tmp/mywebsocket".')
+    parser.add_argument("--wsurl", type=str, default="ws://localhost:8080",
+                        help='WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
 
-   parser.add_argument("--wsurl", type = str, default = "ws://localhost:8080",
-                       help = 'WebSocket URL (must suit the endpoint), e.g. "ws://localhost:9000".')
+    args = parser.parse_args()
 
-   args = parser.parse_args()
+    log.startLogging(sys.stdout)
 
+    # we use an Autobahn utility to install the "best" available Twisted reactor
+    ##
+    from autobahn.twisted.choosereactor import install_reactor
+    reactor = install_reactor()
+    if args.debug:
+        print("Running on reactor {}".format(reactor))
 
-   log.startLogging(sys.stdout)
+    # create a WAMP router factory
+    ##
+    from autobahn.twisted.wamp import RouterFactory
+    router_factory = RouterFactory()
 
+    # create a WAMP router session factory
+    ##
+    from autobahn.twisted.wamp import RouterSessionFactory
+    session_factory = RouterSessionFactory(router_factory)
+    session_factory.session = MyRouterSession
 
-   ## we use an Autobahn utility to install the "best" available Twisted reactor
-   ##
-   from autobahn.twisted.choosereactor import install_reactor
-   reactor = install_reactor()
-   if args.debug:
-      print("Running on reactor {}".format(reactor))
+    # start an embedded application component ..
+    ##
+    component_config = types.ComponentConfig(realm="realm1")
+    component_session = TimeService(component_config)
+    session_factory.add(component_session)
 
+    # create a WAMP-over-WebSocket transport server factory
+    ##
+    from autobahn.twisted.websocket import WampWebSocketServerFactory
+    transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug=False, debug_wamp=args.debug)
+    transport_factory.protocol = ServerProtocol
+    transport_factory._cookies = {}
 
-   ## create a WAMP router factory
-   ##
-   from autobahn.twisted.wamp import RouterFactory
-   router_factory = RouterFactory()
+    transport_factory.setProtocolOptions(failByDrop=False)
 
+    from twisted.web.server import Site
+    from twisted.web.static import File
+    from autobahn.twisted.resource import WebSocketResource
 
-   ## create a WAMP router session factory
-   ##
-   from autobahn.twisted.wamp import RouterSessionFactory
-   session_factory = RouterSessionFactory(router_factory)
-   session_factory.session = MyRouterSession
+    # we serve static files under "/" ..
+    root = File(".")
 
+    # .. and our WebSocket server under "/ws"
+    resource = WebSocketResource(transport_factory)
+    root.putChild("ws", resource)
 
-   ## start an embedded application component ..
-   ##
-   component_config = types.ComponentConfig(realm = "realm1")
-   component_session = TimeService(component_config)
-   session_factory.add(component_session)
+    # run both under one Twisted Web Site
+    site = Site(root)
 
+    # start the WebSocket server from an endpoint
+    ##
+    server = serverFromString(reactor, args.websocket)
+    server.listen(site)
 
-   ## create a WAMP-over-WebSocket transport server factory
-   ##
-   from autobahn.twisted.websocket import WampWebSocketServerFactory
-   transport_factory = WampWebSocketServerFactory(session_factory, args.wsurl, debug = False, debug_wamp = args.debug)
-   transport_factory.protocol = ServerProtocol
-   transport_factory._cookies = {}
-
-   transport_factory.setProtocolOptions(failByDrop = False)
-
-
-   from twisted.web.server import Site
-   from twisted.web.static import File
-   from autobahn.twisted.resource import WebSocketResource
-
-   ## we serve static files under "/" ..
-   root = File(".")
-
-   ## .. and our WebSocket server under "/ws"
-   resource = WebSocketResource(transport_factory)
-   root.putChild("ws", resource)
-
-   ## run both under one Twisted Web Site
-   site = Site(root)
-
-   ## start the WebSocket server from an endpoint
-   ##
-   server = serverFromString(reactor, args.websocket)
-   server.listen(site)
-
-
-   ## now enter the Twisted reactor loop
-   ##
-   reactor.run()
+    # now enter the Twisted reactor loop
+    ##
+    reactor.run()

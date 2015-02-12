@@ -1,18 +1,18 @@
 ###############################################################################
 ##
-##  Copyright (C) 2011-2013 Tavendo GmbH
+# Copyright (C) 2011-2013 Tavendo GmbH
 ##
-##  Licensed under the Apache License, Version 2.0 (the "License");
-##  you may not use this file except in compliance with the License.
-##  You may obtain a copy of the License at
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 ##
-##      http://www.apache.org/licenses/LICENSE-2.0
+# http://www.apache.org/licenses/LICENSE-2.0
 ##
-##  Unless required by applicable law or agreed to in writing, software
-##  distributed under the License is distributed on an "AS IS" BASIS,
-##  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-##  See the License for the specific language governing permissions and
-##  limitations under the License.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 ##
 ###############################################################################
 
@@ -24,101 +24,100 @@ from twisted.web.server import Site
 from twisted.web.static import File
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
-                                       WebSocketServerProtocol, \
-                                       listenWS
+    WebSocketServerProtocol, \
+    listenWS
 
 from autobahn.websocket.compress import *
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
 
-   def onConnect(self, request):
-      print("WebSocket connection request by {}".format(request.peer))
+    def onConnect(self, request):
+        print("WebSocket connection request by {}".format(request.peer))
 
-   def onOpen(self):
-      print("WebSocket extensions in use: {}".format(self.websocket_extensions_in_use))
+    def onOpen(self):
+        print("WebSocket extensions in use: {}".format(self.websocket_extensions_in_use))
 
-   def onMessage(self, payload, isBinary):
-      self.sendMessage(payload, isBinary)
+    def onMessage(self, payload, isBinary):
+        self.sendMessage(payload, isBinary)
 
 
 if __name__ == '__main__':
 
-   if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-      log.startLogging(sys.stdout)
-      debug = True
-   else:
-      debug = False
+    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+        log.startLogging(sys.stdout)
+        debug = True
+    else:
+        debug = False
 
-   factory = WebSocketServerFactory("ws://localhost:9000",
-                                    debug = debug,
-                                    debugCodePaths = debug)
+    factory = WebSocketServerFactory("ws://localhost:9000",
+                                     debug=debug,
+                                     debugCodePaths=debug)
 
-   factory.protocol = EchoServerProtocol
+    factory.protocol = EchoServerProtocol
 
 #   factory.setProtocolOptions(autoFragmentSize = 4)
 
-   ## Enable WebSocket extension "permessage-deflate". This is all you
-   ## need to do (unless you know what you are doing .. see below)!
-   ##
-   def accept0(offers):
-      for offer in offers:
-         if isinstance(offer, PerMessageDeflateOffer):
-            return PerMessageDeflateOfferAccept(offer)
+    # Enable WebSocket extension "permessage-deflate". This is all you
+    # need to do (unless you know what you are doing .. see below)!
+    ##
+    def accept0(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageDeflateOffer):
+                return PerMessageDeflateOfferAccept(offer)
 
-   ## Enable experimental compression extensions "permessage-snappy"
-   ## and "permessage-bzip2"
-   ##
-   def accept1(offers):
-      for offer in offers:
-         if isinstance(offer, PerMessageSnappyOffer):
-            return PerMessageSnappyOfferAccept(offer)
+    # Enable experimental compression extensions "permessage-snappy"
+    # and "permessage-bzip2"
+    ##
+    def accept1(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageSnappyOffer):
+                return PerMessageSnappyOfferAccept(offer)
 
-         elif isinstance(offer, PerMessageBzip2Offer):
-            return PerMessageBzip2OfferAccept(offer)
+            elif isinstance(offer, PerMessageBzip2Offer):
+                return PerMessageBzip2OfferAccept(offer)
 
-         elif isinstance(offer, PerMessageDeflateOffer):
-            return PerMessageDeflateOfferAccept(offer)
+            elif isinstance(offer, PerMessageDeflateOffer):
+                return PerMessageDeflateOfferAccept(offer)
 
-   ## permessage-deflate, server requests the client to do no
-   ## context takeover
-   ##
-   def accept2(offers):
-      for offer in offers:
-         if isinstance(offer, PerMessageDeflateOffer):
-            if offer.acceptNoContextTakeover:
-               return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover = True)
+    # permessage-deflate, server requests the client to do no
+    # context takeover
+    ##
+    def accept2(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageDeflateOffer):
+                if offer.acceptNoContextTakeover:
+                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True)
 
+    # permessage-deflate, server requests the client to do no
+    # context takeover, and does not context takeover also
+    ##
+    def accept3(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageDeflateOffer):
+                if offer.acceptNoContextTakeover:
+                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True, noContextTakeover=True)
 
-   ## permessage-deflate, server requests the client to do no
-   ## context takeover, and does not context takeover also
-   ##
-   def accept3(offers):
-      for offer in offers:
-         if isinstance(offer, PerMessageDeflateOffer):
-            if offer.acceptNoContextTakeover:
-               return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover = True, noContextTakeover = True)
-
-   ## permessage-deflate, server requests the client to do use
-   ## max window bits specified
-   ##
-   def accept4(offers):
-      for offer in offers:
-         if isinstance(offer, PerMessageDeflateOffer):
-            if offer.acceptMaxWindowBits:
-               return PerMessageDeflateOfferAccept(offer, requestMaxWindowBits = 8)
+    # permessage-deflate, server requests the client to do use
+    # max window bits specified
+    ##
+    def accept4(offers):
+        for offer in offers:
+            if isinstance(offer, PerMessageDeflateOffer):
+                if offer.acceptMaxWindowBits:
+                    return PerMessageDeflateOfferAccept(offer, requestMaxWindowBits=8)
 
 
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept1)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept2)
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept3)
-   factory.setProtocolOptions(perMessageCompressionAccept = accept4)
+    factory.setProtocolOptions(perMessageCompressionAccept=accept4)
 
-   listenWS(factory)
+    listenWS(factory)
 
-   webdir = File(".")
-   web = Site(webdir)
-   reactor.listenTCP(8080, web)
+    webdir = File(".")
+    web = Site(webdir)
+    reactor.listenTCP(8080, web)
 
-   reactor.run()
+    reactor.run()
