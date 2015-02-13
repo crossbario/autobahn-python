@@ -35,7 +35,6 @@ class WampWebSocketProtocol:
     """
     Base class for WAMP-over-WebSocket transport mixins.
     """
-    reconnecting = False
 
     def _bailout(self, code, reason=None):
         if self.factory.debug_wamp:

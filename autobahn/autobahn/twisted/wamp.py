@@ -100,7 +100,6 @@ class ReconnectingWampWebSocketClientFactory(WampWebSocketClientFactory, Reconne
     def buildProtocol(self, addr):
         # only way of knowing that connection has been closed by us is to do this cross layer talks :-/
         self._proto = WampWebSocketClientFactory.buildProtocol(self, addr)
-        self._proto.reconnecting = True
         return self._proto
 
     def clientConnectionLost(self, connector, reason):

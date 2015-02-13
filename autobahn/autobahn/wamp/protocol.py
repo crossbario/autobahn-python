@@ -330,11 +330,11 @@ class ApplicationSession(BaseSession):
 
     def getTransport(self):
         """
-        get _transport when it will be available.
+        Get self._transport when it is be available.
         For reconnecting case this allows to make rpc calls and publish even if
         the connection is currently lost.
 
-        The deferred is called after onJoin has been called
+        The future is resolved after self.onJoin has been called
         """
         f = self._create_future()
         if self._transport is not None:
@@ -413,13 +413,13 @@ class ApplicationSession(BaseSession):
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
                 f = self._as_future(self.onJoin, details)
 
+                # application is supposed to register its subscribers and rpc methods in onJoin
+                # we restart the pending queries after the onJoin
                 def joined(res):
                     if self._transportFuture is not None:
                         self._resolve_future(self._transportFuture, self._transport)
-                self._add_future_callbacks(
-                    f,
-                    joined,
-                    None)
+                self._add_future_callbacks(f, joined, None)
+
             elif isinstance(msg, message.Abort):
 
                 # fire callback and close the transport
@@ -755,6 +755,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
         """
         self._transport = None
+
         if self._session_id:
 
             # fire callback and close the transport
@@ -768,9 +769,9 @@ class ApplicationSession(BaseSession):
 
         self.onDisconnect()
         if self._leaveFuture is not None:
+            self._transport.closedByMe = self.closedByMe
             self._resolve_future(self._leaveFuture, None)
             self._leaveFuture = None
-            self._transport.closedByMe = self.closedByMe
 
     def onChallenge(self, challenge):
         """
@@ -814,6 +815,8 @@ class ApplicationSession(BaseSession):
         if six.PY2 and type(topic) == str:
             topic = six.u(topic)
         assert(type(topic) == six.text_type)
+        # self._transport could be temporarily lost.
+        # we try to wait for reconnection before doing the publish
         f = self.getTransport()
         self._add_future_callbacks(f,
                                    lambda _: self._publish(topic, *args, **kwargs),
@@ -916,6 +919,8 @@ class ApplicationSession(BaseSession):
         if six.PY2 and type(procedure) == str:
             procedure = six.u(procedure)
         assert(isinstance(procedure, six.text_type))
+        # self._transport could be temporarily lost.
+        # we try to wait for reconnection before doing the publish
         f = self.getTransport()
         self._add_future_callbacks(f,
                                    lambda _: self._call(procedure, *args, **kwargs),
