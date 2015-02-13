@@ -28,7 +28,6 @@ from twisted.internet.defer import Deferred, \
     DeferredList, \
     inlineCallbacks
 from twisted.internet.protocol import ReconnectingClientFactory
-from twisted.internet.error import ConnectionDone
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -95,8 +94,7 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
 class ReconnectingWampWebSocketClientFactory(WampWebSocketClientFactory, ReconnectingClientFactory):
 
     def clientConnectionFailed(self, connector, reason):
-        print("failed to connect", reason.getErrorMessage())
-        print("retrying...")
+        print("Failed to connect to router: {0}".format(reason.getErrorMessage()))
         ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
 
     def buildProtocol(self, addr):
@@ -110,8 +108,7 @@ class ReconnectingWampWebSocketClientFactory(WampWebSocketClientFactory, Reconne
         # dont reconnect in case of close by us
         if self._proto.closedByMe:
             return
-        print("disconnected", reason.getErrorMessage())
-        print("reconnecting...", self._proto._session)
+        print("Disconnected from router: {0}".format(reason.getErrorMessage()))
         ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 

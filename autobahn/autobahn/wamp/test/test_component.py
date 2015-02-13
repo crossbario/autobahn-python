@@ -17,6 +17,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
+from __future__ import print_function
 try:
     from twisted.trial import unittest
 except ImportError:
@@ -180,11 +181,11 @@ if unittest is not None:
             arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
             self.log("Arglen 3: {0}".format(arglengths))
 
-            while True:
+            while os.environ.get("TEST_DISCONNECTION", False):
                 try:
                     arglengths = yield self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
                 except Exception as e:
-                    print e
+                    print(e)
                 self.log("Arglen 3: {0}".format(arglengths))
                 yield sleep(1)
 
