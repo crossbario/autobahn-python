@@ -22,6 +22,14 @@ import re
 import sys
 import platform
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
+
+# remember if we already had six _before_ installation
+try:
+    import six  # noqa
+    _HAD_SIX = True
+except ImportError:
+    _HAD_SIX = False
 
 CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
@@ -52,7 +60,7 @@ More information:
 
 # get version string from "autobahn/__init__.py"
 # See: http://stackoverflow.com/a/7071358/884770
-##
+#
 VERSIONFILE = "autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -64,7 +72,7 @@ else:
 
 
 # Autobahn core packages
-##
+#
 packages = [
     'autobahn',
     'autobahn.wamp',
@@ -88,8 +96,29 @@ else:
     asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
 
 
+# for testing by users with "python setup.py test" (not Tox, which we use)
+test_requirements = ["pytest", "mock"]
+
+
+# pytest integration for setuptools. see:
+# http://pytest.org/latest/goodpractises.html#integration-with-setuptools-test-commands
+# https://github.com/pyca/cryptography/pull/678/files
+class PyTest(TestCommand):
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        # Import here because in module scope the eggs are not loaded.
+        import pytest
+        errno = pytest.main(self.test_args)
+        sys.exit(errno)
+
+
 # Now install Autobahn ..
-##
+#
 setup(
     name='autobahn',
     version=verstr,
@@ -118,10 +147,12 @@ setup(
         # needed if you want WAMPv2 binary serialization support
         'serialization': ["msgpack-python>=0.4.0"]
     },
+    tests_require=test_requirements,
+    cmdclass={'test': PyTest},
     packages=packages,
     zip_safe=False,
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    ##
+    #
     classifiers=["License :: OSI Approved :: Apache Software License",
                  "Development Status :: 5 - Production/Stable",
                  "Environment :: No Input/Output (Daemon)",
@@ -149,19 +180,19 @@ setup(
 )
 
 
-# deactivate that for now, since it produces errs/warns when "six"
-# wasn't already installed _before_ installing AutobahnPython
-##
-if False:
-    try:
-        from twisted.internet import reactor
-    except ImportError:
-        pass
-    else:
-        # Make Twisted regenerate the dropin.cache, if possible. This is necessary
-        # because in a site-wide install, dropin.cache cannot be rewritten by
-        # normal users.
-        print("Twisted found (default reactor is {})".format(reactor.__class__))
+try:
+    from twisted.internet import reactor
+    print("Twisted found (default reactor is {})".format(reactor.__class__))
+except ImportError:
+    # the user doesn't have Twisted, so skip
+    pass
+else:
+    # Make Twisted regenerate the dropin.cache, if possible. This is necessary
+    # because in a site-wide install, dropin.cache cannot be rewritten by
+    # normal users.
+    if _HAD_SIX:
+        # only proceed if we had had six already _before_ installing AutobahnPython,
+        # since it produces errs/warns otherwise
         try:
             from twisted.plugin import IPlugin, getPlugins
             list(getPlugins(IPlugin))
@@ -169,3 +200,5 @@ if False:
             print("Failed to update Twisted plugin cache: {0}".format(e))
         else:
             print("Twisted dropin.cache regenerated.")
+    else:
+        print("Warning: regenerate of Twisted dropin.cache skipped (can't run when six wasn't there before)")

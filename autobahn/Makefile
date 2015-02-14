@@ -21,6 +21,8 @@ clean:
 	rm -rf ./temp
 	rm -rf ./_trial_temp
 	rm -rf ./.tox
+	rm -rf ./.eggs
+	rm -f  ./twisted/plugins/dropin.cache
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;
@@ -56,7 +58,11 @@ pyflakes:
 	pyflakes .
 
 pep8:
-	pep8 --statistics --ignore=E501 -qq
+	pep8 --statistics --ignore=E501 -qq .
+
+pep8show:
+	pep8 --show-source --ignore=E501 .
+
 # pep8 --select=E231 --show-source
 
 autopep8:
@@ -64,7 +70,7 @@ autopep8:
 
 # This will run pep8, pyflakes and can skip lines that end with # noqa
 flake8:
-	flake8 -v --ignore=E501 autobahn
+	flake8 --ignore=E501 .
 
 pylint:
 	pylint -d line-too-long,invalid-name autobahn
