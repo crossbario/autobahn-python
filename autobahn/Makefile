@@ -8,12 +8,14 @@ all:
 	@echo "   flake8           Run flake8 code checking"
 	@echo ""
 
+# install locally
 install:
 	#python setup.py install
 #	pip install -e .[twisted]
 #	pip install -e .[asyncio,twisted,accelerate,compress,serialization]
 	pip install -e .[asyncio,twisted,accelerate,serialization]
 
+# cleanup everything
 clean:
 	rm -rf ./autobahn.egg-info
 	rm -rf ./build
@@ -28,12 +30,28 @@ clean:
 	find . -name "*.pyc" -type f -exec rm -f {} \;
 	find . -name "*__pycache__" -type d -exec rm -rf {} \;
 
+# publish to PyPI
 publish: clean
 	python setup.py register
 	python setup.py sdist upload
 
-test:
+# direct test via pytest (only here because of setuptools test integration)
+test_pytest:
+	python -m pytest -rsx .
+
+# test via setuptools command
+test_setuptools:
+	python setup.py test
+
+# test under Twisted
+test_twisted:
 	USE_TWISTED=1 trial autobahn
+	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
+
+# test under asyncio
+test_asyncio:
+	USE_ASYNCIO=1 python -m pytest -rsx
+	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
 
 test1:
 	USE_TWISTED=1 trial autobahn.wamp.test.test_auth
@@ -57,14 +75,15 @@ test2:
 pyflakes:
 	pyflakes .
 
+# run PEP8 check and print statistics
 pep8:
 	pep8 --statistics --ignore=E501 -qq .
 
+# run PEP8 check and show source for offending code
 pep8show:
 	pep8 --show-source --ignore=E501 .
 
-# pep8 --select=E231 --show-source
-
+# run autopep8 to automatically transform offending code
 autopep8:
 	autopep8 -ri --aggressive .
 
@@ -72,6 +91,7 @@ autopep8:
 flake8:
 	flake8 --ignore=E501 .
 
+# run PyLint
 pylint:
 	pylint -d line-too-long,invalid-name autobahn
 

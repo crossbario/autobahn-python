@@ -75,17 +75,15 @@ class TestSerializer(unittest.TestCase):
 
     def setUp(self):
         self.serializers = []
+
+        # JSON serializer is always available
         self.serializers.append(serializer.JsonSerializer())
         self.serializers.append(serializer.JsonSerializer(batched=True))
 
-        self.serializers.append(serializer.MsgPackSerializer())
-
-        try:
+        # MsgPack serializers are optional
+        if hasattr(serializer, 'MsgPackSerializer'):
             self.serializers.append(serializer.MsgPackSerializer())
             self.serializers.append(serializer.MsgPackSerializer(batched=True))
-        except ImportError:
-            # MsgPack not installed
-            pass
 
     def test_roundtrip(self):
         for msg in generate_test_messages():
