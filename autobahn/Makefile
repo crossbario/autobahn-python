@@ -68,3 +68,11 @@ flake8:
 
 pylint:
 	pylint -d line-too-long,invalid-name autobahn
+
+# on Unix, check for files with Windows line endings
+find_windows_files:
+	find . -name "*" -exec file {} \; | grep "CRLF"
+
+# on Windows (Git Bash), check for files with Unix lines endings
+find_unix_files:
+	find . -name "*" -exec dos2unix -tv {} \; 2>&1 | grep "Unix"
