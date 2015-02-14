@@ -182,7 +182,7 @@ setup(
 
 try:
     from twisted.internet import reactor
-    print("Twisted found (default reactor is {})".format(reactor.__class__))
+    print("Twisted found (default reactor is {0})".format(reactor.__class__))
 except ImportError:
     # the user doesn't have Twisted, so skip
     pass
