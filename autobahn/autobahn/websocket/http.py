@@ -1,38 +1,46 @@
 ###############################################################################
-##
-# Copyright (C) 2011-2013 Tavendo GmbH
-##
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-##
-# http://www.apache.org/licenses/LICENSE-2.0
-##
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-##
+#
+# The MIT License (MIT)
+# 
+# Copyright (c) Tavendo GmbH
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
 ###############################################################################
 
-##
+#
 # HTTP Status Codes
-##
+#
 # Source: http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 # Adapted on 2011/10/11
-##
+#
 
-##
+#
 # 1xx Informational
-##
+#
 # Request received, continuing process.
-##
+#
 # This class of status code indicates a provisional response, consisting only of
 # the Status-Line and optional headers, and is terminated by an empty line.
 # Since HTTP/1.0 did not define any 1xx status codes, servers must not send
 # a 1xx response to an HTTP/1.0 client except under experimental conditions.
-##
+#
 
 CONTINUE = (100, "Continue",
             "This means that the server has received the request headers, and that the client should proceed to send the request body (in the case of a request for which a body needs to be sent; for example, a POST request). If the request body is large, sending it to a server when a request has already been rejected based upon inappropriate headers is inefficient. To have a server check if the request could be accepted based on the request's headers alone, a client must send Expect: 100-continue as a header in its initial request[2] and check if a 100 Continue status code is received in response before continuing (or receive 417 Expectation Failed and not continue).")
@@ -45,12 +53,12 @@ CHECKPOINT = (103, "Checkpoint",
 REQUEST_URI_TOO_LONG = (122, "Request-URI too long",
                         "This is a non-standard IE7-only code which means the URI is longer than a maximum of 2083 characters.[5][6] (See code 414.)")
 
-##
+#
 # 2xx Success
-##
+#
 # This class of status codes indicates the action requested by the client was
 # received, understood, accepted and processed successfully.
-##
+#
 
 OK = (200, "OK",
       "Standard response for successful HTTP requests. The actual response will depend on the request method used. In a GET request, the response will contain an entity corresponding to the requested resource. In a POST request the response will contain an entity describing or containing the result of the action.")
@@ -71,18 +79,18 @@ MULTI_STATUS = (207, "Multi-Status (WebDAV) (RFC 4918)",
 IM_USED = (226, "IM Used (RFC 3229)",
            "The server has fulfilled a GET request for the resource, and the response is a representation of the result of one or more instance-manipulations applied to the current instance.")
 
-##
+#
 # 3xx Redirection
-##
+#
 # The client must take additional action to complete the request.
-##
+#
 # This class of status code indicates that further action needs to be taken
 # by the user agent in order to fulfill the request. The action required may
 # be carried out by the user agent without interaction with the user if and
 # only if the method used in the second request is GET or HEAD. A user agent
 # should not automatically redirect a request more than five times, since such
 # redirections usually indicate an infinite loop.
-##
+#
 
 MULTIPLE_CHOICES = (300, "Multiple Choices",
                     "Indicates multiple options for the resource that the client may follow. It, for instance, could be used to present different format options for video, list files with different extensions, or word sense disambiguation.")
@@ -103,9 +111,9 @@ TEMPORARY_REDIRECT = (307, "Temporary Redirect (since HTTP/1.1)",
 RESUME_INCOMPLETE = (308, "Resume Incomplete",
                      "This code is used in the Resumable HTTP Requests Proposal to resume aborted PUT or POST requests.")
 
-##
+#
 # 4xx Client Error
-##
+#
 # The 4xx class of status code is intended for cases in which the client
 # seems to have erred. Except when responding to a HEAD request, the server
 # should include an entity containing an explanation of the error situation,
@@ -113,7 +121,7 @@ RESUME_INCOMPLETE = (308, "Resume Incomplete",
 # applicable to any request method. User agents should display any included
 # entity to the user. These are typically the most common error codes
 # encountered while online.
-##
+#
 
 BAD_REQUEST = (400, "Bad Request",
                "The request cannot be fulfilled due to bad syntax.")
@@ -173,11 +181,11 @@ CLIENT_CLOSED_REQUEST = (499, "Client Closed Request",
                          "An Nginx HTTP server extension. This code is introduced to log the case when the connection is closed by client while HTTP server is processing its request, making server unable to send the HTTP header back.")
 
 
-##
+#
 # 5xx Server Error
-##
+#
 # The server failed to fulfill an apparently valid request.
-##
+#
 # Response status codes beginning with the digit "5" indicate cases in which
 # the server is aware that it has encountered an error or is otherwise incapable
 # of performing the request. Except when responding to a HEAD request, the server
@@ -185,7 +193,7 @@ CLIENT_CLOSED_REQUEST = (499, "Client Closed Request",
 # indicate whether it is a temporary or permanent condition. Likewise, user agents
 # should display any included entity to the user. These response codes are
 # applicable to any request method.
-##
+#
 
 INTERNAL_SERVER_ERROR = (500, "Internal Server Error",
                          "A generic error message, given when no more specific message is suitable.")

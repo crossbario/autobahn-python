@@ -93,7 +93,7 @@ class MyComponent(ApplicationSession):
 * best-in-class standards conformance (100% strict passes with [Autobahn Testsuite](http://autobahn.ws/testsuite))
 * message-, frame- and streaming-APIs for WebSocket
 * supports TLS (secure WebSocket) and proxies
-* Open-source (Apache 2 [license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
+* Open-source ([MIT license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
 
 ## More Information

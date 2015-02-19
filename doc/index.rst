@@ -39,7 +39,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 * implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
 * implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
-* Open-source (`Apache 2 license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
+* Open-source (`MIT license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
 
 and much more.
 
