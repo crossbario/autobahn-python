@@ -35,6 +35,7 @@ from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
     inlineCallbacks
+from twisted.internet.protocol import ReconnectingClientFactory
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -96,6 +97,26 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
     """
    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
    """
+
+
+class ReconnectingWampWebSocketClientFactory(WampWebSocketClientFactory, ReconnectingClientFactory):
+
+    def clientConnectionFailed(self, connector, reason):
+        print("Failed to connect to router: {0}".format(reason.getErrorMessage()))
+        ReconnectingClientFactory.clientConnectionFailed(self, connector, reason)
+
+    def buildProtocol(self, addr):
+        # only way of knowing that connection has been closed by us is to do this cross layer talks :-/
+        self._proto = WampWebSocketClientFactory.buildProtocol(self, addr)
+        return self._proto
+
+    def clientConnectionLost(self, connector, reason):
+        WampWebSocketClientFactory.clientConnectionLost(self, connector, reason)
+        # dont reconnect in case of close by us
+        if self._proto.closedByMe:
+            return
+        print("Disconnected from router: {0}".format(reason.getErrorMessage()))
+        ReconnectingClientFactory.clientConnectionLost(self, connector, reason)
 
 
 class ApplicationRunner:
@@ -161,8 +182,8 @@ class ApplicationRunner:
                 return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+        transport_factory = ReconnectingWampWebSocketClientFactory(
+            create, url=self.url, debug=self.debug, debug_wamp=self.debug_wamp)
 
         # start the client from a Twisted endpoint
         from twisted.internet.endpoints import clientFromString
@@ -505,6 +526,7 @@ class Service(service.MultiService):
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.make = make
+        self.session = None
         service.MultiService.__init__(self)
         self.setupService()
 
@@ -516,14 +538,15 @@ class Service(service.MultiService):
 
         # factory for use ApplicationSession
         def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            session = self.make(cfg)
-            session.debug_app = self.debug_app
-            return session
+            if self.session is None:
+                cfg = ComponentConfig(self.realm, self.extra)
+                self.session = self.make(cfg)
+                self.session.debug_app = self.debug_app
+            return self.session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+        transport_factory = ReconnectingWampWebSocketClientFactory(
+            create, url=self.url, debug=self.debug, debug_wamp=self.debug_wamp)
 
         # setup the client from a Twisted endpoint
 
@@ -536,3 +559,6 @@ class Service(service.MultiService):
 
         client = clientClass(host, port, transport_factory)
         client.setServiceParent(self)
+
+    def stopService(self):
+        return self.session.leave()
