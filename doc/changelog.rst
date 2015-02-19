@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.10.0
+------
+
+`Published 2015-02-19 <https://pypi.python.org/pypi/autobahn/0.10.0>`__
+
+* Change license from Apache 2.0 to MIT
+* fix file line endings
+* add setuptools test target
+* fix Python 2.6
+
 0.9.6
 -----
 
