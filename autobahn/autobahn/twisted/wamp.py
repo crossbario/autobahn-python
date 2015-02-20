@@ -478,6 +478,8 @@ class Service(service.MultiService):
     It can host a WAMP application component in a WAMP-over-WebSocket client
     connecting to a WAMP router.
     """
+    factory = WampWebSocketClientFactory
+
     def __init__(self, url, realm, make, extra=None,
                  debug=False, debug_wamp=False, debug_app=False):
         """
@@ -497,6 +499,9 @@ class Service(service.MultiService):
         :type debug_wamp: bool
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
+
+        You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
+        The factory attribute must return a WampWebSocketClientFactory object
         """
         self.url = url
         self.realm = realm
@@ -522,8 +527,8 @@ class Service(service.MultiService):
             return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+        transport_factory = self.factory(create, url=self.url,
+                                         debug=self.debug, debug_wamp=self.debug_wamp)
 
         # setup the client from a Twisted endpoint
 
