@@ -1275,7 +1275,7 @@ class Subscribe(Message):
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(match is None or type(match) == six.text_type)
-        assert(match is None or match in [self.MATCH_EXACT, self.MATCH_PREFIX, self.MATCH_WILDCARD])
+        assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
 
         Message.__init__(self)
         self.request = request
@@ -2019,13 +2019,27 @@ class Register(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, request, procedure, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
+    MATCH_EXACT = u'exact'
+    MATCH_PREFIX = u'prefix'
+    MATCH_WILDCARD = u'wildcard'
+
+    INVOKE_SINGLE = u'single'
+    INVOKE_FIRST = u'first'
+    INVOKE_LAST = u'last'
+    INVOKE_ROUNDROBIN = u'roundrobin'
+    INVOKE_RANDOM = u'random'
+
+    def __init__(self, request, procedure, match=MATCH_EXACT, invoke=INVOKE_SINGLE, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
         """
 
         :param request: The WAMP request ID of this request.
         :type request: int
         :param procedure: The WAMP or application URI of the RPC endpoint provided.
         :type procedure: unicode
+        :param match: The procedure matching policy to be used for the registration.
+        :type match: unicode
+        :param invoke: The procedure invocation policy to be used for the registration.
+        :type invoke: unicode
         :param pkeys: The endpoint can work for this list of application partition keys.
         :type pkeys: list of int or None
         :param discloseCaller: If ``True``, the (registering) callee requests to disclose
@@ -2037,6 +2051,10 @@ class Register(Message):
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
+        assert(match is None or type(match) == six.text_type)
+        assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
+        assert(invoke is None or type(invoke) == six.text_type)
+        assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
         assert(pkeys is None or type(pkeys) == list)
         if pkeys:
             for k in pkeys:
@@ -2047,6 +2065,8 @@ class Register(Message):
         Message.__init__(self)
         self.request = request
         self.procedure = procedure
+        self.match = match
+        self.invoke = invoke
         self.pkeys = pkeys
         self.discloseCaller = discloseCaller
         self.discloseCallerTransport = discloseCallerTransport
@@ -2072,9 +2092,33 @@ class Register(Message):
         options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
         procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allowEmptyComponents=True)
 
+        match = Register.MATCH_EXACT
+        invoke = Register.INVOKE_SINGLE
         pkeys = None
         discloseCaller = None
         discloseCallerTransport = None
+
+        if u'match' in options:
+
+            option_match = options[u'match']
+            if type(option_match) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'match' option in REGISTER".format(type(option_match)))
+
+            if option_match not in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD]:
+                raise ProtocolError("invalid value {0} for 'match' option in REGISTER".format(option_match))
+
+            match = option_match
+
+        if u'invoke' in options:
+
+            option_invoke = options[u'invoke']
+            if type(option_invoke) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'invoke' option in REGISTER".format(type(option_invoke)))
+
+            if option_invoke not in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM]:
+                raise ProtocolError("invalid value {0} for 'invoke' option in REGISTER".format(option_invoke))
+
+            invoke = option_match
 
         if u'pkeys' in options:
 
@@ -2104,7 +2148,8 @@ class Register(Message):
 
             discloseCallerTransport = option_discloseCallerTransport
 
-        obj = Register(request, procedure, pkeys=pkeys, discloseCaller=discloseCaller, discloseCallerTransport=discloseCallerTransport)
+        obj = Register(request, procedure, match=match, invoke=invoke, pkeys=pkeys,
+                       discloseCaller=discloseCaller, discloseCallerTransport=discloseCallerTransport)
 
         return obj
 
@@ -2113,6 +2158,12 @@ class Register(Message):
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         options = {}
+
+        if self.match and self.match != Register.MATCH_EXACT:
+            options[u'match'] = self.match
+
+        if self.invoke and self.invoke != Register.INVOKE_SINGLE:
+            options[u'invoke'] = self.invoke
 
         if self.pkeys is not None:
             options[u'pkeys'] = self.pkeys
@@ -2129,7 +2180,7 @@ class Register(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP REGISTER Message (request = {0}, procedure = {1}, pkeys = {2}, discloseCaller = {3})".format(self.request, self.procedure, self.pkeys, self.discloseCaller)
+        return "WAMP REGISTER Message (request = {0}, procedure = {1}, match = {2}, invoke = {3}, pkeys = {4}, discloseCaller = {5})".format(self.request, self.procedure, self.match, self.invoke, self.pkeys, self.discloseCaller)
 
 
 class Registered(Message):
