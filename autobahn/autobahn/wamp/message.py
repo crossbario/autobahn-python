@@ -2118,7 +2118,7 @@ class Register(Message):
             if option_invoke not in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM]:
                 raise ProtocolError("invalid value {0} for 'invoke' option in REGISTER".format(option_invoke))
 
-            invoke = option_match
+            invoke = option_invoke
 
         if u'pkeys' in options:
 
