@@ -1541,7 +1541,7 @@ class Event(Message):
    The WAMP message code for this type of message.
    """
 
-    def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None):
+    def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None, topic=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1556,12 +1556,15 @@ class Event(Message):
         :type kwargs: dict or None
         :param publisher: If present, the WAMP session ID of the publisher of this event.
         :type publisher: int or None
+        :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
+        :type topic: unicode or None
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(publisher is None or type(publisher) in six.integer_types)
+        assert(topic is None or type(topic) == six.text_type)
 
         Message.__init__(self)
         self.subscription = subscription
@@ -1569,6 +1572,7 @@ class Event(Message):
         self.args = args
         self.kwargs = kwargs
         self.publisher = publisher
+        self.topic = topic
 
     @staticmethod
     def parse(wmsg):
@@ -1612,11 +1616,21 @@ class Event(Message):
 
             publisher = detail_publisher
 
+        topic = None
+        if u'topic' in details:
+
+            detail_topic = details[u'topic']
+            if type(detail_topic) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'topic' detail in EVENT".format(type(detail_topic)))
+
+            topic = detail_topic
+
         obj = Event(subscription,
                     publication,
                     args=args,
                     kwargs=kwargs,
-                    publisher=publisher)
+                    publisher=publisher,
+                    topic=topic)
 
         return obj
 
@@ -1629,6 +1643,9 @@ class Event(Message):
         if self.publisher is not None:
             details[u'publisher'] = self.publisher
 
+        if self.topic is not None:
+            details[u'topic'] = self.topic
+
         if self.kwargs:
             return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args, self.kwargs]
         elif self.args:
@@ -1640,7 +1657,7 @@ class Event(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher)
+        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic)
 
 
 class Call(Message):
@@ -2397,7 +2414,8 @@ class Invocation(Message):
                  caller_transport=None,
                  authid=None,
                  authrole=None,
-                 authmethod=None):
+                 authmethod=None,
+                 procedure=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2425,6 +2443,8 @@ class Invocation(Message):
         :type authrole: unicode or None
         :param authmethod: The authentication method under which the caller was authenticated.
         :type authmethod: unicode or None
+        :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
+        :type procedure: unicode or None
         """
         assert(type(request) in six.integer_types)
         assert(type(registration) in six.integer_types)
@@ -2437,6 +2457,7 @@ class Invocation(Message):
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
+        assert(procedure is None or type(procedure) == six.text_type)
 
         Message.__init__(self)
         self.request = request
@@ -2450,6 +2471,7 @@ class Invocation(Message):
         self.authid = authid
         self.authrole = authrole
         self.authmethod = authmethod
+        self.procedure = procedure
 
     @staticmethod
     def parse(wmsg):
@@ -2550,6 +2572,15 @@ class Invocation(Message):
 
             authmethod = detail_authmethod
 
+        procedure = None
+        if u'procedure' in details:
+
+            detail_procedure = details[u'procedure']
+            if type(detail_procedure) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'procedure' detail in INVOCATION".format(type(detail_procedure)))
+
+            procedure = detail_procedure
+
         obj = Invocation(request,
                          registration,
                          args=args,
@@ -2560,7 +2591,8 @@ class Invocation(Message):
                          caller_transport=caller_transport,
                          authid=authid,
                          authrole=authrole,
-                         authmethod=authmethod)
+                         authmethod=authmethod,
+                         procedure=procedure)
 
         return obj
 
@@ -2591,6 +2623,9 @@ class Invocation(Message):
         if self.authmethod is not None:
             options[u'authmethod'] = self.authmethod
 
+        if self.procedure is not None:
+            options[u'procedure'] = self.procedure
+
         if self.kwargs:
             return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
         elif self.args:
@@ -2602,7 +2637,7 @@ class Invocation(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_transport = {7}, authid = {8}, authrole = {9}, authmethod = {10})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
+        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_transport = {7}, authid = {8}, authrole = {9}, authmethod = {10}, procedure = {11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod, self.procedure)
 
 
 class Interrupt(Message):
