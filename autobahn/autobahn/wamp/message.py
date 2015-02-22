@@ -42,7 +42,6 @@ __all__ = ('Message',
            'Challenge',
            'Authenticate',
            'Goodbye',
-           'Heartbeat',
            'Error',
            'Publish',
            'Published',
@@ -770,99 +769,6 @@ class Goodbye(Message):
         return "WAMP GOODBYE Message (message = {0}, reason = {1})".format(self.message, self.reason)
 
 
-class Heartbeat(Message):
-    """
-    A WAMP ``HEARTBEAT`` message.
-
-    Formats:
-
-    * ``[HEARTBEAT, Incoming|integer, Outgoing|integer]``
-    * ``[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]``
-    """
-
-    MESSAGE_TYPE = 7
-    """
-   The WAMP message code for this type of message.
-   """
-
-    def __init__(self, incoming, outgoing, discard=None):
-        """
-
-        :param incoming: Last incoming heartbeat processed from peer.
-        :type incoming: int
-        :param outgoing: Outgoing heartbeat.
-        :type outgoing: int
-        :param discard: Optional data that is discarded by peer.
-        :type discard: unicode or None
-        """
-        assert(type(incoming) in six.integer_types)
-        assert(type(outgoing) in six.integer_types)
-        assert(discard is None or type(discard) == six.text_type)
-
-        Message.__init__(self)
-        self.incoming = incoming
-        self.outgoing = outgoing
-        self.discard = discard
-
-    @staticmethod
-    def parse(wmsg):
-        """
-        Verifies and parses an unserialized raw message into an actual WAMP message instance.
-
-        :param wmsg: The unserialized raw message.
-        :type wmsg: list
-
-        :returns: An instance of this class.
-        """
-        # this should already be verified by WampSerializer.unserialize
-        ##
-        assert(len(wmsg) > 0 and wmsg[0] == Heartbeat.MESSAGE_TYPE)
-
-        if len(wmsg) not in [3, 4]:
-            raise ProtocolError("invalid message length {0} for HEARTBEAT".format(len(wmsg)))
-
-        incoming = wmsg[1]
-
-        if type(incoming) not in six.integer_types:
-            raise ProtocolError("invalid type {0} for 'incoming' in HEARTBEAT".format(type(incoming)))
-
-        if incoming < 0:  # must be non-negative
-            raise ProtocolError("invalid value {0} for 'incoming' in HEARTBEAT".format(incoming))
-
-        outgoing = wmsg[2]
-
-        if type(outgoing) not in six.integer_types:
-            raise ProtocolError("invalid type {0} for 'outgoing' in HEARTBEAT".format(type(outgoing)))
-
-        if outgoing <= 0:  # must be positive
-            raise ProtocolError("invalid value {0} for 'outgoing' in HEARTBEAT".format(outgoing))
-
-        discard = None
-        if len(wmsg) > 3:
-            discard = wmsg[3]
-            if type(discard) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'discard' in HEARTBEAT".format(type(discard)))
-
-        obj = Heartbeat(incoming, outgoing, discard=discard)
-
-        return obj
-
-    def marshal(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
-        """
-        if self.discard:
-            return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing, self.discard]
-        else:
-            return [Heartbeat.MESSAGE_TYPE, self.incoming, self.outgoing]
-
-    def __str__(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
-        """
-        return "WAMP HEARTBEAT Message (incoming {0}, outgoing = {1}, len(discard) = {2})".format(self.incoming, self.outgoing, len(self.discard) if self.discard else None)
-
-
 class Error(Message):
     """
     A WAMP ``ERROR`` message.
@@ -1000,10 +906,10 @@ class Publish(Message):
                  args=None,
                  kwargs=None,
                  acknowledge=None,
-                 excludeMe=None,
+                 exclude_me=None,
                  exclude=None,
                  eligible=None,
-                 discloseMe=None):
+                 disclose_me=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1020,26 +926,26 @@ class Publish(Message):
         :param acknowledge: If True, acknowledge the publication with a success or
            error response.
         :type acknowledge: bool or None
-        :param excludeMe: If ``True``, exclude the publisher from receiving the event, even
+        :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
-        :type excludeMe: bool or None
+        :type exclude_me: bool or None
         :param exclude: List of WAMP session IDs to exclude from receiving this event.
         :type exclude: list of int or None
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int or None
-        :param discloseMe: If True, request to disclose the publisher of this event
+        :param disclose_me: If True, request to disclose the publisher of this event
            to subscribers.
-        :type discloseMe: bool or None
+        :type disclose_me: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
         assert(acknowledge is None or type(acknowledge) == bool)
-        assert(excludeMe is None or type(excludeMe) == bool)
+        assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or type(exclude) == list)
         assert(eligible is None or type(eligible) == list)
-        assert(discloseMe is None or type(discloseMe) == bool)
+        assert(disclose_me is None or type(disclose_me) == bool)
 
         Message.__init__(self)
         self.request = request
@@ -1047,10 +953,10 @@ class Publish(Message):
         self.args = args
         self.kwargs = kwargs
         self.acknowledge = acknowledge
-        self.excludeMe = excludeMe
+        self.exclude_me = exclude_me
         self.exclude = exclude
         self.eligible = eligible
-        self.discloseMe = discloseMe
+        self.disclose_me = disclose_me
 
     @staticmethod
     def parse(wmsg):
@@ -1086,10 +992,10 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
         acknowledge = None
-        excludeMe = None
+        exclude_me = None
         exclude = None
         eligible = None
-        discloseMe = None
+        disclose_me = None
 
         if u'acknowledge' in options:
 
@@ -1101,11 +1007,11 @@ class Publish(Message):
 
         if u'exclude_me' in options:
 
-            option_excludeMe = options[u'exclude_me']
-            if type(option_excludeMe) != bool:
-                raise ProtocolError("invalid type {0} for 'exclude_me' option in PUBLISH".format(type(option_excludeMe)))
+            option_exclude_me = options[u'exclude_me']
+            if type(option_exclude_me) != bool:
+                raise ProtocolError("invalid type {0} for 'exclude_me' option in PUBLISH".format(type(option_exclude_me)))
 
-            excludeMe = option_excludeMe
+            exclude_me = option_exclude_me
 
         if u'exclude' in options:
 
@@ -1133,21 +1039,21 @@ class Publish(Message):
 
         if u'disclose_me' in options:
 
-            option_discloseMe = options[u'disclose_me']
-            if type(option_discloseMe) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_me' option in PUBLISH".format(type(option_discloseMe)))
+            option_disclose_me = options[u'disclose_me']
+            if type(option_disclose_me) != bool:
+                raise ProtocolError("invalid type {0} for 'disclose_me' option in PUBLISH".format(type(option_disclose_me)))
 
-            discloseMe = option_discloseMe
+            disclose_me = option_disclose_me
 
         obj = Publish(request,
                       topic,
                       args=args,
                       kwargs=kwargs,
                       acknowledge=acknowledge,
-                      excludeMe=excludeMe,
+                      exclude_me=exclude_me,
                       exclude=exclude,
                       eligible=eligible,
-                      discloseMe=discloseMe)
+                      disclose_me=disclose_me)
 
         return obj
 
@@ -1159,14 +1065,14 @@ class Publish(Message):
 
         if self.acknowledge is not None:
             options[u'acknowledge'] = self.acknowledge
-        if self.excludeMe is not None:
-            options[u'exclude_me'] = self.excludeMe
+        if self.exclude_me is not None:
+            options[u'exclude_me'] = self.exclude_me
         if self.exclude is not None:
             options[u'exclude'] = self.exclude
         if self.eligible is not None:
             options[u'eligible'] = self.eligible
-        if self.discloseMe is not None:
-            options[u'disclose_me'] = self.discloseMe
+        if self.disclose_me is not None:
+            options[u'disclose_me'] = self.disclose_me
 
         if self.kwargs:
             return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args, self.kwargs]
@@ -1179,7 +1085,7 @@ class Publish(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, excludeMe = {5}, exclude = {6}, eligible = {7}, discloseMe = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
 
 
 class Published(Message):
@@ -1255,14 +1161,14 @@ class Subscribe(Message):
 
     MESSAGE_TYPE = 32
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     MATCH_EXACT = u'exact'
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
 
-    def __init__(self, request, topic, match=MATCH_EXACT):
+    def __init__(self, request, topic, match=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1280,7 +1186,7 @@ class Subscribe(Message):
         Message.__init__(self)
         self.request = request
         self.topic = topic
-        self.match = match
+        self.match = match or Subscribe.MATCH_EXACT
 
     @staticmethod
     def parse(wmsg):
@@ -1293,7 +1199,7 @@ class Subscribe(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
         if len(wmsg) != 4:
@@ -1316,7 +1222,7 @@ class Subscribe(Message):
 
             match = option_match
 
-        obj = Subscribe(request, topic, match)
+        obj = Subscribe(request, topic, match=match)
 
         return obj
 
@@ -1683,7 +1589,7 @@ class Call(Message):
                  kwargs=None,
                  timeout=None,
                  receive_progress=None,
-                 discloseMe=None):
+                 disclose_me=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1702,8 +1608,8 @@ class Call(Message):
         :param receive_progress: If ``True``, indicates that the caller wants to receive
            progressive call results.
         :type receive_progress: bool or None
-        :param discloseMe: If ``True``, the caller requests to disclose itself to the callee.
-        :type discloseMe: bool or None
+        :param disclose_me: If ``True``, the caller requests to disclose itself to the callee.
+        :type disclose_me: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -1711,7 +1617,7 @@ class Call(Message):
         assert(kwargs is None or type(kwargs) == dict)
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
-        assert(discloseMe is None or type(discloseMe) == bool)
+        assert(disclose_me is None or type(disclose_me) == bool)
 
         Message.__init__(self)
         self.request = request
@@ -1720,7 +1626,7 @@ class Call(Message):
         self.kwargs = kwargs
         self.timeout = timeout
         self.receive_progress = receive_progress
-        self.discloseMe = discloseMe
+        self.disclose_me = disclose_me
 
     @staticmethod
     def parse(wmsg):
@@ -1776,14 +1682,14 @@ class Call(Message):
 
             receive_progress = option_receive_progress
 
-        discloseMe = None
+        disclose_me = None
         if u'disclose_me' in options:
 
-            option_discloseMe = options[u'disclose_me']
-            if type(option_discloseMe) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_me' option in CALL".format(type(option_discloseMe)))
+            option_disclose_me = options[u'disclose_me']
+            if type(option_disclose_me) != bool:
+                raise ProtocolError("invalid type {0} for 'disclose_me' option in CALL".format(type(option_disclose_me)))
 
-            discloseMe = option_discloseMe
+            disclose_me = option_disclose_me
 
         obj = Call(request,
                    procedure,
@@ -1791,7 +1697,7 @@ class Call(Message):
                    kwargs=kwargs,
                    timeout=timeout,
                    receive_progress=receive_progress,
-                   discloseMe=discloseMe)
+                   disclose_me=disclose_me)
 
         return obj
 
@@ -1807,8 +1713,8 @@ class Call(Message):
         if self.receive_progress is not None:
             options[u'receive_progress'] = self.receive_progress
 
-        if self.discloseMe is not None:
-            options[u'disclose_me'] = self.discloseMe
+        if self.disclose_me is not None:
+            options[u'disclose_me'] = self.disclose_me
 
         if self.kwargs:
             return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
@@ -1821,7 +1727,7 @@ class Call(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, discloseMe = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.discloseMe)
+        return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, disclose_me = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me)
 
 
 class Cancel(Message):
@@ -2033,8 +1939,8 @@ class Register(Message):
 
     MESSAGE_TYPE = 64
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     MATCH_EXACT = u'exact'
     MATCH_PREFIX = u'prefix'
@@ -2046,7 +1952,7 @@ class Register(Message):
     INVOKE_ROUNDROBIN = u'roundrobin'
     INVOKE_RANDOM = u'random'
 
-    def __init__(self, request, procedure, match=MATCH_EXACT, invoke=INVOKE_SINGLE, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
+    def __init__(self, request, procedure, match=None, invoke=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2057,14 +1963,6 @@ class Register(Message):
         :type match: unicode
         :param invoke: The procedure invocation policy to be used for the registration.
         :type invoke: unicode
-        :param pkeys: The endpoint can work for this list of application partition keys.
-        :type pkeys: list of int or None
-        :param discloseCaller: If ``True``, the (registering) callee requests to disclose
-           the identity of callers whenever called.
-        :type discloseCaller: bool or None
-        :param discloseCallerTransport: If ``True``, the (registering) calle requests to disclose
-           transport level information of caller whenever called. This only takes effect if ``discloseCaller == True``.
-        :type discloseCallerTransport: bool
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -2072,21 +1970,12 @@ class Register(Message):
         assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
         assert(invoke is None or type(invoke) == six.text_type)
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
-        assert(pkeys is None or type(pkeys) == list)
-        if pkeys:
-            for k in pkeys:
-                assert(type(k) in six.integer_types)
-        assert(discloseCaller is None or type(discloseCaller) == bool)
-        assert(discloseCallerTransport is None or type(discloseCallerTransport) == bool)
 
         Message.__init__(self)
         self.request = request
         self.procedure = procedure
-        self.match = match
-        self.invoke = invoke
-        self.pkeys = pkeys
-        self.discloseCaller = discloseCaller
-        self.discloseCallerTransport = discloseCallerTransport
+        self.match = match or Register.MATCH_EXACT
+        self.invoke = invoke or Register.INVOKE_SINGLE
 
     @staticmethod
     def parse(wmsg):
@@ -2099,7 +1988,7 @@ class Register(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Register.MESSAGE_TYPE)
 
         if len(wmsg) != 4:
@@ -2111,9 +2000,6 @@ class Register(Message):
 
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE
-        pkeys = None
-        discloseCaller = None
-        discloseCallerTransport = None
 
         if u'match' in options:
 
@@ -2137,36 +2023,7 @@ class Register(Message):
 
             invoke = option_invoke
 
-        if u'pkeys' in options:
-
-            option_pkeys = options[u'pkeys']
-            if type(option_pkeys) != list:
-                raise ProtocolError("invalid type {0} for 'pkeys' option in REGISTER".format(type(option_pkeys)))
-
-            for pk in option_pkeys:
-                if type(pk) not in six.integer_types:
-                    raise ProtocolError("invalid type for value '{0}' in 'pkeys' option in REGISTER".format(type(pk)))
-
-            pkeys = option_pkeys
-
-        if u'disclose_caller' in options:
-
-            option_discloseCaller = options[u'disclose_caller']
-            if type(option_discloseCaller) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_caller' option in REGISTER".format(type(option_discloseCaller)))
-
-            discloseCaller = option_discloseCaller
-
-        if u'disclose_caller_transport' in options:
-
-            option_discloseCallerTransport = options[u'disclose_caller_transport']
-            if type(option_discloseCallerTransport) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_caller_transport' option in REGISTER".format(type(option_discloseCallerTransport)))
-
-            discloseCallerTransport = option_discloseCallerTransport
-
-        obj = Register(request, procedure, match=match, invoke=invoke, pkeys=pkeys,
-                       discloseCaller=discloseCaller, discloseCallerTransport=discloseCallerTransport)
+        obj = Register(request, procedure, match=match, invoke=invoke)
 
         return obj
 
@@ -2182,22 +2039,13 @@ class Register(Message):
         if self.invoke and self.invoke != Register.INVOKE_SINGLE:
             options[u'invoke'] = self.invoke
 
-        if self.pkeys is not None:
-            options[u'pkeys'] = self.pkeys
-
-        if self.discloseCaller is not None:
-            options[u'disclose_caller'] = self.discloseCaller
-
-        if self.discloseCallerTransport is not None:
-            options[u'disclose_caller_transport'] = self.discloseCallerTransport
-
         return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP REGISTER Message (request = {0}, procedure = {1}, match = {2}, invoke = {3}, pkeys = {4}, discloseCaller = {5})".format(self.request, self.procedure, self.match, self.invoke, self.pkeys, self.discloseCaller)
+        return "WAMP REGISTER Message (request = {0}, procedure = {1}, match = {2}, invoke = {3})".format(self.request, self.procedure, self.match, self.invoke)
 
 
 class Registered(Message):
@@ -2411,10 +2259,6 @@ class Invocation(Message):
                  timeout=None,
                  receive_progress=None,
                  caller=None,
-                 caller_transport=None,
-                 authid=None,
-                 authrole=None,
-                 authmethod=None,
                  procedure=None):
         """
 
@@ -2435,14 +2279,6 @@ class Invocation(Message):
         :type receive_progress: bool or None
         :param caller: The WAMP session ID of the caller.
         :type caller: int or None
-        :param caller_transport: WAMP transport level information of the caller.
-        :type caller_transport: dict or None
-        :param authid: The authentication ID of the caller.
-        :type authid: unicode or None
-        :param authrole: The authentication role of the caller.
-        :type authrole: unicode or None
-        :param authmethod: The authentication method under which the caller was authenticated.
-        :type authmethod: unicode or None
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
         """
@@ -2453,10 +2289,6 @@ class Invocation(Message):
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
         assert(caller is None or type(caller) in six.integer_types)
-        assert(caller_transport is None or type(caller_transport) == dict)
-        assert(authid is None or type(authid) == six.text_type)
-        assert(authrole is None or type(authrole) == six.text_type)
-        assert(authmethod is None or type(authmethod) == six.text_type)
         assert(procedure is None or type(procedure) == six.text_type)
 
         Message.__init__(self)
@@ -2467,10 +2299,6 @@ class Invocation(Message):
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.caller = caller
-        self.caller_transport = caller_transport
-        self.authid = authid
-        self.authrole = authrole
-        self.authmethod = authmethod
         self.procedure = procedure
 
     @staticmethod
@@ -2536,42 +2364,6 @@ class Invocation(Message):
 
             caller = detail_caller
 
-        caller_transport = None
-        if u'caller_transport' in details:
-
-            detail_caller_transport = details[u'caller_transport']
-            if type(detail_caller_transport) != dict:
-                raise ProtocolError("invalid type {0} for 'caller_transport' detail in INVOCATION".format(type(caller_transport)))
-
-            caller_transport = detail_caller_transport
-
-        authid = None
-        if u'authid' in details:
-
-            detail_authid = details[u'authid']
-            if type(detail_authid) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'authid' detail in INVOCATION".format(type(detail_authid)))
-
-            authid = detail_authid
-
-        authrole = None
-        if u'authrole' in details:
-
-            detail_authrole = details[u'authrole']
-            if type(detail_authrole) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'authrole' detail in INVOCATION".format(type(detail_authrole)))
-
-            authrole = detail_authrole
-
-        authmethod = None
-        if u'authmethod' in details:
-
-            detail_authmethod = details[u'authmethod']
-            if type(detail_authmethod) != six.text_type:
-                raise ProtocolError("invalid type {0} for 'authmethod' detail in INVOCATION".format(type(detail_authmethod)))
-
-            authmethod = detail_authmethod
-
         procedure = None
         if u'procedure' in details:
 
@@ -2588,10 +2380,6 @@ class Invocation(Message):
                          timeout=timeout,
                          receive_progress=receive_progress,
                          caller=caller,
-                         caller_transport=caller_transport,
-                         authid=authid,
-                         authrole=authrole,
-                         authmethod=authmethod,
                          procedure=procedure)
 
         return obj
@@ -2611,18 +2399,6 @@ class Invocation(Message):
         if self.caller is not None:
             options[u'caller'] = self.caller
 
-        if self.caller_transport is not None:
-            options[u'caller_transport'] = self.caller_transport
-
-        if self.authid is not None:
-            options[u'authid'] = self.authid
-
-        if self.authrole is not None:
-            options[u'authrole'] = self.authrole
-
-        if self.authmethod is not None:
-            options[u'authmethod'] = self.authmethod
-
         if self.procedure is not None:
             options[u'procedure'] = self.procedure
 
@@ -2637,7 +2413,7 @@ class Invocation(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_transport = {7}, authid = {8}, authrole = {9}, authmethod = {10}, procedure = {11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod, self.procedure)
+        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure)
 
 
 class Interrupt(Message):

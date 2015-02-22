@@ -346,7 +346,7 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg[4], [1, 2, 3])
         self.assertEqual(msg[5], {u'foo': 23, u'bar': u'hello'})
 
-        e = message.Publish(123456, u'com.myapp.topic1', excludeMe=False, exclude=[300], eligible=[100, 200, 300], discloseMe=True)
+        e = message.Publish(123456, u'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300], disclose_me=True)
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Publish.MESSAGE_TYPE)
@@ -362,10 +362,10 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.topic, u'com.myapp.topic1')
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
-        self.assertEqual(msg.excludeMe, None)
+        self.assertEqual(msg.exclude_me, None)
         self.assertEqual(msg.exclude, None)
         self.assertEqual(msg.eligible, None)
-        self.assertEqual(msg.discloseMe, None)
+        self.assertEqual(msg.disclose_me, None)
         self.assertEqual(msg.marshal(), wmsg)
 
         wmsg = [message.Publish.MESSAGE_TYPE, 123456, {}, u'com.myapp.topic1', [1, 2, 3], {u'foo': 23, u'bar': u'hello'}]
@@ -375,10 +375,10 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.topic, u'com.myapp.topic1')
         self.assertEqual(msg.args, [1, 2, 3])
         self.assertEqual(msg.kwargs, {u'foo': 23, u'bar': u'hello'})
-        self.assertEqual(msg.excludeMe, None)
+        self.assertEqual(msg.exclude_me, None)
         self.assertEqual(msg.exclude, None)
         self.assertEqual(msg.eligible, None)
-        self.assertEqual(msg.discloseMe, None)
+        self.assertEqual(msg.disclose_me, None)
         self.assertEqual(msg.marshal(), wmsg)
 
         wmsg = [message.Publish.MESSAGE_TYPE, 123456, {u'exclude_me': False, u'disclose_me': True, u'exclude': [300], u'eligible': [100, 200, 300]}, u'com.myapp.topic1']
@@ -388,10 +388,10 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.topic, u'com.myapp.topic1')
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
-        self.assertEqual(msg.excludeMe, False)
+        self.assertEqual(msg.exclude_me, False)
         self.assertEqual(msg.exclude, [300])
         self.assertEqual(msg.eligible, [100, 200, 300])
-        self.assertEqual(msg.discloseMe, True)
+        self.assertEqual(msg.disclose_me, True)
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -486,12 +486,12 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertEqual(msg[2], {})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
-        e = message.Register(123456, u'com.myapp.procedure1', pkeys=[10, 11, 12])
+        e = message.Register(123456, u'com.myapp.procedure1', match=u'wildcard')
         msg = e.marshal()
         self.assertEqual(len(msg), 4)
         self.assertEqual(msg[0], message.Register.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
-        self.assertEqual(msg[2], {u'pkeys': [10, 11, 12]})
+        self.assertEqual(msg[2], {u'match': u'wildcard'})
         self.assertEqual(msg[3], u'com.myapp.procedure1')
 
     def test_parse_and_marshal(self):
@@ -500,15 +500,15 @@ class TestRegisterMessage(unittest.TestCase):
         self.assertIsInstance(msg, message.Register)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.procedure, u'com.myapp.procedure1')
-        self.assertEqual(msg.pkeys, None)
+        self.assertEqual(msg.match, u'exact')
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Register.MESSAGE_TYPE, 123456, {u'pkeys': [10, 11, 12]}, u'com.myapp.procedure1']
+        wmsg = [message.Register.MESSAGE_TYPE, 123456, {u'match': u'wildcard'}, u'com.myapp.procedure1']
         msg = message.Register.parse(wmsg)
         self.assertIsInstance(msg, message.Register)
         self.assertEqual(msg.request, 123456)
         self.assertEqual(msg.procedure, u'com.myapp.procedure1')
-        self.assertEqual(msg.pkeys, [10, 11, 12])
+        self.assertEqual(msg.match, u'wildcard')
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -958,61 +958,6 @@ class TestGoodbyeMessage(unittest.TestCase):
 
     def test_str(self):
         e = message.Goodbye(reason=u'wamp.error.system_shutdown', message=u'The host is shutting down now.')
-        self.assertIsInstance(str(e), str)
-
-
-class TestHeartbeatMessage(unittest.TestCase):
-
-    def test_ctor(self):
-        e = message.Heartbeat(123, 456)
-        msg = e.marshal()
-        self.assertEqual(len(msg), 3)
-        self.assertEqual(msg[0], message.Heartbeat.MESSAGE_TYPE)
-        self.assertEqual(msg[1], 123)
-        self.assertEqual(msg[2], 456)
-
-        e = message.Heartbeat(123, 456, u"discard me")
-        msg = e.marshal()
-        self.assertEqual(len(msg), 4)
-        self.assertEqual(msg[0], message.Heartbeat.MESSAGE_TYPE)
-        self.assertEqual(msg[1], 123)
-        self.assertEqual(msg[2], 456)
-        self.assertEqual(msg[3], u"discard me")
-
-    def test_parse_and_marshal(self):
-        wmsg = [message.Heartbeat.MESSAGE_TYPE]
-        self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 100]
-        self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, u"foo"]
-        self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, 0]
-        self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 100, 100, 100]
-        self.assertRaises(ProtocolError, message.Heartbeat.parse, wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 123, 456]
-        msg = message.Heartbeat.parse(wmsg)
-        self.assertIsInstance(msg, message.Heartbeat)
-        self.assertEqual(msg.incoming, 123)
-        self.assertEqual(msg.outgoing, 456)
-        self.assertEqual(msg.discard, None)
-        self.assertEqual(msg.marshal(), wmsg)
-
-        wmsg = [message.Heartbeat.MESSAGE_TYPE, 123, 456, u"discard me"]
-        msg = message.Heartbeat.parse(wmsg)
-        self.assertIsInstance(msg, message.Heartbeat)
-        self.assertEqual(msg.incoming, 123)
-        self.assertEqual(msg.outgoing, 456)
-        self.assertEqual(msg.discard, u"discard me")
-        self.assertEqual(msg.marshal(), wmsg)
-
-    def test_str(self):
-        e = message.Heartbeat(123, 456, u"discard me")
         self.assertIsInstance(str(e), str)
 
 

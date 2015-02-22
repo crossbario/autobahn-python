@@ -580,9 +580,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 progress = None
 
-                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller,
-                                                                                         caller_transport=msg.caller_transport, authid=msg.authid, authrole=msg.authrole,
-                                                                                         authmethod=msg.authmethod)
+                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller)
 
                         if endpoint.obj:
                             if msg.kwargs:
@@ -710,10 +708,6 @@ class ApplicationSession(BaseSession):
                     self._reject_future(d, self._exception_from_message(msg))
                 else:
                     raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
-
-            elif isinstance(msg, message.Heartbeat):
-
-                pass  # FIXME
 
             else:
 

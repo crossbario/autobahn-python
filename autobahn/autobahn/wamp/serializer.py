@@ -53,7 +53,6 @@ class Serializer:
         message.Challenge.MESSAGE_TYPE: message.Challenge,
         message.Authenticate.MESSAGE_TYPE: message.Authenticate,
         message.Goodbye.MESSAGE_TYPE: message.Goodbye,
-        message.Heartbeat.MESSAGE_TYPE: message.Heartbeat,
         message.Error.MESSAGE_TYPE: message.Error,
 
         message.Publish.MESSAGE_TYPE: message.Publish,

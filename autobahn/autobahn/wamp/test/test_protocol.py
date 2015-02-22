@@ -147,10 +147,10 @@ if os.environ.get('USE_TWISTED', False):
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello')
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(excludeMe=False))
+            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(exclude_me=False))
             self.assertEqual(publication, None)
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(excludeMe=False, exclude=[100, 200, 300]))
+            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300]))
             self.assertEqual(publication, None)
 
         @inlineCallbacks
@@ -167,10 +167,10 @@ if os.environ.get('USE_TWISTED', False):
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(acknowledge=True))
             self.assertTrue(type(publication.id) in (int, long))
 
-            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(excludeMe=False, acknowledge=True))
+            publication = yield handler.publish(u'com.myapp.topic1', options=types.PublishOptions(exclude_me=False, acknowledge=True))
             self.assertTrue(type(publication.id) in (int, long))
 
-            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(excludeMe=False, exclude=[100, 200, 300], acknowledge=True))
+            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], acknowledge=True))
             self.assertTrue(type(publication.id) in (int, long))
 
         @inlineCallbacks
@@ -267,7 +267,7 @@ if os.environ.get('USE_TWISTED', False):
             registration = yield handler.register(on_call, u'com.myapp.procedure1')
             self.assertTrue(type(registration.id) in (int, long))
 
-            registration = yield handler.register(on_call, u'com.myapp.procedure1', options=types.RegisterOptions(pkeys=[0, 1, 2]))
+            registration = yield handler.register(on_call, u'com.myapp.procedure1', options=types.RegisterOptions(match=u'prefix'))
             self.assertTrue(type(registration.id) in (int, long))
 
         @inlineCallbacks

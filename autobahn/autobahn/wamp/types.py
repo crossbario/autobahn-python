@@ -267,7 +267,9 @@ class SubscribeOptions:
         self.details_arg = details_arg
 
         # options dict as sent within WAMP message
-        self.options = {'match': match}
+        self.options = {
+            'match': match
+        }
 
     def __str__(self):
         return "SubscribeOptions(match = {0}, details_arg = {1})".format(self.match, self.details_arg)
@@ -302,49 +304,49 @@ class PublishOptions:
 
     def __init__(self,
                  acknowledge=None,
-                 excludeMe=None,
+                 exclude_me=None,
                  exclude=None,
                  eligible=None,
-                 discloseMe=None):
+                 disclose_me=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
            error response.
         :type acknowledge: bool
-        :param excludeMe: If ``True``, exclude the publisher from receiving the event, even
+        :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
-        :type excludeMe: bool
+        :type exclude_me: bool
         :param exclude: List of WAMP session IDs to exclude from receiving this event.
         :type exclude: list of int
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int
-        :param discloseMe: If ``True``, request to disclose the publisher of this event
+        :param disclose_me: If ``True``, request to disclose the publisher of this event
            to subscribers.
-        :type discloseMe: bool
+        :type disclose_me: bool
         """
         assert(acknowledge is None or type(acknowledge) == bool)
-        assert(excludeMe is None or type(excludeMe) == bool)
+        assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))
         assert(eligible is None or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
-        assert(discloseMe is None or type(discloseMe) == bool)
+        assert(disclose_me is None or type(disclose_me) == bool)
 
         self.acknowledge = acknowledge
-        self.excludeMe = excludeMe
+        self.exclude_me = exclude_me
         self.exclude = exclude
         self.eligible = eligible
-        self.discloseMe = discloseMe
+        self.disclose_me = disclose_me
 
         # options dict as sent within WAMP message
         self.options = {
             'acknowledge': acknowledge,
-            'excludeMe': excludeMe,
+            'exclude_me': exclude_me,
             'exclude': exclude,
             'eligible': eligible,
-            'discloseMe': discloseMe
+            'disclose_me': disclose_me
         }
 
     def __str__(self):
-        return "PublishOptions(acknowledge = {0}, excludeMe = {1}, exclude = {2}, eligible = {3}, discloseMe = {4})".format(self.acknowledge, self.excludeMe, self.exclude, self.eligible, self.discloseMe)
+        return "PublishOptions(acknowledge = {0}, exclude_me = {1}, exclude = {2}, eligible = {3}, disclose_me = {4})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
 
 
 class RegisterOptions:
@@ -353,27 +355,28 @@ class RegisterOptions:
     :func:`autobahn.wamp.interfaces.ICallee.register`.
     """
 
-    def __init__(self, details_arg=None, pkeys=None, discloseCaller=None, discloseCallerTransport=None):
+    def __init__(self, match=None, invoke=None, details_arg=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
            in this keyword argument to the callable.
         :type details_arg: str
         """
+        assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
+        assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
+
+        self.match = match
+        self.invoke = invoke
         self.details_arg = details_arg
-        self.pkeys = pkeys
-        self.discloseCaller = discloseCaller
-        self.discloseCallerTransport = discloseCallerTransport
 
         # options dict as sent within WAMP message
         self.options = {
-            'pkeys': pkeys,
-            'discloseCaller': discloseCaller,
-            'discloseCallerTransport': discloseCallerTransport
+            'match': self.match,
+            'invoke': self.invoke
         }
 
     def __str__(self):
-        return "RegisterOptions(details_arg = {0}, pkeys = {1}, discloseCaller = {2}, discloseCallerTransport = {3})".format(self.details_arg, self.pkeys, self.discloseCaller, self.discloseCallerTransport)
+        return "RegisterOptions(match = {0}, invoke = {1}, details_arg = {2})".format(self.match, self.invoke, self.details_arg)
 
 
 class CallDetails:
@@ -382,7 +385,7 @@ class CallDetails:
     registered is being called and opted to receive call details.
     """
 
-    def __init__(self, progress=None, caller=None, caller_transport=None, authid=None, authrole=None, authmethod=None):
+    def __init__(self, progress=None, caller=None):
         """
         Ctor.
 
@@ -390,22 +393,12 @@ class CallDetails:
         :type progress: callable
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
         :type caller: int
-        :param caller_transport: Information from the WAMP transport of the caller.
-        :type caller_transport: dict or None
-        :param authid: The authentication ID of the caller.
-        :type authid: str
-        :param authrole: The authentication role of the caller.
-        :type authrole: str
         """
         self.progress = progress
         self.caller = caller
-        self.caller_transport = caller_transport
-        self.authid = authid
-        self.authrole = authrole
-        self.authmethod = authmethod
 
     def __str__(self):
-        return "CallDetails(progress = {0}, caller = {1}, caller_transport = {2}, authid = {3}, authrole = {4}, authmethod = {5})".format(self.progress, self.caller, self.caller_transport, self.authid, self.authrole, self.authmethod)
+        return "CallDetails(progress = {0}, caller = {1})".format(self.progress, self.caller)
 
 
 class CallOptions:
@@ -414,48 +407,40 @@ class CallOptions:
     """
 
     def __init__(self,
-                 onProgress=None,
+                 on_progress=None,
                  timeout=None,
-                 discloseMe=None,
-                 runOn=None):
+                 disclose_me=None):
         """
 
-        :param onProgress: A callback that will be called when the remote endpoint
+        :param on_progress: A callback that will be called when the remote endpoint
            called yields interim call progress results.
-        :type onProgress: callable
+        :type on_progress: callable
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
-        :param discloseMe: Request to disclose the identity of the caller (it's WAMP session ID)
+        :param disclose_me: Request to disclose the identity of the caller (it's WAMP session ID)
            to Callees. Note that a Dealer, depending on Dealer configuration, might
            reject the request, or might disclose the Callee's identity without
            a request to do so.
-        :type discloseMe: bool
-        :param runOn: If present, indicates a distributed call. Distributed calls allows
-           to run a call issued by a Caller on one or more endpoints implementing the
-           called procedure. Permissible value are: ``"all"``, ``"any"`` and ``"partition"``.
-           If ``runOne == "partition"``, then ``runPartitions`` MUST be present.
-        :type runOn: str
+        :type disclose_me: bool
         """
-        assert(onProgress is None or callable(onProgress))
+        assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
-        assert(discloseMe is None or type(discloseMe) == bool)
-        assert(runOn is None or (type(runOn) == six.text_type and runOn in [u"all", u"any", u"partition"]))
+        assert(disclose_me is None or type(disclose_me) == bool)
 
-        self.onProgress = onProgress
+        self.on_progress = on_progress
         self.timeout = timeout
-        self.discloseMe = discloseMe
-        self.runOn = runOn
+        self.disclose_me = disclose_me
 
         # options dict as sent within WAMP message
         self.options = {
             'timeout': timeout,
-            'discloseMe': discloseMe
+            'disclose_me': disclose_me
         }
-        if onProgress:
+        if on_progress:
             self.options['receive_progress'] = True
 
     def __str__(self):
-        return "CallOptions(onProgress = {0}, timeout = {1}, discloseMe = {2}, runOn = {3})".format(self.onProgress, self.timeout, self.discloseMe, self.runOn)
+        return "CallOptions(on_progress = {0}, timeout = {1}, disclose_me = {2})".format(self.on_progress, self.timeout, self.disclose_me)
 
 
 class CallResult:
