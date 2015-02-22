@@ -124,6 +124,11 @@ class ApplicationError(Error):
     A Broker could not perform a unsubscribe, since the given subscription is not active.
     """
 
+    NO_SUCH_SESSION = u"wamp.error.no_such_session"
+    """
+    A router could not perform an operation, since a session ID specified was non-existant.
+    """
+
     INVALID_ARGUMENT = u"wamp.error.invalid_argument"
     """
     A call failed, since the given argument types or values are not acceptable to the
