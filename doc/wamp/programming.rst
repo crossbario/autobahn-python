@@ -461,6 +461,61 @@ The corresponding **asyncio** code looks like this
    By default, publications are *unacknowledged*. This means, a ``publish()`` may fail *silently* (like when the session is not authorized to publish to the given topic). This behavior can be overridden.
 
 
+.. _inlinecallbacks-and-coroutine:
+
+@inlineCallbacks & @coroutine
+---------------------------
+
+``inlineCallbacks`` (**Twisted**) and ``coroutine`` (**asyncio**) are two decorators providing an elegant way to write asynchronous code without using any callback. 
+
+Classically, an asynchronous code would be:
+
+.. code-block:: python
+    :linenos:
+    
+    def async_process():
+        """Returns a Deferred."""
+    
+    def on_error(err):
+        print("Error: {}".format(err))
+        print("After.")
+    
+    def on_success(res):
+        print("Success: {}".format(res))
+        print("After.")
+    
+    def func():
+        print("Before.")
+        
+        deferred = async_process()
+        
+        deferred.add_callback(on_success)
+        deferred.add_errback(on_error)
+        
+        
+Ugly, isn't it? Instead, let's use the decorators mentionned above:
+
+.. code-block:: python
+    :linenos:
+    
+    from __future__ import print_function
+    
+    def async_process():
+        """Returns a Deferred."""
+    
+    @inlineCallbacks # Or: @coroutine
+    def func():
+        print("Before.")
+        
+        try:
+            res = yield async_process()
+            print("Success: {}".format(res))
+        except Exception as e:
+            print("Error: {}".format(e))
+        finally:
+            print("After.")
+        
+
 .. _session_lifecycle:
 
 Session Lifecycle
