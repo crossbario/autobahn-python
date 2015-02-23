@@ -156,7 +156,7 @@ Precise wallclock time.
 """
 
 
-class Stopwatch:
+class Stopwatch(object):
     """
     Stopwatch based on walltime.
 
@@ -238,7 +238,7 @@ class Stopwatch:
         return elapsed
 
 
-class Tracker:
+class Tracker(object):
     """
     A key-based statistics tracker.
     """
@@ -323,7 +323,7 @@ class Tracker:
         return pformat(self._timings)
 
 
-class EqualityMixin:
+class EqualityMixin(object):
     """
     Mixing to add equality comparison operators to a class.
 

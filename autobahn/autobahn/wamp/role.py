@@ -43,6 +43,10 @@ __all__ = ('RoleFeatures',
 
 class RoleFeatures(util.EqualityMixin):
 
+    """
+    Base class for WAMP role features.
+    """
+
     ROLE = None
 
     def __str__(self):
@@ -64,132 +68,141 @@ class RoleFeatures(util.EqualityMixin):
                     raise ProtocolError("invalid type {0} for feature '{1}' for role '{2}'".format(getattr(self, k), k, self.ROLE))
 
 
-class RoleCommonPubSubFeatures(RoleFeatures):
+class RoleBrokerFeatures(RoleFeatures):
 
-    def __init__(self,
-                 publisher_identification=None,
-                 partitioned_pubsub=None):
-
-        self.publisher_identification = publisher_identification
-        self.partitioned_pubsub = partitioned_pubsub
-
-
-class RoleBrokerFeatures(RoleCommonPubSubFeatures):
+    """
+    WAMP broker role features.
+    """
 
     ROLE = u'broker'
 
     def __init__(self,
-                 subscriber_blackwhite_listing=None,
-                 publisher_exclusion=None,
+                 publisher_identification=None,
                  publication_trustlevels=None,
                  pattern_based_subscription=None,
-                 subscriber_metaevents=None,
-                 subscriber_list=None,
-                 event_history=None,
-                 **kwargs):
-        self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
-        self.publisher_exclusion = publisher_exclusion
+                 subscription_meta_api=None,
+                 subscriber_blackwhite_listing=None,
+                 publisher_exclusion=None,
+                 event_history=None):
+        self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
-        self.subscriber_metaevents = subscriber_metaevents
-        self.subscriber_list = subscriber_list
+        self.subscription_meta_api = subscription_meta_api
+        self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
+        self.publisher_exclusion = publisher_exclusion
         self.event_history = event_history
-        RoleCommonPubSubFeatures.__init__(self, **kwargs)
         self._check_all_bool()
 
 
-class RoleSubscriberFeatures(RoleCommonPubSubFeatures):
+class RoleSubscriberFeatures(RoleFeatures):
+
+    """
+    WAMP subscriber role features.
+    """
 
     ROLE = u'subscriber'
 
     def __init__(self,
+                 publisher_identification=None,
                  publication_trustlevels=None,
                  pattern_based_subscription=None,
-                 subscriber_metaevents=None,
-                 subscriber_list=None,
-                 event_history=None,
-                 **kwargs):
+                 event_history=None):
+        self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
-        self.subscriber_metaevents = subscriber_metaevents
-        self.subscriber_list = subscriber_list
         self.event_history = event_history
-        RoleCommonPubSubFeatures.__init__(self, **kwargs)
         self._check_all_bool()
 
 
-class RolePublisherFeatures(RoleCommonPubSubFeatures):
+class RolePublisherFeatures(RoleFeatures):
+
+    """
+    WAMP publisher role features.
+    """
 
     ROLE = u'publisher'
 
     def __init__(self,
+                 publisher_identification=None,
                  subscriber_blackwhite_listing=None,
-                 publisher_exclusion=None,
-                 **kwargs):
+                 publisher_exclusion=None):
+        self.publisher_identification = publisher_identification
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
-        RoleCommonPubSubFeatures.__init__(self, **kwargs)
         self._check_all_bool()
 
 
-class RoleCommonRpcFeatures(RoleFeatures):
+class RoleDealerFeatures(RoleFeatures):
 
-    def __init__(self,
-                 caller_identification=None,
-                 partitioned_rpc=None,
-                 call_timeout=None,
-                 call_canceling=None,
-                 progressive_call_results=None):
-        self.caller_identification = caller_identification
-        self.partitioned_rpc = partitioned_rpc
-        self.call_timeout = call_timeout
-        self.call_canceling = call_canceling
-        self.progressive_call_results = progressive_call_results
-
-
-class RoleDealerFeatures(RoleCommonRpcFeatures):
+    """
+    WAMP dealer role features.
+    """
 
     ROLE = u'dealer'
 
     def __init__(self,
-                 callee_blackwhite_listing=None,
-                 caller_exclusion=None,
+                 caller_identification=None,
                  call_trustlevels=None,
                  pattern_based_registration=None,
-                 **kwargs):
-        self.callee_blackwhite_listing = callee_blackwhite_listing
-        self.caller_exclusion = caller_exclusion
+                 registration_meta_api=None,
+                 shared_registration=None,
+                 call_timeout=None,
+                 call_canceling=None,
+                 progressive_call_results=None):
+        self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
-        RoleCommonRpcFeatures.__init__(self, **kwargs)
+        self.registration_meta_api = registration_meta_api
+        self.shared_registration = shared_registration
+        self.call_timeout = call_timeout
+        self.call_canceling = call_canceling
+        self.progressive_call_results = progressive_call_results
         self._check_all_bool()
 
 
-class RoleCallerFeatures(RoleCommonRpcFeatures):
+class RoleCallerFeatures(RoleFeatures):
+
+    """
+    WAMP caller role features.
+    """
 
     ROLE = u'caller'
 
     def __init__(self,
-                 callee_blackwhite_listing=None,
-                 caller_exclusion=None,
-                 **kwargs):
-        self.callee_blackwhite_listing = callee_blackwhite_listing
-        self.caller_exclusion = caller_exclusion
-        RoleCommonRpcFeatures.__init__(self, **kwargs)
+                 caller_identification=None,
+                 call_timeout=None,
+                 call_canceling=None,
+                 progressive_call_results=None):
+        self.caller_identification = caller_identification
+        self.call_timeout = call_timeout
+        self.call_canceling = call_canceling
+        self.progressive_call_results = progressive_call_results
         self._check_all_bool()
 
 
-class RoleCalleeFeatures(RoleCommonRpcFeatures):
+class RoleCalleeFeatures(RoleFeatures):
+
+    """
+    WAMP callee role features.
+    """
 
     ROLE = u'callee'
 
     def __init__(self,
+                 caller_identification=None,
                  call_trustlevels=None,
                  pattern_based_registration=None,
-                 **kwargs):
+                 shared_registration=None,
+                 call_timeout=None,
+                 call_canceling=None,
+                 progressive_call_results=None):
+        self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
-        RoleCommonRpcFeatures.__init__(self, **kwargs)
+        self.shared_registration = shared_registration
+        self.call_timeout = call_timeout
+        self.call_canceling = call_canceling
+        self.progressive_call_results = progressive_call_results
         self._check_all_bool()
 
 
