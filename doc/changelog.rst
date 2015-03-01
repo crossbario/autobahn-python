@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.10.1
+------
+
+`Published 2015-03-01 <https://pypi.python.org/pypi/autobahn/0.10.1>`__
+
+* support for pattern-based subscriptions and registrations
+* support for shared registrations
+* fix: HEARTBEAT removed
+
 0.10.0
 ------
 
