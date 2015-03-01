@@ -438,7 +438,7 @@ class ApplicationSession(BaseSession):
                     if handler.details_arg:
                         if not msg.kwargs:
                             msg.kwargs = {}
-                        msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher)
+                        msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
                     try:
                         if handler.obj:
@@ -580,7 +580,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 progress = None
 
-                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller)
+                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
 
                         if endpoint.obj:
                             if msg.kwargs:
