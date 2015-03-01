@@ -280,7 +280,7 @@ class EventDetails:
     Provides details on an event when calling an event handler
     previously registered.
     """
-    def __init__(self, publication, publisher=None):
+    def __init__(self, publication, publisher=None, topic=None):
         """
         Ctor.
 
@@ -288,12 +288,15 @@ class EventDetails:
         :type publication: int
         :param publisher: The WAMP session ID of the original publisher of this event.
         :type publisher: int
+        :param topic: For pattern-based subscriptions, the actual topic URI being published to.
+        :type topic1: unicode or None
         """
         self.publication = publication
         self.publisher = publisher
+        self.topic = topic
 
     def __str__(self):
-        return "EventDetails(publication = {0}, publisher = {1})".format(self.publication, self.publisher)
+        return "EventDetails(publication = {0}, publisher = {1}, topic = {2})".format(self.publication, self.publisher, self.topic)
 
 
 class PublishOptions:
@@ -364,6 +367,7 @@ class RegisterOptions:
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
+        assert(details_arg is None or type(details_arg) == str)
 
         self.match = match
         self.invoke = invoke
@@ -385,7 +389,7 @@ class CallDetails:
     registered is being called and opted to receive call details.
     """
 
-    def __init__(self, progress=None, caller=None):
+    def __init__(self, progress=None, caller=None, procedure=None):
         """
         Ctor.
 
@@ -393,12 +397,15 @@ class CallDetails:
         :type progress: callable
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
         :type caller: int
+        :param procedure: For pattern-based registrations, the actual procedure URI being called.
+        :type procedure: unicode or None
         """
         self.progress = progress
         self.caller = caller
+        self.procedure = procedure
 
     def __str__(self):
-        return "CallDetails(progress = {0}, caller = {1})".format(self.progress, self.caller)
+        return "CallDetails(progress = {0}, caller = {1}, procedure = {2})".format(self.progress, self.caller, self.procedure)
 
 
 class CallOptions:
