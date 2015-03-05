@@ -483,8 +483,9 @@ class ApplicationSession(BaseSession):
                     sub_id = msg.subscription
                     # we should NEVER have our ID subscribed already
                     if sub_id in self._subscriptions:
-                        raise RuntimeError(
-                            'Duplicate subscription "{}".'.format(sub_id))
+                        raise ProtocolError(
+                            'SUBSCRIBED received with existing subscription:' +
+                            str(sub_id) + ' (request ID "{}").'.format(msg.request))
 
                     details = options.details_arg if options else None
                     handler = Handler(obj, fn, topic, details)

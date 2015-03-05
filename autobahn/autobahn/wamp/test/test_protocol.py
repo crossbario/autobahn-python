@@ -248,6 +248,32 @@ if os.environ.get('USE_TWISTED', False):
             self.assertTrue(type(subscription.id) in (int, long))
 
         @inlineCallbacks
+        def test_publish_duplicate_subscription_id(self):
+            handler = ApplicationSession()
+            transport = MockTransport(handler)
+
+            def mysend(msg):
+                '''
+                we're monkey-patching the MockTransport to always reply with the
+                same Subscribed topic-ID -- which would be an error in
+                the Router's logic, but Autobahn should catch it as a
+                ProtocolError
+                '''
+                if isinstance(msg, message.Subscribe):
+                    return transport._handler.onMessage(
+                        message.Subscribed(msg.request, 1234))
+                else:
+                    return MockTransport.send(transport, msg)
+
+            transport.send = mysend
+            yield handler.subscribe(self.fail, u'com.myapp.topic9')
+            try:
+                yield handler.subscribe(self.fail, u'com.myapp.topic9')
+                self.fail("Expecting ProtocolError")
+            except ProtocolError:
+                pass
+
+        @inlineCallbacks
         def test_double_subscribe(self):
             handler = ApplicationSession()
             MockTransport(handler)
@@ -309,7 +335,7 @@ if os.environ.get('USE_TWISTED', False):
             try:
                 handler.onMessage(message.Event(subscription1.id, publish.id))
                 self.fail("Should get exception for unsubscribed topic")
-            except ProtocolError as e:
+            except ProtocolError:
                 pass
 
             # since we unsubscribed the second event handler, we
