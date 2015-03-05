@@ -462,7 +462,7 @@ class ApplicationSession(BaseSession):
                         self.onUserError(e)
                         if self.debug_app:
                             traceback.print_exc()
-                            print('While firing {} subscribed under "{}" ("{}").'.format(
+                            print('While firing {} subscribed under "{0}" ("{1}").'.format(
                                 handler.fn, handler.topic, msg.subscription))
 
                 else:
@@ -485,7 +485,7 @@ class ApplicationSession(BaseSession):
                     if sub_id in self._subscriptions:
                         raise ProtocolError(
                             'SUBSCRIBED received with existing subscription:' +
-                            str(sub_id) + ' (request ID "{}").'.format(msg.request))
+                            str(sub_id) + ' (request ID "{0}").'.format(msg.request))
 
                     details = options.details_arg if options else None
                     handler = Handler(obj, fn, topic, details)
