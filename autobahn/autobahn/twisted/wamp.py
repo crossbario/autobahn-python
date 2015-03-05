@@ -138,6 +138,18 @@ class ApplicationRunner:
         :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
+
+        :param start_reactor: if True (the default) this method starts
+           the Twisted reactor and doesn't return until the reactor
+           stops. If there are any problems starting the reactor or
+           connect()-ing, we stop the reactor and raise the exception
+           back to the caller.
+
+        :returns: None is returned, unless you specify
+            ``start_reactor=False`` in which case the Deferred that
+            connect() returns is returned; this will callback() with
+            an IProtocol instance, which will actually be an instance
+            of :class:`WampWebSocketClientProtocol`
         """
         from twisted.internet import reactor
 
@@ -152,10 +164,15 @@ class ApplicationRunner:
             cfg = ComponentConfig(self.realm, self.extra)
             try:
                 session = make(cfg)
-            except Exception:
-                # the app component could not be created .. fatal
-                log.err()
-                reactor.stop()
+            except Exception as e:
+                if start_reactor:
+                    # the app component could not be created .. fatal
+                    log.err(str(e))
+                    reactor.stop()
+                else:
+                    # if we didn't start the reactor, it's up to the
+                    # caller to deal with errors
+                    raise
             else:
                 session.debug_app = self.debug_app
                 return session
@@ -175,28 +192,34 @@ class ApplicationRunner:
         client = clientFromString(reactor, endpoint_descriptor)
         d = client.connect(transport_factory)
 
-        # if an error happens on the connect(), we save the underlying
-        # exception so that after the event-loop exits we can re-raise
-        # it to the caller.
-
-        class ErrorCollector:
-            exception = None
-
-            def __call__(self, failure):
-                self.exception = failure.value
-                # print(failure.getErrorMessage())
-                reactor.stop()
-        connect_error = ErrorCollector()
-        d.addErrback(connect_error)
-
-        # now enter the Twisted reactor loop
+        # if the user didn't ask us to start the reactor, then they
+        # get to deal with any connect errors themselves.
         if start_reactor:
+            # if an error happens in the connect(), we save the underlying
+            # exception so that after the event-loop exits we can re-raise
+            # it to the caller.
+
+            class ErrorCollector:
+                exception = None
+
+                def __call__(self, failure):
+                    self.exception = failure.value
+                    # print(failure.getErrorMessage())
+                    reactor.stop()
+            connect_error = ErrorCollector()
+            d.addErrback(connect_error)
+
+            # now enter the Twisted reactor loop
             reactor.run()
 
-        # if we exited due to a connection error, raise that to the
-        # caller
-        if connect_error.exception:
-            raise connect_error.exception
+            # if we exited due to a connection error, raise that to the
+            # caller
+            if connect_error.exception:
+                raise connect_error.exception
+
+        else:
+            # let the caller handle any errors
+            return d
 
 
 class _ApplicationSession(ApplicationSession):
