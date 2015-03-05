@@ -35,6 +35,8 @@ import os
 if unittest is not None:
     from autobahn.twisted.util import sleep
     from autobahn.twisted import wamp
+    from autobahn.wamp import subscribe as wamp_subscribe
+    from autobahn.wamp.types import PublishOptions
 
     from twisted.internet import defer
     from twisted.application import service
@@ -66,6 +68,7 @@ if unittest is not None:
             print(msg)
 
         def finish(self):
+            self.log("finish!")
             if not self.finished:
                 self.test.deferred.callback(None)
                 self.finished = True
@@ -188,6 +191,58 @@ if unittest is not None:
 
             self.finish()
 
+    class Case3_Application(CaseComponent):
+
+        @defer.inlineCallbacks
+        def finishWhenCalledTwice(self):
+            self.called += 1
+            if self.called == 2:
+                for _, s in self.subscribers:
+                    yield s.unsubscribe()
+                self.finish()
+
+        @wamp_subscribe(u"mytopic")
+        def onTopic(self):
+            self.log("called")
+            self.finishWhenCalledTwice()
+
+        @wamp_subscribe(u"mytopic")
+        def onTopic2(self):
+            self.log("called2")
+            self.finishWhenCalledTwice()
+
+        @defer.inlineCallbacks
+        def onJoin(self, details):
+            self.called = 0
+            self.log("joined")
+            self.subscribers = yield self.subscribe(self)
+            yield sleep(1)
+            options = PublishOptions(excludeMe=False)
+            yield self.publish(u'mytopic', options=options)
+            self.log("published message")
+
+    class Case4_Frontend(CaseComponent):
+
+        @wamp_subscribe(u"mytopic")
+        def onTopic(self):
+            self.finish()
+
+        @defer.inlineCallbacks
+        def onJoin(self, details):
+
+            self.log("joined")
+            yield self.subscribe(self)
+
+    class Case4_Backend(CaseComponent):
+
+        @defer.inlineCallbacks
+        def onJoin(self, details):
+
+            self.log("joined")
+            yield sleep(1)
+            yield self.publish(u'mytopic')
+            self.log("published message")
+
     class TestRpc(unittest.TestCase):
 
         def setUp(self):
@@ -195,7 +250,8 @@ if unittest is not None:
             self.url = os.environ.get("WAMP_ROUTER_URL")
             self.realm = u"realm1"
             if self.url is None:
-                raise unittest.SkipTest("Please provide WAMP_ROUTER_URL environment with url to wamp router to run wamp integration tests")
+                raise unittest.SkipTest("Please provide WAMP_ROUTER_URL environment "
+                                        "with url to wamp router to run wamp integration tests")
 
         @defer.inlineCallbacks
         def runOneTest(self, components):
@@ -224,3 +280,11 @@ if unittest is not None:
         @defer.inlineCallbacks
         def test_case2(self):
             yield self.runOneTest([Case2_Backend, Case2_Frontend])
+
+        @defer.inlineCallbacks
+        def test_case3(self):
+            yield self.runOneTest([Case3_Application])
+
+        @defer.inlineCallbacks
+        def test_case4(self):
+            yield self.runOneTest([Case4_Backend, Case4_Frontend])

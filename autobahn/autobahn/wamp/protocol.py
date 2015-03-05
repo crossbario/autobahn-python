@@ -29,6 +29,7 @@ from __future__ import absolute_import
 import inspect
 import six
 from six import StringIO
+import weakref
 
 from autobahn.wamp.interfaces import ISession, \
     IPublication, \
@@ -69,11 +70,32 @@ class Handler:
     """
     """
 
-    def __init__(self, obj, fn, topic, details_arg=None):
-        self.obj = obj
-        self.fn = fn
+    def __init__(self, session, subscriptionid, topic, details_arg=None):
+        self.session = weakref.proxy(session)
+        self.id = subscriptionid
         self.topic = topic
         self.details_arg = details_arg
+        self.subscriptions = []
+
+    def callWithMessage(self, msg):
+        for s in self.subscriptions:
+            s._callWithMessage(msg)
+
+    def subscribe(self, obj, fn):
+        s = Subscription(self, obj, fn)
+        self.subscriptions.append(s)
+        return s
+
+    def unsubscribe(self, subscription):
+        self.subscriptions.remove(subscription)
+        if not self.subscriptions:
+            return self.unsubscribeSession()
+
+    def unsubscribeSession(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
+        """
+        return self.session._unsubscribe(self)
 
 
 class Publication:
@@ -91,18 +113,50 @@ IPublication.register(Publication)
 class Subscription:
     """
     Object representing a subscription.
+    Two methods of a same component can subscribe twice to the same topic
     This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
     """
-    def __init__(self, session, subscriptionId):
-        self._session = session
-        self.active = True
-        self.id = subscriptionId
+
+    def __init__(self, handler, obj, fn):
+        self.obj = obj
+        self.fn = fn
+        self.handler = weakref.proxy(handler)
+
+    def _callWithMessage(self, msg):
+        try:
+            if self.obj:
+                if msg.kwargs:
+                    if msg.args:
+                        self.fn(
+                            self.obj, *msg.args, **msg.kwargs)
+                    else:
+                        self.fn(self.obj, **msg.kwargs)
+                else:
+                    if msg.args:
+                        self.fn(self.obj, *msg.args)
+                    else:
+                        self.fn(self.obj)
+            else:
+                if msg.kwargs:
+                    if msg.args:
+                        self.fn(*msg.args, **msg.kwargs)
+                    else:
+                        self.fn(**msg.kwargs)
+                else:
+                    if msg.args:
+                        self.fn(*msg.args)
+                    else:
+                        self.fn()
+
+        except Exception as e:
+            print("While firing event handler {0} subscribed under '{1}' ({2}): {3}".format(
+                  self.fn, self.handler.topic, msg.subscription, e))
 
     def unsubscribe(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
         """
-        return self._session._unsubscribe(self)
+        return self.handler.unsubscribe(self)
 
 
 ISubscription.register(Subscription)
@@ -440,34 +494,7 @@ class ApplicationSession(BaseSession):
                             msg.kwargs = {}
                         msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
-                    try:
-                        if handler.obj:
-                            if msg.kwargs:
-                                if msg.args:
-                                    handler.fn(handler.obj, *msg.args, **msg.kwargs)
-                                else:
-                                    handler.fn(handler.obj, **msg.kwargs)
-                            else:
-                                if msg.args:
-                                    handler.fn(handler.obj, *msg.args)
-                                else:
-                                    handler.fn(handler.obj)
-                        else:
-                            if msg.kwargs:
-                                if msg.args:
-                                    handler.fn(*msg.args, **msg.kwargs)
-                                else:
-                                    handler.fn(**msg.kwargs)
-                            else:
-                                if msg.args:
-                                    handler.fn(*msg.args)
-                                else:
-                                    handler.fn()
-
-                    except Exception as e:
-                        if self.debug_app:
-                            print("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e))
-
+                    handler.callWithMessage(msg)
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
 
@@ -483,12 +510,16 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Subscribed):
 
                 if msg.request in self._subscribe_reqs:
-                    d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
-                    if options:
-                        self._subscriptions[msg.subscription] = Handler(obj, fn, topic, options.details_arg)
-                    else:
-                        self._subscriptions[msg.subscription] = Handler(obj, fn, topic)
-                    s = Subscription(self, msg.subscription)
+                    d, obj, fn, topic, options = self._subscribe_reqs.pop(
+                        msg.request)
+
+                    if msg.subscription not in self._subscriptions:
+                        options_args = options.details_arg if options else None
+                        handler = Handler(self, msg.subscription, topic, options_args)
+                        self._subscriptions[msg.subscription] = handler
+
+                    handler = self._subscriptions[msg.subscription]
+                    s = handler.subscribe(obj, fn)
                     self._resolve_future(d, s)
                 else:
                     raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
@@ -841,13 +872,12 @@ class ApplicationSession(BaseSession):
                         dl.append(_subscribe(handler, proc, uri, subopts))
             return self._gather_futures(dl, consume_exceptions=True)
 
-    def _unsubscribe(self, subscription):
+    def _unsubscribe(self, handler):
         """
         Called from :meth:`autobahn.wamp.protocol.Subscription.unsubscribe`
         """
-        assert(isinstance(subscription, Subscription))
-        assert subscription.active
-        assert(subscription.id in self._subscriptions)
+        assert(isinstance(handler, Handler))
+        assert(handler.id in self._subscriptions)
 
         if not self._transport:
             raise exception.TransportLost()
@@ -855,9 +885,9 @@ class ApplicationSession(BaseSession):
         request = util.id()
 
         d = self._create_future()
-        self._unsubscribe_reqs[request] = (d, subscription)
+        self._unsubscribe_reqs[request] = (d, handler)
 
-        msg = message.Unsubscribe(request, subscription.id)
+        msg = message.Unsubscribe(request, handler.id)
 
         self._transport.send(msg)
         return d
