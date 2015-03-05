@@ -377,6 +377,18 @@ class ApplicationSession(BaseSession):
         else:
             raise Exception("transport disconnected")
 
+    def onUserError(self, e):
+        """
+        This is called when we try to fire a callback, but get an
+        exception from user code -- for example, a registered publish
+        callback or a registered method. Intended to be overridden in
+        the Twisted or asyncio ApplicationSession objects where proper
+        logging can be provided.
+
+        :param e: the Exception we caught.
+        """
+        pass
+
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`

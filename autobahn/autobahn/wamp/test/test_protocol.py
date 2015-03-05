@@ -30,6 +30,8 @@ import os
 
 if os.environ.get('USE_TWISTED', False):
 
+    from six import StringIO
+    from mock import Mock, patch
     from twisted.trial import unittest
     # import unittest
 
@@ -282,6 +284,58 @@ if os.environ.get('USE_TWISTED', False):
             self.assertTrue(event1.called, "Didn't get second subscribe's callback")
 
 
+
+        @inlineCallbacks
+        def test_publish_callback_exception(self):
+            """
+            Ensure we handle an exception from the user code.
+            """
+            handler = ApplicationSession()
+            handler.debug_app = True  # to check we print the traceback
+            MockTransport(handler)
+
+            # monkey-patch a couple APIs that the debug-version should
+            # be calling (FIXME: use mock better? tried it but ...)
+
+            import traceback
+            import sys
+            orig_tb = traceback.print_exc
+            orig_stdout = sys.stdout
+            traceback.print_exc = Mock()
+            sys.stdout = StringIO()
+            try:
+                error_instance = RuntimeError("we have a problem")
+                def boom():
+                    raise error_instance
+
+                sub = yield handler.subscribe(boom, u'com.myapp.topic1')
+                # we want to confirm we get an error, so we monkey-patch
+                # the onUserError callback to ensure we see the error
+                handler.onUserError = Mock(return_value=None)
+
+                # MockTransport gives us the ack reply and then we do our
+                # own event message
+                publish = yield handler.publish(
+                    u'com.myapp.topic1',
+                    options=types.PublishOptions(acknowledge=True, exclude_me=False),
+                )
+                msg = message.Event(sub.id, publish.id)
+                handler.onMessage(msg)
+
+                # the onUserError method should have been called, with our
+                # exception as the only argument
+                self.assertTrue(handler.onUserError.called)
+                self.assertEqual(1, handler.onUserError.call_count)
+                args, kwargs = handler.onUserError.call_args_list[0]
+                self.assertEqual(1, len(args))
+                self.assertEqual(error_instance, args[0])
+                # since we set debug_app, we should also have called traceback.print_exc
+                self.assertTrue(traceback.print_exc.called)
+                self.assertTrue('function boom at' in sys.stdout.getvalue())
+
+            finally:
+                traceback.print_exc = orig_tb
+                sys.stdout = orig_stdout
 
         @inlineCallbacks
         def test_unsubscribe(self):
