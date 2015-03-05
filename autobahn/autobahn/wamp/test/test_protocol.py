@@ -33,7 +33,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     # import unittest
 
-    from twisted.internet.defer import inlineCallbacks
+    from twisted.internet.defer import inlineCallbacks, Deferred
 
     from autobahn.wamp import message
     from autobahn.wamp import serializer
@@ -52,6 +52,7 @@ if os.environ.get('USE_TWISTED', False):
             self._serializer = serializer.JsonSerializer()
             self._registrations = {}
             self._invocations = {}
+            self._topic_subscriptions = {}
 
             self._handler.onOpen(self)
 
@@ -103,7 +104,14 @@ if os.environ.get('USE_TWISTED', False):
                     reply = message.Result(request, args=msg.args, kwargs=msg.kwargs)
 
             elif isinstance(msg, message.Subscribe):
-                reply = message.Subscribed(msg.request, util.id())
+                # fake out that we can do duplicate subscriptions to
+                # the same topic
+                if msg.topic in self._topic_subscriptions:
+                    reply_id = self._topic_subscriptions[msg.topic]
+                else:
+                    reply_id = util.id()
+                    self._topic_subscriptions[msg.topic] = reply_id
+                reply = message.Subscribed(msg.request, reply_id)
 
             elif isinstance(msg, message.Unsubscribe):
                 reply = message.Unsubscribed(msg.request)
@@ -244,6 +252,36 @@ if os.environ.get('USE_TWISTED', False):
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard'))
             self.assertTrue(type(subscription.id) in (int, long))
+
+        @inlineCallbacks
+        def test_double_subscribe(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            event0 = Deferred()
+            event1 = Deferred()
+
+            subscription0 = yield handler.subscribe(lambda: event0.callback(42), u'com.myapp.topic1')
+            subscription1 = yield handler.subscribe(lambda: event1.callback('foo'), u'com.myapp.topic1')
+            # same topic, *HAS* to be the same ID for protocol to
+            # work, because "EVENT, SUBSCRIBED.Subscription|id" is the
+            # only way to send one.
+            self.assertTrue(subscription0.id == subscription1.id)
+
+            # do a publish, and then fake the acknowledgement message
+            publish = yield handler.publish(
+                u'com.myapp.topic1',
+                options=types.PublishOptions(acknowledge=True, exclude_me=False),
+            )
+            msg = message.Event(subscription0.id, publish.id)
+            handler.onMessage(msg)
+
+            # ensure that the publish "did the right thing" and called
+            # both callbacks
+            self.assertTrue(event0.called, "Didn't get first subscribe's callback")
+            self.assertTrue(event1.called, "Didn't get second subscribe's callback")
+
+
 
         @inlineCallbacks
         def test_unsubscribe(self):
