@@ -70,7 +70,8 @@ class Handler:
     """
     """
 
-    def __init__(self, obj, fn, topic, details_arg=None):
+    def __init__(self, subscription_id, obj, fn, topic, details_arg=None):
+        self.subscription_id = subscription_id
         self.obj = obj
         self.fn = fn
         self.topic = topic
@@ -94,10 +95,11 @@ class Subscription:
     Object representing a subscription.
     This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
     """
-    def __init__(self, session, subscriptionId):
+    def __init__(self, session, subscriptionId, handler):
         self._session = session
         self.active = True
         self.id = subscriptionId
+        self.handler = handler
 
     def unsubscribe(self):
         """
@@ -445,25 +447,26 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Event):
 
                 if msg.subscription in self._subscriptions:
-                    handler = self._subscriptions[msg.subscription]
-                    if handler.details_arg:
-                        if not msg.kwargs:
-                            msg.kwargs = {}
-                        msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
+                    for handler in self._subscriptions[msg.subscription]:
+                        ##print("HANDLER", handler, handler.fn, msg.subscription)
+                        if handler.details_arg:
+                            if not msg.kwargs:
+                                msg.kwargs = {}
+                            msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
-                    invoke_args = (handler.obj,) if handler.obj else tuple()
-                    if msg.args:
-                        invoke_args = invoke_args + tuple(msg.args)
-                    invoke_kwargs = msg.kwargs if msg.kwargs else dict()
-                    try:
-                        handler.fn(*invoke_args, **invoke_kwargs)
+                        invoke_args = (handler.obj,) if handler.obj else tuple()
+                        if msg.args:
+                            invoke_args = invoke_args + tuple(msg.args)
+                        invoke_kwargs = msg.kwargs if msg.kwargs else dict()
+                        try:
+                            handler.fn(*invoke_args, **invoke_kwargs)
 
-                    except Exception as e:
-                        self.onUserError(e)
-                        if self.debug_app:
-                            traceback.print_exc()
-                            print('While firing {0} subscribed under "{1}" ("{2}").'.format(
-                                handler.fn, handler.topic, msg.subscription))
+                        except Exception as e:
+                            self.onUserError(e)
+                            if self.debug_app:
+                                traceback.print_exc()
+                                print('While firing {} subscribed under "{}" ("{}").'.format(
+                                    handler.fn, handler.topic, msg.subscription))
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -480,18 +483,24 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Subscribed):
                 if msg.request in self._subscribe_reqs:
                     d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
-                    sub_id = msg.subscription
-                    # we should NEVER have our ID subscribed already
-                    if sub_id in self._subscriptions:
-                        raise ProtocolError(
-                            'SUBSCRIBED received with existing subscription:' +
-                            str(sub_id) + ' (request ID "{0}").'.format(msg.request))
+                    if msg.subscription in self._subscriptions:
+                        existing = self._subscriptions[msg.subscription]
+                        # the topics should match
+                        if existing[0].topic != topic:
+                            raise ProtocolError(
+                                'SUBSCRIBED for ID "{0}" should have topic "{1}" not "{2}".'.format(
+                                    sub_id, existing.topic, topic))
+
+                        sub_id = existing[0].subscription_id
+                    else:
+                        sub_id = msg.subscription
+                        self._subscriptions[msg.subscription] = []
 
                     details = options.details_arg if options else None
-                    handler = Handler(obj, fn, topic, details)
-                    self._subscriptions[sub_id] = handler
-                    self._resolve_future(d, Subscription(self, sub_id))
-
+                    handler = Handler(sub_id, obj, fn, topic, details)
+                    self._subscriptions[msg.subscription].append(handler)
+                    s = Subscription(self, sub_id, handler)
+                    self._resolve_future(d, s)
                 else:
                     raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -857,15 +866,20 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request = util.id()
+        handlers = self._subscriptions[subscription.id]
+        assert subscription.handler in handlers
+        self._subscriptions[subscription.id].remove(subscription.handler)
 
-        d = self._create_future()
-        self._unsubscribe_reqs[request] = (d, subscription)
+        if len(self._subscriptions[subscription.id]) == 0:
+            request = util.id()
 
-        msg = message.Unsubscribe(request, subscription.id)
+            d = self._create_future()
+            self._unsubscribe_reqs[request] = (d, subscription)
 
-        self._transport.send(msg)
-        return d
+            msg = message.Unsubscribe(request, subscription.id)
+
+            self._transport.send(msg)
+            return d
 
     def call(self, procedure, *args, **kwargs):
         """

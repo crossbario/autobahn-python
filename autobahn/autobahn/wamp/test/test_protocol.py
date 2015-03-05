@@ -54,6 +54,8 @@ if os.environ.get('USE_TWISTED', False):
             self._serializer = serializer.JsonSerializer()
             self._registrations = {}
             self._invocations = {}
+            #: str -> ID
+            self._subscription_topics = {}
 
             self._handler.onOpen(self)
 
@@ -105,7 +107,13 @@ if os.environ.get('USE_TWISTED', False):
                     reply = message.Result(request, args=msg.args, kwargs=msg.kwargs)
 
             elif isinstance(msg, message.Subscribe):
-                reply = message.Subscribed(msg.request, util.id())
+                topic = msg.topic
+                if topic in self._subscription_topics:
+                    reply_id = self._subscription_topics[topic]
+                else:
+                    reply_id = util.id()
+                    self._subscription_topics[topic] = reply_id
+                reply = message.Subscribed(msg.request, reply_id)
 
             elif isinstance(msg, message.Unsubscribe):
                 reply = message.Unsubscribed(msg.request)
@@ -248,32 +256,6 @@ if os.environ.get('USE_TWISTED', False):
             self.assertTrue(type(subscription.id) in (int, long))
 
         @inlineCallbacks
-        def test_publish_duplicate_subscription_id(self):
-            handler = ApplicationSession()
-            transport = MockTransport(handler)
-
-            def mysend(msg):
-                '''
-                we're monkey-patching the MockTransport to always reply with the
-                same Subscribed topic-ID -- which would be an error in
-                the Router's logic, but Autobahn should catch it as a
-                ProtocolError
-                '''
-                if isinstance(msg, message.Subscribe):
-                    return transport._handler.onMessage(
-                        message.Subscribed(msg.request, 1234))
-                else:
-                    return MockTransport.send(transport, msg)
-
-            transport.send = mysend
-            yield handler.subscribe(self.fail, u'com.myapp.topic9')
-            try:
-                yield handler.subscribe(self.fail, u'com.myapp.topic9')
-                self.fail("Expecting ProtocolError")
-            except ProtocolError:
-                pass
-
-        @inlineCallbacks
         def test_double_subscribe(self):
             handler = ApplicationSession()
             MockTransport(handler)
@@ -285,19 +267,17 @@ if os.environ.get('USE_TWISTED', False):
                 lambda: event0.callback(42), u'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
                 lambda: event1.callback('foo'), u'com.myapp.topic1')
-            # the IDs should be different, even if the topic is the same
-            self.assertTrue(subscription0.id != subscription1.id)
+            # same topic, same ID
+            self.assertTrue(subscription0.id == subscription1.id)
 
             # do a publish (MockTransport fakes the acknowledgement
-            # message) and then do an actual publish event
-            # it would be up to the router (broker) to send out
-            # multiple Events when appropriate, so we do that here
+            # message) and then do an actual publish event. The IDs
+            # are the same, so we just do one Event.
             publish = yield handler.publish(
                 u'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             handler.onMessage(message.Event(subscription0.id, publish.id))
-            handler.onMessage(message.Event(subscription1.id, publish.id))
 
             # ensure we actually got both callbacks
             self.assertTrue(event0.called, "Missing callback")
@@ -312,6 +292,15 @@ if os.environ.get('USE_TWISTED', False):
             handler = ApplicationSession()
             MockTransport(handler)
 
+            # monkey-patch ApplicationSession to ensure we DO NOT get
+            # an Unsubscribed message -- since we only unsubscribe
+            # from ONE of our handlers for com.myapp.topic1
+            def onMessage(msg):
+                assert not isinstance(msg, message.Unsubscribed)
+                return ApplicationSession.onMessage(handler, msg)
+
+            handler.onMessage = onMessage
+
             event0 = Deferred()
             event1 = Deferred()
 
@@ -319,28 +308,75 @@ if os.environ.get('USE_TWISTED', False):
                 lambda: event0.callback(42), u'com.myapp.topic1')
             subscription1 = yield handler.subscribe(
                 lambda: event1.callback('foo'), u'com.myapp.topic1')
-            # the IDs should be different, even if the topic is the same
-            self.assertTrue(subscription0.id != subscription1.id)
+
+            self.assertTrue(subscription0.id == subscription1.id)
             yield subscription1.unsubscribe()
 
             # do a publish (MockTransport fakes the acknowledgement
-            # message) and then do an actual publish event
-            # it would be up to the router (broker) to send out
-            # multiple Events when appropriate, so we do that here
+            # message) and then do an actual publish event. Note the
+            # IDs are the same, so there's only one Event.
             publish = yield handler.publish(
                 u'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
             )
             handler.onMessage(message.Event(subscription0.id, publish.id))
-            try:
-                handler.onMessage(message.Event(subscription1.id, publish.id))
-                self.fail("Should get exception for unsubscribed topic")
-            except ProtocolError:
-                pass
 
             # since we unsubscribed the second event handler, we
             # should NOT have called its callback
             self.assertTrue(event0.called, "Missing callback")
+            self.assertTrue(not event1.called, "Second callback fired.")
+
+        @inlineCallbacks
+        def test_double_subscribe_double_unsubscribe(self):
+            '''
+            If we subscribe twice, and unsubscribe twice, we should then get
+            an Unsubscribed message.
+            '''
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            # monkey-patch ApplicationSession to ensure we get our message
+            unsubscribed_d = Deferred()
+            def onMessage(msg):
+                if isinstance(msg, message.Unsubscribed):
+                    unsubscribed_d.callback(msg)
+                return ApplicationSession.onMessage(handler, msg)
+
+            handler.onMessage = onMessage
+
+            event0 = Deferred()
+            event1 = Deferred()
+
+            subscription0 = yield handler.subscribe(
+                lambda: event0.callback(42), u'com.myapp.topic1')
+            subscription1 = yield handler.subscribe(
+                lambda: event1.callback('foo'), u'com.myapp.topic1')
+
+            self.assertTrue(subscription0.id == subscription1.id)
+            yield subscription0.unsubscribe()
+            yield subscription1.unsubscribe()
+
+            # after the second unsubscribe, we should have gotten an
+            # Unsubscribed message
+            assert unsubscribed_d.called
+
+            # do a publish (MockTransport fakes the acknowledgement
+            # message) and then do an actual publish event. Sending
+            # the Event should be an error, as we have no
+            # subscriptions left.
+            publish = yield handler.publish(
+                u'com.myapp.topic1',
+                options=types.PublishOptions(acknowledge=True, exclude_me=False),
+            )
+            try:
+                handler.onMessage(message.Event(subscription0.id, publish.id))
+                self.fail("Expected ProtocolError")
+            except ProtocolError as e:
+                pass
+
+            # since we unsubscribed the second event handler, we
+            # should NOT have called its callback
+            self.assertTrue(not event0.called, "First callback fired.")
             self.assertTrue(not event1.called, "Second callback fired.")
 
         @inlineCallbacks
@@ -369,14 +405,11 @@ if os.environ.get('USE_TWISTED', False):
                 second, u'com.myapp.topic1',
                 types.SubscribeOptions(details_arg='boom'),
             )
-            # the IDs should be different, even if the topic is the same
-            self.assertTrue(subscription0.id != subscription1.id)
+            # same topic, same ID
+            self.assertTrue(subscription0.id == subscription1.id)
 
             # MockTransport gives us the ack reply and then we do our
-            # own event messages. We need two, since it would be up to
-            # a Router/Broker to correctly hand out two Event messages
-            # if two callbacks are registered for the same topic
-            # string
+            # own event message.
             publish = yield handler.publish(
                 u'com.myapp.topic1',
                 options=types.PublishOptions(acknowledge=True, exclude_me=False),
@@ -386,8 +419,6 @@ if os.environ.get('USE_TWISTED', False):
             # purpose.
             handler.onMessage(
                 message.Event(subscription0.id, publish.id, args=['arg0']))
-            handler.onMessage(
-                message.Event(subscription1.id, publish.id, args=['arg0']))
 
             # each callback should have gotten called, each with its
             # own args (we check the correct kwarg in second() above)
