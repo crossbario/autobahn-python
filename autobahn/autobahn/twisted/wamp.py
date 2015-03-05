@@ -86,6 +86,14 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
+    def onUserError(self, e):
+        """
+        Override of wamp.ApplicationSession
+        """
+        # see docs; will print currently-active exception to the logs,
+        # which is just what we want.
+        log.err()
+
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
     """
