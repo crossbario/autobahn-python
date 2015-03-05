@@ -380,17 +380,24 @@ class ApplicationSession(BaseSession):
         else:
             raise Exception("transport disconnected")
 
-    def onUserError(self, e):
+    def onUserError(self, e, msg):
         """
         This is called when we try to fire a callback, but get an
         exception from user code -- for example, a registered publish
-        callback or a registered method. Intended to be overridden in
-        the Twisted or asyncio ApplicationSession objects where proper
-        logging can be provided.
+        callback or a registered method. By default, this prints the
+        current stack-trace and then error-message to stdout.
+
+        ApplicationSession-derived objects may override this to
+        provide logging if they prefer. The Twisted implemention does
+        this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
 
         :param e: the Exception we caught.
+
+        :param msg: an informative message from the library. It is
+            suggested you log this immediately after the exception.
         """
-        pass
+        traceback.print_exc()
+        print(msg)
 
     def onMessage(self, msg):
         """
@@ -448,7 +455,6 @@ class ApplicationSession(BaseSession):
 
                 if msg.subscription in self._subscriptions:
                     for handler in self._subscriptions[msg.subscription]:
-                        ##print("HANDLER", handler, handler.fn, msg.subscription)
                         if handler.details_arg:
                             if not msg.kwargs:
                                 msg.kwargs = {}
@@ -462,11 +468,9 @@ class ApplicationSession(BaseSession):
                             handler.fn(*invoke_args, **invoke_kwargs)
 
                         except Exception as e:
-                            self.onUserError(e)
-                            if self.debug_app:
-                                traceback.print_exc()
-                                print('While firing {} subscribed under "{}" ("{}").'.format(
-                                    handler.fn, handler.topic, msg.subscription))
+                            msg = 'While firing {} subscribed under "{}" ("{}").'.format(
+                                handler.fn, handler.topic, msg.subscription)
+                            self.onUserError(e, msg)
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
