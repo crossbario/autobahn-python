@@ -462,7 +462,7 @@ class ApplicationSession(BaseSession):
                         self.onUserError(e)
                         if self.debug_app:
                             traceback.print_exc()
-                            print('While firing {} subscribed under "{0}" ("{1}").'.format(
+                            print('While firing {0} subscribed under "{1}" ("{2}").'.format(
                                 handler.fn, handler.topic, msg.subscription))
 
                 else:
