@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import traceback
 import inspect
 import six
 from six import StringIO
@@ -377,6 +378,18 @@ class ApplicationSession(BaseSession):
         else:
             raise Exception("transport disconnected")
 
+    def onUserError(self, e):
+        """
+        This is called when we try to fire a callback, but get an
+        exception from user code -- for example, a registered publish
+        callback or a registered method. Intended to be overridden in
+        the Twisted or asyncio ApplicationSession objects where proper
+        logging can be provided.
+
+        :param e: the Exception we caught.
+        """
+        pass
+
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -432,41 +445,25 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Event):
 
                 if msg.subscription in self._subscriptions:
-
                     handler = self._subscriptions[msg.subscription]
-
                     if handler.details_arg:
                         if not msg.kwargs:
                             msg.kwargs = {}
                         msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
+                    invoke_args = (handler.obj,) if handler.obj else tuple()
+                    if msg.args:
+                        invoke_args = invoke_args + tuple(msg.args)
+                    invoke_kwargs = msg.kwargs if msg.kwargs else dict()
                     try:
-                        if handler.obj:
-                            if msg.kwargs:
-                                if msg.args:
-                                    handler.fn(handler.obj, *msg.args, **msg.kwargs)
-                                else:
-                                    handler.fn(handler.obj, **msg.kwargs)
-                            else:
-                                if msg.args:
-                                    handler.fn(handler.obj, *msg.args)
-                                else:
-                                    handler.fn(handler.obj)
-                        else:
-                            if msg.kwargs:
-                                if msg.args:
-                                    handler.fn(*msg.args, **msg.kwargs)
-                                else:
-                                    handler.fn(**msg.kwargs)
-                            else:
-                                if msg.args:
-                                    handler.fn(*msg.args)
-                                else:
-                                    handler.fn()
+                        handler.fn(*invoke_args, **invoke_kwargs)
 
                     except Exception as e:
+                        self.onUserError(e)
                         if self.debug_app:
-                            print("Failure while firing event handler {0} subscribed under '{1}' ({2}): {3}".format(handler.fn, handler.topic, msg.subscription, e))
+                            traceback.print_exc()
+                            print('While firing {0} subscribed under "{1}" ("{2}").'.format(
+                                handler.fn, handler.topic, msg.subscription))
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -481,15 +478,20 @@ class ApplicationSession(BaseSession):
                     raise ProtocolError("PUBLISHED received for non-pending request ID {0}".format(msg.request))
 
             elif isinstance(msg, message.Subscribed):
-
                 if msg.request in self._subscribe_reqs:
                     d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
-                    if options:
-                        self._subscriptions[msg.subscription] = Handler(obj, fn, topic, options.details_arg)
-                    else:
-                        self._subscriptions[msg.subscription] = Handler(obj, fn, topic)
-                    s = Subscription(self, msg.subscription)
-                    self._resolve_future(d, s)
+                    sub_id = msg.subscription
+                    # we should NEVER have our ID subscribed already
+                    if sub_id in self._subscriptions:
+                        raise ProtocolError(
+                            'SUBSCRIBED received with existing subscription:' +
+                            str(sub_id) + ' (request ID "{0}").'.format(msg.request))
+
+                    details = options.details_arg if options else None
+                    handler = Handler(obj, fn, topic, details)
+                    self._subscriptions[sub_id] = handler
+                    self._resolve_future(d, Subscription(self, sub_id))
+
                 else:
                     raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -839,6 +841,9 @@ class ApplicationSession(BaseSession):
                         uri = pat.uri()
                         subopts = options or pat.subscribe_options()
                         dl.append(_subscribe(handler, proc, uri, subopts))
+            # XXX pretty sure we *don't* want consome_exceptions here,
+            # because we don't ourselves check the returned list for
+            # errors.
             return self._gather_futures(dl, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):

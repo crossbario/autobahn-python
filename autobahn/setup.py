@@ -153,7 +153,9 @@ setup(
         'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
 
         # needed if you want WAMPv2 binary serialization support
-        'serialization': ["msgpack-python>=0.4.0"]
+        'serialization': ["msgpack-python>=0.4.0"],
+
+        'dev': ["pep8", "flake8", "mock>=1.0.1", "pytest>=2.6.4"],
     },
     tests_require=test_requirements,
     cmdclass={'test': PyTest},
