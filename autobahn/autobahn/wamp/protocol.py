@@ -489,13 +489,13 @@ class ApplicationSession(BaseSession):
                     d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
                     if msg.subscription in self._subscriptions:
                         existing = self._subscriptions[msg.subscription]
+                        sub_id = existing[0].subscription_id
                         # the topics should match
                         if existing[0].topic != topic:
                             raise ProtocolError(
                                 'SUBSCRIBED for ID "{0}" should have topic "{1}" not "{2}".'.format(
                                     sub_id, existing.topic, topic))
 
-                        sub_id = existing[0].subscription_id
                     else:
                         sub_id = msg.subscription
                         self._subscriptions[msg.subscription] = []

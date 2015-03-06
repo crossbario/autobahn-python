@@ -337,11 +337,11 @@ if os.environ.get('USE_TWISTED', False):
 
             # monkey-patch ApplicationSession to ensure we get our message
             unsubscribed_d = Deferred()
+
             def onMessage(msg):
                 if isinstance(msg, message.Unsubscribed):
                     unsubscribed_d.callback(msg)
                 return ApplicationSession.onMessage(handler, msg)
-
             handler.onMessage = onMessage
 
             event0 = Deferred()
@@ -371,7 +371,7 @@ if os.environ.get('USE_TWISTED', False):
             try:
                 handler.onMessage(message.Event(subscription0.id, publish.id))
                 self.fail("Expected ProtocolError")
-            except ProtocolError as e:
+            except ProtocolError:
                 pass
 
             # since we unsubscribed the second event handler, we
