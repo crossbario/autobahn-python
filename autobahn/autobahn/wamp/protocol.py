@@ -468,7 +468,7 @@ class ApplicationSession(BaseSession):
                             handler.fn(*invoke_args, **invoke_kwargs)
 
                         except Exception as e:
-                            msg = 'While firing {} subscribed under "{}" ("{}").'.format(
+                            msg = 'While firing {0} subscribed under "{1}" ("{2}").'.format(
                                 handler.fn, handler.topic, msg.subscription)
                             self.onUserError(e, msg)
 
