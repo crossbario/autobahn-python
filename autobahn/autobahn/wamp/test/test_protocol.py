@@ -30,12 +30,11 @@ import os
 
 if os.environ.get('USE_TWISTED', False):
 
-    from six import StringIO
-    from mock import Mock
     from twisted.trial import unittest
     # import unittest
 
     from twisted.internet.defer import inlineCallbacks, Deferred
+    from twisted.python import log
 
     from autobahn.wamp import message
     from autobahn.wamp import serializer
@@ -433,28 +432,24 @@ if os.environ.get('USE_TWISTED', False):
             Ensure we handle an exception from the user code.
             """
             handler = ApplicationSession()
-            handler.debug_app = True  # to check we print the traceback
             MockTransport(handler)
 
-            # monkey-patch a couple APIs that the debug-version should
-            # be calling (FIXME: use mock better? tried it but ...)
+            error_instance = RuntimeError("we have a problem")
+            got_err_d = Deferred()
 
-            import traceback
-            import sys
-            orig_tb = traceback.print_exc
-            orig_stdout = sys.stdout
-            traceback.print_exc = Mock()
-            sys.stdout = StringIO()
+            def observer(kw):
+                if kw['isError'] and 'failure' in kw:
+                    fail = kw['failure']
+                    fail.trap(RuntimeError)
+                    if error_instance == fail.value:
+                        got_err_d.callback(True)
+            log.addObserver(observer)
+
+            def boom():
+                raise error_instance
+
             try:
-                error_instance = RuntimeError("we have a problem")
-
-                def boom():
-                    raise error_instance
-
                 sub = yield handler.subscribe(boom, u'com.myapp.topic1')
-                # we want to confirm we get an error, so we monkey-patch
-                # the onUserError callback to ensure we see the error
-                handler.onUserError = Mock(return_value=None)
 
                 # MockTransport gives us the ack reply and then we do our
                 # own event message
@@ -465,20 +460,14 @@ if os.environ.get('USE_TWISTED', False):
                 msg = message.Event(sub.id, publish.id)
                 handler.onMessage(msg)
 
-                # the onUserError method should have been called, with our
-                # exception as the only argument
-                self.assertTrue(handler.onUserError.called)
-                self.assertEqual(1, handler.onUserError.call_count)
-                args, kwargs = handler.onUserError.call_args_list[0]
-                self.assertEqual(1, len(args))
-                self.assertEqual(error_instance, args[0])
-                # since we set debug_app, we should also have called traceback.print_exc
-                self.assertTrue(traceback.print_exc.called)
-                self.assertTrue('function boom at' in sys.stdout.getvalue())
+                # we know it worked if our observer worked and did
+                # .callback on our Deferred above.
+                self.assertTrue(got_err_d.called)
+                # ...otherwise trial will fail the test anyway
+                self.flushLoggedErrors()
 
             finally:
-                traceback.print_exc = orig_tb
-                sys.stdout = orig_stdout
+                log.removeObserver(observer)
 
         @inlineCallbacks
         def test_unsubscribe(self):
