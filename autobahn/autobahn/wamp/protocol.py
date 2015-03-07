@@ -875,6 +875,7 @@ class ApplicationSession(BaseSession):
         self._subscriptions[subscription.id].remove(subscription.handler)
 
         if len(self._subscriptions[subscription.id]) == 0:
+            # if the last handler was removed, unsubscribe ..
             request = util.id()
 
             d = self._create_future()
@@ -884,6 +885,9 @@ class ApplicationSession(BaseSession):
 
             self._transport.send(msg)
             return d
+        else:
+            # there are still handlers active on the subscription!
+            return self._create_future_success()
 
     def call(self, procedure, *args, **kwargs):
         """

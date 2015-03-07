@@ -34,7 +34,9 @@ from twisted.application import service
 from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
-    inlineCallbacks
+    inlineCallbacks, \
+    succeed, \
+    fail
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -59,6 +61,14 @@ class FutureMixin:
     @staticmethod
     def _create_future():
         return Deferred()
+
+    @staticmethod
+    def _create_future_success(result=None):
+        return succeed(result)
+
+    @staticmethod
+    def _create_future_error(error=None):
+        return fail(error)
 
     @staticmethod
     def _as_future(fun, *args, **kwargs):

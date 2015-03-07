@@ -60,6 +60,18 @@ class FutureMixin:
         return Future()
 
     @staticmethod
+    def _create_future_success(result=None):
+        f = Future()
+        f.set_result(result)
+        return f
+
+    @staticmethod
+    def _create_future_error(error=None):
+        f = Future()
+        f.set_exception(error)
+        return f
+
+    @staticmethod
     def _as_future(fun, *args, **kwargs):
         try:
             res = fun(*args, **kwargs)
