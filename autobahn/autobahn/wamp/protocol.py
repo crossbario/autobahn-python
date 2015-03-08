@@ -450,23 +450,21 @@ class ApplicationSession(BaseSession):
                 # fire callback and close the transport
                 self.onLeave(types.CloseDetails(msg.reason, msg.message))
 
-            # consumer messages
             elif isinstance(msg, message.Event):
 
                 if msg.subscription in self._subscriptions:
                     for handler in self._subscriptions[msg.subscription]:
-                        if handler.details_arg:
-                            if not msg.kwargs:
-                                msg.kwargs = {}
-                            msg.kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
                             invoke_args = invoke_args + tuple(msg.args)
+
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
+                        if handler.details_arg:
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
+
                         try:
                             handler.fn(*invoke_args, **invoke_kwargs)
-
                         except Exception as e:
                             msg = 'While firing {0} subscribed under "{1}" ("{2}").'.format(
                                 handler.fn, handler.topic, msg.subscription)
