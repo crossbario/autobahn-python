@@ -920,20 +920,20 @@ class ApplicationSession(BaseSession):
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
             options = kwargs.pop('options')
-            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.options)
+            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.message_attr())
         else:
             options = None
             msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
 
-        if options and options.options['acknowledge'] is True:
-            # only acknowledge publishes expect a reply ..
+        if options and options.acknowledge:
+            # only acknowledged publications expect a reply ..
             on_reply = self._create_future()
             self._publish_reqs[request_id] = PublishRequest(request_id, on_reply)
-            self._transport.send(msg)
-            return on_reply
         else:
-            self._transport.send(msg)
-            return
+            on_reply = None
+
+        self._transport.send(msg)
+        return on_reply
 
     def subscribe(self, handler, topic=None, options=None):
         """
@@ -955,7 +955,7 @@ class ApplicationSession(BaseSession):
             self._subscribe_reqs[request_id] = SubscribeRequest(request_id, on_reply, handler_obj)
 
             if options:
-                msg = message.Subscribe(request_id, topic, **options.options)
+                msg = message.Subscribe(request_id, topic, **options.message_attr())
             else:
                 msg = message.Subscribe(request_id, topic)
 
@@ -1030,10 +1030,10 @@ class ApplicationSession(BaseSession):
         request = util.id()
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
-            opts = kwargs.pop('options')
-            msg = message.Call(request, procedure, args=args, kwargs=kwargs, **opts.options)
+            options = kwargs.pop('options')
+            msg = message.Call(request, procedure, args=args, kwargs=kwargs, **options.message_attr())
         else:
-            opts = None
+            options = None
             msg = message.Call(request, procedure, args=args, kwargs=kwargs)
 
         # FIXME
@@ -1042,7 +1042,7 @@ class ApplicationSession(BaseSession):
         #   self._transport.send(cancel_msg)
         # d = Deferred(canceller)
         d = self._create_future()
-        self._call_reqs[request] = d, opts
+        self._call_reqs[request] = d, options
 
         self._transport.send(msg)
         return d
@@ -1067,7 +1067,7 @@ class ApplicationSession(BaseSession):
             self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, endpoint_obj)
 
             if options:
-                msg = message.Register(request_id, procedure, **options.options)
+                msg = message.Register(request_id, procedure, **options.message_attr())
             else:
                 msg = message.Register(request_id, procedure)
 

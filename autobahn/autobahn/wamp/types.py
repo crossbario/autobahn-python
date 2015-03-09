@@ -47,7 +47,7 @@ __all__ = (
 )
 
 
-class ComponentConfig:
+class ComponentConfig(object):
     """
     WAMP application component configuration. An instance of this class is
     provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
@@ -70,7 +70,7 @@ class ComponentConfig:
         return "ComponentConfig(realm = {0}, extra = {1})".format(self.realm, self.extra)
 
 
-class HelloReturn:
+class HelloReturn(object):
     """
     Base class for ``HELLO`` return information.
     """
@@ -171,7 +171,7 @@ class Challenge(HelloReturn):
         return "Challenge(method = {0}, extra = {1})".format(self.method, self.extra)
 
 
-class HelloDetails:
+class HelloDetails(object):
     """
     Provides details of a WAMP session while still attaching.
     """
@@ -197,7 +197,7 @@ class HelloDetails:
         return "HelloDetails(roles = {0}, authmethods = {1}, authid = {2}, pending_session = {3})".format(self.roles, self.authmethods, self.authid, self.pending_session)
 
 
-class SessionDetails:
+class SessionDetails(object):
     """
     Provides details for a WAMP session upon open.
 
@@ -224,7 +224,7 @@ class SessionDetails:
         return "SessionDetails(realm = {0}, session = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
 
 
-class CloseDetails:
+class CloseDetails(object):
     """
     Provides details for a WAMP session upon open.
 
@@ -246,7 +246,7 @@ class CloseDetails:
         return "CloseDetails(reason = {0}, message = '{1}'')".format(self.reason, self.message)
 
 
-class SubscribeOptions:
+class SubscribeOptions(object):
     """
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
@@ -266,16 +266,17 @@ class SubscribeOptions:
         self.match = match
         self.details_arg = details_arg
 
+    def message_attr(self):
         # options dict as sent within WAMP message
-        self.options = {
-            'match': match
+        return {
+            'match': self.match
         }
 
     def __str__(self):
         return "SubscribeOptions(match = {0}, details_arg = {1})".format(self.match, self.details_arg)
 
 
-class EventDetails:
+class EventDetails(object):
     """
     Provides details on an event when calling an event handler
     previously registered.
@@ -299,7 +300,7 @@ class EventDetails:
         return "EventDetails(publication = {0}, publisher = {1}, topic = {2})".format(self.publication, self.publisher, self.topic)
 
 
-class PublishOptions:
+class PublishOptions(object):
     """
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.IPublisher.publish`.
@@ -339,20 +340,21 @@ class PublishOptions:
         self.eligible = eligible
         self.disclose_me = disclose_me
 
+    def message_attr(self):
         # options dict as sent within WAMP message
-        self.options = {
-            'acknowledge': acknowledge,
-            'exclude_me': exclude_me,
-            'exclude': exclude,
-            'eligible': eligible,
-            'disclose_me': disclose_me
+        return {
+            u'acknowledge': self.acknowledge,
+            u'exclude_me': self.exclude_me,
+            u'exclude': self.exclude,
+            u'eligible': self.eligible,
+            u'disclose_me': self.disclose_me
         }
 
     def __str__(self):
         return "PublishOptions(acknowledge = {0}, exclude_me = {1}, exclude = {2}, eligible = {3}, disclose_me = {4})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
 
 
-class RegisterOptions:
+class RegisterOptions(object):
     """
     Used to provide options for registering in
     :func:`autobahn.wamp.interfaces.ICallee.register`.
@@ -373,17 +375,18 @@ class RegisterOptions:
         self.invoke = invoke
         self.details_arg = details_arg
 
+    def message_attr(self):
         # options dict as sent within WAMP message
-        self.options = {
-            'match': self.match,
-            'invoke': self.invoke
+        return {
+            u'match': self.match,
+            u'invoke': self.invoke
         }
 
     def __str__(self):
         return "RegisterOptions(match = {0}, invoke = {1}, details_arg = {2})".format(self.match, self.invoke, self.details_arg)
 
 
-class CallDetails:
+class CallDetails(object):
     """
     Provides details on a call when an endpoint previously
     registered is being called and opted to receive call details.
@@ -408,7 +411,7 @@ class CallDetails:
         return "CallDetails(progress = {0}, caller = {1}, procedure = {2})".format(self.progress, self.caller, self.procedure)
 
 
-class CallOptions:
+class CallOptions(object):
     """
     Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
     """
@@ -438,19 +441,21 @@ class CallOptions:
         self.timeout = timeout
         self.disclose_me = disclose_me
 
+    def message_attr(self):
         # options dict as sent within WAMP message
-        self.options = {
-            'timeout': timeout,
-            'disclose_me': disclose_me
+        res = {
+            u'timeout': self.timeout,
+            u'disclose_me': self.disclose_me
         }
-        if on_progress:
-            self.options['receive_progress'] = True
+        if self.on_progress:
+            res['receive_progress'] = True
+        return res
 
     def __str__(self):
         return "CallOptions(on_progress = {0}, timeout = {1}, disclose_me = {2})".format(self.on_progress, self.timeout, self.disclose_me)
 
 
-class CallResult:
+class CallResult(object):
     """
     Wrapper for remote procedure call results that contain multiple positional
     return values or keyword return values.
