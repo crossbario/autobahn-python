@@ -36,7 +36,7 @@ from autobahn.wamp import serializer
 
 def generate_test_messages():
     return [
-        message.Hello(u"realm1", [role.RoleBrokerFeatures()]),
+        message.Hello(u"realm1", {u'subscriber': role.RoleSubscriberFeatures()}),
         message.Goodbye(),
         message.Yield(123456),
         message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),

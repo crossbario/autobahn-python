@@ -317,11 +317,43 @@ class TestUnsubscribedMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
 
+        e = message.Unsubscribed(0, subscription=123456)
+        msg = e.marshal()
+        self.assertEqual(len(msg), 3)
+        self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
+        self.assertEqual(msg[1], 0)
+        self.assertEqual(msg[2], {u'subscription': 123456})
+
+        e = message.Unsubscribed(0, subscription=123456, reason=u"wamp.subscription.revoked")
+        msg = e.marshal()
+        self.assertEqual(len(msg), 3)
+        self.assertEqual(msg[0], message.Unsubscribed.MESSAGE_TYPE)
+        self.assertEqual(msg[1], 0)
+        self.assertEqual(msg[2], {u'subscription': 123456, u'reason': u"wamp.subscription.revoked"})
+
     def test_parse_and_marshal(self):
         wmsg = [message.Unsubscribed.MESSAGE_TYPE, 123456]
         msg = message.Unsubscribed.parse(wmsg)
         self.assertIsInstance(msg, message.Unsubscribed)
         self.assertEqual(msg.request, 123456)
+        self.assertEqual(msg.subscription, None)
+        self.assertEqual(msg.reason, None)
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {u'subscription': 123456}]
+        msg = message.Unsubscribed.parse(wmsg)
+        self.assertIsInstance(msg, message.Unsubscribed)
+        self.assertEqual(msg.request, 0)
+        self.assertEqual(msg.subscription, 123456)
+        self.assertEqual(msg.reason, None)
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Unsubscribed.MESSAGE_TYPE, 0, {u'subscription': 123456, u'reason': u"wamp.subscription.revoked"}]
+        msg = message.Unsubscribed.parse(wmsg)
+        self.assertIsInstance(msg, message.Unsubscribed)
+        self.assertEqual(msg.request, 0)
+        self.assertEqual(msg.subscription, 123456)
+        self.assertEqual(msg.reason, u"wamp.subscription.revoked")
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -559,11 +591,43 @@ class TestUnregisteredMessage(unittest.TestCase):
         self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
         self.assertEqual(msg[1], 123456)
 
+        e = message.Unregistered(0, registration=123456)
+        msg = e.marshal()
+        self.assertEqual(len(msg), 3)
+        self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
+        self.assertEqual(msg[1], 0)
+        self.assertEqual(msg[2], {u'registration': 123456})
+
+        e = message.Unregistered(0, registration=123456, reason=u"wamp.registration.revoked")
+        msg = e.marshal()
+        self.assertEqual(len(msg), 3)
+        self.assertEqual(msg[0], message.Unregistered.MESSAGE_TYPE)
+        self.assertEqual(msg[1], 0)
+        self.assertEqual(msg[2], {u'registration': 123456, u'reason': u"wamp.registration.revoked"})
+
     def test_parse_and_marshal(self):
         wmsg = [message.Unregistered.MESSAGE_TYPE, 123456]
         msg = message.Unregistered.parse(wmsg)
         self.assertIsInstance(msg, message.Unregistered)
         self.assertEqual(msg.request, 123456)
+        self.assertEqual(msg.registration, None)
+        self.assertEqual(msg.reason, None)
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {u'registration': 123456}]
+        msg = message.Unregistered.parse(wmsg)
+        self.assertIsInstance(msg, message.Unregistered)
+        self.assertEqual(msg.request, 0)
+        self.assertEqual(msg.registration, 123456)
+        self.assertEqual(msg.reason, None)
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Unregistered.MESSAGE_TYPE, 0, {u'registration': 123456, u'reason': u"wamp.registration.revoked"}]
+        msg = message.Unregistered.parse(wmsg)
+        self.assertIsInstance(msg, message.Unregistered)
+        self.assertEqual(msg.request, 0)
+        self.assertEqual(msg.registration, 123456)
+        self.assertEqual(msg.reason, u"wamp.registration.revoked")
         self.assertEqual(msg.marshal(), wmsg)
 
 
@@ -868,37 +932,37 @@ class TestYieldMessage(unittest.TestCase):
 class TestHelloMessage(unittest.TestCase):
 
     def test_ctor(self):
-        e = message.Hello(u"realm1", [role.RoleBrokerFeatures()])
+        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures()})
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], u"realm1")
-        self.assertEqual(msg[2], {u'roles': {u'broker': {}}})
+        self.assertEqual(msg[2], {u'roles': {u'publisher': {}}})
 
-        e = message.Hello(u"realm1", [role.RoleBrokerFeatures(subscriber_blackwhite_listing=True)])
+        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
         msg = e.marshal()
         self.assertEqual(len(msg), 3)
         self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
         self.assertEqual(msg[1], u"realm1")
-        self.assertEqual(msg[2], {u'roles': {u'broker': {u'features': {u'subscriber_blackwhite_listing': True}}}})
+        self.assertEqual(msg[2], {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}})
 
     def test_parse_and_marshal(self):
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'broker': {}}}]
+        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, u"realm1")
-        self.assertEqual(msg.roles, [role.RoleBrokerFeatures()])
+        self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
         self.assertEqual(msg.marshal(), wmsg)
 
-        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'broker': {u'features': {u'subscriber_blackwhite_listing': True}}}}]
+        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, u"realm1")
-        self.assertEqual(msg.roles, [role.RoleBrokerFeatures(subscriber_blackwhite_listing=True)])
+        self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):
-        e = message.Hello(u"realm1", [role.RoleBrokerFeatures()])
+        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures()})
         self.assertIsInstance(str(e), str)
 
 

@@ -60,10 +60,7 @@ if os.environ.get('USE_TWISTED', False):
 
             self._my_session_id = util.id()
 
-            roles = [
-                role.RoleBrokerFeatures(),
-                role.RoleDealerFeatures()
-            ]
+            roles = {u'broker': role.RoleBrokerFeatures(), u'dealer': role.RoleDealerFeatures()}
 
             msg = message.Welcome(self._my_session_id, roles)
             self._handler.onMessage(msg)
