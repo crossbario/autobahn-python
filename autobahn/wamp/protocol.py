@@ -486,7 +486,8 @@ class ApplicationSession(BaseSession):
         if self._transport:
             self._transport.close()
         else:
-            raise Exception("transport disconnected")
+            # XXX or shall we just ignore this?
+            raise RuntimeError("No transport, but disconnect() called.")
 
     def onUserError(self, e, msg):
         """
@@ -546,7 +547,7 @@ class ApplicationSession(BaseSession):
                 raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
 
         else:
-
+            # self._session_id != None (aka "session established")
             if isinstance(msg, message.Goodbye):
                 if not self._goodbye_sent:
                     # the peer wants to close: send GOODBYE reply
@@ -772,9 +773,8 @@ class ApplicationSession(BaseSession):
                             else:
                                 tb = None
 
-                            if self.debug_app:
-                                print("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration))
-                                print(err)
+                            errmsg = "Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration)
+                            self.onUserError(e, msg=errmsg)
 
                             del self._invocations[msg.request]
 
