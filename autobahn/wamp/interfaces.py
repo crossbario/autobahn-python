@@ -262,7 +262,10 @@ class ISession(object):
     @abc.abstractmethod
     def onConnect(self):
         """
-        Callback fired when the transport this session will run over has been established.
+        Callback fired when the transport this session will run over has
+        been established.
+
+        May return a Deferred/Future.
         """
 
     @abc.abstractmethod
@@ -276,6 +279,8 @@ class ISession(object):
         """
         Callback fired when the peer demands authentication.
 
+        May return a Deferred/Future.
+
         :param challenge: The authentication challenge.
         :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
         """
@@ -284,6 +289,8 @@ class ISession(object):
     def onJoin(self, details):
         """
         Callback fired when WAMP session has been established.
+
+        May return a Deferred/Future.
 
         :param details: Session information.
         :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
@@ -306,6 +313,8 @@ class ISession(object):
         """
         Callback fired when WAMP session has is closed
 
+        May return a Deferred/Future.
+
         :param details: Close information.
         :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
         """
@@ -320,6 +329,9 @@ class ISession(object):
     def onDisconnect(self):
         """
         Callback fired when underlying transport has been closed.
+
+        May return a Deferred/Future (but note that the underlying
+        transport is already gone).
         """
 
     @abc.abstractmethod

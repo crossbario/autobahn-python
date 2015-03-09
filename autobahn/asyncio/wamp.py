@@ -26,6 +26,8 @@
 
 from __future__ import absolute_import
 
+import sys
+
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
@@ -102,9 +104,12 @@ class FutureMixin(object):
         def done(f):
             try:
                 res = f.result()
-                callback(res)
-            except Exception as e:
-                errback(e)
+                if callback:
+                    callback(res)
+            except:
+                typ, exc, tb = sys.exc_info()
+                if errback:
+                    errback(typ, exc, tb)
         return future.add_done_callback(done)
 
     @staticmethod
