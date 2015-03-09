@@ -15,7 +15,7 @@ env:
   - TOX_ENV=pypy2asyncio
 
 script:
-  - tox -c autobahn/tox.ini -e $TOX_ENV
+  - tox -c tox.ini -e $TOX_ENV
 
 # This reportedly works around an issue downloading packages from pypi on
 # travis. Consider removing this after the underlying issue is fixed.
