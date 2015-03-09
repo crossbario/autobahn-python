@@ -77,19 +77,19 @@ pyflakes:
 
 # run PEP8 check and print statistics
 pep8:
-	pep8 --statistics --ignore=E501 -qq .
+	pep8 --statistics --ignore=E501 -qq autobahn
 
 # run PEP8 check and show source for offending code
 pep8show:
-	pep8 --show-source --ignore=E501 .
+	pep8 --show-source --ignore=E501 autobahn
 
 # run autopep8 to automatically transform offending code
 autopep8:
-	autopep8 -ri --aggressive .
+	autopep8 -ri --aggressive autobahn
 
 # This will run pep8, pyflakes and can skip lines that end with # noqa
 flake8:
-	flake8 --ignore=E501 .
+	flake8 --ignore=E501 autobahn
 
 # run PyLint
 pylint:
