@@ -213,16 +213,18 @@ class Hello(Message):
         :param realm: The URI of the WAMP realm to join.
         :type realm: unicode
         :param roles: The WAMP roles to announce.
-        :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
+        :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
         :param authmethods: The authentication methods to announce.
         :type authmethods: list of unicode or None
         :param authid: The authentication ID to announce.
         :type authid: unicode or None
         """
         assert(type(realm) == six.text_type)
-        assert(type(roles) == list)
+        assert(type(roles) == dict)
+        assert(len(roles) > 0)
         for role in roles:
-            assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
+            assert(role in [u'subscriber', u'publisher', u'caller', u'callee'])
+            assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
         if authmethods:
             assert(type(authmethods) == list)
             for authmethod in authmethods:
@@ -246,7 +248,7 @@ class Hello(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -255,7 +257,7 @@ class Hello(Message):
         realm = check_or_raise_uri(wmsg[1], u"'realm' in HELLO")
         details = check_or_raise_extra(wmsg[2], u"'details' in HELLO")
 
-        roles = []
+        roles = {}
 
         if u'roles' not in details:
             raise ProtocolError(u"missing mandatory roles attribute in options in HELLO")
@@ -266,7 +268,7 @@ class Hello(Message):
             raise ProtocolError(u"empty 'roles' in 'details' in HELLO")
 
         for role in details_roles:
-            if role not in ROLE_NAME_TO_CLASS:
+            if role not in [u'subscriber', u'publisher', u'caller', u'callee']:
                 raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
             role_cls = ROLE_NAME_TO_CLASS[role]
@@ -282,7 +284,7 @@ class Hello(Message):
             else:
                 role_features = role_cls()
 
-            roles.append(role_features)
+            roles[role] = role_features
 
         authmethods = None
         if u'authmethods' in details:
@@ -313,7 +315,7 @@ class Hello(Message):
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
         details = {u'roles': {}}
-        for role in self.roles:
+        for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
@@ -345,8 +347,8 @@ class Welcome(Message):
 
     MESSAGE_TYPE = 2
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, session, roles, authid=None, authrole=None, authmethod=None, authprovider=None):
         """
@@ -354,7 +356,7 @@ class Welcome(Message):
         :param session: The WAMP session ID the other peer is assigned.
         :type session: int
         :param roles: The WAMP roles to announce.
-        :type roles: list of :class:`autobahn.wamp.role.RoleFeatures`
+        :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
         :param authid: The authentication ID assigned.
         :type authid: unicode or None
         :param authrole: The authentication role assigned.
@@ -365,9 +367,11 @@ class Welcome(Message):
         :type authprovider: unicode or None
         """
         assert(type(session) in six.integer_types)
-        assert(type(roles) == list)
+        assert(type(roles) == dict)
+        assert(len(roles) > 0)
         for role in roles:
-            assert(isinstance(role, autobahn.wamp.role.RoleFeatures))
+            assert(role in [u'broker', u'dealer'])
+            assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
@@ -392,7 +396,7 @@ class Welcome(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -406,7 +410,7 @@ class Welcome(Message):
         authmethod = details.get(u'authmethod', None)
         authprovider = details.get(u'authprovider', None)
 
-        roles = []
+        roles = {}
 
         if u'roles' not in details:
             raise ProtocolError(u"missing mandatory roles attribute in options in WELCOME")
@@ -417,13 +421,15 @@ class Welcome(Message):
             raise ProtocolError(u"empty 'roles' in 'details' in WELCOME")
 
         for role in details_roles:
-            if role not in ROLE_NAME_TO_CLASS:
+            if role not in [u'broker', u'dealer']:
                 raise ProtocolError("invalid role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
             role_cls = ROLE_NAME_TO_CLASS[role]
 
-            if u'features' in details_roles[role]:
-                check_or_raise_extra(details_roles[role][u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
+            details_role = check_or_raise_extra(details_roles[role], "role '{0}' in 'roles' in 'details' in WELCOME".format(role))
+
+            if u'features' in details_role:
+                check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
                 # FIXME: skip unknown attributes
                 role_features = role_cls(**details_roles[role][u'features'])
@@ -431,7 +437,7 @@ class Welcome(Message):
             else:
                 role_features = role_cls()
 
-            roles.append(role_features)
+            roles[role] = role_features
 
         obj = Welcome(session, roles, authid, authrole, authmethod, authprovider)
 
@@ -457,7 +463,7 @@ class Welcome(Message):
         if self.authprovider:
             details[u'authprovider'] = self.authprovider
 
-        for role in self.roles:
+        for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
             for feature in role.__dict__:
                 if not feature.startswith('_') and feature != 'ROLE' and getattr(role, feature) is not None:
@@ -483,8 +489,8 @@ class Abort(Message):
 
     MESSAGE_TYPE = 3
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, reason, message=None):
         """
@@ -561,8 +567,8 @@ class Challenge(Message):
 
     MESSAGE_TYPE = 4
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, method, extra=None):
         """
@@ -628,8 +634,8 @@ class Authenticate(Message):
 
     MESSAGE_TYPE = 5
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, signature, extra=None):
         """
@@ -657,7 +663,7 @@ class Authenticate(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -695,13 +701,13 @@ class Goodbye(Message):
 
     MESSAGE_TYPE = 6
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     DEFAULT_REASON = u"wamp.goodbye.normal"
     """
-   Default WAMP closing reason.
-   """
+    Default WAMP closing reason.
+    """
 
     def __init__(self, reason=DEFAULT_REASON, message=None):
         """
@@ -782,8 +788,8 @@ class Error(Message):
 
     MESSAGE_TYPE = 8
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request_type, request, error, args=None, kwargs=None):
         """
@@ -825,7 +831,7 @@ class Error(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE)
 
         if len(wmsg) not in (5, 6, 7):
@@ -897,8 +903,8 @@ class Publish(Message):
 
     MESSAGE_TYPE = 16
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self,
                  request,
@@ -969,7 +975,7 @@ class Publish(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -1097,8 +1103,8 @@ class Published(Message):
 
     MESSAGE_TYPE = 17
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, publication):
         """
@@ -1126,7 +1132,7 @@ class Published(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1253,8 +1259,8 @@ class Subscribed(Message):
 
     MESSAGE_TYPE = 33
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, subscription):
         """
@@ -1282,7 +1288,7 @@ class Subscribed(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1317,8 +1323,8 @@ class Unsubscribe(Message):
 
     MESSAGE_TYPE = 34
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, subscription):
         """
@@ -1346,7 +1352,7 @@ class Unsubscribe(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1376,24 +1382,38 @@ class Unsubscribed(Message):
     """
     A WAMP ``UNSUBSCRIBED`` message.
 
-    Format: ``[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]``
+    Formats:
+
+    * ``[UNSUBSCRIBED, UNSUBSCRIBE.Request|id]``
+    * ``[UNSUBSCRIBED, UNSUBSCRIBE.Request|id, Details|dict]``
     """
 
     MESSAGE_TYPE = 35
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
-    def __init__(self, request):
+    def __init__(self, request, subscription=None, reason=None):
         """
 
-        :param request: The request ID of the original ``UNSUBSCRIBE`` request.
+        :param request: The request ID of the original ``UNSUBSCRIBE`` request or
+            ``0`` is router triggered unsubscribe ("router revocation signaling").
         :type request: int
+        :param subscription: If unsubscribe was actively triggered by router, the ID
+            of the subscription revoked.
+        :type subscription: int or None
+        :param reason: The reason (an URI) for revocation.
+        :type reason: unicode or None.
         """
         assert(type(request) in six.integer_types)
+        assert(subscription is None or type(subscription) in six.integer_types)
+        assert(reason is None or type(reason) == six.text_type)
+        assert((request != 0 and subscription is None) or (request == 0 and subscription != 0))
 
         Message.__init__(self)
         self.request = request
+        self.subscription = subscription
+        self.reason = reason
 
     @staticmethod
     def parse(wmsg):
@@ -1406,15 +1426,31 @@ class Unsubscribed(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE)
 
-        if len(wmsg) != 2:
+        if len(wmsg) not in [2, 3]:
             raise ProtocolError("invalid message length {0} for UNSUBSCRIBED".format(len(wmsg)))
 
         request = check_or_raise_id(wmsg[1], u"'request' in UNSUBSCRIBED")
 
-        obj = Unsubscribed(request)
+        subscription = None
+        reason = None
+
+        if len(wmsg) > 2:
+
+            details = check_or_raise_extra(wmsg[2], u"'details' in UNSUBSCRIBED")
+
+            if u"subscription" in details:
+                details_subscription = details[u"subscription"]
+                if type(details_subscription) not in six.integer_types:
+                    raise ProtocolError("invalid type {0} for 'subscription' detail in UNSUBSCRIBED".format(type(details_subscription)))
+                subscription = details_subscription
+
+            if u"reason" in details:
+                reason = check_or_raise_uri(details[u"reason"], u"'reason' in UNSUBSCRIBED")
+
+        obj = Unsubscribed(request, subscription, reason)
 
         return obj
 
@@ -1422,13 +1458,21 @@ class Unsubscribed(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
-        return [Unsubscribed.MESSAGE_TYPE, self.request]
+        if self.reason is not None or self.subscription is not None:
+            details = {}
+            if self.reason is not None:
+                details[u"reason"] = self.reason
+            if self.subscription is not None:
+                details[u"subscription"] = self.subscription
+            return [Unsubscribed.MESSAGE_TYPE, self.request, details]
+        else:
+            return [Unsubscribed.MESSAGE_TYPE, self.request]
 
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP UNSUBSCRIBED Message (request = {0})".format(self.request)
+        return "WAMP UNSUBSCRIBED Message (request = {0}, reason = {1}, subscription = {2})".format(self.request, self.reason, self.subscription)
 
 
 class Event(Message):
@@ -1444,8 +1488,8 @@ class Event(Message):
 
     MESSAGE_TYPE = 36
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None, topic=None):
         """
@@ -1491,7 +1535,7 @@ class Event(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Event.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -1579,8 +1623,8 @@ class Call(Message):
 
     MESSAGE_TYPE = 48
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self,
                  request,
@@ -1639,7 +1683,7 @@ class Call(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -1739,8 +1783,8 @@ class Cancel(Message):
 
     MESSAGE_TYPE = 49
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     SKIP = u'skip'
     ABORT = u'abort'
@@ -1773,7 +1817,7 @@ class Cancel(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1783,7 +1827,7 @@ class Cancel(Message):
         options = check_or_raise_extra(wmsg[2], u"'options' in CANCEL")
 
         # options
-        ##
+        #
         mode = None
 
         if u'mode' in options:
@@ -1832,8 +1876,8 @@ class Result(Message):
 
     MESSAGE_TYPE = 50
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, args=None, kwargs=None, progress=None):
         """
@@ -1872,7 +1916,7 @@ class Result(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
 
         if len(wmsg) not in (3, 4, 5):
@@ -2057,8 +2101,8 @@ class Registered(Message):
 
     MESSAGE_TYPE = 65
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, registration):
         """
@@ -2086,7 +2130,7 @@ class Registered(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Registered.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -2121,8 +2165,8 @@ class Unregister(Message):
 
     MESSAGE_TYPE = 66
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, registration):
         """
@@ -2150,7 +2194,7 @@ class Unregister(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Unregister.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -2180,24 +2224,37 @@ class Unregistered(Message):
     """
     A WAMP ``UNREGISTERED`` message.
 
-    Format: ``[UNREGISTERED, UNREGISTER.Request|id]``
+    Formats:
+
+    * ``[UNREGISTERED, UNREGISTER.Request|id]``
+    * ``[UNREGISTERED, UNREGISTER.Request|id, Details|dict]``
     """
 
     MESSAGE_TYPE = 67
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
-    def __init__(self, request):
+    def __init__(self, request, registration=None, reason=None):
         """
 
         :param request: The request ID of the original ``UNREGISTER`` request.
         :type request: int
+        :param registration: If unregister was actively triggered by router, the ID
+            of the registration revoked.
+        :type registration: int or None
+        :param reason: The reason (an URI) for revocation.
+        :type reason: unicode or None.
         """
         assert(type(request) in six.integer_types)
+        assert(registration is None or type(registration) in six.integer_types)
+        assert(reason is None or type(reason) == six.text_type)
+        assert((request != 0 and registration is None) or (request == 0 and registration != 0))
 
         Message.__init__(self)
         self.request = request
+        self.registration = registration
+        self.reason = reason
 
     @staticmethod
     def parse(wmsg):
@@ -2210,15 +2267,31 @@ class Unregistered(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE)
 
-        if len(wmsg) != 2:
+        if len(wmsg) not in [2, 3]:
             raise ProtocolError("invalid message length {0} for UNREGISTERED".format(len(wmsg)))
 
         request = check_or_raise_id(wmsg[1], u"'request' in UNREGISTERED")
 
-        obj = Unregistered(request)
+        registration = None
+        reason = None
+
+        if len(wmsg) > 2:
+
+            details = check_or_raise_extra(wmsg[2], u"'details' in UNREGISTERED")
+
+            if u"registration" in details:
+                details_registration = details[u"registration"]
+                if type(details_registration) not in six.integer_types:
+                    raise ProtocolError("invalid type {0} for 'registration' detail in UNREGISTERED".format(type(details_registration)))
+                registration = details_registration
+
+            if u"reason" in details:
+                reason = check_or_raise_uri(details[u"reason"], u"'reason' in UNREGISTERED")
+
+        obj = Unregistered(request, registration, reason)
 
         return obj
 
@@ -2226,13 +2299,21 @@ class Unregistered(Message):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
         """
-        return [Unregistered.MESSAGE_TYPE, self.request]
+        if self.reason is not None or self.registration is not None:
+            details = {}
+            if self.reason is not None:
+                details[u"reason"] = self.reason
+            if self.registration is not None:
+                details[u"registration"] = self.registration
+            return [Unregistered.MESSAGE_TYPE, self.request, details]
+        else:
+            return [Unregistered.MESSAGE_TYPE, self.request]
 
     def __str__(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
         """
-        return "WAMP UNREGISTERED Message (request = {0})".format(self.request)
+        return "WAMP UNREGISTERED Message (request = {0}, reason = {1}, registration = {2})".format(self.request, self.reason, self.registration)
 
 
 class Invocation(Message):
@@ -2248,8 +2329,8 @@ class Invocation(Message):
 
     MESSAGE_TYPE = 68
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self,
                  request,
@@ -2312,7 +2393,7 @@ class Invocation(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -2458,7 +2539,7 @@ class Interrupt(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -2468,7 +2549,7 @@ class Interrupt(Message):
         options = check_or_raise_extra(wmsg[2], u"'options' in INTERRUPT")
 
         # options
-        ##
+        #
         mode = None
 
         if u'mode' in options:
@@ -2517,8 +2598,8 @@ class Yield(Message):
 
     MESSAGE_TYPE = 70
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, request, args=None, kwargs=None, progress=None):
         """
@@ -2557,7 +2638,7 @@ class Yield(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
+        #
         assert(len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE)
 
         if len(wmsg) not in (3, 4, 5):
