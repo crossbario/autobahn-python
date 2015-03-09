@@ -66,6 +66,16 @@ class Request(object):
         self.on_reply = on_reply
 
 
+class CallRequest(Request):
+    """
+    Object representing an outstanding request to call a procedure.
+    """
+
+    def __init__(self, request_id, on_reply, options):
+        Request.__init__(self, request_id, on_reply)
+        self.options = options
+
+
 class PublishRequest(Request):
     """
     Object representing an outstanding request to publish (acknowledged) an event.
@@ -123,15 +133,15 @@ class Subscription(object):
         """
         self.id = subscription_id
         self.active = True
-        self._session = session
-        self._handler = handler
+        self.session = session
+        self.handler = handler
 
     def unsubscribe(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
         """
         if self.active:
-            return self._session._unsubscribe(self)
+            return self.session._unsubscribe(self)
         else:
             raise Exception("subscription no longer active")
 
@@ -185,17 +195,20 @@ class Registration(object):
 
     This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
     """
-    def __init__(self, session, registration_id):
-        self._session = session
+    def __init__(self, session, registration_id, endpoint):
         self.id = registration_id
         self.active = True
-        self.endpoint = None
+        self.session = session
+        self.endpoint = endpoint
 
     def unregister(self):
         """
         Implements :func:`autobahn.wamp.interfaces.IRegistration.unregister`
         """
-        return self._session._unregister(self)
+        if self.active:
+            return self.session._unregister(self)
+        else:
+            raise Exception("registration no longer active")
 
 
 IRegistration.register(Registration)
@@ -547,7 +560,7 @@ class ApplicationSession(BaseSession):
                     # fire all event handlers on subscription ..
                     for subscription in self._subscriptions[msg.subscription]:
 
-                        handler = subscription._handler
+                        handler = subscription.handler
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
@@ -560,8 +573,8 @@ class ApplicationSession(BaseSession):
                         try:
                             handler.fn(*invoke_args, **invoke_kwargs)
                         except Exception as e:
-                            msg = 'While firing {0} subscribed under "{1}" ("{2}").'.format(
-                                handler.fn, handler.topic, msg.subscription)
+                            msg = 'While firing {0} subscribed under {1}.'.format(
+                                handler.fn, msg.subscription)
                             try:
                                 self.onUserError(e, msg)
                             except:
@@ -631,19 +644,23 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        _, opts = self._call_reqs[msg.request]
-                        if opts.onProgress:
+                        #
+                        call_request = self._call_reqs[msg.request]
+
+                        on_progress = call_request.options.onProgress
+
+                        if on_progress:
                             try:
                                 if msg.kwargs:
                                     if msg.args:
-                                        opts.onProgress(*msg.args, **msg.kwargs)
+                                        on_progress(*msg.args, **msg.kwargs)
                                     else:
-                                        opts.onProgress(**msg.kwargs)
+                                        on_progress(**msg.kwargs)
                                 else:
                                     if msg.args:
-                                        opts.onProgress(*msg.args)
+                                        on_progress(*msg.args)
                                     else:
-                                        opts.onProgress()
+                                        on_progress()
                             except Exception as e:
                                 # silently drop exceptions raised in progressive results handlers
                                 if self.debug:
@@ -654,22 +671,26 @@ class ApplicationSession(BaseSession):
                     else:
 
                         # final result
-                        d, opts = self._call_reqs.pop(msg.request)
+                        #
+                        call_request = self._call_reqs.pop(msg.request)
+
+                        on_reply = call_request.on_reply
+
                         if msg.kwargs:
                             if msg.args:
                                 res = types.CallResult(*msg.args, **msg.kwargs)
                             else:
                                 res = types.CallResult(**msg.kwargs)
-                            self._resolve_future(d, res)
+                            self._resolve_future(on_reply, res)
                         else:
                             if msg.args:
                                 if len(msg.args) > 1:
                                     res = types.CallResult(*msg.args)
-                                    self._resolve_future(d, res)
+                                    self._resolve_future(on_reply, res)
                                 else:
-                                    self._resolve_future(d, msg.args[0])
+                                    self._resolve_future(on_reply, msg.args[0])
                             else:
-                                self._resolve_future(d, None)
+                                self._resolve_future(on_reply, None)
                 else:
                     raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
@@ -785,13 +806,10 @@ class ApplicationSession(BaseSession):
 
                     # create new registration if not yet tracked
                     if msg.registration not in self._registrations:
-                        self._registrations[msg.registration] = Registration(self, msg.registration)
+                        registration = Registration(self, msg.registration, request.endpoint)
+                        self._registrations[msg.registration] = registration
                     else:
                         raise ProtocolError("REGISTERED received for already existing registration ID {0}".format(msg.registration))
-
-                    # set endpoint on existing registration
-                    registration = self._registrations[msg.registration]
-                    registration.endpoint = request.endpoint
 
                     self._resolve_future(request.on_reply, registration)
                 else:
@@ -1006,7 +1024,7 @@ class ApplicationSession(BaseSession):
             request_id = util.id()
 
             on_reply = self._create_future()
-            self._unsubscribe_reqs[request_id] = UnsubscribeRequest(request_id, on_reply)
+            self._unsubscribe_reqs[request_id] = UnsubscribeRequest(request_id, on_reply, subscription.id)
 
             msg = message.Unsubscribe(request_id, subscription.id)
 
@@ -1027,25 +1045,26 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request = util.id()
+        request_id = util.id()
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
             options = kwargs.pop('options')
-            msg = message.Call(request, procedure, args=args, kwargs=kwargs, **options.message_attr())
+            msg = message.Call(request_id, procedure, args=args, kwargs=kwargs, **options.message_attr())
         else:
             options = None
-            msg = message.Call(request, procedure, args=args, kwargs=kwargs)
+            msg = message.Call(request_id, procedure, args=args, kwargs=kwargs)
 
         # FIXME
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
         #   self._transport.send(cancel_msg)
         # d = Deferred(canceller)
-        d = self._create_future()
-        self._call_reqs[request] = d, options
+
+        on_reply = self._create_future()
+        self._call_reqs[request_id] = CallRequest(request_id, on_reply, options)
 
         self._transport.send(msg)
-        return d
+        return on_reply
 
     def register(self, endpoint, procedure=None, options=None):
         """
@@ -1104,15 +1123,15 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request = util.id()
+        request_id = util.id()
 
-        d = self._create_future()
-        self._unregister_reqs[request] = (d, registration)
+        on_reply = self._create_future()
+        self._unregister_reqs[request_id] = UnregisterRequest(request_id, on_reply, registration.id)
 
-        msg = message.Unregister(request, registration.id)
+        msg = message.Unregister(request_id, registration.id)
 
         self._transport.send(msg)
-        return d
+        return on_reply
 
 
 IPublisher.register(ApplicationSession)
