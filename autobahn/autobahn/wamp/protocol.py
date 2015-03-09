@@ -55,71 +55,141 @@ def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
 
 
-class Endpoint:
+class Request(object):
     """
-    """
-
-    def __init__(self, obj, fn, procedure, options=None):
-        self.obj = obj
-        self.fn = fn
-        self.procedure = procedure
-        self.options = options
-
-
-class Handler:
-    """
+    Object representing an outstanding request, such as for subscribe/unsubscribe,
+    register/unregister or call/publish.
     """
 
-    def __init__(self, subscription_id, obj, fn, topic, details_arg=None):
+    def __init__(self, request_id, on_reply):
+        self.request_id = request_id
+        self.on_reply = on_reply
+
+
+class PublishRequest(Request):
+    """
+    Object representing an outstanding request to publish (acknowledged) an event.
+    """
+
+
+class SubscribeRequest(Request):
+    """
+    Object representing an outstanding request to subscribe to a topic.
+    """
+
+    def __init__(self, request_id, on_reply, handler):
+        Request.__init__(self, request_id, on_reply)
+        self.handler = handler
+
+
+class UnsubscribeRequest(Request):
+    """
+    Object representing an outstanding request to unsubscribe a subscription.
+    """
+
+    def __init__(self, request_id, on_reply, subscription_id):
+        Request.__init__(self, request_id, on_reply)
         self.subscription_id = subscription_id
-        self.obj = obj
-        self.fn = fn
-        self.topic = topic
-        self.details_arg = details_arg
 
 
-class Publication:
+class RegisterRequest(Request):
     """
-    Object representing a publication.
-    This class implements :class:`autobahn.wamp.interfaces.IPublication`.
+    Object representing an outstanding request to register a procedure.
     """
-    def __init__(self, publicationId):
-        self.id = publicationId
+
+    def __init__(self, request_id, on_reply, endpoint):
+        Request.__init__(self, request_id, on_reply)
+        self.endpoint = endpoint
 
 
-IPublication.register(Publication)
-
-
-class Subscription:
+class UnregisterRequest(Request):
     """
-    Object representing a subscription.
+    Object representing an outstanding request to unregister a registration.
+    """
+
+    def __init__(self, request_id, on_reply, registration_id):
+        Request.__init__(self, request_id, on_reply)
+        self.registration_id = registration_id
+
+
+class Subscription(object):
+    """
+    Object representing a handler subscription.
+
     This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
     """
-    def __init__(self, session, subscriptionId, handler):
-        self._session = session
+    def __init__(self, subscription_id, session, handler):
+        """
+        """
+        self.id = subscription_id
         self.active = True
-        self.id = subscriptionId
-        self.handler = handler
+        self._session = session
+        self._handler = handler
 
     def unsubscribe(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
         """
-        return self._session._unsubscribe(self)
+        if self.active:
+            return self._session._unsubscribe(self)
+        else:
+            raise Exception("subscription no longer active")
+
+    def __str__(self):
+        return "Subscription(id={0}, is_active={1})".format(self.id, self.active)
 
 
 ISubscription.register(Subscription)
 
 
-class Registration:
+class Handler(object):
+    """
+    Object representing an event handler attached to a subscription.
+    """
+
+    def __init__(self, fn, obj=None, details_arg=None):
+        """
+
+        :param fn: The event handler function to be called.
+        :type fn: callable
+        :param obj: The (optional) object upon which to call the function.
+        :type obj: obj or None
+        :param details_arg: The keyword argument under which event details should be provided.
+        :type details_arg: str or None
+        """
+        self.fn = fn
+        self.obj = obj
+        self.details_arg = details_arg
+
+
+class Publication(object):
+    """
+    Object representing a publication (feedback from publishing an event when doing
+    an acknowledged publish).
+
+    This class implements :class:`autobahn.wamp.interfaces.IPublication`.
+    """
+    def __init__(self, publication_id):
+        self.id = publication_id
+
+    def __str__(self):
+        return "Publication(id={0})".format(self.id)
+
+
+IPublication.register(Publication)
+
+
+class Registration(object):
     """
     Object representing a registration.
+
     This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
     """
-    def __init__(self, session, registrationId):
+    def __init__(self, session, registration_id):
         self._session = session
+        self.id = registration_id
         self.active = True
-        self.id = registrationId
+        self.endpoint = None
 
     def unregister(self):
         """
@@ -131,7 +201,27 @@ class Registration:
 IRegistration.register(Registration)
 
 
-class BaseSession:
+class Endpoint(object):
+    """
+    Object representing an procedure endpoint attached to a registration.
+    """
+
+    def __init__(self, fn, obj=None, details_arg=None):
+        """
+
+        :param fn: The endpoint procedure to be called.
+        :type fn: callable
+        :param obj: The (optional) object upon which to call the function.
+        :type obj: obj or None
+        :param details_arg: The keyword argument under which call details should be provided.
+        :type details_arg: str or None
+        """
+        self.fn = fn
+        self.obj = obj
+        self.details_arg = details_arg
+
+
+class BaseSession(object):
     """
     WAMP session base class.
 
@@ -360,14 +450,7 @@ class ApplicationSession(BaseSession):
 
         self._goodbye_sent = False
 
-        roles = [
-            role.RolePublisherFeatures(),
-            role.RoleSubscriberFeatures(),
-            role.RoleCallerFeatures(),
-            role.RoleCalleeFeatures()
-        ]
-
-        msg = message.Hello(realm, roles, authmethods, authid)
+        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid)
         self._realm = realm
         self._transport.send(msg)
 
@@ -448,12 +531,23 @@ class ApplicationSession(BaseSession):
                 self._session_id = None
 
                 # fire callback and close the transport
-                self.onLeave(types.CloseDetails(msg.reason, msg.message))
+                try:
+                    self.onLeave(types.CloseDetails(msg.reason, msg.message))
+                except Exception as e:
+                    msg = 'While firing onLeave() for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
+                    try:
+                        self.onUserError(e, msg)
+                    except:
+                        pass
 
             elif isinstance(msg, message.Event):
 
                 if msg.subscription in self._subscriptions:
-                    for handler in self._subscriptions[msg.subscription]:
+
+                    # fire all event handlers on subscription ..
+                    for subscription in self._subscriptions[msg.subscription]:
+
+                        handler = subscription._handler
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
@@ -468,7 +562,10 @@ class ApplicationSession(BaseSession):
                         except Exception as e:
                             msg = 'While firing {0} subscribed under "{1}" ("{2}").'.format(
                                 handler.fn, handler.topic, msg.subscription)
-                            self.onUserError(e, msg)
+                            try:
+                                self.onUserError(e, msg)
+                            except:
+                                pass
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -476,44 +573,54 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Published):
 
                 if msg.request in self._publish_reqs:
-                    d, opts = self._publish_reqs.pop(msg.request)
-                    p = Publication(msg.publication)
-                    self._resolve_future(d, p)
+
+                    # get and pop outstanding publish request
+                    publish_request = self._publish_reqs.pop(msg.request)
+
+                    # create a new publication object
+                    publication = Publication(msg.publication)
+
+                    # resolve deferred/future for publishing successfully
+                    self._resolve_future(publish_request.on_reply, publication)
                 else:
                     raise ProtocolError("PUBLISHED received for non-pending request ID {0}".format(msg.request))
 
             elif isinstance(msg, message.Subscribed):
-                if msg.request in self._subscribe_reqs:
-                    d, obj, fn, topic, options = self._subscribe_reqs.pop(msg.request)
-                    if msg.subscription in self._subscriptions:
-                        existing = self._subscriptions[msg.subscription]
-                        sub_id = existing[0].subscription_id
-                        # the topics should match
-                        if existing[0].topic != topic:
-                            raise ProtocolError(
-                                'SUBSCRIBED for ID "{0}" should have topic "{1}" not "{2}".'.format(
-                                    sub_id, existing.topic, topic))
 
-                    else:
-                        sub_id = msg.subscription
+                if msg.request in self._subscribe_reqs:
+
+                    # get and pop outstanding subscribe request
+                    request = self._subscribe_reqs.pop(msg.request)
+
+                    # create new handler subscription list for subscription ID if not yet tracked
+                    if msg.subscription not in self._subscriptions:
                         self._subscriptions[msg.subscription] = []
 
-                    details = options.details_arg if options else None
-                    handler = Handler(sub_id, obj, fn, topic, details)
-                    self._subscriptions[msg.subscription].append(handler)
-                    s = Subscription(self, sub_id, handler)
-                    self._resolve_future(d, s)
+                    subscription = Subscription(msg.subscription, self, request.handler)
+
+                    # add handler to existing subscription
+                    self._subscriptions[msg.subscription].append(subscription)
+
+                    # resolve deferred/future for subscribing successfully
+                    self._resolve_future(request.on_reply, subscription)
                 else:
                     raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
             elif isinstance(msg, message.Unsubscribed):
 
                 if msg.request in self._unsubscribe_reqs:
-                    d, subscription = self._unsubscribe_reqs.pop(msg.request)
-                    if subscription.id in self._subscriptions:
-                        del self._subscriptions[subscription.id]
-                    subscription.active = False
-                    self._resolve_future(d, None)
+
+                    # get and pop outstanding subscribe request
+                    request = self._unsubscribe_reqs.pop(msg.request)
+
+                    # if the subscription still exists, mark as inactive and remove ..
+                    if request.subscription_id in self._subscriptions:
+                        for subscription in self._subscriptions[request.subscription_id]:
+                            subscription.active = False
+                        del self._subscriptions[request.subscription_id]
+
+                    # resolve deferred/future for unsubscribing successfully
+                    self._resolve_future(request.on_reply, 0)
                 else:
                     raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -579,9 +686,10 @@ class ApplicationSession(BaseSession):
                         raise ProtocolError("INVOCATION received for non-registered registration ID {0}".format(msg.registration))
 
                     else:
-                        endpoint = self._registrations[msg.registration]
+                        registration = self._registrations[msg.registration]
+                        endpoint = registration.endpoint
 
-                        if endpoint.options and endpoint.options.details_arg:
+                        if endpoint.details_arg:
 
                             if not msg.kwargs:
                                 msg.kwargs = {}
@@ -593,7 +701,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 progress = None
 
-                            msg.kwargs[endpoint.options.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
+                            msg.kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
 
                         if endpoint.obj:
                             if msg.kwargs:
@@ -671,54 +779,72 @@ class ApplicationSession(BaseSession):
             elif isinstance(msg, message.Registered):
 
                 if msg.request in self._register_reqs:
-                    d, obj, fn, procedure, options = self._register_reqs.pop(msg.request)
-                    self._registrations[msg.registration] = Endpoint(obj, fn, procedure, options)
-                    r = Registration(self, msg.registration)
-                    self._resolve_future(d, r)
+
+                    # get and pop outstanding register request
+                    request = self._register_reqs.pop(msg.request)
+
+                    # create new registration if not yet tracked
+                    if msg.registration not in self._registrations:
+                        self._registrations[msg.registration] = Registration(self, msg.registration)
+                    else:
+                        raise ProtocolError("REGISTERED received for already existing registration ID {0}".format(msg.registration))
+
+                    # set endpoint on existing registration
+                    registration = self._registrations[msg.registration]
+                    registration.endpoint = request.endpoint
+
+                    self._resolve_future(request.on_reply, registration)
                 else:
                     raise ProtocolError("REGISTERED received for non-pending request ID {0}".format(msg.request))
 
             elif isinstance(msg, message.Unregistered):
 
                 if msg.request in self._unregister_reqs:
-                    d, registration = self._unregister_reqs.pop(msg.request)
-                    if registration.id in self._registrations:
-                        del self._registrations[registration.id]
-                    registration.active = False
-                    self._resolve_future(d, None)
+
+                    # get and pop outstanding subscribe request
+                    request = self._unregister_reqs.pop(msg.request)
+
+                    # if the registration still exists, mark as inactive and remove ..
+                    if request.registration_id in self._registrations:
+                        self._registrations[request.registration_id].active = False
+                        del self._registrations[request.registration_id]
+
+                    # resolve deferred/future for unregistering successfully
+                    self._resolve_future(request.on_reply)
                 else:
                     raise ProtocolError("UNREGISTERED received for non-pending request ID {0}".format(msg.request))
 
             elif isinstance(msg, message.Error):
 
-                d = None
+                # remove outstanding request and get the reply deferred/future
+                on_reply = None
+
+                # ERROR reply to CALL
+                if msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
+                    on_reply = self._call_reqs.pop(msg.request).on_reply
 
                 # ERROR reply to PUBLISH
-                if msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
-                    d = self._publish_reqs.pop(msg.request)[0]
+                elif msg.request_type == message.Publish.MESSAGE_TYPE and msg.request in self._publish_reqs:
+                    on_reply = self._publish_reqs.pop(msg.request).on_reply
 
                 # ERROR reply to SUBSCRIBE
                 elif msg.request_type == message.Subscribe.MESSAGE_TYPE and msg.request in self._subscribe_reqs:
-                    d = self._subscribe_reqs.pop(msg.request)[0]
+                    on_reply = self._subscribe_reqs.pop(msg.request).on_reply
 
                 # ERROR reply to UNSUBSCRIBE
                 elif msg.request_type == message.Unsubscribe.MESSAGE_TYPE and msg.request in self._unsubscribe_reqs:
-                    d = self._unsubscribe_reqs.pop(msg.request)[0]
+                    on_reply = self._unsubscribe_reqs.pop(msg.request).on_reply
 
                 # ERROR reply to REGISTER
                 elif msg.request_type == message.Register.MESSAGE_TYPE and msg.request in self._register_reqs:
-                    d = self._register_reqs.pop(msg.request)[0]
+                    on_reply = self._register_reqs.pop(msg.request).on_reply
 
                 # ERROR reply to UNREGISTER
                 elif msg.request_type == message.Unregister.MESSAGE_TYPE and msg.request in self._unregister_reqs:
-                    d = self._unregister_reqs.pop(msg.request)[0]
+                    on_reply = self._unregister_reqs.pop(msg.request).on_reply
 
-                # ERROR reply to CALL
-                elif msg.request_type == message.Call.MESSAGE_TYPE and msg.request in self._call_reqs:
-                    d = self._call_reqs.pop(msg.request)[0]
-
-                if d:
-                    self._reject_future(d, self._exception_from_message(msg))
+                if on_reply:
+                    self._reject_future(on_reply, self._exception_from_message(msg))
                 else:
                     raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
 
@@ -790,20 +916,21 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request = util.id()
+        request_id = util.id()
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
-            opts = kwargs.pop('options')
-            msg = message.Publish(request, topic, args=args, kwargs=kwargs, **opts.options)
+            options = kwargs.pop('options')
+            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.options)
         else:
-            opts = None
-            msg = message.Publish(request, topic, args=args, kwargs=kwargs)
+            options = None
+            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
 
-        if opts and opts.options['acknowledge'] is True:
-            d = self._create_future()
-            self._publish_reqs[request] = d, opts
+        if options and options.options['acknowledge'] is True:
+            # only acknowledge publishes expect a reply ..
+            on_reply = self._create_future()
+            self._publish_reqs[request_id] = PublishRequest(request_id, on_reply)
             self._transport.send(msg)
-            return d
+            return on_reply
         else:
             self._transport.send(msg)
             return
@@ -821,19 +948,19 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        def _subscribe(obj, handler, topic, options):
-            request = util.id()
+        def _subscribe(obj, fn, topic, options):
+            request_id = util.id()
+            on_reply = self._create_future()
+            handler_obj = Handler(fn, obj, options.details_arg if options else None)
+            self._subscribe_reqs[request_id] = SubscribeRequest(request_id, on_reply, handler_obj)
 
-            d = self._create_future()
-            self._subscribe_reqs[request] = (d, obj, handler, topic, options)
-
-            if options is not None:
-                msg = message.Subscribe(request, topic, **options.options)
+            if options:
+                msg = message.Subscribe(request_id, topic, **options.options)
             else:
-                msg = message.Subscribe(request, topic)
+                msg = message.Subscribe(request_id, topic)
 
             self._transport.send(msg)
-            return d
+            return on_reply
 
         if callable(handler):
 
@@ -843,7 +970,7 @@ class ApplicationSession(BaseSession):
         else:
 
             # subscribe all methods on an object decorated with "wamp.subscribe"
-            dl = []
+            on_replies = []
             for k in inspect.getmembers(handler.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
@@ -851,11 +978,9 @@ class ApplicationSession(BaseSession):
                     if pat.is_handler():
                         uri = pat.uri()
                         subopts = options or pat.subscribe_options()
-                        dl.append(_subscribe(handler, proc, uri, subopts))
-            # XXX pretty sure we *don't* want consome_exceptions here,
-            # because we don't ourselves check the returned list for
-            # errors.
-            return self._gather_futures(dl, consume_exceptions=True)
+                        on_replies.append(_subscribe(handler, proc, uri, subopts))
+
+            return self._gather_futures(on_replies, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
         """
@@ -864,28 +989,32 @@ class ApplicationSession(BaseSession):
         assert(isinstance(subscription, Subscription))
         assert subscription.active
         assert(subscription.id in self._subscriptions)
+        assert(subscription in self._subscriptions[subscription.id])
 
         if not self._transport:
             raise exception.TransportLost()
 
-        handlers = self._subscriptions[subscription.id]
-        assert subscription.handler in handlers
-        self._subscriptions[subscription.id].remove(subscription.handler)
+        # remove handler subscription and mark as inactive
+        self._subscriptions[subscription.id].remove(subscription)
+        subscription.active = False
 
-        if len(self._subscriptions[subscription.id]) == 0:
-            # if the last handler was removed, unsubscribe ..
-            request = util.id()
+        # number of handler subscriptions left ..
+        scount = len(self._subscriptions[subscription.id])
 
-            d = self._create_future()
-            self._unsubscribe_reqs[request] = (d, subscription)
+        if scount == 0:
+            # if the last handler was removed, unsubscribe from broker ..
+            request_id = util.id()
 
-            msg = message.Unsubscribe(request, subscription.id)
+            on_reply = self._create_future()
+            self._unsubscribe_reqs[request_id] = UnsubscribeRequest(request_id, on_reply)
+
+            msg = message.Unsubscribe(request_id, subscription.id)
 
             self._transport.send(msg)
-            return d
+            return on_reply
         else:
             # there are still handlers active on the subscription!
-            return self._create_future_success()
+            return self._create_future_success(scount)
 
     def call(self, procedure, *args, **kwargs):
         """
@@ -931,37 +1060,38 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        def _register(obj, endpoint, procedure, options):
-            request = util.id()
+        def _register(obj, fn, procedure, options):
+            request_id = util.id()
+            on_reply = self._create_future()
+            endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
+            self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, endpoint_obj)
 
-            d = self._create_future()
-            self._register_reqs[request] = (d, obj, endpoint, procedure, options)
-
-            if options is not None:
-                msg = message.Register(request, procedure, **options.options)
+            if options:
+                msg = message.Register(request_id, procedure, **options.options)
             else:
-                msg = message.Register(request, procedure)
+                msg = message.Register(request_id, procedure)
 
             self._transport.send(msg)
-            return d
+            return on_reply
 
         if callable(endpoint):
+
             # register a single callable
             return _register(None, endpoint, procedure, options)
 
         else:
-            # register all methods on an object
-            # decorated with "wamp.register"
-            dl = []
 
+            # register all methods on an object decorated with "wamp.register"
+            on_replies = []
             for k in inspect.getmembers(endpoint.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
                     pat = proc.__dict__["_wampuris"][0]
                     if pat.is_endpoint():
                         uri = pat.uri()
-                        dl.append(_register(endpoint, proc, uri, options))
-            return self._gather_futures(dl, consume_exceptions=True)
+                        on_replies.append(_register(endpoint, proc, uri, options))
+
+            return self._gather_futures(on_replies, consume_exceptions=True)
 
     def _unregister(self, registration):
         """
@@ -992,7 +1122,7 @@ ICaller.register(ApplicationSession)
 ITransportHandler.register(ApplicationSession)
 
 
-class ApplicationSessionFactory:
+class ApplicationSessionFactory(object):
     """
     WAMP endpoint session factory.
     """
