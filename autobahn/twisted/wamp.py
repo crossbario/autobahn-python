@@ -84,7 +84,12 @@ class FutureMixin(object):
 
     @staticmethod
     def _add_future_callbacks(future, callback, errback):
-        return future.addCallbacks(callback, errback)
+        # callback and/or errback may be None
+        if callback is None:
+            future.addErrback(errback)
+            return future
+        else:
+            return future.addCallbacks(callback, errback)
 
     @staticmethod
     def _gather_futures(futures, consume_exceptions=True):

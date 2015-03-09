@@ -505,6 +505,24 @@ class ApplicationSession(BaseSession):
         traceback.print_exc()
         print(msg)
 
+    def _swallow_error(self, fail):
+        '''
+        This is an internal generic error-handler for errors encountered
+        when calling down to on*() handlers that can reasonably be
+        expected to be overridden in user code.
+
+        Note that it *cancels* the error, so use with care!
+
+        Specifically, this should *never* be added to the errback
+        chain for a Deferred/coroutine that will make it out to user
+        code.
+        '''
+        # print("_swallow_error", fail)
+        self.onUserError(fail.value, "Generic error-handler")
+        # do we want to return the error? not according to the current
+        # method-name ;)
+        return None
+
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -516,7 +534,9 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-                self._as_future(self.onJoin, details)
+                # XXX ignoring error
+                d = self._as_future(self.onJoin, details)
+                self._add_future_callbacks(d, None, self._swallow_error)
 
             elif isinstance(msg, message.Abort):
 
