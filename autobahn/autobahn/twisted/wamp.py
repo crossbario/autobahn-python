@@ -75,12 +75,12 @@ class FutureMixin:
         return maybeDeferred(fun, *args, **kwargs)
 
     @staticmethod
-    def _resolve_future(future, value):
-        future.callback(value)
+    def _resolve_future(future, result=None):
+        future.callback(result)
 
     @staticmethod
-    def _reject_future(future, value):
-        future.errback(value)
+    def _reject_future(future, error):
+        future.errback(error)
 
     @staticmethod
     def _add_future_callbacks(future, callback, errback):

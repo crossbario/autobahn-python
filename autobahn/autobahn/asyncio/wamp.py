@@ -90,12 +90,12 @@ class FutureMixin:
                 return f
 
     @staticmethod
-    def _resolve_future(future, value):
-        future.set_result(value)
+    def _resolve_future(future, result=None):
+        future.set_result(result)
 
     @staticmethod
-    def _reject_future(future, value):
-        future.set_exception(value)
+    def _reject_future(future, error):
+        future.set_exception(error)
 
     @staticmethod
     def _add_future_callbacks(future, callback, errback):
