@@ -38,7 +38,8 @@ __all__ = ('RoleFeatures',
            'RoleDealerFeatures',
            'RoleCallerFeatures',
            'RoleCalleeFeatures',
-           'ROLE_NAME_TO_CLASS')
+           'ROLE_NAME_TO_CLASS',
+           'DEFAULT_CLIENT_ROLES')
 
 
 class RoleFeatures(util.EqualityMixin):
@@ -83,6 +84,7 @@ class RoleBrokerFeatures(RoleFeatures):
                  subscription_meta_api=None,
                  subscriber_blackwhite_listing=None,
                  publisher_exclusion=None,
+                 subscription_revocation=None,
                  event_history=None):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
@@ -90,6 +92,7 @@ class RoleBrokerFeatures(RoleFeatures):
         self.subscription_meta_api = subscription_meta_api
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
+        self.subscription_revocation = subscription_revocation
         self.event_history = event_history
         self._check_all_bool()
 
@@ -106,10 +109,12 @@ class RoleSubscriberFeatures(RoleFeatures):
                  publisher_identification=None,
                  publication_trustlevels=None,
                  pattern_based_subscription=None,
+                 subscription_revocation=None,
                  event_history=None):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
+        self.subscription_revocation = subscription_revocation
         self.event_history = event_history
         self._check_all_bool()
 
@@ -148,7 +153,8 @@ class RoleDealerFeatures(RoleFeatures):
                  shared_registration=None,
                  call_timeout=None,
                  call_canceling=None,
-                 progressive_call_results=None):
+                 progressive_call_results=None,
+                 registration_revocation=None):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
@@ -157,6 +163,7 @@ class RoleDealerFeatures(RoleFeatures):
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
+        self.registration_revocation = registration_revocation
         self._check_all_bool()
 
 
@@ -195,7 +202,8 @@ class RoleCalleeFeatures(RoleFeatures):
                  shared_registration=None,
                  call_timeout=None,
                  call_canceling=None,
-                 progressive_call_results=None):
+                 progressive_call_results=None,
+                 registration_revocation=None):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
@@ -203,9 +211,11 @@ class RoleCalleeFeatures(RoleFeatures):
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
+        self.registration_revocation = registration_revocation
         self._check_all_bool()
 
 
+# map of role names to role class
 ROLE_NAME_TO_CLASS = {
     u'broker': RoleBrokerFeatures,
     u'subscriber': RoleSubscriberFeatures,
@@ -213,4 +223,13 @@ ROLE_NAME_TO_CLASS = {
     u'dealer': RoleDealerFeatures,
     u'caller': RoleCallerFeatures,
     u'callee': RoleCalleeFeatures,
+}
+
+
+# default role features for client roles supported
+DEFAULT_CLIENT_ROLES = {
+    u'subscriber': RoleSubscriberFeatures(publisher_identification=True, pattern_based_subscription=True, subscription_revocation=True),
+    u'publisher': RolePublisherFeatures(publisher_identification=True, subscriber_blackwhite_listing=True, publisher_exclusion=True),
+    u'caller': RoleCallerFeatures(caller_identification=True, progressive_call_results=True),
+    u'callee': RoleCalleeFeatures(caller_identification=True, pattern_based_registration=True, shared_registration=True, progressive_call_results=True, registration_revocation=True),
 }
