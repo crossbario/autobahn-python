@@ -376,7 +376,7 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception as e:
+            except Exception:
                 # FIXME: log e
                 pass
 
