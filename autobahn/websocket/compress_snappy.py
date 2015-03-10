@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class PerMessageSnappyMixin:
+class PerMessageSnappyMixin(object):
     """
     Mixin class for this extension.
     """

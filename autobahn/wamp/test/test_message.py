@@ -40,7 +40,7 @@ else:
     import unittest
 
 
-class Foo:
+class Foo(object):
     pass
 
 

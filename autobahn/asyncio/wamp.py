@@ -50,7 +50,7 @@ __all__ = (
 )
 
 
-class FutureMixin:
+class FutureMixin(object):
     """
     Mixin for Asyncio style Futures.
     """
@@ -129,7 +129,7 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    """
 
 
-class ApplicationRunner:
+class ApplicationRunner(object):
     """
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.

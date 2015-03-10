@@ -45,7 +45,7 @@ except ImportError:
 
     from array import array
 
-    class XorMaskerNull:
+    class XorMaskerNull(object):
 
         # noinspection PyUnusedLocal
         def __init__(self, mask=None):
@@ -61,7 +61,7 @@ except ImportError:
             self.ptr += len(data)
             return data
 
-    class XorMaskerSimple:
+    class XorMaskerSimple(object):
 
         def __init__(self, mask):
             assert len(mask) == 4
@@ -85,7 +85,7 @@ except ImportError:
             else:
                 return payload.tostring()
 
-    class XorMaskerShifted1:
+    class XorMaskerShifted1(object):
 
         def __init__(self, mask):
             assert len(mask) == 4

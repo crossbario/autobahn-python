@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class PerMessageBzip2Mixin:
+class PerMessageBzip2Mixin(object):
     """
     Mixin class for this extension.
     """

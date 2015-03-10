@@ -39,7 +39,7 @@ __all__ = ('WampWebSocketServerProtocol',
            'WampWebSocketClientFactory')
 
 
-class WampWebSocketProtocol:
+class WampWebSocketProtocol(object):
     """
     Base class for WAMP-over-WebSocket transport mixins.
     """
@@ -212,7 +212,7 @@ class WampWebSocketClientProtocol(WampWebSocketProtocol):
         self._serializer = self.factory._serializers[serializerId]
 
 
-class WampWebSocketFactory:
+class WampWebSocketFactory(object):
     """
     Base class for WAMP-over-WebSocket transport factory mixins.
     """

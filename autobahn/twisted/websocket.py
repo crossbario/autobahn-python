@@ -185,7 +185,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         self.onConnect(response)
 
 
-class WebSocketAdapterFactory:
+class WebSocketAdapterFactory(object):
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
@@ -256,7 +256,7 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 
 
 @implementer(ITransport)
-class WrappingWebSocketAdapter:
+class WrappingWebSocketAdapter(object):
     """
     An adapter for stream-based transport over WebSocket.
 

@@ -33,7 +33,7 @@ except ImportError:
 from mock import patch
 
 
-class FakeReactor:
+class FakeReactor(object):
     '''
     This just fakes out enough reactor methods so .run() can work.
     '''

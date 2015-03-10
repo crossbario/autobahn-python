@@ -31,7 +31,7 @@ from autobahn.wamp.types import SubscribeOptions
 __all__ = ('Pattern',)
 
 
-class Pattern:
+class Pattern(object):
     """
     A WAMP URI Pattern.
 

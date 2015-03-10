@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class PerMessageDeflateMixin:
+class PerMessageDeflateMixin(object):
     """
     Mixin class for this extension.
     """

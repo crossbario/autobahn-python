@@ -75,7 +75,7 @@ except ImportError:
         # convert DFA table to bytes (performance)
         UTF8VALIDATOR_DFA_S = bytes(UTF8VALIDATOR_DFA)
 
-        class Utf8Validator:
+        class Utf8Validator(object):
             """
             Incremental UTF-8 validator with constant memory consumption (minimal state).
 
@@ -150,7 +150,7 @@ except ImportError:
         # convert DFA table to string (performance)
         UTF8VALIDATOR_DFA_S = ''.join([chr(c) for c in UTF8VALIDATOR_DFA])
 
-        class Utf8Validator:
+        class Utf8Validator(object):
             """
             Incremental UTF-8 validator with constant memory consumption (minimal state).
 

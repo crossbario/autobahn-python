@@ -45,7 +45,7 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn.twisted.wamp import ApplicationSession
 
-    class MockTransport:
+    class MockTransport(object):
 
         def __init__(self, handler):
             self._log = False

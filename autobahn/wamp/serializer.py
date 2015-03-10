@@ -40,7 +40,7 @@ __all__ = ['Serializer',
            'JsonSerializer']
 
 
-class Serializer:
+class Serializer(object):
     """
     Base class for WAMP serializers. A WAMP serializer is the core glue between
     parsed WAMP message objects and the bytes on wire (the transport).
@@ -165,7 +165,7 @@ except ImportError:
         return json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
 
 finally:
-    class JsonObjectSerializer:
+    class JsonObjectSerializer(object):
 
         JSON_MODULE = _json
         """
@@ -240,7 +240,7 @@ except ImportError:
     pass
 else:
 
-    class MsgPackObjectSerializer:
+    class MsgPackObjectSerializer(object):
 
         BINARY = True
         """

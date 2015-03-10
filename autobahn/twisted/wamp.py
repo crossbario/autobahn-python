@@ -53,7 +53,7 @@ __all__ = (
 )
 
 
-class FutureMixin:
+class FutureMixin(object):
     """
     Mixin for Twisted style Futures ("Deferreds").
     """
@@ -118,7 +118,7 @@ class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory)
    """
 
 
-class ApplicationRunner:
+class ApplicationRunner(object):
     """
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.
@@ -219,7 +219,7 @@ class ApplicationRunner:
             # exception so that after the event-loop exits we can re-raise
             # it to the caller.
 
-            class ErrorCollector:
+            class ErrorCollector(object):
                 exception = None
 
                 def __call__(self, failure):
@@ -296,7 +296,7 @@ class _ApplicationSession(ApplicationSession):
         yield self.app._fire_signal('ondisconnect')
 
 
-class Application:
+class Application(object):
     """
     A WAMP application. The application object provides a simple way of
     creating, debugging and running WAMP application components.

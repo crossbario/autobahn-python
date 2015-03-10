@@ -208,7 +208,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
             asyncio.async(res)
 
 
-class WebSocketAdapterFactory:
+class WebSocketAdapterFactory(object):
     """
     Adapter class for asyncio-based WebSocket client and server factories.
     """

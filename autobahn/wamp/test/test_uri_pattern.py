@@ -365,7 +365,7 @@ def getargs(fun):
     return args, kwargs, argspec.varargs, argspec.keywords
 
 
-class MockSession:
+class MockSession(object):
 
     def __init__(self):
         self._ecls_to_uri_pat = {}
@@ -421,7 +421,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         def test():
             # noinspection PyUnusedLocal
             @wamp.error(u"com.test.error")
-            class Foo:
+            class Foo(object):
                 pass
 
         self.assertRaises(Exception, test)

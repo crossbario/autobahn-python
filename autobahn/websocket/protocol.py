@@ -178,7 +178,7 @@ def parseWsUrl(url):
     return parsed.scheme == "wss", parsed.hostname, port, resource, path, params
 
 
-class TrafficStats:
+class TrafficStats(object):
 
     def __init__(self):
         self.reset()
@@ -250,7 +250,7 @@ class TrafficStats:
         return json.dumps(self.__json__())
 
 
-class FrameHeader:
+class FrameHeader(object):
     """
     Thin-wrapper for storing WebSocket frame metadata.
 
@@ -279,7 +279,7 @@ class FrameHeader:
         self.mask = mask
 
 
-class ConnectionRequest:
+class ConnectionRequest(object):
     """
     Thin-wrapper for WebSocket connection request information provided in
     :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
@@ -333,7 +333,7 @@ class ConnectionRequest:
         return json.dumps(self.__json__())
 
 
-class ConnectionResponse:
+class ConnectionResponse(object):
     """
     Thin-wrapper for WebSocket connection response information provided in
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
@@ -410,7 +410,7 @@ def parseHttpHeader(data):
     return http_status_line, http_headers, http_headers_cnt
 
 
-class Timings:
+class Timings(object):
     """
     Helper class to track timings by key. This class also supports item access,
     iteration and conversion to string.
@@ -472,7 +472,7 @@ class Timings:
         return pformat(self._timings)
 
 
-class WebSocketProtocol:
+class WebSocketProtocol(object):
     """
     Protocol base class for WebSocket.
 
@@ -2556,7 +2556,7 @@ IWebSocketChannelFrameApi.register(WebSocketProtocol)
 IWebSocketChannelStreamingApi.register(WebSocketProtocol)
 
 
-class PreparedMessage:
+class PreparedMessage(object):
     """
     Encapsulates a prepared message to be sent later once or multiple
     times on one or more WebSocket connections.
@@ -2645,7 +2645,7 @@ class PreparedMessage:
             self.payloadHybi = b''.join([chr(b0), chr(b1), el, mask, plm])
 
 
-class WebSocketFactory:
+class WebSocketFactory(object):
     """
     Mixin for
     :class:`autobahn.websocket.protocol.WebSocketClientFactory` and
