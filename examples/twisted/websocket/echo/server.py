@@ -60,6 +60,7 @@ if __name__ == '__main__':
 
     factory = WebSocketServerFactory("ws://localhost:9000", debug=False)
     factory.protocol = MyServerProtocol
+    # factory.setProtocolOptions(maxConnections=2)
 
     reactor.listenTCP(9000, factory)
     reactor.run()
