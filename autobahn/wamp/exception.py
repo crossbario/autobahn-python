@@ -44,13 +44,6 @@ class Error(RuntimeError):
     """
     Base class for all exceptions related to WAMP.
     """
-    def __init__(self, reason):
-        """
-
-        :param reason: Description of WAMP error that occurred (for logging purposes).
-        :type reason: unicode
-        """
-        RuntimeError.__init__(self, reason)
 
 
 class SessionNotReady(Error):
@@ -80,8 +73,6 @@ class TransportLost(Error):
     Exception raised when the transport underlying the WAMP session
     was lost or is not connected.
     """
-    def __init__(self):
-        Error.__init__(self, u"WAMP transport lost")
 
 
 class ApplicationError(Error):
@@ -94,6 +85,11 @@ class ApplicationError(Error):
     """
     Peer provided an incorrect URI for a URI-based attribute of a WAMP message
     such as a realm, topic or procedure.
+    """
+
+    INVALID_PAYLOAD = u"wamp.error.invalid_payload"
+    """
+    The application payload could not be serialized.
     """
 
     NO_SUCH_PROCEDURE = u"wamp.error.no_such_procedure"
@@ -229,6 +225,13 @@ class NotAuthorized(Exception):
 
 @error(ApplicationError.INVALID_URI)
 class InvalidUri(Exception):
+    """
+    The URI for a topic, procedure or error is not a valid WAMP URI.
+    """
+
+
+@error(ApplicationError.INVALID_PAYLOAD)
+class InvalidPayload(Exception):
     """
     The URI for a topic, procedure or error is not a valid WAMP URI.
     """

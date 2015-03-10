@@ -47,7 +47,7 @@ from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
-from autobahn.wamp.exception import ProtocolError, SessionNotReady
+from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.types import SessionDetails
 
 
@@ -107,8 +107,9 @@ class RegisterRequest(Request):
     Object representing an outstanding request to register a procedure.
     """
 
-    def __init__(self, request_id, on_reply, endpoint):
+    def __init__(self, request_id, on_reply, procedure, endpoint):
         Request.__init__(self, request_id, on_reply)
+        self.procedure = procedure
         self.endpoint = endpoint
 
 
@@ -195,10 +196,11 @@ class Registration(object):
 
     This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
     """
-    def __init__(self, session, registration_id, endpoint):
+    def __init__(self, session, registration_id, procedure, endpoint):
         self.id = registration_id
         self.active = True
         self.session = session
+        self.procedure = procedure
         self.endpoint = endpoint
 
     def unregister(self):
@@ -262,7 +264,9 @@ class BaseSession(object):
         self._ecls_to_uri_pat = {}
 
         # mapping of WAMP error URIs to exception classes
-        self._uri_to_ecls = {}
+        self._uri_to_ecls = {
+            ApplicationError.INVALID_PAYLOAD: SerializationError
+        }
 
         # session authentication information
         self._authid = None
@@ -372,7 +376,7 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception:
+            except Exception as e:
                 # FIXME: log e
                 pass
 
@@ -754,7 +758,14 @@ class ApplicationSession(BaseSession):
                                 reply = message.Yield(msg.request, args=res.results, kwargs=res.kwresults)
                             else:
                                 reply = message.Yield(msg.request, args=[res])
-                            self._transport.send(reply)
+
+                            try:
+                                self._transport.send(reply)
+                            except SerializationError as e:
+                                # the application-level payload returned from the invoked procedure can't be serialized
+                                reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
+                                                      args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                self._transport.send(reply)
 
                         def error(err):
                             if self.traceback_app:
@@ -776,8 +787,16 @@ class ApplicationSession(BaseSession):
                                 exc = err.value
                             else:
                                 exc = err
+
                             reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc, tb)
-                            self._transport.send(reply)
+
+                            try:
+                                self._transport.send(reply)
+                            except SerializationError as e:
+                                # the application-level payload returned from the invoked procedure can't be serialized
+                                reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
+                                                      args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                self._transport.send(reply)
 
                         self._invocations[msg.request] = d
 
@@ -806,7 +825,7 @@ class ApplicationSession(BaseSession):
 
                     # create new registration if not yet tracked
                     if msg.registration not in self._registrations:
-                        registration = Registration(self, msg.registration, request.endpoint)
+                        registration = Registration(self, msg.registration, request.procedure, request.endpoint)
                         self._registrations[msg.registration] = registration
                     else:
                         raise ProtocolError("REGISTERED received for already existing registration ID {0}".format(msg.registration))
@@ -943,6 +962,10 @@ class ApplicationSession(BaseSession):
             options = None
             msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
 
+        # this might raise autobahn.wamp.exception.SerializationError
+        # when the user payload cannot be serialized
+        self._transport.send(msg)
+
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
             on_reply = self._create_future()
@@ -950,7 +973,6 @@ class ApplicationSession(BaseSession):
         else:
             on_reply = None
 
-        self._transport.send(msg)
         return on_reply
 
     def subscribe(self, handler, topic=None, options=None):
@@ -1054,6 +1076,10 @@ class ApplicationSession(BaseSession):
             options = None
             msg = message.Call(request_id, procedure, args=args, kwargs=kwargs)
 
+        # this might raise autobahn.wamp.exception.SerializationError
+        # when the user payload cannot be serialized
+        self._transport.send(msg)
+
         # FIXME
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
@@ -1063,7 +1089,6 @@ class ApplicationSession(BaseSession):
         on_reply = self._create_future()
         self._call_reqs[request_id] = CallRequest(request_id, on_reply, options)
 
-        self._transport.send(msg)
         return on_reply
 
     def register(self, endpoint, procedure=None, options=None):
@@ -1083,7 +1108,7 @@ class ApplicationSession(BaseSession):
             request_id = util.id()
             on_reply = self._create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
-            self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, endpoint_obj)
+            self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, procedure, endpoint_obj)
 
             if options:
                 msg = message.Register(request_id, procedure, **options.message_attr())
