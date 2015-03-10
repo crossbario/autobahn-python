@@ -66,6 +66,12 @@ class Request(object):
         self.on_reply = on_reply
 
 
+class InvocationRequest(Request):
+    """
+    Object representing an outstanding request to invoke an endpoint.
+    """
+
+
 class CallRequest(Request):
     """
     Object representing an outstanding request to call a procedure.
@@ -712,12 +718,20 @@ class ApplicationSession(BaseSession):
 
                     else:
                         registration = self._registrations[msg.registration]
+
                         endpoint = registration.endpoint
 
-                        if endpoint.details_arg:
+                        if endpoint.obj:
+                            invoke_args = (endpoint.obj,)
+                        else:
+                            invoke_args = tuple()
 
-                            if not msg.kwargs:
-                                msg.kwargs = {}
+                        if msg.args:
+                            invoke_args = invoke_args + tuple(msg.args)
+
+                        invoke_kwargs = msg.kwargs if msg.kwargs else dict()
+
+                        if endpoint.details_arg:
 
                             if msg.receive_progress:
                                 def progress(*args, **kwargs):
@@ -726,30 +740,9 @@ class ApplicationSession(BaseSession):
                             else:
                                 progress = None
 
-                            msg.kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
+                            invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
 
-                        if endpoint.obj:
-                            if msg.kwargs:
-                                if msg.args:
-                                    d = self._as_future(endpoint.fn, endpoint.obj, *msg.args, **msg.kwargs)
-                                else:
-                                    d = self._as_future(endpoint.fn, endpoint.obj, **msg.kwargs)
-                            else:
-                                if msg.args:
-                                    d = self._as_future(endpoint.fn, endpoint.obj, *msg.args)
-                                else:
-                                    d = self._as_future(endpoint.fn, endpoint.obj)
-                        else:
-                            if msg.kwargs:
-                                if msg.args:
-                                    d = self._as_future(endpoint.fn, *msg.args, **msg.kwargs)
-                                else:
-                                    d = self._as_future(endpoint.fn, **msg.kwargs)
-                            else:
-                                if msg.args:
-                                    d = self._as_future(endpoint.fn, *msg.args)
-                                else:
-                                    d = self._as_future(endpoint.fn)
+                        on_reply = self._as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
                         def success(res):
                             del self._invocations[msg.request]
@@ -798,9 +791,9 @@ class ApplicationSession(BaseSession):
                                                       args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                 self._transport.send(reply)
 
-                        self._invocations[msg.request] = d
+                        self._invocations[msg.request] = InvocationRequest(msg.request, on_reply)
 
-                        self._add_future_callbacks(d, success, error)
+                        self._add_future_callbacks(on_reply, success, error)
 
             elif isinstance(msg, message.Interrupt):
 
