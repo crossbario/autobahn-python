@@ -92,19 +92,47 @@ packages = [
     'twisted.plugins'
 ]
 
+# Twisted dependencies
+#
+extras_require_twisted = ["zope.interface>=3.6", "Twisted>=11.1"]
+
+# asyncio dependencies
+#
 if PY3:
     if PY33:
         # "Tulip"
-        asyncio_packages = ["asyncio>=0.2.1"]
+        extras_require_asyncio = ["asyncio>=0.2.1"]
     else:
         # Python 3.4+ has asyncio builtin
-        asyncio_packages = []
+        extras_require_asyncio = []
 else:
     # backport of asyncio
-    asyncio_packages = ["trollius>=0.1.2", "futures>=2.1.5"]
+    extras_require_asyncio = ["trollius>=0.1.2", "futures>=2.1.5"]
 
+
+# C-based WebSocket acceleration
+#
+extras_require_accelerate = ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else []
+
+# non-standard WebSocket compression support
+#
+extras_require_compress = ["python-snappy>=0.5", "lz4>=0.2.1"]
+
+# non-JSON WAMP serialization support (namely MsgPack)
+#
+extras_require_serialization = ["msgpack-python>=0.4.0"]
+
+# everything
+#
+extras_require_all = extras_require_twisted + extras_require_asyncio + \
+    extras_require_accelerate + extras_require_compress + extras_require_serialization
+
+# development dependencies
+#
+extras_require_dev = ["pep8", "flake8", "mock>=1.0.1", "pytest>=2.6.4"]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
+#
 test_requirements = ["pytest", "mock"]
 
 
@@ -139,23 +167,13 @@ setup(
     platforms='Any',
     install_requires=['six>=1.6.1'],
     extras_require={
-        # asyncio is needed for Autobahn/asyncio
-        'asyncio': asyncio_packages,
-
-        # you need Twisted for Autobahn/Twisted - obviously
-        'twisted': ["zope.interface>=3.6", "Twisted>=11.1"],
-
-        # native WebSocket and JSON acceleration: this should ONLY be used on CPython
-        'accelerate': ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else [],
-
-        # for (non-standard) WebSocket compression methods - not needed if you
-        # only want standard WebSocket compression ("permessage-deflate")
-        'compress': ["python-snappy>=0.5", "lz4>=0.2.1"],
-
-        # needed if you want WAMPv2 binary serialization support
-        'serialization': ["msgpack-python>=0.4.0"],
-
-        'dev': ["pep8", "flake8", "mock>=1.0.1", "pytest>=2.6.4"],
+        'all': extras_require_all,
+        'asyncio': extras_require_asyncio,
+        'twisted': extras_require_twisted,
+        'accelerate': extras_require_accelerate,
+        'compress': extras_require_compress,
+        'serialization': extras_require_serialization,
+        'dev': extras_require_dev,
     },
     tests_require=test_requirements,
     cmdclass={'test': PyTest},

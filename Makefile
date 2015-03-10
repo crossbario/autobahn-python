@@ -13,7 +13,7 @@ install:
 	#python setup.py install
 #	pip install -e .[twisted]
 #	pip install -e .[asyncio,twisted,accelerate,compress,serialization]
-	pip install -e .[asyncio,twisted,accelerate,serialization]
+	pip install --upgrade -e .[all,dev]
 
 # cleanup everything
 clean:

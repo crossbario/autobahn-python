@@ -1,9 +1,9 @@
 *.pyc
 *.pyo
 *.dat
-/autobahn/build/*
-/autobahn/dist/*
-/autobahn/autobahn.egg-info*/
+build
+dist
+autobahn.egg-info
 *.sublime-workspace
 *.sublime-project
 __pycache__
