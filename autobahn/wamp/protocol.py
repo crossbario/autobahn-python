@@ -775,14 +775,13 @@ class ApplicationSession(BaseSession):
                         def error(typ, exc, tb):
                             errmsg = "Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration)
                             self.onUserError(typ, exc, tb, msg=errmsg)
+                            formatted_tb = None
                             if self.traceback_app:
                                 # if asked to marshal the traceback within the WAMP error message, extract it
                                 # noinspection PyCallingNonCallable
                                 formatted_tb = StringIO()
                                 traceback.print_exception(typ, exc, tb, file=formatted_tb)
                                 formatted_tb = formatted_tb.getvalue().splitlines()
-                            else:
-                                formatted_tb = None
 
                             del self._invocations[msg.request]
 

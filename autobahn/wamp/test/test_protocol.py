@@ -535,9 +535,11 @@ if os.environ.get('USE_TWISTED', False):
         @inlineCallbacks
         def test_invoke_user_raises(self):
             handler = ApplicationSession()
+            handler.traceback_app = True
             MockTransport(handler)
 
             name_error = NameError('foo')
+
             def bing():
                 raise name_error
 
