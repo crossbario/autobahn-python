@@ -547,12 +547,12 @@ if os.environ.get('USE_TWISTED', False):
             yield handler.register(bing, u'com.myapp.myproc99')
 
             try:
-                res = yield handler.call(u'com.myapp.myproc99')
+                yield handler.call(u'com.myapp.myproc99')
                 self.fail("Expected an error")
             except Exception as e:
                 # XXX should/could we export all the builtin types?
                 # right now, we always get ApplicationError
-                #self.assertTrue(isinstance(e, NameError))
+                # self.assertTrue(isinstance(e, NameError))
                 self.assertTrue(isinstance(e, RuntimeError))
 
             # also, we should have logged the real NameError to
@@ -576,6 +576,7 @@ if os.environ.get('USE_TWISTED', False):
                 returnValue(42)
 
             progressive = map(lambda _: Deferred(), range(10))
+
             def progress(arg):
                 progressive[arg].callback(arg)
 
@@ -613,6 +614,7 @@ if os.environ.get('USE_TWISTED', False):
 
             got_progress = Deferred()
             progress_error = NameError('foo')
+
             def progress(arg, something=None):
                 self.assertEqual('nothing', something)
                 got_progress.callback(arg)
@@ -655,6 +657,7 @@ if os.environ.get('USE_TWISTED', False):
                 returnValue(42)
 
             got_progress = Deferred()
+
             def progress():
                 got_progress.callback('intentionally left blank')
 
@@ -686,6 +689,7 @@ if os.environ.get('USE_TWISTED', False):
                 returnValue(42)
 
             got_progress = Deferred()
+
             def progress(key=None):
                 got_progress.callback(key)
 

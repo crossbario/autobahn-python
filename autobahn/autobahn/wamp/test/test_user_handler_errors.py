@@ -29,20 +29,9 @@ from __future__ import absolute_import
 import os
 
 if os.environ.get('USE_TWISTED', False):
-
     from twisted.trial import unittest
-    # import unittest
-
-    from twisted.internet.defer import inlineCallbacks, Deferred
-    from twisted.python import log
-
     from autobahn.wamp import message
-    from autobahn.wamp import serializer
-    from autobahn.wamp import role
-    from autobahn import util
-    from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidUri, ProtocolError
-    from autobahn.wamp import types
-
+    from autobahn.wamp.exception import ProtocolError
     from autobahn.twisted.wamp import ApplicationSession
 
     class MockTransport:
@@ -54,7 +43,6 @@ if os.environ.get('USE_TWISTED', False):
 
         def close(self, *args, **kw):
             pass
-
 
     class MockApplicationSession(ApplicationSession):
         '''
@@ -70,17 +58,16 @@ if os.environ.get('USE_TWISTED', False):
         def onUserError(self, typ, exc, tb, msg):
             self.errors.append((typ, exc, tb, msg))
 
-
     def exception_raiser(exc):
         '''
         Create a method that takes any args and always raises the given
         Exception instance.
         '''
         assert isinstance(exc, Exception), "Must derive from Exception"
+
         def method(*args, **kw):
             raise exc
         return method
-
 
     class TestSessionCallbacks(unittest.TestCase):
         '''
@@ -228,8 +215,3 @@ if os.environ.get('USE_TWISTED', False):
         # NOTE: for Event stuff, that is publish() handlers,
         # test_publish_callback_exception in test_protocol.py already
         # covers exceptions coming from user-code.
-
-
-
-if __name__ == '__main__':
-    unittest.main()
