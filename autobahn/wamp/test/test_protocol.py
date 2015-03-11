@@ -33,7 +33,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     # import unittest
 
-    from twisted.internet.defer import inlineCallbacks, Deferred
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed
     from twisted.python import log
 
     from autobahn.wamp import message
@@ -93,14 +93,19 @@ if os.environ.get('USE_TWISTED', False):
                     registration = self._registrations[msg.procedure]
                     request = util.id()
                     self._invocations[request] = msg.request
-                    reply = message.Invocation(request, registration, args=msg.args, kwargs=msg.kwargs)
+                    reply = message.Invocation(
+                        request, registration,
+                        args=msg.args,
+                        kwargs=msg.kwargs,
+                        receive_progress=msg.receive_progress,
+                    )
                 else:
                     reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, u'wamp.error.no_such_procedure')
 
             elif isinstance(msg, message.Yield):
                 if msg.request in self._invocations:
                     request = self._invocations[msg.request]
-                    reply = message.Result(request, args=msg.args, kwargs=msg.kwargs)
+                    reply = message.Result(request, args=msg.args, kwargs=msg.kwargs, progress=msg.progress)
 
             elif isinstance(msg, message.Subscribe):
                 topic = msg.topic
@@ -554,6 +559,37 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(1, len(errs))
             self.assertEqual(name_error, errs[0].value)
 
+        @inlineCallbacks
+        def test_invoke_progressive_result(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            got_progress = Deferred()
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress(1234)
+                yield succeed(1234)
+                returnValue(42)
+
+            def progress(*args):
+                got_progress.callback(*args)
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            self.assertTrue(got_progress.called)
+            self.assertEqual(1234, got_progress.result)
 
         # ## variant 1: works
         # def test_publish1(self):
