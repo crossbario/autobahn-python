@@ -485,7 +485,8 @@ class ApplicationSession(BaseSession):
         if self._transport:
             self._transport.close()
         else:
-            raise Exception("transport disconnected")
+            # XXX or shall we just ignore this?
+            raise RuntimeError("No transport, but disconnect() called.")
 
     def onUserError(self, typ, exc, tb, msg=None):
         """

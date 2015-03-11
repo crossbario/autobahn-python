@@ -193,6 +193,25 @@ if os.environ.get('USE_TWISTED', False):
             session.onClose(False)
 
             self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_disconnect_with_session(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("the pain runs deep")
+            session.onDisconnect = exception_raiser(exception)
+            # create a valid session
+            session.onMessage(message.Welcome(1234, []))
+
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(2, len(session.errors))
+            # might want to re-think this?
+            self.assertEqual("No transport, but disconnect() called.", str(session.errors[0][1]))
+            self.assertEqual(exception, session.errors[1][1])
 
         # XXX likely missing other ways to invoke the above. need to
         # cover, for sure:
