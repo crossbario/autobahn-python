@@ -30,6 +30,7 @@ import sys
 import inspect
 
 from twisted.python import log
+from twisted.python.failure import Failure
 from twisted.application import service
 from twisted.internet.defer import Deferred, \
     maybeDeferred, \
@@ -85,11 +86,32 @@ class FutureMixin(object):
     @staticmethod
     def _add_future_callbacks(future, callback, errback):
         # callback and/or errback may be None
+
+        # ...also we convert Twisted Failures into the same callback
+        # args as for Futures: typ, exc, tb so our errbacks can be
+        # consistent between the two platforms.
+
+        # alternatively: what if we made a dummy Failure-like thing
+        # for asyncio so our "standard" errback in protocol.py could
+        # use the Failure API, or at least the bits we need...like
+        # collecting the traceback frames.
+
         if callback is None:
-            future.addErrback(errback)
+            def _errback(fail):
+                # converting to common API
+                return errback(fail.type, fail.value, fail.tb)
+            future.addErrback(_errback)
             return future
+
+        elif errback is None:
+            future.addCallback(callback)
+            return future
+
         else:
-            return future.addCallbacks(callback, errback)
+            def _errback(fail):
+                # converting to common API
+                return errback(fail.type, fail.value, fail.tb)
+            return future.addCallbacks(callback, _errback)
 
     @staticmethod
     def _gather_futures(futures, consume_exceptions=True):
@@ -101,15 +123,14 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
-    def onUserError(self, e, msg):
+    def onUserError(self, typ, exc, tb, msg=None):
         """
         Override of wamp.ApplicationSession
         """
-        # see docs; will print currently-active exception to the logs,
-        # which is just what we want.
-        log.err()
-        # also log the framework-provided error-message
-        log.err(msg)
+        log.err(Failure(exc, typ, tb))
+        # also log the framework-provided error-message, if any
+        if msg:
+            log.err(msg)
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):

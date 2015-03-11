@@ -104,9 +104,10 @@ class FutureMixin(object):
                 res = f.result()
                 if callback:
                     callback(res)
-            except Exception as e:
+            except:
+                typ, exc, tb = sys.exc_info()
                 if errback:
-                    errback(e)
+                    errback(typ, exc, tb)
         return future.add_done_callback(done)
 
     @staticmethod

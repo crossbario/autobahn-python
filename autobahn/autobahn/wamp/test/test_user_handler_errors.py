@@ -45,6 +45,16 @@ if os.environ.get('USE_TWISTED', False):
 
     from autobahn.twisted.wamp import ApplicationSession
 
+    class MockTransport:
+        def __init__(self):
+            self.messages = []
+
+        def send(self, msg):
+            self.messages.append(msg)
+
+        def close(self, *args, **kw):
+            pass
+
 
     class MockApplicationSession(ApplicationSession):
         '''
@@ -55,9 +65,10 @@ if os.environ.get('USE_TWISTED', False):
         def __init__(self, *args, **kw):
             ApplicationSession.__init__(self, *args, **kw)
             self.errors = []
+            self._transport = MockTransport()
 
-        def onUserError(self, e, msg):
-            self.errors.append((e, msg))
+        def onUserError(self, typ, exc, tb, msg):
+            self.errors.append((typ, exc, tb, msg))
 
 
     def exception_raiser(exc):
@@ -91,7 +102,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # make sure we got the right error out of onUserError
             self.assertEqual(1, len(session.errors))
-            self.assertEqual(exception, session.errors[0][0])
+            self.assertEqual(exception, session.errors[0][1])
 
         def test_on_leave(self):
             session = MockApplicationSession()
@@ -105,7 +116,124 @@ if os.environ.get('USE_TWISTED', False):
 
             # make sure we got the right error out of onUserError
             self.assertEqual(1, len(session.errors))
-            self.assertEqual(exception, session.errors[0][0])
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_leave_valid_session(self):
+            '''
+            cover when onLeave called after we have a valid session
+            '''
+            session = MockApplicationSession()
+            exception = RuntimeError("such challenge")
+            session.onLeave = exception_raiser(exception)
+            # we have to get to an established connection first...
+            session.onMessage(message.Welcome(1234, []))
+            self.assertTrue(session._session_id is not None)
+
+            # okay we have a session ("because ._session_id is not None")
+            msg = message.Goodbye()
+            session.onMessage(msg)
+
+            self.assertEqual(1, len(session.errors))
+
+        def test_on_leave_via_close(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("sideways")
+            session.onDisconnect = exception_raiser(exception)
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(1, len(session.errors))
+
+        # XXX FIXME Probably more ways to call onLeave!
+
+        def test_on_challenge(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("such challenge")
+            session.onChallenge = exception_raiser(exception)
+            msg = message.Challenge(u"foo")
+
+            # execute
+            session.onMessage(msg)
+
+            # we already handle any onChallenge errors as "abort the
+            # connection". So make sure our error showed up in the
+            # fake-transport.
+            self.assertEqual(0, len(session.errors))
+            self.assertEqual(1, len(session._transport.messages))
+            reply = session._transport.messages[0]
+            self.assertIsInstance(reply, message.Abort)
+            self.assertEqual("such challenge", reply.message)
+
+        def test_no_session(self):
+            '''
+            test "all other cases" when we don't yet have a session
+            established, which should all raise ProtocolErrors and
+            *not* go through the onUserError handler. We cheat and
+            just test one.
+            '''
+            session = MockApplicationSession()
+            exception = RuntimeError("such challenge")
+            session.onConnect = exception_raiser(exception)
+            msg = message.Goodbye()
+
+            self.assertRaises(ProtocolError, session.onMessage, (msg,))
+            self.assertEqual(0, len(session.errors))
+
+        def test_on_disconnect(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("oh sadness")
+            session.onDisconnect = exception_raiser(exception)
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(1, len(session.errors))
+
+        # XXX likely missing other ways to invoke the above. need to
+        # cover, for sure:
+        #
+        # onChallenge
+        # onJoin
+        # onLeave
+        # onDisconnect
+        #
+        # what about other ISession ones?
+        # onConnect
+        # onDisconnect
+
+        # NOTE: for Event stuff, that is publish() handlers,
+        # test_publish_callback_exception in test_protocol.py already
+        # covers exceptions coming from user-code.
+
+
+        # the following tests are a little more complicated, as we
+        # have to establish a valid session first, and then do our
+        # test.
+
+
+        def test_progressive_results(self):
+            '''
+            WRITE ME should test that an exception from a progressive
+            error-handler is caught and processed through onUserError.
+            '''
+            pass
+
+        def test_invocation(self):
+            '''
+            Should test that an exception from a registered method-call will
+            be caught and processed appropriately.
+
+            XXX shouldn't the traceback be serialized across to the
+            other side, ideally?
+            '''
+            pass
+
+
 
 
 if __name__ == '__main__':

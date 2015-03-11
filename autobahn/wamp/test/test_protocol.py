@@ -122,6 +122,18 @@ if os.environ.get('USE_TWISTED', False):
             elif isinstance(msg, message.Unregister):
                 reply = message.Unregistered(msg.request)
 
+            elif isinstance(msg, message.Error):
+                # since I'm basically a Dealer, I forward on the
+                # error, but reply to my own request/invocation
+                request = self._invocations[msg.request]
+                reply = message.Error(
+                    message.Call.MESSAGE_TYPE,
+                    request,
+                    msg.error,
+                    args=msg.args,
+                    kwargs=msg.kwargs,
+                )
+
             if reply:
                 if self._log:
                     payload, isbinary = self._serializer.serialize(reply)
@@ -514,6 +526,34 @@ if os.environ.get('USE_TWISTED', False):
 
             res = yield handler.call(u'com.myapp.myproc1')
             self.assertEqual(res, 23)
+
+        @inlineCallbacks
+        def test_invoke_user_raises(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            name_error = NameError('foo')
+            def bing():
+                raise name_error
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(bing, u'com.myapp.myproc99')
+
+            try:
+                res = yield handler.call(u'com.myapp.myproc99')
+                self.fail("Expected an error")
+            except Exception as e:
+                # XXX should/could we export all the builtin types?
+                # right now, we always get ApplicationError
+                #self.assertTrue(isinstance(e, NameError))
+                self.assertTrue(isinstance(e, RuntimeError))
+
+            # also, we should have logged the real NameError to
+            # Twisted.
+            errs = self.flushLoggedErrors()
+            self.assertEqual(1, len(errs))
+            self.assertEqual(name_error, errs[0].value)
+
 
         # ## variant 1: works
         # def test_publish1(self):
