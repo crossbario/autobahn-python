@@ -600,18 +600,61 @@ if os.environ.get('USE_TWISTED', False):
             MockTransport(handler)
 
             @inlineCallbacks
-            def bing(details=None):
+            def bing(arg, details=None, key=None):
                 self.assertTrue(details is not None)
                 self.assertTrue(details.progress is not None)
-                details.progress('life')
+                self.assertEqual(key, 'word')
+                self.assertEqual('arg', arg)
+                details.progress('life', something='nothing')
                 yield succeed('meaning of')
                 returnValue(42)
 
             got_progress = Deferred()
             progress_error = NameError('foo')
-            def progress(arg):
+            def progress(arg, something=None):
+                self.assertEqual('nothing', something)
                 got_progress.callback(arg)
                 raise progress_error
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                'arg',
+                options=types.CallOptions(on_progress=progress),
+                key='word',
+            )
+            self.assertEqual(42, res)
+            # our progress handler raised an error, but not before
+            # recording success.
+            self.assertTrue(got_progress.called)
+            self.assertEqual('life', got_progress.result)
+            # make sure our progress-handler error was logged
+            errs = self.flushLoggedErrors()
+            self.assertEqual(1, len(errs))
+            self.assertEqual(progress_error, errs[0].value)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result_no_args(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress()
+                yield succeed(True)
+                returnValue(42)
+
+            got_progress = Deferred()
+            def progress():
+                got_progress.callback('intentionally left blank')
 
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
@@ -625,14 +668,39 @@ if os.environ.get('USE_TWISTED', False):
                 options=types.CallOptions(on_progress=progress),
             )
             self.assertEqual(42, res)
-            # our progress handler raised an error, but not before
-            # recording success.
             self.assertTrue(got_progress.called)
-            self.assertEqual('life', got_progress.result)
-            # make sure our progress-handler error was logged
-            errs = self.flushLoggedErrors()
-            self.assertEqual(1, len(errs))
-            self.assertEqual(progress_error, errs[0].value)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result_just_kwargs(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress(key='word')
+                yield succeed(True)
+                returnValue(42)
+
+            got_progress = Deferred()
+            def progress(key=None):
+                got_progress.callback(key)
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            self.assertTrue(got_progress.called)
+            self.assertEqual('word', got_progress.result)
 
         # ## variant 1: works
         # def test_publish1(self):
