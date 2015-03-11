@@ -211,30 +211,6 @@ if os.environ.get('USE_TWISTED', False):
         # covers exceptions coming from user-code.
 
 
-        # the following tests are a little more complicated, as we
-        # have to establish a valid session first, and then do our
-        # test.
-
-
-        def test_progressive_results(self):
-            '''
-            WRITE ME should test that an exception from a progressive
-            error-handler is caught and processed through onUserError.
-            '''
-            pass
-
-        def test_invocation(self):
-            '''
-            Should test that an exception from a registered method-call will
-            be caught and processed appropriately.
-
-            XXX shouldn't the traceback be serialized across to the
-            other side, ideally?
-            '''
-            pass
-
-
-
 
 if __name__ == '__main__':
     unittest.main()

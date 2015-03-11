@@ -594,6 +594,46 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertTrue(progressive[i].called)
                 self.assertEqual(i, progressive[i].result)
 
+        @inlineCallbacks
+        def test_invoke_progressive_result_error(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress('life')
+                yield succeed('meaning of')
+                returnValue(42)
+
+            got_progress = Deferred()
+            progress_error = NameError('foo')
+            def progress(arg):
+                got_progress.callback(arg)
+                raise progress_error
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            # our progress handler raised an error, but not before
+            # recording success.
+            self.assertTrue(got_progress.called)
+            self.assertEqual('life', got_progress.result)
+            # make sure our progress-handler error was logged
+            errs = self.flushLoggedErrors()
+            self.assertEqual(1, len(errs))
+            self.assertEqual(progress_error, errs[0].value)
+
         # ## variant 1: works
         # def test_publish1(self):
         #    d = self.handler.publish(u'de.myapp.topic1')
