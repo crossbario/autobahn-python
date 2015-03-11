@@ -680,23 +680,12 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        #
-                        call_request = self._call_reqs[msg.request]
-
-                        on_progress = call_request.options.onProgress
-
-                        if on_progress:
+                        _, opts = self._call_reqs[msg.request]
+                        if opts.onProgress:
+                            kw = msg.kwargs or dict()
+                            args = msg.args or tuple()
                             try:
-                                if msg.kwargs:
-                                    if msg.args:
-                                        on_progress(*msg.args, **msg.kwargs)
-                                    else:
-                                        on_progress(**msg.kwargs)
-                                else:
-                                    if msg.args:
-                                        on_progress(*msg.args)
-                                    else:
-                                        opts.onProgress()
+                                opts.onProgress(*args, **kw)
                             except:
                                 self.onUserError(*sys.exc_info(), msg="While firing onProgress")
 
