@@ -564,17 +564,18 @@ if os.environ.get('USE_TWISTED', False):
             handler = ApplicationSession()
             MockTransport(handler)
 
-            got_progress = Deferred()
             @inlineCallbacks
             def bing(details=None):
                 self.assertTrue(details is not None)
                 self.assertTrue(details.progress is not None)
-                details.progress(1234)
-                yield succeed(1234)
+                for i in range(10):
+                    details.progress(i)
+                    yield succeed(i)
                 returnValue(42)
 
-            def progress(*args):
-                got_progress.callback(*args)
+            progressive = map(lambda _: Deferred(), range(10))
+            def progress(arg):
+                progressive[arg].callback(arg)
 
             # see MockTransport, must start with "com.myapp.myproc"
             yield handler.register(
@@ -588,8 +589,10 @@ if os.environ.get('USE_TWISTED', False):
                 options=types.CallOptions(on_progress=progress),
             )
             self.assertEqual(42, res)
-            self.assertTrue(got_progress.called)
-            self.assertEqual(1234, got_progress.result)
+            # make sure we got *all* our progressive results
+            for i in range(10):
+                self.assertTrue(progressive[i].called)
+                self.assertEqual(i, progressive[i].result)
 
         # ## variant 1: works
         # def test_publish1(self):
