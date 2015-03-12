@@ -955,16 +955,27 @@ class ApplicationSession(BaseSession):
             options = None
             msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
 
-        # this might raise autobahn.wamp.exception.SerializationError
-        # when the user payload cannot be serialized
-        self._transport.send(msg)
-
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
             on_reply = self._create_future()
             self._publish_reqs[request_id] = PublishRequest(request_id, on_reply)
         else:
             on_reply = None
+
+        try:
+            # Notes:
+            #
+            # * this might raise autobahn.wamp.exception.SerializationError
+            #   when the user payload cannot be serialized
+            # * we have to setup a PublishRequest() in _publish_reqs _before_
+            #   calling transpor.send(), because a mock- or side-by-side transport
+            #   will immediately lead on an incoming WAMP message in onMessage()
+            #
+            self._transport.send(msg)
+        except Exception as e:
+            if request_id in self._publish_reqs:
+                del self._publish_reqs[request_id]
+            raise e
 
         return on_reply
 
@@ -1069,10 +1080,6 @@ class ApplicationSession(BaseSession):
             options = None
             msg = message.Call(request_id, procedure, args=args, kwargs=kwargs)
 
-        # this might raise autobahn.wamp.exception.SerializationError
-        # when the user payload cannot be serialized
-        self._transport.send(msg)
-
         # FIXME
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
@@ -1081,6 +1088,21 @@ class ApplicationSession(BaseSession):
 
         on_reply = self._create_future()
         self._call_reqs[request_id] = CallRequest(request_id, on_reply, options)
+
+        try:
+            # Notes:
+            #
+            # * this might raise autobahn.wamp.exception.SerializationError
+            #   when the user payload cannot be serialized
+            # * we have to setup a PublishRequest() in _publish_reqs _before_
+            #   calling transpor.send(), because a mock- or side-by-side transport
+            #   will immediately lead on an incoming WAMP message in onMessage()
+            #
+            self._transport.send(msg)
+        except Exception as e:
+            if request_id in self._call_reqs:
+                del self._call_reqs[request_id]
+            raise e
 
         return on_reply
 
