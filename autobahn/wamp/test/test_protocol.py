@@ -33,7 +33,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     # import unittest
 
-    from twisted.internet.defer import inlineCallbacks, Deferred
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed
     from twisted.python import log
 
     from autobahn.wamp import message
@@ -93,14 +93,19 @@ if os.environ.get('USE_TWISTED', False):
                     registration = self._registrations[msg.procedure]
                     request = util.id()
                     self._invocations[request] = msg.request
-                    reply = message.Invocation(request, registration, args=msg.args, kwargs=msg.kwargs)
+                    reply = message.Invocation(
+                        request, registration,
+                        args=msg.args,
+                        kwargs=msg.kwargs,
+                        receive_progress=msg.receive_progress,
+                    )
                 else:
                     reply = message.Error(message.Call.MESSAGE_TYPE, msg.request, u'wamp.error.no_such_procedure')
 
             elif isinstance(msg, message.Yield):
                 if msg.request in self._invocations:
                     request = self._invocations[msg.request]
-                    reply = message.Result(request, args=msg.args, kwargs=msg.kwargs)
+                    reply = message.Result(request, args=msg.args, kwargs=msg.kwargs, progress=msg.progress)
 
             elif isinstance(msg, message.Subscribe):
                 topic = msg.topic
@@ -121,6 +126,18 @@ if os.environ.get('USE_TWISTED', False):
 
             elif isinstance(msg, message.Unregister):
                 reply = message.Unregistered(msg.request)
+
+            elif isinstance(msg, message.Error):
+                # since I'm basically a Dealer, I forward on the
+                # error, but reply to my own request/invocation
+                request = self._invocations[msg.request]
+                reply = message.Error(
+                    message.Call.MESSAGE_TYPE,
+                    request,
+                    msg.error,
+                    args=msg.args,
+                    kwargs=msg.kwargs,
+                )
 
             if reply:
                 if self._log:
@@ -514,6 +531,181 @@ if os.environ.get('USE_TWISTED', False):
 
             res = yield handler.call(u'com.myapp.myproc1')
             self.assertEqual(res, 23)
+
+        @inlineCallbacks
+        def test_invoke_user_raises(self):
+            handler = ApplicationSession()
+            handler.traceback_app = True
+            MockTransport(handler)
+
+            name_error = NameError('foo')
+
+            def bing():
+                raise name_error
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(bing, u'com.myapp.myproc99')
+
+            try:
+                yield handler.call(u'com.myapp.myproc99')
+                self.fail("Expected an error")
+            except Exception as e:
+                # XXX should/could we export all the builtin types?
+                # right now, we always get ApplicationError
+                # self.assertTrue(isinstance(e, NameError))
+                self.assertTrue(isinstance(e, RuntimeError))
+
+            # also, we should have logged the real NameError to
+            # Twisted.
+            errs = self.flushLoggedErrors()
+            self.assertEqual(1, len(errs))
+            self.assertEqual(name_error, errs[0].value)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                for i in range(10):
+                    details.progress(i)
+                    yield succeed(i)
+                returnValue(42)
+
+            progressive = map(lambda _: Deferred(), range(10))
+
+            def progress(arg):
+                progressive[arg].callback(arg)
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            # make sure we got *all* our progressive results
+            for i in range(10):
+                self.assertTrue(progressive[i].called)
+                self.assertEqual(i, progressive[i].result)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result_error(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(arg, details=None, key=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                self.assertEqual(key, 'word')
+                self.assertEqual('arg', arg)
+                details.progress('life', something='nothing')
+                yield succeed('meaning of')
+                returnValue(42)
+
+            got_progress = Deferred()
+            progress_error = NameError('foo')
+
+            def progress(arg, something=None):
+                self.assertEqual('nothing', something)
+                got_progress.callback(arg)
+                raise progress_error
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                'arg',
+                options=types.CallOptions(on_progress=progress),
+                key='word',
+            )
+            self.assertEqual(42, res)
+            # our progress handler raised an error, but not before
+            # recording success.
+            self.assertTrue(got_progress.called)
+            self.assertEqual('life', got_progress.result)
+            # make sure our progress-handler error was logged
+            errs = self.flushLoggedErrors()
+            self.assertEqual(1, len(errs))
+            self.assertEqual(progress_error, errs[0].value)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result_no_args(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress()
+                yield succeed(True)
+                returnValue(42)
+
+            got_progress = Deferred()
+
+            def progress():
+                got_progress.callback('intentionally left blank')
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            self.assertTrue(got_progress.called)
+
+        @inlineCallbacks
+        def test_invoke_progressive_result_just_kwargs(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            @inlineCallbacks
+            def bing(details=None):
+                self.assertTrue(details is not None)
+                self.assertTrue(details.progress is not None)
+                details.progress(key='word')
+                yield succeed(True)
+                returnValue(42)
+
+            got_progress = Deferred()
+
+            def progress(key=None):
+                got_progress.callback(key)
+
+            # see MockTransport, must start with "com.myapp.myproc"
+            yield handler.register(
+                bing,
+                u'com.myapp.myproc2',
+                types.RegisterOptions(details_arg='details'),
+            )
+
+            res = yield handler.call(
+                u'com.myapp.myproc2',
+                options=types.CallOptions(on_progress=progress),
+            )
+            self.assertEqual(42, res)
+            self.assertTrue(got_progress.called)
+            self.assertEqual('word', got_progress.result)
 
         # ## variant 1: works
         # def test_publish1(self):
