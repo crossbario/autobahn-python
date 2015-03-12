@@ -123,10 +123,10 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
         """
         Override of wamp.ApplicationSession
         """
-        log.err(Failure(exc, typ, tb))
-        # also log the framework-provided error-message, if any
         if msg:
-            log.err(msg)
+            log.err(Failure(exc, typ, tb), msg)
+        else:
+            log.err(Failure(exc, typ, tb))
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
