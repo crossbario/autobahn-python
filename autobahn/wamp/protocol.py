@@ -467,6 +467,8 @@ class ApplicationSession(BaseSession):
         """
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
+        if six.PY2 and type(authid) == str:
+            authid = six.u(authid)
 
         if self._session_id:
             raise Exception("already joined")
