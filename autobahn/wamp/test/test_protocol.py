@@ -586,7 +586,6 @@ if os.environ.get('USE_TWISTED', False):
                 u'com.myapp.myproc2',
                 types.RegisterOptions(details_arg='details'),
             )
-
             res = yield handler.call(
                 u'com.myapp.myproc2',
                 options=types.CallOptions(on_progress=progress),

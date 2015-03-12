@@ -32,7 +32,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from twisted.internet import defer
     from twisted.python.failure import Failure
-    from autobahn.wamp import message
+    from autobahn.wamp import message, role
     from autobahn.wamp.exception import ProtocolError
     from autobahn.twisted.wamp import ApplicationSession
 
@@ -85,6 +85,14 @@ if os.environ.get('USE_TWISTED', False):
                 return defer.fail(Failure())
         return method
 
+    def create_mock_welcome():
+        return message.Welcome(
+            1234,
+            {
+                u'broker': role.RoleBrokerFeatures(),
+            },
+        )
+
     class TestSessionCallbacks(unittest.TestCase):
         '''
         These test that callbacks on user-overridden ApplicationSession
@@ -103,7 +111,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("blammo")
             session.onJoin = exception_raiser(exception)
-            msg = message.Welcome(1234, [])
+            msg = create_mock_welcome()
 
             # give the sesion a WELCOME, from which it should call onJoin
             session.onMessage(msg)
@@ -116,7 +124,7 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("blammo")
             session.onJoin = async_exception_raiser(exception)
-            msg = message.Welcome(1234, [])
+            msg = create_mock_welcome()
 
             # give the sesion a WELCOME, from which it should call onJoin
             session.onMessage(msg)
@@ -163,7 +171,7 @@ if os.environ.get('USE_TWISTED', False):
             exception = RuntimeError("such challenge")
             session.onLeave = exception_raiser(exception)
             # we have to get to an established connection first...
-            session.onMessage(message.Welcome(1234, []))
+            session.onMessage(create_mock_welcome())
             self.assertTrue(session._session_id is not None)
 
             # okay we have a session ("because ._session_id is not None")
@@ -181,7 +189,7 @@ if os.environ.get('USE_TWISTED', False):
             exception = RuntimeError("such challenge")
             session.onLeave = async_exception_raiser(exception)
             # we have to get to an established connection first...
-            session.onMessage(message.Welcome(1234, []))
+            session.onMessage(create_mock_welcome())
             self.assertTrue(session._session_id is not None)
 
             # okay we have a session ("because ._session_id is not None")
@@ -301,7 +309,7 @@ if os.environ.get('USE_TWISTED', False):
             exception = RuntimeError("the pain runs deep")
             session.onDisconnect = exception_raiser(exception)
             # create a valid session
-            session.onMessage(message.Welcome(1234, []))
+            session.onMessage(create_mock_welcome())
 
             # we short-cut the whole state-machine traversal here by
             # just calling onClose directly, which would normally be
@@ -319,7 +327,7 @@ if os.environ.get('USE_TWISTED', False):
             exception = RuntimeError("the pain runs deep")
             session.onDisconnect = async_exception_raiser(exception)
             # create a valid session
-            session.onMessage(message.Welcome(1234, []))
+            session.onMessage(create_mock_welcome())
 
             # we short-cut the whole state-machine traversal here by
             # just calling onClose directly, which would normally be
