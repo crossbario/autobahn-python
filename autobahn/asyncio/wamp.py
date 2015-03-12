@@ -100,19 +100,16 @@ class FutureMixin(object):
         future.set_exception(error)
 
     @staticmethod
-    def _add_future_callbacks(future, callback, errback,
-                              callbackArgs=(), callbackKeywords={},
-                              errbackArgs=(), errbackKeywords={}):
+    def _add_future_callbacks(future, callback, errback):
         def done(f):
             try:
                 res = f.result()
                 if callback:
-                    callback(res, *callbackArgs, **callbackKeywords)
+                    callback(res)
             except:
                 typ, exc, tb = sys.exc_info()
                 if errback:
-                    args = (typ, exc, tb) + errbackArgs
-                    errback(*args, **errbackKeywords)
+                    errback(typ, exc, tb)
         return future.add_done_callback(done)
 
     @staticmethod
