@@ -455,8 +455,10 @@ class ApplicationSession(BaseSession):
         """
         self._transport = transport
         d = self._as_future(self.onConnect)
-        self._add_future_callbacks(d, None, self._swallow_error,
-                                   errbackKeywords=dict(msg="While firing onConnect"))
+
+        def _error(t, e, tb):
+            return self._swallow_error(t, e, tb, "While firing onConnect")
+        self._add_future_callbacks(d, None, _error)
 
     def onConnect(self):
         """
@@ -515,7 +517,7 @@ class ApplicationSession(BaseSession):
         if msg:
             print(msg)
 
-    def _swallow_error(self, typ, exc, tb, msg=None):
+    def _swallow_error(self, typ, exc, tb, msg):
         '''
         This is an internal generic error-handler for errors encountered
         when calling down to on*() handlers that can reasonably be
@@ -545,15 +547,19 @@ class ApplicationSession(BaseSession):
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
                 d = self._as_future(self.onJoin, details)
-                self._add_future_callbacks(d, None, self._swallow_error,
-                                           errbackKeywords=dict(msg="While firing onJoin"))
+
+                def _error(t, v, tb):
+                    return self._swallow_error(t, v, tb, "While firing onJoin")
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Abort):
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = self._as_future(self.onLeave, details)
-                self._add_future_callbacks(d, None, self._swallow_error,
-                                           errbackKeywords=dict(msg="While firing onLeave"))
+
+                def _error(t, v, tb):
+                    return self._swallow_error(t, v, tb, "While firing onLeave")
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Challenge):
                 challenge = types.Challenge(msg.method, msg.extra)
@@ -571,8 +577,10 @@ class ApplicationSession(BaseSession):
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
                     d = self._as_future(self.onLeave, details)
-                    self._add_future_callbacks(d, None, self._swallow_error,
-                                               errbackKeywords=dict(msg="While firing onLeave"))
+
+                    def _error(t, v, tb):
+                        return self._swallow_error(t, v, tb, "While firing onLeave")
+                    self._add_future_callbacks(d, None, _error)
                     # switching to the callback chain, effectively
                     # cancelling error (which we've now handled)
                     return d
@@ -595,9 +603,11 @@ class ApplicationSession(BaseSession):
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = self._as_future(self.onLeave, details)
-                msg='While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
-                self._add_future_callbacks(d, None, self._swallow_error,
-                                           errbackKeywords=dict(msg=msg))
+
+                def _error(t, v, tb):
+                    errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
+                    return self._swallow_error(t, v, tb, errmsg)
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Event):
                 if msg.subscription in self._subscriptions:
@@ -623,9 +633,12 @@ class ApplicationSession(BaseSession):
                         try:
                             handler.fn(*invoke_args, **invoke_kwargs)
                         except:
-                            msg = 'While firing {0} subscribed under "{1}" ("{2}").'.format(
-                                handler.fn, handler.topic, msg.subscription)
-                            self.onUserError(*sys.exc_info(), msg=msg)
+                            errmsg = 'While firing {0} subscribed under "{1}".'.format(
+                                handler.fn, msg.topic)
+                            try:
+                                self.onUserError(*sys.exc_info(), msg=errmsg)
+                            except:
+                                pass
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
@@ -688,13 +701,13 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        _, opts = self._call_reqs[msg.request]
-                        if opts.onProgress:
+                        call_request = self._call_reqs[msg.request]
+                        if call_request.options.on_progress:
                             kw = msg.kwargs or dict()
                             args = msg.args or tuple()
                             try:
-                                # XXX what if onProgress returns a Deferred/Future?
-                                opts.onProgress(*args, **kw)
+                                # XXX what if on_progress returns a Deferred/Future?
+                                call_request.options.on_progress(*args, **kw)
                             except:
                                 self.onUserError(*sys.exc_info(), msg="While firing onProgress")
 
@@ -780,9 +793,12 @@ class ApplicationSession(BaseSession):
                                                       args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                 self._transport.send(reply)
 
-                        def error(typ, exc, tb):
-                            errmsg = "Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration)
-                            self.onUserError(typ, exc, tb, msg=errmsg)
+                        def error(typ, exc, tb, *args, **kw):
+                            errmsg = 'Failure while invoking procedure {0} registered under "{1}".'.format(endpoint.fn, registration.procedure)
+                            try:
+                                self.onUserError(typ, exc, tb, msg=errmsg)
+                            except:
+                                pass
                             formatted_tb = None
                             if self.traceback_app:
                                 # if asked to marshal the traceback within the WAMP error message, extract it
@@ -801,7 +817,6 @@ class ApplicationSession(BaseSession):
                                 # the application-level payload returned from the invoked procedure can't be serialized
                                 reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
                                                       args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
-                                self._transport.send(reply)
                             # we have handled the error, so we eat it
                             return None
 
@@ -903,14 +918,18 @@ class ApplicationSession(BaseSession):
         if self._session_id:
             # fire callback and close the transport
             d = self._as_future(self.onLeave, types.CloseDetails())
-            self._add_future_callbacks(d, None, self._swallow_error,
-                                       errbackKeywords=dict(msg="While firing onLeave"))
+
+            def _error(t, v, tb):
+                return self._swallow_error(t, v, tb, "While firing onLeave")
+            self._add_future_callbacks(d, None, _error)
 
             self._session_id = None
 
         d = self._as_future(self.onDisconnect)
-        self._add_future_callbacks(d, None, self._swallow_error,
-                                   errbackKeywords=dict(msg="While firing onDisconnect"))
+
+        def _error(t, v, tb):
+            return self._swallow_error(t, v, tb, "While firing onDisconnect")
+        self._add_future_callbacks(d, None, _error)
 
     def onChallenge(self, challenge):
         """
