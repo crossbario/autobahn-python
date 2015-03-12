@@ -384,8 +384,10 @@ class BaseSession(object):
                     else:
                         exc = ecls()
             except Exception:
-                # XXX uncovered
-                self.onUserError(*sys.exc_info(), msg="While re-constructing exception")
+                try:
+                    self.onUserError(*sys.exc_info(), msg="While re-constructing exception")
+                except:
+                    pass
 
         if not exc:
             # the following ctor never fails ..
@@ -532,7 +534,10 @@ class ApplicationSession(BaseSession):
         will do for both Future and Deferred
         '''
         # print("_swallow_error", typ, exc, tb)
-        self.onUserError(typ, exc, tb, msg=msg)
+        try:
+            self.onUserError(typ, exc, tb, msg=msg)
+        except:
+            pass
         return None
 
     def onMessage(self, msg):
@@ -709,7 +714,10 @@ class ApplicationSession(BaseSession):
                                 # XXX what if on_progress returns a Deferred/Future?
                                 call_request.options.on_progress(*args, **kw)
                             except:
-                                self.onUserError(*sys.exc_info(), msg="While firing onProgress")
+                                try:
+                                    self.onUserError(*sys.exc_info(), msg="While firing on_progress")
+                                except:
+                                    pass
 
                         else:
                             # silently ignore progressive results
@@ -834,7 +842,10 @@ class ApplicationSession(BaseSession):
                         self._invocations[msg.request].cancel()
                     except:
                         # XXX can .cancel() return a Deferred/Future?
-                        self.onUserError(*sys.exc_info(), msg="While cancelling call.")
+                        try:
+                            self.onUserError(*sys.exc_info(), msg="While cancelling call.")
+                        except:
+                            pass
                     finally:
                         del self._invocations[msg.request]
 
