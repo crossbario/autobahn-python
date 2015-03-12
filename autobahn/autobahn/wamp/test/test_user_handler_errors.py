@@ -30,6 +30,8 @@ import os
 
 if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
+    from twisted.internet import defer
+    from twisted.python.failure import Failure
     from autobahn.wamp import message
     from autobahn.wamp.exception import ProtocolError
     from autobahn.twisted.wamp import ApplicationSession
@@ -69,6 +71,20 @@ if os.environ.get('USE_TWISTED', False):
             raise exc
         return method
 
+    def async_exception_raiser(exc):
+        '''
+        Create a method that takes any args, and always returns a Deferred
+        that has failed.
+        '''
+        assert isinstance(exc, Exception), "Must derive from Exception"
+
+        def method(*args, **kw):
+            try:
+                raise exc
+            except:
+                return defer.fail(Failure())
+        return method
+
     class TestSessionCallbacks(unittest.TestCase):
         '''
         These test that callbacks on user-overridden ApplicationSession
@@ -77,6 +93,11 @@ if os.environ.get('USE_TWISTED', False):
         XXX should do state-diagram documenting where we are when each
         of these cases arises :/
         '''
+
+        # XXX sure would be nice to use py.test @fixture to do the
+        # async/sync exception-raising stuff (i.e. make each test run
+        # twice)...but that would mean switching all test-running over
+        # to py-test
 
         def test_on_join(self):
             session = MockApplicationSession()
@@ -91,10 +112,39 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][1])
 
+        def test_on_join_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("blammo")
+            session.onJoin = async_exception_raiser(exception)
+            msg = message.Welcome(1234, [])
+
+            # give the sesion a WELCOME, from which it should call onJoin
+            session.onMessage(msg)
+
+            # make sure we got the right error out of onUserError
+            # import traceback
+            # traceback.print_exception(*session.errors[0][:3])
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
         def test_on_leave(self):
             session = MockApplicationSession()
             exception = RuntimeError("boom")
             session.onLeave = exception_raiser(exception)
+            msg = message.Abort(u"testing")
+
+            # we haven't done anything, so this is "abort before we've
+            # connected"
+            session.onMessage(msg)
+
+            # make sure we got the right error out of onUserError
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_leave_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("boom")
+            session.onLeave = async_exception_raiser(exception)
             msg = message.Abort(u"testing")
 
             # we haven't done anything, so this is "abort before we've
@@ -121,8 +171,27 @@ if os.environ.get('USE_TWISTED', False):
             session.onMessage(msg)
 
             self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
 
-        def test_on_leave_via_close(self):
+        def test_on_leave_valid_session_deferred(self):
+            '''
+            cover when onLeave called after we have a valid session
+            '''
+            session = MockApplicationSession()
+            exception = RuntimeError("such challenge")
+            session.onLeave = async_exception_raiser(exception)
+            # we have to get to an established connection first...
+            session.onMessage(message.Welcome(1234, []))
+            self.assertTrue(session._session_id is not None)
+
+            # okay we have a session ("because ._session_id is not None")
+            msg = message.Goodbye()
+            session.onMessage(msg)
+
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_disconnect_via_close(self):
             session = MockApplicationSession()
             exception = RuntimeError("sideways")
             session.onDisconnect = exception_raiser(exception)
@@ -133,6 +202,20 @@ if os.environ.get('USE_TWISTED', False):
             session.onClose(False)
 
             self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_disconnect_via_close_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("sideways")
+            session.onDisconnect = async_exception_raiser(exception)
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
 
         # XXX FIXME Probably more ways to call onLeave!
 
@@ -140,6 +223,24 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onChallenge = exception_raiser(exception)
+            msg = message.Challenge(u"foo")
+
+            # execute
+            session.onMessage(msg)
+
+            # we already handle any onChallenge errors as "abort the
+            # connection". So make sure our error showed up in the
+            # fake-transport.
+            self.assertEqual(0, len(session.errors))
+            self.assertEqual(1, len(session._transport.messages))
+            reply = session._transport.messages[0]
+            self.assertIsInstance(reply, message.Abort)
+            self.assertEqual("such challenge", reply.message)
+
+        def test_on_challenge_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("such challenge")
+            session.onChallenge = async_exception_raiser(exception)
             msg = message.Challenge(u"foo")
 
             # execute
@@ -164,15 +265,28 @@ if os.environ.get('USE_TWISTED', False):
             session = MockApplicationSession()
             exception = RuntimeError("such challenge")
             session.onConnect = exception_raiser(exception)
-            msg = message.Goodbye()
 
-            self.assertRaises(ProtocolError, session.onMessage, (msg,))
+            for msg in [message.Goodbye()]:
+                self.assertRaises(ProtocolError, session.onMessage, (msg,))
             self.assertEqual(0, len(session.errors))
 
         def test_on_disconnect(self):
             session = MockApplicationSession()
             exception = RuntimeError("oh sadness")
             session.onDisconnect = exception_raiser(exception)
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_disconnect_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("oh sadness")
+            session.onDisconnect = async_exception_raiser(exception)
             # we short-cut the whole state-machine traversal here by
             # just calling onClose directly, which would normally be
             # called via a Protocol, e.g.,
@@ -199,6 +313,52 @@ if os.environ.get('USE_TWISTED', False):
             # might want to re-think this?
             self.assertEqual("No transport, but disconnect() called.", str(session.errors[0][1]))
             self.assertEqual(exception, session.errors[1][1])
+
+        def test_on_disconnect_with_session_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("the pain runs deep")
+            session.onDisconnect = async_exception_raiser(exception)
+            # create a valid session
+            session.onMessage(message.Welcome(1234, []))
+
+            # we short-cut the whole state-machine traversal here by
+            # just calling onClose directly, which would normally be
+            # called via a Protocol, e.g.,
+            # autobahn.wamp.websocket.WampWebSocketProtocol
+            session.onClose(False)
+
+            self.assertEqual(2, len(session.errors))
+            # might want to re-think this?
+            self.assertEqual("No transport, but disconnect() called.", str(session.errors[0][1]))
+            self.assertEqual(exception, session.errors[1][1])
+
+        def test_on_connect(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("the pain runs deep")
+            session.onConnect = exception_raiser(exception)
+            trans = MockTransport()
+
+            # normally would be called from a Protocol?
+            session.onOpen(trans)
+
+            # shouldn't have done the .join()
+            self.assertEqual(0, len(trans.messages))
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
+
+        def test_on_connect_deferred(self):
+            session = MockApplicationSession()
+            exception = RuntimeError("the pain runs deep")
+            session.onConnect = async_exception_raiser(exception)
+            trans = MockTransport()
+
+            # normally would be called from a Protocol?
+            session.onOpen(trans)
+
+            # shouldn't have done the .join()
+            self.assertEqual(0, len(trans.messages))
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][1])
 
         # XXX likely missing other ways to invoke the above. need to
         # cover, for sure:

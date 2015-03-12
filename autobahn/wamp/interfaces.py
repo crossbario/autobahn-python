@@ -265,7 +265,7 @@ class ISession(object):
         Callback fired when the transport this session will run over has
         been established.
 
-        XXX Can I return Future/Deferred?
+        May return a Deferred/Future.
         """
 
     @abc.abstractmethod
@@ -279,7 +279,7 @@ class ISession(object):
         """
         Callback fired when the peer demands authentication.
 
-        XXX Can I return Future/Deferred?
+        May return a Deferred/Future.
 
         :param challenge: The authentication challenge.
         :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
@@ -290,7 +290,7 @@ class ISession(object):
         """
         Callback fired when WAMP session has been established.
 
-        XXX Can I return Future/Deferred?
+        May return a Deferred/Future.
 
         :param details: Session information.
         :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
@@ -313,7 +313,7 @@ class ISession(object):
         """
         Callback fired when WAMP session has is closed
 
-        XXX Can I return Future/Deferred?
+        May return a Deferred/Future.
 
         :param details: Close information.
         :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
@@ -330,7 +330,8 @@ class ISession(object):
         """
         Callback fired when underlying transport has been closed.
 
-        XXX Can I return Future/Deferred?
+        May return a Deferred/Future (but note that the underlying
+        transport is already gone).
         """
 
     @abc.abstractmethod

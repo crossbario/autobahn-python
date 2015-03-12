@@ -454,7 +454,9 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self._transport = transport
-        self.onConnect()
+        d = self._as_future(self.onConnect)
+        self._add_future_callbacks(d, None, self._swallow_error,
+                                   errbackKeywords=dict(msg="While firing onConnect"))
 
     def onConnect(self):
         """
@@ -513,7 +515,7 @@ class ApplicationSession(BaseSession):
         if msg:
             print(msg)
 
-    def _swallow_error(self, typ, exc, tb, msg="Generic error-handler"):
+    def _swallow_error(self, typ, exc, tb, msg=None):
         '''
         This is an internal generic error-handler for errors encountered
         when calling down to on*() handlers that can reasonably be
@@ -527,7 +529,7 @@ class ApplicationSession(BaseSession):
         argument here, consistent with what _add_future_callbacks()
         will do for both Future and Deferred
         '''
-        # print("_swallow_error", fail)
+        # print("_swallow_error", typ, exc, tb)
         self.onUserError(typ, exc, tb, msg=msg)
         return None
 
@@ -543,15 +545,15 @@ class ApplicationSession(BaseSession):
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
                 d = self._as_future(self.onJoin, details)
-                self._add_future_callbacks(d, None, self._swallow_error)
+                self._add_future_callbacks(d, None, self._swallow_error,
+                                           errbackKeywords=dict(msg="While firing onJoin"))
 
             elif isinstance(msg, message.Abort):
                 # fire callback and close the transport
-                try:
-                    # XXX what if onLeave returns a Future/Deferred?
-                    self.onLeave(types.CloseDetails(msg.reason, msg.message))
-                except:
-                    self.onUserError(*sys.exc_info(), msg="While firing onLeave callback")
+                details = types.CloseDetails(msg.reason, msg.message)
+                d = self._as_future(self.onLeave, details)
+                self._add_future_callbacks(d, None, self._swallow_error,
+                                           errbackKeywords=dict(msg="While firing onLeave"))
 
             elif isinstance(msg, message.Challenge):
                 challenge = types.Challenge(msg.method, msg.extra)
@@ -565,9 +567,15 @@ class ApplicationSession(BaseSession):
                     # XXX should call onUserError?
                     reply = message.Abort(u"wamp.error.cannot_authenticate", u"{0}".format(exc))
                     self._transport.send(reply)
+
                     # fire callback and close the transport
-                    # XXX what if onLeave returns Future/Deferred
-                    self.onLeave(types.CloseDetails(reply.reason, reply.message))
+                    details = types.CloseDetails(reply.reason, reply.message)
+                    d = self._as_future(self.onLeave, details)
+                    self._add_future_callbacks(d, None, self._swallow_error,
+                                               errbackKeywords=dict(msg="While firing onLeave"))
+                    # switching to the callback chain, effectively
+                    # cancelling error (which we've now handled)
+                    return d
 
                 self._add_future_callbacks(d, success, error)
 
@@ -585,12 +593,11 @@ class ApplicationSession(BaseSession):
                 self._session_id = None
 
                 # fire callback and close the transport
-                try:
-                    # XXX what if onLeave returns Future/Deferred
-                    self.onLeave(types.CloseDetails(msg.reason, msg.message))
-                except:
-                    msg = 'While firing onLeave() for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
-                    self.onUserError(*sys.exc_info(), msg=msg)
+                details = types.CloseDetails(msg.reason, msg.message)
+                d = self._as_future(self.onLeave, details)
+                msg='While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
+                self._add_future_callbacks(d, None, self._swallow_error,
+                                           errbackKeywords=dict(msg=msg))
 
             elif isinstance(msg, message.Event):
                 if msg.subscription in self._subscriptions:
@@ -686,6 +693,7 @@ class ApplicationSession(BaseSession):
                             kw = msg.kwargs or dict()
                             args = msg.args or tuple()
                             try:
+                                # XXX what if onProgress returns a Deferred/Future?
                                 opts.onProgress(*args, **kw)
                             except:
                                 self.onUserError(*sys.exc_info(), msg="While firing onProgress")
@@ -810,6 +818,7 @@ class ApplicationSession(BaseSession):
                     try:
                         self._invocations[msg.request].cancel()
                     except:
+                        # XXX can .cancel() return a Deferred/Future?
                         self.onUserError(*sys.exc_info(), msg="While cancelling call.")
                     finally:
                         del self._invocations[msg.request]
@@ -892,21 +901,16 @@ class ApplicationSession(BaseSession):
         self._transport = None
 
         if self._session_id:
-
             # fire callback and close the transport
-            try:
-                # XXX what if onLeave returns Future/Deferred?
-                self.onLeave(types.CloseDetails())
-            except:
-                self.onUserError(*sys.exc_info(), msg="While firing onLeave callback")
+            d = self._as_future(self.onLeave, types.CloseDetails())
+            self._add_future_callbacks(d, None, self._swallow_error,
+                                       errbackKeywords=dict(msg="While firing onLeave"))
 
             self._session_id = None
 
-        try:
-            # XXX what if onDisconnect returns Future/Deferred?
-            self.onDisconnect()
-        except:
-            self.onUserError(*sys.exc_info(), msg="While firing onDisconnect callback")
+        d = self._as_future(self.onDisconnect)
+        self._add_future_callbacks(d, None, self._swallow_error,
+                                   errbackKeywords=dict(msg="While firing onDisconnect"))
 
     def onChallenge(self, challenge):
         """

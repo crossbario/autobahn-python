@@ -84,7 +84,9 @@ class FutureMixin(object):
         future.errback(error)
 
     @staticmethod
-    def _add_future_callbacks(future, callback, errback):
+    def _add_future_callbacks(future, callback, errback,
+                              callbackArgs=(), callbackKeywords={},
+                              errbackArgs=(), errbackKeywords={}):
         # callback and/or errback may be None
 
         # ...also we convert Twisted Failures into the same callback
@@ -97,21 +99,31 @@ class FutureMixin(object):
         # collecting the traceback frames.
 
         if callback is None:
+            assert errback is not None
+
             def _errback(fail):
                 # converting to common API
-                return errback(fail.type, fail.value, fail.tb)
+                return errback(fail.type, fail.value, fail.tb,
+                               *errbackArgs, **errbackKeywords)
+            # we're doing our own args/kwargs handling so don't use
+            # Twisted's API here.
             future.addErrback(_errback)
             return future
 
         elif errback is None:
-            future.addCallback(callback)
+            future.addCallback(callback, *callbackArgs, **callbackKeywords)
             return future
 
         else:
             def _errback(fail):
                 # converting to common API
-                return errback(fail.type, fail.value, fail.tb)
-            return future.addCallbacks(callback, _errback)
+                return errback(fail.type, fail.value, fail.tb,
+                               *errbackArgs, **errbackKeywords)
+            # not including the errback args or kwargs as we do that
+            # ourselves, in _errback
+            return future.addCallbacks(callback, _errback,
+                                       callbackArgs=callbackArgs,
+                                       callbackKeywords=callbackKeywords)
 
     @staticmethod
     def _gather_futures(futures, consume_exceptions=True):
