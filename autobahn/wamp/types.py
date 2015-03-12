@@ -437,7 +437,7 @@ class CallOptions(object):
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
         assert(disclose_me is None or type(disclose_me) == bool)
 
-        self.onProgress = on_progress
+        self.on_progress = on_progress
         self.timeout = timeout
         self.disclose_me = disclose_me
 
@@ -452,7 +452,7 @@ class CallOptions(object):
         return res
 
     def __str__(self):
-        return "CallOptions(onProgress = {0}, timeout = {1}, disclose_me = {2})".format(self.on_progress, self.timeout, self.disclose_me)
+        return "CallOptions(on_progress = {0}, timeout = {1}, disclose_me = {2})".format(self.on_progress, self.timeout, self.disclose_me)
 
 
 class CallResult(object):
