@@ -638,8 +638,9 @@ class ApplicationSession(BaseSession):
                         try:
                             handler.fn(*invoke_args, **invoke_kwargs)
                         except:
-                            errmsg = 'While firing {0} subscribed under "{1}".'.format(
-                                handler.fn, msg.topic)
+                            errmsg = 'While firing {0}'.format(handler.fn)
+                            if msg.topic is not None:
+                                errmsg += ' (subscribed under "{0}")'.format(msg.topic)
                             try:
                                 self.onUserError(*sys.exc_info(), msg=errmsg)
                             except:
