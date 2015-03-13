@@ -48,6 +48,13 @@ test_twisted:
 	USE_TWISTED=1 trial autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
 
+test_twisted_coverage:
+	-rm .coverage
+	USE_TWISTED=1 coverage run --omit=*/test/* --source=autobahn `which trial` autobahn
+#	coverage -a -d annotated_coverage
+	coverage html
+	coverage report --show-missing
+
 # test under asyncio
 test_asyncio:
 	USE_ASYNCIO=1 python -m pytest -rsx
