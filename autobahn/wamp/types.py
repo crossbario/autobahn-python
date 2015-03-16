@@ -230,6 +230,8 @@ class CloseDetails(object):
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
     """
+    REASON_DEFAULT = u"wamp.close.normal"
+    REASON_TRANSPORT_LOST = u"wamp.close.transport_lost"
 
     def __init__(self, reason=None, message=None):
         """

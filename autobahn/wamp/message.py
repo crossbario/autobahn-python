@@ -704,7 +704,7 @@ class Goodbye(Message):
     The WAMP message code for this type of message.
     """
 
-    DEFAULT_REASON = u"wamp.goodbye.normal"
+    DEFAULT_REASON = u"wamp.close.normal"
     """
     Default WAMP closing reason.
     """
