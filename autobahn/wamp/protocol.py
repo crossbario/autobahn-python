@@ -698,23 +698,13 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        #
                         call_request = self._call_reqs[msg.request]
-
-                        on_progress = call_request.options.onProgress
-
-                        if on_progress:
+                        if call_request.options.on_progress:
+                            kw = msg.kwargs or dict()
+                            args = msg.args or tuple()
                             try:
-                                if msg.kwargs:
-                                    if msg.args:
-                                        on_progress(*msg.args, **msg.kwargs)
-                                    else:
-                                        on_progress(**msg.kwargs)
-                                else:
-                                    if msg.args:
-                                        on_progress(*msg.args)
-                                    else:
-                                        on_progress()
+                                # XXX what if on_progress returns a Deferred/Future?
+                                call_request.options.on_progress(*args, **kw)
                             except Exception as e:
                                 try:
                                     self.onUserError(e, "While firing on_progress")
