@@ -382,9 +382,11 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception:
-                # FIXME: log e
-                pass
+            except Exception as e:
+                try:
+                    self.onUserError(e, "While re-constructing exception")
+                except:
+                    pass
 
         if not exc:
             # the following ctor never fails ..
@@ -453,7 +455,11 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self._transport = transport
-        self.onConnect()
+        d = self._as_future(self.onConnect)
+
+        def _error(e):
+            return self._swallow_error(e, "While firing onConnect")
+        self._add_future_callbacks(d, None, _error)
 
     def onConnect(self):
         """
@@ -486,7 +492,8 @@ class ApplicationSession(BaseSession):
         if self._transport:
             self._transport.close()
         else:
-            raise Exception("transport disconnected")
+            # XXX or shall we just ignore this?
+            raise RuntimeError("No transport, but disconnect() called.")
 
     def onUserError(self, e, msg):
         """
@@ -507,6 +514,25 @@ class ApplicationSession(BaseSession):
         traceback.print_exc()
         print(msg)
 
+    def _swallow_error(self, fail, msg):
+        '''
+        This is an internal generic error-handler for errors encountered
+        when calling down to on*() handlers that can reasonably be
+        expected to be overridden in user code.
+
+        Note that it *cancels* the error, so use with care!
+
+        Specifically, this should *never* be added to the errback
+        chain for a Deferred/coroutine that will make it out to user
+        code.
+        '''
+        # print("_swallow_error", typ, exc, tb)
+        try:
+            self.onUserError(fail.value, msg)
+        except:
+            pass
+        return None
+
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -518,12 +544,21 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-                self._as_future(self.onJoin, details)
+                d = self._as_future(self.onJoin, details)
+
+                def _error(e):
+                    return self._swallow_error(e, "While firing onJoin")
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Abort):
 
                 # fire callback and close the transport
-                self.onLeave(types.CloseDetails(msg.reason, msg.message))
+                details = types.CloseDetails(msg.reason, msg.message)
+                d = self._as_future(self.onLeave, details)
+
+                def _error(e):
+                    return self._swallow_error(e, "While firing onLeave")
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Challenge):
 
@@ -538,7 +573,15 @@ class ApplicationSession(BaseSession):
                     reply = message.Abort(u"wamp.error.cannot_authenticate", u"{0}".format(err.value))
                     self._transport.send(reply)
                     # fire callback and close the transport
-                    self.onLeave(types.CloseDetails(reply.reason, reply.message))
+                    details = types.CloseDetails(reply.reason, reply.message)
+                    d = self._as_future(self.onLeave, details)
+
+                    def _error(e):
+                        return self._swallow_error(e, "While firing onLeave")
+                    self._add_future_callbacks(d, None, _error)
+                    # switching to the callback chain, effectively
+                    # cancelling error (which we've now handled)
+                    return d
 
                 self._add_future_callbacks(d, success, error)
 
@@ -546,7 +589,7 @@ class ApplicationSession(BaseSession):
                 raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
 
         else:
-
+            # self._session_id != None (aka "session established")
             if isinstance(msg, message.Goodbye):
                 if not self._goodbye_sent:
                     # the peer wants to close: send GOODBYE reply
@@ -556,14 +599,13 @@ class ApplicationSession(BaseSession):
                 self._session_id = None
 
                 # fire callback and close the transport
-                try:
-                    self.onLeave(types.CloseDetails(msg.reason, msg.message))
-                except Exception as e:
-                    msg = 'While firing onLeave() for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
-                    try:
-                        self.onUserError(e, msg)
-                    except:
-                        pass
+                details = types.CloseDetails(msg.reason, msg.message)
+                d = self._as_future(self.onLeave, details)
+
+                def _error(e):
+                    errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
+                    return self._swallow_error(e, errmsg)
+                self._add_future_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Event):
 
@@ -656,32 +698,24 @@ class ApplicationSession(BaseSession):
                     if msg.progress:
 
                         # progressive result
-                        #
                         call_request = self._call_reqs[msg.request]
-
-                        on_progress = call_request.options.onProgress
-
-                        if on_progress:
+                        if call_request.options.on_progress:
+                            kw = msg.kwargs or dict()
+                            args = msg.args or tuple()
                             try:
-                                if msg.kwargs:
-                                    if msg.args:
-                                        on_progress(*msg.args, **msg.kwargs)
-                                    else:
-                                        on_progress(**msg.kwargs)
-                                else:
-                                    if msg.args:
-                                        on_progress(*msg.args)
-                                    else:
-                                        on_progress()
+                                # XXX what if on_progress returns a Deferred/Future?
+                                call_request.options.on_progress(*args, **kw)
                             except Exception as e:
-                                # silently drop exceptions raised in progressive results handlers
-                                if self.debug:
-                                    print("Exception raised in progressive results handler: {0}".format(e))
+                                try:
+                                    self.onUserError(e, "While firing on_progress")
+                                except:
+                                    pass
+
                         else:
                             # silently ignore progressive results
                             pass
-                    else:
 
+                    else:
                         # final result
                         #
                         call_request = self._call_reqs.pop(msg.request)
@@ -763,18 +797,18 @@ class ApplicationSession(BaseSession):
                                 self._transport.send(reply)
 
                         def error(err):
+                            errmsg = 'Failure while invoking procedure {0} registered under "{1}".'.format(endpoint.fn, registration.procedure)
+                            try:
+                                self.onUserError(err, errmsg)
+                            except:
+                                pass
+                            formatted_tb = None
                             if self.traceback_app:
                                 # if asked to marshal the traceback within the WAMP error message, extract it
                                 # noinspection PyCallingNonCallable
                                 tb = StringIO()
                                 err.printTraceback(file=tb)
-                                tb = tb.getvalue().splitlines()
-                            else:
-                                tb = None
-
-                            if self.debug_app:
-                                print("Failure while invoking procedure {0} registered under '{1}' ({2}):".format(endpoint.fn, endpoint.procedure, msg.registration))
-                                print(err)
+                                formatted_tb = tb.getvalue().splitlines()
 
                             del self._invocations[msg.request]
 
@@ -783,7 +817,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 exc = err
 
-                            reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc, tb)
+                            reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc, formatted_tb)
 
                             try:
                                 self._transport.send(reply)
@@ -792,6 +826,8 @@ class ApplicationSession(BaseSession):
                                 reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
                                                       args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
                                 self._transport.send(reply)
+                            # we have handled the error, so we eat it
+                            return None
 
                         self._invocations[msg.request] = InvocationRequest(msg.request, on_reply)
 
@@ -805,9 +841,12 @@ class ApplicationSession(BaseSession):
                     # noinspection PyBroadException
                     try:
                         self._invocations[msg.request].cancel()
-                    except Exception:
-                        if self.debug:
-                            print("could not cancel call {0}".format(msg.request))
+                    except Exception as e:
+                        # XXX can .cancel() return a Deferred/Future?
+                        try:
+                            self.onUserError(e, "While cancelling call.")
+                        except:
+                            pass
                     finally:
                         del self._invocations[msg.request]
 
@@ -892,17 +931,20 @@ class ApplicationSession(BaseSession):
         self._transport = None
 
         if self._session_id:
-
             # fire callback and close the transport
-            try:
-                self.onLeave(types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
-            except Exception as e:
-                if self.debug:
-                    print("exception raised in onLeave callback: {0}".format(e))
+            d = self._as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
+
+            def _error(e):
+                return self._swallow_error(e, "While firing onLeave")
+            self._add_future_callbacks(d, None, _error)
 
             self._session_id = None
 
-        self.onDisconnect()
+        d = self._as_future(self.onDisconnect)
+
+        def _error(e):
+            return self._swallow_error(e, "While firing onDisconnect")
+        self._add_future_callbacks(d, None, _error)
 
     def onChallenge(self, challenge):
         """

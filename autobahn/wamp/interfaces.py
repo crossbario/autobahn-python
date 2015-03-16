@@ -276,6 +276,8 @@ class ISession(object):
         """
         Callback fired when the peer demands authentication.
 
+        May return a Deferred/Future.
+
         :param challenge: The authentication challenge.
         :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
         """
@@ -284,6 +286,8 @@ class ISession(object):
     def onJoin(self, details):
         """
         Callback fired when WAMP session has been established.
+
+        May return a Deferred/Future.
 
         :param details: Session information.
         :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.

@@ -330,7 +330,7 @@ Call a remote procedure which produces interim, progressive results:
       print("{} items deleted so far ..".format(n))
 
    total = yield session.call("com.myapp.log.delete",
-                              options = CallOptions(onProgress = deletedSoFar))
+                              options = CallOptions(on_progress = deletedSoFar))
    print("{} items deleted in total.".format(total))
 
 Distributed calls
@@ -524,7 +524,7 @@ and can be called like this
       print("{} items processed so far ..".format(i))
 
    total = yield session.call("com.myapp.longop", 10,
-                              options = CallOptions(onProgress = processedSoFar))
+                              options = CallOptions(on_progress = processedSoFar))
    print("{} items deleted in total.".format(total))
 
 Registration with invocation details

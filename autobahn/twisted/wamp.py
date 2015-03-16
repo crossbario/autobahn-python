@@ -84,7 +84,14 @@ class FutureMixin(object):
 
     @staticmethod
     def _add_future_callbacks(future, callback, errback):
-        return future.addCallbacks(callback, errback)
+        # callback and/or errback may be None
+        if callback is None:
+            assert errback is not None
+            future.addErrback(errback)
+            return future
+        else:
+            future.addCallbacks(callback, errback)
+            return future
 
     @staticmethod
     def _gather_futures(futures, consume_exceptions=True):
@@ -102,7 +109,7 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
         """
         # see docs; will print currently-active exception to the logs,
         # which is just what we want.
-        log.err()
+        log.err(e)
         # also log the framework-provided error-message
         log.err(msg)
 
