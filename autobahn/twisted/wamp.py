@@ -31,6 +31,7 @@ import inspect
 
 from twisted.python import log
 from twisted.application import service
+from twisted.python.failure import Failure
 from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
@@ -83,8 +84,20 @@ class FutureMixin(object):
         future.errback(error)
 
     @staticmethod
+    def _create_failure():
+        """
+        Create a Failure instance. Can ONLY be called inside an "except"
+        block.
+        """
+        return Failure()
+
+    @staticmethod
     def _add_future_callbacks(future, callback, errback):
-        # callback and/or errback may be None
+        """
+        callback or errback may be None, but at least one must be
+        non-None.
+        """
+        assert future is not None
         if callback is None:
             assert errback is not None
             future.addErrback(errback)
