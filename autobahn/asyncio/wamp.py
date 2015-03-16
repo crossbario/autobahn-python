@@ -102,9 +102,11 @@ class FutureMixin(object):
         def done(f):
             try:
                 res = f.result()
-                callback(res)
+                if callback:
+                    callback(res)
             except Exception as e:
-                errback(e)
+                if errback:
+                    errback(e)
         return future.add_done_callback(done)
 
     @staticmethod
