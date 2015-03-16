@@ -528,7 +528,7 @@ class ApplicationSession(BaseSession):
         chain for a Deferred/coroutine that will make it out to user
         code.
         '''
-        # print("_swallow_error", typ, exc, tb)
+        # print("_swallow_error", fail, msg)
         try:
             self.onUserError(fail.value, msg)
         except:
