@@ -895,7 +895,7 @@ class ApplicationSession(BaseSession):
 
             # fire callback and close the transport
             try:
-                self.onLeave(types.CloseDetails())
+                self.onLeave(types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
             except Exception as e:
                 if self.debug:
                     print("exception raised in onLeave callback: {0}".format(e))
