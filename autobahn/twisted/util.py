@@ -27,10 +27,17 @@
 from __future__ import absolute_import
 
 from twisted.internet.defer import Deferred
-from twisted.internet.address import IPv4Address, IPv6Address, UNIXAddress
+from twisted.internet.address import IPv4Address, UNIXAddress
+
+try:
+    from twisted.internet.address import IPv6Address
+    _HAS_IPV6 = True
+except ImportError:
+    _HAS_IPV6 = False
 
 __all = (
     'sleep',
+    'peer2str'
 )
 
 
@@ -60,7 +67,7 @@ def peer2str(addr):
     """
     if isinstance(addr, IPv4Address):
         res = "tcp4:{0}:{1}".format(addr.host, addr.port)
-    elif isinstance(addr, IPv6Address):
+    elif _HAS_IPV6 and isinstance(addr, IPv6Address):
         res = "tcp6:{0}:{1}".format(addr.host, addr.port)
     elif isinstance(addr, UNIXAddress):
         res = "unix:{0}".format(addr.name)
