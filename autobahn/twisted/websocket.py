@@ -45,6 +45,7 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, \
     PerMessageDeflateResponseAccept
 
+
 __all__ = (
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
@@ -192,9 +193,6 @@ class WebSocketAdapterFactory(object):
 
     def _log(self, msg):
         log.msg(msg)
-
-    def _callLater(self, delay, fun):
-        return self.reactor.callLater(delay, fun)
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
