@@ -5,6 +5,21 @@
 Changelog
 =========
 
+0.10.2
+------
+
+`Published 2015-03-19 <https://pypi.python.org/pypi/autobahn/0.10.2>`__
+
+* fix: Twisted 11 lacks IPv6 address class
+* new: various improvements handling errors from user code
+* new: add parameter to limit max connections on WebSocket servers
+* new: use new-style classes everywhere
+* new: moved package content to repo root
+* new: implement router revocation signaling for registrations/subscriptions
+* new: a whole bunch of more unit tests / coverage
+* new: provide reason/message when transport is lost
+* fix: send WAMP errors upon serialization errors
+
 0.10.1
 ------
 
