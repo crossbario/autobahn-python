@@ -6,7 +6,7 @@ import sphinx_bootstrap_theme
 
 # only needed for Autobahn|Python
 sys.path.insert(0, os.path.abspath('./_extensions'))
-sys.path.insert(0, os.path.abspath('../autobahn'))
+sys.path.insert(0, os.path.abspath('..'))
 
 extensions = [
    'sphinx.ext.autodoc',
@@ -40,7 +40,7 @@ copyright = None
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'autobahn'))
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 init = {}
 with open(os.path.join(base_dir, "autobahn", "__init__.py")) as f:
    exec(f.read(), init)
