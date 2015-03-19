@@ -29,13 +29,19 @@ from __future__ import absolute_import
 import os
 
 if os.environ.get('USE_TWISTED', False):
-    from twisted.trial import unittest
-    from twisted.internet import defer
-    from twisted.python.failure import Failure
-    from autobahn.wamp import message, role
-    from autobahn.wamp.exception import ProtocolError
+    from twisted.trial.unittest import TestCase
     from autobahn.twisted.wamp import ApplicationSession
+    from autobahn.twisted.wamp import FutureMixin
 
+else:
+    from unittest import TestCase
+    from autobahn.asyncio.wamp import ApplicationSession
+    from autobahn.asyncio.wamp import FutureMixin
+
+from autobahn.wamp import message, role
+from autobahn.wamp.exception import ProtocolError
+
+if True:  # XXX avoiding completely re-indenting file for now!
     class MockTransport:
         def __init__(self):
             self.messages = []
@@ -57,8 +63,37 @@ if os.environ.get('USE_TWISTED', False):
             self.errors = []
             self._transport = MockTransport()
 
-        def onUserError(self, e, msg):
-            self.errors.append((e, msg))
+        def onUserError(self, fail, msg):
+            self.errors.append((fail, msg))
+
+    def wait_asyncio():
+        """
+        This is kind of a hack for now, but with all these tests we never
+        "really" have to wait for anything -- the results are
+        immediately available. While this works with Twisted (which
+        immediately calls the callbacks in such a case), asyncio
+        *always* schedules a trip around the event loop. So the effect
+        here is that we make our trip through the event-loop and get
+        the call/err backs. There also doesn't appear to be any
+        test-support available -- like trial or pytest-twisted -- that
+        can wait for a returned Future from a test.
+
+        So on the plus side, all these tests can now run with asyncio
+        *or* Twisted, even if this isn't very pretty.
+
+        You call this in your test, after you've "done" everything --
+        typically right before the asserts.
+        """
+
+        if os.environ.get('USE_TWISTED', False):
+            return
+
+        # doing this to avoid duplicating its trollius vs. asyncio
+        # import-code...
+        from autobahn.asyncio.wamp import asyncio
+        loop = asyncio.get_event_loop()
+        loop.call_later(0, loop.stop)
+        loop.run_forever()
 
     def exception_raiser(exc):
         '''
@@ -81,8 +116,8 @@ if os.environ.get('USE_TWISTED', False):
         def method(*args, **kw):
             try:
                 raise exc
-            except:
-                return defer.fail(Failure())
+            except Exception as e:
+                return FutureMixin._create_future_error(e)
         return method
 
     def create_mock_welcome():
@@ -93,7 +128,7 @@ if os.environ.get('USE_TWISTED', False):
             },
         )
 
-    class TestSessionCallbacks(unittest.TestCase):
+    class TestSessionCallbacks(TestCase):
         '''
         These test that callbacks on user-overridden ApplicationSession
         methods that produce errors are handled correctly.
@@ -115,6 +150,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # give the sesion a WELCOME, from which it should call onJoin
             session.onMessage(msg)
+            wait_asyncio()
 
             # make sure we got the right error out of onUserError
             self.assertEqual(1, len(session.errors))
@@ -128,6 +164,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # give the sesion a WELCOME, from which it should call onJoin
             session.onMessage(msg)
+            wait_asyncio()
 
             # make sure we got the right error out of onUserError
             # import traceback
@@ -144,6 +181,7 @@ if os.environ.get('USE_TWISTED', False):
             # we haven't done anything, so this is "abort before we've
             # connected"
             session.onMessage(msg)
+            wait_asyncio()
 
             # make sure we got the right error out of onUserError
             self.assertEqual(1, len(session.errors))
@@ -158,6 +196,7 @@ if os.environ.get('USE_TWISTED', False):
             # we haven't done anything, so this is "abort before we've
             # connected"
             session.onMessage(msg)
+            wait_asyncio()
 
             # make sure we got the right error out of onUserError
             self.assertEqual(1, len(session.errors))
@@ -177,6 +216,7 @@ if os.environ.get('USE_TWISTED', False):
             # okay we have a session ("because ._session_id is not None")
             msg = message.Goodbye()
             session.onMessage(msg)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -195,6 +235,7 @@ if os.environ.get('USE_TWISTED', False):
             # okay we have a session ("because ._session_id is not None")
             msg = message.Goodbye()
             session.onMessage(msg)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -211,6 +252,7 @@ if os.environ.get('USE_TWISTED', False):
             # subsequent onLeave will also fail)
             msg = message.Challenge(u"foo")
             session.onMessage(msg)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -224,6 +266,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -237,6 +280,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -251,6 +295,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # execute
             session.onMessage(msg)
+            wait_asyncio()
 
             # we already handle any onChallenge errors as "abort the
             # connection". So make sure our error showed up in the
@@ -269,6 +314,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # execute
             session.onMessage(msg)
+            wait_asyncio()
 
             # we already handle any onChallenge errors as "abort the
             # connection". So make sure our error showed up in the
@@ -303,6 +349,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -316,6 +363,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(1, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
@@ -332,6 +380,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(2, len(session.errors))
             # might want to re-think this?
@@ -350,6 +399,7 @@ if os.environ.get('USE_TWISTED', False):
             # called via a Protocol, e.g.,
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
+            wait_asyncio()
 
             self.assertEqual(2, len(session.errors))
             # might want to re-think this?
@@ -364,6 +414,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # normally would be called from a Protocol?
             session.onOpen(trans)
+            wait_asyncio()
 
             # shouldn't have done the .join()
             self.assertEqual(0, len(trans.messages))
@@ -378,6 +429,7 @@ if os.environ.get('USE_TWISTED', False):
 
             # normally would be called from a Protocol?
             session.onOpen(trans)
+            wait_asyncio()
 
             # shouldn't have done the .join()
             self.assertEqual(0, len(trans.messages))

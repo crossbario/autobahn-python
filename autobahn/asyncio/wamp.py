@@ -26,6 +26,9 @@
 
 from __future__ import absolute_import
 
+import sys
+import traceback
+
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
@@ -48,6 +51,44 @@ __all__ = (
     'ApplicationSessionFactory',
     'ApplicationRunner'
 )
+
+
+class AsyncioFailure(object):
+    """
+    This provides an object with any features from Twisted's Failure
+    that we might need in Autobahn classes that use FutureMixin.
+
+    We need to encapsulate information from exceptions so that
+    errbacks still have access to the traceback (in case they want to
+    print it out) outside of "except" blocks.
+    """
+
+    def __init__(self, typ, value, tb):
+        """
+        These are the same parameters as returned from ``sys.exc_info()``
+
+        :param typ: exception type
+        :param value: the Exception instance
+        :param tb: a traceback object
+        """
+        self.type = typ
+        self.value = value
+        self.tb = tb
+
+    def printTraceback(self, file=None):
+        """
+        Prints the complete traceback to stderr, or to the provided file
+        """
+        traceback.print_exception(self.type, self.value, self.tb, file=file)
+
+    def getErrorMessage(self):
+        """
+        Returns the str() of the underlying exception.
+        """
+        return str(self.value)
+
+    def __str__(self):
+        return self.getErrorMessage()
 
 
 class FutureMixin(object):
@@ -98,15 +139,32 @@ class FutureMixin(object):
         future.set_exception(error)
 
     @staticmethod
+    def _create_failure():
+        """
+        This returns an object similar to Twisted's Failure.
+
+        It may ONLY be called within an "except" block (such that
+        sys.exc_info() returns useful information).
+
+        We create these objects so that errback()s can have a
+        consistent API between asyncio and Twisted.
+        """
+        return AsyncioFailure(*sys.exc_info())
+
+    @staticmethod
     def _add_future_callbacks(future, callback, errback):
+        """
+        callback or errback may be None, but at least one must be
+        non-None.
+        """
         def done(f):
             try:
                 res = f.result()
                 if callback:
                     callback(res)
-            except Exception as e:
+            except Exception:
                 if errback:
-                    errback(e)
+                    errback(FutureMixin._create_failure())
         return future.add_done_callback(done)
 
     @staticmethod

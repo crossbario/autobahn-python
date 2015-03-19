@@ -31,6 +31,7 @@ import inspect
 
 from twisted.python import log
 from twisted.application import service
+from twisted.python.failure import Failure
 from twisted.internet.defer import Deferred, \
     maybeDeferred, \
     DeferredList, \
@@ -83,8 +84,20 @@ class FutureMixin(object):
         future.errback(error)
 
     @staticmethod
+    def _create_failure():
+        """
+        Create a Failure instance. Can ONLY be called inside an "except"
+        block.
+        """
+        return Failure()
+
+    @staticmethod
     def _add_future_callbacks(future, callback, errback):
-        # callback and/or errback may be None
+        """
+        callback or errback may be None, but at least one must be
+        non-None.
+        """
+        assert future is not None
         if callback is None:
             assert errback is not None
             future.addErrback(errback)
@@ -103,15 +116,12 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
-    def onUserError(self, e, msg):
+    def onUserError(self, fail, msg):
         """
-        Override of wamp.ApplicationSession
+        Override of wamp.ApplicationSession, giving us Twisted-style error
+        logging.
         """
-        # see docs; will print currently-active exception to the logs,
-        # which is just what we want.
-        log.err(e)
-        # also log the framework-provided error-message
-        log.err(msg)
+        log.err(fail, msg)
 
 
 class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
