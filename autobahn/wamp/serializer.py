@@ -253,20 +253,28 @@ else:
       between strings and binary).
       """
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, pack_kwargs=None, unpack_kwargs=None):
             """
             Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
+            :param pack_kwargs = Keyword arguments passed to msgpack.packb().
+            :type pack_kwargs dict
+            :param unpack_kwargs = Keyword arguments passed to msgpack.unpackb().
+            :type unpack_kwargs dict
             """
             self._batched = batched
+            self._pack_kwargs = pack_kwargs or {}
+            self._pack_kwargs.setdefault('use_bin_type', self.ENABLE_V5)
+            self._unpack_kwargs = unpack_kwargs or {}
+            self._unpack_kwargs.setdefault('encoding', 'utf-8')
 
         def serialize(self, obj):
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
             """
-            data = msgpack.packb(obj, use_bin_type=self.ENABLE_V5)
+            data = msgpack.packb(obj, **self._pack_kwargs)
             if self._batched:
                 return struct.pack("!L", len(data)) + data
             else:
@@ -292,7 +300,7 @@ else:
                     data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
-                    msgs.append(msgpack.unpackb(data, encoding='utf-8'))
+                    msgs.append(msgpack.unpackb(data, **self._unpack_kwargs))
 
                     # advance until everything consumed
                     i = i + 4 + l
@@ -302,7 +310,7 @@ else:
                 return msgs
 
             else:
-                return [msgpack.unpackb(payload, encoding='utf-8')]
+                return [msgpack.unpackb(payload, **self._unpack_kwargs)]
 
     IObjectSerializer.register(MsgPackObjectSerializer)
 
@@ -313,14 +321,18 @@ else:
         SERIALIZER_ID = "msgpack"
         MIME_TYPE = "application/x-msgpack"
 
-        def __init__(self, batched=False):
+        def __init__(self, batched=False, pack_kwargs=None, unpack_kwargs=None):
             """
             Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
+            :param pack_kwargs = Keyword arguments passed to msgpack.packb().
+            :type pack_kwargs dict
+            :param unpack_kwargs = Keyword arguments passed to msgpack.unpackb().
+            :type unpack_kwargs dict
             """
-            Serializer.__init__(self, MsgPackObjectSerializer(batched=batched))
+            Serializer.__init__(self, MsgPackObjectSerializer(batched, pack_kwargs, unpack_kwargs))
             if batched:
                 self.SERIALIZER_ID = "msgpack.batched"
 
