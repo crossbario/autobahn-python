@@ -55,6 +55,12 @@ test_twisted_coverage:
 	coverage html
 	coverage report --show-missing
 
+test_coverage:
+	-rm .coverage
+	tox -e py27twisted,py27asyncio,py34asyncio
+	coverage html
+	coverage report --show-missing
+
 # test under asyncio
 test_asyncio:
 	USE_ASYNCIO=1 python -m pytest -rsx
