@@ -278,7 +278,6 @@ class Hello(Message):
             if u'features' in details_role:
                 check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_role[u'features'])
 
             else:
@@ -431,7 +430,6 @@ class Welcome(Message):
             if u'features' in details_role:
                 check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
-                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_roles[role][u'features'])
 
             else:
