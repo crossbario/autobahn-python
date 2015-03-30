@@ -85,7 +85,8 @@ class RoleBrokerFeatures(RoleFeatures):
                  subscriber_blackwhite_listing=None,
                  publisher_exclusion=None,
                  subscription_revocation=None,
-                 event_history=None):
+                 event_history=None,
+                 **kwargs):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
@@ -110,7 +111,8 @@ class RoleSubscriberFeatures(RoleFeatures):
                  publication_trustlevels=None,
                  pattern_based_subscription=None,
                  subscription_revocation=None,
-                 event_history=None):
+                 event_history=None,
+                 **kwargs):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
@@ -130,7 +132,8 @@ class RolePublisherFeatures(RoleFeatures):
     def __init__(self,
                  publisher_identification=None,
                  subscriber_blackwhite_listing=None,
-                 publisher_exclusion=None):
+                 publisher_exclusion=None,
+                 **kwargs):
         self.publisher_identification = publisher_identification
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
@@ -154,7 +157,8 @@ class RoleDealerFeatures(RoleFeatures):
                  call_timeout=None,
                  call_canceling=None,
                  progressive_call_results=None,
-                 registration_revocation=None):
+                 registration_revocation=None,
+                 **kwargs):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
@@ -179,7 +183,8 @@ class RoleCallerFeatures(RoleFeatures):
                  caller_identification=None,
                  call_timeout=None,
                  call_canceling=None,
-                 progressive_call_results=None):
+                 progressive_call_results=None,
+                 **kwargs):
         self.caller_identification = caller_identification
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
@@ -203,7 +208,8 @@ class RoleCalleeFeatures(RoleFeatures):
                  call_timeout=None,
                  call_canceling=None,
                  progressive_call_results=None,
-                 registration_revocation=None):
+                 registration_revocation=None,
+                 **kwargs):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
