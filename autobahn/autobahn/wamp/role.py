@@ -53,7 +53,8 @@ class RoleCommonPubSubFeatures(RoleFeatures):
 
    def __init__(self,
                 publisher_identification = None,
-                partitioned_pubsub = None):
+                partitioned_pubsub = None,
+                **kwargs):
 
       self.publisher_identification = publisher_identification
       self.partitioned_pubsub = partitioned_pubsub
@@ -128,7 +129,8 @@ class RoleCommonRpcFeatures(RoleFeatures):
                 partitioned_rpc = None,
                 call_timeout = None,
                 call_canceling = None,
-                progressive_call_results = None):
+                progressive_call_results = None,
+                **kwargs):
       self.caller_identification = caller_identification
       self.partitioned_rpc = partitioned_rpc
       self.call_timeout = call_timeout
