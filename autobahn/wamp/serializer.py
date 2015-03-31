@@ -214,7 +214,22 @@ IObjectSerializer.register(JsonObjectSerializer)
 class JsonSerializer(Serializer):
 
     SERIALIZER_ID = "json"
+    """
+    ID used as part of the WebSocket subprotocol name to identify the
+    serializer with WAMP-over-WebSocket.
+    """
+
+    RAWSOCKET_SERIALIZER_ID = 1
+    """
+    ID used in lower four bits of second octet in RawSocket opening
+    handshake identify the serializer with WAMP-over-RawSocket.
+    """
+
     MIME_TYPE = "application/json"
+    """
+    MIME type announced in HTTP request/response headers when running
+    WAMP-over-Longpoll HTTP fallback.
+    """
 
     def __init__(self, batched=False):
         """
@@ -311,7 +326,22 @@ else:
     class MsgPackSerializer(Serializer):
 
         SERIALIZER_ID = "msgpack"
+        """
+        ID used as part of the WebSocket subprotocol name to identify the
+        serializer with WAMP-over-WebSocket.
+        """
+
+        RAWSOCKET_SERIALIZER_ID = 2
+        """
+        ID used in lower four bits of second octet in RawSocket opening
+        handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
         MIME_TYPE = "application/x-msgpack"
+        """
+        MIME type announced in HTTP request/response headers when running
+        WAMP-over-Longpoll HTTP fallback.
+        """
 
         def __init__(self, batched=False):
             """

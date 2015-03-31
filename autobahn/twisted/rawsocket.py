@@ -54,7 +54,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             log.msg("WAMP-over-RawSocket connection made")
 
         # the peer we are connected to
-        ##
+        #
         try:
             peer = self.transport.getPeer()
         except AttributeError:
@@ -63,6 +63,19 @@ class WampRawSocketProtocol(Int32StringReceiver):
         else:
             self.peer = peer2str(peer)
 
+        # this will hold an ApplicationSession object
+        # once the RawSocket opening handshake has been
+        # completed
+        #
+        self._session = None
+
+        self._serializer = None
+
+        self._handshake_complete = False
+
+        self._handshake_bytes = b''
+
+    def _on_handshake_complete(self):
         try:
             self._session = self.factory._factory()
             self._session.onOpen(self)
@@ -156,6 +169,50 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
     Base class for Twisted-based WAMP-over-RawSocket server protocols.
     """
 
+    def dataReceived(self, data):
+        if self._handshake_complete:
+            WampRawSocketProtocol.dataReceived(self, data)
+        else:
+            remaining = 4 - len(self._handshake_bytes)
+            self._handshake_bytes += data[:remaining]
+
+            if len(self._handshake_bytes) == 4:
+
+                if self._handshake_bytes[0] != 0x7F:
+                    self.abort()
+
+                # peer requests us to send messages of maximum length 2**max_len_exp
+                #
+                max_len_exp = 9 + (self._handshake_bytes[1] & 0xF0) >> 4
+
+                # client wants to speak this serialization format
+                #
+                ser_id = self._handshake_bytes[1] & 0x0F
+                if ser_id is self._serializers:
+                    self._serializer = self._serializers[ser_id]
+                else:
+                    self.abort()
+
+                # we request the peer to send message of maximum length 2**reply_max_len_exp
+                #
+                reply_max_len_exp = 24
+
+                # send out handshake reply
+                #
+                reply_octet2 = ((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID
+                self.transport.write(b'\x7F') # magic byte
+                self.transport.write(reply_octet2) # max length / serializer
+                self.transport.write(b'\x00\x00') # reserved octets
+
+                self._handshake_complete = True
+                self._on_handshake_complete()
+
+            # consume any remaining data received already ..
+            #
+            data = data[remaining:]
+            if data:
+                self.dataReceived(data)
+
 
 class WampRawSocketClientProtocol(WampRawSocketProtocol):
     """
@@ -168,20 +225,47 @@ class WampRawSocketFactory(Factory):
     Base class for Twisted-based WAMP-over-RawSocket factories.
     """
 
-    def __init__(self, factory, serializer, debug=False):
+    def __init__(self, factory, serializers=None, debug=False):
         """
 
         :param factory: A callable that produces instances that implement
             :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
-        :param serializer: A WAMP serializer to use. A serializer must implement
-            :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializer: obj
+        :param serializers: A list of WAMP serializers to use (or None for default
+           serializers). Serializers must implement
+           :class:`autobahn.wamp.interfaces.ISerializer`.
+        :type serializers: list
         """
         assert(callable(factory))
         self._factory = factory
-        self._serializer = serializer
+
         self.debug = debug
+
+        if serializers is None:
+            serializers = []
+
+            # try MsgPack WAMP serializer
+            try:
+                from autobahn.wamp.serializer import MsgPackSerializer
+                serializers.append(MsgPackSerializer(batched=True))
+                serializers.append(MsgPackSerializer())
+            except ImportError:
+                pass
+
+            # try JSON WAMP serializer
+            try:
+                from autobahn.wamp.serializer import JsonSerializer
+                serializers.append(JsonSerializer(batched=True))
+                serializers.append(JsonSerializer())
+            except ImportError:
+                pass
+
+            if not serializers:
+                raise Exception("could not import any WAMP serializers")
+
+        self._serializers = {}
+        for ser in serializers:
+            self._serializers[ser.RAWSOCKET_SERIALIZER_ID] = ser
 
 
 class WampRawSocketServerFactory(WampRawSocketFactory):
