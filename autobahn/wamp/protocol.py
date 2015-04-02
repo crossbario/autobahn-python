@@ -961,7 +961,9 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
-        self.disconnect()
+        if self._transport:
+            self.disconnect()
+        # do we ever call onLeave with a valid transport?
 
     def leave(self, reason=None, log_message=None):
         """

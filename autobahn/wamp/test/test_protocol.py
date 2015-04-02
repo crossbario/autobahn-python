@@ -154,6 +154,15 @@ if os.environ.get('USE_TWISTED', False):
         def abort(self):
             pass
 
+    class TestClose(unittest.TestCase):
+        def test_server_abort(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            # this should not raise an exception, but did when this
+            # test-case was written
+            handler.onClose(False)
+
     class TestPublisher(unittest.TestCase):
 
         @inlineCallbacks
