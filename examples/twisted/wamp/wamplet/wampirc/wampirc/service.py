@@ -80,12 +80,12 @@ class IRCComponent(ApplicationSession):
 
     @wamp.register('com.myapp.stop_bot')
     def stop_bot(self, id):
-        if id in self._bots:
-            f = self._bots[id].factory
+        f = self._bots.pop(id, None)
+        if f is not None:
+            f = f.factory
             if f.proto:
                 f.proto.transport.loseConnection()
             f.stopFactory()
-            del self._bots[id]
         else:
             raise ApplicationError('com.myapp.error.no_such_bot')
 

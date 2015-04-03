@@ -681,10 +681,8 @@ class ApplicationSession(BaseSession):
                     request = self._unsubscribe_reqs.pop(msg.request)
 
                     # if the subscription still exists, mark as inactive and remove ..
-                    if request.subscription_id in self._subscriptions:
-                        for subscription in self._subscriptions[request.subscription_id]:
-                            subscription.active = False
-                        del self._subscriptions[request.subscription_id]
+                    for subscription in self._subscriptions.pop(request.subscription_id, []):
+                        subscription.active = False
 
                     # resolve deferred/future for unsubscribing successfully
                     self._resolve_future(request.on_reply, 0)
@@ -876,9 +874,9 @@ class ApplicationSession(BaseSession):
                     request = self._unregister_reqs.pop(msg.request)
 
                     # if the registration still exists, mark as inactive and remove ..
-                    if request.registration_id in self._registrations:
-                        self._registrations[request.registration_id].active = False
-                        del self._registrations[request.registration_id]
+                    registration = self._registrations.pop(request.registration_id, None)
+                    if registration is not None:
+                        registration.active = False
 
                     # resolve deferred/future for unregistering successfully
                     self._resolve_future(request.on_reply)
@@ -1017,8 +1015,7 @@ class ApplicationSession(BaseSession):
             #
             self._transport.send(msg)
         except Exception as e:
-            if request_id in self._publish_reqs:
-                del self._publish_reqs[request_id]
+            self._publish_reqs.pop(request_id, None)
             raise e
 
         return on_reply
@@ -1144,8 +1141,7 @@ class ApplicationSession(BaseSession):
             #
             self._transport.send(msg)
         except Exception as e:
-            if request_id in self._call_reqs:
-                del self._call_reqs[request_id]
+            self._call_reqs.pop(request_id, None)
             raise e
 
         return on_reply
