@@ -75,6 +75,8 @@ class WampRawSocketProtocol(Int32StringReceiver):
 
         self._handshake_bytes = b''
 
+        self._max_len_send = None
+
     def _on_handshake_complete(self):
         try:
             self._session = self.factory._factory()
@@ -188,7 +190,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
-                max_len_exp = 9 + (ord(self._handshake_bytes[1]) >> 4)
+                self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1]) >> 4))
 
                 # client wants to speak this serialization format
                 #
@@ -207,9 +209,9 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                 # send out handshake reply
                 #
                 reply_octet2 = chr(((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID)
-                self.transport.write(b'\x7F') # magic byte
-                self.transport.write(reply_octet2) # max length / serializer
-                self.transport.write(b'\x00\x00') # reserved octets
+                self.transport.write(b'\x7F')       # magic byte
+                self.transport.write(reply_octet2)  # max length / serializer
+                self.transport.write(b'\x00\x00')   # reserved octets
 
                 self._handshake_complete = True
                 self._on_handshake_complete()
