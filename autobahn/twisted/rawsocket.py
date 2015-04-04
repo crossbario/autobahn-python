@@ -178,19 +178,26 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
             if len(self._handshake_bytes) == 4:
 
-                if self._handshake_bytes[0] != 0x7F:
+                if self.factory.debug:
+                    print("RawSocket opening handshake received: {0}".format(binascii.b2a_hex(self._handshake_bytes)))
+
+                if ord(self._handshake_bytes[0]) != 0x7f:
+                    if self.factory.debug:
+                        print("Invalid magic byte (octet 1) in RawSocket opening handshake: was 0x{0}, but expected 0x7f".format(binascii.b2a_hex(self._handshake_bytes[0])))
                     self.abort()
 
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
-                max_len_exp = 9 + (self._handshake_bytes[1] & 0xF0) >> 4
+                max_len_exp = 9 + (ord(self._handshake_bytes[1]) >> 4)
 
                 # client wants to speak this serialization format
                 #
-                ser_id = self._handshake_bytes[1] & 0x0F
-                if ser_id is self._serializers:
-                    self._serializer = self._serializers[ser_id]
+                ser_id = ord(self._handshake_bytes[1]) & 0x0F
+                if ser_id in self.factory._serializers:
+                    self._serializer = self.factory._serializers[ser_id]
                 else:
+                    if self.factory.debug:
+                        print("RawSocket opening handshake - no suitable serializer found (client requested {0}, and we have {1})".format(ser_id, self.factory._serializers.keys()))
                     self.abort()
 
                 # we request the peer to send message of maximum length 2**reply_max_len_exp
@@ -199,7 +206,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 # send out handshake reply
                 #
-                reply_octet2 = ((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID
+                reply_octet2 = chr(((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID)
                 self.transport.write(b'\x7F') # magic byte
                 self.transport.write(reply_octet2) # max length / serializer
                 self.transport.write(b'\x00\x00') # reserved octets
@@ -240,6 +247,7 @@ class WampRawSocketFactory(Factory):
         self._factory = factory
 
         self.debug = debug
+        self.debug = True
 
         if serializers is None:
             serializers = []
