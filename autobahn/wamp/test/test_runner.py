@@ -24,60 +24,64 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
+import os
 try:
     import unittest2 as unittest
 except ImportError:
     import unittest
 from mock import patch
 
+if os.environ.get('USE_TWISTED', False):
+    from zope.interface import implementer
+    from twisted.internet.interfaces import IReactorTime
 
-class FakeReactor(object):
-    '''
-    This just fakes out enough reactor methods so .run() can work.
-    '''
-    stop_called = False
-
-    def __init__(self, to_raise):
-        self.stop_called = False
-        self.to_raise = to_raise
-
-    def run(self, *args, **kw):
-        raise self.to_raise
-
-    def stop(self):
-        self.stop_called = True
-
-    def connectTCP(self, *args, **kw):
-        raise RuntimeError("ConnectTCP shouldn't get called")
-
-
-class TestWampTwistedRunner(unittest.TestCase):
-
-    def test_connect_error(self):
+    @implementer(IReactorTime)
+    class FakeReactor(object):
         '''
-        Ensure the runner doesn't swallow errors and that it exits the
-        reactor properly if there is one.
+        This just fakes out enough reactor methods so .run() can work.
         '''
-        try:
-            from autobahn.twisted.wamp import ApplicationRunner
-            from twisted.internet.error import ConnectionRefusedError
-            # the 'reactor' member doesn't exist until we import it
-            from twisted.internet import reactor  # noqa: F401
-        except ImportError:
-            raise unittest.SkipTest('No twisted')
+        stop_called = False
 
-        runner = ApplicationRunner('ws://localhost:1', 'realm')
-        exception = ConnectionRefusedError("It's a trap!")
+        def __init__(self, to_raise):
+            self.stop_called = False
+            self.to_raise = to_raise
+            self.delayed = []
 
-        with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
-            self.assertRaises(
-                ConnectionRefusedError,
-                # pass a no-op session-creation method
-                runner.run, lambda _: None, start_reactor=True
-            )
-            self.assertTrue(mockreactor.stop_called)
+        def run(self, *args, **kw):
+            raise self.to_raise
 
-if __name__ == '__main__':
-    unittest.main()
+        def stop(self):
+            self.stop_called = True
+
+        def callLater(self, delay, func, *args, **kwargs):
+            self.delayed.append((delay, func, args, kwargs))
+
+        def connectTCP(self, *args, **kw):
+            raise RuntimeError("ConnectTCP shouldn't get called")
+
+    class TestWampTwistedRunner(unittest.TestCase):
+        def test_connect_error(self):
+            '''
+            Ensure the runner doesn't swallow errors and that it exits the
+            reactor properly if there is one.
+            '''
+            try:
+                from autobahn.twisted.wamp import ApplicationRunner
+                from twisted.internet.error import ConnectionRefusedError
+                # the 'reactor' member doesn't exist until we import it
+                from twisted.internet import reactor  # noqa: F401
+            except ImportError:
+                raise unittest.SkipTest('No twisted')
+
+            runner = ApplicationRunner('ws://localhost:1', 'realm')
+            exception = ConnectionRefusedError("It's a trap!")
+
+            with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
+                self.assertRaises(
+                    ConnectionRefusedError,
+                    # pass a no-op session-creation method
+                    runner.run, lambda _: None, start_reactor=True
+                )
+                self.assertTrue(mockreactor.stop_called)
