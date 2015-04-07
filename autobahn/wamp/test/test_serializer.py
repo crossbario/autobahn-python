@@ -27,7 +27,11 @@
 from __future__ import absolute_import
 
 # from twisted.trial import unittest
+import decimal
 import unittest
+import datetime
+
+import six
 
 from autobahn.wamp import message
 from autobahn.wamp import role
@@ -79,6 +83,15 @@ def generate_test_messages():
     ]
 
 
+def generate_test_messages_with_custom_types():
+    return [
+        message.Yield(datetime.datetime(2015, 3, 22, 8, 23, 17), args=[
+            datetime.date(2015, 3, 22), decimal.Decimal('27.012')
+        ]),
+        message.Yield(datetime.datetime(2015, 3, 22, 8, 23, 17), datetime.date(2015, 3, 22))
+    ]
+
+
 class TestSerializer(unittest.TestCase):
 
     def setUp(self):
@@ -124,6 +137,56 @@ class TestSerializer(unittest.TestCase):
                 # serialization is gone
                 msg.uncache()
                 self.assertFalse(ser._serializer in msg._serialized)
+
+
+if hasattr(serializer, 'MsgPackSerializer'):
+    from msgpack import ExtType
+
+    class TestMsgpackCustomTypes(unittest.TestCase):
+
+        @staticmethod
+        def default(obj):
+            if isinstance(obj, datetime.datetime):
+                return ExtType(1, obj.strftime(u"%Y%m%dT%H:%M:%S.%f").encode())
+            if isinstance(obj, datetime.date):
+                return ExtType(2, obj.strftime(u"%Y%m%d").encode())
+            if isinstance(obj, decimal.Decimal):
+                return ExtType(3, six.text_type(obj).encode())
+            raise TypeError("Cannot serialize type %s" % obj.__class__.__name__)
+
+        @staticmethod
+        def ext_hook(code, data):
+            if code == 1:
+                return datetime.datetime.strptime(data.decode(), "%Y%m%dT%H:%M:%S.%f")
+            if code == 2:
+                return datetime.datetime.strptime(data.decode(), "%Y%m%d").date()
+            if code == 3:
+                return decimal.Decimal(data.decode())
+            raise TypeError("Unknown type code %d" % code)
+
+        def setUp(self):
+            pack_kwargs = {'default': self.default}
+            unpack_kwargs = {'ext_hook': self.ext_hook}
+            self.serializers = [serializer.MsgPackSerializer(pack_kwargs=pack_kwargs,
+                                                             unpack_kwargs=unpack_kwargs),
+                                serializer.MsgPackSerializer(batched=True, pack_kwargs=pack_kwargs,
+                                                             unpack_kwargs=unpack_kwargs)]
+
+        def test_roundtrip(self):
+            msg = message.Yield(123456, args=[
+                datetime.datetime(2015, 3, 22, 8, 23, 17), datetime.date(2015, 3, 22),
+                decimal.Decimal('27.012')
+            ])
+
+            for ser in self.serializers:
+                # serialize message
+                payload, binary = ser.serialize(msg)
+
+                # unserialize message again
+                msg2 = ser.unserialize(payload, binary)
+
+                # must be equal: message roundtrips via the serializer
+                self.assertEqual([msg], msg2)
 
 
 if __name__ == '__main__':
