@@ -51,8 +51,7 @@ class KeyValueStore(ApplicationSession):
             if value is not None:
                 self.store[k] = value
             else:
-                if k in self.store:
-                    del self.store[k]
+                self.store.pop(k, None)
         else:
             self.store.clear()
         self.store.sync()

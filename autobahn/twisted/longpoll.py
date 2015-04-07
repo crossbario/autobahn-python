@@ -270,8 +270,7 @@ class WampLongPollResourceSession(Resource):
 
                     self.onClose(False, 5000, "session inactive")
                     self._receive._kill()
-                    if self._transportid in self._parent._transports:
-                        del self._parent._transports[self._transportid]
+                    self._parent._transports.pop(self._transportid, None)
                 else:
                     if self._debug:
                         log.msg("WampLongPoll: transport '{0}' is still alive".format(self._transportid))
