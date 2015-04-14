@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.10.3
+------
+
+`Published 2015-04-14 <https://pypi.python.org/pypi/autobahn/0.10.2>`__
+
+* new: using txaio package
+* new: revised WAMP-over-RawSocket specification implemented
+* fix: ignore unknown attributes in WAMP Options/Details
+
 0.10.2
 ------
 
