@@ -41,6 +41,7 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
+
 __all__ = (
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
@@ -215,9 +216,6 @@ class WebSocketAdapterFactory(object):
 
     def _log(self, msg):
         print(msg)
-
-    def _callLater(self, delay, fun):
-        return self.loop.call_later(delay, fun)
 
     def __call__(self):
         proto = self.protocol()

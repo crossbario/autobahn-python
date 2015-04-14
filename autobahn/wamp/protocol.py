@@ -50,6 +50,8 @@ from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.types import SessionDetails
 
+import txaio
+
 
 def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
@@ -455,11 +457,11 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self._transport = transport
-        d = self._as_future(self.onConnect)
+        d = txaio.as_future(self.onConnect)
 
         def _error(e):
             return self._swallow_error(e, "While firing onConnect")
-        self._add_future_callbacks(d, None, _error)
+        txaio.add_callbacks(d, None, _error)
 
     def onConnect(self):
         """
@@ -544,26 +546,26 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-                d = self._as_future(self.onJoin, details)
+                d = txaio.as_future(self.onJoin, details)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onJoin")
-                self._add_future_callbacks(d, None, _error)
+                txaio.add_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Abort):
 
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
-                d = self._as_future(self.onLeave, details)
+                d = txaio.as_future(self.onLeave, details)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onLeave")
-                self._add_future_callbacks(d, None, _error)
+                txaio.add_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Challenge):
 
                 challenge = types.Challenge(msg.method, msg.extra)
-                d = self._as_future(self.onChallenge, challenge)
+                d = txaio.as_future(self.onChallenge, challenge)
 
                 def success(signature):
                     reply = message.Authenticate(signature)
@@ -574,16 +576,16 @@ class ApplicationSession(BaseSession):
                     self._transport.send(reply)
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
-                    d = self._as_future(self.onLeave, details)
+                    d = txaio.as_future(self.onLeave, details)
 
                     def _error(e):
                         return self._swallow_error(e, "While firing onLeave")
-                    self._add_future_callbacks(d, None, _error)
+                    txaio.add_callbacks(d, None, _error)
                     # switching to the callback chain, effectively
                     # cancelling error (which we've now handled)
                     return d
 
-                self._add_future_callbacks(d, success, error)
+                txaio.add_callbacks(d, success, error)
 
             else:
                 raise ProtocolError("Received {0} message, and session is not yet established".format(msg.__class__))
@@ -600,12 +602,12 @@ class ApplicationSession(BaseSession):
 
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
-                d = self._as_future(self.onLeave, details)
+                d = txaio.as_future(self.onLeave, details)
 
                 def _error(e):
                     errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
                     return self._swallow_error(e, errmsg)
-                self._add_future_callbacks(d, None, _error)
+                txaio.add_callbacks(d, None, _error)
 
             elif isinstance(msg, message.Event):
 
@@ -648,7 +650,7 @@ class ApplicationSession(BaseSession):
                     publication = Publication(msg.publication)
 
                     # resolve deferred/future for publishing successfully
-                    self._resolve_future(publish_request.on_reply, publication)
+                    txaio.resolve(publish_request.on_reply, publication)
                 else:
                     raise ProtocolError("PUBLISHED received for non-pending request ID {0}".format(msg.request))
 
@@ -669,7 +671,7 @@ class ApplicationSession(BaseSession):
                     self._subscriptions[msg.subscription].append(subscription)
 
                     # resolve deferred/future for subscribing successfully
-                    self._resolve_future(request.on_reply, subscription)
+                    txaio.resolve(request.on_reply, subscription)
                 else:
                     raise ProtocolError("SUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -687,7 +689,7 @@ class ApplicationSession(BaseSession):
                         del self._subscriptions[request.subscription_id]
 
                     # resolve deferred/future for unsubscribing successfully
-                    self._resolve_future(request.on_reply, 0)
+                    txaio.resolve(request.on_reply, 0)
                 else:
                     raise ProtocolError("UNSUBSCRIBED received for non-pending request ID {0}".format(msg.request))
 
@@ -727,16 +729,16 @@ class ApplicationSession(BaseSession):
                                 res = types.CallResult(*msg.args, **msg.kwargs)
                             else:
                                 res = types.CallResult(**msg.kwargs)
-                            self._resolve_future(on_reply, res)
+                            txaio.resolve(on_reply, res)
                         else:
                             if msg.args:
                                 if len(msg.args) > 1:
                                     res = types.CallResult(*msg.args)
-                                    self._resolve_future(on_reply, res)
+                                    txaio.resolve(on_reply, res)
                                 else:
-                                    self._resolve_future(on_reply, msg.args[0])
+                                    txaio.resolve(on_reply, msg.args[0])
                             else:
-                                self._resolve_future(on_reply, None)
+                                txaio.resolve(on_reply, None)
                 else:
                     raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
@@ -778,7 +780,7 @@ class ApplicationSession(BaseSession):
 
                             invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
 
-                        on_reply = self._as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+                        on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
                         def success(res):
                             del self._invocations[msg.request]
@@ -831,7 +833,7 @@ class ApplicationSession(BaseSession):
 
                         self._invocations[msg.request] = InvocationRequest(msg.request, on_reply)
 
-                        self._add_future_callbacks(on_reply, success, error)
+                        txaio.add_callbacks(on_reply, success, error)
 
             elif isinstance(msg, message.Interrupt):
 
@@ -864,7 +866,7 @@ class ApplicationSession(BaseSession):
                     else:
                         raise ProtocolError("REGISTERED received for already existing registration ID {0}".format(msg.registration))
 
-                    self._resolve_future(request.on_reply, registration)
+                    txaio.resolve(request.on_reply, registration)
                 else:
                     raise ProtocolError("REGISTERED received for non-pending request ID {0}".format(msg.request))
 
@@ -881,7 +883,7 @@ class ApplicationSession(BaseSession):
                         del self._registrations[request.registration_id]
 
                     # resolve deferred/future for unregistering successfully
-                    self._resolve_future(request.on_reply)
+                    txaio.resolve(request.on_reply)
                 else:
                     raise ProtocolError("UNREGISTERED received for non-pending request ID {0}".format(msg.request))
 
@@ -915,7 +917,7 @@ class ApplicationSession(BaseSession):
                     on_reply = self._unregister_reqs.pop(msg.request).on_reply
 
                 if on_reply:
-                    self._reject_future(on_reply, self._exception_from_message(msg))
+                    txaio.reject(on_reply, self._exception_from_message(msg))
                 else:
                     raise ProtocolError("WampAppSession.onMessage(): ERROR received for non-pending request_type {0} and request ID {1}".format(msg.request_type, msg.request))
 
@@ -932,19 +934,19 @@ class ApplicationSession(BaseSession):
 
         if self._session_id:
             # fire callback and close the transport
-            d = self._as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
+            d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
 
             def _error(e):
                 return self._swallow_error(e, "While firing onLeave")
-            self._add_future_callbacks(d, None, _error)
+            txaio.add_callbacks(d, None, _error)
 
             self._session_id = None
 
-        d = self._as_future(self.onDisconnect)
+        d = txaio.as_future(self.onDisconnect)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
-        self._add_future_callbacks(d, None, _error)
+        txaio.add_callbacks(d, None, _error)
 
     def onChallenge(self, challenge):
         """
@@ -1003,7 +1005,7 @@ class ApplicationSession(BaseSession):
 
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
-            on_reply = self._create_future()
+            on_reply = txaio.create_future()
             self._publish_reqs[request_id] = PublishRequest(request_id, on_reply)
         else:
             on_reply = None
@@ -1040,7 +1042,7 @@ class ApplicationSession(BaseSession):
 
         def _subscribe(obj, fn, topic, options):
             request_id = util.id()
-            on_reply = self._create_future()
+            on_reply = txaio.create_future()
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
             self._subscribe_reqs[request_id] = SubscribeRequest(request_id, on_reply, handler_obj)
 
@@ -1070,7 +1072,8 @@ class ApplicationSession(BaseSession):
                         subopts = options or pat.subscribe_options()
                         on_replies.append(_subscribe(handler, proc, uri, subopts))
 
-            return self._gather_futures(on_replies, consume_exceptions=True)
+            # XXX needs coverage
+            return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unsubscribe(self, subscription):
         """
@@ -1095,7 +1098,7 @@ class ApplicationSession(BaseSession):
             # if the last handler was removed, unsubscribe from broker ..
             request_id = util.id()
 
-            on_reply = self._create_future()
+            on_reply = txaio.create_future()
             self._unsubscribe_reqs[request_id] = UnsubscribeRequest(request_id, on_reply, subscription.id)
 
             msg = message.Unsubscribe(request_id, subscription.id)
@@ -1104,7 +1107,7 @@ class ApplicationSession(BaseSession):
             return on_reply
         else:
             # there are still handlers active on the subscription!
-            return self._create_future_success(scount)
+            return txaio.create_future_success(scount)
 
     def call(self, procedure, *args, **kwargs):
         """
@@ -1132,7 +1135,7 @@ class ApplicationSession(BaseSession):
         #   self._transport.send(cancel_msg)
         # d = Deferred(canceller)
 
-        on_reply = self._create_future()
+        on_reply = txaio.create_future()
         self._call_reqs[request_id] = CallRequest(request_id, on_reply, options)
 
         try:
@@ -1167,7 +1170,7 @@ class ApplicationSession(BaseSession):
 
         def _register(obj, fn, procedure, options):
             request_id = util.id()
-            on_reply = self._create_future()
+            on_reply = txaio.create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, procedure, endpoint_obj)
 
@@ -1196,7 +1199,8 @@ class ApplicationSession(BaseSession):
                         uri = pat.uri()
                         on_replies.append(_register(endpoint, proc, uri, options))
 
-            return self._gather_futures(on_replies, consume_exceptions=True)
+            # XXX neds coverage
+            return txaio.gather(on_replies, consume_exceptions=True)
 
     def _unregister(self, registration):
         """
@@ -1211,7 +1215,7 @@ class ApplicationSession(BaseSession):
 
         request_id = util.id()
 
-        on_reply = self._create_future()
+        on_reply = txaio.create_future()
         self._unregister_reqs[request_id] = UnregisterRequest(request_id, on_reply, registration.id)
 
         msg = message.Unregister(request_id, registration.id)

@@ -53,6 +53,7 @@ from autobahn.websocket.compress import *  # noqa
 from autobahn.websocket import http
 
 from six.moves import urllib
+import txaio
 
 if six.PY3:
     # Python 3
@@ -838,7 +839,11 @@ class WebSocketProtocol(object):
                 # When we are a client, the server should drop the TCP
                 # If that doesn't happen, we do. And that will set wasClean = False.
                 if self.serverConnectionDropTimeout > 0:
-                    self.serverConnectionDropTimeoutCall = self.factory._callLater(self.serverConnectionDropTimeout, self.onServerConnectionDropTimeout)
+                    call = taxio.call_later(
+                        self.serverConnectionDropTimeout,
+                        self.onServerConnectionDropTimeout,
+                    )
+                    self.serverConnectionDropTimeoutCall = call
 
         elif self.state == WebSocketProtocol.STATE_OPEN:
             # The peer initiates a closing handshake, so we reply
@@ -1179,7 +1184,7 @@ class WebSocketProtocol(object):
 
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
-            self.openHandshakeTimeoutCall = self.factory._callLater(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
+            self.openHandshakeTimeoutCall = txaio.call_later(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
         self.autoPingTimeoutCall = None
         self.autoPingPending = None
@@ -1394,7 +1399,7 @@ class WebSocketProtocol(object):
             # can get on the wire. Note: this is a "heuristic",
             # since there is no (easy) way to really force out
             # octets from the OS network stack to wire.
-            self.factory._callLater(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
+            txaio.call_later(WebSocketProtocol._QUEUED_WRITE_DELAY, self._send)
         else:
             self.triggered = False
 
@@ -1951,7 +1956,7 @@ class WebSocketProtocol(object):
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
-                            self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, self._sendAutoPing)
+                            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
                     else:
                         if self.debugCodePaths:
                             self.factory._log("Auto ping/pong: received non-pending pong")
@@ -2096,7 +2101,7 @@ class WebSocketProtocol(object):
         if self.autoPingTimeout:
             if self.debugCodePaths:
                 self.factory._log("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
-            self.autoPingTimeoutCall = self.factory._callLater(self.autoPingTimeout, self.onAutoPingTimeout)
+            self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
 
     def sendPong(self, payload=None):
         """
@@ -2160,7 +2165,7 @@ class WebSocketProtocol(object):
 
             # drop connection when timeout on receiving close handshake reply
             if self.closedByMe and self.closeHandshakeTimeout > 0:
-                self.closeHandshakeTimeoutCall = self.factory._callLater(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
+                self.closeHandshakeTimeoutCall = txaio.call_later(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
 
         else:
             raise Exception("logic error")
@@ -3278,7 +3283,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # automatic ping/pong
         #
         if self.autoPingInterval:
-            self.autoPingPendingCall = self.factory._callLater(self.autoPingInterval, self._sendAutoPing)
+            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
 
         # fire handler on derived class
         #

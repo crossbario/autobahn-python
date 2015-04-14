@@ -165,7 +165,10 @@ setup(
     author_email='autobahnws@googlegroups.com',
     url='http://autobahn.ws/python',
     platforms='Any',
-    install_requires=['six>=1.6.1'],
+    install_requires=[
+        'six>=1.6.1',
+        'txaio>=1.0.0'
+    ],
     extras_require={
         'all': extras_require_all,
         'asyncio': extras_require_asyncio,

@@ -30,20 +30,18 @@ import sys
 import inspect
 
 from twisted.python import log
-from twisted.internet.defer import Deferred, \
-    maybeDeferred, \
-    DeferredList, \
-    inlineCallbacks, \
-    succeed, \
-    fail
+from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
+import txaio
+txaio.use_twisted()
+
+
 __all__ = (
-    'FutureMixin',
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner',
@@ -59,52 +57,7 @@ except ImportError:
     __all__.pop(__all__.index("Service"))
 
 
-class FutureMixin(object):
-    """
-    Mixin for Twisted style Futures ("Deferreds").
-    """
-
-    @staticmethod
-    def _create_future():
-        return Deferred()
-
-    @staticmethod
-    def _create_future_success(result=None):
-        return succeed(result)
-
-    @staticmethod
-    def _create_future_error(error=None):
-        return fail(error)
-
-    @staticmethod
-    def _as_future(fun, *args, **kwargs):
-        return maybeDeferred(fun, *args, **kwargs)
-
-    @staticmethod
-    def _resolve_future(future, result=None):
-        future.callback(result)
-
-    @staticmethod
-    def _reject_future(future, error):
-        future.errback(error)
-
-    @staticmethod
-    def _add_future_callbacks(future, callback, errback):
-        # callback and/or errback may be None
-        if callback is None:
-            assert errback is not None
-            future.addErrback(errback)
-            return future
-        else:
-            future.addCallbacks(callback, errback)
-            return future
-
-    @staticmethod
-    def _gather_futures(futures, consume_exceptions=True):
-        return DeferredList(futures, consumeErrors=consume_exceptions)
-
-
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for Twisted-based applications.
     """
@@ -120,7 +73,7 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
         log.err(msg)
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for Twisted-based applications.
     """
@@ -185,6 +138,8 @@ class ApplicationRunner(object):
             of :class:`WampWebSocketClientProtocol`
         """
         from twisted.internet import reactor
+        txaio.use_twisted()
+        txaio.config.loop = reactor
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 

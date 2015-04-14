@@ -32,95 +32,29 @@ from autobahn.websocket.protocol import parseWsUrl
 from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 try:
-    import asyncio
-    from asyncio import iscoroutine
-    from asyncio import Future
+    from asyncio import get_event_loop
 except ImportError:
     # Trollius >= 0.3 was renamed
     # noinspection PyUnresolvedReferences
-    import trollius as asyncio
-    from trollius import iscoroutine
-    from trollius import Future
+    from trollius import get_event_loop
+
+import txaio
+txaio.use_asyncio()
 
 __all__ = (
-    'FutureMixin',
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner'
 )
 
 
-class FutureMixin(object):
-    """
-    Mixin for Asyncio style Futures.
-    """
-
-    @staticmethod
-    def _create_future():
-        return Future()
-
-    @staticmethod
-    def _create_future_success(result=None):
-        f = Future()
-        f.set_result(result)
-        return f
-
-    @staticmethod
-    def _create_future_error(error=None):
-        f = Future()
-        f.set_exception(error)
-        return f
-
-    @staticmethod
-    def _as_future(fun, *args, **kwargs):
-        try:
-            res = fun(*args, **kwargs)
-        except Exception as e:
-            f = Future()
-            f.set_exception(e)
-            return f
-        else:
-            if isinstance(res, Future):
-                return res
-            elif iscoroutine(res):
-                return asyncio.Task(res)
-            else:
-                f = Future()
-                f.set_result(res)
-                return f
-
-    @staticmethod
-    def _resolve_future(future, result=None):
-        future.set_result(result)
-
-    @staticmethod
-    def _reject_future(future, error):
-        future.set_exception(error)
-
-    @staticmethod
-    def _add_future_callbacks(future, callback, errback):
-        def done(f):
-            try:
-                res = f.result()
-                if callback:
-                    callback(res)
-            except Exception as e:
-                if errback:
-                    errback(e)
-        return future.add_done_callback(done)
-
-    @staticmethod
-    def _gather_futures(futures, consume_exceptions=True):
-        return asyncio.gather(*futures, return_exceptions=consume_exceptions)
-
-
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for asyncio-based applications.
     """
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for asyncio-based applications.
     """
@@ -185,7 +119,7 @@ class ApplicationRunner(object):
             except Exception as e:
                 # the app component could not be created .. fatal
                 print(e)
-                asyncio.get_event_loop().stop()
+                get_event_loop().stop()
             else:
                 session.debug_app = self.debug_app
                 return session
@@ -197,7 +131,9 @@ class ApplicationRunner(object):
                                                        debug=self.debug, debug_wamp=self.debug_wamp)
 
         # 3) start the client
-        loop = asyncio.get_event_loop()
+        loop = get_event_loop()
+        txaio.use_asyncio()
+        txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=isSecure)
         loop.run_until_complete(coro)
 
