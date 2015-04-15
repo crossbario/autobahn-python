@@ -41,6 +41,8 @@ if os.environ.get('USE_TWISTED', False):
     from mock import MagicMock, patch
     from txaio.testutil import replace_loop
 
+    from base64 import b64decode
+
     @patch('base64.b64encode')
     def create_client_frame(b64patch, **kwargs):
         """
@@ -53,9 +55,9 @@ if os.environ.get('USE_TWISTED', False):
 
         # only real way to inject a "known" secret-key for the headers
         # to line up... :/
-        b64patch.return_value = b'oazrPd/TGDL5kLZK38FDUszzozk='
+        b64patch.return_value = b'QIatSt9QkZPyS4QQfdufO8TgkL0='
 
-        factory = WebSocketClientFactory(protocols=['wamp.2.json.batched'])
+        factory = WebSocketClientFactory(protocols=['wamp.2.json'])
         factory.protocol = WebSocketClientProtocol
         factory.doStart()
         proto = factory.buildProtocol(IPv4Address('TCP', '127.0.0.9', 65534))
@@ -74,9 +76,62 @@ if os.environ.get('USE_TWISTED', False):
         return b''.join(data)
 
     # beware the evils of line-endings...
-    mock_handshake_client = b'GET / HTTP/1.1\r\nUser-Agent: AutobahnPython/0.10.2\r\nHost: localhost:80\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: 6Jid6RgXpH0RVegaNSs/4g==\r\nSec-WebSocket-Protocol: wamp.2.json.batched,wamp.2.json\r\nSec-WebSocket-Version: 13\r\n\r\n'
+    mock_handshake_client = b'GET / HTTP/1.1\r\nUser-Agent: AutobahnPython/0.10.2\r\nHost: localhost:80\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: 6Jid6RgXpH0RVegaNSs/4g==\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Version: 13\r\n\r\n'
 
-    mock_handshake_server = b'HTTP/1.1 101 Switching Protocols\r\nServer: AutobahnPython/0.10.2\r\nX-Powered-By: AutobahnPython/0.10.2\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: wamp.2.json.batched\r\nSec-WebSocket-Accept: oazrPd/TGDL5kLZK38FDUszzozk=\r\n\r\n\x81~\x02\x19[1,"crossbar",{"roles":{"subscriber":{"features":{"publisher_identification":true,"pattern_based_subscription":true,"subscription_revocation":true}},"publisher":{"features":{"publisher_identification":true,"publisher_exclusion":true,"subscriber_blackwhite_listing":true}},"caller":{"features":{"caller_identification":true,"progressive_call_results":true}},"callee":{"features":{"progressive_call_results":true,"pattern_based_registration":true,"registration_revocation":true,"shared_registration":true,"caller_identification":true}}}}]\x18'
+    mock_handshake_server = b'HTTP/1.1 101 Switching Protocols\r\nServer: AutobahnPython/0.10.2\r\nX-Powered-By: AutobahnPython/0.10.2\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nSec-WebSocket-Protocol: wamp.2.json\r\nSec-WebSocket-Accept: QIatSt9QkZPyS4QQfdufO8TgkL0=\r\n\r\n\x81~\x02\x19[1,"crossbar",{"roles":{"subscriber":{"features":{"publisher_identification":true,"pattern_based_subscription":true,"subscription_revocation":true}},"publisher":{"features":{"publisher_identification":true,"publisher_exclusion":true,"subscriber_blackwhite_listing":true}},"caller":{"features":{"caller_identification":true,"progressive_call_results":true}},"callee":{"features":{"progressive_call_results":true,"pattern_based_registration":true,"registration_revocation":true,"shared_registration":true,"caller_identification":true}}}}]\x18'
+
+    class TestClient(unittest.TestCase):
+        def setUp(self):
+            self.factory = WebSocketClientFactory(protocols=['wamp.2.json'])
+            self.factory.protocol = WebSocketClientProtocol
+            self.factory.doStart()
+
+            self.proto = self.factory.buildProtocol(IPv4Address('TCP', '127.0.0.1', 65534))
+            self.transport = MagicMock()
+            self.proto.transport = self.transport
+            self.proto.connectionMade()
+
+        def tearDown(self):
+            self.factory.doStop()
+            # not really necessary, but ...
+            del self.factory
+            del self.proto
+
+        def test_unclean_timeout_client(self):
+            """
+            make a delayed call to drop the connection (client-side)
+            """
+
+            if False:
+                self.proto.debug = True
+                self.proto.factory._log = print
+
+            # get to STATE_OPEN
+            self.proto.websocket_key = b64decode('6Jid6RgXpH0RVegaNSs/4g==')
+            self.proto.data = mock_handshake_server
+            self.proto.processHandshake()
+            self.assertEqual(self.proto.state, WebSocketServerProtocol.STATE_OPEN)
+            self.assertTrue(self.proto.serverConnectionDropTimeout > 0)
+
+            with replace_loop(Clock()) as reactor:
+                # now 'do the test' and transition to CLOSING
+                self.proto.sendCloseFrame()
+                self.proto.onCloseFrame(1000, "raw reason")
+
+                # check we scheduled a call
+                self.assertEqual(len(reactor.calls), 1)
+                self.assertEqual(reactor.calls[0].func, self.proto.onServerConnectionDropTimeout)
+                self.assertEqual(reactor.calls[0].getTime(), self.proto.serverConnectionDropTimeout)
+
+                # now, advance the clock past the call (and thereby
+                # execute it)
+                reactor.advance(self.proto.closeHandshakeTimeout + 1)
+
+                # we should have called abortConnection
+                self.assertEqual("call.abortConnection()", str(self.proto.transport.method_calls[-1]))
+                self.assertTrue(self.proto.transport.abortConnection.called)
+                # ...too "internal" for an assert?
+                self.assertEqual(self.proto.state, WebSocketServerProtocol.STATE_CLOSED)
 
     class TestPing(unittest.TestCase):
         def setUp(self):
