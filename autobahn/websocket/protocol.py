@@ -839,7 +839,7 @@ class WebSocketProtocol(object):
                 # When we are a client, the server should drop the TCP
                 # If that doesn't happen, we do. And that will set wasClean = False.
                 if self.serverConnectionDropTimeout > 0:
-                    call = taxio.call_later(
+                    call = txaio.call_later(
                         self.serverConnectionDropTimeout,
                         self.onServerConnectionDropTimeout,
                     )
