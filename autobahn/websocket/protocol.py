@@ -49,7 +49,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.util import Stopwatch, newid, wildcards2patterns
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
-from autobahn.websocket.compress import *  # noqa
+from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket import http
 
 from six.moves import urllib
@@ -790,7 +790,7 @@ class WebSocketProtocol(object):
 
         :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
         :type code: int or None
-        :param reason: Close reason (when present, a status code MUST have been also be present).
+        :param reasonRaw: Close reason (when present, a status code MUST have been also be present).
         :type reason: str or None
         """
         if self.debugCodePaths:
@@ -856,7 +856,7 @@ class WebSocketProtocol(object):
             else:
                 # Either reply with same code/reason, or code == NORMAL/reason=None
                 if self.echoCloseCodeReason:
-                    self.sendCloseFrame(code=code, reasonUtf8=reason.encode("UTF-8"), isReply=True)
+                    self.sendCloseFrame(code=code, reasonUtf8=reasonRaw.encode("UTF-8"), isReply=True)
                 else:
                     self.sendCloseFrame(code=WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply=True)
 

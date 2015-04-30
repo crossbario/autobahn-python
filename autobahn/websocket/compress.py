@@ -26,8 +26,20 @@
 
 from __future__ import absolute_import
 
-from autobahn.websocket.compress_base import *  # noqa
-from autobahn.websocket.compress_deflate import *  # noqa
+from autobahn.websocket.compress_base import \
+    PerMessageCompressOffer, \
+    PerMessageCompressOfferAccept, \
+    PerMessageCompressResponse, \
+    PerMessageCompressResponseAccept, \
+    PerMessageCompress
+
+from autobahn.websocket.compress_deflate import \
+    PerMessageDeflateMixin, \
+    PerMessageDeflateOffer, \
+    PerMessageDeflateOfferAccept, \
+    PerMessageDeflateResponse, \
+    PerMessageDeflateResponseAccept, \
+    PerMessageDeflate
 
 # this must be a list (not tuple), since we dynamically
 # extend it ..
@@ -65,7 +77,13 @@ try:
 except ImportError:
     bz2 = None
 else:
-    from autobahn.websocket.compress_bzip2 import *  # noqa
+    from autobahn.websocket.compress_bzip2 import \
+        PerMessageBzip2Mixin, \
+        PerMessageBzip2Offer, \
+        PerMessageBzip2OfferAccept, \
+        PerMessageBzip2Response, \
+        PerMessageBzip2ResponseAccept, \
+        PerMessageBzip2
 
     PMCE = {
         'Offer': PerMessageBzip2Offer,
@@ -91,7 +109,13 @@ try:
 except ImportError:
     snappy = None
 else:
-    from autobahn.websocket.compress_snappy import *  # noqa
+    from autobahn.websocket.compress_snappy import \
+        PerMessageSnappyMixin, \
+        PerMessageSnappyOffer, \
+        PerMessageSnappyOfferAccept, \
+        PerMessageSnappyResponse, \
+        PerMessageSnappyResponseAccept, \
+        PerMessageSnappy
 
     PMCE = {
         'Offer': PerMessageSnappyOffer,
