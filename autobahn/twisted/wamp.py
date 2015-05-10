@@ -54,7 +54,7 @@ try:
 except ImportError:
     # Not on PY3 yet
     service = None
-    __all__.pop(__all__.index("Service"))
+    __all__ = tuple(list(__all__).pop(__all__.index('Service')))
 
 
 class ApplicationSession(protocol.ApplicationSession):
