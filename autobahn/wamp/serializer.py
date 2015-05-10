@@ -303,7 +303,7 @@ else:
                 """
                 for (k, v) in six.iteritems(d):
                     if not isinstance(k, six.text_type):
-                        newk = six.text_type(k)
+                        newk = six.text_type(k, encoding='utf8')
                         del d[k]
                         d[newk] = v
                 return d
