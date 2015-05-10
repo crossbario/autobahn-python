@@ -171,11 +171,29 @@ else:
             ApplicationRunner must raise an exception if given an ssl value that is
             an instance of SSLContext, but only a "ws:" URL.
             '''
+            import ssl
+            try:
+                # Try to create an SSLContext, to be as rigorous as we can be
+                # by avoiding making assumptions about the ApplicationRunner
+                # implementation. If we happen to be on a Python that has no
+                # SSLContext, we pass ssl=True, which will simply cause this
+                # test to degenerate to the behavior of
+                # test_conflict_SSL_True_with_ws_url (above). In fact, at the
+                # moment (2015-05-10), none of this matters because the
+                # ApplicationRunner implementation does not check to require
+                # that its ssl argument is either a bool or an SSLContext. But
+                # that may change, so we should be careful.
+                ssl.create_default_context
+            except AttributeError:
+                context = True
+            else:
+                context = ssl.create_default_context()
+
             loop = Mock()
             loop.create_connection = Mock()
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
-                                           ssl='_unused_')
+                                           ssl=context)
                 error = ('^ssl argument value passed to ApplicationRunner '
                          'conflicts with the "ws:" prefix of the url '
                          'argument\. Did you mean to use "wss:"\?$')
