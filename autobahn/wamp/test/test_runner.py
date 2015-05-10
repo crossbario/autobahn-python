@@ -89,11 +89,12 @@ else:
     # Asyncio tests.
     try:
         import asyncio
+        from unittest.mock import patch, Mock
     except ImportError:
         # Trollius >= 0.3 was renamed to asyncio
         # noinspection PyUnresolvedReferences
         import trollius as asyncio
-    from unittest.mock import patch, Mock
+        from mock import patch, Mock
     from autobahn.asyncio.wamp import ApplicationRunner
 
 
