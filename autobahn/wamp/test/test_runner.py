@@ -97,11 +97,19 @@ else:
         from mock import patch, Mock
     from autobahn.asyncio.wamp import ApplicationRunner
 
-
     class TestApplicationRunner(unittest.TestCase):
         '''
         Test the autobahn.asyncio.wamp.ApplicationRunner class.
         '''
+        def _assertRaisesRegex(self, exception, error, *args, **kw):
+            try:
+                self.assertRaisesRegex
+            except AttributeError:
+                f = self.assertRaisesRegexp
+            else:
+                f = self.assertRaisesRegex
+            f(exception, error, *args, **kw)
+
         def test_explicit_SSLContext(self):
             '''
             Ensure that loop.create_connection is called with the exact SSL
@@ -156,20 +164,19 @@ else:
                 error = ('^ssl argument value passed to ApplicationRunner '
                          'conflicts with the "ws:" prefix of the url '
                          'argument\. Did you mean to use "wss:"\?$')
-                self.assertRaisesRegex(Exception, error, runner.run, '_unused_')
+                self._assertRaisesRegex(Exception, error, runner.run, '_unused_')
 
         def test_conflict_SSLContext_with_ws_url(self):
             '''
             ApplicationRunner must raise an exception if given an ssl value that is
             an instance of SSLContext, but only a "ws:" URL.
             '''
-            import ssl
             loop = Mock()
             loop.create_connection = Mock()
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
-                                           ssl=ssl.create_default_context())
+                                           ssl='_unused_')
                 error = ('^ssl argument value passed to ApplicationRunner '
                          'conflicts with the "ws:" prefix of the url '
                          'argument\. Did you mean to use "wss:"\?$')
-                self.assertRaisesRegex(Exception, error, runner.run, '_unused_')
+                self._assertRaisesRegex(Exception, error, runner.run, '_unused_')
