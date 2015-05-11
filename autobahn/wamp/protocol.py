@@ -626,15 +626,13 @@ class ApplicationSession(BaseSession):
                         if handler.details_arg:
                             invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
 
-                        try:
-                            handler.fn(*invoke_args, **invoke_kwargs)
-                        except Exception as e:
-                            msg = 'While firing {0} subscribed under {1}.'.format(
+                        def _error(e):
+                            errmsg = 'While firing {0} subscribed under {1}.'.format(
                                 handler.fn, msg.subscription)
-                            try:
-                                self.onUserError(e, msg)
-                            except:
-                                pass
+                            return self._swallow_error(e, errmsg)
+
+                        future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
+                        txaio.add_callbacks(future, None, _error)
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
