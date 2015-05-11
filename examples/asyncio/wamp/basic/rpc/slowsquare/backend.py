@@ -30,11 +30,11 @@ except ImportError:
     # Trollius >= 0.3 was renamed
     import trollius as asyncio
 
-from autobahn.asyncio.wamp import ApplicationSession
+from os import environ
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     A math service application component.
     """
@@ -52,3 +52,14 @@ class Component(ApplicationSession):
             return x * x
 
         self.register(slowsquare, 'com.math.slowsquare')
+        print("Registered 'com.math.slowsquare'")
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

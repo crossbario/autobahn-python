@@ -25,6 +25,7 @@
 ###############################################################################
 
 import random
+from os import environ
 
 try:
     import asyncio
@@ -33,19 +34,17 @@ except ImportError:
     import trollius as asyncio
 
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
-    An application component that subscribes and receives events
-    of no payload and of complex payload, and stops after 5 seconds.
+    An application component that subscribes and receives events of no
+    payload and of complex payload, and stops after 5 seconds.
     """
 
     @asyncio.coroutine
     def onJoin(self, details):
-
         self.received = 0
 
         def on_heartbeat(details=None):
@@ -57,8 +56,17 @@ class Component(ApplicationSession):
             print("Got event: {} {} {} {}".format(a, b, c, d))
 
         yield from self.subscribe(on_topic2, 'com.myapp.topic2')
-
         asyncio.get_event_loop().call_later(5, self.leave)
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

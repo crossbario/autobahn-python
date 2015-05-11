@@ -30,12 +30,12 @@ except ImportError:
     # Trollius >= 0.3 was renamed
     import trollius as asyncio
 
+from os import environ
 from autobahn.wamp.types import CallOptions, RegisterOptions
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     Application component that produces progressive results.
     """
@@ -53,3 +53,13 @@ class Component(ApplicationSession):
             return n
 
         self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

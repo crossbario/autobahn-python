@@ -24,17 +24,18 @@
 #
 ###############################################################################
 
+from os import environ
+
 try:
     import asyncio
 except ImportError:
     # Trollius >= 0.3 was renamed
     import trollius as asyncio
 
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component that subscribes and receives events.
     After receiving 5 events, it unsubscribes, sleeps and then
@@ -43,10 +44,9 @@ class Component(ApplicationSession):
 
     @asyncio.coroutine
     def test(self):
-
         self.received = 0
 
-        # @asyncio.coroutine
+        @asyncio.coroutine
         def on_event(i):
             print("Got event: {}".format(i))
             self.received += 1
@@ -55,21 +55,30 @@ class Component(ApplicationSession):
                 if self.runs > 1:
                     self.leave()
                 else:
-                    self.subscription.unsubscribe()
-                    # yield from self.subscription.unsubscribe()
-                    print("Unsubscribed .. continue in 2s ..")
+                    yield from self.subscription.unsubscribe()
 
-                    # FIXME
-                    asyncio.get_event_loop().call_later(2, self.test)
+                    print("Unsubscribed .. continue in 5s ..")
+                    # can't use loop.call_later() with a coroutine for some reason
+                    yield from asyncio.sleep(5)
+                    yield from self.test()
 
         self.subscription = yield from self.subscribe(on_event, 'com.myapp.topic1')
         print("Subscribed with subscription ID {}".format(self.subscription.id))
 
     @asyncio.coroutine
     def onJoin(self, details):
-
         self.runs = 0
         yield from self.test()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

@@ -25,6 +25,7 @@
 ###############################################################################
 
 import random
+from os import environ
 
 try:
     import asyncio
@@ -33,25 +34,35 @@ except ImportError:
     import trollius as asyncio
 
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
-    An application component that publishes events with no payload
-    and with complex payloads every second.
+    An application component that publishes events with no payload and
+    with complex payloads every second.
     """
 
     @asyncio.coroutine
     def onJoin(self, details):
-
         counter = 0
         while True:
+            print("publish: com.myapp.heartbeat")
             self.publish('com.myapp.heartbeat')
 
             obj = {'counter': counter, 'foo': [1, 2, 3]}
+            print("publish: com.myapp.topic2")
             self.publish('com.myapp.topic2', random.randint(0, 100), 23, c="Hello", d=obj)
 
             counter += 1
             yield from asyncio.sleep(1)
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

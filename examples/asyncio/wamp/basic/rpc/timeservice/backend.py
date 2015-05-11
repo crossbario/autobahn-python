@@ -24,13 +24,13 @@
 #
 ###############################################################################
 
+from os import environ
 import datetime
 
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     A simple time service application component.
     """
@@ -42,3 +42,13 @@ class Component(ApplicationSession):
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         self.register(utcnow, 'com.timeservice.now')
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

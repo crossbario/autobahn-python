@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+from os import environ
 import datetime
 
 try:
@@ -33,11 +34,10 @@ except ImportError:
     import trollius as asyncio
 
 from autobahn import wamp
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component registering RPC endpoints using decorators.
     """
@@ -71,3 +71,13 @@ class Component(ApplicationSession):
             return float(x) / float(y)
         else:
             return 0
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)
