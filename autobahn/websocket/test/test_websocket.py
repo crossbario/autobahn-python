@@ -252,7 +252,7 @@ if os.environ.get('USE_TWISTED', False):
             """
             auto-ping with correct reply cancels timeout
             """
-            if True:
+            if False:
                 self.proto.debug = True
                 self.proto.factory._log = print
                 self.proto.debugCodePaths = True

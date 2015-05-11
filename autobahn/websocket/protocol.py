@@ -1944,8 +1944,7 @@ class WebSocketProtocol(object):
             #
             if self.autoPingPending:
                 try:
-                    p = payload.decode('utf8')
-                    if p == self.autoPingPending:
+                    if payload == self.autoPingPending:
                         if self.debugCodePaths:
                             self.factory._log("Auto ping/pong: received pending pong for auto-ping/pong")
 
@@ -2094,9 +2093,9 @@ class WebSocketProtocol(object):
 
         self.autoPingPendingCall = None
 
-        self.autoPingPending = newid(self.autoPingSize)
+        self.autoPingPending = newid(self.autoPingSize).encode('utf8')
 
-        self.sendPing(self.autoPingPending.encode('utf8'))
+        self.sendPing(self.autoPingPending)
 
         if self.autoPingTimeout:
             if self.debugCodePaths:
