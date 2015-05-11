@@ -41,17 +41,17 @@ import txaio
 txaio.use_twisted()
 
 
-__all__ = (
+__all__ = [
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner',
     'Application',
     'Service'
-)
+]
 
 try:
     from twisted.application import service
-except ImportError:
+except (ImportError, SyntaxError):
     # Not on PY3 yet
     service = None
     __all__.pop(__all__.index("Service"))

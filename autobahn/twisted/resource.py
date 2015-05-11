@@ -34,6 +34,7 @@ except ImportError:
     # starting from Twisted 12.2, NoResource has moved
     from twisted.web.resource import NoResource
 from twisted.web.resource import IResource, Resource
+from twisted.python.compat import _PY3
 
 # The following imports reactor at module level
 # See: https://twistedmatrix.com/trac/ticket/6849
@@ -144,7 +145,7 @@ class WebSocketResource(object):
         if not protocol:
             # If protocol creation fails, we signal "internal server error"
             request.setResponseCode(500)
-            return ""
+            return b""
 
         # Take over the transport from Twisted Web
         ##
@@ -166,11 +167,20 @@ class WebSocketResource(object):
         # which we will do a 2nd time), but it's totally non-invasive to our
         # code. Maybe improve this.
         ##
-        data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.uri)
-        for h in request.requestHeaders.getAllRawHeaders():
-            data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
-        data += "\x0d\x0a"
-        data += request.content.read()  # we need this for Hixie-76
+        if _PY3:
+
+            data = request.method + b' ' + request.uri + b' HTTP/1.1\x0d\x0a'
+            for h in request.requestHeaders.getAllRawHeaders():
+                data += h[0] + b': ' + b",".join(h[1]) + b'\x0d\x0a'
+            data += b"\x0d\x0a"
+            data += request.content.read()
+
+        else:
+            data = "%s %s HTTP/1.1\x0d\x0a" % (request.method, request.uri)
+            for h in request.requestHeaders.getAllRawHeaders():
+                data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
+            data += "\x0d\x0a"
+            data += request.content.read()  # we need this for Hixie-76
         protocol.dataReceived(data)
 
         return NOT_DONE_YET
