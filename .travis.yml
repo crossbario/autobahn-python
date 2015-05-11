@@ -8,6 +8,8 @@ env:
   - TOX_ENV=py26twisted
   - TOX_ENV=py26asyncio
   - TOX_ENV=py27twisted
+  - TOX_ENV=py33twisted
+  - TOX_ENV=py34twisted
   - TOX_ENV=py27asyncio
   - TOX_ENV=py33asyncio
   - TOX_ENV=py34asyncio

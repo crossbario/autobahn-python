@@ -34,7 +34,7 @@ if os.environ.get('USE_TWISTED', False):
     # import unittest
 
     from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed
-    from twisted.python import log
+    from twisted.python import log, compat
 
     from autobahn.wamp import message
     from autobahn.wamp import serializer
@@ -44,6 +44,9 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp import types
 
     from autobahn.twisted.wamp import ApplicationSession
+
+    if compat._PY3:
+        long = int
 
     class MockTransport(object):
 
@@ -584,7 +587,7 @@ if os.environ.get('USE_TWISTED', False):
                     yield succeed(i)
                 returnValue(42)
 
-            progressive = map(lambda _: Deferred(), range(10))
+            progressive = list(map(lambda _: Deferred(), range(10)))
 
             def progress(arg):
                 progressive[arg].callback(arg)
