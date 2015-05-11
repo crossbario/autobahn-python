@@ -112,6 +112,7 @@ except ImportError:
 
         def process(self, data):
             dlen = len(data)
+            print(data)
             payload = array('B', data)
             msk = self.mskarray[self.ptr & 3]
             for k in xrange(dlen):

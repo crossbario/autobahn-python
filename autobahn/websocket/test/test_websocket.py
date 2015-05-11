@@ -32,6 +32,7 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from twisted.internet.address import IPv4Address
     from twisted.internet.task import Clock
+    from twisted.python.compat import _PY3
 
     from autobahn.twisted.websocket import WebSocketServerProtocol
     from autobahn.twisted.websocket import WebSocketServerFactory
@@ -116,7 +117,7 @@ if os.environ.get('USE_TWISTED', False):
             with replace_loop(Clock()) as reactor:
                 # now 'do the test' and transition to CLOSING
                 self.proto.sendCloseFrame()
-                self.proto.onCloseFrame(1000, "raw reason")
+                self.proto.onCloseFrame(1000, b"raw reason")
 
                 # check we scheduled a call
                 self.assertEqual(len(reactor.calls), 1)
@@ -225,8 +226,13 @@ if os.environ.get('USE_TWISTED', False):
                 self.assertTrue(self.transport.write.called)
                 data = self.transport.write.call_args[0][0]
 
+                if _PY3:
+                    _data = bytes([data[0]])
+                else:
+                    _data = data[0]
+
                 # the opcode is the lower 7 bits of the first byte.
-                (opcode,) = struct.unpack("B", data[0])
+                (opcode,) = struct.unpack("B", _data)
                 opcode = opcode & (~0x80)
 
                 # ... and should be "9" for ping
@@ -246,7 +252,7 @@ if os.environ.get('USE_TWISTED', False):
             """
             auto-ping with correct reply cancels timeout
             """
-            if False:
+            if True:
                 self.proto.debug = True
                 self.proto.factory._log = print
                 self.proto.debugCodePaths = True
