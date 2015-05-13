@@ -143,7 +143,7 @@ class ApplicationRunner(object):
             ssl = isSecure
         else:
             if self.ssl and not isSecure:
-                raise Exception(
+                raise RuntimeError(
                     'ssl argument value passed to %s conflicts with the "ws:" '
                     'prefix of the url argument. Did you mean to use "wss:"?' %
                     self.__class__.__name__)
