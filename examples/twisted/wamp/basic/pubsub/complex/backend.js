@@ -6,8 +6,8 @@ try {
 }
 
 var connection = new autobahn.Connection({
-   url: 'ws://127.0.0.1:8080/ws',
-   realm: 'realm1'}
+   url: 'ws://127.0.0.1/ws',
+   realm: 'crossbardemo'}
 );
 
 function randint(min, max) {

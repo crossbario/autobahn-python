@@ -25,17 +25,17 @@
 ###############################################################################
 
 import math
+from os import environ
 
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
-@wamp.error("com.myapp.error1")
+@wamp.error(u"com.myapp.error1")
 class AppError1(Exception):
-
     """
     An application specific exception that is decorated with a WAMP URI,
     and hence can be automapped by Autobahn.
@@ -43,7 +43,6 @@ class AppError1(Exception):
 
 
 class Component(ApplicationSession):
-
     """
     Example WAMP application backend that raised exceptions.
     """
@@ -61,7 +60,7 @@ class Component(ApplicationSession):
                 # this also will raise, if x < 0
                 return math.sqrt(x)
 
-        yield self.register(sqrt, 'com.myapp.sqrt')
+        yield self.register(sqrt, u'com.myapp.sqrt')
 
         # raising WAMP application exceptions
         ##
@@ -93,6 +92,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

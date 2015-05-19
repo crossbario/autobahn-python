@@ -9,12 +9,12 @@ try {
 
 var connection = new autobahn.Connection({
    url: 'ws://127.0.0.1:8080/ws',
-   realm: 'realm1'}
+   realm: 'crossbardemo'}
 );
 
 connection.onopen = function (session) {
 
-   function ping() {      
+   function ping() {
    }
 
    function add2(args) {

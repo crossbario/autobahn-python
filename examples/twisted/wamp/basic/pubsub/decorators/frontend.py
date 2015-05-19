@@ -24,11 +24,15 @@
 #
 ###############################################################################
 
+from __future__ import print_function
+
+from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
+from twisted.python.failure import Failure
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -44,24 +48,18 @@ class Component(ApplicationSession):
 
         # subscribe all methods on this object decorated with "@wamp.subscribe"
         # as PubSub event handlers
-        ##
         results = yield self.subscribe(self)
-        for success, res in results:
-            if success:
-                # res is an Subscription instance
-                print("Ok, subscribed handler with subscription ID {}".format(res.id))
-            else:
-                # res is an Failure instance
-                print("Failed to subscribe handler: {}".format(res.value))
 
-    @wamp.subscribe('com.myapp.topic1')
+        # check we didn't have any errors
+        for sub in results:
+            if isinstance(sub, Failure):
+                print("subscribe failed:", sub.getErrorMessage())
+
+    @wamp.subscribe(u'com.myapp.topic1')
     def onEvent1(self, i):
         print("Got event on topic1: {}".format(i))
-        self.received += 1
-        if self.received > 5:
-            self.leave()
 
-    @wamp.subscribe('com.myapp.topic2')
+    @wamp.subscribe(u'com.myapp.topic2')
     def onEvent2(self, msg):
         print("Got event on topic2: {}".format(msg))
 
@@ -71,6 +69,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

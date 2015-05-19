@@ -24,15 +24,16 @@
 #
 ###############################################################################
 
+from os import environ
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
-    An application component providing procedures with different kinds of arguments.
+    An application component providing procedures with different kinds
+    of arguments.
     """
 
     @inlineCallbacks
@@ -59,10 +60,14 @@ class Component(ApplicationSession):
         yield self.register(stars, u'com.arguments.stars')
         yield self.register(orders, u'com.arguments.orders')
         yield self.register(arglen, u'com.arguments.arglen')
-        print("procedures registered")
+        print("Procedures registered; ready for frontend.")
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

@@ -24,15 +24,15 @@
 #
 ###############################################################################
 
+from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp.types import CallOptions
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component calling the different backend procedures.
     """
@@ -47,7 +47,7 @@ class Component(ApplicationSession):
         yield self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
 
         for val in [2, 0, -2]:
-            res = yield self.call('com.myapp.square', val, options=CallOptions(discloseMe=True))
+            res = yield self.call('com.myapp.square', val, options=CallOptions(disclose_me=True))
             print("Squared {} = {}".format(val, res))
 
         self.leave()
@@ -58,6 +58,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

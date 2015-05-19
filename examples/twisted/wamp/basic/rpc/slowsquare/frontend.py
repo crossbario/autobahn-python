@@ -25,15 +25,15 @@
 ###############################################################################
 
 import time
+from os import environ
 
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component using the time service.
     """
@@ -65,6 +65,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)
