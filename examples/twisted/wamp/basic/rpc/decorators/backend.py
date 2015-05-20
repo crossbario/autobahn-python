@@ -24,19 +24,19 @@
 #
 ###############################################################################
 
+from os import environ
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
-class MyService1:
-
-    @wamp.register('com.mathservice.add2')
+class MyService1(object):
+    @wamp.register(u'com.mathservice.add2')
     def add2(self, x, y):
         return x + y
 
-    @wamp.register('com.mathservice.mul2')
+    @wamp.register(u'com.mathservice.mul2')
     def mul2(self, x, y):
         return x * y
 
@@ -66,11 +66,11 @@ class Component(ApplicationSession):
                     # res is an Failure instance
                     print("Failed to register procedure: {}".format(res.value))
 
-    @wamp.register('com.mathservice.square2')
+    @wamp.register(u'com.mathservice.square2')
     def square2(self, x, y):
         return x * x + y * y
 
-    @wamp.register('com.mathservice.div2')
+    @wamp.register(u'com.mathservice.div2')
     def div2(self, x, y):
         if y:
             return float(x) / float(y)
@@ -79,6 +79,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

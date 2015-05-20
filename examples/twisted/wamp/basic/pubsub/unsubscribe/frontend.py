@@ -24,15 +24,16 @@
 #
 ###############################################################################
 
+from __future__ import print_function
+
+from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component that subscribes and receives events.
     After receiving 5 events, it unsubscribes, sleeps and then
@@ -41,29 +42,26 @@ class Component(ApplicationSession):
 
     @inlineCallbacks
     def test(self):
-
         self.received = 0
+        self.sub = yield self.subscribe(self.on_event, 'com.myapp.topic1')
+        print("Subscribed with subscription ID {}".format(self.sub.id))
 
-        @inlineCallbacks
-        def on_event(i):
-            print("Got event: {}".format(i))
-            self.received += 1
-            if self.received > 5:
-                self.runs += 1
-                if self.runs > 1:
-                    self.leave()
-                else:
-                    yield self.subscription.unsubscribe()
-                    print("Unsubscribed .. continue in 2s ..")
-                    reactor.callLater(2, self.test)
-
-        self.subscription = yield self.subscribe(on_event, 'com.myapp.topic1')
-        print("Subscribed with subscription ID {}".format(self.subscription.id))
+    @inlineCallbacks
+    def on_event(self, i):
+        print("Got event: {}".format(i))
+        self.received += 1
+        if self.received > 5:
+            self.runs += 1
+            if self.runs > 1:
+                self.leave()
+            else:
+                yield self.sub.unsubscribe()
+                print("Unsubscribed .. continue in 5s ..")
+                reactor.callLater(5, self.test)
 
     @inlineCallbacks
     def onJoin(self, details):
         print("session attached")
-
         self.runs = 0
         yield self.test()
 
@@ -73,6 +71,10 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

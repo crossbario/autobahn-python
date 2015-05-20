@@ -24,13 +24,14 @@
 #
 ###############################################################################
 
-from autobahn.asyncio.wamp import ApplicationSession
+from os import environ
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
-    An application component providing procedures with different kinds of arguments.
+    An application component providing procedures with different kinds
+    of arguments.
     """
 
     def onJoin(self, details):
@@ -56,3 +57,14 @@ class Component(ApplicationSession):
         self.register(stars, u'com.arguments.stars')
         self.register(orders, u'com.arguments.orders')
         self.register(arglen, u'com.arguments.arglen')
+        print("Registered methods; ready for frontend.")
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

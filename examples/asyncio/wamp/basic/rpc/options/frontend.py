@@ -30,12 +30,12 @@ except ImportError:
     # Trollius >= 0.3 was renamed
     import trollius as asyncio
 
+from os import environ
 from autobahn.wamp.types import CallOptions, RegisterOptions, PublishOptions
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component calling the different backend procedures.
     """
@@ -49,10 +49,20 @@ class Component(ApplicationSession):
         yield from self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
 
         for val in [2, 0, -2]:
-            res = yield from self.call('com.myapp.square', val, options=CallOptions(discloseMe=True))
+            res = yield from self.call('com.myapp.square', val, options=CallOptions(disclose_me=True))
             print("Squared {} = {}".format(val, res))
 
         self.leave()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

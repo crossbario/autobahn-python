@@ -24,10 +24,13 @@
 #
 ###############################################################################
 
+from __future__ import print_function
+
+from os import environ
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
@@ -41,14 +44,21 @@ class Component(ApplicationSession):
         print("session attached")
         counter = 0
         while True:
-            print(".")
+            print("publish: com.myapp.topic1", counter)
             self.publish('com.myapp.topic1', counter)
+
+            print("publish: com.myapp.topic2")
             self.publish('com.myapp.topic2', "Hello world.")
+
             counter += 1
             yield sleep(1)
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import ApplicationRunner
-    runner = ApplicationRunner("ws://127.0.0.1:8080/ws", "realm1")
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Component)

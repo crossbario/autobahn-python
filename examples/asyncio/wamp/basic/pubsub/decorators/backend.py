@@ -24,17 +24,18 @@
 #
 ###############################################################################
 
+from os import environ
+
 try:
     import asyncio
 except ImportError:
     # Trollius >= 0.3 was renamed
     import trollius as asyncio
 
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class Component(ApplicationSession):
-
     """
     An application component that publishes an event every second.
     """
@@ -43,7 +44,20 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         counter = 0
         while True:
+            print("publish: com.myapp.topic1", counter)
             self.publish('com.myapp.topic1', counter)
+
+            print("publish: com.myapp.topic2 'Hello world.'")
             self.publish('com.myapp.topic2', "Hello world.")
             counter += 1
             yield from asyncio.sleep(1)
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)

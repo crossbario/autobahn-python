@@ -24,6 +24,7 @@
 #
 ###############################################################################
 
+from os import environ
 import math
 
 try:
@@ -34,12 +35,11 @@ except ImportError:
 
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
-from autobahn.asyncio.wamp import ApplicationSession
+from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 @wamp.error("com.myapp.error1")
 class AppError1(Exception):
-
     """
     An application specific exception that is decorated with a WAMP URI,
     and hence can be automapped by Autobahn.
@@ -47,7 +47,6 @@ class AppError1(Exception):
 
 
 class Component(ApplicationSession):
-
     """
     Example WAMP application backend that raised exceptions.
     """
@@ -90,3 +89,13 @@ class Component(ApplicationSession):
                 raise AppError1(b - a)
 
         self.register(compare, 'com.myapp.compare')
+
+
+if __name__ == '__main__':
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
+    runner.run(Component)
