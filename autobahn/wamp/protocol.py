@@ -1063,11 +1063,11 @@ class ApplicationSession(BaseSession):
             for k in inspect.getmembers(handler.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
-                    pat = proc.__dict__["_wampuris"][0]
-                    if pat.is_handler():
-                        uri = pat.uri()
-                        subopts = options or pat.subscribe_options()
-                        on_replies.append(_subscribe(handler, proc, uri, subopts))
+                    for pat in proc.__dict__["_wampuris"]:
+                        if pat.is_handler():
+                            uri = pat.uri()
+                            subopts = options or pat.subscribe_options()
+                            on_replies.append(_subscribe(handler, proc, uri, subopts))
 
             # XXX needs coverage
             return txaio.gather(on_replies, consume_exceptions=True)
@@ -1191,10 +1191,10 @@ class ApplicationSession(BaseSession):
             for k in inspect.getmembers(endpoint.__class__, is_method_or_function):
                 proc = k[1]
                 if "_wampuris" in proc.__dict__:
-                    pat = proc.__dict__["_wampuris"][0]
-                    if pat.is_endpoint():
-                        uri = pat.uri()
-                        on_replies.append(_register(endpoint, proc, uri, options))
+                    for pat in proc.__dict__["_wampuris"]:
+                        if pat.is_endpoint():
+                            uri = pat.uri()
+                            on_replies.append(_register(endpoint, proc, uri, options))
 
             # XXX neds coverage
             return txaio.gather(on_replies, consume_exceptions=True)
