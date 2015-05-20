@@ -25,6 +25,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
+import signal
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -158,8 +159,15 @@ class ApplicationRunner(object):
         txaio.use_asyncio()
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
-        loop.run_until_complete(coro)
+        (transport, protocol) = loop.run_until_complete(coro)
+        loop.add_signal_handler(signal.SIGTERM, loop.stop)
 
         # 4) now enter the asyncio event loop
-        loop.run_forever()
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            # wait until we send Goodbye if user hit ctrl-c
+            # (done outside this except so SIGTERM gets the same handling)
+            pass
+        loop.run_until_complete(protocol._session.leave())
         loop.close()

@@ -207,6 +207,16 @@ class ApplicationRunner(object):
 
         d = client.connect(transport_factory)
 
+        # as the reactor shuts down, we wish to wait until we've sent
+        # out our "Goodbye" message; leave() returns a Deferred that
+        # fires when the transport gets to STATE_CLOSED
+        def cleanup(proto):
+            if hasattr(proto, '_session') and proto._session is not None:
+                return proto._session.leave()
+        # if we connect successfully, the arg is a WampWebSocketClientProtocol
+        d.addCallback(lambda proto: reactor.addSystemEventTrigger(
+            'before', 'shutdown', cleanup, proto))
+
         # if the user didn't ask us to start the reactor, then they
         # get to deal with any connect errors themselves.
         if start_reactor:
