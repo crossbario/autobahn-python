@@ -54,7 +54,7 @@ try:
 except (ImportError, SyntaxError):
     # Not on PY3 yet
     service = None
-    __all__.pop(__all__.index("Service"))
+    __all__.pop(__all__.index('Service'))
 
 
 class ApplicationSession(protocol.ApplicationSession):
@@ -93,21 +93,34 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False):
+    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None):
         """
-
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
+
         :param realm: The WAMP realm to join the application session to.
         :type realm: unicode
+
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
+
         :param debug: Turn on low-level debugging.
         :type debug: bool
+
         :param debug_wamp: Turn on WAMP-level debugging.
         :type debug_wamp: bool
+
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
+
+        :param ssl: (Optional). If specified this should be an
+            instance suitable to pass as ``sslContextFactory`` to
+            :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
+            as :class:`twisted.internet.ssl.CertificateOptions`. Leaving
+            it as ``None`` will use the result of calling Twisted's
+            :meth:`twisted.internet.ssl.platformTrust` which tries to use
+            your distribution's CA certificates.
+        :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
         """
         self.url = url
         self.realm = realm
@@ -116,6 +129,7 @@ class ApplicationRunner(object):
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.make = None
+        self.ssl = ssl
 
     def run(self, make, start_reactor=True):
         """
@@ -169,15 +183,28 @@ class ApplicationRunner(object):
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
                                                        debug=self.debug, debug_wamp=self.debug_wamp)
 
-        # start the client from a Twisted endpoint
-        from twisted.internet.endpoints import clientFromString
+        # if user passed ssl= but isn't using isSecure, we'll never
+        # use the ssl argument which makes no sense.
+        context_factory = None
+        if self.ssl is not None:
+            if not isSecure:
+                raise RuntimeError(
+                    'ssl= argument value passed to %s conflicts with the "ws:" '
+                    'prefix of the url argument. Did you mean to use "wss:"?' %
+                    self.__class__.__name__)
+            context_factory = self.ssl
+        elif isSecure:
+            from twisted.internet.ssl import platformTrust
+            context_factory = platformTrust()
 
         if isSecure:
-            endpoint_descriptor = "ssl:{0}:{1}".format(host, port)
+            from twisted.internet.endpoints import SSL4ClientEndpoint
+            assert context_factory is not None
+            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
         else:
-            endpoint_descriptor = "tcp:{0}:{1}".format(host, port)
+            from twisted.internet.endpoints import TCP4ClientEndpoint
+            client = TCP4ClientEndpoint(reactor, host, port)
 
-        client = clientFromString(reactor, endpoint_descriptor)
         d = client.connect(transport_factory)
 
         # if the user didn't ask us to start the reactor, then they
