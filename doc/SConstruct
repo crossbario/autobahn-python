@@ -73,35 +73,15 @@ env = Environment(tools = ['default', 'taschenmesser'],
 ## Process SVGs
 ##
 imgs = env.process_svg(SVG_FILES, IMG_SOURCE_DIR, IMG_GEN_DIR)
-
 Alias("img", imgs)
-
-
-## Sphinx Build
-##
-if GetOption('no_network'):
-   print("Building for no network")
-   docs = env.Command(DOCSDIR, [], 'sphinx-build -A no_network=1 -D no_network=1 -A cstatic="{}" -b html . $TARGET'.format(CSTATIC_LOCAL))
-else:
-   docs = env.Command(DOCSDIR, [], 'sphinx-build -A cstatic="{}" -b html . $TARGET'.format(CSTATIC))
-
-
-# sphinx-build -b spelling . _spelling
-
-env.AlwaysBuild(docs)
-Clean(docs, DOCSDIR)
-Alias("doc", docs)
-
-Default([imgs, docs])
+Default("img")
 
 
 ## Upload to Amazon S3
 ##
-uploaded = env.s3_dir_uploader(UPLOADED, DOCSDIR, BUCKET, BUCKET_PREFIX)
-
-Depends(uploaded, docs)
-Depends(uploaded, imgs)
-
-Clean(uploaded, UPLOADED)
-
-Alias("publish", uploaded)
+if hasattr(env, 's3_dir_uploader'):
+    uploaded = env.s3_dir_uploader(UPLOADED, DOCSDIR, BUCKET, BUCKET_PREFIX)
+    # Depends(uploaded, docs)
+    # Depends(uploaded, imgs)
+    Clean(uploaded, UPLOADED)
+    Alias("publish", uploaded)

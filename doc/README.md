@@ -10,6 +10,8 @@ You will need to have Python and [SCons](http://www.scons.org/) installed. To in
 make install_deps
 ```
 
+**Note:** If you want to use this in a virtualenv, you'll have to install the SCons package for your distribution and use ``virtualenv --system-site-packages`` to build the venv. Then, activate it and install dependencies as above. To run SCons you'll have to do ``python `which scons` `` so that it uses the interpreter from your virtualenv.
+
 Then, to get help on available build targets, just type
 
 ```sh
