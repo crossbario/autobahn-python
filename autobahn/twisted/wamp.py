@@ -37,6 +37,7 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
+import six
 import txaio
 txaio.use_twisted()
 
@@ -194,8 +195,8 @@ class ApplicationRunner(object):
                     self.__class__.__name__)
             context_factory = self.ssl
         elif isSecure:
-            from twisted.internet.ssl import platformTrust
-            context_factory = platformTrust()
+            from twisted.internet.ssl import optionsForClientTLS
+            context_factory = optionsForClientTLS(six.u(host))
 
         if isSecure:
             from twisted.internet.endpoints import SSL4ClientEndpoint
