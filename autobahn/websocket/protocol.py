@@ -660,6 +660,10 @@ class WebSocketProtocol(object):
    Configuration attributes specific to clients.
    """
 
+    def __init__(self):
+        #: a Future/Deferred that fires when we hit STATE_CLOSED
+        self.is_closed = txaio.create_future()
+
     def onOpen(self):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
@@ -967,7 +971,12 @@ class WebSocketProtocol(object):
             if self.debugCodePaths:
                 self.factory._log("dropping connection")
             self.droppedByMe = True
+
+            # this code-path will be hit (*without* hitting
+            # _connectionLost) in some timeout scenarios (unit-tests
+            # cover these). However, sometimes we hit both.
             self.state = WebSocketProtocol.STATE_CLOSED
+            txaio.resolve(self.is_closed, self)
 
             self._closeConnection(abort)
         else:
@@ -1218,7 +1227,12 @@ class WebSocketProtocol(object):
             self.autoPingTimeoutCall.cancel()
             self.autoPingTimeoutCall = None
 
-        self.state = WebSocketProtocol.STATE_CLOSED
+        # check required here because in some scenarios dropConnection
+        # will already have resolved the Future/Deferred.
+        if self.state != WebSocketProtocol.STATE_CLOSED:
+            self.state = WebSocketProtocol.STATE_CLOSED
+            txaio.resolve(self.is_closed, self)
+
         if self.wasServingFlashSocketPolicyFile:
             if self.debug:
                 self.factory._log("connection dropped after serving Flash Socket Policy File")

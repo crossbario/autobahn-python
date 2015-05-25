@@ -303,6 +303,8 @@ class ISession(object):
         :param message: An optional (human readable) closing message, intended for
                         logging purposes.
         :type message: str
+
+        :return: may return a Future/Deferred that fires when we've disconnected
         """
 
     @abc.abstractmethod

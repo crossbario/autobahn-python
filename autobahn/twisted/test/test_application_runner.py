@@ -88,9 +88,9 @@ if os.environ.get('USE_TWISTED', False):
 
             # shouldn't have actually connected to anything
             # successfully, and the run() call shouldn't have inserted
-            # any of its own call/errbacks.
+            # any of its own call/errbacks. (except the cleanup handler)
             self.assertFalse(d.called)
-            self.assertEqual(0, len(d.callbacks))
+            self.assertEqual(1, len(d.callbacks))
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)

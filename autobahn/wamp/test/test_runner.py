@@ -117,7 +117,7 @@ else:
             ApplicationRunner.
             '''
             loop = Mock()
-            loop.create_connection = Mock()
+            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 ssl = {}
                 runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm',
@@ -132,7 +132,7 @@ else:
             ApplicationRunner and the websocket URL starts with "ws:".
             '''
             loop = Mock()
-            loop.create_connection = Mock()
+            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm')
                 runner.run('_unused_')
@@ -145,7 +145,7 @@ else:
             ApplicationRunner and the websocket URL starts with "wss:".
             '''
             loop = Mock()
-            loop.create_connection = Mock()
+            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('wss://127.0.0.1:8080/wss', 'realm')
                 runner.run('_unused_')
@@ -157,7 +157,7 @@ else:
             but only a "ws:" URL.
             '''
             loop = Mock()
-            loop.create_connection = Mock()
+            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
                                            ssl=True)
@@ -190,7 +190,7 @@ else:
                 context = ssl.create_default_context()
 
             loop = Mock()
-            loop.create_connection = Mock()
+            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
                                            ssl=context)
