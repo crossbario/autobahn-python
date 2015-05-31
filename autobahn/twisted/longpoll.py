@@ -1,4 +1,4 @@
-###############################################################################
+########################################
 #
 # The MIT License (MIT)
 #
@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-###############################################################################
+########################################
 
 from __future__ import absolute_import
 
@@ -244,7 +244,7 @@ class WampLongPollResourceSession(Resource):
         self._session = None
 
         # session authentication information
-        ##
+        #
         self._authid = None
         self._authrole = None
         self._authmethod = None
@@ -260,7 +260,7 @@ class WampLongPollResourceSession(Resource):
         self._isalive = False
 
         # kill inactive sessions after this timeout
-        ##
+        #
         killAfter = self._parent._killAfter
         if killAfter > 0:
             def killIfDead():
@@ -405,7 +405,7 @@ class WampLongPollResourceOpen(Resource):
             return self._parent._failRequest(request, "missing attribute 'protocols' in WAMP session open request")
 
         # determine the protocol to speak
-        ##
+        #
         protocol = None
         serializer = None
         for p in options['protocols']:
@@ -419,19 +419,30 @@ class WampLongPollResourceOpen(Resource):
             return self.__failRequest(request, "no common protocol to speak (I speak: {0})".format(["wamp.2.{0}".format(s) for s in self._parent._serializers.keys()]))
 
         # make up new transport ID
-        ##
+        #
         if self._parent._debug_transport_id:
             # use fixed transport ID for debugging purposes
             transport = self._parent._debug_transport_id
         else:
             transport = newid()
 
+        # create transport info object
+        #
+        transport_info = {
+            'type': 'longpoll',
+            'transport_id': transport,
+            'protocol': protocol,
+            'peer': request.getClientIP(),
+            'http_headers_received': None,
+            'http_headers_sent': None
+        }
+
         # create instance of WampLongPollResourceSession or subclass thereof ..
-        ##
-        self._parent._transports[transport] = self._parent.protocol(self._parent, transport, serializer)
+        #
+        self._parent._transports[transport] = self._parent.protocol(self._parent, transport, serializer, transport_info)
 
         # create response
-        ##
+        #
         self._parent._setStandardHeaders(request)
         request.setHeader('content-type', 'application/json; charset=utf-8')
 
@@ -549,7 +560,7 @@ class WampLongPollResource(Resource):
         self._transports = {}
 
         # <Base URL>/open
-        ##
+        #
         self.putChild("open", WampLongPollResourceOpen(self))
 
         if self._debug:
