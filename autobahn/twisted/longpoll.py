@@ -76,7 +76,7 @@ class WampLongPollResourceSessionSend(Resource):
         """
         payload = request.content.read()
         if self._debug:
-            log.msg("WampLongPoll: receiving data for transport '{0}'\n{1}".format(self._parent._transportid, binascii.hexlify(payload)))
+            log.msg("WampLongPoll: receiving data for transport '{0}'\n{1}".format(self._parent._transport_id, binascii.hexlify(payload)))
 
         try:
             # process (batch of) WAMP message(s)
@@ -115,7 +115,7 @@ class WampLongPollResourceSessionReceive(Resource):
         if self._debug:
             def logqueue():
                 if not self._killed:
-                    log.msg("WampLongPoll: transport '{0}' - currently polled {1}, pending messages {2}".format(self._parent._transportid, self._request is not None, len(self._queue)))
+                    log.msg("WampLongPoll: transport '{0}' - currently polled {1}, pending messages {2}".format(self._parent._transport_id, self._request is not None, len(self._queue)))
                     self.reactor.callLater(1, logqueue)
             logqueue()
 
@@ -173,7 +173,7 @@ class WampLongPollResourceSessionReceive(Resource):
 
         def cancel(_):
             if self._debug:
-                log.msg("WampLongPoll: poll request for transport '{0}' has gone away".format(self._parent._transportid))
+                log.msg("WampLongPoll: poll request for transport '{0}' has gone away".format(self._parent._transport_id))
             self._request = None
 
         request.notifyFinish().addErrback(cancel)
@@ -205,13 +205,13 @@ class WampLongPollResourceSessionClose(Resource):
         by issuing a HTTP/POST with empty body to this resource.
         """
         if self._debug:
-            log.msg("WampLongPoll: closing transport '{0}'".format(self._parent._transportid))
+            log.msg("WampLongPoll: closing transport '{0}'".format(self._parent._transport_id))
 
         # now actually close the session
         self._parent.close()
 
         if self._debug:
-            log.msg("WampLongPoll: session ended and transport {0} closed".format(self._parent._transportid))
+            log.msg("WampLongPoll: session ended and transport {0} closed".format(self._parent._transport_id))
 
         request.setResponseCode(http.NO_CONTENT)
         self._parent._parent._setStandardHeaders(request)
@@ -223,14 +223,14 @@ class WampLongPollResourceSession(Resource):
     A Web resource representing an open WAMP session.
     """
 
-    def __init__(self, parent, transportid, serializer):
+    def __init__(self, parent, transport_details):
         """
         Create a new Web resource representing a WAMP session.
 
         :param parent: The parent Web resource.
         :type parent: Instance of :class:`autobahn.twisted.longpoll.WampLongPollResource`.
-        :param serializer: The WAMP serializer in use for this session.
-        :type serializer: An object that implements :class:`autobahn.wamp.interfaces.ISerializer`.
+        :param transport_details: Details on the WAMP-over-Longpoll transport session.
+        :type transport_details: dict
         """
         Resource.__init__(self)
 
@@ -239,8 +239,8 @@ class WampLongPollResourceSession(Resource):
         self._debug_wamp = True
         self.reactor = self._parent.reactor
 
-        self._transportid = transportid
-        self._serializer = serializer
+        self._transport_id = transport_details['transport']
+        self._serializer = transport_details['serializer']
         self._session = None
 
         # session authentication information
@@ -266,15 +266,15 @@ class WampLongPollResourceSession(Resource):
             def killIfDead():
                 if not self._isalive:
                     if self._debug:
-                        log.msg("WampLongPoll: killing inactive WAMP session with transport '{0}'".format(self._transportid))
+                        log.msg("WampLongPoll: killing inactive WAMP session with transport '{0}'".format(self._transport_id))
 
                     self.onClose(False, 5000, "session inactive")
                     self._receive._kill()
-                    if self._transportid in self._parent._transports:
-                        del self._parent._transports[self._transportid]
+                    if self._transport_id in self._parent._transports:
+                        del self._parent._transports[self._transport_id]
                 else:
                     if self._debug:
-                        log.msg("WampLongPoll: transport '{0}' is still alive".format(self._transportid))
+                        log.msg("WampLongPoll: transport '{0}' is still alive".format(self._transport_id))
 
                     self._isalive = False
                     self.reactor.callLater(killAfter, killIfDead)
@@ -282,10 +282,10 @@ class WampLongPollResourceSession(Resource):
             self.reactor.callLater(killAfter, killIfDead)
         else:
             if self._debug:
-                log.msg("WampLongPoll: transport '{0}' automatic killing of inactive session disabled".format(self._transportid))
+                log.msg("WampLongPoll: transport '{0}' automatic killing of inactive session disabled".format(self._transport_id))
 
         if self._debug:
-            log.msg("WampLongPoll: session resource for transport '{0}' initialized)".format(self._transportid))
+            log.msg("WampLongPoll: session resource for transport '{0}' initialized)".format(self._transport_id))
 
         self.onOpen()
 
@@ -296,7 +296,7 @@ class WampLongPollResourceSession(Resource):
         if self.isOpen():
             self.onClose(True, 1000, u"session closed")
             self._receive._kill()
-            del self._parent._transports[self._transportid]
+            del self._parent._transports[self._transport_id]
         else:
             raise TransportLost()
 
@@ -307,7 +307,7 @@ class WampLongPollResourceSession(Resource):
         if self.isOpen():
             self.onClose(True, 1000, u"session aborted")
             self._receive._kill()
-            del self._parent._transports[self._transportid]
+            del self._parent._transports[self._transport_id]
         else:
             raise TransportLost()
 
@@ -426,20 +426,26 @@ class WampLongPollResourceOpen(Resource):
         else:
             transport = newid()
 
-        # create transport info object
-        #
-        transport_info = {
-            'type': 'longpoll',
-            'transport_id': transport,
+        # this doesn't contain all the info (when a header key appears multiple times)
+        # http_headers_received = request.getAllHeaders()
+        http_headers_received = {}
+        for key, values in request.requestHeaders.getAllRawHeaders():
+            if key not in http_headers_received:
+                http_headers_received[key] = []
+            http_headers_received[key].extend(values)
+
+        transport_details = {
+            'transport': transport,
+            'serializer': serializer,
             'protocol': protocol,
             'peer': request.getClientIP(),
-            'http_headers_received': None,
+            'http_headers_received': http_headers_received,
             'http_headers_sent': None
         }
 
         # create instance of WampLongPollResourceSession or subclass thereof ..
         #
-        self._parent._transports[transport] = self._parent.protocol(self._parent, transport, serializer, transport_info)
+        self._parent._transports[transport] = self._parent.protocol(self._parent, transport_details)
 
         # create response
         #
