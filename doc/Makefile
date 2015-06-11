@@ -11,19 +11,11 @@ all:
 	@echo "  doctest           : run doctests"
 	@echo ""
 
-# need a distribution package for SCons, like "apt-get install scons"
-venv:
-	virtualenv --system-site-packages --python=python2 venv
+build:
+	scons
 
-# the "python `which scons`" hacks are because I can't get scons
-# installed in a virtualenv, and its #! hard-codes to system python
-build: install_deps
-	./venv/bin/python `which scons`
-	./venv/bin/sphinx-build -A cstatic="//tavendo-common-static.s3-eu-west-1.amazonaws.com" -b html . _build
-
-build_no_network: install_deps
-	./venv/bin/python `which scons` --no_network
-	./venv/bin/sphinx-build -A no_network=1 -D no_network=1 -A cstatic="http://127.0.0.1:8888" -b html . _build
+build_no_network:
+	scons --no_network
 
 test: build
 	python serve.py --root ./_build --silence
@@ -37,7 +29,6 @@ clean:
 	rm -rf _static/img/gen
 	rm -rf _test
 	rm -rf _spelling
-	rm -rf ./venv
 
 publish: clean build
 	scons publish
@@ -77,15 +68,15 @@ copy_wordlist:
 
 copy: copy_makefile copy_gitignore copy_serve
 
-install_deps: venv
-	./venv/bin/pip install -U scour
-	./venv/bin/pip install -U taschenmesser
-	./venv/bin/pip install -U sphinx
-	./venv/bin/pip install -U sphinx-bootstrap-theme
-	./venv/bin/pip install -U pyenchant
-	./venv/bin/pip install -U sphinxcontrib-spelling
-	./venv/bin/pip install -U repoze.sphinx.autointerface
-	./venv/bin/pip install -e ../[twisted,asyncio]
+install_deps:
+	pip install -U scour
+	pip install -U taschenmesser
+	#pip install -U scons
+	pip install -U sphinx
+	pip install -U sphinx-bootstrap-theme
+	pip install -U pyenchant
+	pip install -U sphinxcontrib-spelling
+	pip install -U repoze.sphinx.autointerface
 
 spelling:
 	PYTHONPATH=../autobahn sphinx-build -b spelling . _spelling
