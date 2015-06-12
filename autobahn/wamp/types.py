@@ -63,6 +63,8 @@ class ComponentConfig(object):
         """
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
+        if extra and not isinstance(extra, dict):
+            raise RuntimeError("'extra' should be a dict, not {}".format(type(extra)))
         self.realm = realm
         self.extra = extra
 
