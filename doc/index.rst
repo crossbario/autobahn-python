@@ -84,6 +84,9 @@ A sample **WebSocket server**:
 
 .. code-block:: python
 
+   from autobahn.twisted.websocket import WebSocketServerProtocol
+   # or: from autobahn.asyncio.websocket import WebSocketServerProtocol
+
    class MyServerProtocol(WebSocketServerProtocol):
 
       def onConnect(self, request):
@@ -119,6 +122,8 @@ A sample **WAMP application component** implementing all client roles:
 
 .. code-block:: python
 
+   from autobahn.twisted.wamp import ApplicationSession
+   # or: from autobahn.asyncio.wamp import ApplicationSession
    class MyComponent(ApplicationSession):
 
       @inlineCallbacks
@@ -127,7 +132,6 @@ A sample **WAMP application component** implementing all client roles:
          # 1) subscribe to a topic
          def onevent(msg):
             print("Got event: {}".format(msg))
-
          yield self.subscribe(onevent, 'com.myapp.hello')
 
          # 2) publish an event
@@ -136,7 +140,6 @@ A sample **WAMP application component** implementing all client roles:
          # 3) register a procedure for remoting
          def add2(x, y):
             return x + y
-
          self.register(add2, 'com.myapp.add2');
 
          # 4) call a remote procedure
@@ -146,7 +149,8 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - * `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
+* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__
+* `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
 
 Introduction to WAMP Programming with |ab|:
 

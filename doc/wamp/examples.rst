@@ -3,6 +3,38 @@
 WAMP Examples
 =============
 
+**NOTE** that for all examples you will **need to run a router**. We develop `Crossbar.io <http://crossbar.io/docs>`_ and there are `other routers <http://wamp.ws/implementations/#routers>`_ available as well. We include a working `Crossbar.io <http://crossbar.io/docs>`_ configuration in the `examples/router/ subdirectory <https://github.com/tavendo/AutobahnPython/tree/master/examples/router>`_ as well as `instructions on how to run it <https://github.com/tavendo/AutobahnPython/blob/master/examples/running-the-examples.md>`_.
+
+The examples are organized between `asycio <https://docs.python.org/3.4/library/asyncio.html>`_ and `Twisted <https://www.twistedmatrix.com>`_ at the top-level, with similarly-named examples demonstrating the same functionality with the respective framework.
+
+Each example typically includes four things:
+
+- ``frontend.py``: the Caller or Subscriber, in Python
+- ``backend.py``: the Callee or Publisher, in Python
+- ``frontend.js``: JavaScript version of the frontend
+- ``backend.js``: JavaScript version of the backend
+- ``*.html``: boilerplate so a browser can run the JavaScript
+
+So for each example, you start *one* backend and *one* frontend component (your choice). You can usually start multiple frontend components with no problem, but will get errors if you start two backends trying to register at the same procedure URI (for example).
+
+Still, you are encouraged to  try playing with mixing and matching the frontend and backend components, starting multiple front-ends, etc. to explore Crossbar and Autobahn's behavior. Often the different examples use similar URIs for procedures and published events, so you can even try mixing between the examples.
+
+The provided `Crossbar.io <http://crossbar.io/docs>`_ configuration will run a Web server that you can visit at `http://localhost:8080`_ and includes links to the frontend/backend HTML for the javascript versions. Usually these just use ``console.log()`` so you'll have to open up the JavaScript console in your browser to see it working.
+
+I'm Confused, Just Tell Me What To Run
+++++++++++++++++++++++++++++++++++++++
+
+If all that is too many options to consider, you want to do this:
+
+1. Open 3 terminals
+2. In terminal 1, `setup and run a local Crossbar <https://github.com/tavendo/AutobahnPython/blob/master/examples/running-the-examples.md>`_ in the root of your Autobahn checkout.
+3. In terminals 2 and 3, go to the root of your Autobahn checkout and activate the virtualenv from step 2 (``source venv-autobahn/bin/activate``)
+4. In terminal 2 run ``python ./examples/twisted/wamp/basic/rpc/arguments/backend.py``
+5. In terminal 3 run ``python ./examples/twisted/wamp/basic/rpc/arguments/frontend.py``
+
+This should give you a
+
+
 Publish & Subscribe (PubSub)
 ++++++++++++++++++++++++++++
 

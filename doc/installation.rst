@@ -18,6 +18,7 @@ You will need at least one of those.
 
 For Twisted installation, please see `here <http://twistedmatrix.com/>`__. Asyncio comes bundled with Python 3.4+. For Python 3.3, install it from `here <https://pypi.python.org/pypi/asyncio>`__. For Python 2, `trollius`_ will work.
 
+
 Supported Configurations
 ........................
 
@@ -42,6 +43,7 @@ Here are the configurations supported by |ab|:
 .. _1: http://twistedmatrix.com/trac/ticket/3413
 .. _2: http://twistedmatrix.com/trac/ticket/6746
 
+
 Performance Note
 ................
 
@@ -51,6 +53,7 @@ Performance Note
 * on CPython, install the native accelerators `wsaccel <https://pypi.python.org/pypi/wsaccel/>`_ and `ujson <https://pypi.python.org/pypi/ujson/>`_ (you can use the install variant ``acceleration`` for that - see below)
 
 To give you an idea of the performance you can expect, here is a `blog post <http://tavendo.com/blog/post/autobahn-pi-benchmark/>`_ benchmarking |ab| running on the `RaspberryPi <http://www.raspberrypi.org/>`_ (a tiny embedded computer) under `PyPy <http://pypy.org/>`_.
+
 
 
 Installing Autobahn
@@ -81,13 +84,13 @@ And to install asyncio backports automatically when required
 Install from Sources
 ....................
 
-To install from sources, clone the repository
+To install from sources, clone the repository:
 
 .. code-block:: sh
 
    git clone git@github.com:tavendo/AutobahnPython.git
 
-checkout a tagged release
+checkout a tagged release:
 
 .. code-block:: sh
 
@@ -95,16 +98,16 @@ checkout a tagged release
    git checkout v0.9.1
 
 .. warning::
-   You should only use *tagged* releases, not *trunk*. The latest code from *trunk* might be broken, unfinished and untested. So you have been warned;)
+   You should only use *tagged* releases, not *master*. The latest code from *master* might be broken, unfinished and untested. So you have been warned ;)
 
-Then do
+Then do:
 
 .. code-block:: sh
 
    cd autobahn
    python setup.py install
 
-You can also use Pip for the last step, which allows to specify install variants (see below)
+You can also use ``pip`` for the last step, which allows to specify install variants (see below)
 
 .. code-block:: sh
 
