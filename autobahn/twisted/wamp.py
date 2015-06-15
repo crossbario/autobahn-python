@@ -84,8 +84,6 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
    """
 
-# XXX should maybe pass "reactor" arg to these factory-methods, too?
-# for asyncio it would be the event-loop instance
 def _create_tcp4_stream_transport(reactor, apprunner, wamp_transport_factory, **kw):
     """
     The default callable used for _create_stream_transport in
@@ -161,22 +159,18 @@ def _create_endpoint_stream_transport(reactor, apprunner, wamp_transport_factory
     return client.connect(wamp_transport_factory)
 
 
-# XXX might want to pass reactory/event-loop instance here too
-def _create_websocket_wamp_factory(reactor, apprunner, session_factory):
+def _create_websocket_wamp_factory(reactor, apprunner, session_factory, **kw):
     # factory for using ApplicationSession
     def create():
         cfg = ComponentConfig(apprunner.realm, apprunner.extra)
         try:
             session = session_factory(cfg)
         except Exception as e:
-            if start_reactor:
-                # the app component could not be created .. fatal
-                log.err(str(e))
+            log.err("Exception while creating session: {0}".format(e))
+            if 'start_reactor' in kw and kw['start_reactor']:
+                log.err("Fatal, stopping reactor.")
                 reactor.stop()
-            else:
-                # if we didn't start the reactor, it's up to the
-                # caller to deal with errors
-                raise
+            raise
         else:
             session.debug_app = apprunner.debug_app
             return session
@@ -301,15 +295,15 @@ class ApplicationRunner(object):
         txaio.use_twisted()
         txaio.config.loop = reactor
 
-#        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
-
         # start logging to console
         if self.debug or self.debug_wamp or self.debug_app:
             log.startLogging(sys.stdout)
 
         # create our connection; this is some WAMP dialect over an
         # underlying stream transport.
-        transport_factory = self._create_wamp_factory(reactor, self, make)
+        # XXX what to do about start_reactor and error-handling on
+        #     ApplicationSession creation? ugly to pass it here...
+        transport_factory = self._create_wamp_factory(reactor, self, make, start_reactor=start_reactor)
         d = self._create_stream_transport(reactor, self, transport_factory, **kw)
 
         # as the reactor shuts down, we wish to wait until we've sent
