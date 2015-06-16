@@ -51,20 +51,25 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
 
-        # register all methods on this object decorated with "@wamp.register"
-        # as a RPC endpoint
-        ##
-        svc1 = MyService1()
+        # to use this session to register all the @register decorated
+        # methods, we call register with the object; so here we create
+        # a MyService1 instance and register all the methods on it and
+        # on ourselves
 
-        for obj in [self, svc1]:
-            results = yield self.register(obj)
-            for success, res in results:
-                if success:
-                    # res is an Registration instance
-                    print("Ok, registered procedure on {} with registration ID {}".format(obj, res.id))
-                else:
-                    # res is an Failure instance
-                    print("Failed to register procedure: {}".format(res.value))
+        svc1 = MyService1()
+        # register all @register-decorated methods from "svc1":
+        results0 = yield self.register(svc1)
+
+        # register all our own @register-decorated methods:
+        results1 = yield self.register(self)
+
+        for success, res in results0 + results1:
+            if success:
+                # res is an Registration instance
+                print("Ok, registered procedure on {} with registration ID {}".format(obj, res.id))
+            else:
+                # res is an Failure instance
+                print("Failed to register procedure: {}".format(res.value))
 
     @wamp.register(u'com.mathservice.square2')
     def square2(self, x, y):
