@@ -5,20 +5,20 @@ from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 # or: from autobahn.asyncio.wamp import ApplicationSession
 
 class MyComponent(ApplicationSession):
-   @inlineCallbacks
-   def onJoin(self, details):
-       # publish an event every second. The event payloads can be
-       # anything JSON- and msgpack- serializable
-       def publish():
-           return self.publish('com.myapp.hello', 'Hello, world!')
-       LoopingCall(publish).start(1)
+    @inlineCallbacks
+    def onJoin(self, details):
+        # publish an event every second. The event payloads can be
+        # anything JSON- and msgpack- serializable
+        def publish():
+            return self.publish('com.myapp.hello', 'Hello, world!')
+        LoopingCall(publish).start(1)
 
-       # a remote procedure; see frontend.py for a Python front-end
-       # that calls this. Any language with WAMP bindings can now call
-       # this procedure if its connected to the same router and realm.
-       def add2(x, y):
-           return x + y
-       yield self.register(add2, 'com.myapp.add2');
+        # a remote procedure; see frontend.py for a Python front-end
+        # that calls this. Any language with WAMP bindings can now call
+        # this procedure if its connected to the same router and realm.
+        def add2(x, y):
+            return x + y
+        yield self.register(add2, 'com.myapp.add2');
 
 
 if __name__ == '__main__':
