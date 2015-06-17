@@ -2,7 +2,7 @@
  WAMP Programming
 ==================
 
-This guide gives an introduction to programming with `WAMP <http://wamp.ws>`__ in Python using |Ab|.
+This guide gives an introduction to programming with `WAMP <http://wamp.ws>`__ in Python using |Ab|. (Go straight to :ref:`wamp_examples`)
 
 WAMP provides two communication patterns for application components to talk to each other
 

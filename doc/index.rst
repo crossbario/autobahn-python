@@ -1,7 +1,7 @@
 |AbL|
 =====
 
-*Open-source real-time framework for Web, Mobile & Internet of Things.*
+*Open-source (MIT) real-time framework for Web, Mobile & Internet of Things.*
 
 Latest release: v\ |version| (:ref:`Changelog`)
 
