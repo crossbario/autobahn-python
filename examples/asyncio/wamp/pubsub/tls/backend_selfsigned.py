@@ -53,11 +53,14 @@ class Component(ApplicationSession):
 
 
 if __name__ == '__main__':
+    # see README; this way everything accesses same cert-files
+    cert_path = '../../../../twisted/wamp/pubsub/tls/server.crt'
+    print(cert_path)
     # create an ssl.Context using just our self-signed cert as the CA certificates
-    options = ssl.create_default_context(cadata=open('./server.crt', 'r').read())
+    options = ssl.create_default_context(cadata=open(cert_path, 'r').read())
     # ...which we pass as "ssl=" to ApplicationRunner (passed to loop.create_connection)
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://demo.crossbar.io/ws"),
+        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://localhost:8083/ws"),
         u"crossbardemo",
         ssl=options,  # try removing this, but still use self-signed cert
         debug_wamp=False,  # optional; log many WAMP details
