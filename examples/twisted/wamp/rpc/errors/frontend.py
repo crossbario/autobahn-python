@@ -81,6 +81,7 @@ class Component(ApplicationSession):
         except AppError1 as e:
             print("Compare Error: {}".format(e))
 
+        print("Exiting; we received only errors we expected.")
         self.leave()
 
     def onDisconnect(self):

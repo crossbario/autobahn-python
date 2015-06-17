@@ -26,6 +26,7 @@
 
 from os import environ
 from twisted.internet.defer import inlineCallbacks
+from twisted.python.failure import Failure
 
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
@@ -56,20 +57,22 @@ class Component(ApplicationSession):
         # a MyService1 instance and register all the methods on it and
         # on ourselves
 
+        results = []
         svc1 = MyService1()
+
         # register all @register-decorated methods from "svc1":
-        results0 = yield self.register(svc1)
+        res = yield self.register(svc1)
+        results.extend(res)
 
         # register all our own @register-decorated methods:
-        results1 = yield self.register(self)
+        res = yield self.register(self)
+        results.extend(res)
 
-        for success, res in results0 + results1:
-            if success:
-                # res is an Registration instance
-                print("Ok, registered procedure on {} with registration ID {}".format(obj, res.id))
-            else:
-                # res is an Failure instance
+        for res in results:
+            if isinstance(res, Failure):
                 print("Failed to register procedure: {}".format(res.value))
+            else:
+                print("registration ID {}: {}".format(res.id, res.procedure))
 
     @wamp.register(u'com.mathservice.square2')
     def square2(self, x, y):
