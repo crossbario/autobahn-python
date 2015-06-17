@@ -55,11 +55,13 @@ class ComponentConfig(object):
 
     def __init__(self, realm=None, extra=None):
         """
-
         :param realm: The realm the session should join.
         :type realm: unicode
-        :param extra: Optional dictionary with extra configuration.
-        :type extra: dict
+
+        :param extra: Optional user-supplied object with extra
+            configuration. This can be any object you like, and is
+            accessible in your `ApplicationSession` subclass via
+            `self.config.extra`. `dict` is a good default choice.
         """
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)

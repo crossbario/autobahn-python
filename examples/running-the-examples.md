@@ -4,7 +4,7 @@
 
 To run the following examples, you need a WAMP router.
 
-By default, **all examples are set up to use a a local Crossbar instance**. You can change the URI used with the environment variable AUTOBAHN_DEMO_ROUTER (by default it is `ws://localhost:8080/ws`). Please see [Running Crossbar Locally] below.
+By default, **all examples are set up to use a local Crossbar instance**. You can change the URI used with the environment variable AUTOBAHN_DEMO_ROUTER (by default it is `ws://localhost:8080/ws`). Please see [Running Crossbar Locally] below.
 
 
 ## Creating a virtualenv
@@ -12,7 +12,8 @@ By default, **all examples are set up to use a a local Crossbar instance**. You 
 If you do not yet have a `virtualenv` to run the examples with, you can do something like:
 
 ```shell
-cd ./autobahn-clone/
+git clone https://github.com/tavendo/AutobahnPython.git
+cd ./AutobahnPython/
 virtualenv venv-autobahn
 source venv-autobahn/bin/activate
 pip install -e ./
@@ -41,11 +42,11 @@ To run an example, you can have two (or three) terminal sessions open with:
 You can also run the frontend/backend in the same shell by putting one in the background. This makes tbe examples less clear, however:
 
 ```shell
-python twisted/wamp/basic/pubsub/basic/frontend.py &
-python twisted/wamp/basic/pubsub/basic/backend.py
+python twisted/wamp/pubsub/basic/frontend.py &
+python twisted/wamp/pubsub/basic/backend.py
 ```
 
-Some **things to try**: open a new terminal and run a second frontend;  leave the backend running for a while and then run the frontend; disconnect a frontend and reconnect (re-run) it; mix and match the examples (e.g. twisted/wamp/basic/pubsub/basic/backend.py with twisted/wamp/basic/pubsub/decorators/frontend.py) to see how the topic URIs interact.
+Some **things to try**: open a new terminal and run a second frontend;  leave the backend running for a while and then run the frontend; disconnect a frontend and reconnect (re-run) it; mix and match the examples (e.g. twisted/wamp/pubsub/basic/backend.py with twisted/wamp/pubsub/decorators/frontend.py) to see how the topic URIs interact.
 
 
 ## Running Crossbar Locally
@@ -55,7 +56,7 @@ If you want to use your own local [Crossbar](http://crossbar.io) instance you mu
 Once you have crossbar installed, use the provided router configuration in `examples/router/.crossbar/config.json`. Starting your router is then:
 
 ```shell
-cd examples/router
+cd ./examples/router
 crossbar start
 ```
 
@@ -73,7 +74,7 @@ Crossbar.io is a WAMP router that can also act as a host for WAMP application co
 {
          ...
          "options": {
-             "pythonpath": ["../../twisted/wamp/basic"]
+             "pythonpath": ["../../twisted/wamp/"]
          },
          "components": [
             {
@@ -86,4 +87,4 @@ Crossbar.io is a WAMP router that can also act as a host for WAMP application co
 }
 ```
 
-For the above exact configuration to work you'll need the `./examples/twisted/wamp/basic` directory in your PYTHONPATH (that configuration is provided in the `"options"` above).
+For the above exact configuration to work you'll need the `./examples/twisted/wamp/` directory in your PYTHONPATH (that configuration is provided in the `"options"` above).

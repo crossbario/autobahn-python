@@ -1,7 +1,7 @@
 |AbL|
 =====
 
-*Open-source real-time framework for Web, Mobile & Internet of Things.*
+*Open-source (MIT) real-time framework for Web, Mobile & Internet of Things.*
 
 Latest release: v\ |version| (:ref:`Changelog`)
 
@@ -25,13 +25,36 @@ Latest release: v\ |version| (:ref:`Changelog`)
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
 
-in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
+in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
 
-WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ in an open standard WebSocket based protocol.
+Documentation Overview
+----------------------
 
-|AbL| features
+See :ref:`site_contents` for a full site-map. Top-level pages available:
 
-* framework for `WebSocket`_ / `WAMP`_ clients
+.. toctree::
+   :maxdepth: 1
+
+   installation
+   asynchronous-programming
+   wamp/programming
+   wamp/examples
+   websocket/programming
+   websocket/examples
+   reference/autobahn
+   contribute
+   changelog
+
+-----
+
+Autobahn Features
+-----------------
+
+WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
+
+|AbL| features:
+
+* framework for `WebSocket`_ and `WAMP`_ clients
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
@@ -41,14 +64,14 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 * supports TLS (secure WebSocket) and proxies
 * Open-source (`MIT license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
 
-and much more.
+...and much more.
 
-Further, |AbL| is written with these goals
+Further, |AbL| is written with these goals:
 
 1. high-performance, fully asynchronous and scalable code
 2. best-in-class standards conformance and security
 
-We do take those design and implementation goals quite serious. For example, |AbL| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |AbL|;)
+We do take those design and implementation goals quite serious. For example, |AbL| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |AbL| ;)
 
 .. note::
    In the following, we will just refer to |Ab| instead of the
@@ -56,8 +79,8 @@ We do take those design and implementation goals quite serious. For example, |Ab
    ambiguity.
 
 
-What can I do with this stuff?
-------------------------------
+What can I do with Autobahn?
+----------------------------
 
 WebSocket is great for apps like **chat**, **trading**, **multi-player games** or **real-time charts**. It allows you to **actively push information** to clients as it happens.
 
@@ -84,25 +107,28 @@ A sample **WebSocket server**:
 
 .. code-block:: python
 
-   class MyServerProtocol(WebSocketServerProtocol):
+   from autobahn.twisted.websocket import WebSocketServerProtocol
+   # or: from autobahn.asyncio.websocket import WebSocketServerProtocol
 
-      def onConnect(self, request):
-         print("Client connecting: {}".format(request.peer))
+       class MyServerProtocol(WebSocketServerProtocol):
 
-      def onOpen(self):
-         print("WebSocket connection open.")
+          def onConnect(self, request):
+              print("Client connecting: {}".format(request.peer))
 
-      def onMessage(self, payload, isBinary):
-         if isBinary:
-            print("Binary message received: {} bytes".format(len(payload)))
-         else:
-            print("Text message received: {}".format(payload.decode('utf8')))
+          def onOpen(self):
+              print("WebSocket connection open.")
 
-         ## echo back message verbatim
-         self.sendMessage(payload, isBinary)
+          def onMessage(self, payload, isBinary):
+              if isBinary:
+                  print("Binary message received: {} bytes".format(len(payload)))
+              else:
+                  print("Text message received: {}".format(payload.decode('utf8')))
 
-      def onClose(self, wasClean, code, reason):
-         print("WebSocket connection closed: {}".format(reason))
+              ## echo back message verbatim
+              self.sendMessage(payload, isBinary)
+
+          def onClose(self, wasClean, code, reason):
+              print("WebSocket connection closed: {}".format(reason))
 
 Complete example code:
 
@@ -119,34 +145,35 @@ A sample **WAMP application component** implementing all client roles:
 
 .. code-block:: python
 
-   class MyComponent(ApplicationSession):
+    from autobahn.twisted.wamp import ApplicationSession
+    # or: from autobahn.asyncio.wamp import ApplicationSession
+    class MyComponent(ApplicationSession):
 
-      @inlineCallbacks
-      def onJoin(self, details):
+       @inlineCallbacks
+       def onJoin(self, details):
 
-         # 1) subscribe to a topic
-         def onevent(msg):
-            print("Got event: {}".format(msg))
+           # 1) subscribe to a topic
+           def onevent(msg):
+               print("Got event: {}".format(msg))
+           yield self.subscribe(onevent, 'com.myapp.hello')
 
-         yield self.subscribe(onevent, 'com.myapp.hello')
+           # 2) publish an event
+           self.publish('com.myapp.hello', 'Hello, world!')
 
-         # 2) publish an event
-         self.publish('com.myapp.hello', 'Hello, world!')
+           # 3) register a procedure for remoting
+           def add2(x, y):
+               return x + y
+           self.register(add2, 'com.myapp.add2');
 
-         # 3) register a procedure for remoting
-         def add2(x, y):
-            return x + y
-
-         self.register(add2, 'com.myapp.add2');
-
-         # 4) call a remote procedure
-         res = yield self.call('com.myapp.add2', 2, 3)
-         print("Got result: {}".format(res))
+           # 4) call a remote procedure
+           res = yield self.call('com.myapp.add2', 2, 3)
+           print("Got result: {}".format(res))
 
 
 Complete example code:
 
-* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__ - * `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
+* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/overview/>`_
+* `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/overview/>`_
 
 Introduction to WAMP Programming with |ab|:
 
