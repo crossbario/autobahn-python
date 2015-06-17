@@ -24,6 +24,12 @@
 #
 ###############################################################################
 
+try:
+    import asyncio
+except ImportError:
+    # Trollius >= 0.3 was renamed
+    import trollius as asyncio
+
 from os import environ
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -34,6 +40,7 @@ class Component(ApplicationSession):
     of arguments.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         def ping():
@@ -52,11 +59,11 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        self.register(ping, u'com.arguments.ping')
-        self.register(add2, u'com.arguments.add2')
-        self.register(stars, u'com.arguments.stars')
-        self.register(orders, u'com.arguments.orders')
-        self.register(arglen, u'com.arguments.arglen')
+        yield from self.register(ping, u'com.arguments.ping')
+        yield from self.register(add2, u'com.arguments.add2')
+        yield from self.register(stars, u'com.arguments.stars')
+        yield from self.register(orders, u'com.arguments.orders')
+        yield from self.register(arglen, u'com.arguments.arglen')
         print("Registered methods; ready for frontend.")
 
 

@@ -41,18 +41,19 @@ class Component(ApplicationSession):
     return complex results.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 
-        self.register(add_complex, 'com.myapp.add_complex')
+        yield from self.register(add_complex, 'com.myapp.add_complex')
 
         def split_name(fullname):
             forename, surname = fullname.split()
             return CallResult(forename, surname)
 
-        self.register(split_name, 'com.myapp.split_name')
+        yield from self.register(split_name, 'com.myapp.split_name')
 
 
 if __name__ == '__main__':

@@ -24,6 +24,12 @@
 #
 ###############################################################################
 
+try:
+    import asyncio
+except ImportError:
+    # Trollius >= 0.3 was renamed
+    import trollius as asyncio
+
 from os import environ
 import datetime
 
@@ -35,13 +41,14 @@ class Component(ApplicationSession):
     A simple time service application component.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        self.register(utcnow, 'com.timeservice.now')
+        yield from self.register(utcnow, 'com.timeservice.now')
 
 
 if __name__ == '__main__':

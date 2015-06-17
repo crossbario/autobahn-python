@@ -40,6 +40,7 @@ class Component(ApplicationSession):
     Application component that produces progressive results.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         @asyncio.coroutine
@@ -52,7 +53,7 @@ class Component(ApplicationSession):
                 yield from asyncio.sleep(1 * n)
             return n
 
-        self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+        yield from self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':

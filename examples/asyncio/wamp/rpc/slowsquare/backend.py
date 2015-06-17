@@ -39,19 +39,20 @@ class Component(ApplicationSession):
     A math service application component.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         def square(x):
             return x * x
 
-        self.register(square, 'com.math.square')
+        yield from self.register(square, 'com.math.square')
 
         @asyncio.coroutine
         def slowsquare(x, delay=1):
             yield from asyncio.sleep(delay)
             return x * x
 
-        self.register(slowsquare, 'com.math.slowsquare')
+        yield from self.register(slowsquare, 'com.math.slowsquare')
         print("Registered 'com.math.slowsquare'")
 
 

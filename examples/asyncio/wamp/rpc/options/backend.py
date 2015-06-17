@@ -41,6 +41,7 @@ class Component(ApplicationSession):
     different kinds of arguments.
     """
 
+    @asyncio.coroutine
     def onJoin(self, details):
 
         def square(val, details=None):
@@ -56,7 +57,7 @@ class Component(ApplicationSession):
                 self.publish('com.myapp.square_on_nonpositive', val, options=options)
             return val * val
 
-        self.register(square, 'com.myapp.square', RegisterOptions(details_arg='details'))
+        yield from self.register(square, 'com.myapp.square', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':
