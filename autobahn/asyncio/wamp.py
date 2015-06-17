@@ -169,5 +169,8 @@ class ApplicationRunner(object):
             # wait until we send Goodbye if user hit ctrl-c
             # (done outside this except so SIGTERM gets the same handling)
             pass
-        loop.run_until_complete(protocol._session.leave())
+        # give Goodbye message a chance to go through, if we still
+        # have an active session
+        if protocol._session:
+            loop.run_until_complete(protocol._session.leave())
         loop.close()
