@@ -8,7 +8,8 @@ from __future__ import print_function
 #
 #  0. change to this directory
 #  1. be in an activated Python2 virtual-env with crossbar installed
-#  2. have a virtualenv called ./venv-py3 using a Python3
+#  2. pip install colorama
+#  3. have a virtualenv called ./venv-py3 using a Python3
 #     interpreter with crossbar (or just Autobahn) installed.
 #
 # ...then just run this script; it colors the output and runs each
@@ -151,6 +152,8 @@ def main(reactor):
         './twisted/wamp/rpc/decorators/',
         './twisted/wamp/rpc/complex/',
         './twisted/wamp/rpc/arguments/',
+
+        'py3 ./asyncio/wamp/overview',
 
         'py3 ./asyncio/wamp/pubsub/unsubscribe/',
         'py3 ./asyncio/wamp/pubsub/tls/',
