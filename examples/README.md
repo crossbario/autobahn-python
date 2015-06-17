@@ -3,12 +3,12 @@
 This folder contains complete working code examples that demonstrate various features of **Autobahn**|Python:
 
  1. **Twisted**-based Examples
-   * [WebSocket](twisted/websocket)
-   * [WAMP](twisted/wamp)
+   * [WebSocket](twisted/websocket/README.md)
+   * [WAMP](twisted/wamp/README.md)
 
 2. **asyncio**-based Examples
-   * [WebSocket](asyncio/websocket)
-   * [WAMP](asyncio/wamp)
+   * [WebSocket](asyncio/websocket/README.md)
+   * [WAMP](asyncio/wamp/README.md)
 
 If you are new to Autobahn and WAMP, you should start with the following if you're going to use Twisted:
 

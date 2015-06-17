@@ -10,35 +10,38 @@ There are several very-similar examples that each follow a similar form and demo
 
 Note that any WAMP component can "do" all the roles (so a "backend" component can easily also call endpoints or listen for events) but we needed to separate things somehow. However, you can organize your components however you see fit.
 
+For examples using RPC, you need to run the backend first, so that procedures are registered and available to call.
 
-## Simple Examples
+## The Examples
 
-1. RPC
-  * [Arguments](rpc/arguments)
-  * [Complex](rpc/complex)
-  * [Decorators](rpc/decorators)
-  * [Errors](rpc/errors)
-  * [Options](rpc/options)
-  * [Progress](rpc/progress)
-  * [Slow Square](rpc/slowsquare)
-  * [Time Service](rpc/timeservice)
+### RPC Examples
 
-2. PubSub
-  * [Basic](pubsub/basic)
-  * [Complex](pubsub/complex)
-  * [Decorators](pubsub/decorators)
-  * [Options](pubsub/options)
-  * [Unsubscribe](pubsub/unsubscribe)
+  * [Arguments](rpc/arguments): different types of argument-passing
+  * [Complex](rpc/complex): complex return types
+  * [Decorators](rpc/decorators): register RPC methods using decorators
+  * [Errors](rpc/errors): map custom error classes to WAMP URIs
+  * [Options](rpc/options): show some RegistrationOptions and CallOptions use
+  * [Progress](rpc/progress): progressive results for long-running oprations
+  * [Slow Square](rpc/slowsquare): an RPC call that takes some time
+  * [Time Service](rpc/timeservice): XXX delete?
 
-There also some more "real" examples, implemented as pluggable "WAMPlets". These also serve as skeletons to base your own WAMPlets from, should you wish to package components as illustrated.
+### PubSub Examples
 
-3. Vote Game [votegame](wamplet/votegame)
+  * [Basic](pubsub/basic): publish to a topic once per second
+  * [Complex](pubsub/complex): demonstrates different payload arguments
+  * [Decorators](pubsub/decorators): doing subscriptions with decorators
+  * [Options](pubsub/options): use of PublishOptions and SubscribeOptions
+  * [Unsubscribe](pubsub/unsubscribe): listen to events for a limited time
 
-A collaborative voting "game" to decide the most amazing fruit.
+There also some larger examples, implemented as pluggable "WAMPlets". These can also serve as skeletons to base your own WAMPlets from, should you wish to package components like this.
 
-4. IRC Bot [wampirc](wamplet/wampirc)
+### Vote Game
 
-Basically shows some simple bridging between IRC and WAMP, exporting private messages to the bot as WAMP publish()es.
+The [votegame](wamplet/votegame) example is a collaborative voting "game" to decide the most amazing fruit. Updates votes amongst all clients in realtime.
+
+### IRC Bot
+
+The [wampirc](wamplet/wampirc) example shows some simple bridging between IRC and WAMP, exporting private messages to the bot as WAMP publish()-es.
 
 
 ## How to run
