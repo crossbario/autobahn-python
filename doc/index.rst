@@ -25,7 +25,7 @@ Latest release: v\ |version| (:ref:`Changelog`)
 * `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
 
-in Python 2 and 3, running on `Twisted`_ and `asyncio`_.
+in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
 
 Documentation Overview
 ----------------------
@@ -52,7 +52,7 @@ Autobahn Features
 
 WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
 
-|AbL| features
+|AbL| features:
 
 * framework for `WebSocket`_ and `WAMP`_ clients
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
@@ -66,7 +66,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 
 ...and much more.
 
-Further, |AbL| is written with these goals
+Further, |AbL| is written with these goals:
 
 1. high-performance, fully asynchronous and scalable code
 2. best-in-class standards conformance and security
@@ -79,8 +79,8 @@ We do take those design and implementation goals quite serious. For example, |Ab
    ambiguity.
 
 
-What can I do with |AbL|?
--------------------------
+What can I do with Autobahn?
+----------------------------
 
 WebSocket is great for apps like **chat**, **trading**, **multi-player games** or **real-time charts**. It allows you to **actively push information** to clients as it happens.
 
@@ -172,8 +172,8 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/beginner/client.py>`__
-* `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/beginner/client.py>`__
+* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/overview/>`_
+* `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/overview/>`_
 
 Introduction to WAMP Programming with |ab|:
 
