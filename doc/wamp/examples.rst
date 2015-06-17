@@ -5,6 +5,9 @@ WAMP Examples
 
 **NOTE** that for all examples you will **need to run a router**. We develop `Crossbar.io <http://crossbar.io/docs>`_ and there are `other routers <http://wamp.ws/implementations/#routers>`_ available as well. We include a working `Crossbar.io <http://crossbar.io/docs>`_ configuration in the `examples/router/ subdirectory <https://github.com/tavendo/AutobahnPython/tree/master/examples/router>`_ as well as `instructions on how to run it <https://github.com/tavendo/AutobahnPython/blob/master/examples/running-the-examples.md>`_.
 
+Overview of Examples
+++++++++++++++++++++
+
 The examples are organized between `asycio <https://docs.python.org/3.4/library/asyncio.html>`_ and `Twisted <https://www.twistedmatrix.com>`_ at the top-level, with similarly-named examples demonstrating the same functionality with the respective framework.
 
 Each example typically includes four things:
