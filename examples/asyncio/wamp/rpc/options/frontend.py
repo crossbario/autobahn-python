@@ -52,7 +52,7 @@ class Component(ApplicationSession):
             res = yield from self.call('com.myapp.square', val, options=CallOptions(disclose_me=True))
             print("Squared {} = {}".format(val, res))
 
-        self.leave()
+        yield from self.leave()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()

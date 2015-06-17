@@ -83,7 +83,7 @@ class Component(ApplicationSession):
         except AppError1 as e:
             print("Compare Error: {}".format(e))
 
-        self.leave()
+        yield from self.leave()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()
