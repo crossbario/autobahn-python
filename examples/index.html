@@ -102,90 +102,102 @@ on running a local crossbar.io instance.
            language) scripts.
          </p>
 
+         <p>
+           So, for example, it's sufficient to open the <code>frontend.html</code> and
+           <code>backend.html</code> scripts in different tabs, or run
+           the corresponding Python <code>backend.py</code>
+           with <code>frontend.html</code> (or vice-versa).
+         </p>
+
+         <p>
+           For examples using RPC, you need to run the backend first,
+           so that procedures are registered and available to call.
+         </p>
+
          <ul>
            <li>
-             <code><a href="twisted/wamp/basic/pubsub/">twisted/wamp/basic/pubsub/</a></code>:
+             <code><a href="twisted/wamp/pubsub/">twisted/wamp/pubsub/</a></code>:
              <ul>
                <li>
                  <code>&hellip;/pubsub/basic/</code>:
-                 <a href="twisted/wamp/basic/pubsub/basic/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/pubsub/basic/backend.html">backend.html</a>
+                 <a href="twisted/wamp/pubsub/basic/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/basic/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/pubsub/complex/</code>:
-                 <a href="twisted/wamp/basic/pubsub/complex/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/pubsub/complex/backend.html">backend.html</a>
+                 <a href="twisted/wamp/pubsub/complex/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/complex/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/pubsub/decorators/</code>:
-                 <a href="twisted/wamp/basic/pubsub/decorators/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/pubsub/decorators/backend.html">backend.html</a>
+                 <a href="twisted/wamp/pubsub/decorators/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/decorators/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/pubsub/options/</code>:
-                 <a href="twisted/wamp/basic/pubsub/options/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/pubsub/options/backend.html">backend.html</a>
+                 <a href="twisted/wamp/pubsub/options/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/options/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/pubsub/unsubscribe/</code>:
-                 <a href="twisted/wamp/basic/pubsub/unsubscribe/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/pubsub/unsubscribe/backend.html">backend.html</a>
+                 <a href="twisted/wamp/pubsub/unsubscribe/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/unsubscribe/backend.html">backend.html</a>
                </li>
              </ul>
            </li>
 
            <li>
-             <code><a href="twisted/wamp/basic/rpc/">twisted/wamp/basic/rpc/</a></code>:
+             <code><a href="twisted/wamp/rpc/">twisted/wamp/rpc/</a></code>:
              <ul>
                <li>
                  <code>&hellip;/rpc/arguments/</code>:
-                 <a href="twisted/wamp/basic/rpc/arguments/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/arguments/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/arguments/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/arguments/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/complex/</code>:
-                 <a href="twisted/wamp/basic/rpc/complex/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/complex/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/complex/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/complex/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/decorators/</code>:
-                 <a href="twisted/wamp/basic/rpc/decorators/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/decorators/frontend.html">frontend.html</a>,
                </li>
 
                <li>
                  <code>&hellip;/rpc/errors/</code>:
-                 <a href="twisted/wamp/basic/rpc/errors/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/errors/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/errors/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/errors/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/options/</code>:
-                 <a href="twisted/wamp/basic/rpc/options/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/options/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/options/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/options/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/progress/</code>:
-                 <a href="twisted/wamp/basic/rpc/progress/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/progress/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/progress/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/progress/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/slowsquare/</code>:
-                 <a href="twisted/wamp/basic/rpc/slowsquare/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/slowsquare/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/slowsquare/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/slowsquare/backend.html">backend.html</a>
                </li>
 
                <li>
                  <code>&hellip;/rpc/timeservice/</code>:
-                 <a href="twisted/wamp/basic/rpc/timeservice/frontend.html">frontend.html</a>,
-                 <a href="twisted/wamp/basic/rpc/timeservice/backend.html">backend.html</a>
+                 <a href="twisted/wamp/rpc/timeservice/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/timeservice/backend.html">backend.html</a>
                </li>
 
              </ul>
