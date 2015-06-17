@@ -94,7 +94,8 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None):
+    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None,
+                 socket_path=None):
         """
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
@@ -122,6 +123,12 @@ class ApplicationRunner(object):
             :meth:`twisted.internet.ssl.platformTrust` which tries to use
             your distribution's CA certificates.
         :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
+
+        :param socket_path: (Optional). If you passed None as the URL, you must
+            pass socket_path= to tell ApplicationRunner where your
+            unix-socket is.
+        :type socket_path: unicode
+
         """
         self.url = url
         self.realm = realm
@@ -131,8 +138,19 @@ class ApplicationRunner(object):
         self.debug_app = debug_app
         self.make = None
         self.ssl = ssl
+        self._socket_path = socket_path
 
-    def run(self, make, start_reactor=True):
+        # configure our internal helpers for creating stream and WAMP
+        # transports
+        self._create_stream_transport = self._create_tcp4_stream_transport
+        # since a None URL is used by autobahn.websocket.protocol.WebSocketClientFactory
+        if url is None:
+            if socket_path is None:
+                raise RuntimeError("Must pass socket_path= kwarg if url is None")
+            self._create_stream_transport = self._create_unix_stream_transport
+        self._create_wamp_factory = self._create_websocket_wamp_factory
+
+    def run(self, make, start_reactor=True, **kw):
         """
         Run the application component.
 
@@ -156,57 +174,16 @@ class ApplicationRunner(object):
         txaio.use_twisted()
         txaio.config.loop = reactor
 
-        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
-
         # start logging to console
         if self.debug or self.debug_wamp or self.debug_app:
             log.startLogging(sys.stdout)
 
-        # factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            try:
-                session = make(cfg)
-            except Exception as e:
-                if start_reactor:
-                    # the app component could not be created .. fatal
-                    log.err(str(e))
-                    reactor.stop()
-                else:
-                    # if we didn't start the reactor, it's up to the
-                    # caller to deal with errors
-                    raise
-            else:
-                session.debug_app = self.debug_app
-                return session
-
-        # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
-
-        # if user passed ssl= but isn't using isSecure, we'll never
-        # use the ssl argument which makes no sense.
-        context_factory = None
-        if self.ssl is not None:
-            if not isSecure:
-                raise RuntimeError(
-                    'ssl= argument value passed to %s conflicts with the "ws:" '
-                    'prefix of the url argument. Did you mean to use "wss:"?' %
-                    self.__class__.__name__)
-            context_factory = self.ssl
-        elif isSecure:
-            from twisted.internet.ssl import optionsForClientTLS
-            context_factory = optionsForClientTLS(six.u(host))
-
-        if isSecure:
-            from twisted.internet.endpoints import SSL4ClientEndpoint
-            assert context_factory is not None
-            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
-        else:
-            from twisted.internet.endpoints import TCP4ClientEndpoint
-            client = TCP4ClientEndpoint(reactor, host, port)
-
-        d = client.connect(transport_factory)
+        # create our connection; this is some WAMP dialect over an
+        # underlying stream transport.
+        # XXX can we do better with start_reactor and error-handling on
+        #     ApplicationSession creation? a bit ugly to pass it here...
+        transport_factory = self._create_wamp_factory(reactor, make, stop_on_error=start_reactor)
+        d = self._create_stream_transport(reactor, transport_factory)
 
         # as the reactor shuts down, we wish to wait until we've sent
         # out our "Goodbye" message; leave() returns a Deferred that
@@ -246,6 +223,85 @@ class ApplicationRunner(object):
         else:
             # let the caller handle any errors
             return d
+
+
+    def _create_tcp4_stream_transport(self, reactor, wamp_transport_factory, **kw):
+        """
+        Internal helper.
+
+        Creats a TCP4 stream transport, possibly with TLS (depending
+        on options).
+        """
+
+        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+
+        # if user passed ssl= but isn't using isSecure, we'll never use
+        # the ssl argument which makes no sense.
+        context_factory = None
+        if self.ssl is not None:
+            if not isSecure:
+                raise RuntimeError(
+                    'ssl= argument value passed to {0} conflicts with the "ws:" '
+                    'prefix of the url argument. Did you mean to use "wss:"?'.format(
+                        self.__class__.__name__)
+                )
+            context_factory = self.ssl
+        elif isSecure:
+            from twisted.internet.ssl import optionsForClientTLS
+            context_factory = optionsForClientTLS(six.u(host))
+
+        if isSecure:
+            from twisted.internet.endpoints import SSL4ClientEndpoint
+            assert context_factory is not None
+            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
+        else:
+            from twisted.internet.endpoints import TCP4ClientEndpoint
+            client = TCP4ClientEndpoint(reactor, host, port)
+
+        return client.connect(wamp_transport_factory)
+
+
+    def _create_unix_stream_transport(self, reactor, wamp_transport_factory):
+        """
+        Internal helper.
+
+        Connects to a Unix socket as the transport.
+        """
+
+        url = None  # see autobahn.websocket.protocol.WebSocketClientFactory
+
+        if self.ssl is not None:
+            raise RuntimeError('ssl= argument inconsistent with Unix-domain sockets')
+
+        from twisted.internet.endpoints import UNIXClientEndpoint
+        client = UNIXClientEndpoint(reactor, self._socket_path)
+        return client.connect(wamp_transport_factory)
+
+
+    def _create_websocket_wamp_factory(self, reactor, session_factory, stop_on_error=False):
+        """
+        Internal helper.
+        """
+        # factory for using ApplicationSession
+        def create():
+            cfg = ComponentConfig(self.realm, self.extra)
+            try:
+                session = session_factory(cfg)
+            except Exception as e:
+                log.err("Exception while creating session: {0}".format(e))
+                if stop_on_error:
+                    log.err("Fatal; stopping reactor.")
+                    reactor.stop()
+                raise
+            else:
+                session.debug_app = self.debug_app
+                return session
+
+        return WampWebSocketClientFactory(
+            create, url=self.url,
+            debug=self.debug, debug_wamp=self.debug_wamp
+        )
+
 
 
 class _ApplicationSession(ApplicationSession):
