@@ -24,6 +24,19 @@ Still, you are encouraged to  try playing with mixing and matching the frontend 
 
 The provided `Crossbar.io <http://crossbar.io/docs>`_ configuration will run a Web server that you can visit at `http://localhost:8080`_ and includes links to the frontend/backend HTML for the javascript versions. Usually these just use ``console.log()`` so you'll have to open up the JavaScript console in your browser to see it working.
 
+.. _run_all_examples:
+
+Automatically Run All Examples
+++++++++++++++++++++++++++++++
+
+There is a script (``./examples/run-all-examples.py``) which runs all the WAMP examples for 5 seconds each, `this asciicast
+<https://asciinema.org/a/9cnar155zalie80c9725nvyk7>`_ shows you how (see comments for how to run it yourself):
+
+.. raw:: html
+
+    <script type="text/javascript" src="https://asciinema.org/a/9cnar155zalie80c9725nvyk7.js" id="asciicast-21588" async></script>
+
+
 
 Publish & Subscribe (PubSub)
 ++++++++++++++++++++++++++++
