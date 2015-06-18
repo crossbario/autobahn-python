@@ -82,7 +82,7 @@ We do take those design and implementation goals quite serious. For example, |Ab
 What can I do with Autobahn?
 ----------------------------
 
-WebSocket is great for apps like **chat**, **trading**, **multi-player games** or **real-time charts**. It allows you to **actively push information** to clients as it happens.
+WebSocket is great for apps like **chat**, **trading**, **multi-player games** or **real-time charts**. It allows you to **actively push information** to clients as it happens. (See also :ref:`run_all_examples`)
 
 Further, WebSocket allows you to real-time enable your Web user interfaces: **always current information** without reloads or polling. UIs no longer need to be a boring, static thing. Looking for the right communication technology for your next-generation Web apps? Enter WebSocket.
 
