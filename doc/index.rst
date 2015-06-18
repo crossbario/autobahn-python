@@ -84,6 +84,14 @@ What can I do with Autobahn?
 
 WebSocket is great for apps like **chat**, **trading**, **multi-player games** or **real-time charts**. It allows you to **actively push information** to clients as it happens. (See also :ref:`run_all_examples`)
 
+.. image:: _static/wamp-demos.png
+    :alt: ascii-cast of all WAMP demos running
+    :height: 443
+    :width: 768
+    :target: wamp/examples.html#run-all-examples
+    :scale: 40%
+    :align: right
+
 Further, WebSocket allows you to real-time enable your Web user interfaces: **always current information** without reloads or polling. UIs no longer need to be a boring, static thing. Looking for the right communication technology for your next-generation Web apps? Enter WebSocket.
 
 And WebSocket works great not only on the Web, but also as a protocol for wiring up the **Internet-of-Things (IoT)**. Connecting a sensor or actor to other application components in real-time over an efficient protocol. Plus: you are using the *same* protocol to connect frontends like Web browsers.
