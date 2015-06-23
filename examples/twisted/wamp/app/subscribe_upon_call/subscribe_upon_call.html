@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+   <body>
+      <h1>Subscribe upon Call</h1>
+      <p>Open JavaScript console to watch output.</p>
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
+
+      <button onclick="do_call()">Call Backend, triggering subscribe</button>
+
+      <script>
+         var connection = new autobahn.Connection({
+            url: "ws://127.0.0.1:8080/ws",
+            realm: 'realm1'
+         });
+
+         var session = null;
+
+         function do_call() {
+            if (session) {
+               session.call("com.example.triggersubscribe").then(
+                  function () {
+                     console.log("ok");
+                  },
+                  function (err) {
+                     console.log(err);
+                  }
+               );
+            } else {
+               console.log("not connected");
+            }
+         }
+
+         var timer = null;
+
+         connection.onopen = function (new_session) {
+            console.log("connected");
+            session = new_session;
+
+            var counter = 0;
+
+            timer = setInterval(function () {
+               console.log("publishing to topic 'com.example.topic1': " + counter);
+               session.publish('com.example.topic1', [counter]);
+               counter += 1;
+            }, 1000);
+         };
+
+         connection.onclose = function (reason, details) {
+            console.log("connection lost", reason, details);
+            session = null;
+            clearInterval(timer);
+            timer = null;
+         }
+
+         connection.open();
+      </script>
+   </body>
+</html>
