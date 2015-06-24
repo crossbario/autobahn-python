@@ -94,6 +94,7 @@ class WampWebSocketProtocol(object):
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
+            print(e)
             if self.factory.debug_wamp:
                 traceback.print_exc()
             reason = "WAMP Protocol Error ({0})".format(e)

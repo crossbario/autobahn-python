@@ -120,6 +120,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
+            log.msg(str(e))
             if self.factory.debug:
                 log.msg("WampRawSocketProtocol: WAMP Protocol Error ({0}) - aborting connection".format(e))
             self.abort()
