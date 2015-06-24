@@ -754,10 +754,9 @@ class ApplicationSession(BaseSession):
 
                     else:
                         registration = self._registrations[msg.registration]
-
                         endpoint = registration.endpoint
 
-                        if endpoint.obj:
+                        if endpoint.obj is not None:
                             invoke_args = (endpoint.obj,)
                         else:
                             invoke_args = tuple()
