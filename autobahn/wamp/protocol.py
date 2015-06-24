@@ -40,7 +40,6 @@ from autobahn.wamp.interfaces import ISession, \
     IRegistration, \
     ITransportHandler
 
-from autobahn import util
 from autobahn import wamp
 from autobahn.wamp import uri
 from autobahn.wamp import message
