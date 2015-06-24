@@ -1150,7 +1150,7 @@ class ApplicationSession(BaseSession):
         except Exception as e:
             if request_id in self._call_reqs:
                 del self._call_reqs[request_id]
-            raise e
+            raise
 
         return on_reply
 
