@@ -1149,7 +1149,7 @@ class ApplicationSession(BaseSession):
             #   will immediately lead on an incoming WAMP message in onMessage()
             #
             self._transport.send(msg)
-        except Exception as e:
+        except:
             if request_id in self._call_reqs:
                 del self._call_reqs[request_id]
             raise
