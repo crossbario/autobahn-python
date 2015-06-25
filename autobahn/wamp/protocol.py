@@ -48,6 +48,7 @@ from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.types import SessionDetails
+from autobahn.util import IdGenerator
 
 import txaio
 
@@ -250,8 +251,6 @@ class BaseSession(object):
     This class implements :class:`autobahn.wamp.interfaces.ISession`.
     """
 
-    _MAX_REQUEST_ID = 2**53  #: request-IDs wrap here
-
     def __init__(self):
         """
 
@@ -283,10 +282,8 @@ class BaseSession(object):
         self._authmethod = None
         self._authprovider = None
 
-        # we create sequential request-IDs for WAMP "Request" types
-        # (session-scoped) only starting at 0, but pre-increment then
-        # return.
-        self._request_id = -1
+        # generator for WAMP request IDs
+        self._request_id_gen = IdGenerator()
 
     def onConnect(self):
         """
@@ -320,15 +317,6 @@ class BaseSession(object):
             assert(not hasattr(exception, '_wampuris'))
             self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[six.u(error)] = exception
-
-    def _next_request_id(self):
-        """
-        Internal use; returns the next Session-scoped request ID.
-        """
-        self._request_id += 1
-        if self._request_id > self._MAX_REQUEST_ID:
-            self._request_id = 0
-        return self._request_id
 
     def _message_from_exception(self, request_type, request, exc, tb=None):
         """
@@ -1009,7 +997,7 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request_id = self._next_request_id()
+        request_id = self._request_id_gen.next()
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
             options = kwargs.pop('options')
@@ -1056,7 +1044,7 @@ class ApplicationSession(BaseSession):
             raise exception.TransportLost()
 
         def _subscribe(obj, fn, topic, options):
-            request_id = self._next_request_id()
+            request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
             self._subscribe_reqs[request_id] = SubscribeRequest(request_id, on_reply, handler_obj)
@@ -1110,7 +1098,7 @@ class ApplicationSession(BaseSession):
 
         if scount == 0:
             # if the last handler was removed, unsubscribe from broker ..
-            request_id = self._next_request_id()
+            request_id = self._request_id_gen.next()
 
             on_reply = txaio.create_future()
             self._unsubscribe_reqs[request_id] = UnsubscribeRequest(request_id, on_reply, subscription.id)
@@ -1134,7 +1122,7 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request_id = self._next_request_id()
+        request_id = self._request_id_gen.next()
 
         if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
             options = kwargs.pop('options')
@@ -1183,7 +1171,7 @@ class ApplicationSession(BaseSession):
             raise exception.TransportLost()
 
         def _register(obj, fn, procedure, options):
-            request_id = self._next_request_id()
+            request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             endpoint_obj = Endpoint(fn, obj, options.details_arg if options else None)
             self._register_reqs[request_id] = RegisterRequest(request_id, on_reply, procedure, endpoint_obj)
@@ -1227,7 +1215,7 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request_id = self._next_request_id()
+        request_id = self._request_id_gen.next()
 
         on_reply = txaio.create_future()
         self._unregister_reqs[request_id] = UnregisterRequest(request_id, on_reply, registration.id)

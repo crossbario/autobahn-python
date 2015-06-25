@@ -78,7 +78,7 @@ if os.environ.get('USE_TWISTED', False):
             if isinstance(msg, message.Publish):
                 if msg.topic.startswith(u'com.myapp'):
                     if msg.acknowledge:
-                        reply = message.Published(msg.request, self._fake_router_session._next_request_id())
+                        reply = message.Published(msg.request, self._fake_router_session._request_id_gen.next())
                 elif len(msg.topic) == 0:
                     reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.invalid_uri')
                 else:
@@ -94,7 +94,7 @@ if os.environ.get('USE_TWISTED', False):
 
                 elif msg.procedure.startswith(u'com.myapp.myproc'):
                     registration = self._registrations[msg.procedure]
-                    request = self._fake_router_session._next_request_id()
+                    request = self._fake_router_session._request_id_gen.next()
                     if request in self._invocations:
                         raise ProtocolError("duplicate invocation")
                     self._invocations[request] = msg.request
@@ -117,7 +117,7 @@ if os.environ.get('USE_TWISTED', False):
                 if topic in self._subscription_topics:
                     reply_id = self._subscription_topics[topic]
                 else:
-                    reply_id = self._fake_router_session._next_request_id()
+                    reply_id = self._fake_router_session._request_id_gen.next()
                     self._subscription_topics[topic] = reply_id
                 reply = message.Subscribed(msg.request, reply_id)
 
@@ -125,7 +125,7 @@ if os.environ.get('USE_TWISTED', False):
                 reply = message.Unsubscribed(msg.request)
 
             elif isinstance(msg, message.Register):
-                registration = self._fake_router_session._next_request_id()
+                registration = self._fake_router_session._request_id_gen.next()
                 self._registrations[msg.procedure] = registration
                 reply = message.Registered(msg.request, registration)
 
