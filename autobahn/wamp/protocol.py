@@ -757,10 +757,9 @@ class ApplicationSession(BaseSession):
 
                     else:
                         registration = self._registrations[msg.registration]
-
                         endpoint = registration.endpoint
 
-                        if endpoint.obj:
+                        if endpoint.obj is not None:
                             invoke_args = (endpoint.obj,)
                         else:
                             invoke_args = tuple()
@@ -1153,7 +1152,7 @@ class ApplicationSession(BaseSession):
         except Exception as e:
             if request_id in self._call_reqs:
                 del self._call_reqs[request_id]
-            raise e
+            raise
 
         return on_reply
 
