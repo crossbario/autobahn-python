@@ -325,7 +325,7 @@ class BaseSession(object):
         """
         Internal use; returns the next Session-scoped request ID.
         """
-        self._request_id +=1
+        self._request_id += 1
         if self._request_id > self._MAX_REQUEST_ID:
             self._request_id = 0
         return self._request_id
