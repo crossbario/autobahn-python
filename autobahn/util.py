@@ -58,7 +58,7 @@ def utcnow():
     :rtype: unicode
     """
     now = datetime.utcnow()
-    return now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    return u"{0}Z".format(now.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
 def utcstr(ts):
@@ -72,7 +72,7 @@ def utcstr(ts):
     :rtype: unicode
     """
     if ts:
-        return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
     else:
         return ts
 
@@ -92,7 +92,7 @@ def parseutc(datestr):
     :rtype: instance of :py:class:`datetime.datetime`
     """
     try:
-        return datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(datestr, u"%Y-%m-%dT%H:%M:%SZ")
     except ValueError:
         return None
 
