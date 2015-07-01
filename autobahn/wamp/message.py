@@ -76,6 +76,12 @@ _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 # loose URI check disallowing empty URI components
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
+# strict URI check disallowing empty URI components in all but the last component
+_URI_PAT_STRICT_LAST_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]*)$")
+
+# loose URI check disallowing empty URI components in all but the last component
+_URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
+
 
 def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
     """
