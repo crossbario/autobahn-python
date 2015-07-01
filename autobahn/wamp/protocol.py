@@ -496,9 +496,12 @@ class ApplicationSession(BaseSession):
         """
         if self._transport:
             self._transport.close()
-        else:
-            # XXX or shall we just ignore this?
-            raise RuntimeError("No transport, but disconnect() called.")
+
+    def is_connected(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
+        """
+        return self._transport is not None
 
     def onUserError(self, e, msg):
         """

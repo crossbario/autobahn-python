@@ -323,6 +323,12 @@ class ISession(object):
         """
 
     @abc.abstractmethod
+    def is_connected(self):
+        """
+        Check if the underlying transport is connected.
+        """
+
+    @abc.abstractmethod
     def onDisconnect(self):
         """
         Callback fired when underlying transport has been closed.
