@@ -248,6 +248,7 @@ class WampLongPollResourceSession(Resource):
         self._authid = None
         self._authrole = None
         self._authmethod = None
+        self._authprovider = None
 
         self._send = WampLongPollResourceSessionSend(self)
         self._receive = WampLongPollResourceSessionReceive(self)
