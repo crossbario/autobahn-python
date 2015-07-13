@@ -214,7 +214,7 @@ class WebSocketAdapterFactory(object):
     Adapter class for asyncio-based WebSocket client and server factories.
     """
 
-    def _log(self, msg):
+    def _ab_log(self, msg):
         print(msg)
 
     def __call__(self):
