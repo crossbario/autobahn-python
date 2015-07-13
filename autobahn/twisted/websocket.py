@@ -171,7 +171,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
                 return self.failHandshake(failure.value.reason, failure.value.code)
             else:
                 if self.debug:
-                    self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
+                    self.factory._ab_log("Unexpected exception in onConnect ['%s']" % failure.value)
                 return self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
 
         res.addErrback(forwardError)
@@ -191,7 +191,7 @@ class WebSocketAdapterFactory(object):
     Adapter class for Twisted-based WebSocket client and server factories.
     """
 
-    def _log(self, msg):
+    def _ab_log(self, msg):
         log.msg(msg)
 
 
