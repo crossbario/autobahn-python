@@ -3423,8 +3423,8 @@ class WebSocketServerFactory(WebSocketFactory):
                  server="AutobahnPython/%s" % __version__,
                  headers=None,
                  externalPort=None,
-                 debug=True,
-                 debugCodePaths=True):
+                 debug=False,
+                 debugCodePaths=False):
         """
         Create instance of WebSocket server factory.
 
@@ -4231,8 +4231,8 @@ class WebSocketClientFactory(WebSocketFactory):
                  useragent="AutobahnPython/%s" % __version__,
                  headers=None,
                  proxy=None,
-                 debug=True,
-                 debugCodePaths=True):
+                 debug=False,
+                 debugCodePaths=False):
         """
         Create instance of WebSocket client factory.
 
