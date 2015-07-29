@@ -14,6 +14,9 @@ For examples using RPC, you need to run the backend first, so that procedures ar
 
 ## The Examples
 
+### Overview Examples
+ * [LoopingCall](overview): shows an alternative way of publishing periodically
+
 ### RPC Examples
 
   * [Arguments](rpc/arguments): different types of argument-passing
@@ -33,16 +36,27 @@ For examples using RPC, you need to run the backend first, so that procedures ar
   * [Options](pubsub/options): use of PublishOptions and SubscribeOptions
   * [Unsubscribe](pubsub/unsubscribe): listen to events for a limited time
 
-There also some larger examples, implemented as pluggable "WAMPlets". These can also serve as skeletons to base your own WAMPlets from, should you wish to package components like this.
+### WAMPlet Examples
 
-### Vote Game
+These are some larger examples, implemented as pluggable "WAMPlets". These can also serve as skeletons to base your own WAMPlets from, should you wish to package components like this.
 
-The [votegame](wamplet/votegame) example is a collaborative voting "game" to decide the most amazing fruit. Updates votes amongst all clients in realtime.
+ * [votegame](wamplet/votegame): a collaborative voting "game" to decide the most amazing fruit. Updates votes amongst all clients in realtime
+ * [wampirc](wamplet/wampirc): shows some simple bridging between IRC and WAMP, exporting private messages to the bot as WAMP publish()-es
+ * [wamplet1](wamplet/wamplet1): just a minimal skeleton
 
-### IRC Bot
 
-The [wampirc](wamplet/wampirc) example shows some simple bridging between IRC and WAMP, exporting private messages to the bot as WAMP publish()-es.
+### App Examples
 
+_We still need to explain these. For starters, here's the list:_
+
+  * [Calculator](app/calculator): _to be explained..._
+  * [Crochet](app/crochet): _to be explained..._
+  * [DBus](app/dbus): _to be explained..._
+  * [Hello](app/hello): _to be explained..._
+  * [Keyvalue](app/keyvalue): _to be explained..._
+  * [Klein](app/klein): _to be explained..._
+  * [Serial2ws](app/serial2ws): _to be explained..._
+  * [Subscribe upon call](app/subscribe_uipon_call): _to be explained..._
 
 ## How to run
 
