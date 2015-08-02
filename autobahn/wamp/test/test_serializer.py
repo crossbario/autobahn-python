@@ -110,7 +110,7 @@ class TestSerializer(unittest.TestCase):
         """
 
         if not hasattr(serializer, 'MsgPackSerializer'):
-            self.skip("no msgpack")
+            self.skipTest("no msgpack")
 
         ser = serializer.MsgPackSerializer()
         payload = b'\x960\xce\x00\x01\xe2@\x80\xb4com.myapp.procedure1\x90\x82\xc4\x03str*\xa7unicode\x17'
@@ -128,7 +128,7 @@ class TestSerializer(unittest.TestCase):
         `use_bin_type=True`
         """
         if not hasattr(serializer, 'MsgPackSerializer'):
-            self.skip("no msgpack")
+            self.skipTest("no msgpack")
 
         ser = serializer.MsgPackSerializer(batched=True)
         payload = b'\x00\x00\x00-\x960\xce\x00\x01\xe2@\x80\xb4com.myapp.procedure1\x90\x82\xa7unicode\x17\xa3str*'
