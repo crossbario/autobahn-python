@@ -22,7 +22,7 @@ So for each example, you start *one* backend and *one* frontend component (your 
 
 Still, you are encouraged to  try playing with mixing and matching the frontend and backend components, starting multiple front-ends, etc. to explore Crossbar and Autobahn's behavior. Often the different examples use similar URIs for procedures and published events, so you can even try mixing between the examples.
 
-The provided `Crossbar.io <http://crossbar.io/docs>`_ configuration will run a Web server that you can visit at `http://localhost:8080`__ and includes links to the frontend/backend HTML for the javascript versions. Usually these just use ``console.log()`` so you'll have to open up the JavaScript console in your browser to see it working.
+The provided `Crossbar.io <http://crossbar.io/docs>`__ configuration will run a Web server that you can visit at `http://localhost:8080` and includes links to the frontend/backend HTML for the javascript versions. Usually these just use ``console.log()`` so you'll have to open up the JavaScript console in your browser to see it working.
 
 .. _run_all_examples:
 
