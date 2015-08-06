@@ -180,8 +180,8 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* `Twisted <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/overview/>`_
-* `asyncio <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/overview/>`_
+* `Twisted Example <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/overview/>`__
+* `asyncio Example <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/overview/>`__
 
 Introduction to WAMP Programming with |ab|:
 

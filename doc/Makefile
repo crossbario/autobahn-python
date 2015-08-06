@@ -12,10 +12,12 @@ all:
 	@echo ""
 
 build:
-	scons
+	#scons
+	sphinx-build -A cstatic="//tavendo-common-static.s3-eu-west-1.amazonaws.com" -b html . _build
 
 build_no_network:
-	scons --no_network
+	#scons --no_network
+	sphinx-build -A no_network=1 -D no_network=1 -A cstatic="http://127.0.0.1:8888" -b html . _build
 
 test: build
 	python serve.py --root ./_build --silence

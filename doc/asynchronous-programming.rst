@@ -26,7 +26,7 @@ Another highly recommended reading is `The Reactive Manifesto <http://www.reacti
 
    -- `The Reactive Manifesto <http://www.reactivemanifesto.org>`_
 
-The fact that |Ab| is implemented using asynchronous programming and non-blocking execution shouldn't come as a surprise, since both `Twisted <https://twistedmatrix.com/trac/>`_ and `asyncio <https://docs.python.org/3/library/asyncio.html>`_ - the foundations upon which |ab| runs - are *asynchronous network programming frameworks*.
+The fact that |Ab| is implemented using asynchronous programming and non-blocking execution shouldn't come as a surprise, since both `Twisted <https://twistedmatrix.com/trac/>`__ and `asyncio <https://docs.python.org/3/library/asyncio.html>`__ - the foundations upon which |ab| runs - are *asynchronous network programming frameworks*.
 
 On the other hand, the principles of asynchronous programming are independent of Twisted and asyncio. For example, other frameworks that fall into the same category are:
 
@@ -99,11 +99,11 @@ The truth is that while the *core* of Twisted and asyncio are very similar, **Tw
 
 So you get *tons* of actual network protocols already out-of-the-box - in production quality implementations!
 
-asyncio does not include any actual application layer network protocols like HTTP. If you need those, you'll have to look for asyncio implementations *outside* the standard library. For example, `here <https://github.com/KeepSafe/aiohttp>`_ is a HTTP server and client library for asyncio.
+asyncio does not include any actual application layer network protocols like HTTP. If you need those, you'll have to look for asyncio implementations *outside* the standard library. For example, `here <https://github.com/KeepSafe/aiohttp>`__ is a HTTP server and client library for asyncio.
 
 Over time, an ecosystem of protocols will likely emerge around asyncio also. But right now, Twisted has a big advantage here.
 
-If you want to read more on this, Glyph (Twisted original author) has a nice blog post `here <https://glyph.twistedmatrix.com/2014/05/the-report-of-our-death.html>`_.
+If you want to read more on this, Glyph (Twisted original author) has a nice blog post `here <https://glyph.twistedmatrix.com/2014/05/the-report-of-our-death.html>`__.
 
 
 Resources
@@ -126,7 +126,7 @@ Then of course there is
 * `The Twisted Documentation <https://twisted.readthedocs.org/>`_
 * `The Twisted API Reference <https://twistedmatrix.com/documents/current/api/>`_
 
-and lots and lots of awesome `Twisted talks <http://www.pyvideo.org/search?models=videos.video&q=twisted>`_ on PyVideo.
+and lots and lots of awesome `Twisted talks <http://www.pyvideo.org/search?models=videos.video&q=twisted>`__ on PyVideo.
 
 
 Asyncio Resources
@@ -139,7 +139,7 @@ asyncio is very new (August 2014). So the amount of material on the Web is still
 * `Python 3.4 docs - asyncio <http://docs.python.org/3.4/library/asyncio.html>`_
 * `PEP-3156 - Asynchronous IO Support Rebooted <http://www.python.org/dev/peps/pep-3156/>`_
 
-However, we quickly introduce core asynchronous programming primitives provided by `Twisted <https://twistedmatrix.com/>`_ and `asyncio <https://docs.python.org/3.4/library/asyncio.html>`_:
+However, we quickly introduce core asynchronous programming primitives provided by `Twisted <https://twistedmatrix.com/>`__ and `asyncio <https://docs.python.org/3.4/library/asyncio.html>`__:
 
 
 Asynchronous Programming Primitives
@@ -293,11 +293,11 @@ Asyncio Futures and Coroutines
 ..............................
 
 
-`Asyncio Futures <http://docs.python.org/3.4/library/asyncio-task.html#future>`_ like Twisted Deferreds encapsulate the result of a future computation. At the time of creation, the result is (usually) not yet available, and will only be available eventually.
+`Asyncio Futures <http://docs.python.org/3.4/library/asyncio-task.html#future>`__ like Twisted Deferreds encapsulate the result of a future computation. At the time of creation, the result is (usually) not yet available, and will only be available eventually.
 
 On the other hand, asyncio futures are quite different from Twisted Deferreds. One difference is that they have no built-in machinery for chaining.
 
-`Asyncio Coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`_ are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
+`Asyncio Coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`__ are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
 
 
 -------
