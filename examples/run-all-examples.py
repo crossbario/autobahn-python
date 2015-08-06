@@ -184,7 +184,9 @@ def main(reactor):
         py = sys.executable
         if exdir.startswith('py3 '):
             exdir = exdir[4:]
-            py = './venv-py3/bin/python'
+            if sys.version_info.major < 3:
+                print("don't have python3, skipping:", exdir)
+                continue
         frontend = join(exdir, 'frontend.py')
         backend = join(exdir, 'backend.py')
         if not exists(frontend) or not exists(backend):
