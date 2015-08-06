@@ -55,16 +55,16 @@ class CrossbarProcessProtocol(ProcessProtocol):
 
     def outReceived(self, data):
         """ProcessProtocol override"""
-        self._out += data
+        self._out += data.decode('utf8')
         while '\n' in self._out:
             idx = self._out.find('\n')
             line = self._out[:idx]
-            self._out = self._out[idx+1:]
+            self._out = self._out[idx + 1:]
             sys.stdout.write(self.prefix + self.color + line + Fore.RESET + '\n')
 
     def errReceived(self, data):
         """ProcessProtocol override"""
-        self._err += data
+        self._err += data.decode('utf8')
         while '\n' in self._err:
             idx = self._err.find('\n')
             line = self._err[:idx]
