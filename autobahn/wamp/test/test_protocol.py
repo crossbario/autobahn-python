@@ -34,7 +34,8 @@ if os.environ.get('USE_TWISTED', False):
     # import unittest
 
     from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed, DeferredList
-    from twisted.python import log, compat
+    from twisted.python import log
+    from six import PY3
 
     from autobahn.wamp import message
     from autobahn.wamp import serializer
@@ -44,7 +45,7 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn.wamp import types
     from autobahn.twisted.wamp import ApplicationSession
 
-    if compat._PY3:
+    if PY3:
         long = int
 
     class MockTransport(object):
