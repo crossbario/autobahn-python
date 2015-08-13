@@ -58,7 +58,7 @@ if __name__ == '__main__':
     else:
         debug = False
 
-    factory = WebSocketServerFactory("ws://localhost:9000",
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000",
                                      debug=debug,
                                      debugCodePaths=debug)
 

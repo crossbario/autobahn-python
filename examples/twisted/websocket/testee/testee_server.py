@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = TesteeServerFactory("ws://localhost:9001", debug=False)
+    factory = TesteeServerFactory("ws://127.0.0.1:9001", debug=False)
 
     reactor.listenTCP(9001, factory)
     reactor.run()
