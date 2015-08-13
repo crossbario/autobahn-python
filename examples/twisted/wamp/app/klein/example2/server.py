@@ -80,4 +80,4 @@ if __name__ == "__main__":
     log.startLogging(sys.stdout)
 
     reactor.listenTCP(8080, Site(webapp.resource()))
-    wampapp.run("ws://localhost:9000", "realm1", standalone=True)
+    wampapp.run("ws://127.0.0.1:9000", "realm1", standalone=True)

@@ -355,7 +355,7 @@ if __name__ == '__main__':
     DEFAULT_WORKERS = psutil.NUM_CPUS
 
     parser = argparse.ArgumentParser(description='Autobahn WebSocket Echo Multicore Server')
-    parser.add_argument('--wsuri', dest='wsuri', type=str, default='ws://localhost:9000', help='The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
+    parser.add_argument('--wsuri', dest='wsuri', type=str, default='ws://127.0.0.1:9000', help='The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
     parser.add_argument('--port', dest='port', type=int, default=8080, help='Port to listen on for embedded Web server. Set to 0 to disable.')
     parser.add_argument('--workers', dest='workers', type=int, default=DEFAULT_WORKERS, help='Number of workers to spawn - should fit the number of (physical) CPU cores.')
     parser.add_argument('--noaffinity', dest='noaffinity', action="store_true", default=False, help='Do not set worker/CPU affinity.')

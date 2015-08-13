@@ -62,7 +62,7 @@ class Component(ApplicationSession):
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://localhost:8080/ws"),
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws"),
         u"crossbardemo",
         extra=dict(
             max_events=5,  # [A] pass in additional configuration
