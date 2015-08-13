@@ -167,7 +167,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.6.1',
-        'txaio>=1.0.2'
+        'txaio>=1.0.3'
     ],
     extras_require={
         'all': extras_require_all,
