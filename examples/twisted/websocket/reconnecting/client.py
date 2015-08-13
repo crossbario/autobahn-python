@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = MyClientFactory("ws://localhost:9000", debug=False)
+    factory = MyClientFactory("ws://127.0.0.1:9000", debug=False)
 
     reactor.connectTCP("127.0.0.1", 9000, factory)
     reactor.run()

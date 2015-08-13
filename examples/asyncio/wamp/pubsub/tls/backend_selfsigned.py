@@ -60,7 +60,7 @@ if __name__ == '__main__':
     options = ssl.create_default_context(cadata=open(cert_path, 'r').read())
     # ...which we pass as "ssl=" to ApplicationRunner (passed to loop.create_connection)
     runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://localhost:8083/ws"),
+        environ.get("AUTOBAHN_DEMO_ROUTER", "wss://127.0.0.1:8083/ws"),
         u"crossbardemo",
         ssl=options,  # try removing this, but still use self-signed cert
         debug_wamp=False,  # optional; log many WAMP details

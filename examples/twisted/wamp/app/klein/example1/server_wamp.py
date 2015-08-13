@@ -36,4 +36,4 @@ def square(x):
 
 
 if __name__ == "__main__":
-    app.run("ws://localhost:9000", "realm1", standalone=True)
+    app.run("ws://127.0.0.1:9000", "realm1", standalone=True)

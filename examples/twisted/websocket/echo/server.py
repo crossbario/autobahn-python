@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory("ws://localhost:9000", debug=False)
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000", debug=False)
     factory.protocol = MyServerProtocol
     # factory.setProtocolOptions(maxConnections=2)
 
