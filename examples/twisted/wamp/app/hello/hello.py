@@ -50,4 +50,4 @@ def onjoined():
 
 
 if __name__ == "__main__":
-    app.run("ws://localhost:8080/ws", "realm1", standalone=True)
+    app.run("ws://127.0.0.1:8080/ws", "realm1", standalone=True)

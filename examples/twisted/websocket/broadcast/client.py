@@ -53,7 +53,7 @@ class BroadcastClientProtocol(WebSocketClientProtocol):
 if __name__ == '__main__':
 
     if len(sys.argv) < 2:
-        print("Need the WebSocket server address, i.e. ws://localhost:9000")
+        print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
     factory = WebSocketClientFactory(sys.argv[1])

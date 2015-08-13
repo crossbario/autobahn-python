@@ -48,7 +48,7 @@ class MessageBasedHashServerProtocol(WebSocketServerProtocol):
 
 
 if __name__ == '__main__':
-    factory = WebSocketServerFactory("ws://localhost:9000")
+    factory = WebSocketServerFactory("ws://127.0.0.1:9000")
     factory.protocol = MessageBasedHashServerProtocol
     listenWS(factory)
     reactor.run()
