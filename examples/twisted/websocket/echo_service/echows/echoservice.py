@@ -60,7 +60,7 @@ class EchoService(service.Service):
 
     def startService(self):
 
-        factory = WebSocketServerFactory("ws://localhost:%d" % self.port, debug=self.debug)
+        factory = WebSocketServerFactory("ws://127.0.0.1:%d" % self.port, debug=self.debug)
 
         factory.protocol = EchoServerProtocol
         factory.setProtocolOptions(allowHixie76=True)  # needed if Hixie76 is to be supported

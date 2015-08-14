@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = BroadcastServerFactory("ws://localhost:9000")
+    factory = BroadcastServerFactory("ws://127.0.0.1:9000")
 
     reactor.listenTCP(9000, factory)
     reactor.run()

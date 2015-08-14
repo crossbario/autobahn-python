@@ -58,7 +58,7 @@ def utcnow():
     :rtype: unicode
     """
     now = datetime.utcnow()
-    return now.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    return u"{0}Z".format(now.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
 def utcstr(ts):
@@ -72,7 +72,7 @@ def utcstr(ts):
     :rtype: unicode
     """
     if ts:
-        return ts.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
     else:
         return ts
 
@@ -92,9 +92,29 @@ def parseutc(datestr):
     :rtype: instance of :py:class:`datetime.datetime`
     """
     try:
-        return datetime.strptime(datestr, "%Y-%m-%dT%H:%M:%SZ")
+        return datetime.strptime(datestr, u"%Y-%m-%dT%H:%M:%SZ")
     except ValueError:
         return None
+
+
+class IdGenerator(object):
+    """
+    ID generator for WAMP request IDs.
+
+    WAMP request IDs are sequential per WAMP session, starting at 0 and
+    wrapping around at 2**53 (both value are inclusive [0, 2**53]).
+
+    See https://github.com/tavendo/WAMP/blob/master/spec/basic.md#ids
+    """
+
+    def __init__(self):
+        self._next = -1
+
+    def next(self):
+        self._next += 1
+        if self._next > 9007199254740992:
+            self._next = 0
+        return self._next
 
 
 # noinspection PyShadowingBuiltins
@@ -111,8 +131,7 @@ def id():
     :returns: A random object ID.
     :rtype: int
     """
-    # return random.randint(0, 9007199254740992) # this is what the WAMP spec says
-    return random.randint(0, 2147483647)  # use a reduced ID space for now (2**31-1)
+    return random.randint(0, 9007199254740992)
 
 
 def newid(length=16):

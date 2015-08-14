@@ -41,6 +41,9 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
+from autobahn.logger import make_logger
+
+
 __all__ = (
     'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
@@ -212,12 +215,7 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for asyncio-based WebSocket client and server factories.
     """
-
-    def _log(self, msg):
-        print(msg)
-
-    def _callLater(self, delay, fun):
-        return self.loop.call_later(delay, fun)
+    log = make_logger()
 
     def __call__(self):
         proto = self.protocol()

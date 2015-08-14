@@ -76,6 +76,12 @@ _URI_PAT_STRICT_NON_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]+)$")
 # loose URI check disallowing empty URI components
 _URI_PAT_LOOSE_NON_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]+)$")
 
+# strict URI check disallowing empty URI components in all but the last component
+_URI_PAT_STRICT_LAST_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]*)$")
+
+# loose URI check disallowing empty URI components in all but the last component
+_URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
+
 
 def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
     """
@@ -278,7 +284,6 @@ class Hello(Message):
             if u'features' in details_role:
                 check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in HELLO".format(role))
 
-                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_role[u'features'])
 
             else:
@@ -431,7 +436,6 @@ class Welcome(Message):
             if u'features' in details_role:
                 check_or_raise_extra(details_role[u'features'], "'features' in role '{0}' in 'roles' in 'details' in WELCOME".format(role))
 
-                # FIXME: skip unknown attributes
                 role_features = role_cls(**details_roles[role][u'features'])
 
             else:

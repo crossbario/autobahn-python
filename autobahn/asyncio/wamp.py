@@ -25,6 +25,7 @@
 ###############################################################################
 
 from __future__ import absolute_import
+import signal
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -33,94 +34,28 @@ from autobahn.asyncio.websocket import WampWebSocketClientFactory
 
 try:
     import asyncio
-    from asyncio import iscoroutine
-    from asyncio import Future
 except ImportError:
-    # Trollius >= 0.3 was renamed
+    # Trollius >= 0.3 was renamed to asyncio
     # noinspection PyUnresolvedReferences
     import trollius as asyncio
-    from trollius import iscoroutine
-    from trollius import Future
+
+import txaio
+txaio.use_asyncio()
 
 __all__ = (
-    'FutureMixin',
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner'
 )
 
 
-class FutureMixin(object):
-    """
-    Mixin for Asyncio style Futures.
-    """
-
-    @staticmethod
-    def _create_future():
-        return Future()
-
-    @staticmethod
-    def _create_future_success(result=None):
-        f = Future()
-        f.set_result(result)
-        return f
-
-    @staticmethod
-    def _create_future_error(error=None):
-        f = Future()
-        f.set_exception(error)
-        return f
-
-    @staticmethod
-    def _as_future(fun, *args, **kwargs):
-        try:
-            res = fun(*args, **kwargs)
-        except Exception as e:
-            f = Future()
-            f.set_exception(e)
-            return f
-        else:
-            if isinstance(res, Future):
-                return res
-            elif iscoroutine(res):
-                return asyncio.Task(res)
-            else:
-                f = Future()
-                f.set_result(res)
-                return f
-
-    @staticmethod
-    def _resolve_future(future, result=None):
-        future.set_result(result)
-
-    @staticmethod
-    def _reject_future(future, error):
-        future.set_exception(error)
-
-    @staticmethod
-    def _add_future_callbacks(future, callback, errback):
-        def done(f):
-            try:
-                res = f.result()
-                if callback:
-                    callback(res)
-            except Exception as e:
-                if errback:
-                    errback(e)
-        return future.add_done_callback(done)
-
-    @staticmethod
-    def _gather_futures(futures, consume_exceptions=True):
-        return asyncio.gather(*futures, return_exceptions=consume_exceptions)
-
-
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for asyncio-based applications.
     """
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for asyncio-based applications.
     """
@@ -141,24 +76,36 @@ class ApplicationRunner(object):
     """
 
     def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_wamp=False, debug_app=False):
+                 debug=False, debug_wamp=False, debug_app=False,
+                 ssl=None):
         """
-
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
+
         :param realm: The WAMP realm to join the application session to.
         :type realm: unicode
+
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
+
         :param serializers: A list of WAMP serializers to use (or None for default serializers).
            Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
+
         :param debug: Turn on low-level debugging.
         :type debug: bool
+
         :param debug_wamp: Turn on WAMP-level debugging.
         :type debug_wamp: bool
+
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
+
+        :param ssl: An (optional) SSL context instance or a bool. See
+           the documentation for the `loop.create_connection` asyncio
+           method, to which this value is passed as the ``ssl=``
+           kwarg.
+        :type ssl: :class:`ssl.SSLContext` or bool
         """
         self.url = url
         self.realm = realm
@@ -168,6 +115,7 @@ class ApplicationRunner(object):
         self.debug_app = debug_app
         self.make = None
         self.serializers = serializers
+        self.ssl = ssl
 
     def run(self, make):
         """
@@ -192,15 +140,37 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
+        if self.ssl is None:
+            ssl = isSecure
+        else:
+            if self.ssl and not isSecure:
+                raise RuntimeError(
+                    'ssl argument value passed to %s conflicts with the "ws:" '
+                    'prefix of the url argument. Did you mean to use "wss:"?' %
+                    self.__class__.__name__)
+            ssl = self.ssl
+
         # 2) create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
                                                        debug=self.debug, debug_wamp=self.debug_wamp)
 
         # 3) start the client
         loop = asyncio.get_event_loop()
-        coro = loop.create_connection(transport_factory, host, port, ssl=isSecure)
-        loop.run_until_complete(coro)
+        txaio.use_asyncio()
+        txaio.config.loop = loop
+        coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
+        (transport, protocol) = loop.run_until_complete(coro)
+        loop.add_signal_handler(signal.SIGTERM, loop.stop)
 
         # 4) now enter the asyncio event loop
-        loop.run_forever()
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            # wait until we send Goodbye if user hit ctrl-c
+            # (done outside this except so SIGTERM gets the same handling)
+            pass
+        # give Goodbye message a chance to go through, if we still
+        # have an active session
+        if protocol._session:
+            loop.run_until_complete(protocol._session.leave())
         loop.close()

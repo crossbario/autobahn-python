@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 # from twisted.trial import unittest
 import unittest
+import six
 
 from autobahn.wamp import message
 from autobahn.wamp import role
@@ -92,6 +93,50 @@ class TestSerializer(unittest.TestCase):
         if hasattr(serializer, 'MsgPackSerializer'):
             self.serializers.append(serializer.MsgPackSerializer())
             self.serializers.append(serializer.MsgPackSerializer(batched=True))
+
+    def test_dict_keys_msgpack(self):
+        """
+        dict keys should always be strings. the data provided is from
+        calling msgpack encode on a dict in python2 with
+        `use_bin_type=True` and the following message:
+
+            print(ser.serialize(
+                message.Call(
+                    123456, u"com.myapp.procedure1",
+                    args=(),
+                    kwargs={u'unicode': 23, 'str': 42}
+                )
+            ))
+        """
+
+        if not hasattr(serializer, 'MsgPackSerializer'):
+            self.skipTest("no msgpack")
+
+        ser = serializer.MsgPackSerializer()
+        payload = b'\x960\xce\x00\x01\xe2@\x80\xb4com.myapp.procedure1\x90\x82\xc4\x03str*\xa7unicode\x17'
+        msg_out = ser.unserialize(payload, True)[0]
+
+        for k in msg_out.kwargs.keys():
+            self.assertEqual(type(k), six.text_type)
+        self.assertTrue('str' in msg_out.kwargs)
+        self.assertTrue('unicode' in msg_out.kwargs)
+
+    def test_dict_keys_msgpack_batched(self):
+        """
+        dict keys should always be strings. the data provided is from
+        calling msgpack encode on a dict in python2 with
+        `use_bin_type=True`
+        """
+        if not hasattr(serializer, 'MsgPackSerializer'):
+            self.skipTest("no msgpack")
+
+        ser = serializer.MsgPackSerializer(batched=True)
+        payload = b'\x00\x00\x00-\x960\xce\x00\x01\xe2@\x80\xb4com.myapp.procedure1\x90\x82\xa7unicode\x17\xa3str*'
+        msg_out = ser.unserialize(payload, True)[0]
+        for k in msg_out.kwargs.keys():
+            self.assertEqual(type(k), six.text_type)
+        self.assertTrue('str' in msg_out.kwargs)
+        self.assertTrue('unicode' in msg_out.kwargs)
 
     def test_roundtrip(self):
         for msg in generate_test_messages():

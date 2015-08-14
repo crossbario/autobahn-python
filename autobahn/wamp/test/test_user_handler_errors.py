@@ -333,10 +333,8 @@ if os.environ.get('USE_TWISTED', False):
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
 
-            self.assertEqual(2, len(session.errors))
-            # might want to re-think this?
-            self.assertEqual("No transport, but disconnect() called.", str(session.errors[0][0]))
-            self.assertEqual(exception, session.errors[1][0])
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][0])
 
         def test_on_disconnect_with_session_deferred(self):
             session = MockApplicationSession()
@@ -351,10 +349,8 @@ if os.environ.get('USE_TWISTED', False):
             # autobahn.wamp.websocket.WampWebSocketProtocol
             session.onClose(False)
 
-            self.assertEqual(2, len(session.errors))
-            # might want to re-think this?
-            self.assertEqual("No transport, but disconnect() called.", str(session.errors[0][0]))
-            self.assertEqual(exception, session.errors[1][0])
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][0])
 
         def test_on_connect(self):
             session = MockApplicationSession()

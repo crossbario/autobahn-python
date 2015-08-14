@@ -33,8 +33,9 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     # import unittest
 
-    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed, DeferredList
     from twisted.python import log
+    from six import PY3
 
     from autobahn.wamp import message
     from autobahn.wamp import serializer
@@ -42,8 +43,10 @@ if os.environ.get('USE_TWISTED', False):
     from autobahn import util
     from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidUri, ProtocolError
     from autobahn.wamp import types
-
     from autobahn.twisted.wamp import ApplicationSession
+
+    if PY3:
+        long = int
 
     class MockTransport(object):
 
@@ -64,6 +67,7 @@ if os.environ.get('USE_TWISTED', False):
 
             msg = message.Welcome(self._my_session_id, roles)
             self._handler.onMessage(msg)
+            self._fake_router_session = ApplicationSession()
 
         def send(self, msg):
             if self._log:
@@ -75,7 +79,7 @@ if os.environ.get('USE_TWISTED', False):
             if isinstance(msg, message.Publish):
                 if msg.topic.startswith(u'com.myapp'):
                     if msg.acknowledge:
-                        reply = message.Published(msg.request, util.id())
+                        reply = message.Published(msg.request, self._fake_router_session._request_id_gen.next())
                 elif len(msg.topic) == 0:
                     reply = message.Error(message.Publish.MESSAGE_TYPE, msg.request, u'wamp.error.invalid_uri')
                 else:
@@ -91,7 +95,9 @@ if os.environ.get('USE_TWISTED', False):
 
                 elif msg.procedure.startswith(u'com.myapp.myproc'):
                     registration = self._registrations[msg.procedure]
-                    request = util.id()
+                    request = self._fake_router_session._request_id_gen.next()
+                    if request in self._invocations:
+                        raise ProtocolError("duplicate invocation")
                     self._invocations[request] = msg.request
                     reply = message.Invocation(
                         request, registration,
@@ -112,7 +118,7 @@ if os.environ.get('USE_TWISTED', False):
                 if topic in self._subscription_topics:
                     reply_id = self._subscription_topics[topic]
                 else:
-                    reply_id = util.id()
+                    reply_id = self._fake_router_session._request_id_gen.next()
                     self._subscription_topics[topic] = reply_id
                 reply = message.Subscribed(msg.request, reply_id)
 
@@ -120,7 +126,7 @@ if os.environ.get('USE_TWISTED', False):
                 reply = message.Unsubscribed(msg.request)
 
             elif isinstance(msg, message.Register):
-                registration = util.id()
+                registration = self._fake_router_session._request_id_gen.next()
                 self._registrations[msg.procedure] = registration
                 reply = message.Registered(msg.request, registration)
 
@@ -153,6 +159,15 @@ if os.environ.get('USE_TWISTED', False):
 
         def abort(self):
             pass
+
+    class TestClose(unittest.TestCase):
+        def test_server_abort(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            # this should not raise an exception, but did when this
+            # test-case was written
+            handler.onClose(False)
 
     class TestPublisher(unittest.TestCase):
 
@@ -533,6 +548,55 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(res, 23)
 
         @inlineCallbacks
+        def test_invoke_twice(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+
+            def myproc1():
+                return 23
+
+            yield handler.register(myproc1, u'com.myapp.myproc1')
+
+            d0 = handler.call(u'com.myapp.myproc1')
+            d1 = handler.call(u'com.myapp.myproc1')
+            res = yield DeferredList([d0, d1])
+            self.assertEqual(res, [(True, 23), (True, 23)])
+
+        @inlineCallbacks
+        def test_invoke_request_id_sequences(self):
+            """
+            make sure each session independently generates sequential IDs
+            """
+            handler0 = ApplicationSession()
+            handler1 = ApplicationSession()
+            trans0 = MockTransport(handler0)
+            trans1 = MockTransport(handler1)
+
+            # the ID sequences for each session should both start at 0
+            # (the register) and then increment for the call()
+            def verify_seq_id(orig, msg):
+                if isinstance(msg, message.Register):
+                    self.assertEqual(msg.request, 0)
+                elif isinstance(msg, message.Call):
+                    self.assertEqual(msg.request, 1)
+                return orig(msg)
+            orig0 = trans0.send
+            orig1 = trans1.send
+            trans0.send = lambda msg: verify_seq_id(orig0, msg)
+            trans1.send = lambda msg: verify_seq_id(orig1, msg)
+
+            def myproc1():
+                return 23
+
+            yield handler0.register(myproc1, u'com.myapp.myproc1')
+            yield handler1.register(myproc1, u'com.myapp.myproc1')
+
+            d0 = handler0.call(u'com.myapp.myproc1')
+            d1 = handler1.call(u'com.myapp.myproc1')
+            res = yield DeferredList([d0, d1])
+            self.assertEqual(res, [(True, 23), (True, 23)])
+
+        @inlineCallbacks
         def test_invoke_user_raises(self):
             handler = ApplicationSession()
             handler.traceback_app = True
@@ -575,7 +639,7 @@ if os.environ.get('USE_TWISTED', False):
                     yield succeed(i)
                 returnValue(42)
 
-            progressive = map(lambda _: Deferred(), range(10))
+            progressive = list(map(lambda _: Deferred(), range(10)))
 
             def progress(arg):
                 progressive[arg].callback(arg)

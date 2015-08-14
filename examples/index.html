@@ -1,0 +1,210 @@
+<!--
+
+
+This is here to facilitate using the examples when running your own
+local Crossbar instance; see running-the-examples.md for instructions
+on running a local crossbar.io instance.
+
+
+
+
+
+-->
+<!doctype html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+      <title>Crossbar.io Examples</title>
+
+      <style>
+         html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+         }
+
+         body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            color: #444;
+            background-color: #ececec;
+            font-family: 'Open Sans', 'Helvetica', 'Arial', sans-serif;
+            line-height: 1.6em;
+         }
+
+         a {
+            color: #b59f00;
+         }
+
+         a:visited {
+            color: #b59f00;
+         }
+
+         a:hover {
+            color: #E4C904;
+         }
+
+         pre {
+            color: #080;
+            font-family: 'Consolas', monospace;
+            font-size: 1.4em;
+         }
+
+         #content {
+            margin: 0 0 0 25%;
+            width: 60%;
+            max-width: 45em;
+         }
+
+         #logo {
+            position: absolute;
+            left: 0;
+            top: 1em;
+            width: 20%;
+            height: auto;
+         }
+      </style>
+   </head>
+   <body>
+      <div id="content">
+
+         <div id="logo">
+           <svg xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:cc="http://creativecommons.org/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" viewBox="0 0 400.61 72.275">
+             <g transform="translate(253.5 -239.34)">
+               <g transform="matrix(1.2987 0 0 1.2987 -524.18 470.3)" fill="#027eae">
+                 <path d="m211.5-174.75v48.844h44.969v-48.844h-44.969zm18.906 4.6875h2.1562v9.5625h-4.2188l2.0625-9.5625zm5.2188 0.0937h2.1562l2.0625 9.5312h-4.2188v-9.5312zm-16.75 10.125h30.219v1.7812h-1.4688v2.75h-3.4688v-2.75h-20.312v2.75h-3.4062v-2.75h-1.5625v-1.7812zm8.1562 4.25h5.5312v24.594h-10.688l5.1562-24.594zm8.5938 0h5.5312l5.1562 24.594h-10.688v-24.594z"/>
+                 <path d="m301.61-125.9h-8.5902l-3.4147-8.8837h-15.633l-3.228 8.8837h-8.3768l15.233-39.109h8.3501zm-14.539-15.473-5.3889-14.513-5.2822 14.513z"/>
+                 <path d="m324.42-125.9v-4.2418c-1.0316 1.5118-2.3877 2.7034-4.0684 3.5749-1.6807 0.87145-3.4548 1.3072-5.3222 1.3072-1.903 0-3.6104-0.41816-5.1221-1.254-1.5117-0.8359-2.6055-2.0097-3.2813-3.5214-0.67585-1.5118-1.0138-3.6014-1.0138-6.2693v-17.927h7.4964v13.019c-0.00003 3.9838 0.13773 6.4249 0.41349 7.3229 0.27568 0.89834 0.77811 1.6098 1.5073 2.1343 0.72917 0.52471 1.654 0.78711 2.7745 0.78711 1.2805 0 2.4276-0.35133 3.4414-1.0539 1.0137-0.70236 1.7074-1.574 2.0809-2.6145 0.37345-1.0403 0.5602-3.588 0.56022-7.6431v-11.952h7.4964v28.332z"/>
+                 <path d="m352.16-154.23v5.9758h-5.1221v11.418c0 2.3121 0.049 3.6593 0.14673 4.0417 0.0978 0.3824 0.32012 0.69818 0.66694 0.94713 0.3468 0.24886 0.76919 0.37354 1.2672 0.37354 0.69359 0 1.6984-0.2403 3.0146-0.72049l0.64026 5.8159c-1.743 0.74697-3.7171 1.1205-5.9224 1.1205-1.3517 0-2.57-0.22686-3.6548-0.68036-1.0849-0.4536-1.8808-1.0403-2.3877-1.7608-0.50689-0.72028-0.85812-1.6938-1.0538-2.9212-0.16001-0.87135-0.2401-2.6321-0.2401-5.282v-12.352h-3.4414v-5.9758h3.4414v-5.6289l7.5231-4.3751v10.004z"/>
+                 <path d="m355.68-140.47c0-2.4898 0.61357-4.8997 1.8408-7.2296 1.2272-2.3297 2.9657-4.1083 5.2155-5.3355 2.2498-1.2271 4.7619-1.8408 7.5364-1.8408 4.2862 0 7.7987 1.3918 10.538 4.175 2.7389 2.7834 4.1083 6.3004 4.1084 10.551-0.00004 4.2862-1.3828 7.8388-4.1484 10.658-2.7656 2.8189-6.247 4.2285-10.444 4.2285-2.5966 0-5.0732-0.58695-7.4297-1.7608s-4.1484-2.8945-5.3755-5.1621c-1.2272-2.2675-1.8408-5.0286-1.8408-8.2834zm7.6831 0.40023c0 2.8099 0.66694 4.962 2.0008 6.456s2.979 2.2408 4.9354 2.2408c1.9563 0 3.597-0.74687 4.922-2.2408s1.9875-3.6636 1.9875-6.5093c-0.00002-2.7744-0.66252-4.9086-1.9875-6.4026s-2.9657-2.241-4.922-2.241c-1.9564 0-3.6015 0.74697-4.9354 2.241-1.3339 1.4939-2.0008 3.6458-2.0008 6.456z"/>
+                 <path d="m390.5-125.9v-39.109h7.4964v14.086c2.312-2.6323 5.051-3.9484 8.2167-3.9484 3.4503 0 6.3048 1.2495 8.5635 3.7482 2.2587 2.4988 3.388 6.087 3.388 10.764-0.00003 4.8374-1.1516 8.5636-3.4547 11.178-2.3032 2.6145-5.0999 3.9217-8.3901 3.9217-1.6184 0-3.2146-0.40471-4.7886-1.2139-1.574-0.80911-2.9301-2.0053-4.0683-3.5882v4.1618zm7.443-14.779c0 2.9346 0.4624 5.1043 1.3872 6.5094 1.2983 1.992 3.0234 2.9878 5.1754 2.9878 1.654 0 3.0635-0.70684 4.2284-2.1208 1.1649-1.4138 1.7474-3.6414 1.7474-6.6827-0.00002-3.2368-0.58693-5.5712-1.7607-7.0028-1.1738-1.4317-2.6767-2.1475-4.5085-2.1475-1.7963 0-3.2902 0.69798-4.4818 2.0941s-1.7874 3.5169-1.7874 6.3626z"/>
+                 <path d="m429.82-145.59-6.8028-1.2272c0.76476-2.7388 2.0809-4.7663 3.9483-6.0825 1.8674-1.3161 4.6419-1.9741 8.3234-1.9741 3.3436 0 5.8335 0.39574 7.4697 1.1872 1.6362 0.79148 2.7878 1.7962 3.4548 3.0145 0.66691 1.2183 1.0004 3.4547 1.0004 6.7095l-0.0801 8.7502c-0.00003 2.49 0.11997 4.3262 0.36015 5.5089 0.24007 1.1828 0.68914 2.4499 1.3472 3.8016h-7.4164c-0.19565-0.49801-0.43575-1.2361-0.72029-2.2142-0.12455-0.44464-0.21344-0.73811-0.26677-0.88042-1.2806 1.245-2.65 2.1787-4.1084 2.8012s-3.0146 0.9338-4.6686 0.9338c-2.9168 0-5.2155-0.79149-6.8962-2.3744-1.6807-1.583-2.521-3.5838-2.521-6.0025 0-1.6007 0.38239-3.0279 1.1472-4.2818 0.76474-1.2538 1.8363-2.2141 3.2146-2.8811 1.3783-0.66691 3.3658-1.2495 5.9624-1.7475 3.5036-0.65804 5.9313-1.2715 7.283-1.8408v-0.74687c-0.00002-1.4406-0.35572-2.4678-1.0671-3.0812-0.71142-0.61363-2.0542-0.92035-4.0283-0.92035-1.3339 0-2.3743 0.2623-3.1213 0.78691-0.74699 0.5247-1.3517 1.445-1.8141 2.7611zm10.031 6.0825c-0.96041 0.32006-2.481 0.70246-4.5619 1.1471s-3.4414 0.88041-4.0817 1.3071c-0.97818 0.6936-1.4673 1.574-1.4673 2.6412 0 1.0493 0.39124 1.9564 1.1738 2.721 0.78252 0.7648 1.7785 1.1472 2.9879 1.1472 1.3517 0 2.6411-0.44464 3.8683-1.3338 0.90702-0.67587 1.5028-1.5028 1.7874-2.481 0.1956-0.64032 0.29344-1.8586 0.29345-3.6548z"/>
+                 <path d="m462.1-165.01v14.379c2.4188-2.8278 5.3088-4.2416 8.6702-4.2416 1.7251 0 3.2813 0.32026 4.6686 0.96037 1.3872 0.64032 2.4321 1.4584 3.1346 2.4544 0.70248 0.99593 1.1827 2.0985 1.4406 3.308 0.25785 1.2094 0.38679 3.0858 0.38682 5.6289v16.62h-7.4964v-14.966c-0.00002-2.9701-0.14237-4.8553-0.42685-5.6556-0.28457-0.80035-0.78701-1.4362-1.5073-1.9075-0.72031-0.47122-1.6229-0.70684-2.7078-0.70684-1.245 0-2.3565 0.30224-3.3347 0.9069-0.97819 0.60477-1.694 1.5162-2.1476 2.7344-0.45353 1.2183-0.68029 3.0192-0.68028 5.4023v14.192h-7.4964v-39.109z"/>
+                 <path d="m513.8-125.9h-7.4964v-14.459c-0.00001-3.059-0.16009-5.0377-0.48019-5.9358-0.32016-0.89803-0.84037-1.5961-1.5606-2.0941-0.72032-0.49801-1.5873-0.74687-2.6011-0.74687-1.2983 0-2.4632 0.35571-3.4948 1.067-1.0315 0.71143-1.7385 1.654-2.1208 2.8279-0.3824 1.1738-0.57359 3.3435-0.57358 6.5094v12.832h-7.4964v-28.332h6.9629v4.1617c2.4721-3.2012 5.5845-4.8019 9.3372-4.8019 1.654 0 3.1657 0.29795 4.5352 0.89375 1.3694 0.59581 2.4054 1.3561 3.1079 2.281 0.70248 0.92482 1.1916 1.9741 1.4673 3.1478 0.27565 1.1739 0.41347 2.8546 0.4135 5.0422z"/>
+               </g>
+             </g>
+           </svg>
+         </div>
+
+         <h1>Examples Index</h1>
+
+         <p>
+           Please see the <code><a href="README.md">README.md</a></code> or
+           <code><a href="running-the-examples.md">running-the-examples.md</a></code>;
+           this provides convenience links to various demos' HTML and
+           JavaScript assets but is intended to be used via a router
+           and corresponding frontend or backend Python (or other
+           language) scripts.
+         </p>
+
+         <p>
+           So, for example, it's sufficient to open the <code>frontend.html</code> and
+           <code>backend.html</code> scripts in different tabs, or run
+           the corresponding Python <code>backend.py</code>
+           with <code>frontend.html</code> (or vice-versa).
+         </p>
+
+         <p>
+           For examples using RPC, you need to run the backend first,
+           so that procedures are registered and available to call.
+         </p>
+
+         <ul>
+           <li>
+             <code><a href="twisted/wamp/pubsub/">twisted/wamp/pubsub/</a></code>:
+             <ul>
+               <li>
+                 <code>&hellip;/pubsub/basic/</code>:
+                 <a href="twisted/wamp/pubsub/basic/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/basic/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/pubsub/complex/</code>:
+                 <a href="twisted/wamp/pubsub/complex/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/complex/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/pubsub/decorators/</code>:
+                 <a href="twisted/wamp/pubsub/decorators/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/decorators/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/pubsub/options/</code>:
+                 <a href="twisted/wamp/pubsub/options/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/options/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/pubsub/unsubscribe/</code>:
+                 <a href="twisted/wamp/pubsub/unsubscribe/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/pubsub/unsubscribe/backend.html">backend.html</a>
+               </li>
+             </ul>
+           </li>
+
+           <li>
+             <code><a href="twisted/wamp/rpc/">twisted/wamp/rpc/</a></code>:
+             <ul>
+               <li>
+                 <code>&hellip;/rpc/arguments/</code>:
+                 <a href="twisted/wamp/rpc/arguments/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/arguments/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/complex/</code>:
+                 <a href="twisted/wamp/rpc/complex/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/complex/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/decorators/</code>:
+                 <a href="twisted/wamp/rpc/decorators/frontend.html">frontend.html</a>,
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/errors/</code>:
+                 <a href="twisted/wamp/rpc/errors/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/errors/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/options/</code>:
+                 <a href="twisted/wamp/rpc/options/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/options/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/progress/</code>:
+                 <a href="twisted/wamp/rpc/progress/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/progress/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/slowsquare/</code>:
+                 <a href="twisted/wamp/rpc/slowsquare/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/slowsquare/backend.html">backend.html</a>
+               </li>
+
+               <li>
+                 <code>&hellip;/rpc/timeservice/</code>:
+                 <a href="twisted/wamp/rpc/timeservice/frontend.html">frontend.html</a>,
+                 <a href="twisted/wamp/rpc/timeservice/backend.html">backend.html</a>
+               </li>
+
+             </ul>
+           </li>
+
+         </ul>
+
+      </div>
+   </body>
+</html>

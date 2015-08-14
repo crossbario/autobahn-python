@@ -24,14 +24,14 @@
 #
 ###############################################################################
 
+from os import environ
 import sys
 import decimal
 
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn import wamp
-from autobahn.twisted.wamp import ApplicationSession
-
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
 class Calculator(ApplicationSession):
 
@@ -97,29 +97,14 @@ if __name__ == '__main__':
         from twisted.python import log
         log.startLogging(sys.stdout)
 
-    # import Twisted reactor
-    ##
-    from twisted.internet import reactor
-    print("Using Twisted reactor {0}".format(reactor.__class__))
-
-    # create embedded web server for static files
-    ##
-    if args.web:
-        from twisted.web.server import Site
-        from twisted.web.static import File
-        reactor.listenTCP(args.web, Site(File(".")))
-
     # run WAMP application component
     ##
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or 'ws://localhost:9000'
 
-    runner = ApplicationRunner(router, u"realm1", standalone=not args.router,
-                               debug=False,             # low-level logging
-                               debug_wamp=args.debug,   # WAMP level logging
-                               debug_app=args.debug     # app-level logging
-                               )
-
-    # start the component and the Twisted reactor ..
-    ##
+    runner = ApplicationRunner(
+        environ.get("AUTOBAHN_DEMO_ROUTER", "ws://127.0.0.1:8080/ws"),
+        u"crossbardemo",
+        debug_wamp=False,  # optional; log many WAMP details
+        debug=False,  # optional; log even more details
+    )
     runner.run(Calculator)

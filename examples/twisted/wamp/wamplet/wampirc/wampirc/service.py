@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     # test drive the component during development ..
     runner = ApplicationRunner(
-        url="ws://localhost:8080/ws",
+        url="ws://127.0.0.1:8080/ws",
         realm="realm1",
         extra=extra,
         debug=False,  # low-level WebSocket debugging

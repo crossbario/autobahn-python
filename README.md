@@ -19,13 +19,19 @@ WAMP provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe*
 
 It is ideal for distributed, multi-client and server applications, such as multi-user database-drive business applications, sensor networks (IoT), instant messaging or MMOGs (massively multi-player online games) .
 
-WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for multiple languages, WAMP applications can be polyglott. Application components can be implemented in a language and run on a device which best fit the particular use case.
+WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for multiple languages, WAMP applications can be polyglot. Application components can be implemented in a language and run on a device which best fit the particular use case.
+
+**Note** that WAMP is a *routed* protocol, so you need to run something that plays the Broker and Dealer roles from the [WAMP Specification](http://wamp.ws/spec/). We provide [Crossbar.io](http://crossbar.io) but there are [other options](http://wamp.ws/implementations/#routers) as well.
+
 
 ## Show me some code
 
 A simple WebSocket echo server:
 
 ```python
+from autobahn.twisted.websocket import WebSocketServerProtocol
+# or: from autobahn.asyncio.websocket import WebSocketServerProtocol
+
 class MyServerProtocol(WebSocketServerProtocol):
 
    def onConnect(self, request):
@@ -50,6 +56,8 @@ class MyServerProtocol(WebSocketServerProtocol):
 ... and a sample WAMP application component:
 
 ```python
+from autobahn.twisted.wamp import ApplicationSession
+# or: from autobahn.asyncio.wamp import ApplicationSession
 
 class MyComponent(ApplicationSession):
 

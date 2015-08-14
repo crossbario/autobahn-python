@@ -52,12 +52,8 @@ if os.environ.get('USE_TWISTED', False):
             self.assertRaises(RuntimeError, runner.run, raise_error)
 
             # both reactor.run and reactor.stop should have been called
-            run_calls = list(filter(lambda mc: mc[0] == 'run',
-                                    fakereactor.method_calls))
-            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
-                                     fakereactor.method_calls))
-            self.assertEqual(len(run_calls), 1)
-            self.assertEqual(len(stop_calls), 1)
+            fakereactor.run.assert_called()
+            fakereactor.stop.assert_called()
 
         @patch('twisted.internet.reactor')
         @inlineCallbacks
@@ -75,12 +71,8 @@ if os.environ.get('USE_TWISTED', False):
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            run_calls = list(filter(lambda mc: mc[0] == 'run',
-                                    fakereactor.method_calls))
-            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
-                                     fakereactor.method_calls))
-            self.assertEqual(len(run_calls), 0)
-            self.assertEqual(len(stop_calls), 0)
+            fakereactor.run.assert_not_called()
+            fakereactor.stop.assert_not_called()
 
         @patch('twisted.internet.reactor')
         def test_runner_no_run_happypath(self, fakereactor):
@@ -92,18 +84,14 @@ if os.environ.get('USE_TWISTED', False):
 
             # shouldn't have actually connected to anything
             # successfully, and the run() call shouldn't have inserted
-            # any of its own call/errbacks.
+            # any of its own call/errbacks. (except the cleanup handler)
             self.assertFalse(d.called)
-            self.assertEqual(0, len(d.callbacks))
+            self.assertEqual(1, len(d.callbacks))
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            run_calls = list(filter(lambda mc: mc[0] == 'run',
-                                    fakereactor.method_calls))
-            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
-                                     fakereactor.method_calls))
-            self.assertEqual(len(run_calls), 0)
-            self.assertEqual(len(stop_calls), 0)
+            fakereactor.run.assert_not_called()
+            fakereactor.stop.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()

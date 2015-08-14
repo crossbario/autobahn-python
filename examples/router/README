@@ -1,0 +1,3 @@
+This contains a configuration file in `.crossbar/config.json` to run a local Crossbar instance and serve some of the example content via a Web server.
+
+See [../running-the-examples.md] for more information.

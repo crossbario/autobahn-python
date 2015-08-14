@@ -24,7 +24,7 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import traceback
 
@@ -79,9 +79,8 @@ class WampWebSocketProtocol(object):
                     print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
                 self._session.onClose(wasClean)
             except Exception:
-                # silently ignore exceptions raised here ..
-                if self.factory.debug_wamp:
-                    traceback.print_exc()
+                print("Error invoking onClose():")
+                traceback.print_exc()
             self._session = None
 
     def onMessage(self, payload, isBinary):
@@ -95,6 +94,7 @@ class WampWebSocketProtocol(object):
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
+            print(e)
             if self.factory.debug_wamp:
                 traceback.print_exc()
             reason = "WAMP Protocol Error ({0})".format(e)

@@ -14,3 +14,6 @@ flake8:
 
 pylint:
 	pylint -d line-too-long,invalid-name .
+
+examples:
+	python run-all-examples.py

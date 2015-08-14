@@ -55,11 +55,13 @@ class ComponentConfig(object):
 
     def __init__(self, realm=None, extra=None):
         """
-
         :param realm: The realm the session should join.
         :type realm: unicode
-        :param extra: Optional dictionary with extra configuration.
-        :type extra: dict
+
+        :param extra: Optional user-supplied object with extra
+            configuration. This can be any object you like, and is
+            accessible in your `ApplicationSession` subclass via
+            `self.config.extra`. `dict` is a good default choice.
         """
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
@@ -330,6 +332,9 @@ class PublishOptions(object):
            to subscribers.
         :type disclose_me: bool
         """
+        # filter out None entries from exclude list, so it's easier for callers
+        if type(exclude) == list:
+            exclude = [x for x in exclude if x is not None]
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))

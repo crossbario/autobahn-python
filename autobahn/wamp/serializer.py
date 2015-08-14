@@ -214,7 +214,22 @@ IObjectSerializer.register(JsonObjectSerializer)
 class JsonSerializer(Serializer):
 
     SERIALIZER_ID = "json"
+    """
+    ID used as part of the WebSocket subprotocol name to identify the
+    serializer with WAMP-over-WebSocket.
+    """
+
+    RAWSOCKET_SERIALIZER_ID = 1
+    """
+    ID used in lower four bits of second octet in RawSocket opening
+    handshake identify the serializer with WAMP-over-RawSocket.
+    """
+
     MIME_TYPE = "application/json"
+    """
+    MIME type announced in HTTP request/response headers when running
+    WAMP-over-Longpoll HTTP fallback.
+    """
 
     def __init__(self, batched=False):
         """
@@ -276,6 +291,23 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
             """
+
+            def ensure_string_keys(d):
+                """
+                under python 2, with use_bin_type=True, most dict keys end up
+                getting encoded as bytes (any syntax except {u"key":
+                u"value"}) so instead of recursively looking through
+                everything that's getting serialized, we fix them up
+                on the way out using msgpack's `object_hook` as
+                there's no corresponding hook for serialization...
+                """
+                for (k, v) in six.iteritems(d):
+                    if not isinstance(k, six.text_type):
+                        newk = six.text_type(k, encoding='utf8')
+                        del d[k]
+                        d[newk] = v
+                return d
+
             if self._batched:
                 msgs = []
                 N = len(payload)
@@ -292,7 +324,13 @@ else:
                     data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
-                    msgs.append(msgpack.unpackb(data, encoding='utf-8'))
+                    msgs.append(
+                        msgpack.unpackb(
+                            data,
+                            encoding='utf-8',
+                            object_hook=ensure_string_keys,
+                        )
+                    )
 
                     # advance until everything consumed
                     i = i + 4 + l
@@ -302,7 +340,12 @@ else:
                 return msgs
 
             else:
-                return [msgpack.unpackb(payload, encoding='utf-8')]
+                unpacked = msgpack.unpackb(
+                    payload,
+                    encoding='utf-8',
+                    object_hook=ensure_string_keys,
+                )
+                return [unpacked]
 
     IObjectSerializer.register(MsgPackObjectSerializer)
 
@@ -311,7 +354,22 @@ else:
     class MsgPackSerializer(Serializer):
 
         SERIALIZER_ID = "msgpack"
+        """
+        ID used as part of the WebSocket subprotocol name to identify the
+        serializer with WAMP-over-WebSocket.
+        """
+
+        RAWSOCKET_SERIALIZER_ID = 2
+        """
+        ID used in lower four bits of second octet in RawSocket opening
+        handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
         MIME_TYPE = "application/x-msgpack"
+        """
+        MIME type announced in HTTP request/response headers when running
+        WAMP-over-Longpoll HTTP fallback.
+        """
 
         def __init__(self, batched=False):
             """

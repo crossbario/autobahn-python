@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # Our WebSocket server
     ##
-    factory = WebSocketServerFactory("ws://localhost:%d" % wsPort,
+    factory = WebSocketServerFactory("ws://127.0.0.1:%d" % wsPort,
                                      debug=debug,
                                      debugCodePaths=debug)
 

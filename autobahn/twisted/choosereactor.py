@@ -39,6 +39,10 @@ def install_optimal_reactor(verbose=False):
     """
     import sys
     from twisted.python import reflect
+    import txaio
+    txaio.use_twisted()  # just to be sure...
+    # XXX should I configure txaio.config.loop in here too, or just in
+    # install_reactor()? (I am: see bottom of function)
 
     # determine currently installed reactor, if any
     ##
@@ -110,6 +114,9 @@ def install_optimal_reactor(verbose=False):
         except Exception as e:
             print("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
 
+    from twisted.internet import reactor
+    txaio.config.loop = reactor
+
 
 def install_reactor(explicitReactor=None, verbose=False):
     """
@@ -121,6 +128,8 @@ def install_reactor(explicitReactor=None, verbose=False):
     :type verbose: bool
     """
     import sys
+    import txaio
+    txaio.use_twisted()  # just to be sure...
 
     if explicitReactor:
         # install explicitly given reactor
@@ -141,6 +150,7 @@ def install_reactor(explicitReactor=None, verbose=False):
 
     # now the reactor is installed, import it
     from twisted.internet import reactor
+    txaio.config.loop = reactor
 
     if verbose:
         from twisted.python.reflect import qual

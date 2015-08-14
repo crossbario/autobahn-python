@@ -30,75 +30,35 @@ import sys
 import inspect
 
 from twisted.python import log
-from twisted.application import service
-from twisted.internet.defer import Deferred, \
-    maybeDeferred, \
-    DeferredList, \
-    inlineCallbacks, \
-    succeed, \
-    fail
+from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
-__all__ = (
-    'FutureMixin',
+import six
+import txaio
+txaio.use_twisted()
+
+
+__all__ = [
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner',
     'Application',
     'Service'
-)
+]
+
+try:
+    from twisted.application import service
+except (ImportError, SyntaxError):
+    # Not on PY3 yet
+    service = None
+    __all__.pop(__all__.index('Service'))
 
 
-class FutureMixin(object):
-    """
-    Mixin for Twisted style Futures ("Deferreds").
-    """
-
-    @staticmethod
-    def _create_future():
-        return Deferred()
-
-    @staticmethod
-    def _create_future_success(result=None):
-        return succeed(result)
-
-    @staticmethod
-    def _create_future_error(error=None):
-        return fail(error)
-
-    @staticmethod
-    def _as_future(fun, *args, **kwargs):
-        return maybeDeferred(fun, *args, **kwargs)
-
-    @staticmethod
-    def _resolve_future(future, result=None):
-        future.callback(result)
-
-    @staticmethod
-    def _reject_future(future, error):
-        future.errback(error)
-
-    @staticmethod
-    def _add_future_callbacks(future, callback, errback):
-        # callback and/or errback may be None
-        if callback is None:
-            assert errback is not None
-            future.addErrback(errback)
-            return future
-        else:
-            future.addCallbacks(callback, errback)
-            return future
-
-    @staticmethod
-    def _gather_futures(futures, consume_exceptions=True):
-        return DeferredList(futures, consumeErrors=consume_exceptions)
-
-
-class ApplicationSession(FutureMixin, protocol.ApplicationSession):
+class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for Twisted-based applications.
     """
@@ -114,7 +74,7 @@ class ApplicationSession(FutureMixin, protocol.ApplicationSession):
         log.err(msg)
 
 
-class ApplicationSessionFactory(FutureMixin, protocol.ApplicationSessionFactory):
+class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     WAMP application session factory for Twisted-based applications.
     """
@@ -134,21 +94,34 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False):
+    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None):
         """
-
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
+
         :param realm: The WAMP realm to join the application session to.
         :type realm: unicode
+
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
+
         :param debug: Turn on low-level debugging.
         :type debug: bool
+
         :param debug_wamp: Turn on WAMP-level debugging.
         :type debug_wamp: bool
+
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
+
+        :param ssl: (Optional). If specified this should be an
+            instance suitable to pass as ``sslContextFactory`` to
+            :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
+            as :class:`twisted.internet.ssl.CertificateOptions`. Leaving
+            it as ``None`` will use the result of calling Twisted's
+            :meth:`twisted.internet.ssl.platformTrust` which tries to use
+            your distribution's CA certificates.
+        :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
         """
         self.url = url
         self.realm = realm
@@ -157,6 +130,7 @@ class ApplicationRunner(object):
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.make = None
+        self.ssl = ssl
 
     def run(self, make, start_reactor=True):
         """
@@ -179,6 +153,8 @@ class ApplicationRunner(object):
             of :class:`WampWebSocketClientProtocol`
         """
         from twisted.internet import reactor
+        txaio.use_twisted()
+        txaio.config.loop = reactor
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
@@ -208,16 +184,39 @@ class ApplicationRunner(object):
         transport_factory = WampWebSocketClientFactory(create, url=self.url,
                                                        debug=self.debug, debug_wamp=self.debug_wamp)
 
-        # start the client from a Twisted endpoint
-        from twisted.internet.endpoints import clientFromString
+        # if user passed ssl= but isn't using isSecure, we'll never
+        # use the ssl argument which makes no sense.
+        context_factory = None
+        if self.ssl is not None:
+            if not isSecure:
+                raise RuntimeError(
+                    'ssl= argument value passed to %s conflicts with the "ws:" '
+                    'prefix of the url argument. Did you mean to use "wss:"?' %
+                    self.__class__.__name__)
+            context_factory = self.ssl
+        elif isSecure:
+            from twisted.internet.ssl import optionsForClientTLS
+            context_factory = optionsForClientTLS(six.u(host))
 
         if isSecure:
-            endpoint_descriptor = "ssl:{0}:{1}".format(host, port)
+            from twisted.internet.endpoints import SSL4ClientEndpoint
+            assert context_factory is not None
+            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
         else:
-            endpoint_descriptor = "tcp:{0}:{1}".format(host, port)
+            from twisted.internet.endpoints import TCP4ClientEndpoint
+            client = TCP4ClientEndpoint(reactor, host, port)
 
-        client = clientFromString(reactor, endpoint_descriptor)
         d = client.connect(transport_factory)
+
+        # as the reactor shuts down, we wish to wait until we've sent
+        # out our "Goodbye" message; leave() returns a Deferred that
+        # fires when the transport gets to STATE_CLOSED
+        def cleanup(proto):
+            if hasattr(proto, '_session') and proto._session is not None:
+                return proto._session.leave()
+        # if we connect successfully, the arg is a WampWebSocketClientProtocol
+        d.addCallback(lambda proto: reactor.addSystemEventTrigger(
+            'before', 'shutdown', cleanup, proto))
 
         # if the user didn't ask us to start the reactor, then they
         # get to deal with any connect errors themselves.
@@ -516,78 +515,81 @@ class Application(object):
                 log.msg("Warning: exception in signal handler swallowed", e)
 
 
-class Service(service.MultiService):
-    """
-    A WAMP application as a twisted service.
-    The application object provides a simple way of creating, debugging and running WAMP application
-    components inside a traditional twisted application
+if service:
+    # Don't define it if Twisted's service support isn't here
 
-    This manages application lifecycle of the wamp connection using startService and stopService
-    Using services also allows to create integration tests that properly terminates their connections
-
-    It can host a WAMP application component in a WAMP-over-WebSocket client
-    connecting to a WAMP router.
-    """
-    factory = WampWebSocketClientFactory
-
-    def __init__(self, url, realm, make, extra=None,
-                 debug=False, debug_wamp=False, debug_app=False):
+    class Service(service.MultiService):
         """
+        A WAMP application as a twisted service.
+        The application object provides a simple way of creating, debugging and running WAMP application
+        components inside a traditional twisted application
 
-        :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-        :type url: unicode
-        :param realm: The WAMP realm to join the application session to.
-        :type realm: unicode
-        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-           when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
-        :type make: callable
-        :param extra: Optional extra configuration to forward to the application component.
-        :type extra: dict
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
+        This manages application lifecycle of the wamp connection using startService and stopService
+        Using services also allows to create integration tests that properly terminates their connections
 
-        You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
-        The factory attribute must return a WampWebSocketClientFactory object
+        It can host a WAMP application component in a WAMP-over-WebSocket client
+        connecting to a WAMP router.
         """
-        self.url = url
-        self.realm = realm
-        self.extra = extra or dict()
-        self.debug = debug
-        self.debug_wamp = debug_wamp
-        self.debug_app = debug_app
-        self.make = make
-        service.MultiService.__init__(self)
-        self.setupService()
+        factory = WampWebSocketClientFactory
 
-    def setupService(self):
-        """
-        Setup the application component.
-        """
-        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+        def __init__(self, url, realm, make, extra=None,
+                     debug=False, debug_wamp=False, debug_app=False):
+            """
 
-        # factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            session = self.make(cfg)
-            session.debug_app = self.debug_app
-            return session
+            :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
+            :type url: unicode
+            :param realm: The WAMP realm to join the application session to.
+            :type realm: unicode
+            :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+               when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+            :type make: callable
+            :param extra: Optional extra configuration to forward to the application component.
+            :type extra: dict
+            :param debug: Turn on low-level debugging.
+            :type debug: bool
+            :param debug_wamp: Turn on WAMP-level debugging.
+            :type debug_wamp: bool
+            :param debug_app: Turn on app-level debugging.
+            :type debug_app: bool
 
-        # create a WAMP-over-WebSocket transport client factory
-        transport_factory = self.factory(create, url=self.url,
-                                         debug=self.debug, debug_wamp=self.debug_wamp)
+            You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
+            The factory attribute must return a WampWebSocketClientFactory object
+            """
+            self.url = url
+            self.realm = realm
+            self.extra = extra or dict()
+            self.debug = debug
+            self.debug_wamp = debug_wamp
+            self.debug_app = debug_app
+            self.make = make
+            service.MultiService.__init__(self)
+            self.setupService()
 
-        # setup the client from a Twisted endpoint
+        def setupService(self):
+            """
+            Setup the application component.
+            """
+            isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        if isSecure:
-            from twisted.application.internet import SSLClient
-            clientClass = SSLClient
-        else:
-            from twisted.application.internet import TCPClient
-            clientClass = TCPClient
+            # factory for use ApplicationSession
+            def create():
+                cfg = ComponentConfig(self.realm, self.extra)
+                session = self.make(cfg)
+                session.debug_app = self.debug_app
+                return session
 
-        client = clientClass(host, port, transport_factory)
-        client.setServiceParent(self)
+            # create a WAMP-over-WebSocket transport client factory
+            transport_factory = self.factory(create, url=self.url,
+                                             debug=self.debug, debug_wamp=self.debug_wamp)
+
+            # setup the client from a Twisted endpoint
+
+            if isSecure:
+                from twisted.application.internet import SSLClient
+                clientClass = SSLClient
+            else:
+                from twisted.application.internet import TCPClient
+                clientClass = TCPClient
+
+            client = clientClass(host, port, transport_factory)
+            client.setServiceParent(self)

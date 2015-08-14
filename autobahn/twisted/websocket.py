@@ -32,7 +32,6 @@ from zope.interface import implementer
 
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
-from twisted.python import log
 from twisted.internet.interfaces import ITransport
 
 from autobahn.wamp import websocket
@@ -40,10 +39,13 @@ from autobahn.websocket import protocol
 from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
 
+from autobahn.logger import make_logger
+
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
     PerMessageDeflateResponse, \
     PerMessageDeflateResponseAccept
+
 
 __all__ = (
     'WebSocketAdapterProtocol',
@@ -189,12 +191,7 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
-
-    def _log(self, msg):
-        log.msg(msg)
-
-    def _callLater(self, delay, fun):
-        return self.reactor.callLater(delay, fun)
+    log = make_logger("twisted")
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):

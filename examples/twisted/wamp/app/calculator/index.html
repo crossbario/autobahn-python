@@ -48,16 +48,16 @@
             //
             var wsuri;
             if (document.location.origin == "file://") {
-               wsuri = "ws://localhost:9000";
+               wsuri = "ws://localhost:8080/ws";
             } else {
-               wsuri = "ws://" + document.location.hostname + ":9000";
+               wsuri = "ws://" + document.location.hostname + ":8080/ws";
             }
             
             // connect to WAMP server
             //
             var connection = new autobahn.Connection({
                url: wsuri,
-               realm: 'realm1'
+               realm: 'crossbardemo'
             });
 
             connection.onopen = function (session) {

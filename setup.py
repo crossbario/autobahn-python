@@ -107,7 +107,7 @@ if PY3:
         extras_require_asyncio = []
 else:
     # backport of asyncio
-    extras_require_asyncio = ["trollius>=0.1.2", "futures>=2.1.5"]
+    extras_require_asyncio = ["trollius>=1.0.4", "futures>=3.0.3"]
 
 
 # C-based WebSocket acceleration
@@ -129,11 +129,11 @@ extras_require_all = extras_require_twisted + extras_require_asyncio + \
 
 # development dependencies
 #
-extras_require_dev = ["pep8", "flake8", "mock>=1.0.1", "pytest>=2.6.4"]
+extras_require_dev = ["pep8", "flake8", "mock==1.0.1", "pytest>=2.6.4"]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 #
-test_requirements = ["pytest", "mock"]
+test_requirements = ["pytest", "mock==1.0.1"]
 
 
 # pytest integration for setuptools. see:
@@ -165,7 +165,10 @@ setup(
     author_email='autobahnws@googlegroups.com',
     url='http://autobahn.ws/python',
     platforms='Any',
-    install_requires=['six>=1.6.1'],
+    install_requires=[
+        'six>=1.6.1',
+        'txaio>=1.0.3'
+    ],
     extras_require={
         'all': extras_require_all,
         'asyncio': extras_require_asyncio,

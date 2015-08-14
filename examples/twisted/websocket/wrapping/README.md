@@ -1,3 +1,35 @@
+# Running the Example
+
+There are four pieces you need to start for the full demo (see below for explanation): a `netcat` or telnet daemon on port 23; a Web server; a WebSocket port-forwarder; and the browser frontend.
+
+## netcat
+
+In this demo, we forward a telnet session from a browser to a telnet server. So, we need to run he telnet server, which is easiest with "netcat": ``nc -l 23`` (as root, so you can listen on 23). Run this in its own terminal.
+
+
+## Web server
+
+To serve the Web content, we can use the built-in Web server from Twisted like so. Run this from the same directory as this README:
+
+    twistd -n --pidfile=twistd-web.pid web --path=. --port=tcp:8080
+
+
+## Port Forwarder
+
+More details below, but Autobahn provides a `twistd` plugin to "unwrap" a protocol that's being forwarded over WebSocket and send it to any endpoint. Run this in yet another window:
+
+	twistd -n --pidfile=twistd-pf.pid endpointforward --endpoint "autobahn:tcp\:9000:url=ws\://localhost\:9000" --dest_endpoint="tcp:127.0.0.1:23"
+
+This says, "listen on tcp 9000 and forward encapulated protocol to localhost:23".
+
+
+## Browser Frontend
+
+You can now point your favourite browser at http://localhost:8080/telnet.html and see the Websockify project's telnet demo; clicking "connect" should cause the "terminal" in your browser to be connected to your `netcat` process.
+
+That is, we've encapsulated telnet over WebSocket in your browser and then de-encapsulated it at your server and forwarded it to telnet; this can be done with any protocol.
+
+
 # Stream-based Endpoints over WebSocket
 
 **Autobahn**|Python provides facilities to wrap existing stream-based Twisted factories and protocols with WebSocket.
