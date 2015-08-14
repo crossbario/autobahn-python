@@ -399,7 +399,7 @@ class TestDecoratorsAdvanced(unittest.TestCase):
         @wamp.register(u"com.oldapp.oldproc")
         @wamp.register(u"com.calculator.square")
         def square(x):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(square, '_wampuris'))
         self.assertTrue(type(square._wampuris) == list)
