@@ -342,24 +342,6 @@ class KwException(Exception):
 # 4. we can silently drop unconsumed args/kwargs
 
 
-def getargs(fun):
-    try:
-        argspec = inspect.getargspec(fun)
-    except:
-        if fun == Exception.__init__:
-            # `inspect.getargspec(Exception.__init__)` does work on PyPy, but not
-            # on CPython, since `Exception.__init__` is C code in CPython that
-            # cannot be reflected upon.
-            argspec = inspect.ArgSpec(args=['self'], varargs='args', keywords=None, defaults=None)
-        else:
-            raise Exception("could not inspect function {0}".format(fun))
-
-    args = argspec.args[:-len(argspec.defaults)]
-    kwargs = argspec.args[-len(argspec.defaults):]
-
-    return args, kwargs, argspec.varargs, argspec.keywords
-
-
 class MockSession(object):
 
     def __init__(self):
