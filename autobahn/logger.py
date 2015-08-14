@@ -26,6 +26,16 @@
 
 from __future__ import absolute_import
 
+import logging
+
+class PrintHandler(logging.Handler):
+    def emit(self, record):
+        print(record)
+
+
+h = PrintHandler()
+logging.getLogger("trollius").addHandler(h)
+
 
 def make_logger(logger_type=None):
     if logger_type == "twisted":
