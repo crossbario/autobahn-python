@@ -26,8 +26,6 @@
 
 from __future__ import absolute_import
 
-import sys
-
 from autobahn import wamp
 from autobahn.wamp import message
 from autobahn.wamp import exception

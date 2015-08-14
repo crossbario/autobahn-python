@@ -26,8 +26,6 @@
 
 from __future__ import absolute_import
 
-import sys
-
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
