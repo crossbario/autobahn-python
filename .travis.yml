@@ -14,13 +14,13 @@ env:
   - TOX_ENV=py33-trollius
   - TOX_ENV=py34-twtrunk
   - TOX_ENV=py34-asyncio
-  - TOX_ENV=pypy-tw122
+  - TOX_ENV=pypy-tw121
   - TOX_ENV=pypy-tw132
   - TOX_ENV=pypy-twcurrent
-  - TOX_ENV=py26-tw122
+  - TOX_ENV=py26-tw121
   - TOX_ENV=py26-tw132
   - TOX_ENV=py26-twcurrent
-  - TOX_ENV=py27-tw122
+  - TOX_ENV=py27-tw121
   - TOX_ENV=py27-tw132
   - TOX_ENV=py27-twcurrent
 
