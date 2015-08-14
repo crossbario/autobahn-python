@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import sys
 import inspect
 
 from autobahn import wamp
@@ -36,12 +35,6 @@ import unittest2 as unittest
 
 
 class TestUris(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
 
     def test_invalid_uris(self):
         for u in [u"",
@@ -96,7 +89,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.register(u"com.calculator.square")
         def square(_):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(square, '_wampuris'))
         self.assertTrue(type(square._wampuris) == list)
@@ -108,10 +101,9 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(square._wampuris[0].uri(), u"com.calculator.square")
         self.assertEqual(square._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
-        # noinspection PyUnusedLocal
         @wamp.register(u"com.myapp.product.<product:int>.update")
         def update_product(product=None, label=None):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(update_product, '_wampuris'))
         self.assertTrue(type(update_product._wampuris) == list)
@@ -123,10 +115,9 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(update_product._wampuris[0].uri(), u"com.myapp.product.<product:int>.update")
         self.assertEqual(update_product._wampuris[0]._type, Pattern.URI_TYPE_WILDCARD)
 
-        # noinspection PyUnusedLocal
         @wamp.register(u"com.myapp.<category:string>.<cid:int>.update")
         def update(category=None, cid=None):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(update, '_wampuris'))
         self.assertTrue(type(update._wampuris) == list)
@@ -142,7 +133,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.subscribe(u"com.myapp.on_shutdown")
         def on_shutdown():
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(on_shutdown, '_wampuris'))
         self.assertTrue(type(on_shutdown._wampuris) == list)
@@ -154,10 +145,9 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(on_shutdown._wampuris[0].uri(), u"com.myapp.on_shutdown")
         self.assertEqual(on_shutdown._wampuris[0]._type, Pattern.URI_TYPE_EXACT)
 
-        # noinspection PyUnusedLocal
         @wamp.subscribe(u"com.myapp.product.<product:int>.on_update")
         def on_product_update(product=None, label=None):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(on_product_update, '_wampuris'))
         self.assertTrue(type(on_product_update._wampuris) == list)
@@ -171,7 +161,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.subscribe(u"com.myapp.<category:string>.<cid:int>.on_update")
         def on_update(category=None, cid=None, label=None):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(on_update, '_wampuris'))
         self.assertTrue(type(on_update._wampuris) == list)
@@ -187,7 +177,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.error(u"com.myapp.error")
         class AppError(Exception):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(AppError, '_wampuris'))
         self.assertTrue(type(AppError._wampuris) == list)
@@ -201,7 +191,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.error(u"com.myapp.product.<product:int>.product_inactive")
         class ProductInactiveError(Exception):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(ProductInactiveError, '_wampuris'))
         self.assertTrue(type(ProductInactiveError._wampuris) == list)
@@ -215,7 +205,7 @@ class TestDecorators(unittest.TestCase):
 
         @wamp.error(u"com.myapp.<category:string>.<product:int>.inactive")
         class ObjectInactiveError(Exception):
-            pass
+            """Do nothing."""
 
         self.assertTrue(hasattr(ObjectInactiveError, '_wampuris'))
         self.assertTrue(type(ObjectInactiveError._wampuris) == list)
