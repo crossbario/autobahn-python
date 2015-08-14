@@ -52,8 +52,10 @@ if os.environ.get('USE_TWISTED', False):
             self.assertRaises(RuntimeError, runner.run, raise_error)
 
             # both reactor.run and reactor.stop should have been called
-            run_calls = filter(lambda mc: mc.count('run'), fakereactor.method_calls)
-            stop_calls = filter(lambda mc: mc.count('stop'), fakereactor.method_calls)
+            run_calls = list(filter(lambda mc: mc[0] == 'run',
+                                    fakereactor.method_calls))
+            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
+                                     fakereactor.method_calls))
             self.assertEqual(len(run_calls), 1)
             self.assertEqual(len(stop_calls), 1)
 
@@ -73,8 +75,10 @@ if os.environ.get('USE_TWISTED', False):
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            run_calls = filter(lambda mc: mc.count('run'), fakereactor.method_calls)
-            stop_calls = filter(lambda mc: mc.count('stop'), fakereactor.method_calls)
+            run_calls = list(filter(lambda mc: mc[0] == 'run',
+                                    fakereactor.method_calls))
+            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
+                                     fakereactor.method_calls))
             self.assertEqual(len(run_calls), 0)
             self.assertEqual(len(stop_calls), 0)
 
@@ -94,8 +98,10 @@ if os.environ.get('USE_TWISTED', False):
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            run_calls = filter(lambda mc: mc.count('run'), fakereactor.method_calls)
-            stop_calls = filter(lambda mc: mc.count('stop'), fakereactor.method_calls)
+            run_calls = list(filter(lambda mc: mc[0] == 'run',
+                                    fakereactor.method_calls))
+            stop_calls = list(filter(lambda mc: mc[0] == 'stop',
+                                     fakereactor.method_calls))
             self.assertEqual(len(run_calls), 0)
             self.assertEqual(len(stop_calls), 0)
 
