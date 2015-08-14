@@ -27,10 +27,7 @@
 from __future__ import absolute_import, print_function
 
 import os
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest2 as unittest
 
 if os.environ.get('USE_TWISTED', False):
     from mock import patch

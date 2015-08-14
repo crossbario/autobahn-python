@@ -30,20 +30,17 @@ import os
 
 if os.environ.get('USE_TWISTED', False):
 
-    from twisted.trial import unittest
-    # import unittest
-
-    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, succeed, DeferredList
+    from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
+    from twisted.internet.defer import succeed, DeferredList
     from twisted.python import log
+    from twisted.trial import unittest
     from six import PY3
 
-    from autobahn.wamp import message
-    from autobahn.wamp import serializer
-    from autobahn.wamp import role
     from autobahn import util
-    from autobahn.wamp.exception import ApplicationError, NotAuthorized, InvalidUri, ProtocolError
-    from autobahn.wamp import types
     from autobahn.twisted.wamp import ApplicationSession
+    from autobahn.wamp import message, role, serializer, types
+    from autobahn.wamp.exception import ApplicationError, NotAuthorized
+    from autobahn.wamp.exception import InvalidUri, ProtocolError
 
     if PY3:
         long = int
@@ -786,7 +783,3 @@ if os.environ.get('USE_TWISTED', False):
         # def test_publish3(self):
         #    with self.assertRaises(ApplicationError):
         #       yield self.handler.publish(u'de.myapp.topic1')
-
-
-if __name__ == '__main__':
-    unittest.main()

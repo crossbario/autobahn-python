@@ -26,8 +26,7 @@
 
 from __future__ import absolute_import
 
-# from twisted.trial import unittest
-import unittest
+import unittest2 as unittest
 import six
 
 from autobahn.wamp import message
@@ -169,7 +168,3 @@ class TestSerializer(unittest.TestCase):
                 # serialization is gone
                 msg.uncache()
                 self.assertFalse(ser._serializer in msg._serialized)
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -26,8 +26,7 @@
 
 from __future__ import absolute_import
 
-# from twisted.trial import unittest
-import unittest
+import unittest2 as unittest
 
 from autobahn.websocket.protocol import createWsUrl, parseWsUrl
 
@@ -126,7 +125,3 @@ class TestParseWsUrl(unittest.TestCase):
 
     def test_parse_url14(self):
         self.assertRaises(Exception, parseWsUrl, "ws://")
-
-
-if __name__ == '__main__':
-    unittest.main()

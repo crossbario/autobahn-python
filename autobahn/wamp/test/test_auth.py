@@ -26,8 +26,7 @@
 
 from __future__ import absolute_import
 
-# from twisted.trial import unittest
-import unittest
+import unittest2 as unittest
 import platform
 
 import re
@@ -127,7 +126,3 @@ class TestWampAuthHelpers(unittest.TestCase):
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
-
-
-if __name__ == '__main__':
-    unittest.main()

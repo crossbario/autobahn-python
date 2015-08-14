@@ -1,28 +1,35 @@
 language: python
+sudo: false
 
 install:
-  - pip install tox
+  - pip install tox codecov
 
 env:
   - TOX_ENV=flake8
-  - TOX_ENV=py26twisted
-  - TOX_ENV=py26asyncio
-  - TOX_ENV=py27twisted
-  - TOX_ENV=py33twisted
-  - TOX_ENV=py34twisted
-  - TOX_ENV=py27asyncio
-  - TOX_ENV=py33asyncio
-  - TOX_ENV=py34asyncio
-  - TOX_ENV=pypy2twisted
-  - TOX_ENV=pypy2asyncio
+  - TOX_ENV=pypy-twtrunk
+  - TOX_ENV=pypy-trollius
+  - TOX_ENV=py27-twtrunk
+  - TOX_ENV=py27-trollius
+  - TOX_ENV=py33-twtrunk
+  - TOX_ENV=py33-trollius
+  - TOX_ENV=py34-twtrunk
+  - TOX_ENV=py34-asyncio
+  - TOX_ENV=pypy-tw121
+  - TOX_ENV=pypy-tw132
+  - TOX_ENV=pypy-twcurrent
+  - TOX_ENV=py26-tw121
+  - TOX_ENV=py26-tw132
+  - TOX_ENV=py26-twcurrent
+  - TOX_ENV=py26-trollius
+  - TOX_ENV=py27-tw121
+  - TOX_ENV=py27-tw132
+  - TOX_ENV=py27-twcurrent
 
 script:
   - tox -c tox.ini -e $TOX_ENV
 
-# This reportedly works around an issue downloading packages from pypi on
-# travis. Consider removing this after the underlying issue is fixed.
-# https://github.com/travis-ci/travis-ci/issues/2389
-sudo: false
+after_script:
+  - codecov
 
 notifications:
    irc:

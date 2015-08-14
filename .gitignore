@@ -22,4 +22,8 @@ egg\-info
 egg
 .egg*
 .tox
+htmlcov/
+.coverage
+*~
+*.log
 *.pid

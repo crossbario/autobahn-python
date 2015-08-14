@@ -26,18 +26,11 @@
 
 from __future__ import absolute_import
 
-import sys
-
 from autobahn.wamp import role
 from autobahn.wamp import message
 from autobahn.wamp.exception import ProtocolError
 
-if sys.version_info < (2, 7):
-    # noinspection PyUnresolvedReferences
-    import unittest2 as unittest
-else:
-    # from twisted.trial import unittest
-    import unittest
+import unittest2 as unittest
 
 
 class Foo(object):
@@ -1023,7 +1016,3 @@ class TestGoodbyeMessage(unittest.TestCase):
     def test_str(self):
         e = message.Goodbye(reason=u'wamp.error.system_shutdown', message=u'The host is shutting down now.')
         self.assertIsInstance(str(e), str)
-
-
-if __name__ == '__main__':
-    unittest.main()
