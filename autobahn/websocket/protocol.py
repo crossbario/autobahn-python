@@ -2192,14 +2192,25 @@ class WebSocketProtocol(object):
                 raise Exception("invalid type %s for close code" % type(code))
             if code != 1000 and not (3000 <= code <= 4999):
                 raise Exception("invalid close code %d" % code)
+
         if reason is not None:
             if code is None:
                 raise Exception("close reason without close code")
-            if type(reason) != six.text_type:
-                raise Exception("invalid type %s for close reason" % type(reason))
+
+            if type(reason) not in (str, six.text_type):
+                # If it's not UTF-8 encodable (str or unicode), coerce it to a
+                # string so we can close properly.
+                reason = str(reason)
+
             reasonUtf8 = reason.encode("utf8")
+
             if len(reasonUtf8) + 2 > 125:
-                raise Exception("close reason too long (%d)" % len(reasonUtf8))
+                # If it's too long, truncate it. A partial message is not
+                # unlikely (for example, an exception), and it is better to
+                # give the start of the message than drop the connection
+                # forever.
+                reasonUtf8 = reasonUtf8[:120] + b"..."
+                assert not len(reasonUtf8) + 2 > 125
         else:
             reasonUtf8 = None
         self.sendCloseFrame(code=code, reasonUtf8=reasonUtf8, isReply=False)
