@@ -67,7 +67,7 @@ if os.environ.get('USE_TWISTED', False):
 
             except RuntimeError as e:
                 # make sure it's "our" exception
-                self.assertEqual(e.message, "we always fail")
+                self.assertEqual(e.args[0], "we always fail")
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
