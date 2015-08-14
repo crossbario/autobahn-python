@@ -32,12 +32,7 @@ import inspect
 from autobahn import wamp
 from autobahn.wamp.uri import Pattern
 
-if sys.version_info < (2, 7):
-    # noinspection PyUnresolvedReferences
-    import unittest2 as unittest
-else:
-    # from twisted.trial import unittest
-    import unittest
+import unittest2 as unittest
 
 
 class TestUris(unittest.TestCase):
@@ -545,7 +540,3 @@ class TestDecoratorsAdvanced(unittest.TestCase):
 
             self.assertIsInstance(exc, ecls)
             self.assertEqual(list(exc.args), args)
-
-
-if __name__ == '__main__':
-    unittest.main()
