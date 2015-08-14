@@ -48,20 +48,37 @@ class WebSocketProtocolTests(unittest.TestCase):
         onClose with no code or reason works.
         """
         t = FakeTransport()
-
         f = WebSocketServerFactory()
         p = WebSocketServerProtocol()
         p.factory = f
         p.transport = t
-        p._onClose = lambda *a: None
 
         p._connectionMade()
         p.state = p.STATE_OPEN
         p.websocket_version = 18
 
         p.sendClose()
-        p._connectionLost("")
 
         # We closed properly
         self.assertEqual(t._written, b"\x88\x00")
-        self.assertEqual(p.state, p.STATE_CLOSED)
+        self.assertEqual(p.state, p.STATE_CLOSING)
+
+    def test_sendClose_str_reason(self):
+        """
+        onClose with a str reason works.
+        """
+        t = FakeTransport()
+        f = WebSocketServerFactory()
+        p = WebSocketServerProtocol()
+        p.factory = f
+        p.transport = t
+
+        p._connectionMade()
+        p.state = p.STATE_OPEN
+        p.websocket_version = 18
+
+        p.sendClose(code=1000, reason="oh no")
+
+        # We closed properly
+        self.assertEqual(t._written, b"\x88\x00")
+        self.assertEqual(p.state, p.STATE_CLOSING)
