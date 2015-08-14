@@ -102,11 +102,11 @@ class WebSocketProtocolTests(unittest.TestCase):
         """
         sendClose with a too-long reason will truncate it.
         """
-        self.protocol.sendClose(code=1000, reason="abc"*1000)
+        self.protocol.sendClose(code=1000, reason="abc" * 1000)
 
         # We closed properly
         self.assertEqual(self.transport._written[2:],
-                         b"\x03\xe8" + (b"abc"*40) + b"...")
+                         b"\x03\xe8" + (b"abc" * 40) + b"...")
         self.assertEqual(self.protocol.state, self.protocol.STATE_CLOSING)
 
     def test_sendClose_reason_with_no_code(self):

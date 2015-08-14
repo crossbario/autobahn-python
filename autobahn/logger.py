@@ -28,6 +28,8 @@ from __future__ import absolute_import
 
 import logging
 
+
+# A logging handler for Trollius that prints everything out
 class PrintHandler(logging.Handler):
     def emit(self, record):
         print(record)
