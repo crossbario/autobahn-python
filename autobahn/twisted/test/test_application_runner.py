@@ -52,8 +52,8 @@ if os.environ.get('USE_TWISTED', False):
             self.assertRaises(RuntimeError, runner.run, raise_error)
 
             # both reactor.run and reactor.stop should have been called
-            fakereactor.run.assert_called()
-            fakereactor.stop.assert_called()
+            self.assertEqual(fakereactor.run.call_count, 1)
+            self.assertEqual(fakereactor.stop.call_count, 1)
 
         @patch('twisted.internet.reactor')
         @inlineCallbacks
@@ -71,8 +71,8 @@ if os.environ.get('USE_TWISTED', False):
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            fakereactor.run.assert_not_called()
-            fakereactor.stop.assert_not_called()
+            self.assertEqual(fakereactor.run.call_count, 0)
+            self.assertEqual(fakereactor.stop.call_count, 0)
 
         @patch('twisted.internet.reactor')
         def test_runner_no_run_happypath(self, fakereactor):
@@ -90,8 +90,8 @@ if os.environ.get('USE_TWISTED', False):
 
             # neither reactor.run() NOR reactor.stop() should have been called
             # (just connectTCP() will have been called)
-            fakereactor.run.assert_not_called()
-            fakereactor.stop.assert_not_called()
+            self.assertEqual(fakereactor.run.call_count, 0)
+            self.assertEqual(fakereactor.stop.call_count, 0)
 
 if __name__ == '__main__':
     unittest.main()
