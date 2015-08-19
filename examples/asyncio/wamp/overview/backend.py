@@ -10,7 +10,7 @@ class MyComponent(ApplicationSession):
         # this procedure if its connected to the same router and realm.
         def add2(x, y):
             return x + y
-        yield from self.register(add2, 'com.myapp.add2');
+        yield from self.register(add2, 'com.myapp.add2')
 
         # publish an event every second. The event payloads can be
         # anything JSON- and msgpack- serializable
