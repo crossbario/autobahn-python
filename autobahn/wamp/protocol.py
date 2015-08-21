@@ -434,7 +434,6 @@ class ApplicationSession(BaseSession):
         self._session_id = None
         self._realm = None
 
-        self._session_id = None
         self._goodbye_sent = False
         self._transport_is_closing = False
 
