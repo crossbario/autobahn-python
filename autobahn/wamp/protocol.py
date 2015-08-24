@@ -965,6 +965,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
+        if details.reason.startswith('wamp.error.'):
+            print('{error}: {message}'.format(error=details.reason, message=details.message))
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?
