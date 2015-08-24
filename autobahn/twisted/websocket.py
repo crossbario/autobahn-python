@@ -76,6 +76,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     """
     Adapter class for Twisted WebSocket client and server protocols.
     """
+    peer = '<never connected>'
 
     def connectionMade(self):
         # the peer we are connected to
@@ -83,7 +84,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             peer = self.transport.getPeer()
         except AttributeError:
             # ProcessProtocols lack getPeer()
-            self.peer = "?"
+            self.peer = "process {}".format(self.transport.pid)
         else:
             self.peer = peer2str(peer)
 
