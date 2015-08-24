@@ -43,6 +43,8 @@ test_pytest:
 test_setuptools:
 	python setup.py test
 
+test: flake8 test_twisted test_asyncio
+
 # test under Twisted
 test_twisted:
 	USE_TWISTED=1 trial autobahn
