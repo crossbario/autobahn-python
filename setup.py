@@ -94,7 +94,7 @@ packages = [
 
 # Twisted dependencies
 #
-extras_require_twisted = ["zope.interface>=3.6", "Twisted>=11.1"]
+extras_require_twisted = ["zope.interface>=3.6", "Twisted>=12.1"]
 
 # asyncio dependencies
 #
