@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
+from twisted.internet._posixstdio import PipeAddress
 
 try:
     from twisted.internet.address import IPv6Address
@@ -71,6 +72,8 @@ def peer2str(addr):
         res = "tcp6:{0}:{1}".format(addr.host, addr.port)
     elif isinstance(addr, UNIXAddress):
         res = "unix:{0}".format(addr.name)
+    elif isinstance(addr, PipeAddress):
+        res = "<pipe>"
     else:
         # gracefully fallback if we can't map the peer's address
         res = "?:{0}".format(addr)

@@ -2755,8 +2755,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         WebSocketProtocol._connectionLost(self, reason)
         self.factory.countConnections -= 1
-        if self.debug:
-            self.factory.log.debug("connection from %s lost" % self.peer)
 
     def processProxyConnect(self):
         raise Exception("Autobahn isn't a proxy server")
@@ -3325,8 +3323,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         During opening handshake the client request was invalid, we send a HTTP
         error response and then drop the connection.
         """
-        if self.debug:
-            self.factory.log.debug("failing WebSocket opening handshake ('%s')" % reason)
+        self.wasNotCleanReason = reason
+        self.factory.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
         self.sendHttpErrorResponse(code, reason, responseHeaders)
         self.dropConnection(abort=False)
 
@@ -3774,8 +3772,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         implementation _after_ your code.
         """
         WebSocketProtocol._connectionLost(self, reason)
-        if self.debug:
-            self.factory.log.debug("connection to %s lost" % self.peer)
 
     def startProxyConnect(self):
         """
@@ -4215,8 +4211,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
         During opening handshake the server response is invalid and we drop the
         connection.
         """
-        if self.debug:
-            self.factory.log.debug("failing WebSocket opening handshake ('%s')" % reason)
+        self.wasNotCleanReason = reason
+        self.factory.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
         self.dropConnection(abort=True)
 
 

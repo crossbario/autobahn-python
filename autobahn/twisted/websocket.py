@@ -33,6 +33,7 @@ from zope.interface import implementer
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.interfaces import ITransport
+from twisted.internet.error import ConnectionDone
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
@@ -75,6 +76,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     """
     Adapter class for Twisted WebSocket client and server protocols.
     """
+    peer = '<never connected>'
 
     def connectionMade(self):
         # the peer we are connected to
@@ -82,7 +84,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             peer = self.transport.getPeer()
         except AttributeError:
             # ProcessProtocols lack getPeer()
-            self.peer = "?"
+            self.peer = "process {}".format(self.transport.pid)
         else:
             self.peer = peer2str(peer)
 
@@ -96,6 +98,10 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             pass
 
     def connectionLost(self, reason):
+        if isinstance(reason.value, ConnectionDone):
+            self.factory.log.debug("Cleanly closed connection from {peer}", peer=self.peer)
+        else:
+            self.factory.log.info("Lost connection to '{peer}': {message}", peer=self.peer, message=reason.value.message)
         self._connectionLost(reason)
 
     def dataReceived(self, data):
