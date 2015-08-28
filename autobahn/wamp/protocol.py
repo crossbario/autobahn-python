@@ -986,7 +986,8 @@ class ApplicationSession(BaseSession):
             self._transport.send(msg)
             self._goodbye_sent = True
             # deferred that fires when transport actually hits CLOSED
-            return self._transport.is_closed
+            is_closed = self._transport is None or self._transport.is_closed
+            return is_closed
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
