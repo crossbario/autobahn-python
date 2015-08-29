@@ -96,24 +96,19 @@ class ApplicationRunner(object):
 
     def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None):
         """
+
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
-
         :param realm: The WAMP realm to join the application session to.
         :type realm: unicode
-
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
-
         :param debug: Turn on low-level debugging.
         :type debug: bool
-
         :param debug_wamp: Turn on WAMP-level debugging.
         :type debug_wamp: bool
-
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
-
         :param ssl: (Optional). If specified this should be an
             instance suitable to pass as ``sslContextFactory`` to
             :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
@@ -213,9 +208,15 @@ class ApplicationRunner(object):
         def cleanup(proto):
             if hasattr(proto, '_session') and proto._session is not None:
                 return proto._session.leave()
+
+        # when our proto was created and connected, make sure it's cleaned
+        # up properly later on when the reactor shuts down for whatever reason
+        def init_proto(proto):
+            reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
+            return proto
+
         # if we connect successfully, the arg is a WampWebSocketClientProtocol
-        d.addCallback(lambda proto: reactor.addSystemEventTrigger(
-            'before', 'shutdown', cleanup, proto))
+        d.addCallback(init_proto)
 
         # if the user didn't ask us to start the reactor, then they
         # get to deal with any connect errors themselves.
