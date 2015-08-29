@@ -129,7 +129,6 @@ class ApplicationRunner(object):
         self.debug = debug
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
-        self.make = None
         self.ssl = ssl
 
     def run(self, make, start_reactor=True):
