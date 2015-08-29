@@ -36,15 +36,6 @@ For examples using RPC, you need to run the backend first, so that procedures ar
   * [Options](pubsub/options): use of PublishOptions and SubscribeOptions
   * [Unsubscribe](pubsub/unsubscribe): listen to events for a limited time
 
-### WAMPlet Examples
-
-These are some larger examples, implemented as pluggable "WAMPlets". These can also serve as skeletons to base your own WAMPlets from, should you wish to package components like this.
-
- * [votegame](wamplet/votegame): a collaborative voting "game" to decide the most amazing fruit. Updates votes amongst all clients in realtime
- * [wampirc](wamplet/wampirc): shows some simple bridging between IRC and WAMP, exporting private messages to the bot as WAMP publish()-es
- * [wamplet1](wamplet/wamplet1): just a minimal skeleton
-
-
 ### App Examples
 
 _We still need to explain these. For starters, here's the list:_
