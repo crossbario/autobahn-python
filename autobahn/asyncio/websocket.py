@@ -235,14 +235,8 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         you can supply a ``loop`` keyword argument to specify the
         asyncio event loop to be used.
         """
-        if 'loop' in kwargs:
-            if kwargs['loop']:
-                self.loop = kwargs['loop']
-            else:
-                self.loop = asyncio.get_event_loop()
-            del kwargs['loop']
-        else:
-            self.loop = asyncio.get_event_loop()
+        loop = kwargs.pop('loop', None)
+        self.loop = loop or asyncio.get_event_loop()
 
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
@@ -259,14 +253,8 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         you can supply a ``loop`` keyword argument to specify the
         asyncio event loop to be used.
         """
-        if 'loop' in kwargs:
-            if kwargs['loop']:
-                self.loop = kwargs['loop']
-            else:
-                self.loop = asyncio.get_event_loop()
-            del kwargs['loop']
-        else:
-            self.loop = asyncio.get_event_loop()
+        loop = kwargs.pop('loop', None)
+        self.loop = loop or asyncio.get_event_loop()
 
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
@@ -286,17 +274,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
     def __init__(self, factory, *args, **kwargs):
 
-        if 'serializers' in kwargs:
-            serializers = kwargs['serializers']
-            del kwargs['serializers']
-        else:
-            serializers = None
-
-        if 'debug_wamp' in kwargs:
-            debug_wamp = kwargs['debug_wamp']
-            del kwargs['debug_wamp']
-        else:
-            debug_wamp = False
+        serializers = kwargs.pop('serializers', None)
+        debug_wamp = kwargs.pop('debug_wamp', False)
 
         websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
@@ -321,17 +300,8 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
 
     def __init__(self, factory, *args, **kwargs):
 
-        if 'serializers' in kwargs:
-            serializers = kwargs['serializers']
-            del kwargs['serializers']
-        else:
-            serializers = None
-
-        if 'debug_wamp' in kwargs:
-            debug_wamp = kwargs['debug_wamp']
-            del kwargs['debug_wamp']
-        else:
-            debug_wamp = False
+        serializers = kwargs.pop('serializers', None)
+        debug_wamp = kwargs.pop('debug_wamp', False)
 
         websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 

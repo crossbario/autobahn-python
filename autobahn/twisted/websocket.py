@@ -215,16 +215,10 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
-        if 'reactor' in kwargs:
-            if kwargs['reactor']:
-                self.reactor = kwargs['reactor']
-            else:
-                from twisted.internet import reactor
-                self.reactor = reactor
-            del kwargs['reactor']
-        else:
+        reactor = kwargs.pop('reactor', None)
+        if reactor is None:
             from twisted.internet import reactor
-            self.reactor = reactor
+        self.reactor = reactor
 
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
@@ -244,16 +238,10 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
-        if 'reactor' in kwargs:
-            if kwargs['reactor']:
-                self.reactor = kwargs['reactor']
-            else:
-                from twisted.internet import reactor
-                self.reactor = reactor
-            del kwargs['reactor']
-        else:
+        reactor = kwargs.pop('reactor', None)
+        if reactor is None:
             from twisted.internet import reactor
-            self.reactor = reactor
+        self.reactor = reactor
 
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
@@ -569,17 +557,8 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 
     def __init__(self, factory, *args, **kwargs):
 
-        if 'serializers' in kwargs:
-            serializers = kwargs['serializers']
-            del kwargs['serializers']
-        else:
-            serializers = None
-
-        if 'debug_wamp' in kwargs:
-            debug_wamp = kwargs['debug_wamp']
-            del kwargs['debug_wamp']
-        else:
-            debug_wamp = False
+        serializers = kwargs.pop('serializers', None)
+        debug_wamp = kwargs.pop('debug_wamp', False)
 
         websocket.WampWebSocketServerFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
@@ -604,17 +583,8 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
 
     def __init__(self, factory, *args, **kwargs):
 
-        if 'serializers' in kwargs:
-            serializers = kwargs['serializers']
-            del kwargs['serializers']
-        else:
-            serializers = None
-
-        if 'debug_wamp' in kwargs:
-            debug_wamp = kwargs['debug_wamp']
-            del kwargs['debug_wamp']
-        else:
-            debug_wamp = False
+        serializers = kwargs.pop('serializers', None)
+        debug_wamp = kwargs.pop('debug_wamp', False)
 
         websocket.WampWebSocketClientFactory.__init__(self, factory, serializers, debug_wamp=debug_wamp)
 
