@@ -451,8 +451,8 @@ class ICallee(ISession):
           instance of :class:`autobahn.wamp.exception.ApplicationError`.
 
         When ``endpoint`` is an object, then each of the object's methods that is decorated
-        with :func:`autobahn.wamp.register` is automatically registered and a list of
-        Deferreds/Futures is returned that each resolves or rejects as above.
+        with :func:`autobahn.wamp.register` is automatically registered and a (single)
+        DeferredList or Future is returned that gathers all individual underlying Deferreds/Futures.
 
         :param endpoint: The endpoint called under the procedure.
         :type endpoint: callable or object
