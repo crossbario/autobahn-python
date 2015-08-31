@@ -81,6 +81,7 @@ class RoleBrokerFeatures(RoleFeatures):
                  publisher_identification=None,
                  publication_trustlevels=None,
                  pattern_based_subscription=None,
+                 session_meta_api=None,
                  subscription_meta_api=None,
                  subscriber_blackwhite_listing=None,
                  publisher_exclusion=None,
@@ -90,6 +91,7 @@ class RoleBrokerFeatures(RoleFeatures):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
+        self.session_meta_api = session_meta_api
         self.subscription_meta_api = subscription_meta_api
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
@@ -152,6 +154,7 @@ class RoleDealerFeatures(RoleFeatures):
                  caller_identification=None,
                  call_trustlevels=None,
                  pattern_based_registration=None,
+                 session_meta_api=None,
                  registration_meta_api=None,
                  shared_registration=None,
                  call_timeout=None,
@@ -162,6 +165,7 @@ class RoleDealerFeatures(RoleFeatures):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
         self.pattern_based_registration = pattern_based_registration
+        self.session_meta_api = session_meta_api
         self.registration_meta_api = registration_meta_api
         self.shared_registration = shared_registration
         self.call_timeout = call_timeout
