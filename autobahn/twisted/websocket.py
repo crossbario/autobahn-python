@@ -33,7 +33,7 @@ from zope.interface import implementer
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.interfaces import ITransport
-from twisted.internet.error import ConnectionDone
+from twisted.internet.error import ConnectionDone, ConnectionAborted
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
@@ -98,10 +98,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             pass
 
     def connectionLost(self, reason):
+        # https://twistedmatrix.com/documents/current/api/twisted.internet.error.ConnectionDone.html
         if isinstance(reason.value, ConnectionDone):
-            self.factory.log.debug("Cleanly closed connection from {peer}", peer=self.peer)
+            self.factory.log.debug("Connection from {peer} was closed cleanly", peer=self.peer)
+        # https://twistedmatrix.com/documents/current/api/twisted.internet.error.ConnectionAborted.html
+        elif isinstance(reason.value, ConnectionAborted):
+            self.factory.log.debug("Connection from {peer} was aborted locally", peer=self.peer)
         else:
-            self.factory.log.info("Lost connection to '{peer}': {message}", peer=self.peer, message=reason.value.message)
+            self.factory.log.info("Connection from {peer} was lost: {message}", peer=self.peer, message=reason.value.message)
         self._connectionLost(reason)
 
     def dataReceived(self, data):
