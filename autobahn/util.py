@@ -116,6 +116,10 @@ class IdGenerator(object):
             self._next = 0
         return self._next
 
+    # generator protocol
+    def __next__(self):
+        return self.next()
+
 
 # noinspection PyShadowingBuiltins
 def id():
