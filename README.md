@@ -2,34 +2,54 @@
 
 [![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
 [![Python Versions](https://img.shields.io/pypi/pyversions/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
-[![License](https://img.shields.io/pypi/l/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
 [![Downloads](https://img.shields.io/pypi/dm/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
 [![Build Status](https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
 [![Coverage](https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg)](https://codecov.io/github/tavendo/AutobahnPython)
 
-**Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
+**Quick Links**: [Project Documentation](http://autobahn.ws/python) &nbsp; [WebSocket Examples](http://autobahn.ws/python/websocket/examples.html) &nbsp; [WAMP Examples](http://autobahn.ws/python/wamp/examples.html) &nbsp; [Crossbar.io](http://crossbar.io)
+**Contact us**: [Mailing list](http://groups.google.com/group/autobahnws), [Twitter](https://twitter.com/autobahnws) or IRC `#autobahn` at `chat.freenode.net`.
+
+---
+
+## Introduction
+
+**Autobahn|Python** is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
 * **[The WebSocket Protocol](http://tools.ietf.org/html/rfc6455)**
 * **[The Web Application Messaging Protocol (WAMP)](http://wamp.ws/)**
 
 in Python running on [**Twisted**](http://twistedmatrix.com/) and [**asyncio**](http://docs.python.org/3.4/library/asyncio.html).
 
-You can use **Autobahn**|Python to create clients and servers in Python speaking just plain WebSocket or WAMP.
+You can use **Autobahn|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
-WebSocket allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and WAMP adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on top of WebSocket.
+WebSocket allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and [WAMP](http://wamp.ws/) adds real-time application messaging abstractions on top of WebSocket.
 
-WAMP provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over [WebSocket](http://tools.ietf.org/html/rfc6455) (and fallback transports for old browsers).
+WAMP provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over [WebSocket](http://tools.ietf.org/html/rfc6455). WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn|Python** based clients. We provide [Crossbar.io](http://crossbar.io), but there are [other options](http://wamp.ws/implementations/#routers) as well.
 
-It is ideal for distributed, multi-client and server applications, such as multi-user database-drive business applications, sensor networks (IoT), instant messaging or MMOGs (massively multi-player online games) .
 
-WAMP enables application architectures with application code distributed freely across processes and devices according to functional aspects. Since WAMP implementations exist for multiple languages, WAMP applications can be polyglot. Application components can be implemented in a language and run on a device which best fit the particular use case.
+## Features
 
-**Note** that WAMP is a *routed* protocol, so you need to run something that plays the Broker and Dealer roles from the [WAMP Specification](http://wamp.ws/spec/). We provide [Crossbar.io](http://crossbar.io) but there are [other options](http://wamp.ws/implementations/#routers) as well.
+* framework for [WebSocket](http://tools.ietf.org/html/rfc6455) and [WAMP](http://wamp.ws/) clients and servers
+* compatible with Python 2.6, 2.7, 3.3 and 3.4
+* runs on [CPython](http://python.org/), [PyPy](http://pypy.org/) and [Jython](http://jython.org/)
+* runs under [Twisted](http://twistedmatrix.com/) and [asyncio](http://docs.python.org/3.4/library/asyncio.html)
+* implements WebSocket [RFC6455](http://tools.ietf.org/html/rfc6455), Draft Hybi-10+, Hixie-76
+* implements [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression)
+* implements [WAMP](http://wamp.ws/), the Web Application Messaging Protocol
+* high-performance, fully asynchronous implementation
+* best-in-class standards conformance (100% strict passes with [Autobahn Testsuite](http://autobahn.ws/testsuite))
+* message-, frame- and streaming-APIs for WebSocket
+* supports TLS (secure WebSocket) and proxies
+* Open-source ([MIT license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
 
 ## Show me some code
 
-A simple WebSocket echo server:
+To give you a first impression, here are two examples. We have lot more in the repo [here](https://github.com/tavendo/AutobahnPython/tree/master/examples).
+
+### WebSocket Echo Server
+
+Here is a simple WebSocket Echo Server that will echo back any WebSocket message received:
 
 ```python
 from autobahn.twisted.websocket import WebSocketServerProtocol
@@ -56,7 +76,14 @@ class MyServerProtocol(WebSocketServerProtocol):
       print("WebSocket connection closed: {}".format(reason))
 ```
 
-... and a sample WAMP application component:
+### WAMP Application Component
+
+Here is a WAMP Application Component that performs all four types of actions that WAMP provides:
+
+1. **subscribe** to a topic
+2. **publish** an event
+3. **register** a procedure
+4. **call** a procedure
 
 ```python
 from autobahn.twisted.wamp import ApplicationSession
@@ -71,56 +98,24 @@ class MyComponent(ApplicationSession):
    @inlineCallbacks
    def onJoin(self, details):
 
-      # 1) subscribe to a topic
+      # 1. subscribe to a topic so we receive events
       def onevent(msg):
          print("Got event: {}".format(msg))
 
       yield self.subscribe(onevent, 'com.myapp.hello')
 
-      # 2) publish an event
+      # 2. publish an event to a topic
       self.publish('com.myapp.hello', 'Hello, world!')
 
-      # 3) register a procedure for remoting
+      # 3. register a procedure for remote calling
       def add2(x, y):
          return x + y
 
       self.register(add2, 'com.myapp.add2');
 
-      # 4) call a remote procedure
+      # 4. call a remote procedure
       res = yield self.call('com.myapp.add2', 2, 3)
       print("Got result: {}".format(res))
 ```
 
-## Features
-
-* framework for [WebSocket](http://tools.ietf.org/html/rfc6455) / [WAMP](http://wamp.ws/) clients and servers
-* compatible with Python 2.6, 2.7, 3.3 and 3.4
-* runs on [CPython](http://python.org/), [PyPy](http://pypy.org/) and [Jython](http://jython.org/)
-* runs under [Twisted](http://twistedmatrix.com/) and [asyncio](http://docs.python.org/3.4/library/asyncio.html)
-* implements WebSocket [RFC6455](http://tools.ietf.org/html/rfc6455), Draft Hybi-10+, Hixie-76
-* implements [WebSocket compression](http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression)
-* implements [WAMP](http://wamp.ws/), the Web Application Messaging Protocol
-* high-performance, fully asynchronous implementation
-* best-in-class standards conformance (100% strict passes with [Autobahn Testsuite](http://autobahn.ws/testsuite))
-* message-, frame- and streaming-APIs for WebSocket
-* supports TLS (secure WebSocket) and proxies
-* Open-source ([MIT license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
-
-
-## More Information
-
-For more information, take a look at the [project documentation](http://autobahn.ws/python). This provides:
-
-* [installation instructions](http://autobahn.ws/python/installation.html)
-* [an introduction to WebSocket programming](http://autobahn.ws/python/websocket/programming.html)
-* [an introduction to WAMP programming](http://autobahn.ws/python/wamp/programming.html)
-* [a list of WebSocket examples in this repo](http://autobahn.ws/python/websocket/examples.html)
-* [a list of WAMP examples in this repo](http://autobahn.ws/python/wamp/examples.html)
-* [a full API reference](http://autobahn.ws/python/reference/autobahn.html)
-
-> **WAMP Version 1**: Looking for WAMP version 1? The last version of AutobahnPython supporting WAMP1 was [0.8.15](https://pypi.python.org/pypi/autobahn/0.8.15). WAMP version 1 is fully deprecated now and no further development happens on AutobahnPython.
-
-
-## Get in touch
-
-Get in touch on IRC `#autobahn` on `chat.freenode.net`, follow us on [Twitter](https://twitter.com/autobahnws) or join the [mailing list](http://groups.google.com/group/autobahnws).
+Above code will work on Twisted and asyncio by changing a single line (the base class of `MyComponent`)!
