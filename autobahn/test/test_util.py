@@ -37,4 +37,3 @@ class TestIdGenerator(unittest.TestCase):
         g = IdGenerator()
         self.assertEqual(0, next(g))
         self.assertEqual(1, next(g))
-
