@@ -6,8 +6,9 @@
 [![Build Status](https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
 [![Coverage](https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg)](https://codecov.io/github/tavendo/AutobahnPython)
 
-**Quick Links**: [Project Documentation](http://autobahn.ws/python) &nbsp; [WebSocket Examples](http://autobahn.ws/python/websocket/examples.html) &nbsp; [WAMP Examples](http://autobahn.ws/python/wamp/examples.html) &nbsp; [Crossbar.io](http://crossbar.io)
-**Contact us**: [Mailing list](http://groups.google.com/group/autobahnws), [Twitter](https://twitter.com/autobahnws) or IRC `#autobahn` at `chat.freenode.net`.
+**Quick Links**: [Docs](http://autobahn.ws/python) - [WebSocket Examples](http://autobahn.ws/python/websocket/examples.html) - [WAMP Examples](http://autobahn.ws/python/wamp/examples.html) - [Crossbar.io](http://crossbar.io)
+
+**Contact us**: [Mailing list](http://groups.google.com/group/autobahnws) - [Twitter](https://twitter.com/autobahnws) - IRC `#autobahn` at `chat.freenode.net`
 
 ---
 
@@ -22,10 +23,9 @@ in Python running on [**Twisted**](http://twistedmatrix.com/) and [**asyncio**](
 
 You can use **Autobahn|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
-WebSocket allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and [WAMP](http://wamp.ws/) adds real-time application messaging abstractions on top of WebSocket.
+**WebSocket** allows [bidirectional real-time messaging on the Web](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) and [WAMP](http://wamp.ws/) adds real-time application messaging abstractions on top of WebSocket.
 
-WAMP provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over [WebSocket](http://tools.ietf.org/html/rfc6455). WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn|Python** based clients. We provide [Crossbar.io](http://crossbar.io), but there are [other options](http://wamp.ws/implementations/#routers) as well.
-
+**WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over [WebSocket](http://tools.ietf.org/html/rfc6455). WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn|Python** based clients. We provide [Crossbar.io](http://crossbar.io), but there are [other options](http://wamp.ws/implementations/#routers) as well.
 
 ## Features
 
@@ -42,10 +42,9 @@ WAMP provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe*
 * supports TLS (secure WebSocket) and proxies
 * Open-source ([MIT license](https://github.com/tavendo/AutobahnPython/blob/master/LICENSE))
 
-
 ## Show me some code
 
-To give you a first impression, here are two examples. We have lot more in the repo [here](https://github.com/tavendo/AutobahnPython/tree/master/examples).
+To give you a first impression, here are two examples. We have lot more [in the repo](https://github.com/tavendo/AutobahnPython/tree/master/examples).
 
 ### WebSocket Echo Server
 
@@ -57,24 +56,26 @@ from autobahn.twisted.websocket import WebSocketServerProtocol
 
 class MyServerProtocol(WebSocketServerProtocol):
 
-   def onConnect(self, request):
-      print("Client connecting: {}".format(request.peer))
+    def onConnect(self, request):
+        print("Client connecting: {}".format(request.peer))
 
-   def onOpen(self):
-      print("WebSocket connection open.")
+    def onOpen(self):
+        print("WebSocket connection open.")
 
-   def onMessage(self, payload, isBinary):
-      if isBinary:
-         print("Binary message received: {} bytes".format(len(payload)))
-      else:
-         print("Text message received: {}".format(payload.decode('utf8')))
+    def onMessage(self, payload, isBinary):
+        if isBinary:
+            print("Binary message received: {} bytes".format(len(payload)))
+        else:
+            print("Text message received: {}".format(payload.decode('utf8')))
 
-      ## echo back message verbatim
-      self.sendMessage(payload, isBinary)
+        # echo back message verbatim
+        self.sendMessage(payload, isBinary)
 
-   def onClose(self, wasClean, code, reason):
-      print("WebSocket connection closed: {}".format(reason))
+    def onClose(self, wasClean, code, reason):
+        print("WebSocket connection closed: {}".format(reason))
 ```
+
+To actually run above server protocol, you need some lines of [boilerplate](http://autobahn.ws/python/websocket/programming.html#running-a-server).
 
 ### WAMP Application Component
 
@@ -91,31 +92,29 @@ from autobahn.twisted.wamp import ApplicationSession
 
 class MyComponent(ApplicationSession):
 
-   def onConnect(self):
-      self.join("realm1")
+    @inlineCallbacks
+    def onJoin(self, details):
 
+        # 1. subscribe to a topic so we receive events
+        def onevent(msg):
+            print("Got event: {}".format(msg))
 
-   @inlineCallbacks
-   def onJoin(self, details):
+        yield self.subscribe(onevent, 'com.myapp.hello')
 
-      # 1. subscribe to a topic so we receive events
-      def onevent(msg):
-         print("Got event: {}".format(msg))
+        # 2. publish an event to a topic
+        self.publish('com.myapp.hello', 'Hello, world!')
 
-      yield self.subscribe(onevent, 'com.myapp.hello')
+        # 3. register a procedure for remote calling
+        def add2(x, y):
+            return x + y
 
-      # 2. publish an event to a topic
-      self.publish('com.myapp.hello', 'Hello, world!')
+        self.register(add2, 'com.myapp.add2');
 
-      # 3. register a procedure for remote calling
-      def add2(x, y):
-         return x + y
-
-      self.register(add2, 'com.myapp.add2');
-
-      # 4. call a remote procedure
-      res = yield self.call('com.myapp.add2', 2, 3)
-      print("Got result: {}".format(res))
+        # 4. call a remote procedure
+        res = yield self.call('com.myapp.add2', 2, 3)
+        print("Got result: {}".format(res))
 ```
 
 Above code will work on Twisted and asyncio by changing a single line (the base class of `MyComponent`)!
+
+To actually run above application component, you need some lines of [boilerplate](http://autobahn.ws/python/wamp/programming.html#running-components) and a [WAMP Router](http://crossbar.io).
