@@ -1,11 +1,11 @@
 # Autobahn|Python
 
-[![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn) &nbsp;
-[![Python Versions](https://img.shields.io/pypi/pyversions/autobahn.svg)](https://pypi.python.org/pypi/autobahn) &nbsp;
-[![License](https://img.shields.io/pypi/l/autobahn.svg)](https://pypi.python.org/pypi/autobahn) &nbsp;
-[![Downloads](https://img.shields.io/pypi/dm/autobahn.svg)](https://pypi.python.org/pypi/autobahn) &nbsp;
-[![Build Status](https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master)](https://travis-ci.org/tavendo/AutobahnPython) &nbsp;
-[![Coverage](https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg)](https://codecov.io/github/tavendo/AutobahnPython) &nbsp;
+[![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![Python Versions](https://img.shields.io/pypi/pyversions/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![License](https://img.shields.io/pypi/l/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![Downloads](https://img.shields.io/pypi/dm/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![Build Status](https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
+[![Coverage](https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg)](https://codecov.io/github/tavendo/AutobahnPython)
 
 **Autobahn**|Python is a subproject of [Autobahn](http://autobahn.ws/) and provides open-source implementations of
 
