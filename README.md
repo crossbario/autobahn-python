@@ -1,14 +1,14 @@
 # Autobahn|Python
 
 [![Version](https://img.shields.io/pypi/v/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
-[![Python Versions](https://img.shields.io/pypi/pyversions/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
 [![Downloads](https://img.shields.io/pypi/dm/autobahn.svg)](https://pypi.python.org/pypi/autobahn)
+[![GitHub Stars](https://img.shields.io/github/stars/tavendo/AutobahnPython.svg?style=social&label=Star)](https://github.com/tavendo/AutobahnPython)
 [![Build Status](https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master)](https://travis-ci.org/tavendo/AutobahnPython)
 [![Coverage](https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg)](https://codecov.io/github/tavendo/AutobahnPython)
 
-**Quick Links**: [Docs](http://autobahn.ws/python) - Examples: [WebSocket](http://autobahn.ws/python/websocket/examples.html)/[WAMP](http://autobahn.ws/python/wamp/examples.html) - **[Crossbar.io](http://crossbar.io)**
+**Quick Links**: [Source Code](https://github.com/tavendo/AutobahnPython) - [Docs](http://autobahn.ws/python) - [WebSocket Examples](http://autobahn.ws/python/websocket/examples.html) - [WAMP Examples](http://autobahn.ws/python/wamp/examples.html) - **[Crossbar.io](http://crossbar.io)**
 
-**Community**: [Mailing list](http://groups.google.com/group/autobahnws) - [StackOverflow](http://stackoverflow.com/questions/tagged/autobahn) - [Twitter](https://twitter.com/autobahnws) - IRC #autobahn (chat.freenode.net)
+**Community**: [Mailing list](http://groups.google.com/group/autobahnws) - [StackOverflow](http://stackoverflow.com/questions/tagged/autobahn) - [Twitter](https://twitter.com/autobahnws) - [IRC #autobahn/chat.freenode.net](https://webchat.freenode.net/)
 
 ---
 

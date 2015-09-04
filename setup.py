@@ -66,6 +66,8 @@ More information:
 * `Source Code <https://github.com/tavendo/AutobahnPython>`__
 """
 
+LONGSDESC = open('README.rst').read()
+
 # get version string from "autobahn/__init__.py"
 # See: http://stackoverflow.com/a/7071358/884770
 #
