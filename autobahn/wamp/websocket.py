@@ -44,6 +44,8 @@ class WampWebSocketProtocol(object):
     Base class for WAMP-over-WebSocket transport mixins.
     """
 
+    _session = None  # default; self.session is set in onOpen
+
     def _bailout(self, code, reason=None):
         if self.factory.debug_wamp:
             print("Failing WAMP-over-WebSocket transport: code = {0}, reason = '{1}'".format(code, reason))
@@ -70,7 +72,7 @@ class WampWebSocketProtocol(object):
         Callback from :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
         # WAMP session might never have been established in the first place .. guard this!
-        if hasattr(self, '_session') and self._session:
+        if self._session is not None:
             # WebSocket connection lost - fire off the WAMP
             # session close callback
             # noinspection PyBroadException
