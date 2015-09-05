@@ -94,7 +94,7 @@ if __name__ == '__main__':
     #
     @run_in_reactor
     def start_wamp():
-        wapp.run(u"ws://127.0.0.1:9000", "realm1", standalone=True, start_reactor=False)
+        wapp.run(u"ws://127.0.0.1:9000", u"realm1", standalone=True, start_reactor=False)
 
     start_wamp()
 

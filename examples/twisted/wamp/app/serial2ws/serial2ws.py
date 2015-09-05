@@ -161,7 +161,7 @@ if __name__ == '__main__':
     # run WAMP application component
     ##
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or 'ws://127.0.0.1:8080'
+    router = args.router or u'ws://127.0.0.1:8080'
 
     runner = ApplicationRunner(router, u"realm1",
                                extra={'port': args.port, 'baudrate': args.baudrate, 'debug': args.debug},
