@@ -29,6 +29,8 @@ from __future__ import absolute_import
 import sys
 import inspect
 
+import six
+
 from twisted.python import log
 from twisted.internet.defer import inlineCallbacks
 
@@ -117,8 +119,8 @@ class ApplicationRunner(object):
             your distribution's CA certificates.
         :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
         """
-        assert(type(url) == unicode)
-        assert(type(realm) == unicode)
+        assert(type(url) == six.text_type)
+        assert(type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm

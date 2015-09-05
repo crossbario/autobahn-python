@@ -27,6 +27,8 @@
 from __future__ import absolute_import
 import signal
 
+import six
+
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
@@ -107,8 +109,8 @@ class ApplicationRunner(object):
            kwarg.
         :type ssl: :class:`ssl.SSLContext` or bool
         """
-        assert(type(url) == unicode)
-        assert(type(realm) == unicode)
+        assert(type(url) == six.text_type)
+        assert(type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm
