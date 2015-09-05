@@ -72,7 +72,7 @@ if os.environ.get('USE_TWISTED', False):
             except ImportError:
                 raise unittest.SkipTest('No twisted')
 
-            runner = ApplicationRunner('ws://localhost:1', 'realm')
+            runner = ApplicationRunner(u'ws://localhost:1', u'realm')
             exception = ConnectionRefusedError("It's a trap!")
 
             with patch('twisted.internet.reactor', FakeReactor(exception)) as mockreactor:
@@ -117,7 +117,7 @@ else:
             loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
                 ssl = {}
-                runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm',
+                runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm',
                                            ssl=ssl)
                 runner.run('_unused_')
                 self.assertIs(ssl, loop.create_connection.call_args[1]['ssl'])
@@ -131,7 +131,7 @@ else:
             loop = Mock()
             loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner('ws://127.0.0.1:8080/ws', 'realm')
+                runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm')
                 runner.run('_unused_')
                 self.assertIs(False, loop.create_connection.call_args[1]['ssl'])
 
@@ -144,7 +144,7 @@ else:
             loop = Mock()
             loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner('wss://127.0.0.1:8080/wss', 'realm')
+                runner = ApplicationRunner(u'wss://127.0.0.1:8080/wss', u'realm')
                 runner.run('_unused_')
                 self.assertIs(True, loop.create_connection.call_args[1]['ssl'])
 
@@ -156,7 +156,7 @@ else:
             loop = Mock()
             loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
+                runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=True)
                 error = ('^ssl argument value passed to ApplicationRunner '
                          'conflicts with the "ws:" prefix of the url '
@@ -189,7 +189,7 @@ else:
             loop = Mock()
             loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
             with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner('ws://127.0.0.1:8080/wss', 'realm',
+                runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=context)
                 error = ('^ssl argument value passed to ApplicationRunner '
                          'conflicts with the "ws:" prefix of the url '

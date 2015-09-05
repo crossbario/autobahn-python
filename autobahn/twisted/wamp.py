@@ -37,7 +37,6 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
-import six
 import txaio
 txaio.use_twisted()
 
@@ -118,6 +117,9 @@ class ApplicationRunner(object):
             your distribution's CA certificates.
         :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
         """
+        assert(type(url) == unicode)
+        assert(type(realm) == unicode)
+        assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
@@ -190,7 +192,7 @@ class ApplicationRunner(object):
             context_factory = self.ssl
         elif isSecure:
             from twisted.internet.ssl import optionsForClientTLS
-            context_factory = optionsForClientTLS(six.u(host))
+            context_factory = optionsForClientTLS(host)
 
         if isSecure:
             from twisted.internet.endpoints import SSL4ClientEndpoint

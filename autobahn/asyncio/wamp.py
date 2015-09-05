@@ -107,6 +107,9 @@ class ApplicationRunner(object):
            kwarg.
         :type ssl: :class:`ssl.SSLContext` or bool
         """
+        assert(type(url) == unicode)
+        assert(type(realm) == unicode)
+        assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
