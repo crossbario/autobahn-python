@@ -16,7 +16,8 @@ autopep8:
 
 # This will run pep8, pyflakes and can skip lines that end with # noqa
 flake8:
-	flake8 --ignore=E501,E901,F401,F403,F811,F821,F841 .
+	flake8 --ignore=E501,E901 .
+#	flake8 --ignore=E501,E901,F401,F403,F811,F821,F841 .
 
 pylint:
 	pylint -d line-too-long,invalid-name .

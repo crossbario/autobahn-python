@@ -19,7 +19,6 @@ import sys
 import time
 import random
 import colors
-import subprocess
 
 prompt = 'user@machine:~/autobahn-python$ '
 

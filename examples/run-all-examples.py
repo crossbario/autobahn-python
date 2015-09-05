@@ -25,7 +25,6 @@ from colorama import Fore
 from twisted.internet.protocol import ProcessProtocol
 from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
 from twisted.internet.error import ProcessExitedAlready
-from twisted.python.failure import Failure
 from twisted.internet import reactor
 from twisted.internet.task import react
 
@@ -102,8 +101,7 @@ def start_crossbar():
     env = environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
 
-    transport = reactor.spawnProcess(
-        protocol, exe, args, path='.', env=env)
+    reactor.spawnProcess(protocol, exe, args, path='.', env=env)
 
     yield launched
     returnValue(protocol)
@@ -119,7 +117,7 @@ def start_example(py_fname, color, prefix='', exe=sys.executable):
     env = environ.copy()
     env["PYTHONUNBUFFERED"] = "1"
 
-    transport = reactor.spawnProcess(protocol, exe, args, path='.', env=env)
+    reactor.spawnProcess(protocol, exe, args, path='.', env=env)
 
     yield launched
     returnValue(protocol)

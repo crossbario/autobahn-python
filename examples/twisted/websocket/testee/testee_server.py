@@ -29,8 +29,8 @@ import autobahn
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
 
-from autobahn.websocket.protocol import WebSocketProtocol
-from autobahn.websocket.compress import *
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateOfferAccept
 
 
 USE_STREAMING_TESTEE = False

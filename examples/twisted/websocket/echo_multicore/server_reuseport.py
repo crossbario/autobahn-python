@@ -85,8 +85,6 @@ class MyServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    import sys
-
     from twisted.python import log
     from twisted.internet import reactor
 
