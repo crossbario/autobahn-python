@@ -53,7 +53,7 @@ class Component(ApplicationSession):
             return x * x
 
         yield from self.register(slowsquare, u'com.math.slowsquare')
-        print("Registered 'com.math.slowsquare'")
+        print("Registered com.math.slowsquare")
 
 
 if __name__ == '__main__':

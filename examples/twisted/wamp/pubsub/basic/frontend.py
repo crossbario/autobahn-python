@@ -44,7 +44,7 @@ class Component(ApplicationSession):
         print("session attached")
         self.received = 0
         sub = yield self.subscribe(self.on_event, u'com.myapp.topic1')
-        print("Subscribed to 'com.myapp.topic1' with {}".format(sub.id))
+        print("Subscribed to com.myapp.topic1 with {}".format(sub.id))
 
     def on_event(self, i):
         print("Got event: {}".format(i))

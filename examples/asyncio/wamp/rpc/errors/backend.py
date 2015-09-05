@@ -38,7 +38,7 @@ from autobahn.wamp.exception import ApplicationError
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
-@wamp.error("com.myapp.error1")
+@wamp.error(u"com.myapp.error1")
 class AppError1(Exception):
     """
     An application specific exception that is decorated with a WAMP URI,
@@ -69,15 +69,15 @@ class Component(ApplicationSession):
         ##
         def checkname(name):
             if name in ['foo', 'bar']:
-                raise ApplicationError("com.myapp.error.reserved")
+                raise ApplicationError(u"com.myapp.error.reserved")
 
             if name.lower() != name.upper():
                 # forward positional arguments in exceptions
-                raise ApplicationError("com.myapp.error.mixed_case", name.lower(), name.upper())
+                raise ApplicationError(u"com.myapp.error.mixed_case", name.lower(), name.upper())
 
             if len(name) < 3 or len(name) > 10:
                 # forward keyword arguments in exceptions
-                raise ApplicationError("com.myapp.error.invalid_length", min=3, max=10)
+                raise ApplicationError(u"com.myapp.error.invalid_length", min=3, max=10)
 
         yield from self.register(checkname, u'com.myapp.checkname')
 

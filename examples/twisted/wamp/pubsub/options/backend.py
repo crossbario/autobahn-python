@@ -57,7 +57,7 @@ class Component(ApplicationSession):
                 exclude_me=False
             )
             publication = yield self.publish(
-                'com.myapp.topic1', counter,
+                u'com.myapp.topic1', counter,
                 options=pub_options,
             )
             print("Published with publication ID {}".format(publication.id))

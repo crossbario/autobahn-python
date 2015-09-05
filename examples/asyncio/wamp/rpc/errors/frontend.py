@@ -38,7 +38,7 @@ from autobahn.wamp.exception import ApplicationError
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
-@wamp.error("com.myapp.error1")
+@wamp.error(u"com.myapp.error1")
 class AppError1(Exception):
     """
     An application specific exception that is decorated with a WAMP URI,
