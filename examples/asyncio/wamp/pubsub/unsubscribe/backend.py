@@ -44,6 +44,6 @@ class Component(ApplicationSession):
 
         counter = 0
         while True:
-            self.publish('com.myapp.topic1', counter)
+            self.publish(u'com.myapp.topic1', counter)
             counter += 1
             yield from asyncio.sleep(1)

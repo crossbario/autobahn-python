@@ -47,13 +47,13 @@ class Component(ApplicationSession):
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 
-        yield from self.register(add_complex, 'com.myapp.add_complex')
+        yield from self.register(add_complex, u'com.myapp.add_complex')
 
         def split_name(fullname):
             forename, surname = fullname.split()
             return CallResult(forename, surname)
 
-        yield from self.register(split_name, 'com.myapp.split_name')
+        yield from self.register(split_name, u'com.myapp.split_name')
 
 
 if __name__ == '__main__':

@@ -36,7 +36,7 @@ wampapp = Application()
 @inlineCallbacks
 def square_submit(request):
     x = int(request.args.get('x', [0])[0])
-    res = yield wampapp.session.call('com.example.square', x)
+    res = yield wampapp.session.call(u'com.example.square', x)
     returnValue("{} squared is {}".format(x, res))
 
 

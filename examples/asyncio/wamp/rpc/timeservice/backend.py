@@ -48,7 +48,7 @@ class Component(ApplicationSession):
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        yield from self.register(utcnow, 'com.timeservice.now')
+        yield from self.register(utcnow, u'com.timeservice.now')
 
 
 if __name__ == '__main__':

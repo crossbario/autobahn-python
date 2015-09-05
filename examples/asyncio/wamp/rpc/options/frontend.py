@@ -46,10 +46,10 @@ class Component(ApplicationSession):
         def on_event(val):
             print("Someone requested to square non-positive: {}".format(val))
 
-        yield from self.subscribe(on_event, 'com.myapp.square_on_nonpositive')
+        yield from self.subscribe(on_event, u'com.myapp.square_on_nonpositive')
 
         for val in [2, 0, -2]:
-            res = yield from self.call('com.myapp.square', val, options=CallOptions(disclose_me=True))
+            res = yield from self.call(u'com.myapp.square', val, options=CallOptions(disclose_me=True))
             print("Squared {} = {}".format(val, res))
 
         yield from self.leave()

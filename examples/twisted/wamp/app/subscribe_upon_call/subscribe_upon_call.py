@@ -34,10 +34,10 @@ def onEvent(msg):
     print("got event: {}".format(msg))
 
 
-@app.register('com.example.triggersubscribe')
+@app.register(u'com.example.triggersubscribe')
 def triggerSubscribe():
     print("triggersubscribe() called")
-    yield app.session.subscribe(onEvent, 'com.example.topic1')
+    yield app.session.subscribe(onEvent, u'com.example.topic1')
 
 
 @app.signal('onjoined')

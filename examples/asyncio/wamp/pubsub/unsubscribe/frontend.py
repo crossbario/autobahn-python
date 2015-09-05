@@ -62,7 +62,7 @@ class Component(ApplicationSession):
                     yield from asyncio.sleep(5)
                     yield from self.test()
 
-        self.subscription = yield from self.subscribe(on_event, 'com.myapp.topic1')
+        self.subscription = yield from self.subscribe(on_event, u'com.myapp.topic1')
         print("Subscribed with subscription ID {}".format(self.subscription.id))
 
     @asyncio.coroutine

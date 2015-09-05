@@ -46,7 +46,7 @@ class Component(ApplicationSession):
 
         def on_event(i):
             print("Got event: {}".format(i))
-        yield from self.subscribe(on_event, 'com.myapp.topic1')
+        yield from self.subscribe(on_event, u'com.myapp.topic1')
 
         counter = 0
         while True:

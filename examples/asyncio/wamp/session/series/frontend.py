@@ -52,7 +52,7 @@ class Component(ApplicationSession):
         print("Realm joined (WAMP session started).")
 
         try:
-            now = yield from self.call('com.timeservice.now')
+            now = yield from self.call(u'com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

@@ -52,7 +52,7 @@ class Component(ApplicationSession):
             if self.received > 5:
                 self.leave()
 
-        yield from self.subscribe(on_event, 'com.myapp.topic1',
+        yield from self.subscribe(on_event, u'com.myapp.topic1',
                                   options=SubscribeOptions(details_arg='details'))
 
     def onDisconnect(self):

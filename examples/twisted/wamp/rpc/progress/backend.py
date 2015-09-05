@@ -53,7 +53,7 @@ class Component(ApplicationSession):
                 yield sleep(1 * n)
             returnValue(n)
 
-        yield self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+        yield self.register(longop, u'com.myapp.longop', RegisterOptions(details_arg='details'))
 
         print("procedures registered")
 

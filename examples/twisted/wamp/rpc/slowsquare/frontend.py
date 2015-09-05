@@ -46,11 +46,11 @@ class Component(ApplicationSession):
             print("{}: {} in {}".format(msg, res, duration))
 
         t1 = time.clock()
-        d1 = self.call('com.math.slowsquare', 3)
+        d1 = self.call(u'com.math.slowsquare', 3)
         d1.addCallback(got, t1, "Slow Square")
 
         t2 = time.clock()
-        d2 = self.call('com.math.square', 3)
+        d2 = self.call(u'com.math.square', 3)
         d2.addCallback(got, t2, "Quick Square")
 
         def done(_):

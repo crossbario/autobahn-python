@@ -50,12 +50,12 @@ class Component(ApplicationSession):
         def on_heartbeat(details=None):
             print("Got heartbeat (publication ID {})".format(details.publication))
 
-        yield from self.subscribe(on_heartbeat, 'com.myapp.heartbeat', options=SubscribeOptions(details_arg='details'))
+        yield from self.subscribe(on_heartbeat, u'com.myapp.heartbeat', options=SubscribeOptions(details_arg='details'))
 
         def on_topic2(a, b, c=None, d=None):
             print("Got event: {} {} {} {}".format(a, b, c, d))
 
-        yield from self.subscribe(on_topic2, 'com.myapp.topic2')
+        yield from self.subscribe(on_topic2, u'com.myapp.topic2')
         asyncio.get_event_loop().call_later(5, self.leave)
 
     def onDisconnect(self):

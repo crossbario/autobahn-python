@@ -45,14 +45,14 @@ class Component(ApplicationSession):
         def square(x):
             return x * x
 
-        yield from self.register(square, 'com.math.square')
+        yield from self.register(square, u'com.math.square')
 
         @asyncio.coroutine
         def slowsquare(x, delay=1):
             yield from asyncio.sleep(delay)
             return x * x
 
-        yield from self.register(slowsquare, 'com.math.slowsquare')
+        yield from self.register(slowsquare, u'com.math.slowsquare')
         print("Registered 'com.math.slowsquare'")
 
 

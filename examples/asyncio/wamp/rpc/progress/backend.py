@@ -53,7 +53,7 @@ class Component(ApplicationSession):
                 yield from asyncio.sleep(1 * n)
             return n
 
-        yield from self.register(longop, 'com.myapp.longop', RegisterOptions(details_arg='details'))
+        yield from self.register(longop, u'com.myapp.longop', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':

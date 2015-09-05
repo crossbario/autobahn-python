@@ -41,4 +41,4 @@ class Component(ApplicationSession):
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        self.register(utcnow, 'com.timeservice.now')
+        self.register(utcnow, u'com.timeservice.now')

@@ -28,7 +28,7 @@ from twisted.internet.defer import returnValue
 from autobahn.twisted.wamp import Application
 
 
-app = Application('com.example')
+app = Application(u'com.example')
 
 
 @app.register()
@@ -37,10 +37,10 @@ def add2(a, b):
     return a + b
 
 
-@app.register('com.example.hello')
+@app.register(u'com.example.hello')
 def hello():
     print("hello() called")
-    res = yield app.session.call('com.example.add2', 2, 3)
+    res = yield app.session.call(u'com.example.add2', 2, 3)
     returnValue("Hello {}".format(res))
 
 

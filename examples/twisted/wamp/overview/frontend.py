@@ -10,10 +10,10 @@ class MyComponent(ApplicationSession):
         # (any session that .publish()es to this topic).
         def onevent(msg):
             print("Got event: {}".format(msg))
-        yield self.subscribe(onevent, 'com.myapp.hello')
+        yield self.subscribe(onevent, u'com.myapp.hello')
 
         # call a remote procedure.
-        res = yield self.call('com.myapp.add2', 2, 3)
+        res = yield self.call(u'com.myapp.add2', 2, 3)
         print("Got result: {}".format(res))
 
 

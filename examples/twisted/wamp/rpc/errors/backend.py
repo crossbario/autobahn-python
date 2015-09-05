@@ -76,7 +76,7 @@ class Component(ApplicationSession):
                 # forward keyword arguments in exceptions
                 raise ApplicationError("com.myapp.error.invalid_length", min=3, max=10)
 
-        yield self.register(checkname, 'com.myapp.checkname')
+        yield self.register(checkname, u'com.myapp.checkname')
 
         # defining and automapping WAMP application exceptions
         ##
@@ -86,7 +86,7 @@ class Component(ApplicationSession):
             if a < b:
                 raise AppError1(b - a)
 
-        yield self.register(compare, 'com.myapp.compare')
+        yield self.register(compare, u'com.myapp.compare')
 
         print("procedures registered")
 

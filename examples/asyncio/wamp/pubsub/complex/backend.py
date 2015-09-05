@@ -48,11 +48,11 @@ class Component(ApplicationSession):
         counter = 0
         while True:
             print("publish: com.myapp.heartbeat")
-            self.publish('com.myapp.heartbeat')
+            self.publish(u'com.myapp.heartbeat')
 
             obj = {'counter': counter, 'foo': [1, 2, 3]}
             print("publish: com.myapp.topic2")
-            self.publish('com.myapp.topic2', random.randint(0, 100), 23, c="Hello", d=obj)
+            self.publish(u'com.myapp.topic2', random.randint(0, 100), 23, c="Hello", d=obj)
 
             counter += 1
             yield from asyncio.sleep(1)

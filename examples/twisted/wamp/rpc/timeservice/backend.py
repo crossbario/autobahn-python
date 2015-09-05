@@ -46,7 +46,7 @@ class Component(ApplicationSession):
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         try:
-            yield self.register(utcnow, 'com.timeservice.now')
+            yield self.register(utcnow, u'com.timeservice.now')
         except Exception as e:
             print("failed to register procedure: {}".format(e))
         else:

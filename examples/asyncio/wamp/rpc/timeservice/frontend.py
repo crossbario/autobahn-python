@@ -44,7 +44,7 @@ class Component(ApplicationSession):
     @asyncio.coroutine
     def onJoin(self, details):
         try:
-            now = yield from self.call('com.timeservice.now')
+            now = yield from self.call(u'com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

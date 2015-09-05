@@ -44,10 +44,10 @@ class Component(ApplicationSession):
     @asyncio.coroutine
     def onJoin(self, details):
 
-        res = yield from self.call('com.myapp.add_complex', 2, 3, 4, 5)
+        res = yield from self.call(u'com.myapp.add_complex', 2, 3, 4, 5)
         print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
 
-        res = yield from self.call('com.myapp.split_name', 'Homer Simpson')
+        res = yield from self.call(u'com.myapp.split_name', 'Homer Simpson')
         print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
         self.leave()
