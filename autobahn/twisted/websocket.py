@@ -33,7 +33,8 @@ from zope.interface import implementer
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.interfaces import ITransport
-from twisted.internet.error import ConnectionDone, ConnectionAborted
+from twisted.internet.error import ConnectionDone, ConnectionAborted, \
+    ConnectionLost
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
@@ -98,14 +99,23 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             pass
 
     def connectionLost(self, reason):
-        # https://twistedmatrix.com/documents/current/api/twisted.internet.error.ConnectionDone.html
         if isinstance(reason.value, ConnectionDone):
-            self.factory.log.debug("Connection from {peer} was closed cleanly", peer=self.peer)
-        # https://twistedmatrix.com/documents/current/api/twisted.internet.error.ConnectionAborted.html
+            self.factory.log.debug("Connection to/from {peer} was closed cleanly",
+                                   peer=self.peer)
+
         elif isinstance(reason.value, ConnectionAborted):
-            self.factory.log.debug("Connection from {peer} was aborted locally", peer=self.peer)
+            self.factory.log.debug("Connection to/from {peer} was aborted locally",
+                                   peer=self.peer)
+
+        elif isinstance(reason.value, ConnectionLost):
+            self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
+                                   peer=self.peer, message=reason.value.args[0])
+
+        # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
-            self.factory.log.info("Connection from {peer} was lost: {message}", peer=self.peer, message=reason.value.message)
+            self.factory.log.info("Connection to/from {peer} lost ({error_type}): {error})",
+                                  peer=self.peer, error_type=type(reason.value), error=reason.value)
+
         self._connectionLost(reason)
 
     def dataReceived(self, data):
@@ -113,9 +123,9 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def _closeConnection(self, abort=False):
         if abort and hasattr(self.transport, 'abortConnection'):
-            # ProcessProtocol lacks abortConnection()
             self.transport.abortConnection()
         else:
+            # e.g. ProcessProtocol lacks abortConnection()
             self.transport.loseConnection()
 
     def _onOpen(self):
