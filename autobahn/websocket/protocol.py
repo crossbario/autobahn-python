@@ -2231,7 +2231,7 @@ class WebSocketProtocol(object):
             if isBinary:
                 raise Exception("cannot send binary message in Hixie76 mode")
 
-            self.sendData('\x00')
+            self.sendData(b'\x00')
             self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
         else:
             self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if isBinary else WebSocketProtocol.MESSAGE_TYPE_TEXT
@@ -2404,7 +2404,7 @@ class WebSocketProtocol(object):
         #   raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
 
         if self.websocket_version == 0:
-            self.sendData('\x00')
+            self.sendData(b'\x00')
         else:
             if self.send_compressed:
                 payload = self._perMessageCompress.endCompressMessage()
@@ -2627,9 +2627,9 @@ class PreparedMessage(object):
             # silently filter out .. probably do something else:
             # base64?
             # dunno
-            self.payloadHixie = ''
+            self.payloadHixie = b''
         else:
-            self.payloadHixie = '\x00' + payload + '\xff'
+            self.payloadHixie = b'\x00' + payload + b'\xff'
 
     def _initHybi(self, payload, binary, masked):
         l = len(payload)
