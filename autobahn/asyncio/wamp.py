@@ -164,7 +164,12 @@ class ApplicationRunner(object):
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
         (transport, protocol) = loop.run_until_complete(coro)
-        loop.add_signal_handler(signal.SIGTERM, loop.stop)
+
+        try:
+            loop.add_signal_handler(signal.SIGTERM, loop.stop)
+        except NotImplementedError:
+            # signals are not available on Windows
+            pass
 
         # 4) now enter the asyncio event loop
         try:
@@ -173,8 +178,10 @@ class ApplicationRunner(object):
             # wait until we send Goodbye if user hit ctrl-c
             # (done outside this except so SIGTERM gets the same handling)
             pass
+
         # give Goodbye message a chance to go through, if we still
         # have an active session
         if protocol._session:
             loop.run_until_complete(protocol._session.leave())
+
         loop.close()
