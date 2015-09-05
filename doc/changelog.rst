@@ -5,6 +5,14 @@
 Changelog
 =========
 
+0.10.6
+------
+
+`Published 2015-09-05 <https://pypi.python.org/pypi/autobahn/0.10.6>`__
+
+* maintenance release with nearly two dozen fixes
+* improved Python 3, error logging, WAMP connection mgmt, ..
+
 0.10.5
 ------
 
@@ -171,7 +179,7 @@ Changelog
 * WAMP application payload validation hooks
 * added Tox based testing for multiple platforms
 * code quality fixes
- 
+
 0.8.11
 ------
 `Published <https://pypi.python.org/pypi/autobahn/0.8.11>`__
@@ -255,7 +263,7 @@ Changelog
 * WAMP v2 basic router (broker + dealer) implementation
 * WAMP v2 example set
 * WAMP v2: decouple transports, sessions and routers
-* support explicit (binary) subprotocol name for wrapping WebSocket factory 
+* support explicit (binary) subprotocol name for wrapping WebSocket factory
 * fix dependency on MsgPack
 
 0.8.0
