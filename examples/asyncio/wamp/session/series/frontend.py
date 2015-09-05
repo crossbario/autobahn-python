@@ -64,7 +64,7 @@ class Component(ApplicationSession):
         print("Realm left (WAMP session ended).")
         self.count += 1
         if self.count < 3:
-            self.join("realm1")
+            self.join(u"realm1")
         else:
             self.disconnect()
 
