@@ -115,10 +115,10 @@ class ApplicationRunner(object):
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
+        self.serializers = serializers
         self.debug = debug
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
-        self.serializers = serializers
         self.ssl = ssl
 
     def run(self, make):

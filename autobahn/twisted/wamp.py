@@ -95,21 +95,33 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra=None, debug=False, debug_wamp=False, debug_app=False, ssl=None):
+    def __init__(self, url, realm, extra=None, serializers=None,
+                 debug=False, debug_wamp=False, debug_app=False,
+                 ssl=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
+
         :param realm: The WAMP realm to join the application session to.
         :type realm: unicode
+
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
+
+        :param serializers: A list of WAMP serializers to use (or None for default serializers).
+           Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
+        :type serializers: list
+
         :param debug: Turn on low-level debugging.
         :type debug: bool
+
         :param debug_wamp: Turn on WAMP-level debugging.
         :type debug_wamp: bool
+
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
+
         :param ssl: (Optional). If specified this should be an
             instance suitable to pass as ``sslContextFactory`` to
             :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
@@ -125,6 +137,7 @@ class ApplicationRunner(object):
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
+        self.serializers = serializers
         self.debug = debug
         self.debug_wamp = debug_wamp
         self.debug_app = debug_app
@@ -179,7 +192,7 @@ class ApplicationRunner(object):
                 return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url,
+        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
                                                        debug=self.debug, debug_wamp=self.debug_wamp)
 
         # if user passed ssl= but isn't using isSecure, we'll never
