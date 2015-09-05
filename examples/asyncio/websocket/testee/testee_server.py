@@ -91,7 +91,7 @@ if __name__ == '__main__':
         # Trollius >= 0.3 was renamed
         import trollius as asyncio
 
-    factory = TesteeServerFactory("ws://127.0.0.1:9002", debug=False)
+    factory = TesteeServerFactory(u"ws://127.0.0.1:9002", debug=False)
 
     loop = asyncio.get_event_loop()
     coro = loop.create_server(factory, port=9002)

@@ -78,7 +78,7 @@ if __name__ == "__main__":
     ##
     # create a Twisted Web resource for our WebSocket server
     ##
-    wsFactory = WebSocketServerFactory("ws://127.0.0.1:8080",
+    wsFactory = WebSocketServerFactory(u"ws://127.0.0.1:8080",
                                        debug=debug,
                                        debugCodePaths=debug)
 

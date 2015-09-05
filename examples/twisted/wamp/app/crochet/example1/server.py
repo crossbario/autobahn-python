@@ -69,7 +69,7 @@ if __name__ == '__main__':
     #
     @run_in_reactor
     def start_wamp():
-        wapp.run("ws://127.0.0.1:8080/ws", "realm1", start_reactor=False)
+        wapp.run(u"ws://127.0.0.1:8080/ws", "realm1", start_reactor=False)
 
     start_wamp()
 

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     else:
         debug = False
 
-    factory = WebSocketServerFactory("ws://127.0.0.1:8080",
+    factory = WebSocketServerFactory(u"ws://127.0.0.1:8080",
                                      debug=debug,
                                      debugCodePaths=debug)
 
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     root = File(".")
 
     # and our WebSocket server under "/ws"
-    root.putChild("ws", resource)
+    root.putChild(u"ws", resource)
 
     # both under one Twisted Web Site
     site = Site(root)

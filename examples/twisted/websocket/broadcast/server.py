@@ -112,7 +112,7 @@ if __name__ == '__main__':
     ServerFactory = BroadcastServerFactory
     # ServerFactory = BroadcastPreparedServerFactory
 
-    factory = ServerFactory("ws://127.0.0.1:9000",
+    factory = ServerFactory(u"ws://127.0.0.1:9000",
                             debug=debug,
                             debugCodePaths=debug)
 

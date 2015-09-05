@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory("ws://127.0.0.1:9000", debug=False, debugCodePaths=True)
+    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000", debug=False, debugCodePaths=True)
     factory.protocol = WebSocketServerProtocol
 
     factory.setProtocolOptions(autoPingInterval=1, autoPingTimeout=3, autoPingSize=20)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     resource = WebSocketResource(factory)
 
     root = File(".")
-    root.putChild("ws", resource)
+    root.putChild(u"ws", resource)
     site = Site(root)
 
     reactor.listenTCP(8080, site)

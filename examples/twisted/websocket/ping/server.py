@@ -76,7 +76,7 @@ if __name__ == '__main__':
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = PingServerFactory("wss://127.0.0.1:9000",
+    factory = PingServerFactory(u"wss://127.0.0.1:9000",
                                 debug='debug' in sys.argv)
 
     factory.protocol = PingServerProtocol
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     resource = WebSocketResource(factory)
 
     root = File(".")
-    root.putChild("ws", resource)
+    root.putChild(u"ws", resource)
     site = Site(root)
 
     reactor.listenSSL(8080, site, contextFactory)
