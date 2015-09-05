@@ -43,29 +43,6 @@ CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
 PY33 = (3, 3) <= sys.version_info < (3, 4)
 
-LONGSDESC = """
-.. |ab| replace:: **Autobahn**\|Python
-
-|ab| is a networking library that is part of the `Autobahn <http://autobahn.ws>`__
-project and provides implementations of
-
-* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
-* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws>`__
-
-for `Twisted <http://www.twistedmatrix.com/>`__ and
-`asyncio <https://docs.python.org/3/library/asyncio.html>`__,
-on Python 2 & 3 and for writing servers and clients.
-
-WebSocket allows bidirectional real-time messaging on the Web and WAMP
-adds asynchronous *Remote Procedure Calls* and *Publish & Subscribe* on
-top of WebSocket.
-
-More information:
-
-* `Project Site <http://autobahn.ws/python>`__
-* `Source Code <https://github.com/tavendo/AutobahnPython>`__
-"""
-
 LONGSDESC = open('README.rst').read()
 
 # get version string from "autobahn/__init__.py"
