@@ -2,6 +2,7 @@ from os import environ
 import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
+
 class MyComponent(ApplicationSession):
     @asyncio.coroutine
     def onJoin(self, details):

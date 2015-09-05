@@ -23,11 +23,12 @@ import subprocess
 
 prompt = 'user@machine:~/autobahn-python$ '
 
+
 def interkey_interval():
     """in milliseconds"""
 #    return 0  # makes testing faster
     return (random.lognormvariate(0.0, 0.5) * 30.0) / 1000.0
-    return float(random.randrange(10,50)) / 1000.0
+    return float(random.randrange(10, 50)) / 1000.0
 
 
 def type_it_out(line):

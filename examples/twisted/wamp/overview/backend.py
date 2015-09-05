@@ -4,6 +4,7 @@ from twisted.internet.task import LoopingCall
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 # or: from autobahn.asyncio.wamp import ApplicationSession
 
+
 class MyComponent(ApplicationSession):
     @inlineCallbacks
     def onJoin(self, details):

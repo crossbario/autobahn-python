@@ -33,6 +33,7 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn import wamp
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
+
 class Calculator(ApplicationSession):
 
     @inlineCallbacks

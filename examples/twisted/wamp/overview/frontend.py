@@ -3,6 +3,7 @@ from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 # or: from autobahn.asyncio.wamp import ApplicationSession
 
+
 class MyComponent(ApplicationSession):
     @inlineCallbacks
     def onJoin(self, details):

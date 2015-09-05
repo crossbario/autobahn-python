@@ -50,10 +50,9 @@ class Component(ApplicationSession):
 
         counter = 0
         while True:
-            publication = yield from self.publish(
-            'com.myapp.topic1', counter,
-                options=PublishOptions(acknowledge=True, disclose_me=True, exclude_me=False)
-            )
+            publication = yield from self.publish(u'com.myapp.topic1',
+                                                  counter,
+                                                  options=PublishOptions(acknowledge=True, disclose_me=True, exclude_me=False))
             print("Event published with publication ID {}".format(publication.id))
             counter += 1
             yield from asyncio.sleep(1)

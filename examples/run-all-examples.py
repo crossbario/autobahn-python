@@ -27,6 +27,7 @@ from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
 from twisted.internet.error import ProcessExitedAlready
 from twisted.python.failure import Failure
 from twisted.internet import reactor
+from twisted.internet.task import react
 
 from autobahn.twisted.util import sleep
 
@@ -68,7 +69,7 @@ class CrossbarProcessProtocol(ProcessProtocol):
         while '\n' in self._err:
             idx = self._err.find('\n')
             line = self._err[:idx]
-            self._err = self._err[idx+1:]
+            self._err = self._err[idx + 1:]
             sys.stderr.write(self.prefix + self.color + line + Fore.RESET + '\n')
 
     def processEnded(self, reason):
@@ -233,6 +234,5 @@ def main(reactor):
     returnValue(5)
 
 
-from twisted.internet.task import react
 if __name__ == '__main__':
     sys.exit(react(main))
