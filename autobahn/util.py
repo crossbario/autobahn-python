@@ -26,28 +26,28 @@
 
 from __future__ import absolute_import
 
+import os
 import time
-import random
+import struct
 import sys
 import re
-import six
+import base64
+import math
+import random
 from datetime import datetime, timedelta
 from pprint import pformat
-
-if six.PY3:
-    # Python 3
-    # noinspection PyShadowingBuiltins
-    xrange = range
 
 __all__ = ("utcnow",
            "parseutc",
            "utcstr",
            "id",
+           "rid",
            "newid",
            "rtime",
            "Stopwatch",
            "Tracker",
-           "EqualityMixin")
+           "EqualityMixin",
+           "IdGenerator")
 
 
 def utcnow():
@@ -104,6 +104,12 @@ class IdGenerator(object):
     WAMP request IDs are sequential per WAMP session, starting at 0 and
     wrapping around at 2**53 (both value are inclusive [0, 2**53]).
 
+    The upper bound **2**53** is chosen since it is the maximum integer that can be
+    represented as a IEEE double such that all smaller integers are representable as well.
+
+    Hence, IDs can be safely used with languages that use IEEE double as their
+    main (or only) number type (JavaScript, Lua, etc).
+
     See https://github.com/tavendo/WAMP/blob/master/spec/basic.md#ids
     """
 
@@ -111,6 +117,12 @@ class IdGenerator(object):
         self._next = -1
 
     def next(self):
+        """
+        Returns next ID.
+
+        :returns: The next ID.
+        :rtype: int
+        """
         self._next += 1
         if self._next > 9007199254740992:
             self._next = 0
@@ -121,10 +133,49 @@ class IdGenerator(object):
         return self.next()
 
 
-# noinspection PyShadowingBuiltins
-def id():
+#
+# Performance comparison of IdGenerator.next(), id() and rid().
+#
+# All tests were performed on:
+#
+#   - Ubuntu 14.04 LTS x86-64
+#   - Intel Core i7 920 @ 3.3GHz
+#
+# The tests generated 100 mio. IDs and run-time was measured
+# as wallclock from Unix "time" command. In each run, a single CPU
+# core was essentially at 100% load all the time (though the sys/usr
+# ratio was different).
+#
+# PyPy 2.6.1:
+#
+#   IdGenerator.next()    0.5s
+#   id()                 29.4s
+#   rid()               106.1s
+#
+# CPython 2.7.10:
+#
+#   IdGenerator.next()   49.0s
+#   id()                370.5s
+#   rid()               196.4s
+#
+
+#
+# Note on the ID range [0, 2**53]. We once reduced the range to [0, 2**31].
+# This lead to extremely hard to track down issues due to ID collisions!
+# Here: https://github.com/tavendo/AutobahnPython/issues/419#issue-90483337
+#
+
+
+# 8 byte mask with 53 LSBs set (WAMP requires IDs from [0, 2**53]
+_WAMP_ID_MASK = struct.unpack(">Q", b"\x00\x1f\xff\xff\xff\xff\xff\xff")[0]
+
+
+def rid():
     """
-    Generate a new random object ID from range **[0, 2**53]**.
+    Generate a new random integer ID from range **[0, 2**53]**.
+
+    The generated ID is uniformly distributed over the whole range, doesn't have
+    a period (no pseudo-random generator is used) and cryptographically strong.
 
     The upper bound **2**53** is chosen since it is the maximum integer that can be
     represented as a IEEE double such that all smaller integers are representable as well.
@@ -132,7 +183,28 @@ def id():
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
 
-    :returns: A random object ID.
+    :returns: A random integer ID.
+    :rtype: int
+    """
+    return struct.unpack("@Q", os.urandom(8))[0] & _WAMP_ID_MASK
+
+
+# noinspection PyShadowingBuiltins
+def id():
+    """
+    Generate a new random integer ID from range **[0, 2**53]**.
+
+    The generated ID is based on a pseudo-random number generator (Mersenne Twister,
+    which has a period of 2**19937-1). It is NOT cryptographically strong, and
+    hence NOT suitable to generate e.g. secret keys or access tokens.
+
+    The upper bound **2**53** is chosen since it is the maximum integer that can be
+    represented as a IEEE double such that all smaller integers are representable as well.
+
+    Hence, IDs can be safely used with languages that use IEEE double as their
+    main (or only) number type (JavaScript, Lua, etc).
+
+    :returns: A random integer ID.
     :rtype: int
     """
     return random.randint(0, 9007199254740992)
@@ -140,20 +212,24 @@ def id():
 
 def newid(length=16):
     """
-    Generate a new random object ID.
+    Generate a new random string ID.
+
+    The generated ID is uniformly distributed and cryptographically strong. It is
+    hence usable for things like secret keys and access tokens.
 
     :param length: The length (in chars) of the ID to generate.
     :type length: int
 
-    :returns: A random object ID.
-    :rtype: str
+    :returns: A random string ID.
+    :rtype: unicode
     """
-    return ''.join([random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_") for _ in xrange(length)])
+    l = int(math.ceil(float(length) * 6. / 8.))
+    return base64.b64encode(os.urandom(l))[:length].decode('ascii')
 
 
 # Select the most precise walltime measurement function available
 # on the platform
-##
+#
 if sys.platform.startswith('win'):
     # On Windows, this function returns wall-clock seconds elapsed since the
     # first call to this function, as a floating point number, based on the
