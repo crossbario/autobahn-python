@@ -22,6 +22,44 @@ AutobahnPython supports both Python 2 and Python 3.
 
 ### Documentation
 
+#### Requirements
+
+You will need to have some stuff installed to generate the docs:
+
+```
+cd ~/scm/autobahn/AutobahnPython/doc
+install_deps
+```
+
+Additionally, install [SCons](http://scons.org/).
+
+#### Test
+
+To generate and publish the documentation to [here](http://autobahn.ws/python/):
+
+```
+cd ~/scm/autobahn/AutobahnPython
+make clean
+make install
+cd doc
+make test
+```
+
+and open [http://localhost:8080](http://localhost:8080).
+
+#### Publish
+
+To generate and publish the documentation to [here](http://autobahn.ws/python/):
+
+```
+cd ~/scm/autobahn/AutobahnPython
+make clean
+make install
+cd doc
+make publish
+```
+
+> The docs are published to the Autobahn Web site, which is hosted on a AWS S3 bucket is owned by Tavendo, and hence the publish can only be done by Tavendo.
 
 ### WebSocket Test Reports
 
