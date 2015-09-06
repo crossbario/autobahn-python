@@ -40,7 +40,7 @@ Features
 -  implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
 -  implements `WAMP <http://wamp.ws/>`__, the Web Application Messaging Protocol
 -  high-performance, fully asynchronous implementation
--  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://autobahn.ws/testsuite>`__)
+-  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://autobahn.ws/testsuite>`__: `Server Test Report <http://autobahn.ws/python/testreport/servers/index.html>`__ / `Client Test Report <http://autobahn.ws/python/testreport/clients/index.html>`__)
 -  message-, frame- and streaming-APIs for WebSocket
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`__)

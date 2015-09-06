@@ -5,6 +5,13 @@
 Changelog
 =========
 
+0.10.7
+------
+
+`Published 2015-09-06 <https://pypi.python.org/pypi/autobahn/0.10.7>`__
+
+* fixes a regression in 0.10.6
+
 0.10.6
 ------
 
