@@ -3,14 +3,12 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Downloads| |GitHub Stars|
+| |Version| |Downloads| |Build Status| |Coverage|
 
 --------------
 
 | **Quick Links**: `Source Code <https://github.com/tavendo/AutobahnPython>`__ - `Docs <http://autobahn.ws/python>`__ - `WebSocket Examples <http://autobahn.ws/python/websocket/examples.html>`__ - `WAMP Examples <http://autobahn.ws/python/wamp/examples.html>`__ - `Crossbar.io <http://crossbar.io>`__
 | **Community**: `Mailing list <http://groups.google.com/group/autobahnws>`__ - `StackOverflow <http://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
-|
-| |Master Branch| |Build Status| |Coverage|
 
 Introduction
 ------------
