@@ -100,12 +100,12 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def connectionLost(self, reason):
         if isinstance(reason.value, ConnectionDone):
-            self.factory.log.debug("Connection to/from {peer} was closed cleanly",
-                                   peer=self.peer)
+            self.factory.log.debug(
+                "Connection to/from {peer} was closed cleanly".format(peer=self.peer))
 
         elif isinstance(reason.value, ConnectionAborted):
-            self.factory.log.debug("Connection to/from {peer} was aborted locally",
-                                   peer=self.peer)
+            self.factory.log.debug(
+                "Connection to/from {peer} was aborted locally".format(peer=self.peer))
 
         elif isinstance(reason.value, ConnectionLost):
             # The following is ridiculous, but the treatment of reason.value.args
@@ -118,16 +118,21 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
                 message = None
 
             if message:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
-                                       peer=self.peer, message=message)
+                self.factory.log.debug(
+                    "Connection to/from {peer} was lost in a non-clean "
+                    "fashion: {message}".format(peer=self.peer,
+                                                message=message))
             else:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
-                                       peer=self.peer)
+                self.factory.log.debug(
+                    "Connection to/from {peer} was lost in a non-clean "
+                    "fashion".format(peer=self.peer))
 
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
-            self.factory.log.info("Connection to/from {peer} lost ({error_type}): {error})",
-                                  peer=self.peer, error_type=type(reason.value), error=reason.value)
+            self.factory.log.info(
+                "Connection to/from {peer} lost ({error_type}): {error})".format(
+                    peer=self.peer, error_type=type(reason.value),
+                    error=reason.value))
 
         self._connectionLost(reason)
 
