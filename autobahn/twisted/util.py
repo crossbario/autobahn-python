@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 from twisted.internet.defer import Deferred
 from twisted.internet.address import IPv4Address, UNIXAddress
-from twisted.internet._posixstdio import PipeAddress
+from twisted.internet.stdio import PipeAddress
 
 try:
     from twisted.internet.address import IPv6Address
