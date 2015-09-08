@@ -35,6 +35,9 @@ publish: clean
 	python setup.py register
 	python setup.py sdist upload
 
+test_styleguide:
+	flake8 --statistics --max-line-length=119 -qq autobahn
+
 # direct test via pytest (only here because of setuptools test integration)
 test_pytest:
 	python -m pytest -rsx .
@@ -104,7 +107,7 @@ autopep8:
 
 # This will run pep8, pyflakes and can skip lines that end with # noqa
 flake8:
-	flake8 --ignore=E501 autobahn
+	flake8 --ignore=E501,N801,N802,N803,N805,N806 autobahn
 
 # run PyLint
 pylint:
