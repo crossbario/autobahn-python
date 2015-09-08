@@ -8,6 +8,37 @@ AutobahnPython supports both Python 2 and Python 3.
 
 * http://python-future.org/compatible_idioms.html
 
+## Coding Style
+
+Please follow these coding standards when writing code for inclusion in AutobahnPython.
+
+> The rules and text here follows [Django](https://docs.djangoproject.com/en/1.8/internals/contributing/writing-code/coding-style/).
+
+1. Unless otherwise specified, follow [PEP 8](https://www.python.org/dev/peps/pep-0008).
+2. Use 4 spaces for indents, CamelCase for classes, and snake_case for variables, functions and members.
+3. Remember that PEP 8 is only a guide, so respect the style of the surrounding code as a primary goal.
+4. An exception to PEP 8 is our rules on line lengths. Don’t limit lines of code to 79 characters if it means the code looks significantly uglier or is harder to read. We allow up to 119 characters as this is the width of GitHub code review; anything longer requires horizontal scrolling which makes review more difficult. This check is included when you run flake8. Documentation, comments, and docstrings should be wrapped at 79 characters, even though PEP 8 suggests 72.
+5. Using hanging indents, with each argument strictly on a separate line (see also [here](http://stackoverflow.com/questions/15435811/what-is-pep8s-e128-continuation-line-under-indented-for-visual-indent/15435837#15435837) for an explanation why this is PEP8 compliant):
+
+```python
+raise ApplicationError(
+    u"crossbar.error.class_import_failed",
+    u"Session not derived of ApplicationSession"
+)
+```
+
+**Code must be checked for adherence to above rules using [flake8](https://flake8.readthedocs.org/en/2.4.1/).**
+
+Currently, code is checked using
+
+    flake8 --ignore=E501 autobahn
+
+but this will be
+
+    flake8 --max-line-length=119 autobahn
+
+upcoming.
+
 ## Release Process
 
 1. Travis is fully green
