@@ -30,11 +30,15 @@ import unittest2 as unittest
 import platform
 
 import re
+import six
 import json
 import binascii
 import hashlib
 
-from autobahn.wamp import auth
+from autobahn.wamp import auth, types
+from autobahn.wamp.protocol import ApplicationSession
+
+from mock import Mock
 
 # these test vectors are all for HMAC-SHA1
 PBKDF2_TEST_VECTORS = [
@@ -126,3 +130,152 @@ class TestWampAuthHelpers(unittest.TestCase):
         signature = auth.compute_wcs(secret.encode('utf8'), challenge)
         self.assertEqual(type(signature), bytes)
         self.assertEqual(signature, b"1njQtmmeYO41N5EWEzD2kAjjEKRZ5kPZt/TzpYXOzR0=")
+
+
+class TestAuthOnChallenge(unittest.TestCase):
+    """
+    Tests for the default onChallenge implementation
+    """
+
+    def setUp(self):
+        self.secret = b'cr0ssb4r'
+        self.salt = u'salt123'
+        self.config = dict(
+            iterations=100,
+            keylen=32,
+        )
+        self.salted_key = auth.derive_key(
+            self.secret, self.salt.encode('utf8'), **self.config
+        )
+        # added after the derive_key so we can do ** trick above
+        self.config['salt'] = self.salt
+
+        # configure a session with the appropriate secret
+        extra = {
+            'wamp_cra': {
+                'user': 'test_user',
+                'secret': self.secret,
+            }
+        }
+        self.session = ApplicationSession(
+            types.ComponentConfig(realm=u"testing", extra=extra)
+        )
+
+    def test_success_onchallenge(self):
+        extra = {
+            "challenge": b"sign me",
+        }
+        extra.update(self.config)
+        challenge = types.Challenge(u'wampcra', extra=extra)
+        gold_signature = auth.compute_wcs(self.salted_key, b"sign me").decode('ascii')
+
+        # pretend WAMP gave us a challenge to compute
+        signature = self.session.onChallenge(challenge)
+
+        self.assertTrue(isinstance(gold_signature, six.text_type))
+        self.assertTrue(isinstance(signature, six.text_type))
+        self.assertEqual(gold_signature, signature, "Signatures should match")
+
+    def test_success_onconnect(self):
+        self.session.join = Mock()
+
+        self.session.onConnect()
+
+        # we should have called through to join with
+        # authmethods=['wampcra'] and an authid
+        self.assertTrue(self.session.join.called, "we should have called .join()")
+        args = self.session.join.call_args[0]
+        kwargs = self.session.join.call_args[1]
+        self.assertEqual(args, (self.session.config.realm,))
+        self.assertTrue('authmethods' in kwargs)
+        self.assertTrue('authid' in kwargs)
+        self.assertTrue(u'wampcra' in kwargs['authmethods'])
+        self.assertEqual('test_user', kwargs['authid'])
+
+    def test_missing_secret(self):
+        extra = {
+            "challenge": b"sign me",
+        }
+        extra.update(self.config)
+        challenge = types.Challenge(u'wampcra', extra=extra)
+        # pretend user forgot the 'secret' key
+        del self.session.config.extra['wamp_cra']['secret']
+
+        self.assertRaises(Exception, self.session.onChallenge, challenge)
+
+    def test_missing_user(self):
+        # pretend user forgot the 'user' key
+        del self.session.config.extra['wamp_cra']['user']
+
+        # 'user' is only used in onConnect
+        self.assertRaises(Exception, self.session.onConnect)
+
+    def test_extra_not_a_dict(self):
+        """
+        if '.config.extra' is not a dict, we should not-fail
+        """
+        self.session.config.extra = object()
+        self.session.join = Mock()
+
+        self.session.onConnect()
+        self.assertRaises(Exception, self.session.onChallenge, None)
+
+        self.assertTrue(self.session.join.called, "we should have called .join()")
+        self.assertEqual(None, self.session.join.call_args[1]['authid'])
+
+    def test_no_wampcra_in_extra(self):
+        self.session.config.extra = dict()  # no 'wamp_cra' key
+        self.assertRaises(Exception, self.session.onChallenge, None)
+
+    def test_wampcra_not_a_dict(self):
+        self.session.config.extra = dict(wamp_cra=object())
+        self.assertRaises(Exception, self.session.onChallenge, None)
+
+    def test_wrong_iterations(self):
+        extra = {
+            "challenge": b"sign me",
+            "salt": self.salt,
+            "iterations": 42,
+            "keylen": 32,
+        }
+        challenge = types.Challenge(u'wampcra', extra=extra)
+        gold_signature = auth.compute_wcs(self.salted_key, b"sign me").decode('ascii')
+
+        # pretend WAMP gave us a challenge to compute
+        signature = self.session.onChallenge(challenge)
+
+        self.assertTrue(isinstance(gold_signature, six.text_type))
+        self.assertTrue(isinstance(signature, six.text_type))
+        self.assertNotEqual(gold_signature, signature, "Signatures should NOT match")
+
+    def test_wrong_keylen(self):
+        extra = {
+            "challenge": b"sign me",
+            "salt": self.salt,
+            "iterations": 100,
+            "keylen": 8,
+        }
+        challenge = types.Challenge(u'wampcra', extra=extra)
+        gold_signature = auth.compute_wcs(self.salted_key, b"sign me").decode('ascii')
+
+        # pretend WAMP gave us a challenge to compute
+        signature = self.session.onChallenge(challenge)
+
+        self.assertTrue(isinstance(gold_signature, six.text_type))
+        self.assertTrue(isinstance(signature, six.text_type))
+        self.assertNotEqual(gold_signature, signature, "Signatures should NOT match")
+
+    def test_unsalted_challenge(self):
+        extra = {
+            "challenge": b"sign me",
+        }
+        challenge = types.Challenge(u'wampcra', extra=extra)
+        # using the secret directly, not .salted_key
+        gold_signature = auth.compute_wcs(self.secret, b"sign me").decode('ascii')
+
+        # pretend WAMP gave us a challenge to compute
+        signature = self.session.onChallenge(challenge)
+
+        self.assertTrue(isinstance(gold_signature, six.text_type))
+        self.assertTrue(isinstance(signature, six.text_type))
+        self.assertEqual(gold_signature, signature, "Signatures should match")
