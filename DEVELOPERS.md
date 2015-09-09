@@ -31,14 +31,14 @@ raise ApplicationError(
 
 Code must be checked for PEP8 compliance using [flake8](https://flake8.readthedocs.org/en/2.4.1/) with [pyflakes](https://pypi.python.org/pypi/pyflakes) and [pep8-naming](http://pypi.python.org/pypi/pep8-naming) plugins installed:
 
-    flake8 --max-line-length=119 autobahn
+    flake8 autobahn
 
 There is no automatic checker for rule 4, hence reviewers of PRs should manually inspect code for compliance.
 
 Note that AutobahnPython currently does not fully comply to above rules:
 
 ```console
-(python279_1)oberstet@thinkpad-t430s:~/scm/autobahn/AutobahnPython$ flake8 --statistics --max-line-length=119 -qq autobahn
+(python279_1)oberstet@thinkpad-t430s:~/scm/autobahn/AutobahnPython$ flake8 --statistics -qq autobahn
 388     E501 line too long (131 > 119 characters)
 4       N801 class names should use CapWords convention
 296     N802 function name should be lowercase
