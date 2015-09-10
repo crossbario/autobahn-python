@@ -93,9 +93,12 @@ else:
 #
 extras_require_accelerate = ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else []
 
-# non-standard WebSocket compression support
+# non-standard WebSocket compression support (FIXME: consider removing altogether)
 #
-extras_require_compress = ["python-snappy>=0.5", "lz4>=0.2.1"]
+extras_require_compress = [
+    "python-snappy>=0.5",   # Ubuntu: sudo apt-get install libsnappy-dev
+    "lz4>=0.2.1"            # no we need that anyway?
+]
 
 # non-JSON WAMP serialization support (namely MsgPack)
 #
