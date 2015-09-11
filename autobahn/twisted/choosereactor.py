@@ -34,7 +34,7 @@ from autobahn._logger import make_logger
 
 def install_optimal_reactor(verbose=False):
     """
-    Try to install the optimal Twisted reactor for platform.
+    Try to install the optimal Twisted reactor for this platform.
 
     :param verbose: If ``True``, print what happens.
     :type verbose: bool
@@ -147,8 +147,7 @@ def install_reactor(explicit_reactor=None, verbose=False):
     else:
         # automatically choose optimal reactor
         ##
-        if verbose:
-            print("Automatically choosing optimal Twisted reactor")
+        log.debug("Automatically choosing optimal Twisted reactor")
         install_optimal_reactor(verbose)
 
     # now the reactor is installed, import it
@@ -157,6 +156,6 @@ def install_reactor(explicit_reactor=None, verbose=False):
 
     if verbose:
         from twisted.python.reflect import qual
-        print("Running Twisted reactor %s" % qual(reactor.__class__))
+        log.debug("Running Twisted reactor {reactor}", reactor=qual(reactor.__class__))
 
     return reactor
