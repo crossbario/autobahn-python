@@ -64,6 +64,7 @@ The **Public User API** is what (third party) application developers should rely
 * has docstring including the tag `@public`
 * has docs generated and published
 * follow the PEP8 naming convention (stuff does not start with a `_`)
+* is versioned using semver
 
 The **Private Library API** is for library internal use, crossing files, classes and such. Application developers should not use this API, and we make no guarantees whatsoever. Any minor version bump might change anything here. We might rip out anything here or add stuff. This API may be used from our companion projects (Autobahn <-> Crossbar). The reason **we** are allowed to use that API is simple: we know what we are doing, and we are able to coordinate across projects and can rectify issues that arise. This **Private Library API** does NOT mark things with a starting `_`.
 
