@@ -360,22 +360,22 @@ class Tracker(object):
         """
         self._timings[key] = rtime()
 
-    def diff(self, startKey, endKey, formatted=True):
+    def diff(self, start_key, end_key, formatted=True):
         """
         Get elapsed difference between two previously tracked keys.
 
-        :param startKey: First key for interval (older timestamp).
-        :type startKey: str
-        :param endKey: Second key for interval (younger timestamp).
-        :type endKey: str
+        :param start_key: First key for interval (older timestamp).
+        :type start_key: str
+        :param end_key: Second key for interval (younger timestamp).
+        :type end_key: str
         :param formatted: If ``True``, format computed time period and return string.
         :type formatted: bool
 
         :returns: Computed time period in seconds (or formatted string).
         :rtype: float or str
         """
-        if endKey in self._timings and startKey in self._timings:
-            d = self._timings[endKey] - self._timings[startKey]
+        if end_key in self._timings and start_key in self._timings:
+            d = self._timings[end_key] - self._timings[start_key]
             if formatted:
                 if d < 0.00001:  # 10us
                     s = "%d ns" % round(d * 1000000000.)

@@ -30,7 +30,7 @@ import re
 import sys
 import platform
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
+from setuptools.command.test import test as test_command
 
 # remember if we already had six _before_ installation
 try:
@@ -129,10 +129,10 @@ test_requirements = ["pytest", "mock>=1.0.1"]
 # pytest integration for setuptools. see:
 # http://pytest.org/latest/goodpractises.html#integration-with-setuptools-test-commands
 # https://github.com/pyca/cryptography/pull/678/files
-class PyTest(TestCommand):
+class PyTest(test_command):
 
     def finalize_options(self):
-        TestCommand.finalize_options(self)
+        test_command.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 

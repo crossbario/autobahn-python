@@ -64,8 +64,9 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
     session = ApplicationSession
     """
-   The application session class this application session factory will use. Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
-   """
+    The application session class this application session factory will use.
+    Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
+    """
 
 
 class ApplicationRunner(object):
