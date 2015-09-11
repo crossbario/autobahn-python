@@ -41,7 +41,7 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
-from autobahn.logger import make_logger
+from autobahn._logger import make_logger
 
 
 __all__ = (
