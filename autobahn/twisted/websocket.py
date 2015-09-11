@@ -41,7 +41,7 @@ from autobahn.websocket import protocol
 from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
 
-from autobahn._logger import make_logger
+from autobahn._logging import make_logger
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
