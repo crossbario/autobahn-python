@@ -65,9 +65,9 @@ def install_optimal_reactor(verbose=False):
             try:
                 from twisted.internet import kqreactor
                 kqreactor.install()
-            except Exception as e:
-                log.warn(("WARNING: Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor\n"
-                         "{log_failure.getTraceback()}"))
+            except Exception:
+                log.failure(("Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor\n"
+                             "{log_failure.getTraceback()}"))
             else:
                 log.debug("Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.")
         else:
@@ -81,8 +81,9 @@ def install_optimal_reactor(verbose=False):
             try:
                 from twisted.internet.iocpreactor import reactor as iocpreactor
                 iocpreactor.install()
-            except Exception as e:
-                log.warn("WARNING: Running on Windows, but cannot install IOCP Twisted reactor ({0}).".format(e))
+            except Exception:
+                log.failure(("Running on Windows, but cannot install IOCP Twisted reactor\n"
+                             "{log_failure.getTraceback()"))
             else:
                 log.debug("Running on Windows and optimal reactor (ICOP) was installed.")
         else:
@@ -96,8 +97,9 @@ def install_optimal_reactor(verbose=False):
             try:
                 from twisted.internet import epollreactor
                 epollreactor.install()
-            except Exception as e:
-                log.warn("WARNING: Running on Linux, but cannot install Epoll Twisted reactor ({0}).".format(e))
+            except Exception:
+                log.failure(("Running on Linux, but cannot install Epoll Twisted reactor",
+                             "{log_failure.getTraceback()"))
             else:
                 log.debug("Running on Linux and optimal reactor (epoll) was installed.")
         else:
@@ -107,8 +109,9 @@ def install_optimal_reactor(verbose=False):
         try:
             from twisted.internet import default as defaultreactor
             defaultreactor.install()
-        except Exception as e:
-            log.warn("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
+        except Exception:
+            log.failure(("Could not install default Twisted reactor for this platform"
+                         "{log_failure.getTraceback()"))
 
     from twisted.internet import reactor
     txaio.config.loop = reactor
