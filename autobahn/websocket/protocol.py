@@ -810,7 +810,9 @@ class WebSocketProtocol(object):
 
         # closing reason
         #
-        if reasonRaw is not None:
+        if reasonRaw is None:
+            self.remoteCloseReason = None
+        else:
             # we use our own UTF-8 validator to get consistent and fully conformant
             # UTF-8 validation behavior
             u = Utf8Validator()
@@ -860,7 +862,7 @@ class WebSocketProtocol(object):
             else:
                 # Either reply with same code/reason, or code == NORMAL/reason=None
                 if self.echoCloseCodeReason:
-                    self.sendCloseFrame(code=code, reasonUtf8=reasonRaw.encode("UTF-8"), isReply=True)
+                    self.sendCloseFrame(code=code, reasonUtf8=self.remoteCloseReason, isReply=True)
                 else:
                     self.sendCloseFrame(code=WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply=True)
 

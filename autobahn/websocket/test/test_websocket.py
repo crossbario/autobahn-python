@@ -94,10 +94,22 @@ if os.environ.get('USE_TWISTED', False):
             self.proto.connectionMade()
 
         def tearDown(self):
+            if self.proto.openHandshakeTimeoutCall:
+                self.proto.openHandshakeTimeoutCall.cancel()
             self.factory.doStop()
             # not really necessary, but ...
             del self.factory
             del self.proto
+
+        def test_missing_reason_raw(self):
+            # we want to hit the "STATE_OPEN" case, so pretend we're there
+            self.proto.echoCloseCodeReason = True
+            self.proto.state = self.proto.STATE_OPEN
+            self.proto.websocket_version = 1
+
+            self.proto.sendCloseFrame = MagicMock()
+
+            self.proto.onCloseFrame(1000, None)
 
         def test_unclean_timeout_client(self):
             """
