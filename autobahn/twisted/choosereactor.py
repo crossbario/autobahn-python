@@ -29,6 +29,8 @@ __all__ = (
     'install_reactor'
 )
 
+from autobahn._logger import make_logger
+
 
 def install_optimal_reactor(verbose=False):
     """
@@ -37,6 +39,8 @@ def install_optimal_reactor(verbose=False):
     :param verbose: If ``True``, print what happens.
     :type verbose: bool
     """
+    log = make_logger("twisted")
+
     import sys
     from twisted.python import reflect
     import txaio
@@ -65,13 +69,12 @@ def install_optimal_reactor(verbose=False):
                 from twisted.internet import kqreactor
                 kqreactor.install()
             except Exception as e:
-                print("WARNING: Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor ({0}).".format(e))
+                log.warn(("WARNING: Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor\n"
+                         "{log_failure.getTraceback()}"))
             else:
-                if verbose:
-                    print("Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.")
+                log.debug("Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.")
         else:
-            if verbose:
-                print("Running on *BSD or MacOSX and optimal reactor (kqueue) already installed.")
+            log.debug("Running on *BSD or MacOSX and optimal reactor (kqueue) already installed.")
 
     elif sys.platform in ['win32']:
 
@@ -82,13 +85,11 @@ def install_optimal_reactor(verbose=False):
                 from twisted.internet.iocpreactor import reactor as iocpreactor
                 iocpreactor.install()
             except Exception as e:
-                print("WARNING: Running on Windows, but cannot install IOCP Twisted reactor ({0}).".format(e))
+                log.warn("WARNING: Running on Windows, but cannot install IOCP Twisted reactor ({0}).".format(e))
             else:
-                if verbose:
-                    print("Running on Windows and optimal reactor (ICOP) was installed.")
+                log.debug("Running on Windows and optimal reactor (ICOP) was installed.")
         else:
-            if verbose:
-                print("Running on Windows and optimal reactor (ICOP) already installed.")
+            log.debug("Running on Windows and optimal reactor (ICOP) already installed.")
 
     elif sys.platform.startswith('linux'):
 
@@ -99,31 +100,30 @@ def install_optimal_reactor(verbose=False):
                 from twisted.internet import epollreactor
                 epollreactor.install()
             except Exception as e:
-                print("WARNING: Running on Linux, but cannot install Epoll Twisted reactor ({0}).".format(e))
+                log.warn("WARNING: Running on Linux, but cannot install Epoll Twisted reactor ({0}).".format(e))
             else:
-                if verbose:
-                    print("Running on Linux and optimal reactor (epoll) was installed.")
+                log.debug("Running on Linux and optimal reactor (epoll) was installed.")
         else:
-            if verbose:
-                print("Running on Linux and optimal reactor (epoll) already installed.")
+            log.debug("Running on Linux and optimal reactor (epoll) already installed.")
 
     else:
         try:
             from twisted.internet import default as defaultreactor
             defaultreactor.install()
         except Exception as e:
-            print("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
+            log.warn("WARNING: Could not install default Twisted reactor for this platform ({0}).".format(e))
 
     from twisted.internet import reactor
     txaio.config.loop = reactor
 
 
-def install_reactor(explicitReactor=None, verbose=False):
+def install_reactor(explicit_reactor=None, verbose=False):
     """
     Install Twisted reactor.
 
-    :param explicitReactor: If provided, install this reactor. Else, install optimal reactor.
-    :type explicitReactor: obj
+    :param explicit_reactor: If provided, install this reactor. Else, install
+        the optimal reactor.
+    :type explicit_reactor: obj
     :param verbose: If ``True``, print what happens.
     :type verbose: bool
     """
@@ -131,15 +131,18 @@ def install_reactor(explicitReactor=None, verbose=False):
     import txaio
     txaio.use_twisted()  # just to be sure...
 
-    if explicitReactor:
+    log = make_logger("twisted")
+
+    if explicit_reactor:
         # install explicitly given reactor
         ##
         from twisted.application.reactors import installReactor
-        print("Trying to install explicitly specified Twisted reactor '%s'" % explicitReactor)
+        log.info("Trying to install explicitly specified Twisted reactor '{reactor}'", reactor=explicit_reactor)
         try:
-            installReactor(explicitReactor)
-        except Exception as e:
-            print("Could not install Twisted reactor %s%s" % (explicitReactor, ' ["%s"]' % e if verbose else ''))
+            installReactor(explicit_reactor)
+        except Exception:
+            log.failure("Could not install Twisted reactor {reactor}\n{log_failure.getTraceback()}",
+                        reactor=explicit_reactor)
             sys.exit(1)
     else:
         # automatically choose optimal reactor
