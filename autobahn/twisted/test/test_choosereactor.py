@@ -76,7 +76,7 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("default", reactor_mock)
             self.patch(sys, "platform", "unknown")
 
-            # Emulate that a reactor reactor has not been installed
+            # Emulate that a reactor has not been installed
             self.patch_modules()
 
             choosereactor.install_optimal_reactor()
@@ -91,7 +91,7 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("kqreactor", reactor_mock)
             self.patch(sys, "platform", "darwin")
 
-            # Emulate that a reactor reactor has not been installed
+            # Emulate that a reactor has not been installed
             self.patch_modules()
 
             choosereactor.install_optimal_reactor()
@@ -105,7 +105,7 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("epollreactor", reactor_mock)
             self.patch(sys, "platform", "linux")
 
-            # Emulate that a reactor reactor has not been installed
+            # Emulate that a reactor has not been installed
             self.patch_modules()
 
             choosereactor.install_optimal_reactor()
