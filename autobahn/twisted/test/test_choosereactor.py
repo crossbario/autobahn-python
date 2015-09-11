@@ -40,13 +40,32 @@ if os.environ.get('USE_TWISTED', False):
     class ChooseReactorTests(TestCase):
 
         def patch_reactor(self, name, new_reactor):
-
+            """
+            Patch ``name`` so that Twisted will grab a fake reactor instead of
+            a real one.
+            """
             if hasattr(twisted.internet, name):
                 self.patch(twisted.internet, name, new_reactor)
             else:
                 def _cleanup():
                     delattr(twisted.internet, name)
                 setattr(twisted.internet, name, new_reactor)
+
+        def patch_modules(self):
+            """
+            Patch ``sys.modules`` so that Twisted believes there is no
+            installed reactor.
+            """
+            old_modules = dict(sys.modules)
+
+            new_modules = dict(sys.modules)
+            del new_modules["twisted.internet.reactor"]
+
+            def _cleanup():
+                sys.modules = old_modules
+
+            self.addCleanup(_cleanup)
+            sys.modules = new_modules
 
         def test_unknown(self):
             """
@@ -62,7 +81,7 @@ if os.environ.get('USE_TWISTED', False):
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
-            self.patch(sys, "modules", [])
+            self.patch_modules()
 
             choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
@@ -81,7 +100,7 @@ if os.environ.get('USE_TWISTED', False):
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
-            self.patch(sys, "modules", [])
+            self.patch_modules()
 
             choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
@@ -94,15 +113,12 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("epollreactor", reactor_mock)
             self.patch(sys, "platform", "linux")
 
-            # Emulate that no reactor has been installed
-            self.patch(sys, "modules", [])
-
             choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
-            self.patch(sys, "modules", [])
+            self.patch_modules()
 
             choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
