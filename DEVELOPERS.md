@@ -49,6 +49,27 @@ Note that AutobahnPython currently does not fully comply to above rules:
 
 It also does not comply fully to rule 4. This will get addressed in the next major release (0.11).
 
+
+### API Stability Level
+
+We distinbuish three levels of API in AutobahnPython:
+
+1. public user API
+2. private library API
+3. private non-API
+
+The **Public User API** is what (third party) application developers should rely on *exclusively*. It is the only API we make any kind of stability guarantees. The **Public User API** is
+
+* defined via ABC interfaces (when that makes sense)
+* has docstring including the tag `@public`
+* has docs generated and published
+* follow the PEP8 naming convention (stuff does not start with a `_`)
+
+The **Private Library API** is for library internal use, crossing files, classes and such. Application developers should not use this API, and we make no guarantees whatsoever. Any minor version bump might change anything here. We might rip out anything here or add stuff. This API may be used from our companion projects (Autobahn <-> Crossbar). The reason **we** are allowed to use that API is simple: we know what we are doing, and we are able to coordinate across projects and can rectify issues that arise. This **Private Library API** does NOT mark things with a starting `_`.
+
+The **Private non-API** isn't an API at all: like class members which may only be used within that class, or functions which may only be used in the same module where the function is defined.
+
+
 ## Release Process
 
 1. Travis is fully green
