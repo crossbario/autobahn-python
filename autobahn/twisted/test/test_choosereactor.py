@@ -30,19 +30,14 @@ import os
 import sys
 
 if os.environ.get('USE_TWISTED', False):
-    # t.i.reactor doesn't exist until we've imported it once, but we
-    # need it to exist so we can @patch it out in the tests ...
     import twisted.internet
-    from twisted.internet.selectreactor import SelectReactor
-
     from twisted.trial.unittest import TestCase
 
-    from mock import patch, Mock
+    from mock import Mock
 
     from autobahn.twisted import choosereactor
 
     class ChooseReactorTests(TestCase):
-
 
         def patch_reactor(self, name, new_reactor):
 
@@ -53,7 +48,6 @@ if os.environ.get('USE_TWISTED', False):
                     delattr(twisted.internet, name)
                 setattr(twisted.internet, name, new_reactor)
 
-
         def test_unknown(self):
             """
             ``install_optimal_reactor`` will use the default reactor if it is
@@ -63,14 +57,14 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("default", reactor_mock)
             self.patch(sys, "platform", "unknown")
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
             self.patch(sys, "modules", [])
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
 
         def test_mac(self):
@@ -82,14 +76,14 @@ if os.environ.get('USE_TWISTED', False):
             self.patch_reactor("kqreactor", reactor_mock)
             self.patch(sys, "platform", "darwin")
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
             self.patch(sys, "modules", [])
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
 
         def test_linux(self):
@@ -103,12 +97,12 @@ if os.environ.get('USE_TWISTED', False):
             # Emulate that no reactor has been installed
             self.patch(sys, "modules", [])
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
             reactor_mock.reset_mock()
 
             # Emulate that a reactor reactor has not been installed
             self.patch(sys, "modules", [])
 
-            r = choosereactor.install_optimal_reactor()
+            choosereactor.install_optimal_reactor()
             reactor_mock.install.assert_called_once_with()
