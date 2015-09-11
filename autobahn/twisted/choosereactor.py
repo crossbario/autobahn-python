@@ -29,7 +29,7 @@ __all__ = (
     'install_reactor'
 )
 
-from autobahn._logger import make_logger
+from autobahn._logging import make_logger
 
 
 def install_optimal_reactor(verbose=False):
