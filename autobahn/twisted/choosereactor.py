@@ -63,9 +63,6 @@ def install_optimal_reactor(verbose=False):
         ##
         if current_reactor != 'KQueueReactor':
             try:
-                v = sys.version_info
-                if v[0] == 1 or (v[0] == 2 and v[1] < 6) or (v[0] == 2 and v[1] == 6 and v[2] < 5):
-                    raise Exception("Python version too old ({0}) to use kqueue reactor".format(sys.version))
                 from twisted.internet import kqreactor
                 kqreactor.install()
             except Exception as e:
