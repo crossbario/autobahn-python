@@ -24,12 +24,14 @@
 #
 ###############################################################################
 
+from __future__ import absolute_import
+
+from autobahn._logging import make_logger
+
 __all__ = (
     'install_optimal_reactor',
     'install_reactor'
 )
-
-from autobahn._logging import make_logger
 
 
 def install_optimal_reactor(verbose=False):

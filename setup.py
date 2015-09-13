@@ -71,38 +71,60 @@ packages = [
     'twisted.plugins'
 ]
 
-# Twisted dependencies
+# Twisted dependencies (be careful bumping these minimal versions,
+# as we make claims to support older Twisted!)
 #
-extras_require_twisted = ["zope.interface>=3.6", "Twisted>=12.1"]
+extras_require_twisted = [
+    "zope.interface>=3.6",  # Zope Public License
+    "Twisted>=12.1"         # MIT license
+]
 
 # asyncio dependencies
 #
 if PY3:
     if PY33:
         # "Tulip"
-        extras_require_asyncio = ["asyncio>=0.2.1"]
+        extras_require_asyncio = [
+            "asyncio>=3.4.3"        # Apache 2.0
+        ]
     else:
         # Python 3.4+ has asyncio builtin
         extras_require_asyncio = []
 else:
-    # backport of asyncio
-    extras_require_asyncio = ["trollius>=1.0.4", "futures>=3.0.3"]
+    # backport of asyncio for Python 2
+    extras_require_asyncio = [
+        "trollius>=2.0",            # Apache 2.0
+        "futures>=3.0.3"            # BSD license
+    ]
 
 
 # C-based WebSocket acceleration
 #
-extras_require_accelerate = ["wsaccel>=0.6.2", "ujson>=1.33"] if CPY else []
+if CPY:
+    extras_require_accelerate = [
+        "wsaccel>=0.6.2"            # Apache 2.0
+    ]
+
+    # ujson is broken on Windows (https://github.com/esnme/ultrajson/issues/184)
+    if sys.platform != 'win32':
+        extras_require_accelerate.append("ujson>=1.33")     # BSD license
+else:
+    extras_require_accelerate = []
+
 
 # non-standard WebSocket compression support (FIXME: consider removing altogether)
-#
+# Ubuntu: sudo apt-get install libsnappy-dev
+# lz4: do we need that anyway?
 extras_require_compress = [
-    "python-snappy>=0.5",   # Ubuntu: sudo apt-get install libsnappy-dev
-    "lz4>=0.2.1"            # no we need that anyway?
+    "python-snappy>=0.5",       # BSD license
+    "lz4>=0.7.0"                # BSD license
 ]
 
 # non-JSON WAMP serialization support (namely MsgPack)
 #
-extras_require_serialization = ["msgpack-python>=0.4.0"]
+extras_require_serialization = [
+    "msgpack-python>=0.4.6"     # Apache 2.0 license
+]
 
 # everything
 #
@@ -112,18 +134,21 @@ extras_require_all = extras_require_twisted + extras_require_asyncio + \
 # development dependencies
 #
 extras_require_dev = [
-    "pep8",
-    "flake8",
-    "pep8-naming",
-    "pyflakes",
-    "mock>=1.0.1",
-    "pytest>=2.6.4",
-    "unittest2>=1.1.0"
+    "pep8>=1.6.2",          # MIT license
+    "pep8-naming>=0.3.3",   # MIT license
+    "flake8>=2.4.1",        # MIT license
+    "pyflakes>=0.9.2",      # MIT license
+    "mock>=1.3.0",          # BSD license
+    "pytest>=2.7.2",        # MIT license
+    "unittest2>=1.1.0"      # BSD license
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 #
-test_requirements = ["pytest", "mock>=1.0.1"]
+test_requirements = [
+    "pytest>=2.7.2",        # MIT license
+    "mock>=1.3.0"           # BSD license
+]
 
 
 # pytest integration for setuptools. see:
@@ -156,8 +181,8 @@ setup(
     url='http://autobahn.ws/python',
     platforms='Any',
     install_requires=[
-        'six>=1.6.1',
-        'txaio>=1.0.3'
+        'six>=1.9.0',       # MIT license
+        'txaio>=1.1.0'      # MIT license
     ],
     extras_require={
         'all': extras_require_all,
