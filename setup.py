@@ -50,7 +50,7 @@ LONGSDESC = open('README.rst').read()
 #
 VERSIONFILE = "autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
 if mo:
     verstr = mo.group(1)
