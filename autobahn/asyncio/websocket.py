@@ -42,8 +42,8 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
-from autobahn._logging import make_logger
 from autobahn.websocket.types import ConnectionDeny
+from txaio import make_logger
 
 
 __all__ = (

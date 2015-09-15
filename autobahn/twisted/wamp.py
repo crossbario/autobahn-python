@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import sys
 import inspect
 
 import six
@@ -169,9 +168,7 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        # start logging to console
-        if self.debug or self.debug_wamp or self.debug_app:
-            log.startLogging(sys.stdout)
+        txaio.start_logging()
 
         # factory for use ApplicationSession
         def create():

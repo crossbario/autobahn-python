@@ -42,7 +42,7 @@ from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str
 
-from autobahn._logging import make_logger
+from txaio import make_logger
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -223,7 +223,7 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
-    log = make_logger("twisted")
+    log = make_logger()
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
