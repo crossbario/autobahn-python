@@ -178,8 +178,6 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         """
         Register a Twisted producer with this protocol.
 
-        Modes: Hybi, Hixie
-
         :param producer: A Twisted push or pull producer.
         :type producer: object
         :param streaming: Producer type.
