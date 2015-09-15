@@ -2392,11 +2392,11 @@ class PreparedMessage(object):
 
         # first byte
         #
-        b0 = ((1 << 7) | 2) if binary else ((1 << 7) | 1)
+        b0 = ((1 << 7) | 2) if isBinary else ((1 << 7) | 1)
 
         # second byte, payload len bytes and mask
         #
-        if masked:
+        if applyMask:
             b1 = 1 << 7
             mask = struct.pack("!I", random.getrandbits(32))
             if l == 0:
@@ -2919,7 +2919,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
         if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
-
 
         # compute Sec-WebSocket-Accept
         #
