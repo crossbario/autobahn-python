@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+from __future__ import absolute_import
+
 from collections import deque
 
 from autobahn.wamp import websocket
@@ -51,7 +53,6 @@ __all__ = (
     'WebSocketAdapterFactory',
     'WebSocketServerFactory',
     'WebSocketClientFactory',
-
     'WampWebSocketServerProtocol',
     'WampWebSocketClientProtocol',
     'WampWebSocketServerFactory',

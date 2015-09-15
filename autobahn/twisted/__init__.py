@@ -23,3 +23,41 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
+
+from __future__ import absolute_import
+
+# WebSocket protocol support
+from autobahn.twisted.websocket import \
+    WebSocketServerProtocol, \
+    WebSocketClientProtocol, \
+    WebSocketServerFactory, \
+    WebSocketClientFactory
+
+# Twisted Web support
+from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
+
+# Twisted specific utilities (these should really be in Twisted, but
+# they aren't, and we use these in example code, so it must be part of
+# the public API)
+from autobahn.twisted.util import sleep
+from autobahn.twisted.choosereactor import install_reactor
+
+
+__all__ = (
+    # WebSocket
+    'WebSocketServerProtocol',
+    'WebSocketClientProtocol',
+    'WebSocketServerFactory',
+    'WebSocketClientFactory',
+
+    # Twisted Web
+    'WebSocketResource',
+
+    # this should really be in Twisted
+    'WSGIRootResource',
+
+    # this should really be in Twisted
+    'sleep',
+    'install_reactor'
+)

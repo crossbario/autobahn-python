@@ -24,6 +24,9 @@
 #
 ###############################################################################
 
+
+from __future__ import absolute_import
+
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
@@ -36,7 +39,7 @@ except ImportError:
 from twisted.web.resource import IResource, Resource
 from six import PY3
 
-# The following imports reactor at module level
+# The following triggers an import of reactor at module level!
 #
 from twisted.web.server import NOT_DONE_YET
 

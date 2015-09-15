@@ -48,7 +48,7 @@ __all = (
 
 def sleep(delay, reactor=None):
     """
-    Inline sleep for use in coroutines (Twisted ``inlineCallback`` decorated functions).
+    Inline sleep for use in co-routines (Twisted ``inlineCallback`` decorated functions).
 
     .. seealso::
        * `twisted.internet.defer.inlineCallbacks <http://twistedmatrix.com/documents/current/api/twisted.internet.defer.html#inlineCallbacks>`__
@@ -68,18 +68,21 @@ def sleep(delay, reactor=None):
 
 def peer2str(addr):
     """
-    Convert a Twisted address, as returned from ``self.transport.getPeer()`` to a string
+    Convert a Twisted address as returned from ``self.transport.getPeer()`` to a string.
+
+    :returns: Returns a string representation of the peer on a Twisted transport.
+    :rtype: unicode
     """
     if isinstance(addr, IPv4Address):
-        res = "tcp4:{0}:{1}".format(addr.host, addr.port)
+        res = u"tcp4:{0}:{1}".format(addr.host, addr.port)
     elif _HAS_IPV6 and isinstance(addr, IPv6Address):
-        res = "tcp6:{0}:{1}".format(addr.host, addr.port)
+        res = u"tcp6:{0}:{1}".format(addr.host, addr.port)
     elif isinstance(addr, UNIXAddress):
-        res = "unix:{0}".format(addr.name)
+        res = u"unix:{0}".format(addr.name)
     elif isinstance(addr, PipeAddress):
-        res = "<pipe>"
+        res = u"<pipe>"
     else:
         # gracefully fallback if we can't map the peer's address
-        res = "?:{0}".format(addr)
+        res = u"?:{0}".format(addr)
 
     return res
