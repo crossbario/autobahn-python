@@ -520,8 +520,8 @@ class ApplicationSession(BaseSession):
         :param msg: an informative message from the library. It is
             suggested you log this immediately after the exception.
         """
-        traceback.print_exc()
-        print(msg)
+        self.log.error(txaio.failure_format_traceback(txaio.create_future_error(e)))
+        self.log.error(msg)
 
     def _swallow_error(self, fail, msg):
         '''
@@ -535,7 +535,6 @@ class ApplicationSession(BaseSession):
         chain for a Deferred/coroutine that will make it out to user
         code.
         '''
-        # print("_swallow_error", typ, exc, tb)
         try:
             self.onUserError(fail.value, msg)
         except:
@@ -546,7 +545,6 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
         """
-        print("BLAM", id(self.log), type(self.log))
         self.log.debug("onMessage: {message}", session_id=self._session_id, message=msg)
         self.log.trace("onMessage: {message}", session_id=self._session_id, message=msg)
         if self._session_id is None:
@@ -814,11 +812,7 @@ class ApplicationSession(BaseSession):
                                 pass
                             formatted_tb = None
                             if self.traceback_app:
-                                # if asked to marshal the traceback within the WAMP error message, extract it
-                                # noinspection PyCallingNonCallable
-                                tb = StringIO()
-                                err.printTraceback(file=tb)
-                                formatted_tb = tb.getvalue().splitlines()
+                                formatted_tb = txaio.failure_format_traceback(err)
 
                             del self._invocations[msg.request]
 
@@ -972,7 +966,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason.startswith('wamp.error.'):
-            print('{error}: {message}'.format(error=details.reason, message=details.message))
+            self.log.error('{reason}: {message}', reason=details.reason, message=details.message)
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?

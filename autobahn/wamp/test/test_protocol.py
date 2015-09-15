@@ -32,7 +32,6 @@ if os.environ.get('USE_TWISTED', False):
 
     from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
     from twisted.internet.defer import succeed, DeferredList
-    from twisted.python import log
     from twisted.trial import unittest
     from six import PY3
 
@@ -463,37 +462,28 @@ if os.environ.get('USE_TWISTED', False):
             error_instance = RuntimeError("we have a problem")
             got_err_d = Deferred()
 
-            def observer(kw):
-                if kw['isError'] and 'failure' in kw:
-                    fail = kw['failure']
-                    fail.trap(RuntimeError)
-                    if error_instance == fail.value:
-                        got_err_d.callback(True)
-            log.addObserver(observer)
+            def observer(e, msg):
+                if error_instance == e:
+                    got_err_d.callback(True)
+            handler.onUserError = observer
 
             def boom():
                 raise error_instance
 
-            try:
-                sub = yield handler.subscribe(boom, u'com.myapp.topic1')
+            sub = yield handler.subscribe(boom, u'com.myapp.topic1')
 
-                # MockTransport gives us the ack reply and then we do our
-                # own event message
-                publish = yield handler.publish(
-                    u'com.myapp.topic1',
-                    options=types.PublishOptions(acknowledge=True, exclude_me=False),
-                )
-                msg = message.Event(sub.id, publish.id)
-                handler.onMessage(msg)
+            # MockTransport gives us the ack reply and then we do our
+            # own event message
+            publish = yield handler.publish(
+                u'com.myapp.topic1',
+                options=types.PublishOptions(acknowledge=True, exclude_me=False),
+            )
+            msg = message.Event(sub.id, publish.id)
+            handler.onMessage(msg)
 
-                # we know it worked if our observer worked and did
-                # .callback on our Deferred above.
-                self.assertTrue(got_err_d.called)
-                # ...otherwise trial will fail the test anyway
-                self.flushLoggedErrors()
-
-            finally:
-                log.removeObserver(observer)
+            # we know it worked if our observer worked and did
+            # .callback on our Deferred above.
+            self.assertTrue(got_err_d.called)
 
         @inlineCallbacks
         def test_unsubscribe(self):
@@ -598,6 +588,10 @@ if os.environ.get('USE_TWISTED', False):
             handler = ApplicationSession()
             handler.traceback_app = True
             MockTransport(handler)
+            errors = []
+            def log_error(e, msg):
+                errors.append((e, msg))
+            handler.onUserError = log_error
 
             name_error = NameError('foo')
 
@@ -618,9 +612,8 @@ if os.environ.get('USE_TWISTED', False):
 
             # also, we should have logged the real NameError to
             # Twisted.
-            errs = self.flushLoggedErrors()
-            self.assertEqual(1, len(errs))
-            self.assertEqual(name_error, errs[0].value)
+            self.assertEqual(1, len(errors))
+            self.assertEqual(name_error, errors[0][0].value)
 
         @inlineCallbacks
         def test_invoke_progressive_result(self):
@@ -674,6 +667,10 @@ if os.environ.get('USE_TWISTED', False):
 
             got_progress = Deferred()
             progress_error = NameError('foo')
+            logged_errors = []
+            def got_error(e, msg):
+                logged_errors.append((e, msg))
+            handler.onUserError = got_error
 
             def progress(arg, something=None):
                 self.assertEqual('nothing', something)
@@ -693,15 +690,15 @@ if os.environ.get('USE_TWISTED', False):
                 options=types.CallOptions(on_progress=progress),
                 key='word',
             )
+
             self.assertEqual(42, res)
             # our progress handler raised an error, but not before
             # recording success.
             self.assertTrue(got_progress.called)
             self.assertEqual('life', got_progress.result)
             # make sure our progress-handler error was logged
-            errs = self.flushLoggedErrors()
-            self.assertEqual(1, len(errs))
-            self.assertEqual(progress_error, errs[0].value)
+            self.assertEqual(1, len(logged_errors))
+            self.assertEqual(progress_error, logged_errors[0][0])
 
         @inlineCallbacks
         def test_invoke_progressive_result_no_args(self):
