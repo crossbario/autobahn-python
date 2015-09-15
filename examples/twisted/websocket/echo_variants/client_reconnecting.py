@@ -85,9 +85,6 @@ if __name__ == '__main__':
     factory = EchoClientFactory(sys.argv[1],
                                 debug=debug,
                                 debugCodePaths=debug)
-
-    # uncomment to use Hixie-76 protocol
-    # factory.setProtocolOptions(allowHixie76 = True, version = 0)
     connectWS(factory)
 
     reactor.run()

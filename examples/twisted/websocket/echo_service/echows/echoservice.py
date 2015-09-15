@@ -37,8 +37,7 @@ from twisted.web.static import File
 from autobahn.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol
 
-from autobahn.resource import WebSocketResource, \
-    HTTPChannelHixie76Aware
+from autobahn.resource import WebSocketResource
 
 
 class EchoServerProtocol(WebSocketServerProtocol):
@@ -61,9 +60,7 @@ class EchoService(service.Service):
     def startService(self):
 
         factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % self.port, debug=self.debug)
-
         factory.protocol = EchoServerProtocol
-        factory.setProtocolOptions(allowHixie76=True)  # needed if Hixie76 is to be supported
 
         # FIXME: Site.start/stopFactory should start/stop factories wrapped as Resources
         factory.startFactory()
@@ -79,7 +76,6 @@ class EchoService(service.Service):
 
         # both under one Twisted Web Site
         site = Site(root)
-        site.protocol = HTTPChannelHixie76Aware  # needed if Hixie76 is to be supported
 
         self.site = site
         self.factory = factory
