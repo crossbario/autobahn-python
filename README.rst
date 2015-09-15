@@ -34,8 +34,8 @@ Features
 -  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp.ws/>`__ clients and servers
 -  compatible with Python 2.6, 2.7, 3.3 and 3.4
 -  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
--  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ -  implements WebSocket
-   `RFC6455 <http://tools.ietf.org/html/rfc6455>`__, Draft Hybi-10+, Hixie-76
+-  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
+   `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
 -  implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
 -  implements `WAMP <http://wamp.ws/>`__, the Web Application Messaging Protocol
 -  high-performance, fully asynchronous implementation
