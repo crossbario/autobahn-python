@@ -29,7 +29,7 @@ from __future__ import absolute_import, print_function
 import traceback
 
 from autobahn.websocket import protocol
-from autobahn.websocket import http
+from autobahn.websocket.types import ConnectionDeny
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
@@ -184,7 +184,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
                 return subprotocol, headers
 
         if self.STRICT_PROTOCOL_NEGOTIATION:
-            raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
+            raise ConnectionDeny(ConnectionDeny.BAD_REQUEST, "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
         else:
             # assume wamp.2.json
             self._serializer = self.factory._serializers['json']

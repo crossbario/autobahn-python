@@ -28,7 +28,6 @@ from collections import deque
 
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
-from autobahn.websocket import http
 
 try:
     import asyncio
@@ -42,6 +41,7 @@ except ImportError:
     from trollius import Future
 
 from autobahn._logging import make_logger
+from autobahn.websocket.types import ConnectionDeny
 
 
 __all__ = (
@@ -192,10 +192,10 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
             res = self.onConnect(request)
             # if yields(res):
             #  res = yield from res
-        except http.HttpException as exc:
-            self.failHandshake(exc.reason, exc.code)
-        except Exception:
-            self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
+        except ConnectionDeny as e:
+            self.failHandshake(e.reason, e.code)
+        except Exception as e:
+            self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.http.INTERNAL_SERVER_ERROR)
         else:
             self.succeedHandshake(res)
 

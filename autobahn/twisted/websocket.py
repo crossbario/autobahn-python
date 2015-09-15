@@ -37,8 +37,9 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
 from autobahn.wamp import websocket
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
+    ConnectionDeny
 from autobahn.websocket import protocol
-from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
 
 from autobahn._logging import make_logger
@@ -199,12 +200,12 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         res.addCallback(self.succeedHandshake)
 
         def forwardError(failure):
-            if failure.check(http.HttpException):
+            if failure.check(ConnectionDeny):
                 return self.failHandshake(failure.value.reason, failure.value.code)
             else:
                 if self.debug:
                     self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
-                return self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
+                return self.failHandshake("Internal server error: {}".format(failure.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
 
         res.addErrback(forwardError)
 
@@ -291,14 +292,14 @@ class WrappingWebSocketAdapter(object):
     def onConnect(self, requestOrResponse):
 
         # Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
-        if isinstance(requestOrResponse, protocol.ConnectionRequest):
+        if isinstance(requestOrResponse, ConnectionRequest):
             request = requestOrResponse
             for p in request.protocols:
                 if p in self.factory._subprotocols:
                     self._binaryMode = (p != 'base64')
                     return p
-            raise http.HttpException(http.NOT_ACCEPTABLE[0], "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
-        elif isinstance(requestOrResponse, protocol.ConnectionResponse):
+            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+        elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
                 self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks %s WebSocket subprotocols" % self.factory._subprotocols)

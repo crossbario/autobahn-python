@@ -43,80 +43,52 @@ class IWebSocketChannel(object):
     """
 
     @abc.abstractmethod
-    def onConnect(self, requestOrResponse):
+    def on_connect(self, request_or_response):
         """
         Callback fired during WebSocket opening handshake when a client connects (to a server with
         request from client) or when server connection established (by a client with response from
-        server).
+        server). This method may run asynchronous code.
 
-        :param requestOrResponse: Connection request (for servers) or response (for clients).
-        :type requestOrResponse: Instance of :class:`autobahn.websocket.protocol.ConnectionRequest`
-           or :class:`autobahn.websocket.protocol.ConnectionResponse`.
+        :param request_or_response: Connection request (for servers) or response (for clients).
+        :type request_or_response: Instance of :class:`autobahn.websocket.types.ConnectionRequest`
+           or :class:`autobahn.websocket.types.ConnectionResponse`.
 
         :returns:
-           When this callback is fired on a WebSocket server, you may return one of the
-           following:
-
-           1. ``None``: Connection accepted (no subprotocol)
-           2. ``str``: Connection accepted with given subprotocol
-           3. ``(subprotocol, headers)``: Connection accepted with given ``subprotocol`` (which
-              also may be ``None``) and set the given HTTP ``headers`` (e.g. cookies). ``headers``
-              must be a ``dict`` with ``str`` keys and values for the HTTP header values to set.
-
-              If a given header value is a non-string iterable (e.g. list or tuple), a separate
-              header line will be sent for each item in the iterable.
-
-           If the client announced one or multiple subprotocols, the server MUST select
-           one of the given list.
+           When this callback is fired on a WebSocket server, you may return either ``None`` (in
+           which case the connection is accepted with no specific WebSocket subprotocol) or
+           an instance of :class:`autobahn.websocket.types.ConnectionAccept`.
+           When the callback is fired on a WebSocket client, this method must return ``None``.
+           Do deny a connection, raise an Exception.
+           You can also return a Deferred/Future that resolves/rejects to the above.
         """
 
     @abc.abstractmethod
-    def onOpen(self):
+    def on_open(self):
         """
         Callback fired when the initial WebSocket opening handshake was completed.
         You now can send and receive WebSocket messages.
         """
 
     @abc.abstractmethod
-    def sendMessage(self, payload, isBinary=False, fragmentSize=None, sync=False, doNotCompress=False):
+    def send_message(self, message):
         """
         Send a WebSocket message over the connection to the peer.
 
-        :param payload: The message payload.
-        :type payload: bytes
-        :param isBinary: ``True`` when payload is binary, else the payload must be UTF-8 encoded text.
-        :type isBinary: bool
-        :param fragmentSize: Fragment message into WebSocket fragments of this size (the last frame
-           potentially being shorter).
-        :type fragmentSize: int
-        :param sync: If ``True``, try to force data onto the wire immediately.
-
-           .. warning::
-              Do NOT use this feature for normal applications.
-              Performance likely will suffer significantly.
-              This feature is mainly here for use by Autobahn|Testsuite.
-        :type sync: bool
-        :param doNotCompress: Iff ``True``, never compress this message. This only applies to
-                              Hybi-Mode and only when WebSocket compression has been negotiated on
-                              the WebSocket connection. Use when you know the payload
-                              incompressible (e.g. encrypted or already compressed).
-        :type doNotCompress: bool
+        :param message: The WebSocket message to be sent.
+        :type message: Instance of :class:`autobahn.websocket.types.OutgoingMessage`
         """
 
     @abc.abstractmethod
-    def onMessage(self, payload, isBinary):
+    def on_message(self, message):
         """
         Callback fired when a complete WebSocket message was received.
 
-        :param payload: Message payload (UTF-8 encoded text or binary). Can also be empty when
-           the WebSocket message contained no payload.
-        :type payload: bytes
-        :param isBinary: ``True`` iff payload is binary, else the payload is UTF-8 encoded text.
-        :type isBinary: bool
+        :param message: The WebSocket message received.
+        :type message: :class:`autobahn.websocket.types.IncomingMessage`
         """
 
     @abc.abstractmethod
-    def sendClose(self, code=None, reason=None):
+    def send_close(self, code=None, reason=None):
         """
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
@@ -125,20 +97,20 @@ class IWebSocketChannel(object):
         :type code: int
         :param reason: An optional close reason (a string that when present, a status
            code MUST also be present).
-        :type reason: str
+        :type reason: unicode
         """
 
     @abc.abstractmethod
-    def onClose(self, wasClean, code, reason):
+    def on_close(self, was_clean, code, reason):
         """
         Callback fired when the WebSocket connection has been closed (WebSocket closing
         handshake has been finished or the connection was closed uncleanly).
 
         :param wasClean: ``True`` iff the WebSocket connection was closed cleanly.
         :type wasClean: bool
-        :param code: Close status code (as sent by the WebSocket peer).
+        :param code: Close status code as sent by the WebSocket peer.
         :type code: int or None
-        :param reason: Close reason (as sent by the WebSocket peer).
+        :param reason: Close reason as sent by the WebSocket peer.
         :type reason: unicode or None
         """
 
@@ -152,7 +124,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendPing(self, payload=None):
+    def send_ping(self, payload=None):
         """
         Send a WebSocket ping to the peer.
 
@@ -164,7 +136,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def onPing(self, payload):
+    def on_ping(self, payload):
         """
         Callback fired when a WebSocket ping was received. A default implementation responds
         by sending a WebSocket pong.
@@ -174,7 +146,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def sendPong(self, payload=None):
+    def send_pong(self, payload=None):
         """
         Send a WebSocket pong to the peer.
 
@@ -186,7 +158,7 @@ class IWebSocketChannel(object):
         """
 
     @abc.abstractmethod
-    def onPong(self, payload):
+    def on_pong(self, payload):
         """
         Callback fired when a WebSocket pong was received. A default implementation does nothing.
 

@@ -46,11 +46,12 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelFrameApi, \
     IWebSocketChannelStreamingApi
 
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
+
 from autobahn.util import Stopwatch, newid, wildcards2patterns
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
-from autobahn.websocket import http
 
 from six.moves import urllib
 import txaio
@@ -278,98 +279,6 @@ class FrameHeader(object):
         self.rsv = rsv
         self.length = length
         self.mask = mask
-
-
-class ConnectionRequest(object):
-    """
-    Thin-wrapper for WebSocket connection request information provided in
-    :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
-    a WebSocket client want to establish a connection to a WebSocket server.
-    """
-    def __init__(self, peer, headers, host, path, params, version, origin, protocols, extensions):
-        """
-        Constructor.
-
-        :param peer: Descriptor of the connecting client (e.g. IP address/port in case of TCP transports).
-        :type peer: str
-        :param headers: HTTP headers from opening handshake request.
-        :type headers: dict
-        :param host: Host from opening handshake HTTP header.
-        :type host: str
-        :param path: Path from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `/myservice`.
-        :type path: str
-        :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `{'foo': ['23', '66'], 'bar': ['2']}`.
-        :type params: dict of arrays of strings
-        :param version: The WebSocket protocol version the client announced (and will be spoken, when connection is accepted).
-        :type version: int
-        :param origin: The WebSocket origin header or None. Note that this only a reliable source of information for browser clients!
-        :type origin: str
-        :param protocols: The WebSocket (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
-        :type protocols: list of str
-        :param extensions: The WebSocket extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
-        :type extensions: list of str
-        """
-        self.peer = peer
-        self.headers = headers
-        self.host = host
-        self.path = path
-        self.params = params
-        self.version = version
-        self.origin = origin
-        self.protocols = protocols
-        self.extensions = extensions
-
-    def __json__(self):
-        return {'peer': self.peer,
-                'headers': self.headers,
-                'host': self.host,
-                'path': self.path,
-                'params': self.params,
-                'version': self.version,
-                'origin': self.origin,
-                'protocols': self.protocols,
-                'extensions': self.extensions}
-
-    def __str__(self):
-        return json.dumps(self.__json__())
-
-
-class ConnectionResponse(object):
-    """
-    Thin-wrapper for WebSocket connection response information provided in
-    :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
-    a WebSocket server has accepted a connection request by a client.
-    """
-    def __init__(self, peer, headers, version, protocol, extensions):
-        """
-        Constructor.
-
-        :param peer: Descriptor of the connected server (e.g. IP address/port in case of TCP transport).
-        :type peer: str
-        :param headers: HTTP headers from opening handshake response.
-        :type headers: dict
-        :param version: The WebSocket protocol version that is spoken.
-        :type version: int
-        :param protocol: The WebSocket (sub)protocol in use.
-        :type protocol: str
-        :param extensions: The WebSocket extensions in use.
-        :type extensions: list of str
-        """
-        self.peer = peer
-        self.headers = headers
-        self.version = version
-        self.protocol = protocol
-        self.extensions = extensions
-
-    def __json__(self):
-        return {'peer': self.peer,
-                'headers': self.headers,
-                'version': self.version,
-                'protocol': self.protocol,
-                'extensions': self.extensions}
-
-    def __str__(self):
-        return json.dumps(self.__json__())
 
 
 def parseHttpHeader(data):
@@ -2545,10 +2454,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if len(rl) != 3:
                 return self.failHandshake("Bad HTTP request status line '%s'" % self.http_status_line)
             if rl[0].strip() != "GET":
-                return self.failHandshake("HTTP method '%s' not allowed" % rl[0], http.METHOD_NOT_ALLOWED[0])
+                return self.failHandshake("HTTP method '%s' not allowed" % rl[0], 405)
             vs = rl[2].strip().split("/")
             if len(vs) != 2 or vs[0] != "HTTP" or vs[1] not in ["1.1"]:
-                return self.failHandshake("Unsupported HTTP version '%s'" % rl[2], http.UNSUPPORTED_HTTP_VERSION[0])
+                return self.failHandshake("Unsupported HTTP version '%s'" % rl[2], 505)
 
             # HTTP Request line : REQUEST-URI
             #
@@ -2648,7 +2557,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     self.dropConnection(abort=False)
                     return
                 else:
-                    return self.failHandshake("HTTP Upgrade header missing", http.UPGRADE_REQUIRED[0])
+                    return self.failHandshake("HTTP Upgrade header missing", 426)  # Upgrade Required
             upgradeWebSocket = False
             for u in self.http_headers["upgrade"].split(","):
                 if u.strip().lower() == "websocket":
@@ -2693,7 +2602,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 sv.reverse()
                 svs = ','.join([str(x) for x in sv])
                 return self.failHandshake("WebSocket version %d not supported (supported versions: %s)" % (version, svs),
-                                          http.BAD_REQUEST[0],
+                                          400,  # Bad Request
                                           [("Sec-WebSocket-Version", svs)])
             else:
                 # store the protocol version we are supposed to talk
@@ -2785,7 +2694,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
                 # maximum number of concurrent connections reached
                 #
-                self.failHandshake("maximum number of connections reached", code=http.SERVICE_UNAVAILABLE[0])
+                self.failHandshake("maximum number of connections reached", code=503)  # Service Unavailable
 
             else:
                 # WebSocket handshake validated => produce opening handshake response
@@ -2891,7 +2800,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
         # build response to complete WebSocket handshake
         #
-        response = "HTTP/1.1 %d Switching Protocols\x0d\x0a" % http.SWITCHING_PROTOCOLS[0]
+        response = "HTTP/1.1 101 Switching Protocols\x0d\x0a"
 
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
@@ -2986,7 +2895,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if len(self.data) > 0:
             self.consumeData()
 
-    def failHandshake(self, reason, code=http.BAD_REQUEST[0], responseHeaders=None):
+    def failHandshake(self, reason, code=400, responseHeaders=None):
         """
         During opening handshake the client request was invalid, we send a HTTP
         error response and then drop the connection.
@@ -3012,7 +2921,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         Send HTML page HTTP response.
         """
         responseBody = html.encode('utf8')
-        response = "HTTP/1.1 %d %s\x0d\x0a" % (http.OK[0], http.OK[1])
+        response = "HTTP/1.1 200 OK\x0d\x0a"
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
         response += "Content-Type: text/html; charset=UTF-8\x0d\x0a"
@@ -3025,7 +2934,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         Send HTTP Redirect (303) response.
         """
-        response = "HTTP/1.1 %d\x0d\x0a" % http.SEE_OTHER[0]
+        response = "HTTP/1.1 303\x0d\x0a"
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
         response += "Location: %s\x0d\x0a" % url
@@ -3639,7 +3548,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 status_code = int(sl[1].strip())
             except ValueError:
                 return self.failHandshake("Bad HTTP status code ('%s')" % sl[1].strip())
-            if status_code != http.SWITCHING_PROTOCOLS[0]:
+            if status_code != 101:  # Switching Protocols
 
                 # FIXME: handle redirects
                 # FIXME: handle authentication required

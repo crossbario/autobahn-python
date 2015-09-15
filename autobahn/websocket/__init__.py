@@ -23,3 +23,23 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
+
+from __future__ import absolute_import
+
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
+    ConnectionAccept, ConnectionDeny, Message, IncomingMessage, OutgoingMessage
+from autobahn.websocket.interfaces import IWebSocketChannel
+
+__all__ = (
+    'IWebSocketChannel',
+
+    'Message',
+    'IncomingMessage',
+    'OutgoingMessage',
+
+    'ConnectionRequest',
+    'ConnectionResponse',
+    'ConnectionAccept',
+    'ConnectionDeny',
+)
