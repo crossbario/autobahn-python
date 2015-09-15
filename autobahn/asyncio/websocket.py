@@ -43,7 +43,7 @@ except ImportError:
     from trollius import Future
 
 from autobahn.websocket.types import ConnectionDeny
-from txaio import make_logger
+import txaio
 
 
 __all__ = (
@@ -216,7 +216,7 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for asyncio-based WebSocket client and server factories.
     """
-    log = make_logger()
+    log = txaio.make_logger()
 
     def __call__(self):
         proto = self.protocol()

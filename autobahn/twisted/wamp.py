@@ -168,7 +168,7 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        txaio.start_logging()
+        txaio.start_logging(level='debug')
 
         # factory for use ApplicationSession
         def create():

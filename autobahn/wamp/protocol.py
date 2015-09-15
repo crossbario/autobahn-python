@@ -423,6 +423,8 @@ class ApplicationSession(BaseSession):
     * :class:`autobahn.wamp.interfaces.ITransportHandler`
     """
 
+    log = txaio.make_logger()
+
     def __init__(self, config=None):
         """
         Constructor.
@@ -544,6 +546,9 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
         """
+        print("BLAM", id(self.log), type(self.log))
+        self.log.debug("onMessage: {message}", session_id=self._session_id, message=msg)
+        self.log.trace("onMessage: {message}", session_id=self._session_id, message=msg)
         if self._session_id is None:
 
             # the first message must be WELCOME, ABORT or CHALLENGE ..

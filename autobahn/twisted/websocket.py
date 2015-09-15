@@ -42,7 +42,7 @@ from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str
 
-from txaio import make_logger
+import txaio
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -79,6 +79,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     Adapter class for Twisted WebSocket client and server protocols.
     """
     peer = '<never connected>'
+    log = txaio.make_logger()
 
     def connectionMade(self):
         # the peer we are connected to
@@ -91,6 +92,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             self.peer = peer2str(peer)
 
         self._connectionMade()
+        self.log.info('Connection made to {peer}', peer=self.peer)
 
         # Set "Nagle"
         try:
@@ -101,12 +103,12 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def connectionLost(self, reason):
         if isinstance(reason.value, ConnectionDone):
-            self.factory.log.debug("Connection to/from {peer} was closed cleanly",
-                                   peer=self.peer)
+            self.log.debug("Connection to/from {peer} was closed cleanly",
+                           peer=self.peer)
 
         elif isinstance(reason.value, ConnectionAborted):
-            self.factory.log.debug("Connection to/from {peer} was aborted locally",
-                                   peer=self.peer)
+            self.log.debug("Connection to/from {peer} was aborted locally",
+                           peer=self.peer)
 
         elif isinstance(reason.value, ConnectionLost):
             # The following is ridiculous, but the treatment of reason.value.args
@@ -119,16 +121,16 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
                 message = None
 
             if message:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
-                                       peer=self.peer, message=message)
+                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
+                               peer=self.peer, message=message)
             else:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
-                                       peer=self.peer)
+                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
+                               peer=self.peer)
 
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
-            self.factory.log.info("Connection to/from {peer} lost ({error_type}): {error})",
-                                  peer=self.peer, error_type=type(reason.value), error=reason.value)
+            self.log.info("Connection to/from {peer} lost ({error_type}): {error})",
+                          peer=self.peer, error_type=type(reason.value), error=reason.value)
 
         self._connectionLost(reason)
 
@@ -203,8 +205,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
             if failure.check(ConnectionDeny):
                 return self.failHandshake(failure.value.reason, failure.value.code)
             else:
-                if self.debug:
-                    self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
+                self.log.debug("Unexpected exception in onConnect ['{failure.value}']", failure=failure)
                 return self.failHandshake("Internal server error: {}".format(failure.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
 
         res.addErrback(forwardError)
@@ -223,7 +224,6 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
-    log = make_logger()
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
