@@ -58,7 +58,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 * compatible with Python 2.6, 2.7, 3.3 and 3.4
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
-* implements WebSocket `RFC6455`_ (and older versions like Hybi-10+ and Hixie-76)
+* implements WebSocket `RFC6455`_ (and draft versions Hybi-10+)
 * implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
 * implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
