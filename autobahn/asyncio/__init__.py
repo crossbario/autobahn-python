@@ -34,9 +34,14 @@ from autobahn.asyncio.websocket import \
     WebSocketServerFactory, \
     WebSocketClientFactory
 
+# WAMP support
+from autobahn.asyncio.wamp import ApplicationSession
+
+
 __all__ = (
     'WebSocketServerProtocol',
     'WebSocketClientProtocol',
     'WebSocketServerFactory',
     'WebSocketClientFactory',
+    'ApplicationSession',
 )
