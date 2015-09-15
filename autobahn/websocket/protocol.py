@@ -484,47 +484,33 @@ class WebSocketProtocol(object):
       * :class:`autobahn.websocket.interfaces.IWebSocketChannelStreamingApi`
     """
 
-    SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+    SUPPORTED_SPEC_VERSIONS = [10, 11, 12, 13, 14, 15, 16, 17, 18]
     """
     WebSocket protocol spec (draft) versions supported by this implementation.
     Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
-    draft spec versions (Hybi-Drafts). Use of version 0 indicates Hixie-76.
+    draft spec versions (Hybi-Drafts).
     """
 
-    SUPPORTED_PROTOCOL_VERSIONS = [0, 8, 13]
+    SUPPORTED_PROTOCOL_VERSIONS = [8, 13]
     """
-    WebSocket protocol versions supported by this implementation. For Hixie-76,
-    there is no protocol version announced in HTTP header, and we just use the
-    draft version (0) in this case.
+    WebSocket protocol versions supported by this implementation.
     """
 
-    SPEC_TO_PROTOCOL_VERSION = {0: 0, 10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
+    SPEC_TO_PROTOCOL_VERSION = {10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
     """
-    Mapping from protocol spec (draft) version to protocol version.  For
-    Hixie-76, there is no protocol version announced in HTTP header, and we
-    just use the pseudo protocol version 0 in this case.
+    Mapping from protocol spec (draft) version to protocol version.
     """
 
-    PROTOCOL_TO_SPEC_VERSION = {0: 0, 8: 12, 13: 18}
+    PROTOCOL_TO_SPEC_VERSION = {8: 12, 13: 18}
     """
     Mapping from protocol version to the latest protocol spec (draft) version
-    using that protocol version.  For Hixie-76, there is no protocol version
-    announced in HTTP header, and we just use the draft version (0) in this case.
+    using that protocol version.
     """
 
     DEFAULT_SPEC_VERSION = 18
     """
     Default WebSocket protocol spec version this implementation speaks: final
     RFC6455.
-    """
-
-    DEFAULT_ALLOW_HIXIE76 = False
-    """
-    By default, this implementation will not allow to speak the obsoleted
-    Hixie-76 protocol version. That protocol version has security issues, but
-    is still spoken by some clients. Enable at your own risk! Enabling can be
-    done by using setProtocolOptions() on the factories for clients and
-    servers.
     """
 
     _WS_MAGIC = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -620,7 +606,6 @@ class WebSocketProtocol(object):
                            'logOctets',
                            'logFrames',
                            'trackTimings',
-                           'allowHixie76',
                            'utf8validateIncoming',
                            'applyMask',
                            'maxFramePayloadSize',
@@ -788,11 +773,7 @@ class WebSocketProtocol(object):
         the TCP connection either immediately (when we are a server) or after a timeout
         (when we are a client and expect the server to drop the TCP).
 
-        Modes: Hybi, Hixie
-
-        Notes:
-          - For Hixie mode, this method is slightly misnamed for historic reasons.
-          - For Hixie mode, code and reasonRaw are silently ignored.
+        Modes: Hybi
 
         :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
         :type code: int or None
@@ -891,7 +872,7 @@ class WebSocketProtocol(object):
         but it didn't (in time self.serverConnectionDropTimeout).
         So we drop the connection, but set self.wasClean = False.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         self.serverConnectionDropTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
@@ -911,7 +892,7 @@ class WebSocketProtocol(object):
         It didn't do so (in time self.openHandshakeTimeout).
         So we drop the connection, but set self.wasClean = False.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         self.openHandshakeTimeoutCall = None
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
@@ -940,7 +921,7 @@ class WebSocketProtocol(object):
         respond (in time self.closeHandshakeTimeout) with a close response frame though.
         So we drop the connection, but set self.wasClean = False.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         self.closeHandshakeTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
@@ -969,7 +950,7 @@ class WebSocketProtocol(object):
         """
         Drop the underlying TCP connection.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
@@ -991,10 +972,7 @@ class WebSocketProtocol(object):
         """
         Fails the WebSocket connection.
 
-        Modes: Hybi, Hixie
-
-        Notes:
-          - For Hixie mode, the code and reason are silently ignored.
+        Modes: Hybi
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
@@ -1025,10 +1003,7 @@ class WebSocketProtocol(object):
         """
         Fired when a WebSocket protocol violation/error occurs.
 
-        Modes: Hybi, Hixie
-
-        Notes:
-          - For Hixie mode, reason is silently ignored.
+        Modes: Hybi
 
         :param reason: Protocol violation that was encountered (human readable).
         :type reason: str
@@ -1051,10 +1026,7 @@ class WebSocketProtocol(object):
         for text message when payload is invalid UTF-8 or close frames with
         close reason that is invalid UTF-8.
 
-        Modes: Hybi, Hixie
-
-        Notes:
-          - For Hixie mode, reason is silently ignored.
+        Modes: Hybi
 
         :param reason: What was invalid for the payload (human readable).
         :type reason: str
@@ -1090,7 +1062,7 @@ class WebSocketProtocol(object):
         This is called by network framework when a new TCP connection has been established
         and handed over to a Protocol instance (an instance of this class).
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
 
         # copy default options from factory (so we are not affected by changed on
@@ -1207,7 +1179,7 @@ class WebSocketProtocol(object):
         """
         This is called by network framework when a transport connection was lost.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         # cancel any server connection drop timer if present
         #
@@ -1252,7 +1224,7 @@ class WebSocketProtocol(object):
         """
         Hook fired right after raw octets have been received, but only when self.logOctets == True.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         self.factory.log.debug("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
 
@@ -1260,7 +1232,7 @@ class WebSocketProtocol(object):
         """
         Hook fired right after raw octets have been sent, but only when self.logOctets == True.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         self.factory.log.debug("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
 
@@ -1304,7 +1276,7 @@ class WebSocketProtocol(object):
         """
         This is called by network framework upon receiving data on transport connection.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.trafficStats.incomingOctetsWireLevel += len(data)
@@ -1320,7 +1292,7 @@ class WebSocketProtocol(object):
         """
         Consume buffered (incoming) data.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
 
         # WebSocket is open (handshake was completed) or close was sent
@@ -1366,7 +1338,7 @@ class WebSocketProtocol(object):
         """
         Process proxy connect.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         raise Exception("must implement proxy connect (client or server) in derived class")
 
@@ -1374,7 +1346,7 @@ class WebSocketProtocol(object):
         """
         Process WebSocket handshake.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         raise Exception("must implement handshake (client or server) in derived class")
 
@@ -1382,7 +1354,7 @@ class WebSocketProtocol(object):
         """
         Trigger sending stuff from send queue (which is only used for chopped/synched writes).
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         if not self.triggered:
             self.triggered = True
@@ -1393,7 +1365,7 @@ class WebSocketProtocol(object):
         Send out stuff from send queue. For details how this works, see test/trickling
         in the repo.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         if len(self.send_queue) > 0:
             e = self.send_queue.popleft()
@@ -1430,7 +1402,7 @@ class WebSocketProtocol(object):
         to WebSocket data message fragmentation. Note that this is also different
         from the TcpNoDelay option which can be set on the socket.
 
-        Modes: Hybi, Hixie
+        Modes: Hybi
         """
         if chopsize and chopsize > 0:
             i = 0
@@ -1463,101 +1435,15 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPreparedMessage`
         """
-        if self.websocket_version != 0:
-            if self._perMessageCompress is None or preparedMsg.doNotCompress:
-                self.sendData(preparedMsg.payloadHybi)
-            else:
-                self.sendMessage(preparedMsg.payload, preparedMsg.binary)
+        if self._perMessageCompress is None or preparedMsg.doNotCompress:
+            self.sendData(preparedMsg.payloadHybi)
         else:
-            self.sendData(preparedMsg.payloadHixie)
+            self.sendMessage(preparedMsg.payload, preparedMsg.binary)
 
     def processData(self):
         """
-        After WebSocket handshake has been completed, this procedure will do all
-        subsequent processing of incoming bytes.
-
-        Modes: Hybi, Hixie
-        """
-        if self.websocket_version == 0:
-            return self.processDataHixie76()
-        else:
-            return self.processDataHybi()
-
-    def processDataHixie76(self):
-        """
-        Hixie-76 incoming data processing.
-
-        Modes: Hixie
-        """
-        buffered_len = len(self.data)
-
-        # outside a message, that is we are awaiting data which starts a new message
-        #
-        if not self.inside_message:
-            if buffered_len >= 2:
-
-                # new message
-                #
-                if self.data[0] == b'\x00':
-
-                    self.inside_message = True
-
-                    if self.utf8validateIncoming:
-                        self.utf8validator.reset()
-                        self.utf8validateIncomingCurrentMessage = True
-                        self.utf8validateLast = (True, True, 0, 0)
-                    else:
-                        self.utf8validateIncomingCurrentMessage = False
-
-                    self.data = self.data[1:]
-                    if self.trackedTimings:
-                        self.trackedTimings.track("onMessageBegin")
-                    self._onMessageBegin(False)
-
-                # Hixie close from peer received
-                #
-                elif self.data[0] == b'\xff' and self.data[1] == b'\x00':
-                    self.onCloseFrame(None, None)
-                    self.data = self.data[2:]
-                    # stop receiving/processing after having received close!
-                    return False
-
-                # malformed data
-                #
-                else:
-                    if self.protocolViolation("malformed data received"):
-                        return False
-            else:
-                # need more data
-                return False
-
-        end_index = self.data.find(b'\xff')
-        if end_index > 0:
-            payload = self.data[:end_index]
-            self.data = self.data[end_index + 1:]
-        else:
-            payload = self.data
-            self.data = b''
-
-        # incrementally validate UTF-8 payload
-        #
-        if self.utf8validateIncomingCurrentMessage:
-            self.utf8validateLast = self.utf8validator.validate(payload)
-            if not self.utf8validateLast[0]:
-                if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
-                    return False
-
-        self._onMessageFrameData(payload)
-
-        if end_index > 0:
-            self.inside_message = False
-            self._onMessageEnd()
-
-        return len(self.data) > 0
-
-    def processDataHybi(self):
-        """
-        RFC6455/Hybi-Drafts incoming data processing.
+        After WebSocket handshake has been completed, this procedure will do
+        all subsequent processing of incoming bytes.
 
         Modes: Hybi
         """
@@ -2017,9 +1903,6 @@ class WebSocketProtocol(object):
 
         Modes: Hybi
         """
-        if self.websocket_version == 0:
-            raise Exception("function not supported in Hixie-76 mode")
-
         if payload_len is not None:
             if len(payload) < 1:
                 raise Exception("cannot construct repeated payload with length %d from payload of length %d" % (payload_len, len(payload)))
@@ -2092,8 +1975,6 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPing`
         """
-        if self.websocket_version == 0:
-            raise Exception("function not supported in Hixie-76 mode")
         if self.state != WebSocketProtocol.STATE_OPEN:
             return
         if payload:
@@ -2124,8 +2005,6 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendPong`
         """
-        if self.websocket_version == 0:
-            raise Exception("function not supported in Hixie-76 mode")
         if self.state != WebSocketProtocol.STATE_OPEN:
             return
         if payload:
@@ -2142,11 +2021,7 @@ class WebSocketProtocol(object):
         an internal method which deliberately allows not send close
         frame with invalid payload.
 
-        Modes: Hybi, Hixie
-
-        Notes:
-          - For Hixie mode, this method is slightly misnamed for historic reasons.
-          - For Hixie mode, code and reasonUtf8 will be silently ignored.
+        Modes: Hybi
         """
         if self.state == WebSocketProtocol.STATE_CLOSING:
             if self.debugCodePaths:
@@ -2161,16 +2036,13 @@ class WebSocketProtocol(object):
 
         elif self.state == WebSocketProtocol.STATE_OPEN:
 
-            if self.websocket_version == 0:
-                self.sendData("\xff\x00")
-            else:
-                # construct Hybi close frame payload and send frame
-                payload = b''
-                if code is not None:
-                    payload += struct.pack("!H", code)
-                if reasonUtf8 is not None:
-                    payload += reasonUtf8
-                self.sendFrame(opcode=8, payload=payload)
+            # construct Hybi close frame payload and send frame
+            payload = b''
+            if code is not None:
+                payload += struct.pack("!H", code)
+            if reasonUtf8 is not None:
+                payload += reasonUtf8
+            self.sendFrame(opcode=8, payload=payload)
 
             # update state
             self.state = WebSocketProtocol.STATE_CLOSING
@@ -2231,23 +2103,16 @@ class WebSocketProtocol(object):
         if self.send_state != WebSocketProtocol.SEND_STATE_GROUND:
             raise Exception("WebSocketProtocol.beginMessage invalid in current sending state")
 
-        if self.websocket_version == 0:
-            if isBinary:
-                raise Exception("cannot send binary message in Hixie76 mode")
+        self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if isBinary else WebSocketProtocol.MESSAGE_TYPE_TEXT
+        self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
 
-            self.sendData(b'\x00')
-            self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
+        # setup compressor
+        #
+        if self._perMessageCompress is not None and not doNotCompress:
+            self.send_compressed = True
+            self._perMessageCompress.startCompressMessage()
         else:
-            self.send_message_opcode = WebSocketProtocol.MESSAGE_TYPE_BINARY if isBinary else WebSocketProtocol.MESSAGE_TYPE_TEXT
-            self.send_state = WebSocketProtocol.SEND_STATE_MESSAGE_BEGIN
-
-            # setup compressor
-            #
-            if self._perMessageCompress is not None and not doNotCompress:
-                self.send_compressed = True
-                self._perMessageCompress.startCompressMessage()
-            else:
-                self.send_compressed = False
+            self.send_compressed = False
 
         self.trafficStats.outgoingWebSocketMessages += 1
 
@@ -2255,9 +2120,6 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.beginMessageFrame`
         """
-        if self.websocket_version == 0:
-            raise Exception("function not supported in Hixie-76 mode")
-
         if self.state != WebSocketProtocol.STATE_OPEN:
             return
 
@@ -2352,48 +2214,37 @@ class WebSocketProtocol(object):
             self.trafficStats.outgoingOctetsAppLevel += len(payload)
         self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
 
-        if self.websocket_version == 0:
-            # Hixie Mode
-            #
-            if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
-                raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
-            self.sendData(payload, sync=sync)
-            return None
+        if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
+            raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
 
+        rl = len(payload)
+        if self.send_message_frame_masker.pointer() + rl > self.send_message_frame_length:
+            l = self.send_message_frame_length - self.send_message_frame_masker.pointer()
+            rest = -(rl - l)
+            pl = payload[:l]
         else:
-            # Hybi Mode
-            #
-            if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE_FRAME:
-                raise Exception("WebSocketProtocol.sendMessageFrameData invalid in current sending state")
+            l = rl
+            rest = self.send_message_frame_length - self.send_message_frame_masker.pointer() - l
+            pl = payload
 
-            rl = len(payload)
-            if self.send_message_frame_masker.pointer() + rl > self.send_message_frame_length:
-                l = self.send_message_frame_length - self.send_message_frame_masker.pointer()
-                rest = -(rl - l)
-                pl = payload[:l]
-            else:
-                l = rl
-                rest = self.send_message_frame_length - self.send_message_frame_masker.pointer() - l
-                pl = payload
+        # mask frame payload
+        #
+        plm = self.send_message_frame_masker.process(pl)
 
-            # mask frame payload
-            #
-            plm = self.send_message_frame_masker.process(pl)
+        # send frame payload
+        #
+        self.sendData(plm, sync=sync)
 
-            # send frame payload
-            #
-            self.sendData(plm, sync=sync)
+        # if we are done with frame, move back into "inside message" state
+        #
+        if self.send_message_frame_masker.pointer() >= self.send_message_frame_length:
+            self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
 
-            # if we are done with frame, move back into "inside message" state
-            #
-            if self.send_message_frame_masker.pointer() >= self.send_message_frame_length:
-                self.send_state = WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE
-
-            # when =0 : frame was completed exactly
-            # when >0 : frame is still uncomplete and that much amount is still left to complete the frame
-            # when <0 : frame was completed and there was this much unconsumed data in payload argument
-            #
-            return rest
+        # when =0 : frame was completed exactly
+        # when >0 : frame is still uncomplete and that much amount is still left to complete the frame
+        # when <0 : frame was completed and there was this much unconsumed data in payload argument
+        #
+        return rest
 
     def endMessage(self):
         """
@@ -2407,16 +2258,13 @@ class WebSocketProtocol(object):
         # if self.send_state != WebSocketProtocol.SEND_STATE_INSIDE_MESSAGE:
         #   raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
 
-        if self.websocket_version == 0:
-            self.sendData(b'\x00')
+        if self.send_compressed:
+            payload = self._perMessageCompress.endCompressMessage()
+            self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
         else:
-            if self.send_compressed:
-                payload = self._perMessageCompress.endCompressMessage()
-                self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
-            else:
-                # send continuation frame with empty payload and FIN set to end message
-                payload = b''
-            self.sendFrame(opcode=0, payload=payload, fin=True)
+            # send continuation frame with empty payload and FIN set to end message
+            payload = b''
+        self.sendFrame(opcode=0, payload=payload, fin=True)
 
         self.send_state = WebSocketProtocol.SEND_STATE_GROUND
 
@@ -2424,9 +2272,6 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendMessageFrame`
         """
-        if self.websocket_version == 0:
-            raise Exception("function not supported in Hixie-76 mode")
-
         if self.state != WebSocketProtocol.STATE_OPEN:
             return
 
@@ -2454,34 +2299,6 @@ class WebSocketProtocol(object):
         if self.trackedTimings:
             self.trackedTimings.track("sendMessage")
 
-        if self.websocket_version == 0:
-            if isBinary:
-                raise Exception("cannot send binary message in Hixie76 mode")
-            if fragmentSize:
-                raise Exception("cannot fragment messages in Hixie76 mode")
-            self.sendMessageHixie76(payload, sync)
-        else:
-            self.sendMessageHybi(payload, isBinary, fragmentSize, sync, doNotCompress)
-
-    def sendMessageHixie76(self, payload, sync=False):
-        """
-        Hixie76-Variant of sendMessage().
-
-        Modes: Hixie
-        """
-        self.sendData(b'\x00' + payload + b'\xff', sync=sync)
-
-    def sendMessageHybi(self,
-                        payload,
-                        isBinary=False,
-                        fragmentSize=None,
-                        sync=False,
-                        doNotCompress=False):
-        """
-        Hybi-Variant of sendMessage().
-
-        Modes: Hybi
-        """
         # (initial) frame opcode
         #
         if isBinary:
@@ -2620,22 +2437,6 @@ class PreparedMessage(object):
             self.binary = isBinary
         self.doNotCompress = doNotCompress
 
-        # store pre-framed octets to be sent to Hixie-76 peers
-        self._initHixie(payload, isBinary)
-
-        # store pre-framed octets to be sent to Hybi peers
-        self._initHybi(payload, isBinary, applyMask)
-
-    def _initHixie(self, payload, binary):
-        if binary:
-            # silently filter out .. probably do something else:
-            # base64?
-            # dunno
-            self.payloadHixie = b''
-        else:
-            self.payloadHixie = b'\x00' + payload + b'\xff'
-
-    def _initHybi(self, payload, binary, masked):
         l = len(payload)
 
         # first byte
@@ -2762,12 +2563,6 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
     def processProxyConnect(self):
         raise Exception("Autobahn isn't a proxy server")
-
-    def parseHixie76Key(self, key):
-        """
-        Parse Hixie76 opening handshake key provided by client.
-        """
-        return int(filter(lambda x: x.isdigit(), key)) / key.count(" ")
 
     def processHandshake(self):
         """
@@ -2927,10 +2722,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if 'sec-websocket-version' not in self.http_headers:
                 if self.debugCodePaths:
                     self.factory.log.debug("Hixie76 protocol detected")
-                if self.allowHixie76:
-                    version = 0
-                else:
-                    return self.failHandshake("WebSocket connection denied - Hixie76 protocol mode disabled.")
+                return self.failHandshake("WebSocket connection denied - Hixie76 protocol not supported.")
             else:
                 if self.debugCodePaths:
                     self.factory.log.debug("Hybi protocol detected")
@@ -2974,11 +2766,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
             # Origin / Sec-WebSocket-Origin
             # http://tools.ietf.org/html/draft-ietf-websec-origin-02
             #
-            if self.websocket_version < 13 and self.websocket_version != 0:
+            if self.websocket_version < 13:
                 # Hybi, but only < Hybi-13
                 websocket_origin_header_key = 'sec-websocket-origin'
             else:
-                # RFC6455, >= Hybi-13 and Hixie
+                # RFC6455, >= Hybi-13
                 websocket_origin_header_key = "origin"
 
             self.websocket_origin = ""
@@ -3000,74 +2792,40 @@ class WebSocketServerProtocol(WebSocketProtocol):
             if not origin_is_allowed:
                 return self.failHandshake("WebSocket connection denied: origin '{0}' not allowed".format(self.websocket_origin))
 
-            # Sec-WebSocket-Key (Hybi) or Sec-WebSocket-Key1/Sec-WebSocket-Key2 (Hixie-76)
+            # Sec-WebSocket-Key
             #
-            if self.websocket_version == 0:
-                for kk in ['Sec-WebSocket-Key1', 'Sec-WebSocket-Key2']:
-                    k = kk.lower()
-                    if k not in self.http_headers:
-                        return self.failHandshake("HTTP %s header missing" % kk)
-                    if http_headers_cnt[k] > 1:
-                        return self.failHandshake("HTTP %s header appears more than once in opening handshake request" % kk)
-                    try:
-                        key1 = self.parseHixie76Key(self.http_headers["sec-websocket-key1"].strip())
-                        key2 = self.parseHixie76Key(self.http_headers["sec-websocket-key2"].strip())
-                    except:
-                        return self.failHandshake("could not parse Sec-WebSocket-Key1/2")
-            else:
-                if 'sec-websocket-key' not in self.http_headers:
-                    return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
-                if http_headers_cnt["sec-websocket-key"] > 1:
-                    return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
-                key = self.http_headers["sec-websocket-key"].strip()
-                if len(key) != 24:  # 16 bytes => (ceil(128/24)*24)/6 == 24
-                    return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
-                if key[-2:] != "==":  # 24 - ceil(128/6) == 2
-                    return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
-                for c in key[:-2]:
-                    if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
-                        return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" % (c, key))
+            if 'sec-websocket-key' not in self.http_headers:
+                return self.failHandshake("HTTP Sec-WebSocket-Key header missing")
+            if http_headers_cnt["sec-websocket-key"] > 1:
+                return self.failHandshake("HTTP Sec-WebSocket-Key header appears more than once in opening handshake request")
+            key = self.http_headers["sec-websocket-key"].strip()
+            if len(key) != 24:  # 16 bytes => (ceil(128/24)*24)/6 == 24
+                return self.failHandshake("bad Sec-WebSocket-Key (length must be 24 ASCII chars) '%s'" % key)
+            if key[-2:] != "==":  # 24 - ceil(128/6) == 2
+                return self.failHandshake("bad Sec-WebSocket-Key (invalid base64 encoding) '%s'" % key)
+            for c in key[:-2]:
+                if c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/":
+                    return self.failHandshake("bad character '%s' in Sec-WebSocket-Key (invalid base64 encoding) '%s'" % (c, key))
 
             # Sec-WebSocket-Extensions
             #
             self.websocket_extensions = []
             if 'sec-websocket-extensions' in self.http_headers:
-
-                if self.websocket_version == 0:
-                    return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
+                if http_headers_cnt["sec-websocket-extensions"] > 1:
+                    return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake request")
                 else:
-                    if http_headers_cnt["sec-websocket-extensions"] > 1:
-                        return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake request")
-                    else:
-                        # extensions requested/offered by client
-                        #
-                        self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
-
-            # For Hixie-76, we need 8 octets of HTTP request body to complete HS!
-            #
-            if self.websocket_version == 0:
-                if len(self.data) < end_of_header + 4 + 8:
-                    return
-                else:
-                    key3 = self.data[end_of_header + 4:end_of_header + 4 + 8]
-                    if self.debug:
-                        self.factory.log.debug("received HTTP request body containing key3 for Hixie-76: %s" % key3)
+                    # extensions requested/offered by client
+                    #
+                    self.websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
             # Ok, got complete HS input, remember rest (if any)
             #
-            if self.websocket_version == 0:
-                self.data = self.data[end_of_header + 4 + 8:]
-            else:
-                self.data = self.data[end_of_header + 4:]
+            self.data = self.data[end_of_header + 4:]
 
             # store WS key
             #
-            if self.websocket_version == 0:
-                # noinspection PyUnboundLocalVariable
-                self._wskey = (key1, key2, key3)
-            else:
-                # noinspection PyUnboundLocalVariable
-                self._wskey = key
+            # noinspection PyUnboundLocalVariable
+            self._wskey = key
 
             # DoS protection
             #
@@ -3131,11 +2889,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             raise Exception("protocol accepted must be from the list client sent or None")
 
         self.websocket_protocol_in_use = protocol
-
-        if self.websocket_version == 0:
-            key1, key2, key3 = self._wskey
-        else:
-            key = self._wskey
+        key = self._wskey
 
         # extensions effectively in use for this connection
         #
@@ -3214,64 +2968,24 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if self.websocket_protocol_in_use is not None:
             response += "Sec-WebSocket-Protocol: %s\x0d\x0a" % str(self.websocket_protocol_in_use)
 
-        if self.websocket_version == 0:
 
-            if self.websocket_origin:
-                # browser client provide the header, and expect it to be echo'ed
-                response += "Sec-WebSocket-Origin: %s\x0d\x0a" % str(self.websocket_origin)
+        # compute Sec-WebSocket-Accept
+        #
+        sha1 = hashlib.sha1()
+        # noinspection PyUnboundLocalVariable
+        sha1.update(key.encode('utf8') + WebSocketProtocol._WS_MAGIC)
+        sec_websocket_accept = base64.b64encode(sha1.digest())
 
-            if self.debugCodePaths:
-                self.factory.log.debug('factory isSecure = %s port = %s' % (self.factory.isSecure, self.factory.externalPort))
+        response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept.decode()
 
-            if self.factory.externalPort and ((self.factory.isSecure and self.factory.externalPort != 443) or ((not self.factory.isSecure) and self.factory.externalPort != 80)):
-                if self.debugCodePaths:
-                    self.factory.log.debug('factory running on non-default port')
-                response_port = ':' + str(self.factory.externalPort)
-            else:
-                if self.debugCodePaths:
-                    self.factory.log.debug('factory running on default port')
-                response_port = ''
+        # agreed extensions
+        #
+        if len(extensionResponse) > 0:
+            response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensionResponse)
 
-            # FIXME: check this! But see below ..
-            if False:
-                response_host = str(self.factory.host)
-                response_path = str(self.factory.path)
-            else:
-                response_host = str(self.http_request_host)
-                response_path = str(self.http_request_uri)
-
-            location = "%s://%s%s%s" % ('wss' if self.factory.isSecure else 'ws', response_host, response_port, response_path)
-
-            # Safari is very picky about this one
-            response += "Sec-WebSocket-Location: %s\x0d\x0a" % location
-
-            # end of HTTP response headers
-            response += "\x0d\x0a"
-
-            # compute accept body
-            #
-            # noinspection PyUnboundLocalVariable
-            accept_val = struct.pack(">II", key1, key2) + key3
-            response_body = hashlib.md5(accept_val).digest()
-
-        else:
-            # compute Sec-WebSocket-Accept
-            #
-            sha1 = hashlib.sha1()
-            # noinspection PyUnboundLocalVariable
-            sha1.update(key.encode('utf8') + WebSocketProtocol._WS_MAGIC)
-            sec_websocket_accept = base64.b64encode(sha1.digest())
-
-            response += "Sec-WebSocket-Accept: %s\x0d\x0a" % sec_websocket_accept.decode()
-
-            # agreed extensions
-            #
-            if len(extensionResponse) > 0:
-                response += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensionResponse)
-
-            # end of HTTP response headers
-            response += "\x0d\x0a"
-            response_body = None
+        # end of HTTP response headers
+        response += "\x0d\x0a"
+        response_body = None
 
         # send out opening handshake response
         #
@@ -3303,8 +3017,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # init state
         #
         self.inside_message = False
-        if self.websocket_version != 0:
-            self.current_frame = None
+        self.current_frame = None
 
         # automatic ping/pong
         #
@@ -3422,13 +3135,13 @@ class WebSocketServerFactory(WebSocketFactory):
 
     protocol = WebSocketServerProtocol
     """
-   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketServerProtocol`.
-   """
+    The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketServerProtocol`.
+    """
 
     isServer = True
     """
-   Flag indicating if this factory is client- or server-side.
-   """
+    Flag indicating if this factory is client- or server-side.
+    """
 
     def __init__(self,
                  url=None,
@@ -3531,7 +3244,6 @@ class WebSocketServerFactory(WebSocketFactory):
         Reset all WebSocket protocol options to defaults.
         """
         self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
-        self.allowHixie76 = WebSocketProtocol.DEFAULT_ALLOW_HIXIE76
         self.webStatus = True
         self.utf8validateIncoming = True
         self.requireMaskedClientFrames = True
@@ -3569,7 +3281,6 @@ class WebSocketServerFactory(WebSocketFactory):
 
     def setProtocolOptions(self,
                            versions=None,
-                           allowHixie76=None,
                            webStatus=None,
                            utf8validateIncoming=None,
                            maskServerFrames=None,
@@ -3596,8 +3307,6 @@ class WebSocketServerFactory(WebSocketFactory):
 
         :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
         :type versions: list of ints or None
-        :param allowHixie76: Allow to speak Hixie76 protocol version.
-        :type allowHixie76: bool or None
         :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
         :type webStatus: bool or None
         :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
@@ -3644,15 +3353,10 @@ class WebSocketServerFactory(WebSocketFactory):
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
         """
-        if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
-            self.allowHixie76 = allowHixie76
-
         if versions is not None:
             for v in versions:
                 if v not in WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS:
                     raise Exception("invalid WebSocket protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
-                if v == 0 and not self.allowHixie76:
-                    raise Exception("use of Hixie-76 requires allowHixie76 == True")
             if set(versions) != set(self.versions):
                 self.versions = versions
 
@@ -3872,27 +3576,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
             self.factory.log.debug("failing proxy connect ('%s')" % reason)
         self.dropConnection(abort=True)
 
-    def createHixieKey(self):
-        """
-        Implements this algorithm:
-
-        http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76#page-21
-        Items 16 - 22
-        """
-        spaces1 = random.randint(1, 12)
-        max1 = int(4294967295 / spaces1)
-        number1 = random.randint(0, max1)
-        product1 = number1 * spaces1
-        key1 = str(product1)
-        rchars = filter(lambda x: (0x21 <= x <= 0x2f) or (0x3a <= x <= 0x7e), range(0, 127))
-        for i in xrange(random.randint(1, 12)):
-            p = random.randint(0, len(key1) - 1)
-            key1 = key1[:p] + chr(random.choice(rchars)) + key1[p:]
-        for i in xrange(spaces1):
-            p = random.randint(1, len(key1) - 2)
-            key1 = key1[:p] + ' ' + key1[p:]
-        return key1, number1
-
     def startHandshake(self):
         """
         Start WebSocket opening handshake.
@@ -3925,31 +3608,13 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # handshake random key
         #
-        if self.version == 0:
-            (self.websocket_key1, number1) = self.createHixieKey()
-            (self.websocket_key2, number2) = self.createHixieKey()
-            self.websocket_key3 = os.urandom(8)
-            accept_val = struct.pack(">II", number1, number2) + self.websocket_key3
-            self.websocket_expected_challenge_response = hashlib.md5(accept_val).digest()
-
-            # Safari does NOT set Content-Length, even though the body is
-            # non-empty, and the request unchunked. We do it.
-            # See also: http://www.ietf.org/mail-archive/web/hybi/current/msg02149.html
-            request += "Content-Length: %s\x0d\x0a" % len(self.websocket_key3)
-
-            # First two keys.
-            request += "Sec-WebSocket-Key1: %s\x0d\x0a" % self.websocket_key1
-            request += "Sec-WebSocket-Key2: %s\x0d\x0a" % self.websocket_key2
-            request_body = self.websocket_key3
-        else:
-            self.websocket_key = base64.b64encode(os.urandom(16))
-            request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key.decode()
-            request_body = None
+        self.websocket_key = base64.b64encode(os.urandom(16))
+        request += "Sec-WebSocket-Key: %s\x0d\x0a" % self.websocket_key.decode()
 
         # optional origin announced
         #
         if self.factory.origin:
-            if self.version > 10 or self.version == 0:
+            if self.version > 10:
                 request += "Origin: %s\x0d\x0a" % self.factory.origin
             else:
                 request += "Sec-WebSocket-Origin: %s\x0d\x0a" % self.factory.origin
@@ -3961,30 +3626,24 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
         # extensions
         #
-        if self.version != 0:
-            extensions = []
+        extensions = []
 
-            # permessage-compress offers
-            #
-            for offer in self.perMessageCompressionOffers:
-                extensions.append(offer.getExtensionString())
-
-            if len(extensions) > 0:
-                request += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensions)
-
-        # set WS protocol version depending on WS spec version
+        # permessage-compress offers
         #
-        if self.version != 0:
-            request += "Sec-WebSocket-Version: %d\x0d\x0a" % WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.version]
+        for offer in self.perMessageCompressionOffers:
+            extensions.append(offer.getExtensionString())
+
+        if len(extensions) > 0:
+            request += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensions)
+
+        # set WS protocol version
+        #
+        request += "Sec-WebSocket-Version: %d\x0d\x0a" % WebSocketProtocol.SPEC_TO_PROTOCOL_VERSION[self.version]
 
         request += "\x0d\x0a"
 
         self.http_request_data = request.encode('utf8')
         self.sendData(self.http_request_data)
-
-        if request_body:
-            # Write HTTP request body for Hixie-76
-            self.sendData(request_body)
 
         if self.debug:
             self.factory.log.debug(request)
@@ -4062,20 +3721,19 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # compute Sec-WebSocket-Accept
             #
-            if self.version != 0:
-                if 'sec-websocket-accept' not in self.http_headers:
-                    return self.failHandshake("HTTP Sec-WebSocket-Accept header missing in opening handshake reply")
-                else:
-                    if http_headers_cnt["sec-websocket-accept"] > 1:
-                        return self.failHandshake("HTTP Sec-WebSocket-Accept header appears more than once in opening handshake reply")
-                    sec_websocket_accept_got = self.http_headers["sec-websocket-accept"].strip()
+            if 'sec-websocket-accept' not in self.http_headers:
+                return self.failHandshake("HTTP Sec-WebSocket-Accept header missing in opening handshake reply")
+            else:
+                if http_headers_cnt["sec-websocket-accept"] > 1:
+                    return self.failHandshake("HTTP Sec-WebSocket-Accept header appears more than once in opening handshake reply")
+                sec_websocket_accept_got = self.http_headers["sec-websocket-accept"].strip()
 
-                    sha1 = hashlib.sha1()
-                    sha1.update(self.websocket_key + WebSocketProtocol._WS_MAGIC)
-                    sec_websocket_accept = base64.b64encode(sha1.digest()).decode()
+                sha1 = hashlib.sha1()
+                sha1.update(self.websocket_key + WebSocketProtocol._WS_MAGIC)
+                sec_websocket_accept = base64.b64encode(sha1.digest()).decode()
 
-                    if sec_websocket_accept_got != sec_websocket_accept:
-                        return self.failHandshake("HTTP Sec-WebSocket-Accept bogus value : expected %s / got %s" % (sec_websocket_accept, sec_websocket_accept_got))
+                if sec_websocket_accept_got != sec_websocket_accept:
+                    return self.failHandshake("HTTP Sec-WebSocket-Accept bogus value : expected %s / got %s" % (sec_websocket_accept, sec_websocket_accept_got))
 
             # Sec-WebSocket-Extensions
             #
@@ -4086,15 +3744,12 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             if 'sec-websocket-extensions' in self.http_headers:
 
-                if self.version == 0:
-                    return self.failHandshake("HTTP Sec-WebSocket-Extensions header encountered for Hixie-76")
+                if http_headers_cnt["sec-websocket-extensions"] > 1:
+                    return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
                 else:
-                    if http_headers_cnt["sec-websocket-extensions"] > 1:
-                        return self.failHandshake("HTTP Sec-WebSocket-Extensions header appears more than once in opening handshake reply")
-                    else:
-                        # extensions select by server
-                        #
-                        websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
+                    # extensions select by server
+                    #
+                    websocket_extensions = self._parseExtensionsHeader(self.http_headers["sec-websocket-extensions"])
 
                 # process extensions selected by server
                 #
@@ -4146,22 +3801,9 @@ class WebSocketClientProtocol(WebSocketProtocol):
                         #
                         self.websocket_protocol_in_use = sp
 
-            # For Hixie-76, we need 16 octets of HTTP request body to complete HS!
-            #
-            if self.version == 0:
-                if len(self.data) < end_of_header + 4 + 16:
-                    return
-                else:
-                    challenge_response = self.data[end_of_header + 4:end_of_header + 4 + 16]
-                    if challenge_response != self.websocket_expected_challenge_response:
-                        return self.failHandshake("invalid challenge response received from server (Hixie-76)")
-
             # Ok, got complete HS input, remember rest (if any)
             #
-            if self.version == 0:
-                self.data = self.data[end_of_header + 4 + 16:]
-            else:
-                self.data = self.data[end_of_header + 4:]
+            self.data = self.data[end_of_header + 4:]
 
             # opening handshake completed, move WebSocket connection into OPEN state
             #
@@ -4178,8 +3820,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # init state
             #
             self.inside_message = False
-            if self.version != 0:
-                self.current_frame = None
+            self.current_frame = None
             self.websocket_version = self.version
 
             # we handle this symmetrical to server-side .. that is, give the
@@ -4227,13 +3868,13 @@ class WebSocketClientFactory(WebSocketFactory):
 
     protocol = WebSocketClientProtocol
     """
-   The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketClientProtocol`.
-   """
+    The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketClientProtocol`.
+    """
 
     isServer = False
     """
-   Flag indicating if this factory is client- or server-side.
-   """
+    Flag indicating if this factory is client- or server-side.
+    """
 
     def __init__(self,
                  url=None,
@@ -4334,7 +3975,6 @@ class WebSocketClientFactory(WebSocketFactory):
         Reset all WebSocket protocol options to defaults.
         """
         self.version = WebSocketProtocol.DEFAULT_SPEC_VERSION
-        self.allowHixie76 = WebSocketProtocol.DEFAULT_ALLOW_HIXIE76
         self.utf8validateIncoming = True
         self.acceptMaskedServerFrames = False
         self.maskClientFrames = True
@@ -4362,7 +4002,6 @@ class WebSocketClientFactory(WebSocketFactory):
 
     def setProtocolOptions(self,
                            version=None,
-                           allowHixie76=None,
                            utf8validateIncoming=None,
                            acceptMaskedServerFrames=None,
                            maskClientFrames=None,
@@ -4424,14 +4063,9 @@ class WebSocketClientFactory(WebSocketFactory):
         :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
         :type autoPingSize: int
         """
-        if allowHixie76 is not None and allowHixie76 != self.allowHixie76:
-            self.allowHixie76 = allowHixie76
-
         if version is not None:
             if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:
                 raise Exception("invalid WebSocket draft version %s (allowed values: %s)" % (version, str(WebSocketProtocol.SUPPORTED_SPEC_VERSIONS)))
-            if version == 0 and not self.allowHixie76:
-                raise Exception("use of Hixie-76 requires allowHixie76 == True")
             if version != self.version:
                 self.version = version
 
