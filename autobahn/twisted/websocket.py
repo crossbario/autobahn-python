@@ -227,8 +227,7 @@ class WebSocketAdapterFactory(object):
     log = make_logger("twisted")
 
 
-# we deliberately subclass t.i.p.Factory, not t.i.p.ServerFactory. See https://github.com/tavendo/AutobahnPython/issues/389
-class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.Factory):
+class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
     """
     Base class for Twisted-based WebSocket server factories.
     """
@@ -249,8 +248,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
-# we deliberately subclass t.i.p.Factory, not t.i.p.ClientFactory. See https://github.com/tavendo/AutobahnPython/issues/389
-class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.Factory):
+class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
     """
     Base class for Twisted-based WebSocket client factories.
     """

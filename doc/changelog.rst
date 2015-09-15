@@ -5,10 +5,17 @@
 Changelog
 =========
 
+0.10.9
+------
+
+`Published 2015-09-15 <https://pypi.python.org/pypi/autobahn/0.10.8>`__
+
+* fixes regression #500 introduced with commit 9f68749
+
 0.10.8
 ------
 
-`Published 2015-09-13 <https://pypi.python.org/pypi/autobahn/0.10.7>`__
+`Published 2015-09-13 <https://pypi.python.org/pypi/autobahn/0.10.8>`__
 
 * maintenance release with some issues fixed
 
