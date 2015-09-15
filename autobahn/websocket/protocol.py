@@ -486,65 +486,67 @@ class WebSocketProtocol(object):
 
     SUPPORTED_SPEC_VERSIONS = [0, 10, 11, 12, 13, 14, 15, 16, 17, 18]
     """
-   WebSocket protocol spec (draft) versions supported by this implementation.
-   Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
-   draft spec versions (Hybi-Drafts). Use of version 0 indicates Hixie-76.
-   """
+    WebSocket protocol spec (draft) versions supported by this implementation.
+    Use of version 18 indicates RFC6455. Use of versions < 18 indicate actual
+    draft spec versions (Hybi-Drafts). Use of version 0 indicates Hixie-76.
+    """
 
     SUPPORTED_PROTOCOL_VERSIONS = [0, 8, 13]
     """
-   WebSocket protocol versions supported by this implementation. For Hixie-76,
-   there is no protocol version announced in HTTP header, and we just use the
-   draft version (0) in this case.
-   """
+    WebSocket protocol versions supported by this implementation. For Hixie-76,
+    there is no protocol version announced in HTTP header, and we just use the
+    draft version (0) in this case.
+    """
 
     SPEC_TO_PROTOCOL_VERSION = {0: 0, 10: 8, 11: 8, 12: 8, 13: 13, 14: 13, 15: 13, 16: 13, 17: 13, 18: 13}
     """
-   Mapping from protocol spec (draft) version to protocol version.  For Hixie-76,
-   there is no protocol version announced in HTTP header, and we just use the
-   pseudo protocol version 0 in this case.
-   """
+    Mapping from protocol spec (draft) version to protocol version.  For
+    Hixie-76, there is no protocol version announced in HTTP header, and we
+    just use the pseudo protocol version 0 in this case.
+    """
 
     PROTOCOL_TO_SPEC_VERSION = {0: 0, 8: 12, 13: 18}
     """
-   Mapping from protocol version to the latest protocol spec (draft) version
-   using that protocol version.  For Hixie-76, there is no protocol version
-   announced in HTTP header, and we just use the draft version (0) in this case.
-   """
+    Mapping from protocol version to the latest protocol spec (draft) version
+    using that protocol version.  For Hixie-76, there is no protocol version
+    announced in HTTP header, and we just use the draft version (0) in this case.
+    """
 
     DEFAULT_SPEC_VERSION = 18
     """
-   Default WebSocket protocol spec version this implementation speaks: final RFC6455.
-   """
+    Default WebSocket protocol spec version this implementation speaks: final
+    RFC6455.
+    """
 
     DEFAULT_ALLOW_HIXIE76 = False
     """
-   By default, this implementation will not allow to speak the obsoleted
-   Hixie-76 protocol version. That protocol version has security issues, but
-   is still spoken by some clients. Enable at your own risk! Enabling can be
-   done by using setProtocolOptions() on the factories for clients and servers.
-   """
+    By default, this implementation will not allow to speak the obsoleted
+    Hixie-76 protocol version. That protocol version has security issues, but
+    is still spoken by some clients. Enable at your own risk! Enabling can be
+    done by using setProtocolOptions() on the factories for clients and
+    servers.
+    """
 
     _WS_MAGIC = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
     """
-   Protocol defined magic used during WebSocket handshake (used in Hybi-drafts
-   and final RFC6455.
-   """
+    Protocol defined magic used during WebSocket handshake (used in Hybi-drafts
+    and final RFC6455.
+    """
 
     _QUEUED_WRITE_DELAY = 0.00001
     """
-   For synched/chopped writes, this is the reactor reentry delay in seconds.
-   """
+    For synched/chopped writes, this is the reactor reentry delay in seconds.
+    """
 
     MESSAGE_TYPE_TEXT = 1
     """
-   WebSocket text message type (UTF-8 payload).
-   """
+    WebSocket text message type (UTF-8 payload).
+    """
 
     MESSAGE_TYPE_BINARY = 2
     """
-   WebSocket binary message type (arbitrary binary payload).
-   """
+    WebSocket binary message type (arbitrary binary payload).
+    """
 
     # WebSocket protocol state:
     # (STATE_PROXY_CONNECTING) => STATE_CONNECTING => STATE_OPEN => STATE_CLOSING => STATE_CLOSED
@@ -633,8 +635,8 @@ class WebSocketProtocol(object):
                            'autoPingTimeout',
                            'autoPingSize']
     """
-   Configuration attributes common to servers and clients.
-   """
+    Configuration attributes common to servers and clients.
+    """
 
     CONFIG_ATTRS_SERVER = ['versions',
                            'webStatus',
@@ -647,8 +649,8 @@ class WebSocketProtocol(object):
                            'allowedOriginsPatterns',
                            'maxConnections']
     """
-   Configuration attributes specific to servers.
-   """
+    Configuration attributes specific to servers.
+    """
 
     CONFIG_ATTRS_CLIENT = ['version',
                            'acceptMaskedServerFrames',
@@ -657,8 +659,8 @@ class WebSocketProtocol(object):
                            'perMessageCompressionOffers',
                            'perMessageCompressionAccept']
     """
-   Configuration attributes specific to clients.
-   """
+    Configuration attributes specific to clients.
+    """
 
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
