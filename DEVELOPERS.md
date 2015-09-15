@@ -70,6 +70,16 @@ The **Private Library API** is for library internal use, crossing files, classes
 
 The **Private non-API** isn't an API at all: like class members which may only be used within that class, or functions which may only be used in the same module where the function is defined.
 
+### Public API
+
+The new rule for the public API is simple: if something is exported from the modules below, then it is public. Otherwise not.
+
+* [Top](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/__init__.py)
+* [WebSocket](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/websocket/__init__.py)
+* [WAMP](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/wamp/__init__.py)
+* [Asyncio](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/asyncio/__init__.py)
+* [Twisted](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/twisted/__init__.py)
+
 
 ## Release Process
 

@@ -38,7 +38,6 @@ from datetime import datetime, timedelta
 from pprint import pformat
 
 __all__ = ("utcnow",
-           "parseutc",
            "utcstr",
            "id",
            "rid",
@@ -50,6 +49,25 @@ __all__ = ("utcnow",
            "IdGenerator")
 
 
+def utcstr(ts=None):
+    """
+    Format UTC timestamp in ISO 8601 format.
+
+    Note: to parse an ISO 8601 formatted string, use the **iso8601**
+    module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``).
+
+    :param ts: The timestamp to format.
+    :type ts: instance of :py:class:`datetime.datetime` or None
+
+    :returns: Timestamp formatted in ISO 8601 format.
+    :rtype: unicode
+    """
+    assert(ts is None or isinstance(ts, datetime.datetime))
+    if ts is None:
+        ts = datetime.utcnow()
+    return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
+
+
 def utcnow():
     """
     Get current time in UTC as ISO 8601 string.
@@ -57,44 +75,7 @@ def utcnow():
     :returns: Current time as string in ISO 8601 format.
     :rtype: unicode
     """
-    now = datetime.utcnow()
-    return u"{0}Z".format(now.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
-
-
-def utcstr(ts):
-    """
-    Format UTC timestamp in ISO 8601 format.
-
-    :param ts: The timestamp to format.
-    :type ts: instance of :py:class:`datetime.datetime`
-
-    :returns: Timestamp formatted in ISO 8601 format.
-    :rtype: unicode
-    """
-    if ts:
-        return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
-    else:
-        return ts
-
-
-def parseutc(datestr):
-    """
-    Parse an ISO 8601 combined date and time string, like i.e. ``"2011-11-23T12:23:00Z"``
-    into a UTC datetime instance.
-
-    .. deprecated:: 0.8.12
-       Use the **iso8601** module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``)
-
-    :param datestr: The datetime string to parse.
-    :type datestr: unicode
-
-    :returns: The converted datetime object.
-    :rtype: instance of :py:class:`datetime.datetime`
-    """
-    try:
-        return datetime.strptime(datestr, u"%Y-%m-%dT%H:%M:%SZ")
-    except ValueError:
-        return None
+    return utcstr()
 
 
 class IdGenerator(object):
