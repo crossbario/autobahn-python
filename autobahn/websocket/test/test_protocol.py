@@ -70,8 +70,8 @@ class Hixie76RejectionTests(unittest.TestCase):
         p._connectionMade()
         p.data = http_request
         p.processHandshake()
-        self.assertIn("HTTP/1.1 400", t._written)
-        self.assertIn("Hixie76 protocol not supported", t._written)
+        self.assertIn(b"HTTP/1.1 400", t._written)
+        self.assertIn(b"Hixie76 protocol not supported", t._written)
 
 
 class WebSocketProtocolTests(unittest.TestCase):
