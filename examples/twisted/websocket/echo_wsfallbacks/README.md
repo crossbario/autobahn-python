@@ -3,14 +3,14 @@ WebSocket Echo Server with Fallbacks
 
 This example has the [broadest browser](http://www.tavendo.de/webmq/browsers) support currently possible with Autobahn.
 
-It supports native WebSocket protocol variants Hixie-76, Hybi-10+ and RFC6455.
+It supports native WebSocket protocol variants Hybi-10+ and RFC6455.
 
 On IE6-9 it uses [Google Chrome Frame](http://www.google.com/chromeframe) when available.
 
 On IE8,9 it can use a [Flash-based WebSocket implementation](https://github.com/gimite/web-socket-js). This requires Adobe Flash 10+.
 
 > The Flash implementation can also be used on older Android devices without Chrome Mobile, but with Flash. You need to remove the conditional comments around the Flash file includes though in this case from the `index.html`.
-> 
+>
 
 Running
 -------
@@ -51,5 +51,5 @@ Here is a typical browser log when the Flash implementation kicks in:
     Upgrade: WebSocket
     Connection: Upgrade
     Sec-WebSocket-Accept: 4wHBJpfr8P419FMUv8sJ/rT0x/4=
-    
+
     Connected!

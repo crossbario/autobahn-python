@@ -61,7 +61,6 @@ if __name__ == '__main__':
                                      debugCodePaths=debug)
 
     factory.protocol = EchoServerProtocol
-    factory.setProtocolOptions(allowHixie76=True)
     listenWS(factory, contextFactory)
 
     webdir = File(".")
