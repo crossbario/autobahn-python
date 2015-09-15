@@ -773,8 +773,6 @@ class WebSocketProtocol(object):
         the TCP connection either immediately (when we are a server) or after a timeout
         (when we are a client and expect the server to drop the TCP).
 
-        Modes: Hybi
-
         :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
         :type code: int or None
         :param reasonRaw: Close reason (when present, a status code MUST have been also be present).
@@ -871,8 +869,6 @@ class WebSocketProtocol(object):
         We (a client) expected the peer (a server) to drop the connection,
         but it didn't (in time self.serverConnectionDropTimeout).
         So we drop the connection, but set self.wasClean = False.
-
-        Modes: Hybi
         """
         self.serverConnectionDropTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
@@ -891,8 +887,6 @@ class WebSocketProtocol(object):
         We expected the peer to complete the opening handshake with to us.
         It didn't do so (in time self.openHandshakeTimeout).
         So we drop the connection, but set self.wasClean = False.
-
-        Modes: Hybi
         """
         self.openHandshakeTimeoutCall = None
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
@@ -920,8 +914,6 @@ class WebSocketProtocol(object):
         We expected the peer to respond to us initiating a close handshake. It didn't
         respond (in time self.closeHandshakeTimeout) with a close response frame though.
         So we drop the connection, but set self.wasClean = False.
-
-        Modes: Hybi
         """
         self.closeHandshakeTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
@@ -949,8 +941,6 @@ class WebSocketProtocol(object):
     def dropConnection(self, abort=False):
         """
         Drop the underlying TCP connection.
-
-        Modes: Hybi
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
@@ -971,8 +961,6 @@ class WebSocketProtocol(object):
     def failConnection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason="Going Away"):
         """
         Fails the WebSocket connection.
-
-        Modes: Hybi
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
@@ -1003,8 +991,6 @@ class WebSocketProtocol(object):
         """
         Fired when a WebSocket protocol violation/error occurs.
 
-        Modes: Hybi
-
         :param reason: Protocol violation that was encountered (human readable).
         :type reason: str
 
@@ -1025,8 +1011,6 @@ class WebSocketProtocol(object):
         Fired when invalid payload is encountered. Currently, this only happens
         for text message when payload is invalid UTF-8 or close frames with
         close reason that is invalid UTF-8.
-
-        Modes: Hybi
 
         :param reason: What was invalid for the payload (human readable).
         :type reason: str
@@ -1061,10 +1045,7 @@ class WebSocketProtocol(object):
         """
         This is called by network framework when a new TCP connection has been established
         and handed over to a Protocol instance (an instance of this class).
-
-        Modes: Hybi
         """
-
         # copy default options from factory (so we are not affected by changed on
         # those), but only copy if not already set on protocol instance (allow
         # to set configuration individually)
@@ -1177,9 +1158,8 @@ class WebSocketProtocol(object):
 
     def _connectionLost(self, reason):
         """
-        This is called by network framework when a transport connection was lost.
-
-        Modes: Hybi
+        This is called by network framework when a transport connection was
+        lost.
         """
         # cancel any server connection drop timer if present
         #
@@ -1222,25 +1202,22 @@ class WebSocketProtocol(object):
 
     def logRxOctets(self, data):
         """
-        Hook fired right after raw octets have been received, but only when self.logOctets == True.
-
-        Modes: Hybi
+        Hook fired right after raw octets have been received, but only when
+        self.logOctets == True.
         """
         self.factory.log.debug("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
 
     def logTxOctets(self, data, sync):
         """
-        Hook fired right after raw octets have been sent, but only when self.logOctets == True.
-
-        Modes: Hybi
+        Hook fired right after raw octets have been sent, but only when
+        self.logOctets == True.
         """
         self.factory.log.debug("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
 
     def logRxFrame(self, frameHeader, payload):
         """
-        Hook fired right after WebSocket frame has been received and decoded, but only when self.logFrames == True.
-
-        Modes: Hybi
+        Hook fired right after WebSocket frame has been received and decoded,
+        but only when self.logFrames == True.
         """
         data = b''.join(payload)
         info = (self.peer,
@@ -1255,9 +1232,8 @@ class WebSocketProtocol(object):
 
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
         """
-        Hook fired right after WebSocket frame has been encoded and sent, but only when self.logFrames == True.
-
-        Modes: Hybi
+        Hook fired right after WebSocket frame has been encoded and sent, but
+        only when self.logFrames == True.
         """
         info = (self.peer,
                 frameHeader.fin,
@@ -1274,9 +1250,8 @@ class WebSocketProtocol(object):
 
     def _dataReceived(self, data):
         """
-        This is called by network framework upon receiving data on transport connection.
-
-        Modes: Hybi
+        This is called by network framework upon receiving data on transport
+        connection.
         """
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.trafficStats.incomingOctetsWireLevel += len(data)
@@ -1291,10 +1266,7 @@ class WebSocketProtocol(object):
     def consumeData(self):
         """
         Consume buffered (incoming) data.
-
-        Modes: Hybi
         """
-
         # WebSocket is open (handshake was completed) or close was sent
         #
         if self.state == WebSocketProtocol.STATE_OPEN or self.state == WebSocketProtocol.STATE_CLOSING:
@@ -1337,24 +1309,19 @@ class WebSocketProtocol(object):
     def processProxyConnect(self):
         """
         Process proxy connect.
-
-        Modes: Hybi
         """
         raise Exception("must implement proxy connect (client or server) in derived class")
 
     def processHandshake(self):
         """
         Process WebSocket handshake.
-
-        Modes: Hybi
         """
         raise Exception("must implement handshake (client or server) in derived class")
 
     def _trigger(self):
         """
-        Trigger sending stuff from send queue (which is only used for chopped/synched writes).
-
-        Modes: Hybi
+        Trigger sending stuff from send queue (which is only used for
+        chopped/synched writes).
         """
         if not self.triggered:
             self.triggered = True
@@ -1362,10 +1329,8 @@ class WebSocketProtocol(object):
 
     def _send(self):
         """
-        Send out stuff from send queue. For details how this works, see test/trickling
-        in the repo.
-
-        Modes: Hybi
+        Send out stuff from send queue. For details how this works, see
+        test/trickling in the repo.
         """
         if len(self.send_queue) > 0:
             e = self.send_queue.popleft()
@@ -1396,13 +1361,12 @@ class WebSocketProtocol(object):
     def sendData(self, data, sync=False, chopsize=None):
         """
         Wrapper for self.transport.write which allows to give a chopsize.
-        When asked to chop up writing to TCP stream, we write only chopsize octets
-        and then give up control to select() in underlying reactor so that bytes
-        get onto wire immediately. Note that this is different from and unrelated
-        to WebSocket data message fragmentation. Note that this is also different
-        from the TcpNoDelay option which can be set on the socket.
-
-        Modes: Hybi
+        When asked to chop up writing to TCP stream, we write only chopsize
+        octets and then give up control to select() in underlying reactor so
+        that bytes get onto wire immediately. Note that this is different from
+        and unrelated to WebSocket data message fragmentation. Note that this
+        is also different from the TcpNoDelay option which can be set on the
+        socket.
         """
         if chopsize and chopsize > 0:
             i = 0
@@ -1444,8 +1408,6 @@ class WebSocketProtocol(object):
         """
         After WebSocket handshake has been completed, this procedure will do
         all subsequent processing of incoming bytes.
-
-        Modes: Hybi
         """
         buffered_len = len(self.data)
 
@@ -1690,8 +1652,6 @@ class WebSocketProtocol(object):
     def onFrameBegin(self):
         """
         Begin of receive new frame.
-
-        Modes: Hybi
         """
         if self.current_frame.opcode > 7:
             self.control_frame_data = []
@@ -1733,8 +1693,6 @@ class WebSocketProtocol(object):
     def onFrameData(self, payload):
         """
         New data received within frame.
-
-        Modes: Hybi
         """
         if self.current_frame.opcode > 7:
             self.control_frame_data.append(payload)
@@ -1770,8 +1728,6 @@ class WebSocketProtocol(object):
     def onFrameEnd(self):
         """
         End of frame received.
-
-        Modes: Hybi
         """
         if self.current_frame.opcode > 7:
             if self.logFrames:
@@ -1813,10 +1769,7 @@ class WebSocketProtocol(object):
     def processControlFrame(self):
         """
         Process a completely received control frame.
-
-        Modes: Hybi
         """
-
         payload = b''.join(self.control_frame_data)
         self.control_frame_data = None
 
@@ -1888,20 +1841,20 @@ class WebSocketProtocol(object):
                   chopsize=None,
                   sync=False):
         """
-        Send out frame. Normally only used internally via sendMessage(), sendPing(), sendPong() and sendClose().
+        Send out frame. Normally only used internally via sendMessage(),
+        sendPing(), sendPong() and sendClose().
 
-        This method deliberately allows to send invalid frames (that is frames invalid
-        per-se, or frames invalid because of protocol state). Other than in fuzzing servers,
-        calling methods will ensure that no invalid frames are sent.
+        This method deliberately allows to send invalid frames (that is frames
+        invalid per-se, or frames invalid because of protocol state). Other
+        than in fuzzing servers, calling methods will ensure that no invalid
+        frames are sent.
 
-        In addition, this method supports explicit specification of payload length.
-        When payload_len is given, it will always write that many octets to the stream.
-        It'll wrap within payload, resending parts of that when more octets were requested
-        The use case is again for fuzzing server which want to sent increasing amounts
-        of payload data to peers without having to construct potentially large messages
-        themselves.
-
-        Modes: Hybi
+        In addition, this method supports explicit specification of payload
+        length. When payload_len is given, it will always write that many
+        octets to the stream. It'll wrap within payload, resending parts of
+        that when more octets were requested The use case is again for fuzzing
+        server which want to sent increasing amounts of payload data to peers
+        without having to construct potentially large messages themselves.
         """
         if payload_len is not None:
             if len(payload) < 1:
@@ -2020,8 +1973,6 @@ class WebSocketProtocol(object):
         Send a close frame and update protocol state. Note, that this is
         an internal method which deliberately allows not send close
         frame with invalid payload.
-
-        Modes: Hybi
         """
         if self.state == WebSocketProtocol.STATE_CLOSING:
             if self.debugCodePaths:
@@ -2423,10 +2374,10 @@ class PreparedMessage(object):
         :type isBinary: bool
         :param applyMask: Provide `True` if WebSocket message is to be masked (required for client to server WebSocket messages).
         :type applyMask: bool
-        :param doNotCompress: Iff `True`, never compress this message. This only applies to
-                              Hybi-Mode and only when WebSocket compression has been negotiated on
-                              the WebSocket connection. Use when you know the payload
-                              incompressible (e.g. encrypted or already compressed).
+        :param doNotCompress: Iff `True`, never compress this message. This
+            only applies when WebSocket compression has been negotiated on the
+            WebSocket connection. Use when you know the payload incompressible
+            (e.g. encrypted or already compressed).
         :type doNotCompress: bool
         """
         if not doNotCompress:
@@ -2498,12 +2449,13 @@ class WebSocketFactory(object):
 
         :param payload: The message payload.
         :type payload: bytes
-        :param isBinary: `True` iff payload is binary, else the payload must be UTF-8 encoded text.
+        :param isBinary: `True` iff payload is binary, else the payload must be
+            UTF-8 encoded text.
         :type isBinary: bool
-        :param doNotCompress: Iff `True`, never compress this message. This only applies to
-                              Hybi-Mode and only when WebSocket compression has been negotiated on
-                              the WebSocket connection. Use when you know the payload
-                              incompressible (e.g. encrypted or already compressed).
+        :param doNotCompress: Iff `True`, never compress this message. This
+            only applies when WebSocket compression has been negotiated on the
+            WebSocket connection. Use when you know the payload incompressible
+            (e.g. encrypted or already compressed).
         :type doNotCompress: bool
 
         :returns: obj -- An instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
@@ -3485,7 +3437,6 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         Connect to explicit proxy.
         """
-
         # construct proxy connect HTTP request
         #
         request = "CONNECT %s:%d HTTP/1.1\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
