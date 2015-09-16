@@ -62,7 +62,7 @@ def utcstr(ts=None):
     :returns: Timestamp formatted in ISO 8601 format.
     :rtype: unicode
     """
-    assert(ts is None or isinstance(ts, datetime.datetime))
+    assert(ts is None or isinstance(ts, datetime))
     if ts is None:
         ts = datetime.utcnow()
     return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
