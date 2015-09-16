@@ -26,12 +26,10 @@
 
 from __future__ import absolute_import
 
-import sys
 import inspect
 
 import six
 
-from twisted.python import log
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
@@ -63,16 +61,6 @@ class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for Twisted-based applications.
     """
-
-    def onUserError(self, e, msg):
-        """
-        Override of wamp.ApplicationSession
-        """
-        # see docs; will print currently-active exception to the logs,
-        # which is just what we want.
-        log.err(e)
-        # also log the framework-provided error-message
-        log.err(msg)
 
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
@@ -169,9 +157,10 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        # start logging to console
         if self.debug or self.debug_wamp or self.debug_app:
-            log.startLogging(sys.stdout)
+            txaio.start_logging(level='debug')
+        else:
+            txaio.start_logging(level='info')
 
         # factory for use ApplicationSession
         def create():
@@ -181,7 +170,7 @@ class ApplicationRunner(object):
             except Exception as e:
                 if start_reactor:
                     # the app component could not be created .. fatal
-                    log.err(str(e))
+                    self.log.error(str(e))
                     reactor.stop()
                 else:
                     # if we didn't start the reactor, it's up to the
@@ -529,7 +518,7 @@ class Application(object):
                 yield handler(*args, **kwargs)
             except Exception as e:
                 # FIXME
-                log.msg("Warning: exception in signal handler swallowed", e)
+                self.log.info("Warning: exception in signal handler swallowed", e)
 
 
 if service:

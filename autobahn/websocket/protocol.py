@@ -556,6 +556,8 @@ class WebSocketProtocol(object):
     Configuration attributes specific to clients.
     """
 
+    log = txaio.make_logger()
+
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
@@ -564,8 +566,7 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onOpen`
         """
-        if self.debugCodePaths:
-            self.factory.log.debug("WebSocketProtocol.onOpen")
+        self.log.debug("WebSocketProtocol.onOpen")
 
     def onMessageBegin(self, isBinary):
         """
@@ -585,10 +586,16 @@ class WebSocketProtocol(object):
         if not self.failedByMe:
             if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                 self.wasMaxMessagePayloadSizeExceeded = True
-                self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+                self.failConnection(
+                    WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
+                    "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize
+                )
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
-                self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
+                self.failConnection(
+                    WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION,
+                    "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize
+                )
 
     def onMessageFrameData(self, payload):
         """
@@ -637,14 +644,14 @@ class WebSocketProtocol(object):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
         if self.debug:
-            self.factory.log.debug("WebSocketProtocol.onMessage")
+            self.log.debug("WebSocketProtocol.onMessage")
 
     def onPing(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
         """
         if self.debug:
-            self.factory.log.debug("WebSocketProtocol.onPing")
+            self.log.debug("WebSocketProtocol.onPing")
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.sendPong(payload)
 
@@ -653,7 +660,7 @@ class WebSocketProtocol(object):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
         if self.debug:
-            self.factory.log.debug("WebSocketProtocol.onPong")
+            self.log.debug("WebSocketProtocol.onPong")
 
     def onClose(self, wasClean, code, reason):
         """
@@ -673,7 +680,7 @@ class WebSocketProtocol(object):
             s += "self.localCloseReason=%s\n" % self.localCloseReason
             s += "self.remoteCloseCode=%s\n" % self.remoteCloseCode
             s += "self.remoteCloseReason=%s\n" % self.remoteCloseReason
-            self.factory.log.debug(s)
+            self.log.debug(s)
 
     def onCloseFrame(self, code, reasonRaw):
         """
@@ -688,7 +695,7 @@ class WebSocketProtocol(object):
         :type reason: str or None
         """
         if self.debugCodePaths:
-            self.factory.log.debug("WebSocketProtocol.onCloseFrame")
+            self.log.debug("WebSocketProtocol.onCloseFrame")
 
         self.remoteCloseCode = code
 
@@ -722,7 +729,7 @@ class WebSocketProtocol(object):
             #
             if self.closeHandshakeTimeoutCall is not None:
                 if self.debugCodePaths:
-                    self.factory.log.debug("closeHandshakeTimeoutCall.cancel")
+                    self.log.debug("closeHandshakeTimeoutCall.cancel")
                 self.closeHandshakeTimeoutCall.cancel()
                 self.closeHandshakeTimeoutCall = None
 
@@ -782,14 +789,14 @@ class WebSocketProtocol(object):
         self.serverConnectionDropTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
-                self.factory.log.debug("onServerConnectionDropTimeout")
+                self.log.debug("onServerConnectionDropTimeout")
             self.wasClean = False
             self.wasNotCleanReason = "server did not drop TCP connection (in time)"
             self.wasServerConnectionDropTimeout = True
             self.dropConnection(abort=True)
         else:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping onServerConnectionDropTimeout since connection is already closed")
+                self.log.debug("skipping onServerConnectionDropTimeout since connection is already closed")
 
     def onOpenHandshakeTimeout(self):
         """
@@ -800,20 +807,20 @@ class WebSocketProtocol(object):
         self.openHandshakeTimeoutCall = None
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
             if self.debugCodePaths:
-                self.factory.log.debug("onOpenHandshakeTimeout fired")
+                self.log.debug("onOpenHandshakeTimeout fired")
             self.wasClean = False
             self.wasNotCleanReason = "peer did not finish (in time) the opening handshake"
             self.wasOpenHandshakeTimeout = True
             self.dropConnection(abort=True)
         elif self.state == WebSocketProtocol.STATE_OPEN:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is open (opening handshake already finished)")
+                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is open (opening handshake already finished)")
         elif self.state == WebSocketProtocol.STATE_CLOSING:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is closing")
+                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is closing")
         elif self.state == WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection already closed")
+                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection already closed")
         else:
             # should not arrive here
             raise Exception("logic error")
@@ -827,14 +834,14 @@ class WebSocketProtocol(object):
         self.closeHandshakeTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
-                self.factory.log.debug("onCloseHandshakeTimeout fired")
+                self.log.debug("onCloseHandshakeTimeout fired")
             self.wasClean = False
             self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping onCloseHandshakeTimeout since connection is already closed")
+                self.log.debug("skipping onCloseHandshakeTimeout since connection is already closed")
 
     def onAutoPingTimeout(self):
         """
@@ -842,7 +849,7 @@ class WebSocketProtocol(object):
         did not reply in time to our ping. We drop the connection.
         """
         if self.debugCodePaths:
-            self.factory.log.debug("Auto ping/pong: onAutoPingTimeout fired")
+            self.log.debug("Auto ping/pong: onAutoPingTimeout fired")
 
         self.autoPingTimeoutCall = None
         self.dropConnection(abort=True)
@@ -852,8 +859,7 @@ class WebSocketProtocol(object):
         Drop the underlying TCP connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.factory.log.debug("dropping connection")
+            self.log.debug("dropping connection: {reason}", reason=self.wasNotCleanReason)
             self.droppedByMe = True
 
             # this code-path will be hit (*without* hitting
@@ -865,15 +871,14 @@ class WebSocketProtocol(object):
             self._closeConnection(abort)
         else:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping dropConnection since connection is already closed")
+                self.log.debug("skipping dropConnection since connection is already closed")
 
     def failConnection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason="Going Away"):
         """
         Fails the WebSocket connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.factory.log.debug("Failing connection : %s - %s" % (code, reason))
+            self.log.debug("Failing connection: {code}: {reason}", code=code, reason=reason)
 
             self.failedByMe = True
 
@@ -894,7 +899,7 @@ class WebSocketProtocol(object):
 
         else:
             if self.debugCodePaths:
-                self.factory.log.debug("skipping failConnection since connection is already closed")
+                self.log.debug("skipping failConnection since connection is already closed")
 
     def protocolViolation(self, reason):
         """
@@ -906,7 +911,7 @@ class WebSocketProtocol(object):
         :returns: bool -- True, when any further processing should be discontinued.
         """
         if self.debugCodePaths:
-            self.factory.log.debug("Protocol violation : %s" % reason)
+            self.log.debug("Protocol violation : %s" % reason)
         self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
         if self.failByDrop:
             return True
@@ -927,7 +932,7 @@ class WebSocketProtocol(object):
         :returns: bool -- True, when any further processing should be discontinued.
         """
         if self.debugCodePaths:
-            self.factory.log.debug("Invalid payload : %s" % reason)
+            self.log.debug("Invalid payload : %s" % reason)
         self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, reason)
         if self.failByDrop:
             return True
@@ -969,8 +974,8 @@ class WebSocketProtocol(object):
             configAttrLog.append((configAttr, getattr(self, configAttr), configAttrSource))
 
         if self.debug:
-            # self.factory.log.debug(configAttrLog)
-            self.factory.log.debug("\n" + pformat(configAttrLog))
+            # self.log.debug(configAttrLog)
+            self.log.debug("\n" + pformat(configAttrLog))
 
         # permessage-compress extension
         self._perMessageCompress = None
@@ -1072,9 +1077,10 @@ class WebSocketProtocol(object):
         """
         # cancel any server connection drop timer if present
         #
+        self.log.debug('_connectionLost: {reason}', reason=reason)
         if not self.factory.isServer and self.serverConnectionDropTimeoutCall is not None:
             if self.debugCodePaths:
-                self.factory.log.debug("serverConnectionDropTimeoutCall.cancel")
+                self.log.debug("serverConnectionDropTimeoutCall.cancel")
             self.serverConnectionDropTimeoutCall.cancel()
             self.serverConnectionDropTimeoutCall = None
 
@@ -1082,13 +1088,13 @@ class WebSocketProtocol(object):
         #
         if self.autoPingPendingCall:
             if self.debugCodePaths:
-                self.factory.log.debug("Auto ping/pong: canceling autoPingPendingCall upon lost connection")
+                self.log.debug("Auto ping/pong: canceling autoPingPendingCall upon lost connection")
             self.autoPingPendingCall.cancel()
             self.autoPingPendingCall = None
 
         if self.autoPingTimeoutCall:
             if self.debugCodePaths:
-                self.factory.log.debug("Auto ping/pong: canceling autoPingTimeoutCall upon lost connection")
+                self.log.debug("Auto ping/pong: canceling autoPingTimeoutCall upon lost connection")
             self.autoPingTimeoutCall.cancel()
             self.autoPingTimeoutCall = None
 
@@ -1100,7 +1106,7 @@ class WebSocketProtocol(object):
 
         if self.wasServingFlashSocketPolicyFile:
             if self.debug:
-                self.factory.log.debug("connection dropped after serving Flash Socket Policy File")
+                self.log.debug("connection dropped after serving Flash Socket Policy File")
         else:
             if not self.wasClean:
                 if not self.droppedByMe and self.wasNotCleanReason is None:
@@ -1114,14 +1120,14 @@ class WebSocketProtocol(object):
         Hook fired right after raw octets have been received, but only when
         self.logOctets == True.
         """
-        self.factory.log.debug("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
+        self.log.debug("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
 
     def logTxOctets(self, data, sync):
         """
         Hook fired right after raw octets have been sent, but only when
         self.logOctets == True.
         """
-        self.factory.log.debug("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
+        self.log.debug("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
 
     def logRxFrame(self, frameHeader, payload):
         """
@@ -1137,7 +1143,7 @@ class WebSocketProtocol(object):
                 frameHeader.length,
                 data if frameHeader.opcode == 1 else binascii.b2a_hex(data))
 
-        self.factory.log.debug("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
+        self.log.debug("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
 
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
         """
@@ -1155,7 +1161,7 @@ class WebSocketProtocol(object):
                 sync,
                 payload if frameHeader.opcode == 1 else binascii.b2a_hex(payload))
 
-        self.factory.log.debug("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
+        self.log.debug("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
 
     def _dataReceived(self, data):
         """
@@ -1208,7 +1214,7 @@ class WebSocketProtocol(object):
             # ignore any data received after WS was closed
             #
             if self.debugCodePaths:
-                self.factory.log.debug("received data in STATE_CLOSED")
+                self.log.debug("received data in STATE_CLOSED")
 
         # should not arrive here (invalid state)
         #
@@ -1257,7 +1263,7 @@ class WebSocketProtocol(object):
                     self.logTxOctets(e[0], e[1])
             else:
                 if self.debugCodePaths:
-                    self.factory.log.debug("skipped delayed write, since connection is closed")
+                    self.log.debug("skipped delayed write, since connection is closed")
             # we need to reenter the reactor to make the latter
             # reenter the OS network stack, so that octets
             # can get on the wire. Note: this is a "heuristic",
@@ -1611,7 +1617,7 @@ class WebSocketProtocol(object):
             if self._isMessageCompressed:
                 compressedLen = len(payload)
                 if self.debug:
-                    self.factory.log.debug("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
+                    self.log.debug("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
 
                 payload = self._perMessageCompress.decompressMessageData(payload)
                 uncompressedLen = len(payload)
@@ -1665,7 +1671,7 @@ class WebSocketProtocol(object):
                             return False
 
                 # if self.debug:
-                #   self.factory.log.debug("Traffic statistics:\n" + str(self.trafficStats))
+                #   self.log.debug("Traffic statistics:\n" + str(self.trafficStats))
 
                 if self.state == WebSocketProtocol.STATE_OPEN:
                     self.trafficStats.incomingWebSocketMessages += 1
@@ -1712,7 +1718,7 @@ class WebSocketProtocol(object):
                 try:
                     if payload == self.autoPingPending:
                         if self.debugCodePaths:
-                            self.factory.log.debug("Auto ping/pong: received pending pong for auto-ping/pong")
+                            self.log.debug("Auto ping/pong: received pending pong for auto-ping/pong")
 
                         if self.autoPingTimeoutCall:
                             self.autoPingTimeoutCall.cancel()
@@ -1724,10 +1730,10 @@ class WebSocketProtocol(object):
                             self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
                     else:
                         if self.debugCodePaths:
-                            self.factory.log.debug("Auto ping/pong: received non-pending pong")
+                            self.log.debug("Auto ping/pong: received non-pending pong")
                 except:
                     if self.debugCodePaths:
-                        self.factory.log.debug("Auto ping/pong: received non-pending pong")
+                        self.log.debug("Auto ping/pong: received non-pending pong")
 
             # fire app-level callback
             #
@@ -1850,7 +1856,7 @@ class WebSocketProtocol(object):
     def _sendAutoPing(self):
         # Sends an automatic ping and sets up a timeout.
         if self.debugCodePaths:
-            self.factory.log.debug("Auto ping/pong: sending ping auto-ping/pong")
+            self.log.debug("Auto ping/pong: sending ping auto-ping/pong")
 
         self.autoPingPendingCall = None
 
@@ -1860,7 +1866,7 @@ class WebSocketProtocol(object):
 
         if self.autoPingTimeout:
             if self.debugCodePaths:
-                self.factory.log.debug("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
+                self.log.debug("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
             self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
 
     def sendPong(self, payload=None):
@@ -1885,11 +1891,11 @@ class WebSocketProtocol(object):
         """
         if self.state == WebSocketProtocol.STATE_CLOSING:
             if self.debugCodePaths:
-                self.factory.log.debug("ignoring sendCloseFrame since connection is closing")
+                self.log.debug("ignoring sendCloseFrame since connection is closing")
 
         elif self.state == WebSocketProtocol.STATE_CLOSED:
             if self.debugCodePaths:
-                self.factory.log.debug("ignoring sendCloseFrame since connection already closed")
+                self.log.debug("ignoring sendCloseFrame since connection already closed")
 
         elif self.state in [WebSocketProtocol.STATE_PROXY_CONNECTING, WebSocketProtocol.STATE_CONNECTING]:
             raise Exception("cannot close a connection not yet connected")
@@ -2226,7 +2232,7 @@ class WebSocketProtocol(object):
                 i += pfs
 
         # if self.debug:
-        #   self.factory.log.debug("Traffic statistics:\n" + str(self.trafficStats))
+        #   self.log.debug("Traffic statistics:\n" + str(self.trafficStats))
 
     def _parseExtensionsHeader(self, header, removeQuotes=True):
         """
@@ -2410,7 +2416,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         WebSocketProtocol._connectionMade(self)
         self.factory.countConnections += 1
         if self.debug:
-            self.factory.log.debug("connection accepted from peer %s" % self.peer)
+            self.log.debug("connection accepted from peer %s" % self.peer)
 
     def _connectionLost(self, reason):
         """
@@ -2436,7 +2442,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             self.http_request_data = self.data[:end_of_header + 4]
             if self.debug:
-                self.factory.log.debug("received HTTP request:\n\n%s\n\n" % self.http_request_data)
+                self.log.debug("received HTTP request:\n\n%s\n\n" % self.http_request_data)
 
             # extract HTTP status line and headers
             #
@@ -2445,8 +2451,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
             # validate WebSocket opening handshake client request
             #
             if self.debug:
-                self.factory.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
-                self.factory.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
+                self.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
+                self.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
 
             # HTTP Request line : METHOD, VERSION
             #
@@ -2505,7 +2511,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
                 else:
                     if self.debugCodePaths:
-                        self.factory.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
+                        self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
                 self.http_request_host = h
 
@@ -2516,7 +2522,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
                 else:
                     if self.debugCodePaths:
-                        self.factory.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
+                        self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
             # Upgrade
             #
@@ -2544,15 +2550,15 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         if 'after' in self.http_request_params and len(self.http_request_params['after']) > 0:
                             after = int(self.http_request_params['after'][0])
                             if self.debugCodePaths:
-                                self.factory.log.debug("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
+                                self.log.debug("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
                             self.sendServerStatus(url, after)
                         else:
                             if self.debugCodePaths:
-                                self.factory.log.debug("HTTP Upgrade header missing : 303-redirecting to %s" % url)
+                                self.log.debug("HTTP Upgrade header missing : 303-redirecting to %s" % url)
                             self.sendRedirect(url)
                     else:
                         if self.debugCodePaths:
-                            self.factory.log.debug("HTTP Upgrade header missing : render server status page")
+                            self.log.debug("HTTP Upgrade header missing : render server status page")
                         self.sendServerStatus()
                     self.dropConnection(abort=False)
                     return
@@ -2582,11 +2588,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
             #
             if 'sec-websocket-version' not in self.http_headers:
                 if self.debugCodePaths:
-                    self.factory.log.debug("Hixie76 protocol detected")
+                    self.log.debug("Hixie76 protocol detected")
                 return self.failHandshake("WebSocket connection denied - Hixie76 protocol not supported.")
             else:
                 if self.debugCodePaths:
-                    self.factory.log.debug("Hybi protocol detected")
+                    self.log.debug("Hybi protocol detected")
                 if http_headers_cnt["sec-websocket-version"] > 1:
                     return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
                 try:
@@ -2717,11 +2723,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
             flash_policy_file_request = self.data.find(b"<policy-file-request/>\x00")
             if flash_policy_file_request >= 0:
                 if self.debug:
-                    self.factory.log.debug("received Flash Socket Policy File request")
+                    self.log.debug("received Flash Socket Policy File request")
 
                 if self.serveFlashSocketPolicy:
                     if self.debug:
-                        self.factory.log.debug("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
+                        self.log.debug("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
 
                     self.sendData(self.flashSocketPolicy.encode('utf8'))
 
@@ -2730,7 +2736,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     self.dropConnection()
                 else:
                     if self.debug:
-                        self.factory.log.debug("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
+                        self.log.debug("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
 
     def succeedHandshake(self, res):
         """
@@ -2767,7 +2773,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         for (extension, params) in self.websocket_extensions:
 
             if self.debug:
-                self.factory.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
+                self.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
             # process permessage-compress extension
             #
@@ -2783,7 +2789,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             else:
                 if self.debug:
-                    self.factory.log.debug("client requested '%s' extension we don't support or which is not activated" % extension)
+                    self.log.debug("client requested '%s' extension we don't support or which is not activated" % extension)
 
         # handle permessage-compress offers by the client
         #
@@ -2796,7 +2802,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 extensionResponse.append(accept.getExtensionString())
             else:
                 if self.debug:
-                    self.factory.log.debug("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
+                    self.log.debug("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
 
         # build response to complete WebSocket handshake
         #
@@ -2850,12 +2856,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # send out opening handshake response
         #
         if self.debug:
-            self.factory.log.debug("sending HTTP response:\n\n%s" % response)
+            self.log.debug("sending HTTP response:\n\n%s" % response)
         self.sendData(response.encode('utf8'))
 
         if response_body:
             if self.debug:
-                self.factory.log.debug("sending HTTP response body:\n\n%s" % binascii.b2a_hex(response_body))
+                self.log.debug("sending HTTP response body:\n\n%s" % binascii.b2a_hex(response_body))
             self.sendData(response_body)
 
         # save response for testsuite
@@ -2870,7 +2876,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         if self.openHandshakeTimeoutCall is not None:
             if self.debugCodePaths:
-                self.factory.log.debug("openHandshakeTimeoutCall.cancel")
+                self.log.debug("openHandshakeTimeoutCall.cancel")
             self.openHandshakeTimeoutCall.cancel()
             self.openHandshakeTimeoutCall = None
 
@@ -2901,7 +2907,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         error response and then drop the connection.
         """
         self.wasNotCleanReason = reason
-        self.factory.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
+        self.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
         self.sendHttpErrorResponse(code, reason, responseHeaders)
         self.dropConnection(abort=False)
 
@@ -3323,7 +3329,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         """
         WebSocketProtocol._connectionMade(self)
         if self.debug:
-            self.factory.log.debug("connection to %s established" % self.peer)
+            self.log.debug("connection to %s established" % self.peer)
 
         if not self.factory.isServer and self.factory.proxy is not None:
             # start by doing a HTTP/CONNECT for explicit proxies
@@ -3352,7 +3358,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         request += "\x0d\x0a"
 
         if self.debug:
-            self.factory.log.debug(request)
+            self.log.debug(request)
 
         self.sendData(request)
 
@@ -3367,7 +3373,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             http_response_data = self.data[:end_of_header + 4]
             if self.debug:
-                self.factory.log.debug("received HTTP response:\n\n%s\n\n" % http_response_data)
+                self.log.debug("received HTTP response:\n\n%s\n\n" % http_response_data)
 
             # extract HTTP status line and headers
             #
@@ -3376,8 +3382,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # validate proxy connect response
             #
             if self.debug:
-                self.factory.log.debug("received HTTP status line for proxy connect request : %s" % str(http_status_line))
-                self.factory.log.debug("received HTTP headers for proxy connect request : %s" % str(http_headers))
+                self.log.debug("received HTTP status line for proxy connect request : %s" % str(http_status_line))
+                self.log.debug("received HTTP headers for proxy connect request : %s" % str(http_headers))
 
             # Response Line
             #
@@ -3432,7 +3438,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         connection.
         """
         if self.debug:
-            self.factory.log.debug("failing proxy connect ('%s')" % reason)
+            self.log.debug("failing proxy connect ('%s')" % reason)
         self.dropConnection(abort=True)
 
     def startHandshake(self):
@@ -3505,7 +3511,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         self.sendData(self.http_request_data)
 
         if self.debug:
-            self.factory.log.debug(request)
+            self.log.debug(request)
 
     def processHandshake(self):
         """
@@ -3518,7 +3524,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             self.http_response_data = self.data[:end_of_header + 4]
             if self.debug:
-                self.factory.log.debug("received HTTP response:\n\n%s\n\n" % self.http_response_data)
+                self.log.debug("received HTTP response:\n\n%s\n\n" % self.http_response_data)
 
             # extract HTTP status line and headers
             #
@@ -3527,8 +3533,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # validate WebSocket opening handshake server response
             #
             if self.debug:
-                self.factory.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
-                self.factory.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
+                self.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
+                self.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
 
             # Response Line
             #
@@ -3615,7 +3621,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 for (extension, params) in websocket_extensions:
 
                     if self.debug:
-                        self.factory.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
+                        self.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
 
                     # process permessage-compress extension
                     #
@@ -3672,7 +3678,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             #
             if self.openHandshakeTimeoutCall is not None:
                 if self.debugCodePaths:
-                    self.factory.log.debug("openHandshakeTimeoutCall.cancel")
+                    self.log.debug("openHandshakeTimeoutCall.cancel")
                 self.openHandshakeTimeoutCall.cancel()
                 self.openHandshakeTimeoutCall = None
 
@@ -3716,7 +3722,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         connection.
         """
         self.wasNotCleanReason = reason
-        self.factory.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
+        self.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
         self.dropConnection(abort=True)
 
 

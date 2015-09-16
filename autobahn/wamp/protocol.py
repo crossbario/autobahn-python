@@ -26,10 +26,8 @@
 
 from __future__ import absolute_import
 
-import traceback
 import inspect
 import six
-from six import StringIO
 
 from autobahn.wamp.interfaces import ISession, \
     IPublication, \
@@ -387,9 +385,12 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception as e:
+            except Exception:
                 try:
-                    self.onUserError(e, "While re-constructing exception")
+                    self.onUserError(
+                        txaio.create_failure(),
+                        "While re-constructing exception",
+                    )
                 except:
                     pass
 
@@ -422,6 +423,8 @@ class ApplicationSession(BaseSession):
     * :class:`autobahn.wamp.interfaces.ICallee`
     * :class:`autobahn.wamp.interfaces.ITransportHandler`
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, config=None):
         """
@@ -502,7 +505,7 @@ class ApplicationSession(BaseSession):
         """
         return self._transport is not None
 
-    def onUserError(self, e, msg):
+    def onUserError(self, fail, msg):
         """
         This is called when we try to fire a callback, but get an
         exception from user code -- for example, a registered publish
@@ -513,13 +516,19 @@ class ApplicationSession(BaseSession):
         provide logging if they prefer. The Twisted implemention does
         this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
 
-        :param e: the Exception we caught.
+        :param fail: instance implementing txaio.IFailedFuture
 
         :param msg: an informative message from the library. It is
             suggested you log this immediately after the exception.
         """
-        traceback.print_exc()
-        print(msg)
+        if isinstance(fail.value, exception.ApplicationError):
+            self.log.error(fail.value.error_message())
+        else:
+            self.log.error(
+                '{msg}: {traceback}',
+                msg=msg,
+                traceback=txaio.failure_format_traceback(fail),
+            )
 
     def _swallow_error(self, fail, msg):
         '''
@@ -533,9 +542,8 @@ class ApplicationSession(BaseSession):
         chain for a Deferred/coroutine that will make it out to user
         code.
         '''
-        # print("_swallow_error", typ, exc, tb)
         try:
-            self.onUserError(fail.value, msg)
+            self.onUserError(fail, msg)
         except:
             pass
         return None
@@ -710,9 +718,12 @@ class ApplicationSession(BaseSession):
                             try:
                                 # XXX what if on_progress returns a Deferred/Future?
                                 call_request.options.on_progress(*args, **kw)
-                            except Exception as e:
+                            except Exception:
                                 try:
-                                    self.onUserError(e, "While firing on_progress")
+                                    self.onUserError(
+                                        txaio.create_failure(),
+                                        "While firing on_progress",
+                                    )
                                 except:
                                     pass
 
@@ -809,11 +820,7 @@ class ApplicationSession(BaseSession):
                                 pass
                             formatted_tb = None
                             if self.traceback_app:
-                                # if asked to marshal the traceback within the WAMP error message, extract it
-                                # noinspection PyCallingNonCallable
-                                tb = StringIO()
-                                err.printTraceback(file=tb)
-                                formatted_tb = tb.getvalue().splitlines()
+                                formatted_tb = txaio.failure_format_traceback(err)
 
                             del self._invocations[msg.request]
 
@@ -846,10 +853,13 @@ class ApplicationSession(BaseSession):
                     # noinspection PyBroadException
                     try:
                         self._invocations[msg.request].cancel()
-                    except Exception as e:
+                    except Exception:
                         # XXX can .cancel() return a Deferred/Future?
                         try:
-                            self.onUserError(e, "While cancelling call.")
+                            self.onUserError(
+                                txaio.create_failure(),
+                                "While cancelling call.",
+                            )
                         except:
                             pass
                     finally:
@@ -967,7 +977,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason.startswith('wamp.error.'):
-            print('{error}: {message}'.format(error=details.reason, message=details.message))
+            self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?

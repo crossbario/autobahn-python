@@ -207,6 +207,9 @@ class ApplicationError(Error):
         self.kwargs = kwargs
         self.error = error
 
+    def error_message(self):
+        return '{}: {}'.format(self.error, ' '.join(self.args))
+
     def __str__(self):
         if self.kwargs and 'traceback' in self.kwargs:
             tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
