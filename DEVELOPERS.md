@@ -89,20 +89,23 @@ That is, use an assert if the following holds true: if the assert fails, it mean
 To check for user errors, such as application code using the wrong type when calling into the library, use Exceptions:
 
 ```python
-def publish(topic, *args, **kwargs):
-    if type(topic) != unicode:
-        raise RuntimeError(u"URIs must be unicode - got {} instead".format(type(topic)))
+import six
+
+def foo(uri):
+    if type(topic) != six.text_type:
+        raise RuntimeError(u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
 
 In this specific example, we also have a WAMP defined error:
 
 ```python
+import six
 from autobahn.wamp import ApplicationError
 
-def publish(topic, *args, **kwargs):
-    if type(topic) != unicode:
+def foo(uri):
+    if type(topic) != six.text_type:
         raise ApplicationError(ApplicationError.INVALID_URI,
-                               "URIs must be unicode - got {} instead".format(type(topic)))
+                               u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
 
 
