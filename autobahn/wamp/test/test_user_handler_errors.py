@@ -58,7 +58,7 @@ if os.environ.get('USE_TWISTED', False):
             self._transport = MockTransport()
 
         def onUserError(self, e, msg):
-            self.errors.append((e, msg))
+            self.errors.append((e.value, msg))
 
     def exception_raiser(exc):
         '''

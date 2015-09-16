@@ -26,10 +26,8 @@
 
 from __future__ import absolute_import
 
-import traceback
 import inspect
 import six
-from six import StringIO
 
 from autobahn.wamp.interfaces import ISession, \
     IPublication, \
@@ -387,10 +385,10 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception as e:
+            except Exception:
                 try:
                     self.onUserError(
-                        txaio.create_future_error(),
+                        txaio.create_failure(),
                         "While re-constructing exception",
                     )
                 except:
@@ -554,8 +552,6 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
         """
-        self.log.debug("onMessage: {message}", session_id=self._session_id, message=msg)
-        self.log.trace("onMessage: {message}", session_id=self._session_id, message=msg)
         if self._session_id is None:
 
             # the first message must be WELCOME, ABORT or CHALLENGE ..
@@ -725,7 +721,7 @@ class ApplicationSession(BaseSession):
                             except Exception:
                                 try:
                                     self.onUserError(
-                                        txaio.create_future_error(),
+                                        txaio.create_failure(),
                                         "While firing on_progress",
                                     )
                                 except:
@@ -861,7 +857,7 @@ class ApplicationSession(BaseSession):
                         # XXX can .cancel() return a Deferred/Future?
                         try:
                             self.onUserError(
-                                txaio.create_future_error(),
+                                txaio.create_failure(),
                                 "While cancelling call.",
                             )
                         except:
@@ -981,7 +977,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason.startswith('wamp.error.'):
-            self.log.error('{reason}: {message}', reason=details.reason, message=details.message)
+            self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?

@@ -463,7 +463,7 @@ if os.environ.get('USE_TWISTED', False):
             got_err_d = Deferred()
 
             def observer(e, msg):
-                if error_instance == e:
+                if error_instance == e.value:
                     got_err_d.callback(True)
             handler.onUserError = observer
 
@@ -589,8 +589,9 @@ if os.environ.get('USE_TWISTED', False):
             handler.traceback_app = True
             MockTransport(handler)
             errors = []
+
             def log_error(e, msg):
-                errors.append((e, msg))
+                errors.append((e.value, msg))
             handler.onUserError = log_error
 
             name_error = NameError('foo')
@@ -613,7 +614,7 @@ if os.environ.get('USE_TWISTED', False):
             # also, we should have logged the real NameError to
             # Twisted.
             self.assertEqual(1, len(errors))
-            self.assertEqual(name_error, errors[0][0].value)
+            self.assertEqual(name_error, errors[0][0])
 
         @inlineCallbacks
         def test_invoke_progressive_result(self):
@@ -668,8 +669,9 @@ if os.environ.get('USE_TWISTED', False):
             got_progress = Deferred()
             progress_error = NameError('foo')
             logged_errors = []
+
             def got_error(e, msg):
-                logged_errors.append((e, msg))
+                logged_errors.append((e.value, msg))
             handler.onUserError = got_error
 
             def progress(arg, something=None):

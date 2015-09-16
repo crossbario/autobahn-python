@@ -28,7 +28,6 @@ from __future__ import absolute_import, print_function
 
 import os
 import unittest2 as unittest
-import txaio
 
 if os.environ.get('USE_TWISTED', False):
     from mock import patch
