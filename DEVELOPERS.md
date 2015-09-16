@@ -80,6 +80,33 @@ The new rule for the public API is simple: if something is exported from the mod
 * [Asyncio](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/asyncio/__init__.py)
 * [Twisted](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/twisted/__init__.py)
 
+### Use of assert vs Exceptions
+
+`assert` is for telling fellow programmers: "when I wrote this, I thought X could/would never really happen, and if it does this code will very Likely do the wrong thing".
+
+That is, use an assert if the following holds true: if the assert fails, it means we have a bug within the library itself.
+
+To check for user errors, such as application code using the wrong type when calling into the library, use Exceptions:
+
+```python
+def publish(topic, *args, **kwargs):
+    if type(topic) != unicode:
+        raise RuntimeError(u"URIs must be unicode - got {} instead".format(type(topic)))
+```
+
+In this specific example, we also have a WAMP defined error:
+
+```python
+from autobahn.wamp import ApplicationError
+
+def publish(topic, *args, **kwargs):
+    if type(topic) != unicode:
+        raise ApplicationError(ApplicationError.INVALID_URI,
+                               "URIs must be unicode - got {} instead".format(type(topic)))
+```
+
+
+See the discussion [here](https://github.com/tavendo/AutobahnPython/issues/99).
 
 ## Release Process
 
