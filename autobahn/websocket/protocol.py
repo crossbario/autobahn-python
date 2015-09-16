@@ -586,10 +586,16 @@ class WebSocketProtocol(object):
         if not self.failedByMe:
             if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                 self.wasMaxMessagePayloadSizeExceeded = True
-                self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+                self.failConnection(
+                    WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
+                    "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize
+                )
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
-                self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION, "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize)
+                self.failConnection(
+                    WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION,
+                    "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize
+                )
 
     def onMessageFrameData(self, payload):
         """
