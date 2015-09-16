@@ -26,69 +26,68 @@
 
 from __future__ import absolute_import
 
-import os
+# t.i.reactor doesn't exist until we've imported it once, but we
+# need it to exist so we can @patch it out in the tests ...
+from twisted.internet import reactor  # noqa
+from twisted.internet.defer import inlineCallbacks, succeed
+from twisted.trial import unittest
 
-if os.environ.get('USE_TWISTED', False):
-    # t.i.reactor doesn't exist until we've imported it once, but we
-    # need it to exist so we can @patch it out in the tests ...
-    from twisted.internet import reactor  # noqa
-    from twisted.internet.defer import inlineCallbacks, succeed
-    from twisted.trial import unittest
+from mock import patch, Mock
 
-    from mock import patch, Mock
+from autobahn.twisted.wamp import ApplicationRunner
 
-    from autobahn.twisted.wamp import ApplicationRunner
 
-    def raise_error(*args, **kw):
-        raise RuntimeError("we always fail")
+def raise_error(*args, **kw):
+    raise RuntimeError("we always fail")
 
-    class TestApplicationRunner(unittest.TestCase):
-        @patch('twisted.internet.reactor')
-        def test_runner_default(self, fakereactor):
-            fakereactor.connectTCP = Mock(side_effect=raise_error)
-            runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
 
-            # we should get "our" RuntimeError when we call run
-            self.assertRaises(RuntimeError, runner.run, raise_error)
+class TestApplicationRunner(unittest.TestCase):
+    @patch('twisted.internet.reactor')
+    def test_runner_default(self, fakereactor):
+        fakereactor.connectTCP = Mock(side_effect=raise_error)
+        runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
 
-            # both reactor.run and reactor.stop should have been called
-            self.assertEqual(fakereactor.run.call_count, 1)
-            self.assertEqual(fakereactor.stop.call_count, 1)
+        # we should get "our" RuntimeError when we call run
+        self.assertRaises(RuntimeError, runner.run, raise_error)
 
-        @patch('twisted.internet.reactor')
-        @inlineCallbacks
-        def test_runner_no_run(self, fakereactor):
-            fakereactor.connectTCP = Mock(side_effect=raise_error)
-            runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
+        # both reactor.run and reactor.stop should have been called
+        self.assertEqual(fakereactor.run.call_count, 1)
+        self.assertEqual(fakereactor.stop.call_count, 1)
 
-            try:
-                yield runner.run(raise_error, start_reactor=False)
-                self.fail()  # should have raise an exception, via Deferred
+    @patch('twisted.internet.reactor')
+    @inlineCallbacks
+    def test_runner_no_run(self, fakereactor):
+        fakereactor.connectTCP = Mock(side_effect=raise_error)
+        runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
 
-            except RuntimeError as e:
-                # make sure it's "our" exception
-                self.assertEqual(e.args[0], "we always fail")
+        try:
+            yield runner.run(raise_error, start_reactor=False)
+            self.fail()  # should have raise an exception, via Deferred
 
-            # neither reactor.run() NOR reactor.stop() should have been called
-            # (just connectTCP() will have been called)
-            self.assertEqual(fakereactor.run.call_count, 0)
-            self.assertEqual(fakereactor.stop.call_count, 0)
+        except RuntimeError as e:
+            # make sure it's "our" exception
+            self.assertEqual(e.args[0], "we always fail")
 
-        @patch('twisted.internet.reactor')
-        def test_runner_no_run_happypath(self, fakereactor):
-            proto = Mock()
-            fakereactor.connectTCP = Mock(return_value=succeed(proto))
-            runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
+        # neither reactor.run() NOR reactor.stop() should have been called
+        # (just connectTCP() will have been called)
+        self.assertEqual(fakereactor.run.call_count, 0)
+        self.assertEqual(fakereactor.stop.call_count, 0)
 
-            d = runner.run(Mock(), start_reactor=False)
+    @patch('twisted.internet.reactor')
+    def test_runner_no_run_happypath(self, fakereactor):
+        proto = Mock()
+        fakereactor.connectTCP = Mock(return_value=succeed(proto))
+        runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm')
 
-            # shouldn't have actually connected to anything
-            # successfully, and the run() call shouldn't have inserted
-            # any of its own call/errbacks. (except the cleanup handler)
-            self.assertFalse(d.called)
-            self.assertEqual(1, len(d.callbacks))
+        d = runner.run(Mock(), start_reactor=False)
 
-            # neither reactor.run() NOR reactor.stop() should have been called
-            # (just connectTCP() will have been called)
-            self.assertEqual(fakereactor.run.call_count, 0)
-            self.assertEqual(fakereactor.stop.call_count, 0)
+        # shouldn't have actually connected to anything
+        # successfully, and the run() call shouldn't have inserted
+        # any of its own call/errbacks. (except the cleanup handler)
+        self.assertFalse(d.called)
+        self.assertEqual(1, len(d.callbacks))
+
+        # neither reactor.run() NOR reactor.stop() should have been called
+        # (just connectTCP() will have been called)
+        self.assertEqual(fakereactor.run.call_count, 0)
+        self.assertEqual(fakereactor.stop.call_count, 0)
