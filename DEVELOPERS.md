@@ -82,34 +82,33 @@ The new rule for the public API is simple: if something is exported from the mod
 
 ### Use of assert vs Exceptions
 
-`assert` is for telling fellow programmers: "when I wrote this, I thought X could/would never really happen, and if it does this code will very Likely do the wrong thing".
+> See the discussion [here](https://github.com/tavendo/AutobahnPython/issues/99).
 
-That is, use an assert if the following holds true: if the assert fails, it means we have a bug within the library itself.
+`assert` is for telling fellow programmers: "When I wrote this, I thought X could/would never really happen, and if it does, this code will very likely do the wrong thing".
 
-To check for user errors, such as application code using the wrong type when calling into the library, use Exceptions:
+That is, **use an assert if the following holds true: if the assert fails, it means we have a bug within the library itself**.
+
+In contrast, to check e.g. for user errors, such as application code using the wrong type when calling into the library, use Exceptions:
 
 ```python
 import six
 
 def foo(uri):
-    if type(topic) != six.text_type:
+    if type(uri) != six.text_type:
         raise RuntimeError(u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
 
-In this specific example, we also have a WAMP defined error:
+In this specific example, we also have a WAMP defined error (which would be preferred compared to the generic exception used above):
 
 ```python
 import six
 from autobahn.wamp import ApplicationError
 
 def foo(uri):
-    if type(topic) != six.text_type:
+    if type(uri) != six.text_type:
         raise ApplicationError(ApplicationError.INVALID_URI,
                                u"URIs for foo() must be unicode - got {} instead".format(type(uri)))
 ```
-
-
-See the discussion [here](https://github.com/tavendo/AutobahnPython/issues/99).
 
 ## Release Process
 
