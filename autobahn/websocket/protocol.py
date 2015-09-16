@@ -853,8 +853,7 @@ class WebSocketProtocol(object):
         Drop the underlying TCP connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("dropping connection")
+            self.log.debug("dropping connection: {reason}", reason=self.wasNotCleanReason)
             self.droppedByMe = True
 
             # this code-path will be hit (*without* hitting
@@ -873,8 +872,7 @@ class WebSocketProtocol(object):
         Fails the WebSocket connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("Failing connection : %s - %s" % (code, reason))
+            self.log.debug("Failing connection: {code}: {reason}", code=code, reason=reason)
 
             self.failedByMe = True
 
