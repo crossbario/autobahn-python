@@ -36,6 +36,9 @@ if os.environ.get('USE_TWISTED', False):
     from twisted.trial import unittest
     from six import PY3
 
+    from twisted.internet.base import DelayedCall
+    DelayedCall.debug = True
+
     from autobahn import util
     from autobahn.twisted.wamp import ApplicationSession
     from autobahn.wamp import message, role, serializer, types
