@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp import error
+from autobahn.wamp.uri import error
 
 __all__ = (
     'Error',
