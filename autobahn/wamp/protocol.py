@@ -389,7 +389,10 @@ class BaseSession(object):
                         exc = ecls()
             except Exception as e:
                 try:
-                    self.onUserError(e, "While re-constructing exception")
+                    self.onUserError(
+                        txaio.create_future_error(),
+                        "While re-constructing exception",
+                    )
                 except:
                     pass
 
@@ -504,7 +507,7 @@ class ApplicationSession(BaseSession):
         """
         return self._transport is not None
 
-    def onUserError(self, e, msg):
+    def onUserError(self, fail, msg):
         """
         This is called when we try to fire a callback, but get an
         exception from user code -- for example, a registered publish
@@ -515,13 +518,19 @@ class ApplicationSession(BaseSession):
         provide logging if they prefer. The Twisted implemention does
         this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
 
-        :param e: the Exception we caught.
+        :param fail: instance implementing txaio.IFailedFuture
 
         :param msg: an informative message from the library. It is
             suggested you log this immediately after the exception.
         """
-        self.log.error(txaio.failure_format_traceback(txaio.create_future_error(e)))
-        self.log.error(msg)
+        if isinstance(fail.value, exception.ApplicationError):
+            self.log.error(fail.value.error_message())
+        else:
+            self.log.error(
+                '{msg}: {traceback}',
+                msg=msg,
+                traceback=txaio.failure_format_traceback(fail),
+            )
 
     def _swallow_error(self, fail, msg):
         '''
@@ -536,7 +545,7 @@ class ApplicationSession(BaseSession):
         code.
         '''
         try:
-            self.onUserError(fail.value, msg)
+            self.onUserError(fail, msg)
         except:
             pass
         return None
@@ -713,9 +722,12 @@ class ApplicationSession(BaseSession):
                             try:
                                 # XXX what if on_progress returns a Deferred/Future?
                                 call_request.options.on_progress(*args, **kw)
-                            except Exception as e:
+                            except Exception:
                                 try:
-                                    self.onUserError(e, "While firing on_progress")
+                                    self.onUserError(
+                                        txaio.create_future_error(),
+                                        "While firing on_progress",
+                                    )
                                 except:
                                     pass
 
@@ -845,10 +857,13 @@ class ApplicationSession(BaseSession):
                     # noinspection PyBroadException
                     try:
                         self._invocations[msg.request].cancel()
-                    except Exception as e:
+                    except Exception:
                         # XXX can .cancel() return a Deferred/Future?
                         try:
-                            self.onUserError(e, "While cancelling call.")
+                            self.onUserError(
+                                txaio.create_future_error(),
+                                "While cancelling call.",
+                            )
                         except:
                             pass
                     finally:

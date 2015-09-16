@@ -62,14 +62,6 @@ class ApplicationSession(protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
-    def onUserError(self, e, msg):
-        """
-        Override of wamp.ApplicationSession
-        """
-        self.log.error(txaio.failure_format_traceback(txaio.create_future_error(e)))
-        # also log the framework-provided error-message
-        self.log.error(msg)
-
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
