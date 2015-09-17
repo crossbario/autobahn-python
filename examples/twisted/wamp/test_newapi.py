@@ -32,7 +32,7 @@ def on_create(connection):
     connection.on_connect(on_connect)
 
 
-def run(main):
+def run(on_create):
     """
     This could be a high level "runner" tool we ship.
     """
@@ -69,5 +69,5 @@ def run(main):
 
 if __name__ == '__main__':
     # here, run() could be s.th. we ship, and a user would just
-    # provide a main() thing and run:
-    return run(main)
+    # provide a on_create() thing and run:
+    return run(on_create)
