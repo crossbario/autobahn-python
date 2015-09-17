@@ -50,8 +50,8 @@ def run(main):
     # a connection connects and automatically reconnects WAMP client
     # transports to a WAMP router. A connection has a listener system
     # where user code can hook into different events : on_join
-    connection = Connection(main, transports=transports,
-        reactor=reactor)
+    connection = Connection(main, realm=u'public',
+        transports=transports, reactor=reactor)
 
     # the following returns a deferred that fires when the connection is
     # finally done: either by explicit close by user code, or by error or
