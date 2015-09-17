@@ -43,13 +43,12 @@ from autobahn.wamp.exception import \
     SerializationError, \
     ProtocolError, \
     TransportLost, \
-    ApplicationError
+    ApplicationError, \
+    InvalidUri
 
 from autobahn.wamp.interfaces import \
-    ICaller, \
-    ICallee, \
-    IPublisher, \
-    ISubscriber
+    ISession, \
+    IApplicationSession
 
 from autobahn.wamp.uri import \
     error, \
@@ -74,11 +73,10 @@ __all__ = (
     'ProtocolError',
     'TransportLost',
     'ApplicationError',
+    'InvalidUri',
 
-    'ICaller',
-    'ICallee',
-    'IPublisher',
-    'ISubscriber',
+    'ISession',
+    'IApplicationSession',
 
     'error',
     'register',

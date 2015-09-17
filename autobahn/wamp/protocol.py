@@ -26,17 +26,9 @@
 
 from __future__ import absolute_import
 
-import inspect
 import six
-
-from autobahn.wamp.interfaces import ISession, \
-    IPublication, \
-    IPublisher, \
-    ISubscription, \
-    ISubscriber, \
-    ICaller, \
-    IRegistration, \
-    ITransportHandler
+import txaio
+import inspect
 
 from autobahn import wamp
 from autobahn.wamp import uri
@@ -45,10 +37,9 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
+from autobahn.wamp.interfaces import IApplicationSession  # noqa
 from autobahn.wamp.types import SessionDetails
 from autobahn.util import IdGenerator
-
-import txaio
 
 
 def is_method_or_function(f):
@@ -963,6 +954,11 @@ class ApplicationSession(BaseSession):
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
+    def onDisconnect(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
+        """
+
     def publish(self, topic, *args, **kwargs):
         """
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
@@ -1203,11 +1199,8 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-IPublisher.register(ApplicationSession)
-ISubscriber.register(ApplicationSession)
-ICaller.register(ApplicationSession)
-# ICallee.register(ApplicationSession)  # FIXME: ".register" collides with the ABC "register" method
-ITransportHandler.register(ApplicationSession)
+# IApplicationSession.register collides with the abc.ABCMeta.register method
+# IApplicationSession.register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):

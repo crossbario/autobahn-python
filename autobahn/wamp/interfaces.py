@@ -27,6 +27,15 @@
 import abc
 import six
 
+__all__ = (
+    'IObjectSerializer',
+    'ISerializer',
+    'ITransport',
+    'ITransportHandler',
+    'ISession',
+    'IApplicationSession',
+)
+
 
 @six.add_metaclass(abc.ABCMeta)
 class IObjectSerializer(object):
