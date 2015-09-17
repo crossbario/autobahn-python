@@ -80,6 +80,45 @@ The new rule for the public API is simple: if something is exported from the mod
 * [Asyncio](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/asyncio/__init__.py)
 * [Twisted](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/twisted/__init__.py)
 
+### Cross-platform Considerations
+
+Autobahn supports many different platforms and both major async frameworks. One thing that helps with this is the [txaio](https://github.com/tavendo/txaio) library. This is used for all Deferred/Future operations throughout the code and more recently for logging.
+
+Here is a recommended way to do **logging**:
+
+```python
+class Foo(object):
+    log = txaio.make_logger()
+
+    def connect(self):
+        try:
+            self.log.info("Connecting")
+            raise Exception("an error")
+        except:
+            fail = txaio.create_failure()
+            self.log.error("Connection failed: {msg}", msg=txaio.failure_message(fail))
+            self.log.debug("{traceback}", traceback=txaio.failure_format_traceback(fail))
+            # Exception instance in fail.value
+```
+
+Note that ``create_failure()`` can (and should) be called without arguments when inside an ``except`` block; this will give it a valid traceback instance. The only attribute you can depend on is ``fail.value`` which is the ``Exception`` instance. Otherwise use ``txaio.failre_*`` methods.
+
+How to **handler async methods** with txaio:
+
+```python
+f = txaio.as_future(mightReturnDeferred, 'arg0')
+
+def success(result):
+    print("It worked! {}".format(result))
+
+def error(fail):
+    print("It failed! {}".format(txaio.failure_message(fail)))
+txaio.add_callbacks(f, success, error)
+```
+
+Either the success or error callback can be ``None`` (e.g. if you just need to add an error-handler). ``fail`` must implement ``txaio.IFailedFuture`` (but only that; don't depend on any other methods). You cannot use ``@asyncio.coroutine`` or ``@inlineCallbacks``.
+
+
 ### Use of assert vs Exceptions
 
 > See the discussion [here](https://github.com/tavendo/AutobahnPython/issues/99).
