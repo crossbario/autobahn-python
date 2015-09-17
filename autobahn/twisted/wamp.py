@@ -83,6 +83,8 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
+    log = txaio.make_logger()
+
     def __init__(self, url, realm, extra=None, serializers=None,
                  debug=False, debug_wamp=False, debug_app=False,
                  ssl=None):
@@ -313,6 +315,8 @@ class Application(object):
     A WAMP application. The application object provides a simple way of
     creating, debugging and running WAMP application components.
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, prefix=None):
         """
