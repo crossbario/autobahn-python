@@ -32,7 +32,6 @@ import six
 import autobahn
 from autobahn import util
 from autobahn.wamp.exception import ProtocolError
-from autobahn.wamp.interfaces import IMessage
 from autobahn.wamp.role import ROLE_NAME_TO_CLASS
 
 __all__ = ('Message',
@@ -173,32 +172,51 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
 
 class Message(util.EqualityMixin):
     """
-    WAMP message base class. Implements :class:`autobahn.wamp.interfaces.IMessage`.
+    WAMP message base class.
 
     .. note:: This is not supposed to be instantiated.
+    """
+
+    MESSAGE_TYPE = None
+    """
+    WAMP message type code.
     """
 
     def __init__(self):
         # serialization cache: mapping from ISerializer instances to serialized bytes
         self._serialized = {}
 
+    @staticmethod
+    def parse(wmsg):
+        """
+        Factory method that parses a unserialized raw message (as returned byte
+        :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
+        of this class.
+
+        :returns: obj -- An instance of this class.
+        """
+
     def uncache(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.uncache`
+        Resets the serialization cache.
         """
         self._serialized = {}
 
     def serialize(self, serializer):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.serialize`
+        Serialize this object into a wire level bytes representation and cache
+        the resulting bytes. If the cache already contains an entry for the given
+        serializer, return the cached representation directly.
+
+        :param serializer: The wire level serializer to use.
+        :type serializer: An instance that implements :class:`autobahn.interfaces.ISerializer`
+
+        :returns: bytes -- The serialized bytes.
         """
         # only serialize if not cached ..
         if serializer not in self._serialized:
             self._serialized[serializer] = serializer.serialize(self.marshal())
         return self._serialized[serializer]
-
-
-IMessage.register(Message)
 
 
 class Hello(Message):
@@ -210,8 +228,8 @@ class Hello(Message):
 
     MESSAGE_TYPE = 1
     """
-   The WAMP message code for this type of message.
-   """
+    The WAMP message code for this type of message.
+    """
 
     def __init__(self, realm, roles, authmethods=None, authid=None):
         """
@@ -317,7 +335,9 @@ class Hello(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {u'roles': {}}
         for role in self.roles.values():
@@ -338,7 +358,7 @@ class Hello(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Return a string representation of this message.
         """
         return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3})".format(self.realm, self.roles, self.authmethods, self.authid)
 
@@ -449,7 +469,9 @@ class Welcome(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {
             u'roles': {}
@@ -479,7 +501,7 @@ class Welcome(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP WELCOME Message (session = {0}, roles = {1}, authid = {2}, authrole = {3}, authmethod = {4}, authprovider = {5})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
 
@@ -547,7 +569,9 @@ class Abort(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {}
         if self.message:
@@ -557,7 +581,7 @@ class Abort(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP ABORT Message (message = {0}, reason = {1})".format(self.message, self.reason)
 
@@ -618,13 +642,15 @@ class Challenge(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Challenge.MESSAGE_TYPE, self.method, self.extra]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP CHALLENGE Message (method = {0}, extra = {1})".format(self.method, self.extra)
 
@@ -685,13 +711,15 @@ class Authenticate(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Authenticate.MESSAGE_TYPE, self.signature, self.extra]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP AUTHENTICATE Message (signature = {0}, extra = {1})".format(self.signature, self.extra)
 
@@ -764,7 +792,9 @@ class Goodbye(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {}
         if self.message:
@@ -774,7 +804,7 @@ class Goodbye(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP GOODBYE Message (message = {0}, reason = {1})".format(self.message, self.reason)
 
@@ -876,7 +906,9 @@ class Error(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {}
 
@@ -889,7 +921,7 @@ class Error(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
 
@@ -1069,7 +1101,9 @@ class Publish(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -1093,7 +1127,7 @@ class Publish(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
 
@@ -1151,13 +1185,15 @@ class Published(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Published.MESSAGE_TYPE, self.request, self.publication]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP PUBLISHED Message (request = {0}, publication = {1})".format(self.request, self.publication)
 
@@ -1238,7 +1274,9 @@ class Subscribe(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -1249,7 +1287,7 @@ class Subscribe(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP SUBSCRIBE Message (request = {0}, topic = {1}, match = {2})".format(self.request, self.topic, self.match)
 
@@ -1307,13 +1345,15 @@ class Subscribed(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Subscribed.MESSAGE_TYPE, self.request, self.subscription]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP SUBSCRIBED Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
 
@@ -1371,13 +1411,15 @@ class Unsubscribe(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Unsubscribe.MESSAGE_TYPE, self.request, self.subscription]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP UNSUBSCRIBE Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
 
@@ -1460,7 +1502,9 @@ class Unsubscribed(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         if self.reason is not None or self.subscription is not None:
             details = {}
@@ -1474,7 +1518,7 @@ class Unsubscribed(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP UNSUBSCRIBED Message (request = {0}, reason = {1}, subscription = {2})".format(self.request, self.reason, self.subscription)
 
@@ -1590,7 +1634,9 @@ class Event(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {}
 
@@ -1609,7 +1655,7 @@ class Event(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic)
 
@@ -1751,7 +1797,9 @@ class Call(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -1773,7 +1821,7 @@ class Call(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, disclose_me = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me)
 
@@ -1851,7 +1899,9 @@ class Cancel(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -1862,7 +1912,7 @@ class Cancel(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP CANCEL Message (request = {0}, mode = '{1}'')".format(self.request, self.mode)
 
@@ -1957,7 +2007,9 @@ class Result(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         details = {}
 
@@ -1973,7 +2025,7 @@ class Result(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
 
@@ -2077,7 +2129,9 @@ class Register(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -2091,7 +2145,7 @@ class Register(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP REGISTER Message (request = {0}, procedure = {1}, match = {2}, invoke = {3})".format(self.request, self.procedure, self.match, self.invoke)
 
@@ -2149,13 +2203,15 @@ class Registered(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Registered.MESSAGE_TYPE, self.request, self.registration]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP REGISTERED Message (request = {0}, registration = {1})".format(self.request, self.registration)
 
@@ -2213,13 +2269,15 @@ class Unregister(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         return [Unregister.MESSAGE_TYPE, self.request, self.registration]
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP UNREGISTER Message (request = {0}, registration = {1})".format(self.request, self.registration)
 
@@ -2301,7 +2359,9 @@ class Unregistered(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         if self.reason is not None or self.registration is not None:
             details = {}
@@ -2315,7 +2375,7 @@ class Unregistered(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP UNREGISTERED Message (request = {0}, reason = {1}, registration = {2})".format(self.request, self.reason, self.registration)
 
@@ -2471,7 +2531,9 @@ class Invocation(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -2496,7 +2558,7 @@ class Invocation(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure)
 
@@ -2573,7 +2635,9 @@ class Interrupt(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -2584,7 +2648,7 @@ class Interrupt(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP INTERRUPT Message (request = {0}, mode = '{1}')".format(self.request, self.mode)
 
@@ -2679,7 +2743,9 @@ class Yield(Message):
 
     def marshal(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.marshal`
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
         """
         options = {}
 
@@ -2695,6 +2761,6 @@ class Yield(Message):
 
     def __str__(self):
         """
-        Implements :func:`autobahn.wamp.interfaces.IMessage.__str__`
+        Returns string representation of this message.
         """
         return "WAMP YIELD Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)

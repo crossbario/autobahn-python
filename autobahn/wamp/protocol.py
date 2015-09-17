@@ -156,9 +156,6 @@ class Subscription(object):
         return "Subscription(id={0}, is_active={1})".format(self.id, self.active)
 
 
-ISubscription.register(Subscription)
-
-
 class Handler(object):
     """
     Object representing an event handler attached to a subscription.
@@ -193,9 +190,6 @@ class Publication(object):
         return "Publication(id={0})".format(self.id)
 
 
-IPublication.register(Publication)
-
-
 class Registration(object):
     """
     Object representing a registration.
@@ -217,9 +211,6 @@ class Registration(object):
             return self.session._unregister(self)
         else:
             raise Exception("registration no longer active")
-
-
-IRegistration.register(Registration)
 
 
 class Endpoint(object):
@@ -282,26 +273,6 @@ class BaseSession(object):
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
-
-    def onConnect(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
-        """
-
-    def onJoin(self, details):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
-        """
-
-    def onLeave(self, details):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
-        """
-
-    def onDisconnect(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
-        """
 
     def define(self, exception, error=None):
         """
@@ -410,18 +381,9 @@ class BaseSession(object):
         return exc
 
 
-ISession.register(BaseSession)
-
-
 class ApplicationSession(BaseSession):
     """
-    WAMP endpoint session. This class implements
-
-    * :class:`autobahn.wamp.interfaces.IPublisher`
-    * :class:`autobahn.wamp.interfaces.ISubscriber`
-    * :class:`autobahn.wamp.interfaces.ICaller`
-    * :class:`autobahn.wamp.interfaces.ICallee`
-    * :class:`autobahn.wamp.interfaces.ITransportHandler`
+    WAMP endpoint session.
     """
 
     log = txaio.make_logger()
