@@ -70,8 +70,8 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
     session = ApplicationSession
     """
-   The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
-   """
+    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
+    """
 
 
 class ApplicationRunner(object):
@@ -254,6 +254,17 @@ class ApplicationRunner(object):
         else:
             # let the caller handle any errors
             return d
+
+
+class Connection(object):
+
+    def __init__(self, transport=u'ws://127.0.0.1:8080/ws', realm=u'realm1', reactor=None):
+        pass
+
+    def connect(self, main):
+        d = txaio.create_future()
+        txaio.resolve(d, u"hello")
+        return d
 
 
 class _ApplicationSession(ApplicationSession):
