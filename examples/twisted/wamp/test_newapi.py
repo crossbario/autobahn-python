@@ -18,7 +18,7 @@ def on_join(session):
     session.leave()
 
 
-def main(connection):
+def on_create(connection):
     """
     This is the main entry into user code. It _gets_ a connection
     instance, which it then can hook onto.
@@ -50,7 +50,7 @@ def run(main):
     # a connection connects and automatically reconnects WAMP client
     # transports to a WAMP router. A connection has a listener system
     # where user code can hook into different events : on_join
-    connection = Connection(main, realm=u'public',
+    connection = Connection(on_create, realm=u'public',
         transports=transports, reactor=reactor)
 
     # the following returns a deferred that fires when the connection is
