@@ -40,14 +40,44 @@ __all__ = ('Connection')
 
 
 class Connection(connection.Connection):
+    """
+    A connection establishes a transport and attached a session
+    to a realm using the transport for communication.
+
+    The transports a connection tries to use can be configured,
+    as well as the auto-reconnect strategy.
+    """
 
     log = txaio.make_logger()
 
-    def __init__(self, main, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None, session_klass=None):
-        connection.Connection.__init__(self, main, transports, realm, extra)
-        self._session_klass = session_klass
+    session = ApplicationSession
+    """
+    The factory of the session we will instantiate.
+    """
 
-    def start(self, reactor=None):
+    def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
+        """
+
+        :param main: The
+        """
+        connection.Connection.__init__(self, None, transports, realm, extra)
+
+    def start(self, reactor=None, main=None):
+        """
+        Starts the connection. The connection will establish a transport
+        and attach a session to a realm using the transport.
+
+        When the transport is lost, a retry strategy is used to start
+        reconnect attempts. Retrying ends when maximum configurable limits have
+        been reached, or when the connection was ended explicitly.
+
+        This procedure returns a Deferred/Future that will fire when the
+        connection is finally done, that is won't reconnect or has ended
+        explicitly. When the connection has ended, either successfully or
+        with failure, the returned Deferred/Future will fire.
+
+        :returns: obj -- A Deferred or Future.
+        """
         if reactor is None:
             from twisted.internet import reactor
             start_reactor = True
@@ -67,10 +97,7 @@ class Connection(connection.Connection):
         def create():
             cfg = ComponentConfig(self._realm, self._extra)
             try:
-                if self._session_klass:
-                    session = self._session_klass(cfg)
-                else:
-                    session = ApplicationSession(cfg)
+                session = self.session(cfg)
             except Exception as e:
                 if start_reactor:
                     # the app component could not be created .. fatal

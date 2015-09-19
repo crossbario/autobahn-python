@@ -37,6 +37,9 @@ from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
+# new API
+# from autobahn.twisted.connection import Connection
+
 import txaio
 txaio.use_twisted()
 
@@ -46,7 +49,10 @@ __all__ = [
     'ApplicationSessionFactory',
     'ApplicationRunner',
     'Application',
-    'Service'
+    'Service',
+
+    # new API
+    'Session'
 ]
 
 try:
@@ -254,17 +260,6 @@ class ApplicationRunner(object):
         else:
             # let the caller handle any errors
             return d
-
-
-class Connection(object):
-
-    def __init__(self, transport=u'ws://127.0.0.1:8080/ws', realm=u'realm1', reactor=None):
-        pass
-
-    def connect(self, main):
-        d = txaio.create_future()
-        txaio.resolve(d, u"hello")
-        return d
 
 
 class _ApplicationSession(ApplicationSession):
@@ -614,3 +609,7 @@ if service:
 
             client = clientClass(host, port, transport_factory)
             client.setServiceParent(self)
+
+
+# new API
+Session = ApplicationSession
