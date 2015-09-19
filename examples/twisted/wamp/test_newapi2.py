@@ -1,5 +1,25 @@
 from twisted.internet.task import react
+from twisted.internet.defer import inlineCallbacks
 from autobahn.twisted.connection import Connection
+
+from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+
+
+class MySession(ApplicationSession):
+
+    @inlineCallbacks
+    def onJoin(self, details):
+        print("on_join", details)
+        try:
+            res = yield self.call(u'com.example.add2', [2, 3])
+            print(res)
+        except Exception as e:
+            print(e)
+        self.leave()
+
+    def onLeave(self, details):
+        print("on_leave: {}".format(details))
+        self.disconnect()
 
 
 def main(reactor, connection):
@@ -16,5 +36,10 @@ def main(reactor, connection):
 
 
 if __name__ == '__main__':
-    connection = Connection(main)
-    react(connection.start)
+
+    if True:
+        connection = Connection(main, realm=u'realm1', session_klass=MySession)
+        react(connection.start)
+    else:
+        runner = ApplicationRunner(u"ws://127.0.0.1:8080/ws", u"realm1")
+        runner.run(MySession)
