@@ -46,6 +46,7 @@ __all__ = ("utcnow",
            "Stopwatch",
            "Tracker",
            "EqualityMixin",
+           "ObservableMixin",
            "IdGenerator")
 
 
@@ -460,7 +461,7 @@ def wildcards2patterns(wildcards):
     return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
 
 
-class Observable(object):
+class ObservableMixin(object):
 
     def __init__(self):
         self._listeners = {}
@@ -482,6 +483,6 @@ class Observable(object):
 
     def fire(self, event, *args, **kwargs):
         res = []
-        for handler in selg._listeners.get(event, []):
+        for handler in self._listeners.get(event, []):
             res.append(handler(*args, **kwargs))
         return res
