@@ -7,7 +7,7 @@ from autobahn.twisted.connection import Connection
 class MySession(Session):
 
     @coroutine
-    def onJoin(self, details):
+    def on_join(self, details):
         print("on_join: {}".format(details))
 
         def add2(a, b):

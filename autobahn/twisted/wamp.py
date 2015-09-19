@@ -612,4 +612,22 @@ if service:
 
 
 # new API
-Session = ApplicationSession
+class Session(ApplicationSession):
+
+    def onJoin(self, details):
+        return self.on_join(details)
+
+    def onLeave(self, details):
+        return self.on_leave(details)
+
+    def onDisconnect(self):
+        return self.on_disconnect()
+
+    def on_join(self):
+        pass
+
+    def on_leave(self, details):
+        self.disconnect()
+
+    def on_disconnect(self):
+        pass
