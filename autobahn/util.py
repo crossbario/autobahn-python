@@ -37,6 +37,9 @@ import random
 from datetime import datetime, timedelta
 from pprint import pformat
 
+import txaio
+
+
 __all__ = ("utcnow",
            "utcstr",
            "id",
@@ -461,8 +464,6 @@ def wildcards2patterns(wildcards):
     return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
 
 
-import txaio
-
 class ObservableMixin(object):
 
     def __init__(self, parent=None):
@@ -486,7 +487,6 @@ class ObservableMixin(object):
 
     def fire(self, event, *args, **kwargs):
         res = []
-        print self, self._listeners
         if event in self._listeners:
             for handler in self._listeners[event]:
                 value = txaio.as_future(handler, *args, **kwargs)
