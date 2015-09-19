@@ -93,11 +93,18 @@ class Connection(connection.Connection):
 
         txaio.start_logging(level='debug')
 
+        if main:
+            main(reactor, self)
+
         # factory for use ApplicationSession
         def create():
             cfg = ComponentConfig(self._realm, self._extra)
             try:
                 session = self.session(cfg)
+
+                # let child listener bubble up event
+                session._parent = self
+
             except Exception as e:
                 if start_reactor:
                     # the app component could not be created .. fatal

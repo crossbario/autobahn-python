@@ -461,9 +461,12 @@ def wildcards2patterns(wildcards):
     return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
 
 
+import txaio
+
 class ObservableMixin(object):
 
-    def __init__(self):
+    def __init__(self, parent=None):
+        self._parent = parent
         self._listeners = {}
 
     def on(self, event, handler):
@@ -483,6 +486,11 @@ class ObservableMixin(object):
 
     def fire(self, event, *args, **kwargs):
         res = []
-        for handler in self._listeners.get(event, []):
-            res.append(handler(*args, **kwargs))
-        return res
+        print self, self._listeners
+        if event in self._listeners:
+            for handler in self._listeners[event]:
+                value = txaio.as_future(handler, *args, **kwargs)
+                res.append(value)
+        if self._parent is not None:
+            res.append(self._parent.fire(event, *args, **kwargs))
+        return txaio.gather(res)

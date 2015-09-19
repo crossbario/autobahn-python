@@ -39,7 +39,7 @@ from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.interfaces import IApplicationSession  # noqa
 from autobahn.wamp.types import SessionDetails
-from autobahn.util import IdGenerator
+from autobahn.util import IdGenerator, ObservableMixin
 
 from autobahn.wamp.request import \
     Publication, \
@@ -60,7 +60,7 @@ def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
 
 
-class BaseSession(object):
+class BaseSession(ObservableMixin):
     """
     WAMP session base class.
 
@@ -71,6 +71,8 @@ class BaseSession(object):
         """
 
         """
+        ObservableMixin.__init__(self)
+
         # this is for library level debugging
         self.debug = False
 
@@ -760,6 +762,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
+        return self.fire('join', self, details)
 
     def onLeave(self, details):
         """
