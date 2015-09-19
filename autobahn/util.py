@@ -458,3 +458,30 @@ def wildcards2patterns(wildcards):
     :rtype: list of obj
     """
     return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
+
+
+class Observable(object):
+
+    def __init__(self):
+        self._listeners = {}
+
+    def on(self, event, handler):
+        if event not in self._listeners:
+            self._listeners[event] = set()
+        self._listeners[event].add(handler)
+
+    def off(self, event=None, handler=None):
+        if event is None:
+            self._listeners = {}
+        else:
+            if event in self._listeners:
+                if handler is None:
+                    del self._listeners[event]
+                else:
+                    self._listeners[event].discard(handler)
+
+    def fire(self, event, *args, **kwargs):
+        res = []
+        for handler in selg._listeners.get(event, []):
+            res.append(handler(*args, **kwargs))
+        return res
