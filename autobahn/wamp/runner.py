@@ -80,9 +80,10 @@ class Connection(object):
     # XXX I decided to pass a actualy "session" instance (instead of
     # session_factory) so that adding listeners is easier, and because
     # it only ever got called once anyway.
-    def __init__(self, transports,
+    def __init__(self,
+                 transports=u"ws://127.0.0.1:8080/ws",
                  main=None,
-                 realm=u"default",
+                 realm=u"realm1",
                  extra=None,
                  session_factory=None,
                  loop=None):
@@ -129,6 +130,12 @@ class Connection(object):
         self._done = None  # a Deferred/Future that fires when we're done
 
         # generator for the next transport to try
+        if isinstance(transports, dict):
+            transports = [transports]
+        elif isinstance(transports, six.text_type):
+            transports = [dict(url=transports, type="websocket")]
+        elif isinstance(transports, str):
+            transports = [dict(url=six.u(transports), type="websocket")]
         self._transport_gen = itertools.cycle(transports)
 
         # figure out which connect_to implementation we need

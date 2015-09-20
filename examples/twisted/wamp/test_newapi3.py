@@ -1,9 +1,10 @@
 from twisted.internet.task import react
 from twisted.internet.defer import inlineCallbacks as coroutine
-from autobahn.twisted.connection import Connection
+from autobahn.wamp.runner import Connection
+from autobahn.twisted.wamp import run
 
 
-def main(reactor, connection):
+def main(connection):
 
     @coroutine
     def on_join(session, details):
@@ -26,6 +27,5 @@ def main(reactor, connection):
 
 
 if __name__ == '__main__':
-
-    connection = Connection()
-    react(connection.start, [main])
+    connection = Connection(main=main)
+    run(connection)
