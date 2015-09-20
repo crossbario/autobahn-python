@@ -1077,7 +1077,7 @@ class WebSocketProtocol(object):
         """
         # cancel any server connection drop timer if present
         #
-        self.log.debug('_connectionLost: {reason}', reason=reason)
+        self.log.debug('_connectionLost: {reason}', reason=txaio.failure_message(reason))
         if not self.factory.isServer and self.serverConnectionDropTimeoutCall is not None:
             if self.debugCodePaths:
                 self.log.debug("serverConnectionDropTimeoutCall.cancel")

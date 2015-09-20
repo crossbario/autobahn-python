@@ -246,7 +246,7 @@ class CloseDetails(object):
         self.reason = reason
         self.message = message
 
-    def __str__(self):
+    def __repr__(self):
         return "CloseDetails(reason = {0}, message = '{1}'')".format(self.reason, self.message)
 
 

@@ -80,52 +80,28 @@ Also, |ab| will invoke callbacks on your application component when certain even
 
 .. _running-components:
 
+
 Running Components
 ------------------
 
-To actually make use of an application components, the component needs to connect to a WAMP router.
-|Ab| includes a *runner* that does the heavy lifting for you.
+To actually make use of an application components, the component needs to connect to a WAMP router. |Ab| includes a *run* helper method and a :class:`autobahn.wamp.runner.Connection` abstraction that do the heavy lifting for you.
 
-Here is how you use :class:`autobahn.twisted.wamp.ApplicationRunner` with **Twisted**
+Instances of ``ApplicationSession`` abstract the WAMP Session lifecycle. Above this, instances of :class:`autobahn.wamp.runner.Connection` abstract the configuration of "a WAMP connection". This includes 1 or more transports, the realm to join, and other configuration.
 
-.. code-block:: python
-   :emphasize-lines: 1
-
-   from autobahn.twisted.wamp import ApplicationRunner
-
-   runner = ApplicationRunner(url=u"ws://localhost:8080/ws", realm=u"realm1")
-   runner.run(MyComponent)
-
-and here is how you use :class:`autobahn.asyncio.wamp.ApplicationRunner` with **asyncio**
-
-.. code-block:: python
-   :emphasize-lines: 1
-
-   from autobahn.asyncio.wamp import ApplicationRunner
-
-   runner = ApplicationRunner(url=u"ws://localhost:8080/ws", realm=u"realm1")
-   runner.run(MyComponent)
-
-As can be seen, the only difference between Twisted and asyncio is the import (line 1). The rest of the code is identical.
-
-There are two mandatory arguments to ``ApplicationRunner``:
-
-1. ``url``: the WebSocket URL of the WAMP router (for WAMP-over-WebSocket)
-2. ``realm``: the *Realm* the component should join on that router
+To actually run 1 or more Connection instances, you can use the :func:`autobahn.twisted.wamp.run`` or :func:`autobahn.asyncio.wamp.run`` method (depending on whether you want to run under Twisted or asyncio).
 
 .. tip::
    A *Realm* is a routing namespace and an administrative domain for WAMP. For example, a single WAMP router can manage multiple *Realms*, and those realms are completely separate: an event published to topic T on a Realm R1 is NOT received by a subscribe to T on Realm R2.
-
 
 Here are quick templates for you to copy/paste for creating and running a WAMP component.
 
 **Twisted**:
 
 .. code-block:: python
-    :emphasize-lines: 2
+    :emphasize-lines: 2,5
 
     from twisted.internet.defer import inlineCallbacks
-    from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+    from autobahn.twisted.wamp import ApplicationSession, Connection, run
 
     class MyComponent(ApplicationSession):
 
@@ -137,17 +113,21 @@ Here are quick templates for you to copy/paste for creating and running a WAMP c
             # yield self.register(...)
 
     if __name__ == '__main__':
-        runner = ApplicationRunner(url=u"ws://localhost:8080/ws", realm=u"realm1")
-        runner.run(MyComponent)
+        connection = Connection(
+            transports=[{"url": u"ws://localhost:8080/ws"}],
+            realm=u"realm1",
+            session_factory=MyComponent,
+        )
+        run([connection])
 
 
 **asyncio**:
 
 .. code-block:: python
-    :emphasize-lines: 2
+    :emphasize-lines: 2,5
 
     from asyncio import coroutine
-    from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
+    from autobahn.asyncio.wamp import ApplicationSession, Connection, run
 
     class MyComponent(ApplicationSession):
         @coroutine
@@ -158,8 +138,109 @@ Here are quick templates for you to copy/paste for creating and running a WAMP c
             # yield from self.register(...)
 
     if __name__ == '__main__':
-        runner = ApplicationRunner(url=u"ws://localhost:8080/ws", realm=u"realm1")
-        runner.run(MyComponent)
+        connection = Connection(
+            transports=[{"url": u"ws://localhost:8080/ws"}],
+            realm=u"realm1",
+            session_factory=MyComponent,
+        )
+        run([connection])
+
+
+If you wish to use a "compositional" style of programming instead of sub-classing ``ApplicationSession``,  you can do that by using the listner API that ApplicationSession provides:
+
+.. code-block:: python
+
+from __future__ import print_function
+from autobahn.wamp.runner import Connection
+from autobahn.twisted.wamp import run
+
+def setup(session, details):
+    print('session joined: {}'.format(session))
+    # explicitly leaving a realm will disconnect the connection
+    # cleanly and not try to reconnect, but exit cleanly.
+    return session.leave()
+
+def teardown(session, details):
+    print("on_leave", details)
+
+def on_create(session):
+    print("on_create", session)
+    session.on('join', setup)
+    session.on('leave', teardown)
+
+if __name__ == '__main__':
+    connection = Connection(
+        transports=[{"url": u"ws://localhost:8080/ws"}],
+        realm=u"realm1",
+        main=on_create,
+    )
+    run([connection], log_level='info')
+    from __future__ import print_function
+    from autobahn.twisted.runner import Connection
+    from autobahn.twisted.wamp import run
+
+    def setup(session, details):
+        print('session joined: {}'.format(session))
+        # explicitly leaving a realm will disconnect the connection
+        # cleanly and not try to reconnect, but exit cleanly.
+        return session.leave()
+
+    def teardown(session, details):
+        print("on_leave", details)
+
+    def on_create(session):
+        print("on_create", session)
+        session.on('join', setup)
+        session.on('leave', teardown)
+
+    if __name__ == '__main__':
+        connection = Connection(
+            transports=[{"url": u"ws://localhost:8080/ws"}],
+            realm=u"realm1",
+            main=on_create,
+        )
+        run([connection])
+
+The following events are provided:
+
+  - connect: the transport has connected
+  - join: the WAMP Session has successfully ``join()``-ed to a realm
+  - ready: all Deferreds/Futures from ``on_join`` or any ``join`` listener have fired
+  - leave: the WAMP Session has left
+  - disconnect: the transport has disconnected
+
+Note that according to the spec, a WAMP session may ``leave()`` and then re-``join()`` without disconnecting the underlying transport, so you can get a ``join`` notification more than once. If the transport does leave and re-connect, a new ``ApplicationSession`` instance will be created and your ``main`` method called again.
+
+.. tip::
+
+    You should (re-)initialize any state in ``on_join`` or a "join" listener, do any cleanup in ``on_leave`` or a "leave" listener and add all listeners in the ``main`` method you provide to Connection.
+
+
+**Note** we recently **deprecated ``ApplicationRunner``** entirely, replacing it with the :class:`autobahn.wamp.runner.Connection` API and a helper-method to run Connection instances (:func:`autobahn.twisted.wamp.run` or :func:`autobahn.asyncio.wamp.run`).
+
+**The transition to the new API from ApplicationRunner** is fairly straight-forward. Your ``realm`` and ``extra`` kwargs to ApplicationRunner are given to Connection, as is the ``session_factory`` argument to the old ``ApplicationRunner.run``. A minimal "transport configuration" (that is, WAMP over WebSocket) given just a URI is: ``{"url": u"ws://127.0.0.1:8080/ws"}``.
+
+So, if you had:
+
+.. code-block:: python
+
+    class Session(ApplicationSession):
+        pass
+
+    runner = ApplicationRunner(u"ws://localhost:8080/ws", realm=u"realm1")
+    runner.run(Session)
+
+Then you should now use:
+
+.. code-block:: python
+
+    connection = Connection(
+        transports=[{"url": u"ws://localhost:8080/ws"}],
+        realm=u"realm1",
+        session_factory=Session,
+    )
+    run([connection])
+
 
 
 Running a WAMP Router

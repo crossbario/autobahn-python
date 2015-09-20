@@ -70,4 +70,3 @@ class Component(ApplicationSession):
 
     def onDisconnect(self):
         print("Transport disconnected.")
-        asyncio.get_event_loop().stop()

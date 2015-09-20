@@ -55,15 +55,10 @@ class Component(ApplicationSession):
         yield from self.subscribe(on_event, u'com.myapp.topic1',
                                   options=SubscribeOptions(details_arg='details'))
 
-    def onDisconnect(self):
-        asyncio.get_event_loop().stop()
-
 
 if __name__ == '__main__':
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
         u"crossbardemo",
-        debug_wamp=False,  # optional; log many WAMP details
-        debug=False,  # optional; log even more details
     )
     runner.run(Component)

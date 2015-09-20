@@ -1,3 +1,5 @@
-This contains a configuration file in `.crossbar/config.json` to run a local Crossbar instance and serve some of the example content via a Web server.
+This directory contains a configuration file in `.crossbar/config.json` to run a local Crossbar instance and serve some of the example content via a Web server.
 
 See [../running-the-examples.md] for more information.
+
+You can start the example Crossbar.io instance by running "crossbar start" in this directory.

@@ -56,8 +56,6 @@ class Component(ApplicationSession):
 
     def onDisconnect(self):
         print("disconnected")
-        if reactor.running:
-            reactor.stop()
 
 
 if __name__ == '__main__':
@@ -67,7 +65,5 @@ if __name__ == '__main__':
         extra=dict(
             max_events=5,  # [A] pass in additional configuration
         ),
-        debug_wamp=False,  # optional; log many WAMP details
-        debug=False,  # optional; log even more details
     )
     runner.run(Component)
