@@ -274,7 +274,7 @@ class Connection(object):
             if reason == 'closed':
                 txaio.resolve(self._done, None)
             else:
-                txaio.reject(self._done, Exception('Transport disconnected uncleanly: {}'.format(reason)))
+                txaio.reject(self._done, Exception('Transport disconnected uncleanly: {0}'.format(reason)))
             self._connecting = None
             self._done = None
 
