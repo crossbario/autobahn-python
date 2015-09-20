@@ -604,7 +604,6 @@ class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocket
     protocol = WampWebSocketClientProtocol
 
     def __init__(self, factory, *args, **kwargs):
-
         serializers = kwargs.pop('serializers', None)
         debug_wamp = kwargs.pop('debug_wamp', False)
 

@@ -1,7 +1,7 @@
 from twisted.internet.task import react
 from twisted.internet.defer import inlineCallbacks as coroutine
 from autobahn.twisted.wamp import Session
-from autobahn.twisted.connection import Connection
+from autobahn.wamp.runner import Connection
 
 
 class MySession(Session):
@@ -25,7 +25,5 @@ class MySession(Session):
 
 
 if __name__ == '__main__':
-
-    connection = Connection()
-    connection.session = MySession
-    react(connection.start)
+    connection = Connection(session_factory=MySession)
+    react(lambda _: connection.open())

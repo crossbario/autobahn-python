@@ -24,29 +24,20 @@
 #
 ###############################################################################
 
+from __future__ import print_function
 
-from __future__ import absolute_import
+from autobahn.twisted import wamp
+from twisted.internet.defer import inlineCallbacks
 
-from autobahn.util import ObservableMixin
+connection = wamp.Connection([{"url": u"ws://localhost:8080/ws"}], realm='realm1')
 
-__all__ = ('Connection')
+@inlineCallbacks
+def greetings(session, details):
+    print("session joined: realm={}, authrole={}".format(details.realm, details.authrole))
+    yield session.publish('open')
+    yield session.leave()
+    print("left.")
+connection.on('join', greetings)
 
-
-def check_transport(transport):
-    """
-    Check a WAMP transport configuration.
-    """
-    pass
-
-
-class Connection(ObservableMixin):
-
-    def __init__(self, main, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
-        ObservableMixin.__init__(self)
-        self._main = main
-        self._transports = transports
-        self._realm = realm
-        self._extra = extra
-
-    def start(self, reactor):
-        raise RuntimeError('not implemented')
+if __name__ == '__main__':
+    wamp.run(connection, log_level='info')

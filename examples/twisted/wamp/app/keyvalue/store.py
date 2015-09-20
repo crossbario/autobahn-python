@@ -113,11 +113,7 @@ if __name__ == '__main__':
     from autobahn.twisted.wamp import ApplicationRunner
     router = args.router or u'ws://127.0.0.1:9000'
 
-    runner = ApplicationRunner(router, u"realm1", standalone=not args.router,
-                               debug=False,             # low-level logging
-                               debug_wamp=args.debug,   # WAMP level logging
-                               debug_app=args.debug     # app-level logging
-                               )
+    runner = ApplicationRunner(router, u"realm1")
 
     # start the component and the Twisted reactor ..
     ##

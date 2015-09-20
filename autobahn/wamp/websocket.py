@@ -33,6 +33,9 @@ from autobahn.websocket.types import ConnectionDeny
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
+import txaio
+
+
 __all__ = ('WampWebSocketServerProtocol',
            'WampWebSocketClientProtocol',
            'WampWebSocketServerFactory',
@@ -59,6 +62,7 @@ class WampWebSocketProtocol(object):
         # create a new WAMP session and fire off session open callback.
         try:
             self._session = self.factory._factory()
+            # self._session should be an ITransportHandler
             self._session.onOpen(self)
         except Exception as e:
             self.log.critical(traceback.format_exc())
@@ -80,8 +84,10 @@ class WampWebSocketProtocol(object):
                     print("WAMP-over-WebSocket transport lost: wasClean = {0}, code = {1}, reason = '{2}'".format(wasClean, code, reason))
                 self._session.onClose(wasClean)
             except Exception:
-                print("Error invoking onClose():")
-                traceback.print_exc()
+                self.log.critical(
+                    "While calling onClose(): {traceback}",
+                    traceback=txaio.failure_format_traceback(txaio.create_failure()),
+                )
             self._session = None
 
     def onMessage(self, payload, isBinary):
@@ -95,9 +101,10 @@ class WampWebSocketProtocol(object):
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
-            print(e)
-            if self.factory.debug_wamp:
-                traceback.print_exc()
+            self.log.critical(
+                "While calling onMessage: {traceback}",
+                traceback=txaio.failure_format_traceback(txaio.create_failure()),
+            )
             reason = "WAMP Protocol Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason=reason)
 
