@@ -31,6 +31,7 @@ import six
 import txaio
 
 from autobahn.wamp import transport
+from autobahn.util import ObservableMixin
 from autobahn.wamp.types import ComponentConfig
 from autobahn.wamp.exception import TransportLost
 from autobahn.wamp.protocol import _ListenerCollection
@@ -39,7 +40,7 @@ from autobahn.websocket.protocol import parseWsUrl
 
 # XXX move to transport? protocol
 # XXX should at least move to same file as the "connect_to" things?
-class Connection(object):
+class Connection(ObservableMixin):
     """
     This represents configuration of a protocol and transport to make
     a WAMP connection to particular endpoints.
@@ -157,9 +158,7 @@ class Connection(object):
         assert self._session_factory is not None
         self._config = ComponentConfig(self._realm, self._extra)
         self.session = self._session_factory(self._config)
-        self.session.on('connect', self._on_connect)
-        self.session.on('join', self._on_join)
-        self.session.on('ready', self._on_ready)
+        self.session._parent = self
         self.session.on('leave', self._on_leave)
         self.session.on('disconnect', self._on_disconnect)
 
@@ -252,14 +251,14 @@ class Connection(object):
         if not txaio.is_called(self._main_done):
             txaio.reject(self._main_done, fail)
 
-    def _on_connect(self, session):
-        return self.on.connect._notify(session)
+#    def _on_connect(self, session):
+#        return self.on.connect._notify(session)
 
-    def _on_join(self, session, details):
-        return self.on.join._notify(session, details)
+#    def _on_join(self, session, details):
+#        return self.on.join._notify(session, details)
 
-    def _on_ready(self, session):
-        return self.on.ready._notify(session)
+#    def _on_ready(self, session):
+#        return self.on.ready._notify(session)
 
     def _on_leave(self, session, details):
         if details.reason.startswith('wamp.error.'):
@@ -267,7 +266,7 @@ class Connection(object):
                 Exception('{0}: {1}'.format(details.reason, details.message))
             )
             txaio.reject(self._done, fail)
-        return self.on.leave._notify(session, details)
+#        return self.on.leave._notify(session, details)
 
     def _on_disconnect(self, session, reason):
         def _really_done(arg):
@@ -281,8 +280,8 @@ class Connection(object):
         def _error(fail):
             print(txaio.failure_format_traceback(fail))
         txaio.add_callbacks(self._main_done, _really_done, _error)
-        d = self.on.disconnect._notify(session, reason)
-        self._main_done.addBoth(lambda _: d)
+#        d = self.on.disconnect._notify(session, reason)
+#        self._main_done.addBoth(lambda _: d)
         return self._main_done
 
     def __str__(self):

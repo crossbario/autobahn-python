@@ -379,7 +379,8 @@ class ApplicationSession(BaseSession):
         d = txaio.as_future(self.onConnect)
 
         def do_connect(rtn):
-            d1 = self.on.connect._notify(self)
+            # d1 = self.on.connect._notify(self)
+            d1 = self.fire('connect', self)
             txaio.add_callbacks(d1, lambda _: rtn, None)
         txaio.add_callbacks(d, do_connect, None)
 
@@ -483,9 +484,11 @@ class ApplicationSession(BaseSession):
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
 
-                d = self.on.join._notify(self, details)
+                # d = self.on.join._notify(self, details)
+                d = self.fire('join', self, details)
                 txaio.add_callbacks(d, lambda _: txaio.as_future(self.onJoin, details), None)
-                txaio.add_callbacks(d, lambda _: self.on.ready._notify(self), None)
+                # txaio.add_callbacks(d, lambda _: self.on.ready._notify(self), None)
+                txaio.add_callbacks(d, lambda _: self.fire('ready', self), None)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onJoin")
@@ -499,7 +502,8 @@ class ApplicationSession(BaseSession):
                 # transport
                 details = types.CloseDetails(msg.reason, msg.message)
 
-                d = self.on.leave._notify(self, details)
+                # d = self.on.leave._notify(self, details)
+                d = self.fire('leave', self, details)
                 txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                 def _error(e):
@@ -520,7 +524,8 @@ class ApplicationSession(BaseSession):
                     self._transport.send(reply)
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
-                    d = self.on.leave._notify(self, details)
+                    # d = self.on.leave._notify(self, details)
+                    d = self.fire('leave', self, details)
                     txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                     def _error(e):
@@ -547,7 +552,8 @@ class ApplicationSession(BaseSession):
 
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
-                d = self.on.leave._notify(self, details)
+                # d = self.on.leave._notify(self, details)
+                d = self.fire('leave', self, details)
                 txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                 def _error(e):
@@ -881,7 +887,8 @@ class ApplicationSession(BaseSession):
             # fire callback and close the transport
             details = types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST,
                                          message="WAMP transport was lost without closing the session before")
-            d = self.on.leave._notify(self, details)
+            # d = self.on.leave._notify(self, details)
+            d = self.fire('leave', self, details)
             txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
             def _error(e):
@@ -899,7 +906,8 @@ class ApplicationSession(BaseSession):
 
         def notify_disconnect(rtn):
             detail = 'closed' if wasClean else 'lost'
-            d1 = self.on.disconnect._notify(self, detail)
+            # d1 = self.on.disconnect._notify(self, detail)
+            d1 = self.fire('disconnect', self, detail)
             txaio.add_callbacks(d1, lambda _: rtn, None)
             return d1
         txaio.add_callbacks(d2, notify_disconnect, None)
