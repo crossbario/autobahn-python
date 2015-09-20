@@ -21,10 +21,12 @@ class MySession(Session):
         except Exception as e:
             print("error: {}".format(e))
         finally:
-            self.leave()
+            print('leaving ..')
+            #self.leave()
+
 
     def on_leave(self, details):
-        print('on_leave: {}'.format(details))
+        print('on_leave xx: {}'.format(details))
         self.disconnect()
 
     def on_disconnect(self):

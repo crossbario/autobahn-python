@@ -20,9 +20,16 @@ def main(reactor, connection):
         except Exception as e:
             print("error: {}".format(e))
         finally:
-            session.leave()
+            print("leaving ..")
+            #session.leave()
 
     connection.on('join', on_join)
+
+    def on_leave(session, details):
+        print("on_leave: {}".format(details))
+        session.disconnect()
+
+    #connection.on('leave', on_leave)
 
 
 if __name__ == '__main__':

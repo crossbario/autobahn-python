@@ -27,6 +27,7 @@
 
 from __future__ import absolute_import, print_function
 
+from twisted.internet.defer import inlineCallbacks
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
@@ -48,6 +49,7 @@ from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 from autobahn.wamp import connection
 from autobahn.wamp.types import ComponentConfig
 
+from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 
 
@@ -166,6 +168,7 @@ class Connection(connection.Connection):
         """
         connection.Connection.__init__(self, None, transports, realm, extra)
 
+    @inlineCallbacks
     def start(self, reactor=None, main=None):
         print("FOOL!")
         if reactor is None:
@@ -179,6 +182,23 @@ class Connection(connection.Connection):
         if main:
             main(reactor, self)
 
+        reconnect = True
+
+        while reconnect:
+            try:
+                print("connecting ..")
+                res = yield self._connect_once(reactor)
+                print("XXXXXX", res)
+            except Exception as e:
+                print(e)
+                yield sleep(2)
+            else:
+                reconnect = False
+
+    def _connect_once(self, reactor):
+
+        done = txaio.create_future()
+
         # factory for use ApplicationSession
         def create():
             cfg = ComponentConfig(self._realm, self._extra)
@@ -187,6 +207,20 @@ class Connection(connection.Connection):
 
                 # let child listener bubble up event
                 session._parent = self
+
+                def on_leave(session, details):
+                    print("on_leave: {}".format(details))
+
+                session.on('leave', on_leave)
+
+                def on_disconnect(session, was_clean):
+                    print("on_disconnect: {}".format(was_clean))
+                    if was_clean:
+                        done.callback(None)
+                    else:
+                        done.errback(RuntimeError('transport closed uncleanly'))
+
+                session.on('disconnect', on_disconnect)
 
             except Exception as e:
                 if False:
@@ -200,8 +234,6 @@ class Connection(connection.Connection):
             else:
                 return session
 
-        done = txaio.create_future()
-
         d = _connect_transport(reactor, self._transports[0], create)
 
         def on_connect_sucess(res):
@@ -209,6 +241,7 @@ class Connection(connection.Connection):
 
         def on_connect_failure(err):
             print('on_connect_failure', err)
+            done.errback(err)
 
         d.addCallbacks(on_connect_sucess, on_connect_failure)
 

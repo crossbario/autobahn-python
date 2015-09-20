@@ -746,7 +746,7 @@ class ApplicationSession(BaseSession):
 
             self._session_id = None
 
-        d = txaio.as_future(self.onDisconnect)
+        d = txaio.as_future(self.onDisconnect, wasClean)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
@@ -770,6 +770,9 @@ class ApplicationSession(BaseSession):
         """
         if details.reason.startswith('wamp.error.'):
             self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
+
+        self.fire('leave', self, details)
+
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?
@@ -793,10 +796,11 @@ class ApplicationSession(BaseSession):
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
-    def onDisconnect(self):
+    def onDisconnect(self, wasClean):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
+        return self.fire('disconnect', self, wasClean)
 
     def publish(self, topic, *args, **kwargs):
         """
