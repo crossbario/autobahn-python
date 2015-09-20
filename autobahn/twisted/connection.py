@@ -164,7 +164,7 @@ class Connection(connection.Connection):
         return transport_endpoint.connect(transport_factory)
 
     @inlineCallbacks
-    def start(self, reactor=None, main=None):
+    def start(self, reactor=None):
         if reactor is None:
             from twisted.internet import reactor
 
@@ -173,8 +173,7 @@ class Connection(connection.Connection):
 
         txaio.start_logging(level='debug')
 
-        if main:
-            main(reactor, self)
+        yield self.fire('start', reactor, self)
 
         transport_gen = itertools.cycle(self._transports)
 

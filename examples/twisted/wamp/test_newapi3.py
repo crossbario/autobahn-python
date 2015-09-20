@@ -10,6 +10,7 @@ def main(reactor, connection):
         print("on_join: {}".format(details))
 
         def add2(a, b):
+            print("add2() called", a, b)
             return a + b
 
         yield session.register(add2, u'com.example.add2')
@@ -21,18 +22,13 @@ def main(reactor, connection):
             print("error: {}".format(e))
         finally:
             print("leaving ..")
-            #session.leave()
+            session.leave()
 
     connection.on('join', on_join)
 
-    def on_leave(session, details):
-        print("on_leave: {}".format(details))
-        session.disconnect()
-
-    #connection.on('leave', on_leave)
-
 
 if __name__ == '__main__':
-
     connection = Connection()
-    react(connection.start, [main])
+    connection.on('start', main)
+
+    react(connection.start)
