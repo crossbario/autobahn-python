@@ -53,7 +53,7 @@ class EchoService(service.Service):
     echo server running under path "/ws".
     """
 
-    def __init__(self, port=8080, debug=False):
+    def __init__(self, port=8080):
         self.port = port
         self.debug = debug
 

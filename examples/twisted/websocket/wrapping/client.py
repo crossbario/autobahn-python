@@ -52,7 +52,6 @@ if __name__ == '__main__':
     wrappedFactory = Factory.forProtocol(HelloClientProtocol)
     factory = WrappingWebSocketClientFactory(wrappedFactory,
                                              u"ws://127.0.0.1:9000",
-                                             debug=False,
                                              enableCompression=False,
                                              autoFragmentSize=1024)
 

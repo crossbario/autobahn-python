@@ -37,7 +37,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import IApplicationSession  # noqa
+from autobahn.wamp.interfaces import IApplicationSession, ISession  # noqa
 from autobahn.wamp.types import SessionDetails
 from autobahn.util import IdGenerator
 
@@ -208,9 +208,120 @@ class BaseSession(object):
         return exc
 
 
+ISession.register(BaseSession)
+
+
+class _Listener(object):
+    """
+    Internal helper.
+
+    A class which is instantiated to provide listener functionality
+    like:
+
+        # js-like
+        connection.on('open', callback)
+        # attribute-access style:
+        connection.on.open(callback)
+        # add/remove style:
+        connection.on.open.add(callback)
+        # they all need something like this for removal:
+        connection.on.open.remove(callback)
+
+    XXX I guess should probably decide on ONE way, but this
+    abstraction is nice to avoid copy-pasting code to track lists of
+    callbacks and invoke them wherever we need listeners...
+    """
+
+    log = txaio.make_logger()
+
+    def __init__(self):
+        self._listeners = set()
+
+    def add(self, callback):
+        """
+        Add a callback to this listener
+        """
+        self._listeners.add(callback)
+
+    __call__ = add  #: alias for "add"
+
+    def remove(self, callback):
+        """
+        Remove a callback from this listener
+        """
+        self._listeners.remove(callback)
+
+    def _notify(self, *args, **kw):
+        """
+        Calls all listeners with the specified args.
+
+        Returns a Deferred which callbacks when all the listeners
+        which return Deferreds/Futures have themselves completed.
+        """
+        calls = []
+
+        def failed(fail):
+            self.log.error("Notifying listener failed: {msg}", msg=txaio.failure_message(fail))
+            self.log.debug("{traceback}", traceback=txaio.failure_format_traceback(fail))
+
+        for cb in self._listeners:
+            f = txaio.as_future(cb, *args, **kw)
+            txaio.add_callbacks(f, None, failed)
+            calls.append(f)
+        return txaio.gather(calls)
+
+
+class _ListenerCollection(object):
+    """
+    Internal helper.
+
+    This collects all your valid event listeners together in one
+    object if you want.
+    """
+    def __init__(self, valid_events):
+        self._valid_events = valid_events
+        for e in valid_events:
+            setattr(self, e, _Listener())
+
+    def __call__(self, event, callback):
+        if event not in self._valid_events:
+            raise Exception("Invalid event '{}'".format(event))
+        getattr(self, event).add(callback)
+
+    def remove(self, event, callback):
+        if event not in self._valid_events:
+            raise Exception("Invalid event '{}'".format(event))
+        getattr(self, event).remove(callback)
+
+
 class ApplicationSession(BaseSession):
     """
-    WAMP endpoint session.
+    WAMP endpoint session. This class implements
+
+    * :class:`autobahn.wamp.interfaces.IPublisher`
+    * :class:`autobahn.wamp.interfaces.ISubscriber`
+    * :class:`autobahn.wamp.interfaces.ICaller`
+    * :class:`autobahn.wamp.interfaces.ICallee`
+    * :class:`autobahn.wamp.interfaces.ITransportHandler`
+
+    It also emits several events, corresponding to some of the methods
+    you can override. You can choose to use either interface (even
+    mixing and matching). Any callback can by asynchronous
+    (i.e. return a Future/Deferred).
+
+    The events are:
+
+      * `"join"`: the session has been established, and `onJoin` has run
+
+    You may add event listeners as so::
+
+        def joined(session):
+            print("A session is now joined:", session)
+        session.on('join', joined)  # "session" is an ApplicationSession instance
+        session.on.join(joined)  # "session" is an ApplicationSession instance
+
+    All the callbacks take a single argument (the session instance)
+    except disconnect, which receives either `closed` or `lost`
     """
 
     log = txaio.make_logger()
@@ -221,6 +332,18 @@ class ApplicationSession(BaseSession):
         """
         BaseSession.__init__(self)
         self.config = config or types.ComponentConfig(realm=u"default")
+
+        # events which can be listened for
+        # XXX so can do:
+        #    session.on.join(callback)
+        #    session.on.leave(callback)
+        #    session.on.join.remove(callback)
+        # or:
+        #    session.on.join.add(callback)
+        # or:
+        #    session.on('join', callback)
+        #    session.on.remove('join', callback)
+        self.on = _ListenerCollection(['join', 'leave', 'ready', 'connect', 'disconnect'])
 
         self._transport = None
         self._session_id = None
@@ -252,6 +375,11 @@ class ApplicationSession(BaseSession):
         """
         self._transport = transport
         d = txaio.as_future(self.onConnect)
+
+        def do_connect(rtn):
+            d1 = self.on.connect._notify(self)
+            txaio.add_callbacks(d1, lambda _: rtn, None)
+        txaio.add_callbacks(d, do_connect, None)
 
         def _error(e):
             return self._swallow_error(e, "While firing onConnect")
@@ -314,6 +442,10 @@ class ApplicationSession(BaseSession):
             self.log.error(fail.value.error_message())
         else:
             self.log.error(
+                '{msg}',
+                msg=txaio.failure_format_traceback(fail),
+            )
+            self.log.debug(
                 '{msg}: {traceback}',
                 msg=msg,
                 traceback=txaio.failure_format_traceback(fail),
@@ -348,7 +480,10 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
-                d = txaio.as_future(self.onJoin, details)
+
+                d = self.on.join._notify(self, details)
+                txaio.add_callbacks(d, lambda _: txaio.as_future(self.onJoin, details), None)
+                txaio.add_callbacks(d, lambda _: self.on.ready._notify(self), None)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onJoin")
@@ -356,9 +491,14 @@ class ApplicationSession(BaseSession):
 
             elif isinstance(msg, message.Abort):
 
-                # fire callback and close the transport
+                # fire callback
+                # note: we do not close the transport here as the WAMP
+                # session joining/leaving is independant from the
+                # transport
                 details = types.CloseDetails(msg.reason, msg.message)
-                d = txaio.as_future(self.onLeave, details)
+
+                d = self.on.leave._notify(self, details)
+                txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onLeave")
@@ -378,7 +518,8 @@ class ApplicationSession(BaseSession):
                     self._transport.send(reply)
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
-                    d = txaio.as_future(self.onLeave, details)
+                    d = self.on.leave._notify(self, details)
+                    txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                     def _error(e):
                         return self._swallow_error(e, "While firing onLeave")
@@ -404,7 +545,8 @@ class ApplicationSession(BaseSession):
 
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
-                d = txaio.as_future(self.onLeave, details)
+                d = self.on.leave._notify(self, details)
+                txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
                 def _error(e):
                     errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
@@ -733,10 +875,12 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
         """
         self._transport = None
-
         if self._session_id:
             # fire callback and close the transport
-            d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
+            details = types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST,
+                                         message="WAMP transport was lost without closing the session before")
+            d = self.on.leave._notify(self, details)
+            txaio.add_callbacks(d, lambda _: txaio.as_future(self.onLeave, details), None)
 
             def _error(e):
                 return self._swallow_error(e, "While firing onLeave")
@@ -744,11 +888,23 @@ class ApplicationSession(BaseSession):
 
             self._session_id = None
 
-        d = txaio.as_future(self.onDisconnect)
+# XXX hmm, why do "all" the tests fail if I try chaining to d?
+#        else:
+#            d = txaio.create_future_success(None)
+
+        # XXX do we want to chain these to "d" from if block above? (yes) (hmm: maybe not
+        d2 = txaio.as_future(self.onDisconnect)
+
+        def notify_disconnect(rtn):
+            detail = 'closed' if wasClean else 'lost'
+            d1 = self.on.disconnect._notify(self, detail)
+            txaio.add_callbacks(d1, lambda _: rtn, None)
+            return d1
+        txaio.add_callbacks(d2, notify_disconnect, None)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
-        txaio.add_callbacks(d, None, _error)
+        txaio.add_callbacks(d2, None, _error)
 
     def onChallenge(self, challenge):
         """
@@ -784,6 +940,7 @@ class ApplicationSession(BaseSession):
             msg = wamp.message.Goodbye(reason=reason, message=log_message)
             self._transport.send(msg)
             self._goodbye_sent = True
+
             # deferred that fires when transport actually hits CLOSED
             is_closed = self._transport is None or self._transport.is_closed
             return is_closed
@@ -970,6 +1127,10 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
+        if not callable(endpoint):
+            raise RuntimeError("'endpoint' argument must be a callable")
+        if procedure is None and not hasattr(endpoint, '__class__'):
+            raise RuntimeError("Must specify a 'procedure' if endpoint isn't an instance")
         assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
         if procedure and six.PY2 and type(procedure) == str:
             procedure = six.u(procedure)

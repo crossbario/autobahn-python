@@ -100,6 +100,13 @@ if os.environ.get('USE_TWISTED', False):
             # not really necessary, but ...
             del self.factory
             del self.proto
+            # the setUp causes a number of delayed calls to be created
+            # so we ensure they get cancelled (otherwise we'll get
+            # unclean reactor errors). Best would be to cause them not
+            # to get created in the first place?
+            from twisted.internet import reactor
+            for call in reactor.getDelayedCalls():
+                call.cancel()
 
         def test_missing_reason_raw(self):
             # we want to hit the "STATE_OPEN" case, so pretend we're there
@@ -168,6 +175,14 @@ if os.environ.get('USE_TWISTED', False):
             # not really necessary, but ...
             del self.factory
             del self.proto
+            # the setUp causes a number of delayed calls to be created
+            # so we ensure they get cancelled (otherwise we'll get
+            # unclean reactor errors). Best would be to cause them not
+            # to get created in the first place?
+            from twisted.internet import reactor
+            for call in reactor.getDelayedCalls():
+                if issubclass(WebSocketServerProtocol, call.func.im_class):
+                    call.cancel()
 
         def test_unclean_timeout(self):
             """

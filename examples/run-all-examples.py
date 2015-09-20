@@ -23,12 +23,16 @@ import colorama
 from colorama import Fore
 
 from twisted.internet.protocol import ProcessProtocol
-from twisted.internet.defer import inlineCallbacks, Deferred, returnValue
+from twisted.internet.defer import inlineCallbacks, Deferred, returnValue, DeferredList, FirstError
 from twisted.internet.error import ProcessExitedAlready
 from twisted.internet import reactor
 from twisted.internet.task import react
 
 from autobahn.twisted.util import sleep
+
+if len(sys.argv) > 1:
+    print("There are no options. Use the source. See main() method near bottom.")
+    sys.exit(1)
 
 
 class CrossbarProcessProtocol(ProcessProtocol):
@@ -75,7 +79,7 @@ class CrossbarProcessProtocol(ProcessProtocol):
         """IProcessProtocol API"""
         # reason.value should always be a ProcessTerminated instance
         fail = reason.value
-        # print('processEnded', fail)
+        # print('processEnded: ', fail)
 
         if fail.exitCode != 0 and fail.exitCode is not None:
             msg = 'Process exited with code "{}".'.format(fail.exitCode)
@@ -174,7 +178,7 @@ def main(reactor):
 
     print_banner("Running crossbar.io instance")
     cb_proto = yield start_crossbar()
-    yield sleep(2)  # wait for sockets to be listening
+    yield sleep(2)  # wait for sockets to be listening, hopefully
     if cb_proto.all_done.called:
         raise RuntimeError("crossbar exited already")
 
@@ -198,7 +202,16 @@ def main(reactor):
         yield sleep(1)
         print("  starting frontend")
         front_proto = yield start_example(frontend, Fore.YELLOW, 'frontend: ', exe=py)
-        yield sleep(3)
+        try:
+            yield DeferredList(
+                [
+                    sleep(3),
+                    front_proto.all_done,
+                    back_proto.all_done
+                ], fireOnOneCallback=True, fireOnOneErrback=True,
+            )
+        except FirstError as e:
+            e.subFailure.raiseException()
 
         for p in [back_proto, front_proto]:
             try:

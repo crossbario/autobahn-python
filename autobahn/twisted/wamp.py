@@ -24,18 +24,32 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
-import inspect
+from __future__ import absolute_import, print_function
 
 import six
+import sys
+import inspect
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks, returnValue, DeferredList
+from twisted.internet.error import ReactorAlreadyRunning, ReactorNotRunning
+from twisted.internet.interfaces import IStreamClientEndpoint, IProtocolFactory, IReactorCore
+from twisted.internet.endpoints import clientFromString, UNIXClientEndpoint
+from twisted.internet.endpoints import TCP4ClientEndpoint
 
-from autobahn.wamp import protocol
-from autobahn.wamp.types import ComponentConfig
+try:
+    _TLS = True
+    from twisted.internet.endpoints import SSL4ClientEndpoint
+    from twisted.internet.ssl import optionsForClientTLS, CertificateOptions
+    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
+except ImportError:
+    _TLS = False
+
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.twisted.rawsocket import WampRawSocketClientFactory
+from autobahn.wamp import protocol
+from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.runner import _ApplicationRunner, Connection
 
 import txaio
 txaio.use_twisted()
@@ -45,8 +59,10 @@ __all__ = [
     'ApplicationSession',
     'ApplicationSessionFactory',
     'ApplicationRunner',
+    'Connection',
+    'connect_to',
     'Application',
-    'Service'
+    'Service',
 ]
 
 try:
@@ -70,75 +86,265 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
     session = ApplicationSession
     """
-    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
+    The application session class this application session factory
+    will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
     """
 
 
-class ApplicationRunner(object):
+def _connect_stream(reactor, config, wamp_transport_factory, hostname=None):
     """
-    This class is a convenience tool mainly for development and quick hosting
-    of WAMP application components.
+    Internal helper.
 
-    It can host a WAMP application component in a WAMP-over-WebSocket client
-    connecting to a WAMP router.
+    Connects the given wamp_transport_factory to a stream endpoint, as
+    determined from the config that's passed in (which should be just the
+    "endpoint" part).
+
+    NOTE this presumes that 'config' has already been checked with
+    :meth:`autobahn.wamp.transport.check`
+
+    hostname is only used if the 'tls' option is True
+
+    Returns Deferred that fires with IProtocol
+    """
+    if reactor is None:
+        from twisted.internet import reactor
+
+    if isinstance(config, (str, six.text_type)):
+        endpoint = clientFromString(reactor, config)
+
+    elif IStreamClientEndpoint.providedBy(config):
+        endpoint = IStreamClientEndpoint(config)
+
+    else:
+        if config['type'] == 'tcp':
+            version = int(config.get('version', 4))
+            host = str(config['host'])
+            port = int(config['port'])
+            timeout = int(config.get('timeout', 10))  # in seconds
+
+            tls = config.get('tls', None)
+            if tls is False:
+                tls = None
+            if tls:
+                if not _TLS:
+                    raise Exception('TLS configured, but no support'
+                                    ' (is pyOpenSSL installed?)')
+                # we accept Twisted objects here. This must be a
+                # IOpenSSLClientConnectionCreator provider -- as
+                # created, e.g., by
+                # twisted.internet.ssl.optionsForClientTLS() or a
+                # CertificateOptions instance
+                if IOpenSSLClientConnectionCreator.providedBy(tls):
+                    context = IOpenSSLClientConnectionCreator(tls)
+                elif isinstance(tls, CertificateOptions):
+                    context = tls
+                elif tls is True:
+                    context = optionsForClientTLS(hostname)
+                else:
+                    raise Exception("Unknown 'tls' option type '{}'".format(type(tls)))
+
+                if version == 4:
+                    endpoint = SSL4ClientEndpoint(
+                        reactor,
+                        host,
+                        port,
+                        context,
+                        timeout=timeout,
+                    )
+                elif version == 6:
+                    raise Exception("TLS on IPv6 not implemented")
+                else:
+                    raise Exception("invalid TCP protocol version {}".format(version))
+
+            else:
+                if version == 4:
+                    creator = TCP4ClientEndpoint
+                elif version == 6:
+                    try:
+                        from twisted.internet.endpoints import TCP6ClientEndpoint
+                    except ImportError:
+                        raise Exception("No TCP6 support; upgrade Twisted")
+                    creator = TCP6ClientEndpoint
+                else:
+                    raise Exception("invalid TCP protocol version {}".format(version))
+                endpoint = creator(reactor,
+                                   host,
+                                   port,
+                                   timeout=timeout)
+
+        elif config['type'] == 'unix':
+            path = config['path']
+            timeout = int(config.get('timeout', 10))  # in seconds
+            endpoint = UNIXClientEndpoint(reactor, path, timeout=timeout)
+
+        else:
+            raise Exception("invalid endpoint type '{}'".format(config['type']))
+
+        return endpoint.connect(wamp_transport_factory)
+
+
+# needs custom asycio vs Twisted (because where the imports come from)
+# -- or would have to do "if txaio.using_twisted():" etc switch-type
+# statement.
+def _create_wamp_factory(reactor, cfg, session_factory):
+    """
+    Internal helper.
+
+    This creates the appropriate protocol-factory (that implements
+    tx:`IProtocolFactory <twisted.internet.interfaces.IProtocolFactory>`)
     """
 
+    # type in ['websocket', 'rawsocket']
+    kind = cfg.get('type', 'websocket')
+
+    if kind == 'websocket':
+        return WampWebSocketClientFactory(
+            session_factory, url=cfg['url'],
+        )
+    elif kind == 'rawsocket':
+        return WampRawSocketClientFactory(
+            session_factory,
+        )
+    else:
+        raise RuntimeError("Unknown WAMP type '{}'".format(kind))
+
+
+# XXX THINK move to transport.py?
+# XXX the shutdown hooks being different between asyncio/twisted makes this hard to be generic :(
+@inlineCallbacks
+def connect_to(transport_config, session, loop=None):
+    """:param reactor: the reactor to use (or None for default)
+
+    :param transport_config: dict containing valid client transport
+    config (see :mod:`autobahn.wamp.transport`) XXX maybe this should
+    just demand an actual Factory? or accept either a dict (==config)
+    or an IFactory provider? (to be consistent with asking for a
+    straight ISession, instead of config)
+
+    :param session: an ISession (e.g. ApplicationSession subclass)
+
+    :returns: Deferred that callbacks with a protocol instance after a
+    connection has been made (not necessarily a WAMP session joined
+    yet, however)
+
+    """
+
+    def create():
+        return session
+
+    reactor = loop
+    if loop is None:
+        from twisted.internet import reactor
+
+    if IProtocolFactory.providedBy(transport_config):
+        transport_factory = transport_config
+    else:
+        transport_factory = _create_wamp_factory(reactor, transport_config, create)
+
+    _, host, port, _, _, _ = parseWsUrl(transport_config['url'])
+    if 'endpoint' in transport_config:
+        endpoint = transport_config['endpoint']
+    else:
+        endpoint = dict(host=host, port=port, type='tcp', version=4)
+    proto = yield _connect_stream(reactor, endpoint, transport_factory, hostname=host)
+
+    # as the reactor/event-loop shuts down, we wish to wait until we've sent
+    # out our "Goodbye" message; leave() returns a Deferred that
+    # fires when the transport gets to STATE_CLOSED
+    def cleanup():
+        if hasattr(proto, '_session') and proto._session is not None:
+            if proto._session._session_id:
+                return proto._session.leave()
+    reactor.addSystemEventTrigger('before', 'shutdown', cleanup)
+
+    returnValue(proto)
+
+
+# this replaces ApplicationRunner, and is the preferred API. Or, call
+# Connection.open() yourself, use txaio.start_logging() and run your
+# own reactor.
+def run(connections, log_level='info', loop=None):
+    # be nice if user just passes one connection
+    if isinstance(connections, Connection):
+        connections = [connections]
+
+    # decide on event-loop (FIXME use choosereactor)
     log = txaio.make_logger()
+    txaio.start_logging(level=log_level)
 
-    def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_wamp=False, debug_app=False,
-                 ssl=None):
+    if loop is None:
+        from twisted.internet import reactor as loop
+    txaio.use_twisted()
+    txaio.config.loop = loop
+
+    # open all the connections (in parallel)
+
+    def error(fail):
+        log.error("{msg}", msg=txaio.failure_message(fail))
+        log.debug("{traceback}", traceback=txaio.failure_format_traceback(fail))
+
+    def success(_):
+        log.info('All connections have completed.')
+        try:
+            loop.stop()
+        except ReactorNotRunning:
+            pass
+
+    def startup():
+        opens = []
+        for conn in connections:
+            if conn._loop is None:
+                conn._loop = loop
+            d = conn.open()
+            d.addErrback(error)
+            opens.append(d)
+        done = DeferredList(opens)
+
+        done.addCallback(success)
+        # DeferredList never errbacks.
+        return done
+
+    loop.callWhenRunning(startup)
+    loop.run()
+
+
+# XXX probably want IConnection to declare API (e.g. so asyncio one
+# follows it as well)
+# XXX we can probably make this common via txaio as well...
+
+
+class ApplicationRunner(_ApplicationRunner):
+    """
+    Provides a high-level API that is (mostly) consistent across
+    asyncio and Twisted code. This starts the event-loop/reactor,
+    starts logging and provides a place to put all your configuration
+    information.
+
+    If you want more control over the reactor and logging, see the
+    :class:`Connection` class, a lower-level interface (which is
+    itself used by this class).
+
+    If you need even lower-level control than that, see
+    :meth:`connect_to` which attempts a single connection to a single
+    transport.
+
+    There is a single event this class emits upon which you may
+    listen, and that is ``connection`` which is fired whenever a new
+    Connection instance is created; this receives a single argument:
+    the new instance. You can use this event to add listeners on the
+    ``connection.session`` instance, which will be an
+    ``ApplicationSession`` (or subclass) instance.
+    """
+
+    def run(self, session_factory, start_reactor=True):
         """
+        Run an application component.
 
-        :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-        :type url: unicode
-
-        :param realm: The WAMP realm to join the application session to.
-        :type realm: unicode
-
-        :param extra: Optional extra configuration to forward to the application component.
-        :type extra: dict
-
-        :param serializers: A list of WAMP serializers to use (or None for default serializers).
-           Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializers: list
-
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
-
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
-
-        :param ssl: (Optional). If specified this should be an
-            instance suitable to pass as ``sslContextFactory`` to
-            :class:`twisted.internet.endpoints.SSL4ClientEndpoint`` such
-            as :class:`twisted.internet.ssl.CertificateOptions`. Leaving
-            it as ``None`` will use the result of calling Twisted's
-            :meth:`twisted.internet.ssl.platformTrust` which tries to use
-            your distribution's CA certificates.
-        :type ssl: :class:`twisted.internet.ssl.CertificateOptions`
-        """
-        assert(type(url) == six.text_type)
-        assert(type(realm) == six.text_type)
-        assert(extra is None or type(extra) == dict)
-        self.url = url
-        self.realm = realm
-        self.extra = extra or dict()
-        self.serializers = serializers
-        self.debug = debug
-        self.debug_wamp = debug_wamp
-        self.debug_app = debug_app
-        self.ssl = ssl
-
-    def run(self, make, start_reactor=True):
-        """
-        Run the application component.
-
-        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-           when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+        :param session_factory: A callable that produces instances of
+           :class:`autobahn.asyncio.wamp.ApplicationSession` when
+           called with an instance of
+           :class:`autobahn.wamp.types.ComponentConfig`. Usually this
+           is simply your ``ApplicationSession`` subclass.
         :type make: callable
 
         :param start_reactor: if True (the default) this method starts
@@ -148,83 +354,31 @@ class ApplicationRunner(object):
            back to the caller.
 
         :returns: None is returned, unless you specify
-            ``start_reactor=False`` in which case the Deferred that
-            connect() returns is returned; this will callback() with
-            an IProtocol instance, which will actually be an instance
-            of :class:`WampWebSocketClientProtocol`
+            ``start_reactor=False`` in which case you get a Deferred
+            that will callback() with a Connection instance when a
+            connection is first established (WAMP session not yet
+            joined at this point).
         """
-        from twisted.internet import reactor
+        loop = self._loop
+        if loop is None:
+            from twisted.internet import reactor as loop
         txaio.use_twisted()
-        txaio.config.loop = reactor
+        txaio.config.loop = loop
 
-        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+        # XXX FIXME should we really start logging automagically? or
+        # not... or provide a "start_logging=True" kwarg?
 
-        if self.debug or self.debug_wamp or self.debug_app:
-            txaio.start_logging(level='debug')
-        else:
-            txaio.start_logging(level='info')
+        # XXX I guess the "experts" interface is:
+        # Connection(..).open() and then you can start logging however you want...?
+        txaio.start_logging(out=sys.stdout, level='info')
 
-        # factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            try:
-                session = make(cfg)
-            except Exception as e:
-                if start_reactor:
-                    # the app component could not be created .. fatal
-                    self.log.error(str(e))
-                    reactor.stop()
-                else:
-                    # if we didn't start the reactor, it's up to the
-                    # caller to deal with errors
-                    raise
-            else:
-                session.debug_app = self.debug_app
-                return session
-
-        # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
-
-        # if user passed ssl= but isn't using isSecure, we'll never
-        # use the ssl argument which makes no sense.
-        context_factory = None
-        if self.ssl is not None:
-            if not isSecure:
-                raise RuntimeError(
-                    'ssl= argument value passed to %s conflicts with the "ws:" '
-                    'prefix of the url argument. Did you mean to use "wss:"?' %
-                    self.__class__.__name__)
-            context_factory = self.ssl
-        elif isSecure:
-            from twisted.internet.ssl import optionsForClientTLS
-            context_factory = optionsForClientTLS(host)
-
-        if isSecure:
-            from twisted.internet.endpoints import SSL4ClientEndpoint
-            assert context_factory is not None
-            client = SSL4ClientEndpoint(reactor, host, port, context_factory)
-        else:
-            from twisted.internet.endpoints import TCP4ClientEndpoint
-            client = TCP4ClientEndpoint(reactor, host, port)
-
-        d = client.connect(transport_factory)
-
-        # as the reactor shuts down, we wish to wait until we've sent
-        # out our "Goodbye" message; leave() returns a Deferred that
-        # fires when the transport gets to STATE_CLOSED
-        def cleanup(proto):
-            if hasattr(proto, '_session') and proto._session is not None:
-                return proto._session.leave()
-
-        # when our proto was created and connected, make sure it's cleaned
-        # up properly later on when the reactor shuts down for whatever reason
-        def init_proto(proto):
-            reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
-            return proto
-
-        # if we connect successfully, the arg is a WampWebSocketClientProtocol
-        d.addCallback(init_proto)
+        connection = Connection(
+            self._transports,
+            session_factory,
+            realm=self.realm,
+            extra=self.extra,
+            loop=loop,
+        )
 
         # if the user didn't ask us to start the reactor, then they
         # get to deal with any connect errors themselves.
@@ -238,13 +392,24 @@ class ApplicationRunner(object):
 
                 def __call__(self, failure):
                     self.exception = failure.value
-                    # print(failure.getErrorMessage())
-                    reactor.stop()
+                    self.log.critical(txaio.failure_message(failure))
             connect_error = ErrorCollector()
-            d.addErrback(connect_error)
+
+            def shutdown(_):
+                try:
+                    IReactorCore(loop).stop()
+                except ReactorAlreadyRunning:
+                    pass
+
+            def startup():
+                d = connection.open()
+                d.addErrback(connect_error)
+                d.addBoth(shutdown)
+                return d
+            IReactorCore(loop).callWhenRunning(startup)
 
             # now enter the Twisted reactor loop
-            reactor.run()
+            IReactorCore(loop).run()
 
             # if we exited due to a connection error, raise that to the
             # caller
@@ -253,23 +418,23 @@ class ApplicationRunner(object):
 
         else:
             # let the caller handle any errors
+            d = connection.open()
+            # we return a Connection instance ("_" will be IProtocol)
+            d.addCallback(lambda _: connection)
             return d
 
-
-class Connection(object):
-
-    def __init__(self, transport=u'ws://127.0.0.1:8080/ws', realm=u'realm1', reactor=None):
-        pass
-
-    def connect(self, main):
-        d = txaio.create_future()
-        txaio.resolve(d, u"hello")
-        return d
+    def _create_session(self, cfg):
+        """
+        Internal helper
+        """
+        self.session = self._session_factory(cfg)
+        return self.session
 
 
 class _ApplicationSession(ApplicationSession):
     """
-    WAMP application session class used internally with :class:`autobahn.twisted.app.Application`.
+    WAMP application session class used internally with
+    :class:`autobahn.twisted.app.Application`.
     """
 
     def __init__(self, config, app):
@@ -331,23 +496,25 @@ class Application(object):
 
     def __init__(self, prefix=None):
         """
-
-        :param prefix: The application URI prefix to use for procedures and topics,
-           e.g. ``"com.example.myapp"``.
+        :param prefix: The application URI prefix to use for
+           procedures and topics, e.g. ``"com.example.myapp"``.
         :type prefix: unicode
         """
         self._prefix = prefix
 
-        # procedures to be registered once the app session has joined the router/realm
+        #: procedures to be registered once the app session has joined
+        #: the router/realm
         self._procs = []
 
-        # event handler to be subscribed once the app session has joined the router/realm
+        #: event handler to be subscribed once the app session has
+        #: joined the router/realm
         self._handlers = []
 
-        # app lifecycle signal handlers
+        #: app lifecycle signal handlers
         self._signals = {}
 
-        # once an app session is connected, this will be here
+        #: once an app session is connected, this will be that instance
+        # XXX maybe list intead? so we can start many?
         self.session = None
 
     def __call__(self, config):
@@ -365,24 +532,17 @@ class Application(object):
         return self.session
 
     def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1",
-            debug=False, debug_wamp=False, debug_app=False,
             start_reactor=True):
         """
         Run the application.
 
         :param url: The URL of the WAMP router to connect to.
         :type url: unicode
+
         :param realm: The realm on the WAMP router to join.
         :type realm: unicode
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
         """
-        runner = ApplicationRunner(url, realm,
-                                   debug=debug, debug_wamp=debug_wamp, debug_app=debug_app)
+        runner = ApplicationRunner(url, realm)
         runner.run(self.__call__, start_reactor)
 
     def register(self, uri=None):
@@ -579,9 +739,6 @@ if service:
             self.url = url
             self.realm = realm
             self.extra = extra or dict()
-            self.debug = debug
-            self.debug_wamp = debug_wamp
-            self.debug_app = debug_app
             self.make = make
             service.MultiService.__init__(self)
             self.setupService()
@@ -596,7 +753,6 @@ if service:
             def create():
                 cfg = ComponentConfig(self.realm, self.extra)
                 session = self.make(cfg)
-                session.debug_app = self.debug_app
                 return session
 
             # create a WAMP-over-WebSocket transport client factory
