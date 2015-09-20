@@ -75,11 +75,11 @@ def check(transport, listen=False):
     """
     for key in transport.keys():
         if key not in ['type', 'url', 'endpoint']:
-            raise Exception("Unknown key '{}' in transport config".format(key))
+            raise Exception("Unknown key '{0}' in transport config".format(key))
 
     kind = transport.get('type', 'websocket')
     if kind not in ['websocket', 'rawsocket']:
-        raise Exception("Unknown transport type '{}'".format(kind))
+        raise Exception("Unknown transport type '{0}'".format(kind))
 
     if 'url' in transport:
         assert(type(transport['url']) == six.text_type)
@@ -100,7 +100,7 @@ def check(transport, listen=False):
     else:
         if kind != 'websocket':
             raise RuntimeError("Must provide 'endpoint' configuration "
-                               "for '{}'".format(transport['type']))
+                               "for '{0}'".format(transport['type']))
         return True
 
 
@@ -158,11 +158,11 @@ def check_endpoint(endpoint, listen=False):
     ]
     for key in endpoint.keys():
         if key not in valid_keys:
-            raise Exception("Invalid endpoint key '{}'".format(key))
+            raise Exception("Invalid endpoint key '{0}'".format(key))
 
     kind = endpoint.get('type', 'tcp')
     if kind not in ['tcp', 'unix']:
-        raise Exception("Unknown endpoint kind '{}'".format(kind))
+        raise Exception("Unknown endpoint kind '{0}'".format(kind))
 
     if kind == 'tcp':
         if 'path' in endpoint:
@@ -206,14 +206,14 @@ def check_endpoint(endpoint, listen=False):
     else:
         for x in ['host', 'port', 'interface', 'tls', 'shared', 'version']:
             if x in endpoint:
-                raise Exception("'{}' not accepted for unix endpoint")
+                raise Exception("'{0}' not accepted for unix endpoint".format(x))
 
         if 'path' not in endpoint:
             raise Exception("unix endpoints require 'path'")
 
     timeout = float(endpoint.get('timeout', 10))
     if timeout <= 0.0:
-        raise Exception("Invalid timeout '{}'".format(timeout))
+        raise Exception("Invalid timeout '{0}'".format(timeout))
 
     if listen:
         if 'timeout' in endpoint:
@@ -221,6 +221,6 @@ def check_endpoint(endpoint, listen=False):
     else:
         for key in ['backlog', 'shared', 'interface']:
             if key in endpoint:
-                raise Exception("'{}' not accepted for client endpoints")
+                raise Exception("'{0}' not accepted for client endpoints".format(x))
 
     return True
