@@ -29,8 +29,11 @@ from __future__ import absolute_import
 
 import six
 
+import txaio
+
 from autobahn.util import ObservableMixin
 from autobahn.websocket.protocol import parseWsUrl
+from autobahn.wamp.types import ComponentConfig
 
 __all__ = ('Connection')
 
@@ -121,3 +124,52 @@ class Connection(ObservableMixin):
 
     def start(self, reactor):
         raise RuntimeError('not implemented')
+
+    def _connect_once(self, reactor, transport_config):
+
+        done = txaio.create_future()
+
+        # factory for ISession objects
+        def create_session():
+            cfg = ComponentConfig(self._realm, self._extra)
+            try:
+                session = self.session(cfg)
+            except Exception:
+                # couldn't instantiate session calls, which is fatal.
+                # let the reconnection logic deal with that
+                raise
+            else:
+                # let child listener bubble up event
+                session._parent = self
+
+                # listen on leave events
+                def on_leave(session, details):
+                    print("on_leave: {}".format(details))
+
+                session.on('leave', on_leave)
+
+                # listen on disconnect events
+                def on_disconnect(session, was_clean):
+                    print("on_disconnect: {}".format(was_clean))
+                    if was_clean:
+                        done.callback(None)
+                    else:
+                        done.errback(RuntimeError('transport closed uncleanly'))
+
+                session.on('disconnect', on_disconnect)
+
+                # return the fresh session object
+                return session
+
+        d = self._connect_transport(reactor, transport_config, create_session)
+
+        def on_connect_sucess(res):
+            print('on_connect_sucess', res)
+
+        def on_connect_failure(err):
+            print('on_connect_failure', err)
+            done.errback(err)
+
+        txaio.add_callbacks(d, on_connect_sucess, on_connect_failure)
+
+        return done

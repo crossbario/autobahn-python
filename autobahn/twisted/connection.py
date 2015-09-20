@@ -44,12 +44,10 @@ except ImportError:
 
 import txaio
 
-from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
 from autobahn.wamp import connection
-from autobahn.wamp.types import ComponentConfig
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
@@ -138,15 +136,6 @@ def _create_transport_endpoint(reactor, endpoint_config):
     return endpoint
 
 
-def _connect_transport(reactor, transport_config, session_factory):
-    """
-    Create and connect a WAMP-over-XXX transport.
-    """
-    transport_factory = _create_transport_factory(reactor, transport_config, session_factory)
-    transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
-    return transport_endpoint.connect(transport_factory)
-
-
 class Connection(connection.Connection):
     """
     A connection establishes a transport and attached a session
@@ -165,6 +154,14 @@ class Connection(connection.Connection):
 
     def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
         connection.Connection.__init__(self, None, transports, realm, extra)
+
+    def _connect_transport(self, reactor, transport_config, session_factory):
+        """
+        Create and connect a WAMP-over-XXX transport.
+        """
+        transport_factory = _create_transport_factory(reactor, transport_config, session_factory)
+        transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
+        return transport_endpoint.connect(transport_factory)
 
     @inlineCallbacks
     def start(self, reactor=None, main=None):
@@ -186,61 +183,9 @@ class Connection(connection.Connection):
         while reconnect:
             transport_config = next(transport_gen)
             try:
-                res = yield self._connect_once(reactor, transport_config)
+                yield self._connect_once(reactor, transport_config)
             except Exception as e:
                 print(e)
                 yield sleep(2)
             else:
                 reconnect = False
-
-    def _connect_once(self, reactor, transport_config):
-
-        done = txaio.create_future()
-
-        # factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self._realm, self._extra)
-            try:
-                session = self.session(cfg)
-
-                # let child listener bubble up event
-                session._parent = self
-
-                def on_leave(session, details):
-                    print("on_leave: {}".format(details))
-
-                session.on('leave', on_leave)
-
-                def on_disconnect(session, was_clean):
-                    print("on_disconnect: {}".format(was_clean))
-                    if was_clean:
-                        done.callback(None)
-                    else:
-                        done.errback(RuntimeError('transport closed uncleanly'))
-
-                session.on('disconnect', on_disconnect)
-
-            except Exception as e:
-                if False:
-                    # the app component could not be created .. fatal
-                    self.log.error(str(e))
-                    reactor.stop()
-                else:
-                    # if we didn't start the reactor, it's up to the
-                    # caller to deal with errors
-                    raise
-            else:
-                return session
-
-        d = _connect_transport(reactor, transport_config, create)
-
-        def on_connect_sucess(res):
-            print('on_connect_sucess', res)
-
-        def on_connect_failure(err):
-            print('on_connect_failure', err)
-            done.errback(err)
-
-        d.addCallbacks(on_connect_sucess, on_connect_failure)
-
-        return done
