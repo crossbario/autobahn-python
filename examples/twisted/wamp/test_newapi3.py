@@ -4,7 +4,7 @@ from autobahn.wamp.runner import Connection
 from autobahn.twisted.wamp import run
 
 
-def main(connection):
+def setup(connection):
 
     @coroutine
     def on_join(session, details):
@@ -25,7 +25,14 @@ def main(connection):
 
     connection.on('join', on_join)
 
+@coroutine
+def main(reactor):
+    # can do other setup here.
+    # pass extra= kwarg to Connection as any object, available later
+    # as 'session.config.extra'.
+    connection = Connection(main=setup, loop=reactor)
+    yield connection.open()
+    # here, after the connection is closed, can do any cleanup etc.
 
 if __name__ == '__main__':
-    connection = Connection(main=main)
-    run(connection)
+    react(main)
