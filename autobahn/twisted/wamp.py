@@ -784,7 +784,7 @@ class Session(ApplicationSession):
     def onDisconnect(self):
         return self.on_disconnect()
 
-    def on_join(self):
+    def on_join(self, details):
         pass
 
     def on_leave(self, details):
