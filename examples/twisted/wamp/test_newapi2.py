@@ -23,9 +23,18 @@ class MySession(Session):
         finally:
             self.leave()
 
+    def on_leave(self, details):
+        print('on_leave: {}'.format(details))
+        self.disconnect()
+
+    def on_disconnect(self):
+        print('on_disconnect')
+
 
 if __name__ == '__main__':
 
-    connection = Connection()
+    transports = u'ws://localhost:8080/ws'
+
+    connection = Connection(transports=transports)
     connection.session = MySession
     react(connection.start)
