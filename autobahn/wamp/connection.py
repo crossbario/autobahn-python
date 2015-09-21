@@ -86,7 +86,8 @@ class Transport(object):
     """
 
     def __init__(self, idx, config, max_retries=15, max_retry_delay=300,
-        initial_retry_delay=1.5, retry_delay_growth=1.5, retry_delay_jitter=0.1):
+                 initial_retry_delay=1.5, retry_delay_growth=1.5,
+                 retry_delay_jitter=0.1):
         """
 
         :param config: The transport configuration.
@@ -184,7 +185,8 @@ class Connection(ObservableMixin):
 
     def _connect_once(self, reactor, transport_config):
 
-        self.log.info('connecting once using transport type "{transport_type}" '
+        self.log.info(
+            'connecting once using transport type "{transport_type}" '
             'over endpoint type "{endpoint_type}"',
             transport_type=transport_config['type'],
             endpoint_type=transport_config['endpoint']['type']

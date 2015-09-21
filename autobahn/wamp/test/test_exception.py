@@ -29,6 +29,7 @@ from six import PY3
 
 from autobahn.wamp.exception import ApplicationError
 
+
 class ApplicationErrorTestCase(TestCase):
 
     def test_unicode_str(self):

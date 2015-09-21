@@ -245,10 +245,10 @@ class Connection(connection.Connection):
         if reactor is None:
             from twisted.internet import reactor
 
-        #txaio.use_twisted()
-        #txaio.config.loop = reactor
+        # txaio.use_twisted()
+        # txaio.config.loop = reactor
 
-        #txaio.start_logging(level='debug')
+        # txaio.start_logging(level='debug')
 
         yield self.fire('start', reactor, self)
 
