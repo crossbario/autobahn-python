@@ -50,11 +50,8 @@ def check_endpoint(endpoint, check_native_endpoint=None):
         - type: "tcp" or "unix" (default: tcp)
         - port: (mandatory for TCP) any valid port number
         - version: "4" or "6" (default: 4)
-        - host: (non-listen only) the host to connect to (or IP address)
-        - interface: (optional; TCP listen only) explicit interface to listen on (default: any)
-        - backlog: (optional; listen only) accept-queue depth (default: 50)
-        - timeout: (optional; non-listen only) connection timeout in seconds (default: 10)
-        - shared: (optional; TCP listen only) share socket amongst other processes (default: False)
+        - host: the host to connect to (or IP address)
+        - timeout: (optional) connection timeout in seconds (default: 10)
         - tls: (optional; TCP only) dict of TLS options
 
         If using Twisted, an "endpoint" can be any object providing
