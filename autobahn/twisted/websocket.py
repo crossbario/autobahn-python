@@ -37,11 +37,12 @@ from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
 from autobahn.wamp import websocket
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
+    ConnectionDeny
 from autobahn.websocket import protocol
-from autobahn.websocket import http
 from autobahn.twisted.util import peer2str
 
-from autobahn._logging import make_logger
+import txaio
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -78,6 +79,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     Adapter class for Twisted WebSocket client and server protocols.
     """
     peer = '<never connected>'
+    log = txaio.make_logger()
 
     def connectionMade(self):
         # the peer we are connected to
@@ -90,6 +92,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             self.peer = peer2str(peer)
 
         self._connectionMade()
+        self.log.info('Connection made to {peer}', peer=self.peer)
 
         # Set "Nagle"
         try:
@@ -100,12 +103,12 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
     def connectionLost(self, reason):
         if isinstance(reason.value, ConnectionDone):
-            self.factory.log.debug("Connection to/from {peer} was closed cleanly",
-                                   peer=self.peer)
+            self.log.debug("Connection to/from {peer} was closed cleanly",
+                           peer=self.peer)
 
         elif isinstance(reason.value, ConnectionAborted):
-            self.factory.log.debug("Connection to/from {peer} was aborted locally",
-                                   peer=self.peer)
+            self.log.debug("Connection to/from {peer} was aborted locally",
+                           peer=self.peer)
 
         elif isinstance(reason.value, ConnectionLost):
             # The following is ridiculous, but the treatment of reason.value.args
@@ -118,16 +121,16 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
                 message = None
 
             if message:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
-                                       peer=self.peer, message=message)
+                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
+                               peer=self.peer, message=message)
             else:
-                self.factory.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
-                                       peer=self.peer)
+                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
+                               peer=self.peer)
 
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
-            self.factory.log.info("Connection to/from {peer} lost ({error_type}): {error})",
-                                  peer=self.peer, error_type=type(reason.value), error=reason.value)
+            self.log.info("Connection to/from {peer} lost ({error_type}): {error})",
+                          peer=self.peer, error_type=type(reason.value), error=reason.value)
 
         self._connectionLost(reason)
 
@@ -178,8 +181,6 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         """
         Register a Twisted producer with this protocol.
 
-        Modes: Hybi, Hixie
-
         :param producer: A Twisted push or pull producer.
         :type producer: object
         :param streaming: Producer type.
@@ -201,12 +202,11 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         res.addCallback(self.succeedHandshake)
 
         def forwardError(failure):
-            if failure.check(http.HttpException):
+            if failure.check(ConnectionDeny):
                 return self.failHandshake(failure.value.reason, failure.value.code)
             else:
-                if self.debug:
-                    self.factory._log("Unexpected exception in onConnect ['%s']" % failure.value)
-                return self.failHandshake(http.INTERNAL_SERVER_ERROR[1], http.INTERNAL_SERVER_ERROR[0])
+                self.log.debug("Unexpected exception in onConnect ['{failure.value}']", failure=failure)
+                return self.failHandshake("Internal server error: {}".format(failure.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
 
         res.addErrback(forwardError)
 
@@ -224,7 +224,6 @@ class WebSocketAdapterFactory(object):
     """
     Adapter class for Twisted-based WebSocket client and server factories.
     """
-    log = make_logger("twisted")
 
 
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
@@ -293,14 +292,14 @@ class WrappingWebSocketAdapter(object):
     def onConnect(self, requestOrResponse):
 
         # Negotiate either the 'binary' or the 'base64' WebSocket subprotocol
-        if isinstance(requestOrResponse, protocol.ConnectionRequest):
+        if isinstance(requestOrResponse, ConnectionRequest):
             request = requestOrResponse
             for p in request.protocols:
                 if p in self.factory._subprotocols:
                     self._binaryMode = (p != 'base64')
                     return p
-            raise http.HttpException(http.NOT_ACCEPTABLE[0], "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
-        elif isinstance(requestOrResponse, protocol.ConnectionResponse):
+            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+        elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
                 self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks %s WebSocket subprotocols" % self.factory._subprotocols)

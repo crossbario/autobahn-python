@@ -117,7 +117,6 @@ if __name__ == '__main__':
                             debugCodePaths=debug)
 
     factory.protocol = BroadcastServerProtocol
-    factory.setProtocolOptions(allowHixie76=True)
     listenWS(factory)
 
     webdir = File(".")

@@ -37,9 +37,7 @@ from flask import Flask, render_template
 from autobahn.twisted.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol
 
-from autobahn.twisted.resource import WebSocketResource, \
-    WSGIRootResource, \
-    HTTPChannelHixie76Aware
+from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
 
 
 ##
@@ -83,8 +81,6 @@ if __name__ == "__main__":
                                        debugCodePaths=debug)
 
     wsFactory.protocol = EchoServerProtocol
-    wsFactory.setProtocolOptions(allowHixie76=True)  # needed if Hixie76 is to be supported
-
     wsResource = WebSocketResource(wsFactory)
 
     ##
@@ -102,7 +98,6 @@ if __name__ == "__main__":
     # create a Twisted Web Site and run everything
     ##
     site = Site(rootResource)
-    site.protocol = HTTPChannelHixie76Aware  # needed if Hixie76 is to be supported
 
     reactor.listenTCP(8080, site)
     reactor.run()

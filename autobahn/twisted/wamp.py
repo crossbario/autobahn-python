@@ -26,18 +26,19 @@
 
 from __future__ import absolute_import
 
-import sys
 import inspect
 
 import six
 
-from twisted.python import log
 from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+
+# new API
+# from autobahn.twisted.connection import Connection
 
 import txaio
 txaio.use_twisted()
@@ -48,7 +49,10 @@ __all__ = [
     'ApplicationSessionFactory',
     'ApplicationRunner',
     'Application',
-    'Service'
+    'Service',
+
+    # new API
+    'Session'
 ]
 
 try:
@@ -64,16 +68,6 @@ class ApplicationSession(protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
-    def onUserError(self, e, msg):
-        """
-        Override of wamp.ApplicationSession
-        """
-        # see docs; will print currently-active exception to the logs,
-        # which is just what we want.
-        log.err(e)
-        # also log the framework-provided error-message
-        log.err(msg)
-
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
@@ -82,8 +76,8 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
     session = ApplicationSession
     """
-   The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
-   """
+    The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
+    """
 
 
 class ApplicationRunner(object):
@@ -94,6 +88,8 @@ class ApplicationRunner(object):
     It can host a WAMP application component in a WAMP-over-WebSocket client
     connecting to a WAMP router.
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, url, realm, extra=None, serializers=None,
                  debug=False, debug_wamp=False, debug_app=False,
@@ -169,9 +165,10 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
-        # start logging to console
         if self.debug or self.debug_wamp or self.debug_app:
-            log.startLogging(sys.stdout)
+            txaio.start_logging(level='debug')
+        else:
+            txaio.start_logging(level='info')
 
         # factory for use ApplicationSession
         def create():
@@ -181,7 +178,7 @@ class ApplicationRunner(object):
             except Exception as e:
                 if start_reactor:
                     # the app component could not be created .. fatal
-                    log.err(str(e))
+                    self.log.error(str(e))
                     reactor.stop()
                 else:
                     # if we didn't start the reactor, it's up to the
@@ -324,6 +321,8 @@ class Application(object):
     A WAMP application. The application object provides a simple way of
     creating, debugging and running WAMP application components.
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, prefix=None):
         """
@@ -529,7 +528,7 @@ class Application(object):
                 yield handler(*args, **kwargs)
             except Exception as e:
                 # FIXME
-                log.msg("Warning: exception in signal handler swallowed", e)
+                self.log.info("Warning: exception in signal handler swallowed", e)
 
 
 if service:
@@ -610,3 +609,25 @@ if service:
 
             client = clientClass(host, port, transport_factory)
             client.setServiceParent(self)
+
+
+# new API
+class Session(ApplicationSession):
+
+    def onJoin(self, details):
+        return self.on_join(details)
+
+    def onLeave(self, details):
+        return self.on_leave(details)
+
+    def onDisconnect(self):
+        return self.on_disconnect()
+
+    def on_join(self):
+        pass
+
+    def on_leave(self, details):
+        self.disconnect()
+
+    def on_disconnect(self):
+        pass

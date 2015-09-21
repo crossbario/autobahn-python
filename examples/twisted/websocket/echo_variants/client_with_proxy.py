@@ -71,9 +71,6 @@ if __name__ == '__main__':
                                      proxy=proxy,
                                      debug=debug,
                                      debugCodePaths=debug)
-
-    # uncomment to use Hixie-76 protocol
-    # factory.setProtocolOptions(allowHixie76 = True, version = 0)
     factory.protocol = EchoClientProtocol
     connectWS(factory)
 

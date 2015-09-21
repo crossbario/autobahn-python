@@ -16,7 +16,6 @@ serializer
 subprotocol
 subprotocols
 Hybi
-Hixie
 args
 kwargs
 unserialized

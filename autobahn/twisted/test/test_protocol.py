@@ -24,29 +24,35 @@
 #
 ###############################################################################
 
-from unittest2 import TestCase
-from six import PY3
+from __future__ import absolute_import, print_function
 
-from autobahn.wamp.exception import ApplicationError
+import unittest2 as unittest
 
-class ApplicationErrorTestCase(TestCase):
+from autobahn.twisted.websocket import WebSocketServerFactory
+from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.test import FakeTransport
 
-    def test_unicode_str(self):
-        """
-        Unicode arguments in ApplicationError will not raise an exception when
-        str()'d.
-        """
-        error = ApplicationError(u"some.url", u"\u2603")
-        if PY3:
-            self.assertIn(u"\u2603", str(error))
-        else:
-            self.assertIn("\\u2603", str(error))
 
-    def test_unicode_errormessage(self):
+class Hixie76RejectionTests(unittest.TestCase):
+    """
+    Hixie-76 should not be accepted by an Autobahn server.
+    """
+    def test_handshake_fails(self):
         """
-        Unicode arguments in ApplicationError will not raise an exception when
-        the error_message method is called.
+        A handshake from a client only supporting Hixie-76 will fail.
         """
-        error = ApplicationError(u"some.url", u"\u2603")
-        print(error.error_message())
-        self.assertIn(u"\u2603", error.error_message())
+        t = FakeTransport()
+        f = WebSocketServerFactory()
+        p = WebSocketServerProtocol()
+        p.factory = f
+        p.transport = t
+
+        # from http://tools.ietf.org/html/draft-hixie-thewebsocketprotocol-76
+        http_request = b"GET /demo HTTP/1.1\r\nHost: example.com\r\nConnection: Upgrade\r\nSec-WebSocket-Key2: 12998 5 Y3 1  .P00\r\nSec-WebSocket-Protocol: sample\r\nUpgrade: WebSocket\r\nSec-WebSocket-Key1: 4 @1  46546xW%0l 1 5\r\nOrigin: http://example.com\r\n\r\n^n:ds[4U"
+
+        p.openHandshakeTimeout = 0
+        p._connectionMade()
+        p.data = http_request
+        p.processHandshake()
+        self.assertIn(b"HTTP/1.1 400", t._written)
+        self.assertIn(b"Hixie76 protocol not supported", t._written)

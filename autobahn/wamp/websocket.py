@@ -29,7 +29,7 @@ from __future__ import absolute_import, print_function
 import traceback
 
 from autobahn.websocket import protocol
-from autobahn.websocket import http
+from autobahn.websocket.types import ConnectionDeny
 from autobahn.wamp.interfaces import ITransport
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 
@@ -61,8 +61,7 @@ class WampWebSocketProtocol(object):
             self._session = self.factory._factory()
             self._session.onOpen(self)
         except Exception as e:
-            if self.factory.debug_wamp:
-                traceback.print_exc()
+            self.log.critical(traceback.format_exc())
             # Exceptions raised in onOpen are fatal ..
             reason = "WAMP Internal Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
@@ -103,8 +102,7 @@ class WampWebSocketProtocol(object):
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason=reason)
 
         except Exception as e:
-            if self.factory.debug_wamp:
-                traceback.print_exc()
+            self.log.critical(traceback.format_exc())
             reason = "WAMP Internal Error ({0})".format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
@@ -184,7 +182,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
                 return subprotocol, headers
 
         if self.STRICT_PROTOCOL_NEGOTIATION:
-            raise http.HttpException(http.BAD_REQUEST[0], "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
+            raise ConnectionDeny(ConnectionDeny.BAD_REQUEST, "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
         else:
             # assume wamp.2.json
             self._serializer = self.factory._serializers['json']

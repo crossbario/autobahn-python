@@ -50,7 +50,7 @@ LONGSDESC = open('README.rst').read()
 #
 VERSIONFILE = "autobahn/__init__.py"
 verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
 mo = re.search(VSRE, verstrline, re.M)
 if mo:
     verstr = mo.group(1)
@@ -182,7 +182,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.9.0',       # MIT license
-        'txaio>=1.1.0'      # MIT license
+        'txaio>=2.0.0',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,

@@ -23,3 +23,18 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
+from __future__ import absolute_import, print_function
+
+
+class FakeTransport(object):
+    _written = b""
+    _open = True
+
+    def write(self, msg):
+        if not self._open:
+            raise Exception("Can't write to a closed connection")
+        self._written = self._written + msg
+
+    def loseConnection(self):
+        self._open = False

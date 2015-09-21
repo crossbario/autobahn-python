@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from autobahn._logging import make_logger
+from txaio import make_logger
 
 __all__ = (
     'install_optimal_reactor',
@@ -41,7 +41,7 @@ def install_optimal_reactor(verbose=False):
     :param verbose: If ``True``, print what happens.
     :type verbose: bool
     """
-    log = make_logger("twisted")
+    log = make_logger()
 
     import sys
     from twisted.python import reflect
@@ -133,7 +133,7 @@ def install_reactor(explicit_reactor=None, verbose=False):
     import txaio
     txaio.use_twisted()  # just to be sure...
 
-    log = make_logger("twisted")
+    log = make_logger()
 
     if explicit_reactor:
         # install explicitly given reactor

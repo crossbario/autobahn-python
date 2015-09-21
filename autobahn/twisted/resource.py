@@ -24,6 +24,9 @@
 #
 ###############################################################################
 
+
+from __future__ import absolute_import
+
 from zope.interface import implementer
 
 from twisted.protocols.policies import ProtocolWrapper
@@ -36,39 +39,14 @@ except ImportError:
 from twisted.web.resource import IResource, Resource
 from six import PY3
 
-# The following imports reactor at module level
-# See: https://twistedmatrix.com/trac/ticket/6849
-from twisted.web.http import HTTPChannel
-
-# .. and this also, since it imports t.w.http
+# The following triggers an import of reactor at module level!
 #
 from twisted.web.server import NOT_DONE_YET
 
 __all__ = (
     'WebSocketResource',
-    'HTTPChannelHixie76Aware',
     'WSGIRootResource',
 )
-
-
-class HTTPChannelHixie76Aware(HTTPChannel):
-    """
-    Hixie-76 is deadly broken. It includes 8 bytes of body, but then does not
-    set content-length header. This hacked HTTPChannel injects the missing
-    HTTP header upon detecting Hixie-76. We need this since otherwise
-    Twisted Web will silently ignore the body.
-
-    To use this, set ``protocol = HTTPChannelHixie76Aware`` on your
-    `twisted.web.server.Site <http://twistedmatrix.com/documents/current/api/twisted.web.server.Site.html>`_ instance.
-
-    .. seealso: `Autobahn Twisted Web site example <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_site>`_
-    """
-
-    def headerReceived(self, line):
-        header = line.split(':')[0].lower()
-        if header == "sec-websocket-key1" and not self._transferDecoder:
-            HTTPChannel.headerReceived(self, "Content-Length: 8")
-        HTTPChannel.headerReceived(self, line)
 
 
 class WSGIRootResource(Resource):
@@ -110,7 +88,6 @@ class WebSocketResource(object):
     """
     A Twisted Web resource for WebSocket.
     """
-
     isLeaf = True
 
     def __init__(self, factory):
@@ -180,7 +157,6 @@ class WebSocketResource(object):
             for h in request.requestHeaders.getAllRawHeaders():
                 data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
             data += "\x0d\x0a"
-            data += request.content.read()  # we need this for Hixie-76
         protocol.dataReceived(data)
 
         return NOT_DONE_YET

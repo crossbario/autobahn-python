@@ -482,3 +482,90 @@ class CallResult(object):
 
     def __str__(self):
         return "CallResult(results = {0}, kwresults = {1})".format(self.results, self.kwresults)
+
+
+class IPublication(object):
+    """
+    Represents a publication of an event. This is used with acknowledged publications.
+    """
+
+    def id(self):
+        """
+        The WAMP publication ID for this publication.
+        """
+
+
+class ISubscription(object):
+    """
+    Represents a subscription to a topic.
+    """
+
+    def id(self):
+        """
+        The WAMP subscription ID for this subscription.
+        """
+
+    def active(self):
+        """
+        Flag indicating if subscription is active.
+        """
+
+    def unsubscribe(self):
+        """
+        Unsubscribe this subscription that was previously created from
+        :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+
+        After a subscription has been unsubscribed successfully, no events
+        will be routed to the event handler anymore.
+
+        Returns an instance of :tx:`twisted.internet.defer.Deferred` (when
+        running on **Twisted**) or an instance of :py:class:`asyncio.Future`
+        (when running on **asyncio**).
+
+        - If the unsubscription succeeds, the returned Deferred/Future will
+          *resolve* (with no return value).
+
+        - If the unsubscription fails, the returned Deferred/Future will *reject*
+          with an instance of :class:`autobahn.wamp.exception.ApplicationError`.
+
+        :returns: A Deferred/Future for the unsubscription
+        :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
+        """
+
+
+class IRegistration(object):
+    """
+    Represents a registration of an endpoint.
+    """
+
+    def id(self):
+        """
+        The WAMP registration ID for this registration.
+        """
+
+    def active(self):
+        """
+        Flag indicating if registration is active.
+        """
+
+    def unregister(self):
+        """
+        Unregister this registration that was previously created from
+        :func:`autobahn.wamp.interfaces.ICallee.register`.
+
+        After a registration has been unregistered successfully, no calls
+        will be routed to the endpoint anymore.
+
+        Returns an instance of :tx:`twisted.internet.defer.Deferred` (when
+        running on **Twisted**) or an instance of :py:class:`asyncio.Future`
+        (when running on **asyncio**).
+
+        - If the unregistration succeeds, the returned Deferred/Future will
+          *resolve* (with no return value).
+
+        - If the unregistration fails, the returned Deferred/Future will be rejected
+          with an instance of :class:`autobahn.wamp.exception.ApplicationError`.
+
+        :returns: A Deferred/Future for the unregistration
+        :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
+        """

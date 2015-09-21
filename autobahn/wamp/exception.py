@@ -28,7 +28,7 @@ from __future__ import absolute_import
 
 from six import PY3
 
-from autobahn.wamp import error
+from autobahn.wamp.uri import error
 
 __all__ = (
     'Error',
@@ -209,13 +209,22 @@ class ApplicationError(Error):
         self.kwargs = kwargs
         self.error = error
 
+    def error_message(self):
+        """
+        Get the error message of this exception.
+
+        :return: unicode
+        """
+        return u'{}: {}'.format(self.error, u' '.join(self.args))
+
     def __unicode__(self):
         if self.kwargs and 'traceback' in self.kwargs:
             tb = u':\n' + u'\n'.join(self.kwargs.pop('traceback')) + u'\n'
             self.kwargs['traceback'] = u'...'
         else:
             tb = u''
-        return u"ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(self.error, self.args, self.kwargs, tb)
+        return u"ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(
+            self.error, self.args, self.kwargs, tb)
 
     def __str__(self):
         if PY3:

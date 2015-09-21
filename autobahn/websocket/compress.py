@@ -58,7 +58,7 @@ __all__ = [
 ]
 
 # class for "permessage-deflate" is always available
-##
+#
 PERMESSAGE_COMPRESSION_EXTENSION = {
     PerMessageDeflateMixin.EXTENSION_NAME: {
         'Offer': PerMessageDeflateOffer,
@@ -71,7 +71,7 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 
 
 # include "permessage-bzip2" classes if bzip2 is available
-##
+#
 try:
     import bz2
 except ImportError:
@@ -102,7 +102,7 @@ else:
 
 
 # include "permessage-snappy" classes if Snappy is available
-##
+#
 try:
     # noinspection PyPackageRequirements
     import snappy

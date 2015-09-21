@@ -30,13 +30,7 @@ import unittest2 as unittest
 
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
-
-
-class FakeTransport(object):
-    _written = b""
-
-    def write(self, msg):
-        self._written = self._written + msg
+from autobahn.test import FakeTransport
 
 
 class WebSocketProtocolTests(unittest.TestCase):

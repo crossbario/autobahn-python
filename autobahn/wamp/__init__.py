@@ -26,43 +26,59 @@
 
 from __future__ import absolute_import
 
-from autobahn.wamp.uri import Pattern
+from autobahn.wamp.types import \
+    SessionDetails, \
+    CloseDetails, \
+    RegisterOptions, \
+    CallOptions, \
+    CallDetails, \
+    CallResult, \
+    SubscribeOptions, \
+    PublishOptions, \
+    EventDetails
+
+from autobahn.wamp.exception import \
+    Error, \
+    SessionNotReady, \
+    SerializationError, \
+    ProtocolError, \
+    TransportLost, \
+    ApplicationError, \
+    InvalidUri
+
+from autobahn.wamp.interfaces import \
+    ISession, \
+    IApplicationSession
+
+from autobahn.wamp.uri import \
+    error, \
+    register, \
+    subscribe
 
 
-def register(uri):
-    """
-    Decorator for WAMP procedure endpoints.
-    """
-    def decorate(f):
-        assert(callable(f))
-        if not hasattr(f, '_wampuris'):
-            f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_ENDPOINT))
-        return f
-    return decorate
+__all__ = (
+    'SessionDetails',
+    'CloseDetails',
+    'RegisterOptions',
+    'CallOptions',
+    'CallDetails',
+    'CallResult',
+    'SubscribeOptions',
+    'PublishOptions',
+    'EventDetails',
 
+    'Error',
+    'SessionNotReady',
+    'SerializationError',
+    'ProtocolError',
+    'TransportLost',
+    'ApplicationError',
+    'InvalidUri',
 
-def subscribe(uri):
-    """
-    Decorator for WAMP event handlers.
-    """
-    def decorate(f):
-        assert(callable(f))
-        if not hasattr(f, '_wampuris'):
-            f._wampuris = []
-        f._wampuris.append(Pattern(uri, Pattern.URI_TARGET_HANDLER))
-        return f
-    return decorate
+    'ISession',
+    'IApplicationSession',
 
-
-def error(uri):
-    """
-    Decorator for WAMP error classes.
-    """
-    def decorate(cls):
-        assert(issubclass(cls, Exception))
-        if not hasattr(cls, '_wampuris'):
-            cls._wampuris = []
-        cls._wampuris.append(Pattern(uri, Pattern.URI_TARGET_EXCEPTION))
-        return cls
-    return decorate
+    'error',
+    'register',
+    'subscribe',
+)

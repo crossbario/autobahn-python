@@ -23,3 +23,25 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
+
+from __future__ import absolute_import
+
+# WebSocket protocol support
+from autobahn.asyncio.websocket import \
+    WebSocketServerProtocol, \
+    WebSocketClientProtocol, \
+    WebSocketServerFactory, \
+    WebSocketClientFactory
+
+# WAMP support
+from autobahn.asyncio.wamp import ApplicationSession
+
+
+__all__ = (
+    'WebSocketServerProtocol',
+    'WebSocketClientProtocol',
+    'WebSocketServerFactory',
+    'WebSocketClientFactory',
+    'ApplicationSession',
+)

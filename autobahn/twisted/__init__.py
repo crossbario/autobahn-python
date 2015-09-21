@@ -23,3 +23,55 @@
 # THE SOFTWARE.
 #
 ###############################################################################
+
+
+from __future__ import absolute_import
+
+# Twisted specific utilities (these should really be in Twisted, but
+# they aren't, and we use these in example code, so it must be part of
+# the public API)
+from autobahn.twisted.util import sleep
+from autobahn.twisted.choosereactor import install_reactor
+
+# WebSocket protocol support
+from autobahn.twisted.websocket import \
+    WebSocketServerProtocol, \
+    WebSocketClientProtocol, \
+    WebSocketServerFactory, \
+    WebSocketClientFactory
+
+# support for running Twisted stream protocols over WebSocket
+from autobahn.twisted.websocket import WrappingWebSocketServerFactory, \
+    WrappingWebSocketClientFactory
+
+# Twisted Web support
+from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
+
+# WAMP support
+from autobahn.twisted.wamp import ApplicationSession
+
+
+__all__ = (
+    # this should really be in Twisted
+    'sleep',
+    'install_reactor',
+
+    # WebSocket
+    'WebSocketServerProtocol',
+    'WebSocketClientProtocol',
+    'WebSocketServerFactory',
+    'WebSocketClientFactory',
+
+    # wrapping stream protocols in WebSocket
+    'WrappingWebSocketServerFactory',
+    'WrappingWebSocketClientFactory',
+
+    # Twisted Web
+    'WebSocketResource',
+
+    # this should really be in Twisted
+    'WSGIRootResource',
+
+    # WAMP support
+    'ApplicationSession',
+)

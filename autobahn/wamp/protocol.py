@@ -26,19 +26,9 @@
 
 from __future__ import absolute_import
 
-import traceback
-import inspect
 import six
-from six import StringIO
-
-from autobahn.wamp.interfaces import ISession, \
-    IPublication, \
-    IPublisher, \
-    ISubscription, \
-    ISubscriber, \
-    ICaller, \
-    IRegistration, \
-    ITransportHandler
+import txaio
+import inspect
 
 from autobahn import wamp
 from autobahn.wamp import uri
@@ -47,204 +37,30 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
+from autobahn.wamp.interfaces import IApplicationSession  # noqa
 from autobahn.wamp.types import SessionDetails
-from autobahn.util import IdGenerator
+from autobahn.util import IdGenerator, ObservableMixin
 
-import txaio
+from autobahn.wamp.request import \
+    Publication, \
+    Subscription, \
+    Handler, \
+    Registration, \
+    Endpoint, \
+    PublishRequest, \
+    SubscribeRequest, \
+    UnsubscribeRequest, \
+    CallRequest, \
+    InvocationRequest, \
+    RegisterRequest, \
+    UnregisterRequest
 
 
 def is_method_or_function(f):
     return inspect.ismethod(f) or inspect.isfunction(f)
 
 
-class Request(object):
-    """
-    Object representing an outstanding request, such as for subscribe/unsubscribe,
-    register/unregister or call/publish.
-    """
-
-    def __init__(self, request_id, on_reply):
-        self.request_id = request_id
-        self.on_reply = on_reply
-
-
-class InvocationRequest(Request):
-    """
-    Object representing an outstanding request to invoke an endpoint.
-    """
-
-
-class CallRequest(Request):
-    """
-    Object representing an outstanding request to call a procedure.
-    """
-
-    def __init__(self, request_id, on_reply, options):
-        Request.__init__(self, request_id, on_reply)
-        self.options = options
-
-
-class PublishRequest(Request):
-    """
-    Object representing an outstanding request to publish (acknowledged) an event.
-    """
-
-
-class SubscribeRequest(Request):
-    """
-    Object representing an outstanding request to subscribe to a topic.
-    """
-
-    def __init__(self, request_id, on_reply, handler):
-        Request.__init__(self, request_id, on_reply)
-        self.handler = handler
-
-
-class UnsubscribeRequest(Request):
-    """
-    Object representing an outstanding request to unsubscribe a subscription.
-    """
-
-    def __init__(self, request_id, on_reply, subscription_id):
-        Request.__init__(self, request_id, on_reply)
-        self.subscription_id = subscription_id
-
-
-class RegisterRequest(Request):
-    """
-    Object representing an outstanding request to register a procedure.
-    """
-
-    def __init__(self, request_id, on_reply, procedure, endpoint):
-        Request.__init__(self, request_id, on_reply)
-        self.procedure = procedure
-        self.endpoint = endpoint
-
-
-class UnregisterRequest(Request):
-    """
-    Object representing an outstanding request to unregister a registration.
-    """
-
-    def __init__(self, request_id, on_reply, registration_id):
-        Request.__init__(self, request_id, on_reply)
-        self.registration_id = registration_id
-
-
-class Subscription(object):
-    """
-    Object representing a handler subscription.
-
-    This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
-    """
-    def __init__(self, subscription_id, session, handler):
-        """
-        """
-        self.id = subscription_id
-        self.active = True
-        self.session = session
-        self.handler = handler
-
-    def unsubscribe(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
-        """
-        if self.active:
-            return self.session._unsubscribe(self)
-        else:
-            raise Exception("subscription no longer active")
-
-    def __str__(self):
-        return "Subscription(id={0}, is_active={1})".format(self.id, self.active)
-
-
-ISubscription.register(Subscription)
-
-
-class Handler(object):
-    """
-    Object representing an event handler attached to a subscription.
-    """
-
-    def __init__(self, fn, obj=None, details_arg=None):
-        """
-
-        :param fn: The event handler function to be called.
-        :type fn: callable
-        :param obj: The (optional) object upon which to call the function.
-        :type obj: obj or None
-        :param details_arg: The keyword argument under which event details should be provided.
-        :type details_arg: str or None
-        """
-        self.fn = fn
-        self.obj = obj
-        self.details_arg = details_arg
-
-
-class Publication(object):
-    """
-    Object representing a publication (feedback from publishing an event when doing
-    an acknowledged publish).
-
-    This class implements :class:`autobahn.wamp.interfaces.IPublication`.
-    """
-    def __init__(self, publication_id):
-        self.id = publication_id
-
-    def __str__(self):
-        return "Publication(id={0})".format(self.id)
-
-
-IPublication.register(Publication)
-
-
-class Registration(object):
-    """
-    Object representing a registration.
-
-    This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
-    """
-    def __init__(self, session, registration_id, procedure, endpoint):
-        self.id = registration_id
-        self.active = True
-        self.session = session
-        self.procedure = procedure
-        self.endpoint = endpoint
-
-    def unregister(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.IRegistration.unregister`
-        """
-        if self.active:
-            return self.session._unregister(self)
-        else:
-            raise Exception("registration no longer active")
-
-
-IRegistration.register(Registration)
-
-
-class Endpoint(object):
-    """
-    Object representing an procedure endpoint attached to a registration.
-    """
-
-    def __init__(self, fn, obj=None, details_arg=None):
-        """
-
-        :param fn: The endpoint procedure to be called.
-        :type fn: callable
-        :param obj: The (optional) object upon which to call the function.
-        :type obj: obj or None
-        :param details_arg: The keyword argument under which call details should be provided.
-        :type details_arg: str or None
-        """
-        self.fn = fn
-        self.obj = obj
-        self.details_arg = details_arg
-
-
-class BaseSession(object):
+class BaseSession(ObservableMixin):
     """
     WAMP session base class.
 
@@ -255,6 +71,8 @@ class BaseSession(object):
         """
 
         """
+        ObservableMixin.__init__(self)
+
         # this is for library level debugging
         self.debug = False
 
@@ -284,26 +102,6 @@ class BaseSession(object):
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
-
-    def onConnect(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
-        """
-
-    def onJoin(self, details):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
-        """
-
-    def onLeave(self, details):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
-        """
-
-    def onDisconnect(self):
-        """
-        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
-        """
 
     def define(self, exception, error=None):
         """
@@ -387,9 +185,12 @@ class BaseSession(object):
                         exc = ecls(*msg.args)
                     else:
                         exc = ecls()
-            except Exception as e:
+            except Exception:
                 try:
-                    self.onUserError(e, "While re-constructing exception")
+                    self.onUserError(
+                        txaio.create_failure(),
+                        "While re-constructing exception",
+                    )
                 except:
                     pass
 
@@ -409,19 +210,12 @@ class BaseSession(object):
         return exc
 
 
-ISession.register(BaseSession)
-
-
 class ApplicationSession(BaseSession):
     """
-    WAMP endpoint session. This class implements
-
-    * :class:`autobahn.wamp.interfaces.IPublisher`
-    * :class:`autobahn.wamp.interfaces.ISubscriber`
-    * :class:`autobahn.wamp.interfaces.ICaller`
-    * :class:`autobahn.wamp.interfaces.ICallee`
-    * :class:`autobahn.wamp.interfaces.ITransportHandler`
+    WAMP endpoint session.
     """
+
+    log = txaio.make_logger()
 
     def __init__(self, config=None):
         """
@@ -502,7 +296,7 @@ class ApplicationSession(BaseSession):
         """
         return self._transport is not None
 
-    def onUserError(self, e, msg):
+    def onUserError(self, fail, msg):
         """
         This is called when we try to fire a callback, but get an
         exception from user code -- for example, a registered publish
@@ -513,13 +307,19 @@ class ApplicationSession(BaseSession):
         provide logging if they prefer. The Twisted implemention does
         this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
 
-        :param e: the Exception we caught.
+        :param fail: instance implementing txaio.IFailedFuture
 
         :param msg: an informative message from the library. It is
             suggested you log this immediately after the exception.
         """
-        traceback.print_exc()
-        print(msg)
+        if isinstance(fail.value, exception.ApplicationError):
+            self.log.error(fail.value.error_message())
+        else:
+            self.log.error(
+                '{msg}: {traceback}',
+                msg=msg,
+                traceback=txaio.failure_format_traceback(fail),
+            )
 
     def _swallow_error(self, fail, msg):
         '''
@@ -533,9 +333,8 @@ class ApplicationSession(BaseSession):
         chain for a Deferred/coroutine that will make it out to user
         code.
         '''
-        # print("_swallow_error", typ, exc, tb)
         try:
-            self.onUserError(fail.value, msg)
+            self.onUserError(fail, msg)
         except:
             pass
         return None
@@ -710,9 +509,12 @@ class ApplicationSession(BaseSession):
                             try:
                                 # XXX what if on_progress returns a Deferred/Future?
                                 call_request.options.on_progress(*args, **kw)
-                            except Exception as e:
+                            except Exception:
                                 try:
-                                    self.onUserError(e, "While firing on_progress")
+                                    self.onUserError(
+                                        txaio.create_failure(),
+                                        "While firing on_progress",
+                                    )
                                 except:
                                     pass
 
@@ -809,11 +611,7 @@ class ApplicationSession(BaseSession):
                                 pass
                             formatted_tb = None
                             if self.traceback_app:
-                                # if asked to marshal the traceback within the WAMP error message, extract it
-                                # noinspection PyCallingNonCallable
-                                tb = StringIO()
-                                err.printTraceback(file=tb)
-                                formatted_tb = tb.getvalue().splitlines()
+                                formatted_tb = txaio.failure_format_traceback(err)
 
                             del self._invocations[msg.request]
 
@@ -846,10 +644,13 @@ class ApplicationSession(BaseSession):
                     # noinspection PyBroadException
                     try:
                         self._invocations[msg.request].cancel()
-                    except Exception as e:
+                    except Exception:
                         # XXX can .cancel() return a Deferred/Future?
                         try:
-                            self.onUserError(e, "While cancelling call.")
+                            self.onUserError(
+                                txaio.create_failure(),
+                                "While cancelling call.",
+                            )
                         except:
                             pass
                     finally:
@@ -945,7 +746,7 @@ class ApplicationSession(BaseSession):
 
             self._session_id = None
 
-        d = txaio.as_future(self.onDisconnect)
+        d = txaio.as_future(self.onDisconnect, wasClean)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
@@ -961,13 +762,17 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
+        return self.fire('join', self, details)
 
     def onLeave(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason.startswith('wamp.error.'):
-            print('{error}: {message}'.format(error=details.reason, message=details.message))
+            self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
+
+        self.fire('leave', self, details)
+
         if self._transport:
             self.disconnect()
         # do we ever call onLeave with a valid transport?
@@ -990,6 +795,12 @@ class ApplicationSession(BaseSession):
             return is_closed
         else:
             raise SessionNotReady(u"Already requested to close the session")
+
+    def onDisconnect(self, wasClean):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
+        """
+        return self.fire('disconnect', self, wasClean)
 
     def publish(self, topic, *args, **kwargs):
         """
@@ -1231,11 +1042,8 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-IPublisher.register(ApplicationSession)
-ISubscriber.register(ApplicationSession)
-ICaller.register(ApplicationSession)
-# ICallee.register(ApplicationSession)  # FIXME: ".register" collides with the ABC "register" method
-ITransportHandler.register(ApplicationSession)
+# IApplicationSession.register collides with the abc.ABCMeta.register method
+# IApplicationSession.register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):

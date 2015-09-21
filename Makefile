@@ -40,7 +40,7 @@ test_styleguide:
 
 # direct test via pytest (only here because of setuptools test integration)
 test_pytest:
-	python -m pytest -rsx .
+	python -m pytest -rsx autobahn/
 
 # test via setuptools command
 test_setuptools:
@@ -62,13 +62,14 @@ test_twisted_coverage:
 
 test_coverage:
 	-rm .coverage
-	tox -e py27twisted,py27asyncio,py34asyncio
+	tox -e py27-twcurrent,py27-trollius,py34-asyncio
+	coverage combine
 	coverage html
 	coverage report --show-missing
 
 # test under asyncio
 test_asyncio:
-	USE_ASYNCIO=1 python -m pytest -rsx
+	USE_ASYNCIO=1 python -m pytest -rsx autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_ASYNCIO=1 python -m pytest -rsx
 
 test1:
