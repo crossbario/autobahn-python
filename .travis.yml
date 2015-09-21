@@ -10,10 +10,15 @@ env:
   - TOX_ENV=pypy-trollius
   - TOX_ENV=py27-twtrunk
   - TOX_ENV=py27-trollius
+  - TOX_ENV=py33-twcurrent
   - TOX_ENV=py33-twtrunk
   - TOX_ENV=py33-trollius
+  - TOX_ENV=py34-twcurrent
   - TOX_ENV=py34-twtrunk
   - TOX_ENV=py34-asyncio
+  - TOX_ENV=py35-twcurrent
+  - TOX_ENV=py35-twtrunk
+  - TOX_ENV=py35-asyncio
   - TOX_ENV=pypy-tw121
   - TOX_ENV=pypy-tw132
   - TOX_ENV=pypy-twcurrent
