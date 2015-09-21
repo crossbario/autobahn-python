@@ -56,12 +56,44 @@ from autobahn.twisted.wamp import ApplicationSession
 __all__ = ('Connection')
 
 
+def _create_transport_serializers(reactor, transport_config):
+    """
+    Create a list of serializers to use with a WAMP protocol factory.
+    """
+    serializer_ids = transport_config.get(u'serializers', [u'msgpack', u'json'])
+    serializers = []
+
+    for serializer_id in serializer_ids:
+        if serializer_id == u'msgpack':
+            # try MsgPack WAMP serializer
+            try:
+                from autobahn.wamp.serializer import MsgPackSerializer
+            except ImportError:
+                pass
+            else:
+                serializers.append(MsgPackSerializer(batched=True))
+                serializers.append(MsgPackSerializer())
+
+        if serializer_id == u'json':
+            # try JSON WAMP serializer
+            try:
+                from autobahn.wamp.serializer import JsonSerializer
+            except ImportError:
+                pass
+            else:
+                serializers.append(JsonSerializer(batched=True))
+                serializers.append(JsonSerializer())
+
+    return serializers
+
+
 def _create_transport_factory(reactor, transport_config, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
     if transport_config['type'] == 'websocket':
-        return WampWebSocketClientFactory(session_factory, url=transport_config['url'])
+        serializers = _create_transport_serializers(transport_config)
+        return WampWebSocketClientFactory(session_factory, url=transport_config['url'], serializers=serializers)
     elif transport_config['type'] == 'rawsocket':
         return WampRawSocketClientFactory(session_factory)
     else:
@@ -168,23 +200,41 @@ class Connection(connection.Connection):
         if reactor is None:
             from twisted.internet import reactor
 
-        txaio.use_twisted()
-        txaio.config.loop = reactor
+        #txaio.use_twisted()
+        #txaio.config.loop = reactor
 
-        txaio.start_logging(level='debug')
+        #txaio.start_logging(level='debug')
 
         yield self.fire('start', reactor, self)
 
+        # transports to try again and again ..
         transport_gen = itertools.cycle(self._transports)
 
         reconnect = True
 
+        self.log.info('entering reconnection loop')
+
         while reconnect:
-            transport_config = next(transport_gen)
-            try:
-                yield self._connect_once(reactor, transport_config)
-            except Exception as e:
-                print(e)
-                yield sleep(2)
+            # cycle through all transports forever ..
+            transport = next(transport_gen)
+
+            # only actually try to connect using the transport,
+            # if the transport hasn't reached max. connect count
+            if transport.can_reconnect():
+                delay = transport.next_delay()
+                self.log.debug('trying transport {transport_idx} using connect delay {transport_delay}', transport_idx=transport.idx, transport_delay=delay)
+                yield sleep(delay)
+                try:
+                    transport.connect_attempts += 1
+                    yield self._connect_once(reactor, transport.config)
+                    transport.connect_sucesses += 1
+                except Exception as e:
+                    transport.connect_failures += 1
+                    self.log.error(u'connection failed: {error}', error=e)
+                else:
+                    reconnect = False
             else:
-                reconnect = False
+                # check if there is any transport left we can use
+                # to connect
+                if not self._can_reconnect():
+                    reconnect = False

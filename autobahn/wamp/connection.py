@@ -27,6 +27,7 @@
 
 from __future__ import absolute_import
 
+import random
 import six
 
 import txaio
@@ -79,6 +80,52 @@ def check_transport(transport, check_native_endpoint=None):
         assert(False), 'should not arrive here'
 
 
+class Transport(object):
+    """
+    Thin-wrapper for WAMP transports used by a Connection.
+    """
+
+    def __init__(self, idx, config, max_retries=15, max_retry_delay=300,
+        initial_retry_delay=1.5, retry_delay_growth=1.5, retry_delay_jitter=0.1):
+        """
+
+        :param config: The transport configuration.
+        :type config: dict
+        """
+        self.idx = idx
+        self.config = config
+
+        self.max_retries = max_retries
+        self.max_retry_delay = max_retry_delay
+        self.initial_retry_delay = initial_retry_delay
+        self.retry_delay_growth = retry_delay_growth
+        self.retry_delay_jitter = retry_delay_jitter
+
+        self.reset()
+
+    def reset(self):
+        self.connect_attempts = 0
+        self.connect_sucesses = 0
+        self.connect_failures = 0
+        self.retry_delay = self.initial_retry_delay
+
+    def can_reconnect(self):
+        return self.connect_attempts < self.max_retries
+
+    def next_delay(self):
+        if self.connect_attempts == 0:
+            # if we never tried before, try immediately
+            return 0
+        elif self.connect_attempts >= self.max_retries:
+            raise RuntimeError('max reconnects reached')
+        else:
+            self.retry_delay = self.retry_delay * self.retry_delay_growth
+            self.retry_delay = random.normalvariate(self.retry_delay, self.retry_delay * self.retry_delay_jitter)
+            if self.retry_delay > self.max_retry_delay:
+                self.retry_delay = self.max_retry_delay
+            return self.retry_delay
+
+
 class Connection(ObservableMixin):
 
     session = None
@@ -114,18 +161,34 @@ class Connection(ObservableMixin):
                 transport['endpoint']['tls'] = {}
             transports = [transport]
 
+        self._transports = []
+        idx = 0
         for transport in transports:
             check_transport(transport)
+            self._transports.append(Transport(idx, transport))
+            idx += 1
 
         self._main = main
-        self._transports = transports
         self._realm = realm
         self._extra = extra
+
+    def _can_reconnect(self):
+        # check if any of our transport has any reconnect attempt left
+        for transport in self._transports:
+            if transport.can_reconnect():
+                return True
+        return False
 
     def start(self, reactor):
         raise RuntimeError('not implemented')
 
     def _connect_once(self, reactor, transport_config):
+
+        self.log.info('connecting once using transport type "{transport_type}" '
+            'over endpoint type "{endpoint_type}"',
+            transport_type=transport_config['type'],
+            endpoint_type=transport_config['endpoint']['type']
+        )
 
         done = txaio.create_future()
 
@@ -139,19 +202,23 @@ class Connection(ObservableMixin):
                 # let the reconnection logic deal with that
                 raise
             else:
-                # let child listener bubble up event
+                # hook up the listener to the parent so we can bubble
+                # up events happning on the session onto the connection
                 session._parent = self
 
                 # listen on leave events
                 def on_leave(session, details):
-                    print("on_leave: {}".format(details))
+                    self.log.debug("session on_leave: {details}", details=details)
 
                 session.on('leave', on_leave)
 
                 # listen on disconnect events
                 def on_disconnect(session, was_clean):
-                    print("on_disconnect: {}".format(was_clean))
+                    self.log.debug("session on_disconnect: {was_clean}", was_clean=was_clean)
+
                     if was_clean:
+                        # eg the session has left the realm, and the transport was properly
+                        # shut down. successfully finish the connection
                         done.callback(None)
                     else:
                         done.errback(RuntimeError('transport closed uncleanly'))
@@ -163,11 +230,12 @@ class Connection(ObservableMixin):
 
         d = self._connect_transport(reactor, transport_config, create_session)
 
-        def on_connect_sucess(res):
-            print('on_connect_sucess', res)
+        def on_connect_sucess(proto):
+            # FIXME: leave / cleanup proto when reactor stops?
+            pass
 
         def on_connect_failure(err):
-            print('on_connect_failure', err)
+            # failed to establish a connection in the first place
             done.errback(err)
 
         txaio.add_callbacks(d, on_connect_sucess, on_connect_failure)

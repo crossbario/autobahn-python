@@ -28,7 +28,30 @@ def main(reactor, connection):
 
 
 if __name__ == '__main__':
-    connection = Connection()
+    import txaio
+    txaio.use_twisted()
+    txaio.start_logging(level='debug')
+
+    transports = [
+        {
+            'type': 'websocket',
+            'url': 'ws://localhost',
+            'endpoint': {
+                'type': 'unix',
+                'path': '/tmp/cb1.sock'
+            }
+        },
+        {
+            'type': 'websocket',
+            'url': 'ws://127.0.0.1:8080/ws',
+            'endpoint': {
+                'type': 'tcp',
+                'host': '127.0.0.1',
+                'port': 8080
+            }
+        }
+    ]
+    connection = Connection(transports=transports)
     connection.on('start', main)
 
     react(connection.start)
