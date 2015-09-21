@@ -207,7 +207,7 @@ class ApplicationError(Error):
         self.kwargs = kwargs
         self.error = error
 
-    def __str__(self):
+    def __unicode__(self):
         if self.kwargs and 'traceback' in self.kwargs:
             tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
             self.kwargs['traceback'] = '...'
