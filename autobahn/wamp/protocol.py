@@ -316,7 +316,7 @@ class ApplicationSession(BaseSession):
             self.log.error(fail.value.error_message())
         else:
             self.log.error(
-                '{msg}: {traceback}',
+                u'{msg}: {traceback}',
                 msg=msg,
                 traceback=txaio.failure_format_traceback(fail),
             )
