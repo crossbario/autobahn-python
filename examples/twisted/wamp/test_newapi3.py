@@ -8,6 +8,11 @@ def main(reactor, connection):
     @coroutine
     def on_join(session, details):
         print("on_join: {}".format(details))
+        try:
+            print(session._transport)
+            print(session._transport.websocket_protocol_in_use)
+        except Exception as e:
+            pass
 
         def add2(a, b):
             print("add2() called", a, b)
@@ -28,14 +33,14 @@ def main(reactor, connection):
 
 
 if __name__ == '__main__':
-    import txaio
-    txaio.use_twisted()
-    txaio.start_logging(level='debug')
+    #import txaio
+    #txaio.use_twisted()
+    #txaio.start_logging(level='debug')
 
     transports = [
         {
-            'type': 'websocket',
-            'url': 'ws://localhost',
+            'type': 'rawsocket',
+            'serializer': 'msgpack',
             'endpoint': {
                 'type': 'unix',
                 'path': '/tmp/cb1.sock'

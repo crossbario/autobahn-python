@@ -56,11 +56,51 @@ from autobahn.twisted.wamp import ApplicationSession
 __all__ = ('Connection')
 
 
-def _create_transport_serializers(reactor, transport_config):
+def _unique_list(seq):
+    """
+    Return a list with unique elements from sequence, preserving order.
+    """
+    seen = set(seq)
+    return [x for x in seq if x not in seen and not seen.add(x)]
+
+
+def _create_transport_serializer(serializer_id):
+    if serializer_id in [u'msgpack', u'mgspack.batched']:
+        # try MsgPack WAMP serializer
+        try:
+            from autobahn.wamp.serializer import MsgPackSerializer
+        except ImportError:
+            pass
+        else:
+            if serializer_id == u'mgspack.batched':
+                return MsgPackSerializer(batched=True)
+            else:
+                return MsgPackSerializer()
+
+    if serializer_id in [u'json', u'json.batched']:
+        # try JSON WAMP serializer
+        try:
+            from autobahn.wamp.serializer import JsonSerializer
+        except ImportError:
+            pass
+        else:
+            if serializer_id == u'json.batched':
+                return JsonSerializer(batched=True)
+            else:
+                return JsonSerializer()
+
+    raise RuntimeError('could not create serializer for "{}"'.format(serializer_id))
+
+
+def _create_transport_serializers(transport_config):
     """
     Create a list of serializers to use with a WAMP protocol factory.
     """
-    serializer_ids = transport_config.get(u'serializers', [u'msgpack', u'json'])
+    if u'serializers' in transport_config:
+        serializer_ids = _unique_list(transport_config['serializers'])
+    else:
+        serializer_ids = [u'msgpack', u'json']
+
     serializers = []
 
     for serializer_id in serializer_ids:
@@ -92,10 +132,15 @@ def _create_transport_factory(reactor, transport_config, session_factory):
     Create a WAMP-over-XXX transport factory.
     """
     if transport_config['type'] == 'websocket':
+        # FIXME: forward WebSocket options
         serializers = _create_transport_serializers(transport_config)
         return WampWebSocketClientFactory(session_factory, url=transport_config['url'], serializers=serializers)
+
     elif transport_config['type'] == 'rawsocket':
-        return WampRawSocketClientFactory(session_factory)
+        # FIXME: forward RawSocket options
+        serializer = _create_transport_serializer(transport_config.get('serializer', u'json'))
+        return WampRawSocketClientFactory(session_factory, serializer=serializer)
+
     else:
         assert(False), 'should not arrive here'
 

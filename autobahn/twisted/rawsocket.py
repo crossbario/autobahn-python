@@ -303,7 +303,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
                 self._on_handshake_complete()
 
                 if self.factory.debug:
-                    self.log.info("WampRawSocketProtocol: opening handshake completed", self._serializer)
+                    self.log.info("WampRawSocketProtocol: opening handshake completed (using serializer {serializer})", serializer=self._serializer)
 
             # consume any remaining data received already ..
             #
