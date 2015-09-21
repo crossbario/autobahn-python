@@ -26,6 +26,8 @@
 
 from __future__ import absolute_import
 
+from six import PY3
+
 from autobahn.wamp.uri import error
 
 __all__ = (
@@ -208,15 +210,27 @@ class ApplicationError(Error):
         self.error = error
 
     def error_message(self):
-        return '{}: {}'.format(self.error, ' '.join(self.args))
+        """
+        Get the error message of this exception.
+
+        :return: unicode
+        """
+        return u'{}: {}'.format(self.error, u' '.join(self.args))
+
+    def __unicode__(self):
+        if self.kwargs and 'traceback' in self.kwargs:
+            tb = u':\n' + u'\n'.join(self.kwargs.pop('traceback')) + u'\n'
+            self.kwargs['traceback'] = u'...'
+        else:
+            tb = u''
+        return u"ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(
+            self.error, self.args, self.kwargs, tb)
 
     def __str__(self):
-        if self.kwargs and 'traceback' in self.kwargs:
-            tb = ':\n' + '\n'.join(self.kwargs.pop('traceback')) + '\n'
-            self.kwargs['traceback'] = '...'
+        if PY3:
+            return self.__unicode__()
         else:
-            tb = ''
-        return "ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(self.error, self.args, self.kwargs, tb)
+            return self.__unicode__().encode('utf8')
 
 
 @error(ApplicationError.NOT_AUTHORIZED)

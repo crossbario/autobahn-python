@@ -316,7 +316,7 @@ class ApplicationSession(BaseSession):
             self.log.error(fail.value.error_message())
         else:
             self.log.error(
-                '{msg}: {traceback}',
+                u'{msg}: {traceback}',
                 msg=msg,
                 traceback=txaio.failure_format_traceback(fail),
             )
@@ -604,7 +604,7 @@ class ApplicationSession(BaseSession):
 
                         def error(err):
                             # errmsg = 'Failure while invoking procedure {0} registered under "{1}: {2}".'.format(endpoint.fn, registration.procedure, err)
-                            errmsg = "{0}".format(err.value.args[0])
+                            errmsg = u"{0}".format(err.value.args[0])
                             try:
                                 self.onUserError(err, errmsg)
                             except:
