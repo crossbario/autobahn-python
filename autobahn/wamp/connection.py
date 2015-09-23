@@ -27,6 +27,7 @@
 
 from __future__ import absolute_import
 
+import inspect
 import random
 import six
 
@@ -127,6 +128,10 @@ class Transport(object):
             return self.retry_delay
 
 
+def _default_main(reactor, session):
+    return session.join(session.config.realm)
+
+
 class Connection(ObservableMixin):
 
     session = None
@@ -134,11 +139,20 @@ class Connection(ObservableMixin):
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
+    def __init__(self, main=_default_main, transports=u'ws://127.0.0.1:8080/ws', realm=None, extra=None):
         ObservableMixin.__init__(self)
 
-        if main is not None and not callable(main):
+        if main is None:
+            main = _default_main
+        if not callable(main):
             raise RuntimeError('"main" must be a callable if given')
+        if inspect.isgeneratorfunction(main):
+            raise RuntimeError(
+                'main= arg ({main_name}) is a generator function; are you missing'
+                ' @inlineCallbacks or @coroutine?'.format(
+                    main_name='{0}.{1}'.format(main.__module__, main.func_name),
+                )
+            )
 
         if type(realm) != six.text_type:
             raise RuntimeError('invalid type {} for "realm" - must be Unicode'.format(type(realm)))
@@ -183,6 +197,9 @@ class Connection(ObservableMixin):
     def start(self, reactor):
         raise RuntimeError('not implemented')
 
+    def _on_connect(self, session):
+        return self._main(self._reactor, session)
+
     def _connect_once(self, reactor, transport_config):
 
         self.log.info(
@@ -213,6 +230,7 @@ class Connection(ObservableMixin):
                     self.log.debug("session on_leave: {details}", details=details)
 
                 session.on('leave', on_leave)
+                session.on('connect', self._on_connect)
 
                 # listen on disconnect events
                 def on_disconnect(session, was_clean):

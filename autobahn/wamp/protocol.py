@@ -231,6 +231,9 @@ class ApplicationSession(BaseSession):
         self._goodbye_sent = False
         self._transport_is_closing = False
 
+        self._joined = None
+        self._left = None
+
         # outstanding requests
         self._publish_reqs = {}
         self._subscribe_reqs = {}
@@ -263,7 +266,10 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
         """
-        self.join(self.config.realm)
+        # XXX FIXME "for real" all these .fire() things should happen
+        # in onMessage etc, not by overriding so that failing to call
+        # super doesn't lead to mysterious, hard-to-debug failures.
+        return self.fire('connect', self)
 
     def join(self, realm, authmethods=None, authid=None):
         """
@@ -282,6 +288,8 @@ class ApplicationSession(BaseSession):
         msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid)
         self._realm = realm
         self._transport.send(msg)
+        self._joined = txaio.create_future()
+        return self._joined
 
     def disconnect(self):
         """
@@ -339,6 +347,13 @@ class ApplicationSession(BaseSession):
             pass
         return None
 
+    def _do_left(self, details):
+        if self._left is not None:
+            txaio.resolve(self._left, details)
+            self._left = None
+        return details
+
+
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -352,6 +367,13 @@ class ApplicationSession(BaseSession):
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
                 d = txaio.as_future(self.onJoin, details)
 
+                def do_joined(details):
+                    if self._joined is not None:
+                        txaio.resolve(self._joined, details)
+                        self._joined = None
+                    return details
+                txaio.add_callbacks(d, do_joined, None)
+
                 def _error(e):
                     return self._swallow_error(e, "While firing onJoin")
                 txaio.add_callbacks(d, None, _error)
@@ -361,6 +383,7 @@ class ApplicationSession(BaseSession):
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = txaio.as_future(self.onLeave, details)
+                txaio.add_callbacks(d, self._do_left, None)
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onLeave")
@@ -381,6 +404,7 @@ class ApplicationSession(BaseSession):
                     # fire callback and close the transport
                     details = types.CloseDetails(reply.reason, reply.message)
                     d = txaio.as_future(self.onLeave, details)
+                    txaio.add_callbacks(d, self._do_left, None)
 
                     def _error(e):
                         return self._swallow_error(e, "While firing onLeave")
@@ -407,6 +431,7 @@ class ApplicationSession(BaseSession):
                 # fire callback and close the transport
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = txaio.as_future(self.onLeave, details)
+                txaio.add_callbacks(d, self._do_left, None)
 
                 def _error(e):
                     errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
@@ -739,6 +764,7 @@ class ApplicationSession(BaseSession):
         if self._session_id:
             # fire callback and close the transport
             d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
+            txaio.add_callbacks(d, self._do_left, None)
 
             def _error(e):
                 return self._swallow_error(e, "While firing onLeave")
@@ -762,7 +788,14 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
-        return self.fire('join', self, details)
+        d = self.fire('join', self, details)
+
+        # need to ensure we're not returning the list of results from
+        # gather() as .fire() is going to do...
+        def return_details(_):
+            return details
+        txaio.add_callbacks(d, return_details, None)
+        return d
 
     def onLeave(self, details):
         """
@@ -790,9 +823,8 @@ class ApplicationSession(BaseSession):
             msg = wamp.message.Goodbye(reason=reason, message=log_message)
             self._transport.send(msg)
             self._goodbye_sent = True
-            # deferred that fires when transport actually hits CLOSED
-            is_closed = self._transport is None or self._transport.is_closed
-            return is_closed
+            self._left = txaio.create_future()
+            return self._left
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
