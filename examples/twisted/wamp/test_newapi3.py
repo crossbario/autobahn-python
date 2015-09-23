@@ -31,6 +31,13 @@ def main(reactor, session):
         print("leaving ..")
         yield session.leave()
 
+    print("joining again")
+    details = yield session.join(u'crossbardemo')
+    print("details", details)
+    yield session.leave()
+    print("disconnecting")
+    yield session.disconnect()
+
 
 if __name__ == '__main__':
     if False:

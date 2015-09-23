@@ -129,6 +129,18 @@ class Transport(object):
 
 
 def _default_main(reactor, session):
+
+    def on_connect(s):
+        return s.join(s.config.realm)
+    session.on('connect', on_connect)
+
+    def on_leave(s, details):
+        session.disconnect()
+        if details.reason.startswith('wamp.error.'):
+            session.log.error('{details.reason}: {details.message}', details=details)
+            raise RuntimeError("WAMP error '{}'".format(details.reason))
+    session.on('leave', on_leave)
+
     return session.join(session.config.realm)
 
 
@@ -139,7 +151,7 @@ class Connection(ObservableMixin):
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, main=_default_main, transports=u'ws://127.0.0.1:8080/ws', realm=None, extra=None):
+    def __init__(self, main=_default_main, transports=u'ws://127.0.0.1:8080/ws', realm=None, extra=None, session=None):
         ObservableMixin.__init__(self)
 
         if main is None:
@@ -153,6 +165,9 @@ class Connection(ObservableMixin):
                     main_name='{0}.{1}'.format(main.__module__, main.func_name),
                 )
             )
+
+        if session is not None:
+            self.session = session
 
         if type(realm) != six.text_type:
             raise RuntimeError('invalid type {} for "realm" - must be Unicode'.format(type(realm)))

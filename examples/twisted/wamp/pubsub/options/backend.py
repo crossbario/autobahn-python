@@ -28,48 +28,43 @@ from __future__ import print_function
 
 from os import environ
 from twisted.internet.defer import inlineCallbacks
+from twisted.internet.task import react
 
 from autobahn.wamp.types import PublishOptions
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.connection import Connection
 
 
-class Component(ApplicationSession):
-    """
-    An application component that publishes an event every second.
-    """
+@inlineCallbacks
+def setup(session, details):
+    print("session attached")
 
-    @inlineCallbacks
-    def onJoin(self, details):
-        print("session attached")
+    def on_event(i):
+        print("Got event: {}".format(i))
 
-        def on_event(i):
-            print("Got event: {}".format(i))
+    yield session.subscribe(on_event, u'com.myapp.topic1')
 
-        yield self.subscribe(on_event, u'com.myapp.topic1')
-
-        counter = 0
-        while True:
-            print("publish: com.myapp.topic1", counter)
-            pub_options = PublishOptions(
-                acknowledge=True,
-                disclose_me=True,
-                exclude_me=False
-            )
-            publication = yield self.publish(
-                u'com.myapp.topic1', counter,
-                options=pub_options,
-            )
-            print("Published with publication ID {}".format(publication.id))
-            counter += 1
-            yield sleep(1)
+    counter = 0
+    while True:
+        print("publish: com.myapp.topic1", counter)
+        pub_options = PublishOptions(
+            acknowledge=True,
+            disclose_me=True,
+            exclude_me=False
+        )
+        publication = yield session.publish(
+            u'com.myapp.topic1', counter,
+            options=pub_options,
+        )
+        print("Published with publication ID {}".format(publication.id))
+        counter += 1
+        yield sleep(1)
 
 
 if __name__ == '__main__':
-    runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
-        u"crossbardemo",
-        debug_wamp=False,  # optional; log many WAMP details
-        debug=False,  # optional; log even more details
+    connection = Connection(
+        transports=environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
+        realm=u"crossbardemo",
     )
-    runner.run(Component)
+    connection.on('join', setup)
+    react(connection.start)

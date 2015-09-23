@@ -29,13 +29,14 @@ from __future__ import print_function
 from os import environ
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks
+from twisted.internet.task import react
 
 from autobahn.wamp.types import SubscribeOptions
-from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
+from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.connection import Connection
 
 
 class Component(ApplicationSession):
-
     """
     An application component that subscribes and receives events,
     and stop after having received 5 events.
@@ -52,21 +53,19 @@ class Component(ApplicationSession):
             print(msg.format(details.publication, details.publisher, i))
             self.received += 1
             if self.received > 5:
+                print("Received 5 events, leave()-ing")
                 self.leave()
 
-        yield self.subscribe(on_event, u'com.myapp.topic1',
-                             options=SubscribeOptions(details_arg='details'))
-
-    def onDisconnect(self):
-        print("disconnected")
-        reactor.stop()
+        yield self.subscribe(
+            on_event, u'com.myapp.topic1',
+            options=SubscribeOptions(details_arg='details'),
+        )
 
 
 if __name__ == '__main__':
-    runner = ApplicationRunner(
-        environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
-        u"crossbardemo",
-        debug_wamp=False,  # optional; log many WAMP details
-        debug=False,  # optional; log even more details
+    connection = Connection(
+        transports=environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
+        realm=u"crossbardemo",
+        session=Component,
     )
-    runner.run(Component)
+    react(connection.start)

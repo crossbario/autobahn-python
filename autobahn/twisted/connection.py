@@ -229,8 +229,8 @@ class Connection(connection.Connection):
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
-        connection.Connection.__init__(self, main, transports, realm, extra)
+    def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None, session=None):
+        connection.Connection.__init__(self, main, transports, realm, extra, session)
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """

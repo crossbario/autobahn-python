@@ -804,10 +804,11 @@ class ApplicationSession(BaseSession):
         if details.reason.startswith('wamp.error.'):
             self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
 
+        # XXX FIXME
         self.fire('leave', self, details)
 
-        if self._transport:
-            self.disconnect()
+        #if self._transport:
+        #self.disconnect()
         # do we ever call onLeave with a valid transport?
 
     def leave(self, reason=None, log_message=None):
