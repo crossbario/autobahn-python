@@ -604,7 +604,7 @@ class ApplicationSession(BaseSession):
 
                         def error(err):
                             # errmsg = 'Failure while invoking procedure {0} registered under "{1}: {2}".'.format(endpoint.fn, registration.procedure, err)
-                            errmsg = u"{0}".format(err.value.args[0])
+                            errmsg = u"{0}".format(err.value)
                             try:
                                 self.onUserError(err, errmsg)
                             except:
