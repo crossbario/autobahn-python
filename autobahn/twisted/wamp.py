@@ -309,7 +309,7 @@ class _ApplicationSession(ApplicationSession):
         self.disconnect()
 
     @inlineCallbacks
-    def onDisconnect(self):
+    def onDisconnect(self, was_clean):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
@@ -620,8 +620,8 @@ class Session(ApplicationSession):
     def onLeave(self, details):
         return self.on_leave(details)
 
-    def onDisconnect(self):
-        return self.on_disconnect()
+    def onDisconnect(self, was_clean):
+        return self.on_disconnect(was_clean)
 
     def on_join(self):
         pass
@@ -629,5 +629,5 @@ class Session(ApplicationSession):
     def on_leave(self, details):
         self.disconnect()
 
-    def on_disconnect(self):
+    def on_disconnect(self, was_clean):
         pass
