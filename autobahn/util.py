@@ -473,11 +473,14 @@ def wildcards2patterns(wildcards):
 # (e.g. fat-finger "jion" instead of "join" and then nothing works)
 class ObservableMixin(object):
 
-    def __init__(self, parent=None):
+    def __init__(self, valid_events, parent=None):
+        self._valid_events = valid_events
         self._parent = parent
         self._listeners = {}
 
     def on(self, event, handler):
+        if event not in self._valid_events:
+            raise Exception("Invalid event '{0}'".format(event))
         if event not in self._listeners:
             self._listeners[event] = set()
         self._listeners[event].add(handler)
@@ -486,6 +489,8 @@ class ObservableMixin(object):
         if event is None:
             self._listeners = {}
         else:
+            if event not in self._valid_events:
+                raise Exception("Invalid event '{0}'".format(event))
             if event in self._listeners:
                 if handler is None:
                     del self._listeners[event]

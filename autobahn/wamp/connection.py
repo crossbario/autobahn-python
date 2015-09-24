@@ -136,7 +136,7 @@ class Connection(ObservableMixin):
     """
 
     def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
-        ObservableMixin.__init__(self)
+        super(Connection, self).__init__(['join', 'leave', 'connect', 'disconnect'])
 
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')

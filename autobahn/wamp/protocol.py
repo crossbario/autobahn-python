@@ -69,9 +69,8 @@ class BaseSession(ObservableMixin):
 
     def __init__(self):
         """
-
         """
-        ObservableMixin.__init__(self)
+        super(BaseSession, self).__init__(['join', 'leave', 'connect', 'disconnect'])
 
         # this is for library level debugging
         self.debug = False
