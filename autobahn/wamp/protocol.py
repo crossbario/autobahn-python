@@ -354,7 +354,6 @@ class ApplicationSession(BaseSession):
             self._left = None
         return details
 
-
     def onMessage(self, msg):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
@@ -807,10 +806,6 @@ class ApplicationSession(BaseSession):
 
         # XXX FIXME
         self.fire('leave', self, details)
-
-        #if self._transport:
-        #self.disconnect()
-        # do we ever call onLeave with a valid transport?
 
     def leave(self, reason=None, log_message=None):
         """
