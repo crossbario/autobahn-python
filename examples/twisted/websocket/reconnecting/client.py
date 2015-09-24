@@ -34,6 +34,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
     def onConnect(self, response):
         print("Server connected: {0}".format(response.peer))
+        self.factory.resetDelay()
 
     def onOpen(self):
         print("WebSocket connection open.")
