@@ -288,7 +288,8 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.disconnect`
         """
         if self._transport:
-            self._transport.close()
+            return self._transport.close()
+        return txaio.create_future_success(None)
 
     def is_connected(self):
         """
