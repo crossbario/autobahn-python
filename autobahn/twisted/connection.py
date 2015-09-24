@@ -241,6 +241,9 @@ class Connection(connection.Connection):
 
     def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
         connection.Connection.__init__(self, None, transports, realm, extra)
+        # XXX port from refactor-transport: if transports is list,
+        # pre-check for early error (e.g. so we don't have to actually
+        # open() it to find a syntax problem).
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
@@ -267,12 +270,17 @@ class Connection(connection.Connection):
         while reconnect:
             # cycle through all transports forever ..
             transport = next(transport_gen)
+            # XXX call check on this transport
 
             # only actually try to connect using the transport,
             # if the transport hasn't reached max. connect count
             if transport.can_reconnect():
                 delay = transport.next_delay()
-                self.log.debug('trying transport {transport_idx} using connect delay {transport_delay}', transport_idx=transport.idx, transport_delay=delay)
+                self.log.debug(
+                    'trying transport {transport_idx} using connect delay {transport_delay}',
+                    transport_idx=transport.idx,
+                    transport_delay=delay,
+                )
                 yield sleep(delay)
                 try:
                     transport.connect_attempts += 1
