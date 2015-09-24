@@ -135,6 +135,7 @@ class WampWebSocketProtocol(object):
         """
         if self.isOpen():
             self.sendClose(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL)
+            return self.is_closed
         else:
             raise TransportLost()
 
