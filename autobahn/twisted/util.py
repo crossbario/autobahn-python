@@ -32,7 +32,7 @@ try:
     from twisted.internet.stdio import PipeAddress
 except ImportError:
     # stdio.PipeAddress isn't avail on Twisted 13.0+
-    from types import NoneType as PipeAddress
+    PipeAddress = None
 
 try:
     from twisted.internet.address import IPv6Address
