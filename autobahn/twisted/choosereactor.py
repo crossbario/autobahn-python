@@ -85,7 +85,7 @@ def install_optimal_reactor(verbose=False):
                 iocpreactor.install()
             except:
                 log.failure(("Running on Windows, but cannot install IOCP Twisted reactor\n"
-                             "{log_failure.value"))
+                             "{log_failure.value}"))
             else:
                 log.debug("Running on Windows and optimal reactor (ICOP) was installed.")
         else:
@@ -101,7 +101,7 @@ def install_optimal_reactor(verbose=False):
                 epollreactor.install()
             except:
                 log.failure(("Running on Linux, but cannot install Epoll Twisted reactor",
-                             "{log_failure.value"))
+                             "{log_failure.value}"))
             else:
                 log.debug("Running on Linux and optimal reactor (epoll) was installed.")
         else:
@@ -113,7 +113,7 @@ def install_optimal_reactor(verbose=False):
             defaultreactor.install()
         except:
             log.failure(("Could not install default Twisted reactor for this platform"
-                         "{log_failure.value"))
+                         "{log_failure.value}"))
 
     from twisted.internet import reactor
     txaio.config.loop = reactor
