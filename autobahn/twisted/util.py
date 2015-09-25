@@ -31,7 +31,7 @@ from twisted.internet.address import IPv4Address, UNIXAddress
 try:
     from twisted.internet.stdio import PipeAddress
 except ImportError:
-    # stdio.PipeAddress isn't avail on Twisted 13.0+
+    # stdio.PipeAddress is only avail on Twisted 13.0+
     PipeAddress = None
 
 try:
