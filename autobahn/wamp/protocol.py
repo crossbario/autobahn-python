@@ -69,9 +69,8 @@ class BaseSession(ObservableMixin):
 
     def __init__(self):
         """
-
         """
-        ObservableMixin.__init__(self)
+        super(BaseSession, self).__init__(['join', 'leave', 'connect', 'disconnect'])
 
         # this is for library level debugging
         self.debug = False
@@ -288,7 +287,8 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.disconnect`
         """
         if self._transport:
-            self._transport.close()
+            return self._transport.close()
+        return txaio.create_future_success(None)
 
     def is_connected(self):
         """

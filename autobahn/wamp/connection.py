@@ -35,6 +35,7 @@ import txaio
 from autobahn.util import ObservableMixin
 from autobahn.websocket.protocol import parseWsUrl
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.exception import ApplicationError
 
 __all__ = ('Connection')
 
@@ -135,7 +136,7 @@ class Connection(ObservableMixin):
     """
 
     def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
-        ObservableMixin.__init__(self)
+        super(Connection, self).__init__(['join', 'leave', 'connect', 'disconnect'])
 
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')
@@ -211,19 +212,23 @@ class Connection(ObservableMixin):
                 # listen on leave events
                 def on_leave(session, details):
                     self.log.debug("session on_leave: {details}", details=details)
-
+                    if details.reason.startswith('wamp.error.'):
+                        e = ApplicationError(details.reason, details.message)
+                        txaio.reject(done, txaio.create_failure(e))
                 session.on('leave', on_leave)
 
                 # listen on disconnect events
                 def on_disconnect(session, was_clean):
                     self.log.debug("session on_disconnect: {was_clean}", was_clean=was_clean)
 
-                    if was_clean:
-                        # eg the session has left the realm, and the transport was properly
-                        # shut down. successfully finish the connection
-                        done.callback(None)
-                    else:
-                        done.errback(RuntimeError('transport closed uncleanly'))
+                    if not txaio.is_called(done):
+                        if was_clean:
+                            # eg the session has left the realm, and the transport was properly
+                            # shut down. successfully finish the connection
+                            txaio.resolve(done, None)
+                        else:
+                            fail = txaio.create_failure(RuntimeError('transport closed uncleanly'))
+                            txaio.reject(done, fail)
 
                 session.on('disconnect', on_disconnect)
 

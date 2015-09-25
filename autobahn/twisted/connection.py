@@ -27,12 +27,16 @@
 
 from __future__ import absolute_import, print_function
 
+import six
+import traceback
 import itertools
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks, DeferredList
+from twisted.internet.error import ReactorNotRunning
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.endpoints import clientFromString
 
 try:
     _TLS = True
@@ -44,13 +48,15 @@ except ImportError:
 
 import txaio
 
+from autobahn.twisted.util import sleep
+from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
 from autobahn.wamp import connection
+from autobahn.wamp.exception import ApplicationError
+from autobahn.websocket.protocol import parseWsUrl
 
-from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
 
 
 __all__ = ('Connection')
@@ -224,13 +230,20 @@ class Connection(connection.Connection):
 
     log = txaio.make_logger()
 
+    #: The factory of the session we will instantiate.
     session = ApplicationSession
-    """
-    The factory of the session we will instantiate.
-    """
+
+    #: list of WAMP error-URIs that are considered fatal
+    fatal_errors = [
+        u"wamp.error.no_such_realm",
+        u"wamp.error.no_such_role",
+    ]
 
     def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
         connection.Connection.__init__(self, None, transports, realm, extra)
+        # XXX port from refactor-transport: if transports is list,
+        # pre-check for early error (e.g. so we don't have to actually
+        # open() it to find a syntax problem).
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
@@ -245,11 +258,6 @@ class Connection(connection.Connection):
         if reactor is None:
             from twisted.internet import reactor
 
-        # txaio.use_twisted()
-        # txaio.config.loop = reactor
-
-        # txaio.start_logging(level='debug')
-
         yield self.fire('start', reactor, self)
 
         # transports to try again and again ..
@@ -262,12 +270,17 @@ class Connection(connection.Connection):
         while reconnect:
             # cycle through all transports forever ..
             transport = next(transport_gen)
+            # XXX call check on this transport
 
             # only actually try to connect using the transport,
             # if the transport hasn't reached max. connect count
             if transport.can_reconnect():
                 delay = transport.next_delay()
-                self.log.debug('trying transport {transport_idx} using connect delay {transport_delay}', transport_idx=transport.idx, transport_delay=delay)
+                self.log.debug(
+                    'trying transport {transport_idx} using connect delay {transport_delay}',
+                    transport_idx=transport.idx,
+                    transport_delay=delay,
+                )
                 yield sleep(delay)
                 try:
                     transport.connect_attempts += 1
@@ -275,7 +288,11 @@ class Connection(connection.Connection):
                     transport.connect_sucesses += 1
                 except Exception as e:
                     transport.connect_failures += 1
-                    self.log.error(u'connection failed: {error}', error=e)
+                    self.log.error(u'connection failed: {error}', error=str(e))
+                    self.log.debug(traceback.format_exc())
+                    if isinstance(e, ApplicationError):
+                        if e.error in self.fatal_errors:
+                            raise
                 else:
                     reconnect = False
             else:

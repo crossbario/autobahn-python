@@ -464,13 +464,23 @@ def wildcards2patterns(wildcards):
     return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
 
 
+# XXX I really think this would be better as a helper object rather
+# than a mix-in ... and fit the "composition over inheritance" theme
+# ;)
+
+# XXX also, it *really* needs to know what the valid events are so a
+# proper error message can happen if you .on/.off on something bogus
+# (e.g. fat-finger "jion" instead of "join" and then nothing works)
 class ObservableMixin(object):
 
-    def __init__(self, parent=None):
+    def __init__(self, valid_events, parent=None):
+        self._valid_events = valid_events
         self._parent = parent
         self._listeners = {}
 
     def on(self, event, handler):
+        if event not in self._valid_events:
+            raise Exception("Invalid event '{0}'".format(event))
         if event not in self._listeners:
             self._listeners[event] = set()
         self._listeners[event].add(handler)
@@ -479,18 +489,36 @@ class ObservableMixin(object):
         if event is None:
             self._listeners = {}
         else:
+            if event not in self._valid_events:
+                raise Exception("Invalid event '{0}'".format(event))
             if event in self._listeners:
                 if handler is None:
                     del self._listeners[event]
                 else:
                     self._listeners[event].discard(handler)
 
+    def _error(self, fail):
+        self.log.error("event notification failed: {fail}", fail=txaio.failure_format_traceback(fail))
+        return None
+
+    # XXX should probably be _fire (e.g. private)
     def fire(self, event, *args, **kwargs):
         res = []
         if event in self._listeners:
             for handler in self._listeners[event]:
-                value = txaio.as_future(handler, *args, **kwargs)
-                res.append(value)
+                try:
+                    d = txaio.as_future(handler, *args, **kwargs)
+                    txaio.add_callbacks(d, None, self._error)
+                    res.append(d)
+                except Exception:
+                    # this better? res.append(txaio.create_future_error())
+                    return txaio.create_future_error()
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
-        return txaio.gather(res)
+
+        # otherwise, we'll return a list of tuples of the events'
+        # results; probably not what's intended?
+        def return_none(arg):
+            return None
+        d = txaio.gather(res, consume_exceptions=False)
+        txaio.add_callbacks(d, return_none, None)
