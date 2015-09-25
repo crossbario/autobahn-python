@@ -6,36 +6,39 @@ install:
 
 env:
   - TOX_ENV=flake8
-  - TOX_ENV=pypy-twtrunk
-  - TOX_ENV=pypy-trollius
-  - TOX_ENV=py27-twtrunk
-  - TOX_ENV=py27-trollius
-  - TOX_ENV=py33-twcurrent
-  - TOX_ENV=py33-twtrunk
-  - TOX_ENV=py33-trollius
-  - TOX_ENV=py34-twcurrent
-  - TOX_ENV=py34-twtrunk
-  - TOX_ENV=py34-asyncio
-# no cpy35 on travis yet! (09/12/2015)
-#  - TOX_ENV=py35-twcurrent
-#  - TOX_ENV=py35-twtrunk
-#  - TOX_ENV=py35-asyncio
-  - TOX_ENV=pypy-tw121
-  - TOX_ENV=pypy-tw132
-  - TOX_ENV=pypy-twcurrent
-  - TOX_ENV=py26-tw121
-  - TOX_ENV=py26-tw132
-  - TOX_ENV=py26-twcurrent
-  - TOX_ENV=py26-trollius
   - TOX_ENV=py27-tw121
   - TOX_ENV=py27-tw132
-  - TOX_ENV=py27-twcurrent
+  - TOX_ENV=py27-tw154
+  - TOX_ENV=py27-twtrunk
+  - TOX_ENV=py27-asyncio
+  - TOX_ENV=py34-tw154
+  - TOX_ENV=py34-twtrunk
+  - TOX_ENV=py34-asyncio
+  - TOX_ENV=pypy-tw121 
+  - TOX_ENV=pypy-tw132
+  - TOX_ENV=pypy-tw154
+  - TOX_ENV=pypy-twtrunk
+  - TOX_ENV=pypy-asyncio
+  - TOX_ENV=py26-tw121
+  - TOX_ENV=py26-tw132
+  - TOX_ENV=py26-tw154
+  - TOX_ENV=py26-asyncio
+  - TOX_ENV=py33-tw154
+  - TOX_ENV=py33-twtrunk
+  - TOX_ENV=py33-asyncio
+# Travis still lacks CPy 3.5 currently (09/25/15)  
+#  - TOX_ENV=py35-tw154
+#  - TOX_ENV=py35-twtrunk
+#  - TOX_ENV=py35-asyncio
 
 script:
   - tox -c tox.ini -e $TOX_ENV
 
 after_script:
   - codecov
+
+matrix:
+  fast_finish: true
 
 notifications:
    irc:
