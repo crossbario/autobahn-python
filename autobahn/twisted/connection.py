@@ -229,8 +229,8 @@ class Connection(connection.Connection):
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
-        connection.Connection.__init__(self, None, transports, realm, extra)
+    def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None, session=None):
+        connection.Connection.__init__(self, main, transports, realm, extra, session)
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
@@ -244,13 +244,7 @@ class Connection(connection.Connection):
     def start(self, reactor=None):
         if reactor is None:
             from twisted.internet import reactor
-
-        # txaio.use_twisted()
-        # txaio.config.loop = reactor
-
-        # txaio.start_logging(level='debug')
-
-        yield self.fire('start', reactor, self)
+        self._reactor = reactor
 
         # transports to try again and again ..
         transport_gen = itertools.cycle(self._transports)

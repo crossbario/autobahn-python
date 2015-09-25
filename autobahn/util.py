@@ -485,12 +485,20 @@ class ObservableMixin(object):
                 else:
                     self._listeners[event].discard(handler)
 
+    def _observer_error(self, fail):
+        self.log.error("{tb}", tb=txaio.failure_format_traceback(fail))
+        return None
+
     def fire(self, event, *args, **kwargs):
         res = []
         if event in self._listeners:
             for handler in self._listeners[event]:
-                value = txaio.as_future(handler, *args, **kwargs)
-                res.append(value)
+                try:
+                    value = txaio.as_future(handler, *args, **kwargs)
+                    txaio.add_callbacks(value, None, self._observer_error)
+                    res.append(value)
+                except Exception:
+                    return txaio.create_future_error()
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
-        return txaio.gather(res)
+        return txaio.gather(res, consume_exceptions=False)
