@@ -27,12 +27,14 @@
 
 from __future__ import absolute_import, print_function
 
+import six
 import itertools
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.endpoints import clientFromString
 
 try:
     _TLS = True
@@ -54,6 +56,51 @@ from autobahn.twisted.wamp import ApplicationSession
 
 
 __all__ = ('Connection')
+
+
+def _check_twisted_endpoint(endpoint):
+    if isinstance(endpoint, (str, six.text_type)):
+        # I don't belive there's any limit to what exceptions this
+        # might throw, as they're pluggable...
+        try:
+            from twisted.internet import reactor
+            clientFromString(reactor, endpoint)
+            return True
+        except Exception as e:
+            # log e as well/instead?
+            msg = "Invalid client endpoint string '{0}': {1}".format(
+                endpoint, str(e))
+            raise Exception(msg)
+
+    if IStreamClientEndpoint.providedBy(endpoint):
+        return True
+
+    if type(endpoint) != dict:
+        raise Exception("'endpoint' must be a dict, or string,"
+                        " or IStreamClientEndpoint provider")
+
+    # we should have a dict now; we only do Twisted-specific checks
+    # here; the generic checks are done in the caller.
+
+    kind = endpoint.get('type', 'tcp')
+    if kind == 'tcp':
+        tls = endpoint.get('tls', None)
+        if tls is not None:
+            if not _TLS:
+                raise Exception("TLS configured, but no Twisted TLS support (is OpenSSL installed?)")
+
+            acceptable = False
+            if tls is True:
+                acceptable = True
+            elif IOpenSSLClientConnectionCreator.providedBy(tls):
+                acceptable = True
+            elif isinstance(tls, CertificateOptions):
+                acceptable = True
+
+            if not acceptable:
+                raise Exception("TLS configuration must be CertificateOptions"
+                                " or True or provide IOpenSSLClientConnectionCreator")
+    return True
 
 
 def _unique_list(seq):

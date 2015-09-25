@@ -41,43 +41,119 @@ __all__ = ('Connection')
 
 def check_endpoint(endpoint, check_native_endpoint=None):
     """
-    Check a WAMP connecting endpoint configuration.
-    """
-    if type(endpoint) != dict:
-        check_native_endpoint(endpoint)
-    else:
-        if 'type' not in endpoint:
-            raise RuntimeError('missing type in endpoint')
-        if endpoint['type'] not in ['tcp', 'unix']:
-            raise RuntimeError('invalid type "{}" in endpoint'.format(endpoint['type']))
+    :param listen: True if this transport will be used for listening
 
-        if endpoint['type'] == 'tcp':
-            pass
-        elif endpoint['type'] == 'unix':
-            pass
-        else:
-            assert(False), 'should not arrive here'
+    :param endpoint:
+
+        A dict defining a network endpoint, consisting of the following keys:
+
+        - type: "tcp" or "unix" (default: tcp)
+        - port: (mandatory for TCP) any valid port number
+        - version: "4" or "6" (default: 4)
+        - host: the host to connect to (or IP address)
+        - timeout: (optional) connection timeout in seconds (default: 10)
+        - tls: (optional; TCP only) dict of TLS options
+
+        If using Twisted, an "endpoint" can be any object providing
+        IStreamClientEndpoint *or* a string that ``clientFromString``
+        successfully parses.
+
+    :returns: True if this is a valid endpoint, or an exception otherwise
+    """
+
+    if type(endpoint) != dict:
+        # if the endpoint isn't a dict, it *must* be a valid "native"
+        # object
+        if check_native_endpoint is None:
+            raise Exception("'endpoint' configuration must be a dict")
+        return check_native_endpoint(endpoint)
+
+    # we *do* have a dict here, but we still want to call the native
+    # checker if it's available -- for example, if TLS is configured
+    # but we have an older Twisted, this fails.
+    if check_native_endpoint is not None:
+        check_native_endpoint(endpoint)
+
+    valid_keys = ['type', 'port', 'version', 'tls', 'path', 'host', 'timeout']
+    for key in endpoint.keys():
+        if key not in valid_keys:
+            raise Exception("Invalid endpoint key '{0}'".format(key))
+
+    kind = endpoint.get('type', 'tcp')
+    if kind not in ['tcp', 'unix']:
+        raise Exception("Unknown endpoint kind '{0}'".format(kind))
+
+    if kind == 'tcp':
+        if 'path' in endpoint:
+            raise Exception("'tcp' endpoints do not accept 'path'")
+        if 'host' not in endpoint:
+            raise Exception("Client endpoints require 'host'")
+        version = endpoint.get('version', 4)
+        if version not in [4, 6]:
+            raise Exception("Only TCP versions 4 or 6 accepted")
+
+        # 'tls' values are checked by the native checkers
+        if 'tls' in endpoint:
+            assert check_native_endpoint is not None
+    else:
+        for x in ['host', 'port', 'tls', 'shared', 'version']:
+            if x in endpoint:
+                raise Exception("'{0}' not accepted for unix endpoint".format(x))
+
+        if 'path' not in endpoint:
+            raise Exception("unix endpoints require 'path'")
+
+    timeout = float(endpoint.get('timeout', 10))
+    if timeout <= 0.0:
+        raise Exception("Invalid timeout '{0}'".format(timeout))
+
+    return True
 
 
 def check_transport(transport, check_native_endpoint=None):
     """
-    Check a WAMP connecting transport configuration.
+    :param transport:
+        a dict defining a WAMP transport. A WAMP transport definition
+        consists of the following fields:
+
+        - type: "websocket" or "rawsocket" (default: websocket)
+        - url: (only if type==websocket) the websocket url, like ws://demo.crossbar.io/ws
+        - endpoint: (optional) a dict defining a network endpoint (see :meth:`check_endpoint`)
+
+    :returns: True if this is a valid WAMP transport, or an exception otherwise
     """
-    if type(transport) != dict:
-        raise RuntimeError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
+    for key in transport.keys():
+        if key not in ['type', 'url', 'endpoint']:
+            raise Exception("Unknown key '{0}' in transport config".format(key))
 
-    if 'type' not in transport:
-        raise RuntimeError('missing type in transport')
+    kind = transport.get('type', 'websocket')
+    if kind not in ['websocket', 'rawsocket']:
+        raise Exception("Unknown transport type '{0}'".format(kind))
 
-    if transport['type'] not in ['websocket', 'rawsocket']:
-        raise RuntimeError('invalid transport type {}'.format(transport['type']))
+    if 'url' in transport:
+        assert(type(transport['url']) == six.text_type)
 
-    if transport['type'] == 'websocket':
-        pass
-    elif transport['type'] == 'rawsocket':
-        pass
+    if kind == 'websocket':
+        if 'url' not in transport:
+            raise Exception("'url' is required in transport")
+        is_secure, host, port, resource, path, params = parseWsUrl(transport['url'])
+        if 'endpoint' in transport:
+            if not is_secure and 'tls' in transport['endpoint'] and transport['endpoint']['tls']:
+                raise RuntimeError(
+                    '"tls" key conflicts with the "ws:" prefix of the url'
+                    ' argument. Did you mean to use "wss:"?'
+                )
+
+    if 'endpoint' in transport:
+        return check_endpoint(
+            transport['endpoint'],
+            check_native_endpoint=check_native_endpoint,
+        )
     else:
-        assert(False), 'should not arrive here'
+        if kind != 'websocket':
+            raise RuntimeError("Must provide 'endpoint' configuration "
+                               "for '{0}'".format(transport['type']))
+        return True
 
 
 class Transport(object):
