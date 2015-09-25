@@ -27,3 +27,4 @@ htmlcov/
 *~
 *.log
 *.pid
+.cache/
