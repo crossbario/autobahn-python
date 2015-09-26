@@ -1,3 +1,5 @@
+from twisted.internet.defer import inlineCallbacks as coroutine
+
 @coroutine
 def component1_setup(reactor, session):
     # the session is joined and ready for use.
@@ -31,10 +33,38 @@ def component2_main(reactor, session):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.wamp import Component, run
+    from autobahn.twisted.component import Component, run
+
+    transports = [
+        {
+            'type': 'rawsocket',
+            'serializer': 'msgpack',
+            'endpoint': {
+                'type': 'unix',
+                'path': '/tmp/cb1.sock'
+            }
+        },
+        {
+            'type': 'websocket',
+            'url': 'ws://127.0.0.1:8080/ws',
+            'endpoint': {
+                'type': 'tcp',
+                'host': '127.0.0.1',
+                'port': 8080
+            }
+        }
+    ]
+
+    config = {
+        'realm': u'realm1',
+        'extra': {
+            'foo': 23
+        }
+    }
 
     components = [
-        Component(setup=component1_setup),
-        Component(main=component2_main)
+        Component(setup=component1_setup, transports=transports, config=config),
+        Component(main=component2_main, transports=transports, config=config)
     ]
+
     run(components)

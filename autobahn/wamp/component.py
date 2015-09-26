@@ -127,7 +127,7 @@ class Transport(object):
             return self.retry_delay
 
 
-class Connection(ObservableMixin):
+class Component(ObservableMixin):
 
     session = None
     """

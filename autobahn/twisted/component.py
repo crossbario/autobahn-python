@@ -38,7 +38,7 @@ try:
     _TLS = True
     from twisted.internet.endpoints import SSL4ClientEndpoint
     from twisted.internet.ssl import optionsForClientTLS, CertificateOptions
-    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
+    from twisted.internet.interfaces import IOpenSSLClientComponentCreator
 except ImportError:
     _TLS = False
 
@@ -47,13 +47,13 @@ import txaio
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
-from autobahn.wamp import connection
+from autobahn.wamp import component
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
 
 
-__all__ = ('Connection')
+__all__ = ('Component')
 
 
 def _unique_list(seq):
@@ -167,9 +167,9 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     raise RuntimeError('TLS configured in transport, but TLS support is not installed (eg OpenSSL?)')
 
                 # FIXME: create TLS context from configuration
-                if IOpenSSLClientConnectionCreator.providedBy(tls):
+                if IOpenSSLClientComponentCreator.providedBy(tls):
                     # eg created from twisted.internet.ssl.optionsForClientTLS()
-                    context = IOpenSSLClientConnectionCreator(tls)
+                    context = IOpenSSLClientComponentCreator(tls)
 
                 elif isinstance(tls, CertificateOptions):
                     context = tls
@@ -213,12 +213,12 @@ def _create_transport_endpoint(reactor, endpoint_config):
     return endpoint
 
 
-class Connection(connection.Connection):
+class Component(component.Component):
     """
-    A connection establishes a transport and attached a session
+    A component establishes a transport and attached a session
     to a realm using the transport for communication.
 
-    The transports a connection tries to use can be configured,
+    The transports a component tries to use can be configured,
     as well as the auto-reconnect strategy.
     """
 
@@ -230,7 +230,7 @@ class Connection(connection.Connection):
     """
 
     def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
-        connection.Connection.__init__(self, None, transports, realm, extra)
+        component.Component.__init__(self, None, transports, realm, extra)
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
@@ -257,7 +257,7 @@ class Connection(connection.Connection):
 
         reconnect = True
 
-        self.log.info('entering reconnection loop')
+        self.log.info('entering recomponent loop')
 
         while reconnect:
             # cycle through all transports forever ..
@@ -275,7 +275,7 @@ class Connection(connection.Connection):
                     transport.connect_sucesses += 1
                 except Exception as e:
                     transport.connect_failures += 1
-                    self.log.error(u'connection failed: {error}', error=e)
+                    self.log.error(u'component failed: {error}', error=e)
                 else:
                     reconnect = False
             else:
