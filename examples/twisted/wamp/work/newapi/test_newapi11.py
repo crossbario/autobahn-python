@@ -1,3 +1,31 @@
+@coroutine
+def main(reactor, session):
+    # the session is joined and ready
+    result = yield session.call(u'com.example.add2', 2, 3)
+    print('result={}'.format(result))
+    # as we exit, this signals we are done with the session! the session
+    # can be recycled
+
+if __name__ == '__main__':
+    client = Client(main=main)
+    react(client.run)
+
+
+@coroutine
+def setup(reactor, session):
+    # the session is joined and ready also!
+    def add2(a, b):
+        return a + b
+    yield session.register(u'com.example.add2', add2)
+    print('procedure registered')
+    # as we exit, this signals we are ready! the session must be kept.
+
+if __name__ == '__main__':
+    client = Client(setup=setup)
+    react(client.run)
+
+
+
 
 @coroutine
 def client_main(reactor, client):
@@ -33,6 +61,20 @@ if __name__ == '__main__':
     client = Client(session_main=session_main)
     react(client.run)
 
+
+
+@coroutine
+def session_main(reactor, session):
+    def add2(a, b):
+        return a + b
+    yield session.register(u'com.example.add2', add2)
+    print('procedure registered')
+    txaio.return_value(txaio.create_future())
+
+
+if __name__ == '__main__':
+    client = Client(session_main=session_main)
+    react(client.run)
 
 
 @coroutine
