@@ -1,6 +1,7 @@
 from autobahn.wamp import Api
 
-
+# create an API object to use the decorator style
+# register/subscribe WAMP actions
 api = Api()
 
 @api.register(u'com.example.add2')
@@ -14,10 +15,20 @@ def on_hello(msg, details=None):
 
 @coroutine
 def component1(reactor, session):
-    yield session.add_api(api)
+    """
+    A first component, which gets called "setup-like". When
+    it returns, this signals that the component is ready for work.
+    """
+    # expose the API on the session
+    yield session.expose(api)
+
 
 @coroutine
 def component2(reactor, session):
+    """
+    A second component, which gets called "main-like".
+    When it returns, this will automatically close the session.
+    """
     result = yield session.call(u'com.example.add2', 2, 3)
     session.publish(u'com.example.on-hello', u'result={}'.format(result))
 
@@ -25,9 +36,13 @@ def component2(reactor, session):
 if __name__ == '__main__':
     from autobahn.twisted.component import Component, run
 
+    # Components wrap either a setup or main function and
+    # can be configured with transports, authentication and so on.
     components = [
         Component(setup=component1),
         Component(main=component2)
     ]
 
+    # a convenience runner is provided which takes a list of
+    # components and runs all of them
     run(components)
