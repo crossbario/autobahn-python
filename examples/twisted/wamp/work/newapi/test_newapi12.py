@@ -7,13 +7,15 @@ def component1_setup(reactor, session):
         print('backend component shutting down ..')
         session.leave()
 
-    yield session.subscribe(u'com.example.shutdown', shutdown)
+    yield session.subscribe(shutdown, u'com.example.shutdown')
+#    yield session.subscribe(u'com.example.shutdown', shutdown)
 
     def add2(a, b):
         print('backend component: add2()')
         return a + b
 
-    yield session.register(u'com.example.add2', add2)
+    yield session.register(add2, u'com.example.add2')
+#    yield session.register(u'com.example.add2', add2)
 
     print('backend component ready.')
 
@@ -33,8 +35,14 @@ def component2_main(reactor, session):
 
 
 if __name__ == '__main__':
-    from autobahn.twisted.component import Component, run
+    from autobahn.twisted.component import Component
+    from twisted.internet.task import react
 
+    #component = Component(setup=component1_setup)
+    #react(component.start)
+
+
+    from autobahn.twisted.component import Component, run
     transports = [
         {
             'type': 'rawsocket',
@@ -67,4 +75,4 @@ if __name__ == '__main__':
         Component(main=component2_main, transports=transports, config=config)
     ]
 
-    run(components)
+    react(run, [components])

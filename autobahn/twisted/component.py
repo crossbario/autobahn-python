@@ -229,9 +229,6 @@ class Component(component.Component):
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, transports=u'ws://127.0.0.1:8080/ws', realm=u'realm1', extra=None):
-        component.Component.__init__(self, None, transports, realm, extra)
-
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
         Create and connect a WAMP-over-XXX transport.
@@ -283,3 +280,23 @@ class Component(component.Component):
                 # to connect
                 if not self._can_reconnect():
                     reconnect = False
+
+
+def run(reactor, components):
+    if isinstance(components, Component):
+        components = [components]
+
+    if type(components) != list:
+        raise RuntimeError('"components" must be a list of Component objects - encountered {0}'.format(type(components)))
+
+    for c in components:
+        if not isinstance(c, Component):
+            raise RuntimeError('"components" must be a list of Component objects - encountered item of type {0}'.format(type(c)))
+
+    dl = []
+    for c in components:
+        dl.append(c.start(reactor))
+
+    d = txaio.gather(dl, consume_exceptions=True)
+
+    return d

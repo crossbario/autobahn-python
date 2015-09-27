@@ -63,8 +63,12 @@ class ComponentConfig(object):
             accessible in your `ApplicationSession` subclass via
             `self.config.extra`. `dict` is a good default choice.
         """
+        realm = realm or u'default'
+        # FIXME
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
+        if type(realm) != six.text_type:
+            raise RuntimeError('"realm" must be of type Unicode - was {0}'.format(type(realm)))
         self.realm = realm
         self.extra = extra
 

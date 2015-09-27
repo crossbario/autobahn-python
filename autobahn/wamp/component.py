@@ -128,23 +128,66 @@ class Transport(object):
 
 
 class Component(ObservableMixin):
+    """
+    A WAMP application component. A component holds configuration for and knows how to create
+    transports and sessions.
+    """
 
     session = None
     """
     The factory of the session we will instantiate.
     """
 
-    def __init__(self, main=None, transports=u'ws://127.0.0.1:8080/ws', realm=u'default', extra=None):
+    TYPE_MAIN = 1
+    TYPE_SETUP = 2
+
+    def __init__(self, main=None, setup=None, transports=None, config=None):
+        """
+
+        :param main: A callable that runs user code for the component. The component will be
+            started with a "main-like" procedure. When a transport has been connected and
+            a session has been established and joined a realm, the user code will be run until it finishes
+            which signals that the component has run to completion.
+        :type main: callable
+        :param setup: A callable that runs user code for the component. The component will be
+            started with a "setup-like" procedure. When a transport has been connected and
+            a session has been established and joined a realm, the user code will be run until it finishes
+            which signals that the component is now "ready". The component will continue to run until
+            it explicitly closes the session or the underlying transport closes.
+        :type setup: callable
+        :param transports: Transport configurations for creating transports.
+        :type transports: None or unicode or list
+        :param config: Session configuration.
+        :type config: None or dict
+        """
         ObservableMixin.__init__(self)
+
+        if main is None and setup is None:
+            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component')
+
+        if main is not None and setup is not None:
+            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component (not both)')
 
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')
 
-        if type(realm) != six.text_type:
-            raise RuntimeError('invalid type {} for "realm" - must be Unicode'.format(type(realm)))
+        if setup is not None and not callable(setup):
+            raise RuntimeError('"setup" must be a callable if given')
 
-        # backward compatibility / convenience: allows to provide an URL instead of a
-        # list of transports
+        if setup:
+            self._entry = setup
+            self._entry_type = Component.TYPE_SETUP
+        elif main:
+            self._entry = main
+            self._entry_type = Component.TYPE_MAIN
+        else:
+            assert(False), 'logic error'
+
+        # use WAMP-over-WebSocket to localhost when no transport is specified at all
+        if transports is None:
+            transports = u'ws://127.0.0.1:8080/ws'
+
+        # allows to provide an URL instead of a list of transports
         if type(transports) == six.text_type:
             url = transports
             is_secure, host, port, resource, path, params = parseWsUrl(url)
@@ -162,6 +205,7 @@ class Component(ObservableMixin):
                 transport['endpoint']['tls'] = {}
             transports = [transport]
 
+        # now check and save list of transports
         self._transports = []
         idx = 0
         for transport in transports:
@@ -169,9 +213,8 @@ class Component(ObservableMixin):
             self._transports.append(Transport(idx, transport))
             idx += 1
 
-        self._main = main
-        self._realm = realm
-        self._extra = extra
+        self._realm = u'realm1'
+        self._extra = None
 
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left
@@ -207,6 +250,41 @@ class Component(ObservableMixin):
                 # hook up the listener to the parent so we can bubble
                 # up events happning on the session onto the connection
                 session._parent = self
+
+                if self._entry_type == Component.TYPE_MAIN:
+
+                    def on_join(session, details):
+                        print("session on_join: {details}", details)
+                        d = txaio.as_future(self._entry, reactor, session)
+
+                        def main_success(_):
+                            print("main_success")
+
+                        def main_error(err):
+                            print("main_error", err)
+
+                        txaio.add_callbacks(d, main_success, main_error)
+
+                    session.on('join', on_join)
+
+                elif self._entry_type == Component.TYPE_SETUP:
+
+                    def on_join(session, details):
+                        print("session on_join: {details}", details)
+                        d = txaio.as_future(self._entry, reactor, session)
+
+                        def setup_success(_):
+                            print("setup_success")
+
+                        def setup_error(err):
+                            print("setup_error", err)
+
+                        txaio.add_callbacks(d, setup_success, setup_error)
+
+                    session.on('join', on_join)
+
+                else:
+                    assert(False), 'logic error'
 
                 # listen on leave events
                 def on_leave(session, details):
