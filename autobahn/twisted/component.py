@@ -33,6 +33,7 @@ from twisted.internet.defer import inlineCallbacks
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.task import react
 
 try:
     _TLS = True
@@ -282,7 +283,7 @@ class Component(component.Component):
                     reconnect = False
 
 
-def run(reactor, components):
+def _run(reactor, components):
     if isinstance(components, Component):
         components = [components]
 
@@ -293,10 +294,16 @@ def run(reactor, components):
         if not isinstance(c, Component):
             raise RuntimeError('"components" must be a list of Component objects - encountered item of type {0}'.format(type(c)))
 
+    # all components are started in parallel
     dl = []
     for c in components:
+        # a component can be of type MAIN or SETUP
         dl.append(c.start(reactor))
 
     d = txaio.gather(dl, consume_exceptions=True)
 
     return d
+
+
+def run(components):
+    react(_run, [components])

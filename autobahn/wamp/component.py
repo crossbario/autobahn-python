@@ -254,14 +254,16 @@ class Component(ObservableMixin):
                 if self._entry_type == Component.TYPE_MAIN:
 
                     def on_join(session, details):
-                        print("session on_join: {details}", details)
+                        self.log.debug("session on_join: {details}", details=details)
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def main_success(_):
-                            print("main_success")
+                            self.log.debug("main_success")
+                            txaio.resolve(done, None)
 
                         def main_error(err):
-                            print("main_error", err)
+                            self.log.debug("main_error", err)
+                            txaio.reject(done, err)
 
                         txaio.add_callbacks(d, main_success, main_error)
 
@@ -270,14 +272,14 @@ class Component(ObservableMixin):
                 elif self._entry_type == Component.TYPE_SETUP:
 
                     def on_join(session, details):
-                        print("session on_join: {details}", details)
+                        self.log.debug("session on_join: {details}", details=details)
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def setup_success(_):
-                            print("setup_success")
+                            self.log.debug("setup_success")
 
                         def setup_error(err):
-                            print("setup_error", err)
+                            self.log.debug("setup_error", err)
 
                         txaio.add_callbacks(d, setup_success, setup_error)
 
@@ -299,9 +301,9 @@ class Component(ObservableMixin):
                     if was_clean:
                         # eg the session has left the realm, and the transport was properly
                         # shut down. successfully finish the connection
-                        done.callback(None)
+                        txaio.resolve(done, None)
                     else:
-                        done.errback(RuntimeError('transport closed uncleanly'))
+                        txaio.reject(done, RuntimeError('transport closed uncleanly'))
 
                 session.on('disconnect', on_disconnect)
 
