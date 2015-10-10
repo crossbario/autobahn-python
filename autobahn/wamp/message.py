@@ -2051,6 +2051,7 @@ class Register(Message):
     INVOKE_LAST = u'last'
     INVOKE_ROUNDROBIN = u'roundrobin'
     INVOKE_RANDOM = u'random'
+    INVOKE_ALL = u'all'
 
     def __init__(self, request, procedure, match=None, invoke=None):
         """
