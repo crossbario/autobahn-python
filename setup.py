@@ -97,7 +97,6 @@ else:
         "futures>=3.0.3"            # BSD license
     ]
 
-
 # C-based WebSocket acceleration
 #
 if CPY:
@@ -110,7 +109,6 @@ if CPY:
         extras_require_accelerate.append("ujson>=1.33")     # BSD license
 else:
     extras_require_accelerate = []
-
 
 # non-standard WebSocket compression support (FIXME: consider removing altogether)
 # Ubuntu: sudo apt-get install libsnappy-dev
