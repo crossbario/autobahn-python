@@ -3688,6 +3688,11 @@ class WebSocketClientProtocol(WebSocketProtocol):
             self.current_frame = None
             self.websocket_version = self.version
 
+            # automatic ping/pong
+            #
+            if self.autoPingInterval:
+                self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+
             # we handle this symmetrical to server-side .. that is, give the
             # client a chance to bail out .. i.e. on no subprotocol selected
             # by server
