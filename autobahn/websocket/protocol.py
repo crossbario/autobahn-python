@@ -3394,7 +3394,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # HTTP version
             #
             http_version = sl[0].strip()
-            if http_version != "HTTP/1.1":
+            if not http_version in ("HTTP/1.1", "HTTP/1.0"):
                 return self.failProxyConnect("Unsupported HTTP version ('%s')" % http_version)
 
             # HTTP status code
@@ -3430,7 +3430,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # now start WebSocket opening handshake
             #
-            self.startHandshake()
+            if self.factory.isSecure:
+                self.startTLS()
+            else:
+                self.startHandshake()
 
     def failProxyConnect(self, reason):
         """

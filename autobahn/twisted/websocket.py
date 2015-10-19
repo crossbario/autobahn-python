@@ -218,7 +218,10 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     def _onConnect(self, response):
         self.onConnect(response)
-
+    def startTLS(self):
+        self.log.debug("Starting TLS upgrade")
+        self.transport.startTLS(self.factory.contextFactory)
+        self.startHandshake()
 
 class WebSocketAdapterFactory(object):
     """
@@ -515,17 +518,17 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     else:
         from twisted.internet import reactor
 
+    if factory.isSecure:
+        if contextFactory is None:
+            # create default client SSL context factory when none given
+            from twisted.internet import ssl
+            contextFactory = ssl.ClientContextFactory()
+
     if factory.proxy is not None:
-        if factory.isSecure:
-            raise Exception("WSS over explicit proxies not implemented")
-        else:
-            conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)
+        factory.contextFactory = contextFactory
+        conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)
     else:
         if factory.isSecure:
-            if contextFactory is None:
-                # create default client SSL context factory when none given
-                from twisted.internet import ssl
-                contextFactory = ssl.ClientContextFactory()
             conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)
         else:
             conn = reactor.connectTCP(factory.host, factory.port, factory, timeout, bindAddress)
