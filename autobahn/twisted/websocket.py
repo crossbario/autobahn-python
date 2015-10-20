@@ -218,10 +218,12 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
 
     def _onConnect(self, response):
         self.onConnect(response)
+
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")
         self.transport.startTLS(self.factory.contextFactory)
         self.startHandshake()
+
 
 class WebSocketAdapterFactory(object):
     """
