@@ -131,14 +131,14 @@ Above code will work on Twisted and asyncio by changing a single line
 .. |Downloads| image:: https://img.shields.io/pypi/dm/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn
 
-.. |GitHub Stars| image:: https://img.shields.io/github/stars/tavendo/AutobahnPython.svg?style=social&label=Star
+.. |GitHub Stars| image:: https://img.shields.io/github/stars/crossbario/autobahn-python.svg?style=social&label=Star
    :target: https://github.com/crossbario/autobahn-python
 
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
-   :target: https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master
+   :target: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
 
-.. |Build Status| image:: https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master
-   :target: https://travis-ci.org/tavendo/AutobahnPython
+.. |Build Status| image:: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+   :target: https://travis-ci.org/crossbario/autobahn-python
 
-.. |Coverage| image:: https://img.shields.io/codecov/c/github/tavendo/AutobahnPython/master.svg
-   :target: https://codecov.io/github/tavendo/AutobahnPython
+.. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
+   :target: https://codecov.io/github/crossbario/autobahn-python
