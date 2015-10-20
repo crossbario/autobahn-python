@@ -7,7 +7,7 @@ You'll see how to create WebSocket server (":ref:`creating-websocket-servers`") 
 
 *Resources:*
 
-* Example Code for this Guide: `Twisted-based <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_ or `asyncio-based <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
+* Example Code for this Guide: `Twisted-based <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo>`_ or `asyncio-based <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/websocket/echo>`_
 * More :ref:`WebSocket Examples <websocket_examples>`
 
 .. _creating-websocket-servers:
@@ -226,8 +226,8 @@ What we are doing here is
 
 You can find complete code for above examples here:
 
-* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
-* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
+* `WebSocket Echo (Twisted-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo>`_
+* `WebSocket Echo (Asyncio-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/websocket/echo>`_
 
 
 .. _connection-lifecycle:
@@ -486,8 +486,8 @@ What we are doing here is
 
 You can find complete code for above examples here:
 
-* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
-* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
+* `WebSocket Echo (Twisted-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo>`_
+* `WebSocket Echo (Asyncio-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/websocket/echo>`_
 
 
 Upgrading

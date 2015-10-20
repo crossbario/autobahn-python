@@ -6,7 +6,7 @@ It also includes a WebSocket client that will send a WebSocket message every sec
 
 Lastly, a HTML5 client is also included.
 
-This example uses the Asyncio integration of **Autobahn**|Python. You can find the corresponding example using the Twisted integration [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo).
+This example uses the Asyncio integration of **Autobahn**|Python. You can find the corresponding example using the Twisted integration [here](https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo).
 
 ## Running
 

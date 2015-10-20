@@ -62,7 +62,7 @@ WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/pos
 * implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
 * implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
-* Open-source (`MIT license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`_)
+* Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`_)
 
 ...and much more.
 
@@ -140,8 +140,8 @@ A sample **WebSocket server**:
 
 Complete example code:
 
-* `WebSocket Echo (Twisted-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo>`_
-* `WebSocket Echo (Asyncio-based) <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/websocket/echo>`_
+* `WebSocket Echo (Twisted-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo>`_
+* `WebSocket Echo (Asyncio-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/websocket/echo>`_
 
 Introduction to WebSocket Programming with |ab|:
 
@@ -180,8 +180,8 @@ A sample **WAMP application component** implementing all client roles:
 
 Complete example code:
 
-* `Twisted Example <https://github.com/tavendo/AutobahnPython/blob/master/examples/twisted/wamp/overview/>`__
-* `asyncio Example <https://github.com/tavendo/AutobahnPython/blob/master/examples/asyncio/wamp/overview/>`__
+* `Twisted Example <https://github.com/crossbario/autobahn-python/blob/master/examples/twisted/wamp/overview/>`__
+* `asyncio Example <https://github.com/crossbario/autobahn-python/blob/master/examples/asyncio/wamp/overview/>`__
 
 Introduction to WAMP Programming with |ab|:
 
@@ -209,12 +209,12 @@ For **WAMP developers**, :doc:`wamp/programming` gives an introduction for progr
 Community
 ---------
 
-Development of |ab| takes place on the GitHub `source repository <https://github.com/tavendo/AutobahnPython>`_.
+Development of |ab| takes place on the GitHub `source repository <https://github.com/crossbario/autobahn-python>`_.
 
 .. note::
    We are open for contributions, whether that's code or documentation! Preferably via pull requests.
 
-We also take **bug reports** at the `issue tracker <https://github.com/tavendo/AutobahnPython/issues>`_.
+We also take **bug reports** at the `issue tracker <https://github.com/crossbario/autobahn-python/issues>`_.
 
 The best place to **ask questions** is on the `mailing list <https://groups.google.com/forum/#!forum/autobahnws>`_. We'd also love to hear about your project and what you are using |ab| for!
 

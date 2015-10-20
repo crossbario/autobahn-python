@@ -74,11 +74,11 @@ The **Private non-API** isn't an API at all: like class members which may only b
 
 The new rule for the public API is simple: if something is exported from the modules below, then it is public. Otherwise not.
 
-* [Top](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/__init__.py)
-* [WebSocket](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/websocket/__init__.py)
-* [WAMP](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/wamp/__init__.py)
-* [Asyncio](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/asyncio/__init__.py)
-* [Twisted](https://github.com/tavendo/AutobahnPython/blob/master/autobahn/twisted/__init__.py)
+* [Top](https://github.com/crossbario/autobahn-python/blob/master/autobahn/__init__.py)
+* [WebSocket](https://github.com/crossbario/autobahn-python/blob/master/autobahn/websocket/__init__.py)
+* [WAMP](https://github.com/crossbario/autobahn-python/blob/master/autobahn/wamp/__init__.py)
+* [Asyncio](https://github.com/crossbario/autobahn-python/blob/master/autobahn/asyncio/__init__.py)
+* [Twisted](https://github.com/crossbario/autobahn-python/blob/master/autobahn/twisted/__init__.py)
 
 ### Cross-platform Considerations
 
@@ -121,7 +121,7 @@ Either the success or error callback can be ``None`` (e.g. if you just need to a
 
 ### Use of assert vs Exceptions
 
-> See the discussion [here](https://github.com/tavendo/AutobahnPython/issues/99).
+> See the discussion [here](https://github.com/crossbario/autobahn-python/issues/99).
 
 `assert` is for telling fellow programmers: "When I wrote this, I thought X could/would never really happen, and if it does, this code will very likely do the wrong thing".
 
@@ -320,7 +320,7 @@ After the upload has finished, check the live pages:
 
 ### 0.10.6
 
-[Milestone for 0.10.6](https://github.com/tavendo/AutobahnPython/milestones/0.10.6)
+[Milestone for 0.10.6](https://github.com/crossbario/autobahn-python/milestones/0.10.6)
 
 * Automatic reconnection
 * Configurable WAMP connecting transports
@@ -331,6 +331,6 @@ After the upload has finished, check the live pages:
 
 ### 0.11.0
 
-[Milestone for 0.11.0](https://github.com/tavendo/AutobahnPython/milestones/0.11.0)
+[Milestone for 0.11.0](https://github.com/crossbario/autobahn-python/milestones/0.11.0)
 
 * new main development line with new, long-term API

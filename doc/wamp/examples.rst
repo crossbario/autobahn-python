@@ -3,7 +3,7 @@
 WAMP Examples
 =============
 
-**NOTE** that for all examples you will **need to run a router**. We develop `Crossbar.io <http://crossbar.io/docs>`_ and there are `other routers <http://wamp.ws/implementations/#routers>`_ available as well. We include a working `Crossbar.io <http://crossbar.io/docs>`_ configuration in the `examples/router/ subdirectory <https://github.com/tavendo/AutobahnPython/tree/master/examples/router>`_ as well as `instructions on how to run it <https://github.com/tavendo/AutobahnPython/blob/master/examples/running-the-examples.md>`_.
+**NOTE** that for all examples you will **need to run a router**. We develop `Crossbar.io <http://crossbar.io/docs>`_ and there are `other routers <http://wamp.ws/implementations/#routers>`_ available as well. We include a working `Crossbar.io <http://crossbar.io/docs>`_ configuration in the `examples/router/ subdirectory <https://github.com/crossbario/autobahn-python/tree/master/examples/router>`_ as well as `instructions on how to run it <https://github.com/crossbario/autobahn-python/blob/master/examples/running-the-examples.md>`_.
 
 Overview of Examples
 ++++++++++++++++++++
@@ -41,31 +41,31 @@ There is a script (``./examples/run-all-examples.py``) which runs all the WAMP e
 Publish & Subscribe (PubSub)
 ++++++++++++++++++++++++++++
 
-* Basic `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/pubsub/basic>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/pubsub/basic>`__ - Demonstrates basic publish and subscribe.
+* Basic `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/pubsub/basic>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/pubsub/basic>`__ - Demonstrates basic publish and subscribe.
 
-* Complex `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/pubsub/complex>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/pubsub/complex>`__ - Demonstrates publish and subscribe with complex events.
+* Complex `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/pubsub/complex>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/pubsub/complex>`__ - Demonstrates publish and subscribe with complex events.
 
-* Options `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/pubsub/options>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/pubsub/options>`__ - Using options with PubSub.
+* Options `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/pubsub/options>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/pubsub/options>`__ - Using options with PubSub.
 
-* Unsubscribe `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/pubsub/unsubscribe>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/pubsub/unsubscribe>`__ - Cancel a subscription to a topic.
+* Unsubscribe `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/pubsub/unsubscribe>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/pubsub/unsubscribe>`__ - Cancel a subscription to a topic.
 
 
 Remote Procedure Calls (RPC)
 ++++++++++++++++++++++++++++
 
-* Time Service `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/timeservice>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/timeservice>`__ - A trivial time service - demonstrates basic remote procedure feature.
+* Time Service `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/timeservice>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/timeservice>`__ - A trivial time service - demonstrates basic remote procedure feature.
 
-* Slow Square `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/slowsquare>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/slowsquare>`__ - Demonstrates procedures which return promises and return asynchronously.
+* Slow Square `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/slowsquare>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/slowsquare>`__ - Demonstrates procedures which return promises and return asynchronously.
 
-* Arguments `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/arguments>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/arguments>`__ - Demonstrates all variants of call arguments.
+* Arguments `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/arguments>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/arguments>`__ - Demonstrates all variants of call arguments.
 
-* Complex Result `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/complex>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/complex>`__  - Demonstrates complex call results (call results with more than one positional or keyword results).
+* Complex Result `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/complex>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/complex>`__  - Demonstrates complex call results (call results with more than one positional or keyword results).
 
-* Errors `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/errors>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/errors>`__ - Demonstrates error raising and catching over remote procedures.
+* Errors `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/errors>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/errors>`__ - Demonstrates error raising and catching over remote procedures.
 
-* Progressive Results `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/progress>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/progress>`__ - Demonstrates calling remote procedures that produce progressive results.
+* Progressive Results `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/progress>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/progress>`__ - Demonstrates calling remote procedures that produce progressive results.
 
-* Options `Twisted <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/wamp/rpc/options>`__ - `asyncio <https://github.com/tavendo/AutobahnPython/tree/master/examples/asyncio/wamp/rpc/options>`__ - Using options with RPC.
+* Options `Twisted <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/wamp/rpc/options>`__ - `asyncio <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/wamp/rpc/options>`__ - Using options with RPC.
 
 
 I'm Confused, Just Tell Me What To Run
@@ -74,7 +74,7 @@ I'm Confused, Just Tell Me What To Run
 If all that is too many options to consider, you want to do this:
 
 1. Open 3 terminals
-2. In terminal 1, `setup and run a local Crossbar <https://github.com/tavendo/AutobahnPython/blob/master/examples/running-the-examples.md>`_ in the root of your Autobahn checkout.
+2. In terminal 1, `setup and run a local Crossbar <https://github.com/crossbario/autobahn-python/blob/master/examples/running-the-examples.md>`_ in the root of your Autobahn checkout.
 3. In terminals 2 and 3, go to the root of your Autobahn checkout and activate the virtualenv from step 2 (``source venv-autobahn/bin/activate``)
 4. In terminal 2 run ``python ./examples/twisted/wamp/rpc/arguments/backend.py``
 5. In terminal 3 run ``python ./examples/twisted/wamp/rpc/arguments/frontend.py``

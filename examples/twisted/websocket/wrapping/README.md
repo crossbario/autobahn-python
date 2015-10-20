@@ -38,7 +38,7 @@ That means, you can run any stream-based protocol *over* WebSocket without any m
 Why would you want to do that? For example, to create a VNC, SSH, IRC, IMAP, MQTT or other client for some existing protocol that runs on browsers, and connects to an *unmodified* server.
 
 > This example is about running any stream-based Twisted endpoint over WebSocket.
-> **Autobahn**|Python also supports running WebSocket over any stream-based Twisted endpoint. Please see [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_endpoints).
+> **Autobahn**|Python also supports running WebSocket over any stream-based Twisted endpoint. Please see [here](https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_endpoints).
 >
 
 ## WebSocket Transport Scheme

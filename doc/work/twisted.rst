@@ -25,7 +25,7 @@ Twisted Reactor
 Wrapping Factory & Protocol
 ===========================
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/wrapping>`__
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/wrapping>`__
 
 
 * :class:`autobahn.twisted.websocket.WrappingWebSocketServerFactory`
@@ -36,7 +36,7 @@ You can find a complete example `here <https://github.com/tavendo/AutobahnPython
 Twisted Endpoints
 =================
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_endpoints>`__
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_endpoints>`__
 
 |
 
@@ -45,7 +45,7 @@ Twisted Web & WSGI
 
 AutobahnPython provides integration with Twisted Web via a special `WebSocketResource` that can be added to Twisted Web resource hierarchies.
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_site>`__
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_site>`__
 
 * :class:`autobahn.twisted.resource.WebSocketResource`
 * :class:`autobahn.twisted.resource.HTTPChannelHixie76Aware`
@@ -54,7 +54,7 @@ You can find a complete example `here <https://github.com/tavendo/AutobahnPython
 
 The Twisted Web support of AutobahnPython also allows you add WebSocket as part of a WSGI application that runs under Twisted.
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsgi>`__
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_wsgi>`__
 
 * :class:`autobahn.twisted.resource.WSGIRootResource`
 
@@ -63,7 +63,7 @@ You can find a complete example `here <https://github.com/tavendo/AutobahnPython
 Flash Policy Server
 ===================
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_wsfallbacks>`__
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_wsfallbacks>`__
 
 
 * :class:`autobahn.twisted.flashpolicy.FlashPolicyProtocol`

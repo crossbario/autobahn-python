@@ -260,7 +260,7 @@ rst_epilog = """
 .. _Jython: http://jython.org/
 .. _WAMP: http://wamp.ws/
 .. _WAMPv1: http://wamp.ws/spec/wamp1/
-.. _WAMPv2: https://github.com/tavendo/WAMP/blob/master/spec/README.md
+.. _WAMPv2: https://github.com/wamp-proto/wamp-proto/blob/master/spec/README.md
 .. _AutobahnTestsuite: http://autobahn.ws/testsuite
 .. _trollius: https://pypi.python.org/pypi/trollius/
 .. _tulip: https://pypi.python.org/pypi/asyncio/

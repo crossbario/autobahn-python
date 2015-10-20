@@ -7,9 +7,9 @@ WebSocket & WAMP for Python on Twisted and asyncio.
 
 --------------
 
-| **Quick Links**: `Source Code <https://github.com/tavendo/AutobahnPython>`__ - `Documentation <http://autobahn.ws/python>`__ - `WebSocket Examples <http://autobahn.ws/python/websocket/examples.html>`__ - `WAMP Examples <http://autobahn.ws/python/wamp/examples.html>`__
+| **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <http://autobahn.ws/python>`__ - `WebSocket Examples <http://autobahn.ws/python/websocket/examples.html>`__ - `WAMP Examples <http://autobahn.ws/python/wamp/examples.html>`__
 | **Community**: `Mailing list <http://groups.google.com/group/autobahnws>`__ - `StackOverflow <http://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
-| **Companion Projects**: `Autobahn|JS <https://github.com/tavendo/AutobahnJS/>`__ - `Autobahn|Cpp <https://github.com/tavendo/AutobahnCpp>`__ - `Autobahn|Testsuite <https://github.com/tavendo/AutobahnTestSuite>`__ - `Crossbar.io <http://crossbar.io>`__ - `WAMP <http://wamp.ws>`__
+| **Companion Projects**: `Autobahn|JS <https://github.com/crossbario/autobahn-js/>`__ - `Autobahn|Cpp <https://github.com/crossbario/autobahn-cpp>`__ - `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ - `Crossbar.io <http://crossbar.io>`__ - `WAMP <http://wamp.ws>`__
 
 Introduction
 ------------
@@ -42,12 +42,12 @@ Features
 -  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://autobahn.ws/testsuite>`__: `Server Test Report <http://autobahn.ws/python/testreport/servers/index.html>`__ / `Client Test Report <http://autobahn.ws/python/testreport/clients/index.html>`__)
 -  message-, frame- and streaming-APIs for WebSocket
 -  supports TLS (secure WebSocket) and proxies
--  Open-source (`MIT license <https://github.com/tavendo/AutobahnPython/blob/master/LICENSE>`__)
+-  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
 
 Show me some code
 -----------------
 
-To give you a first impression, here are two examples. We have lot more `in the repo <https://github.com/tavendo/AutobahnPython/tree/master/examples>`__.
+To give you a first impression, here are two examples. We have lot more `in the repo <https://github.com/crossbario/autobahn-python/tree/master/examples>`__.
 
 WebSocket Echo Server
 ~~~~~~~~~~~~~~~~~~~~~
@@ -132,7 +132,7 @@ Above code will work on Twisted and asyncio by changing a single line
    :target: https://pypi.python.org/pypi/autobahn
 
 .. |GitHub Stars| image:: https://img.shields.io/github/stars/tavendo/AutobahnPython.svg?style=social&label=Star
-   :target: https://github.com/tavendo/AutobahnPython
+   :target: https://github.com/crossbario/autobahn-python
 
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
    :target: https://travis-ci.org/tavendo/AutobahnPython.svg?branch=master

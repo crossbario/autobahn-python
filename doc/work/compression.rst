@@ -8,7 +8,7 @@ Autobahn|Python supports the following WebSocket extensions for compression:
 * permessage-bzip2
 * permessage-snappy
 
-You can find a complete example `here <https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/echo_compressed>`_.
+You can find a complete example `here <https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/echo_compressed>`_.
 
 |
 

@@ -12,7 +12,7 @@ There are many more examples showing options and advanced features:
 
    * WAMP application components can be run in servers and clients without any modification to your component class.
 
-   * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/tavendo/AutobahnJS/#show-me-some-code>`_ in JavaScript.
+   * `AutobahnJS`_ allows you to write WAMP application components in JavaScript which run in browsers and Nodejs. Here is how above example `looks like <https://github.com/crossbario/autobahn-js/#show-me-some-code>`_ in JavaScript.
 
 
 .. note::

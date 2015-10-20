@@ -4,7 +4,7 @@ This example shows a WebSocket server that will receive a JSON encode float over
 
 This example is intended to demonstrate how to use coroutines inside WebSocket handlers.
 
-> This example uses the Asyncio integration of **Autobahn**|Python. You can find the corresponding example using the Twisted integration [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/slowsquare).
+> This example uses the Asyncio integration of **Autobahn**|Python. You can find the corresponding example using the Twisted integration [here](https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/slowsquare).
 > 
 
 ## Running

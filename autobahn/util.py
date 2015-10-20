@@ -95,7 +95,7 @@ class IdGenerator(object):
     Hence, IDs can be safely used with languages that use IEEE double as their
     main (or only) number type (JavaScript, Lua, etc).
 
-    See https://github.com/tavendo/WAMP/blob/master/spec/basic.md#ids
+    See https://github.com/wamp-proto/wamp-proto/blob/master/spec/basic.md#ids
     """
 
     def __init__(self):
@@ -147,7 +147,7 @@ class IdGenerator(object):
 #
 # Note on the ID range [0, 2**53]. We once reduced the range to [0, 2**31].
 # This lead to extremely hard to track down issues due to ID collisions!
-# Here: https://github.com/tavendo/AutobahnPython/issues/419#issue-90483337
+# Here: https://github.com/crossbario/autobahn-python/issues/419#issue-90483337
 #
 
 

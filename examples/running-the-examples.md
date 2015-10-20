@@ -12,7 +12,7 @@ By default, **all examples are set up to use a local Crossbar instance**. You ca
 If you do not yet have a `virtualenv` to run the examples with, you can do something like:
 
 ```shell
-git clone https://github.com/tavendo/AutobahnPython.git
+git clone https://github.com/crossbario/autobahn-python.git
 cd ./AutobahnPython/
 virtualenv venv-autobahn
 source venv-autobahn/bin/activate

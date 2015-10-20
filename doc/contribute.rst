@@ -1,7 +1,7 @@
 Contribute
 ==========
 
-|ab| is an open source project, and hosted on GitHub. The `GitHub repository <https://github.com/tavendo/AutobahnPython>`_ includes the documentation.
+|ab| is an open source project, and hosted on GitHub. The `GitHub repository <https://github.com/crossbario/autobahn-python>`_ includes the documentation.
 
 We're looking for all kinds of contributions - from simple fixes of typos in the code or documentation to implementation of new features and additions of tutorials.
 

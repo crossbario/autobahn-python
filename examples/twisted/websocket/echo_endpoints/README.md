@@ -19,7 +19,7 @@ but also over
 and possible other endpoints. This is nifty and flexible.
 
 > This example is about running WebSocket over different stream-based Twisted endpoints.
-> **Autobahn**|Python also supports running any stream-based Twisted endpoint over WebSocket (which in turn runs over any stream-based underlying Twisted endpoint). Please see [here](https://github.com/tavendo/AutobahnPython/tree/master/examples/twisted/websocket/wrapping).
+> **Autobahn**|Python also supports running any stream-based Twisted endpoint over WebSocket (which in turn runs over any stream-based underlying Twisted endpoint). Please see [here](https://github.com/crossbario/autobahn-python/tree/master/examples/twisted/websocket/wrapping).
 > 
 
 ## Running WebSocket over TCP
