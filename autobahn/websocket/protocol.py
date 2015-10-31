@@ -3769,8 +3769,8 @@ class WebSocketClientFactory(WebSocketFactory):
         :type useragent: str
         :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
         :type headers: dict
-        :param proxy: Explicit proxy server to use (`hostname:port` or `IP:port`), e.g. `192.168.1.100:8080`.
-        :type proxy: str
+        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
+        :type proxy: dict or None
         :param debug: Debug mode (default: `False`).
         :type debug: bool
         :param debugCodePaths: Debug code paths mode (default: `False`).
@@ -3817,6 +3817,8 @@ class WebSocketClientFactory(WebSocketFactory):
         :type useragent: str
         :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
         :type headers: dict
+        :param proxy: (Optional) a dict with ``host`` and ``port`` keys specifying a proxy to use
+        :type proxy: dict or None
         """
         # parse WebSocket URI into components
         (isSecure, host, port, resource, path, params) = parseWsUrl(url or "ws://localhost")
