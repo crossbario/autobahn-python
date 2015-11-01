@@ -2405,6 +2405,8 @@ class Invocation(Message):
                  timeout=None,
                  receive_progress=None,
                  caller=None,
+                 caller_role=None,
+                 caller_id=None,
                  procedure=None):
         """
 
@@ -2425,6 +2427,10 @@ class Invocation(Message):
         :type receive_progress: bool or None
         :param caller: The WAMP session ID of the caller.
         :type caller: int or None
+        :param caller_role: The WAMP role of the caller.
+        :type caller_role: string or None
+        :param caller_id: The WAMP ID of the caller.
+        :type caller_id: string or None
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
         """
@@ -2435,6 +2441,8 @@ class Invocation(Message):
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
         assert(caller is None or type(caller) in six.integer_types)
+        assert(caller_role is None or type(caller_role) in six.text_type)
+        assert(caller_id is None or type(caller_id) in six.text_type)
         assert(procedure is None or type(procedure) == six.text_type)
 
         Message.__init__(self)
@@ -2445,6 +2453,8 @@ class Invocation(Message):
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.caller = caller
+        self.caller_role = caller_role
+        self.caller_id = caller_id
         self.procedure = procedure
 
     @staticmethod
@@ -2510,6 +2520,24 @@ class Invocation(Message):
 
             caller = detail_caller
 
+        caller_role = None
+        if u'caller_role' in details:
+
+            detail_caller_role = details[u'caller_role']
+            if type(detail_caller_role) not in six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller_role' detail in INVOCATION".format(type(detail_caller_role)))
+
+            caller_role = detail_caller_role
+
+        caller_id = None
+        if u'caller_id' in details:
+
+            detail_caller_id = details[u'caller_id']
+            if type(detail_caller_id) not in six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller' detail in INVOCATION".format(type(detail_caller_id)))
+
+            caller_id = detail_caller_id
+
         procedure = None
         if u'procedure' in details:
 
@@ -2526,6 +2554,8 @@ class Invocation(Message):
                          timeout=timeout,
                          receive_progress=receive_progress,
                          caller=caller,
+                         caller_role=caller_role,
+                         caller_id=caller_id,
                          procedure=procedure)
 
         return obj
@@ -2547,6 +2577,12 @@ class Invocation(Message):
         if self.caller is not None:
             options[u'caller'] = self.caller
 
+        if self.caller_role is not None:
+            options[u'caller_role'] = self.caller_role
+
+        if self.caller_id is not None:
+            options[u'caller_id'] = self.caller_id
+
         if self.procedure is not None:
             options[u'procedure'] = self.procedure
 
@@ -2561,7 +2597,7 @@ class Invocation(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure)
+        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, caller_role = {7}, caller_id = {8}, procedure = {9})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_role, self.caller_id, self.procedure)
 
 
 class Interrupt(Message):
