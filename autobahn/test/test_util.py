@@ -35,5 +35,14 @@ class TestIdGenerator(unittest.TestCase):
     def test_idgenerator_is_generator(self):
         "IdGenerator follows the generator protocol"
         g = IdGenerator()
-        self.assertEqual(0, next(g))
         self.assertEqual(1, next(g))
+        self.assertEqual(2, next(g))
+
+    def test_generator_wrap(self):
+        g = IdGenerator()
+        g._next = 2 ** 53 - 1  # cheat a little
+
+        v = next(g)
+        self.assertEqual(v, 2 ** 53)
+        v = next(g)
+        self.assertEqual(v, 1)

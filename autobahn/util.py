@@ -86,8 +86,8 @@ class IdGenerator(object):
     """
     ID generator for WAMP request IDs.
 
-    WAMP request IDs are sequential per WAMP session, starting at 0 and
-    wrapping around at 2**53 (both value are inclusive [0, 2**53]).
+    WAMP request IDs are sequential per WAMP session, starting at 1 and
+    wrapping around at 2**53 (both value are inclusive [1, 2**53]).
 
     The upper bound **2**53** is chosen since it is the maximum integer that can be
     represented as a IEEE double such that all smaller integers are representable as well.
@@ -99,7 +99,7 @@ class IdGenerator(object):
     """
 
     def __init__(self):
-        self._next = -1
+        self._next = 0  # starts at 1; next() pre-increments
 
     def next(self):
         """
@@ -110,7 +110,7 @@ class IdGenerator(object):
         """
         self._next += 1
         if self._next > 9007199254740992:
-            self._next = 0
+            self._next = 1
         return self._next
 
     # generator protocol

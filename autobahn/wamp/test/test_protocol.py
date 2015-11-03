@@ -563,9 +563,9 @@ if os.environ.get('USE_TWISTED', False):
             # (the register) and then increment for the call()
             def verify_seq_id(orig, msg):
                 if isinstance(msg, message.Register):
-                    self.assertEqual(msg.request, 0)
-                elif isinstance(msg, message.Call):
                     self.assertEqual(msg.request, 1)
+                elif isinstance(msg, message.Call):
+                    self.assertEqual(msg.request, 2)
                 return orig(msg)
             orig0 = trans0.send
             orig1 = trans1.send
