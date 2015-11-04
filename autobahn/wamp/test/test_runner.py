@@ -59,7 +59,15 @@ if os.environ.get('USE_TWISTED', False):
             raise RuntimeError("ConnectTCP shouldn't get called")
 
     class TestWampTwistedRunner(unittest.TestCase):
-        def test_connect_error(self):
+        # XXX should figure out *why* but the test_protocol timeout
+        # tests fail if we *don't* patch out this txaio stuff. So,
+        # presumably it's messing up some global state that both tests
+        # implicitly depend on ...
+
+        @patch('txaio.use_twisted')
+        @patch('txaio.start_logging')
+        @patch('txaio.config')
+        def test_connect_error(self, *args):
             '''
             Ensure the runner doesn't swallow errors and that it exits the
             reactor properly if there is one.
