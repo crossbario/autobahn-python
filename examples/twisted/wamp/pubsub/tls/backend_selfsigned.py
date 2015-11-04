@@ -27,6 +27,8 @@
 from __future__ import print_function
 
 from os import environ
+import six
+
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
 
@@ -55,7 +57,7 @@ if __name__ == '__main__':
     # load the self-signed cert the server is using
     cert = crypto.load_certificate(
         crypto.FILETYPE_PEM,
-        unicode(open('./server.crt', 'r').read())
+        six.u(open('./server.crt', 'r').read())
     )
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
