@@ -32,6 +32,8 @@ from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
 from autobahn.test import FakeTransport
 
+from mock import Mock
+
 
 class WebSocketProtocolTests(unittest.TestCase):
     """
@@ -50,6 +52,17 @@ class WebSocketProtocolTests(unittest.TestCase):
 
         self.protocol = p
         self.transport = t
+
+    def test_auto_ping(self):
+        proto = Mock()
+        self.protocol.autoPingInterval = 1
+        self.protocol.websocket_protocols = [proto]
+        self.protocol.websocket_extensions = []
+        self.protocol._onOpen = lambda: None
+        self.protocol._wskey = b'0' * 32
+        self.protocol.succeedHandshake(proto)
+
+        self.assertTrue(self.protocol.autoPingPendingCall is not None)
 
     def test_sendClose_none(self):
         """
