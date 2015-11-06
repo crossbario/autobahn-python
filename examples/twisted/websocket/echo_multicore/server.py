@@ -31,21 +31,6 @@ import StringIO
 from sys import argv, executable
 from socket import AF_INET
 
-from twisted.internet import reactor
-from twisted.python import log
-from twisted.internet import reactor
-from twisted.internet.protocol import Factory
-from twisted.web.server import Site
-from twisted.web.static import File
-
-from autobahn.websocket import parseWsUrl
-
-from autobahn.twisted.websocket import WebSocketServerFactory, \
-    WebSocketServerProtocol
-
-from autobahn.util import Stopwatch
-
-
 # make sure we run a capable OS/reactor
 ##
 startupMsgs = []
@@ -66,7 +51,24 @@ elif sys.platform == 'win32':
 else:
     raise Exception("Hey man, what OS are you using?")
 
+from twisted.internet import reactor
+
 startupMsgs.append("Using Twisted reactor class %s on Twisted %s" % (str(reactor.__class__), pkg_resources.require("Twisted")[0].version))
+
+
+from twisted.internet import reactor
+from twisted.python import log
+from twisted.internet import reactor
+from twisted.internet.protocol import Factory
+from twisted.web.server import Site
+from twisted.web.static import File
+
+from autobahn.websocket.protocol import parseWsUrl
+
+from autobahn.twisted.websocket import WebSocketServerFactory, \
+    WebSocketServerProtocol
+
+from autobahn.util import Stopwatch
 
 
 hasStatprof = False
@@ -277,9 +279,9 @@ def worker(options):
 
     if not options.noaffinity:
         p = psutil.Process(workerPid)
-        print "affinity [before]", p.get_cpu_affinity()
-        p.set_cpu_affinity([options.cpuid])
-        print "affinity [after]", p.get_cpu_affinity()
+        print "affinity [before]", p.cpu_affinity()
+        p.cpu_affinity([options.cpuid])
+        print "affinity [after]", p.cpu_affinity()
 
     factory = EchoServerFactory(options.wsuri, debug=options.debug)
 
@@ -352,7 +354,7 @@ if __name__ == '__main__':
     import argparse
     import psutil
 
-    DEFAULT_WORKERS = psutil.NUM_CPUS
+    DEFAULT_WORKERS = psutil.cpu_count()
 
     parser = argparse.ArgumentParser(description='Autobahn WebSocket Echo Multicore Server')
     parser.add_argument('--wsuri', dest='wsuri', type=str, default=u'ws://127.0.0.1:9000', help='The WebSocket URI the server is listening on, e.g. ws://localhost:9000.')
