@@ -130,7 +130,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
             self.log.debug("Connection to/from {peer} lost ({error_type}): {error})",
-                          peer=self.peer, error_type=type(reason.value), error=reason.value)
+                           peer=self.peer, error_type=type(reason.value), error=reason.value)
 
         self._connectionLost(reason)
 
