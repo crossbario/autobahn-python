@@ -92,7 +92,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
             self.peer = peer2str(peer)
 
         self._connectionMade()
-        self.log.info('Connection made to {peer}', peer=self.peer)
+        self.log.debug('Connection made to {peer}', peer=self.peer)
 
         # Set "Nagle"
         try:
@@ -129,7 +129,7 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
 
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
-            self.log.info("Connection to/from {peer} lost ({error_type}): {error})",
+            self.log.debug("Connection to/from {peer} lost ({error_type}): {error})",
                           peer=self.peer, error_type=type(reason.value), error=reason.value)
 
         self._connectionLost(reason)
