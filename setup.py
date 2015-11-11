@@ -127,7 +127,9 @@ extras_require_serialization = [
 # everything
 #
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_compress + extras_require_serialization
+    extras_require_accelerate + extras_require_serialization
+
+# extras_require_all += extras_require_compress
 
 # development dependencies
 #
