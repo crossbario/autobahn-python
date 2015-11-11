@@ -40,7 +40,7 @@ class Foo(object):
 class TestIds(unittest.TestCase):
 
     def test_valid_ids(self):
-        for val in [0, 1, 23, 42, 9007199254740992]:
+        for val in [0, 1, 23, 100000, 9007199254740992]:
             self.assertEqual(val, message.check_or_raise_id(val))
 
     def test_invalid_ids(self):

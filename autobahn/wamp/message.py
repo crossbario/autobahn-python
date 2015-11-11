@@ -141,7 +141,9 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
     """
     if type(value) not in six.integer_types:
         raise ProtocolError(u"{0}: invalid type {1} for ID".format(message, type(value)))
-    if value <= 0 or value > 9007199254740992:  # 2**53
+    # the value 0 for WAMP IDs is possible in certain WAMP messages, e.g. UNREGISTERED with
+    # router revocation signaling!
+    if value < 0 or value > 9007199254740992:  # 2**53
         raise ProtocolError(u"{0}: invalid value {1} for ID".format(message, value))
     return value
 
