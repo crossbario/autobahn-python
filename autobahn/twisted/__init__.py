@@ -44,8 +44,8 @@ from autobahn.twisted.websocket import \
 from autobahn.twisted.websocket import WrappingWebSocketServerFactory, \
     WrappingWebSocketClientFactory
 
-# Twisted Web support
-from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
+# Twisted Web support - FIXME: these imports trigger import of Twisted reactor!
+# from autobahn.twisted.resource import WebSocketResource, WSGIRootResource
 
 # WAMP support
 from autobahn.twisted.wamp import ApplicationSession
@@ -66,11 +66,11 @@ __all__ = (
     'WrappingWebSocketServerFactory',
     'WrappingWebSocketClientFactory',
 
-    # Twisted Web
-    'WebSocketResource',
+    # Twisted Web - FIXME: see comment for import above
+    # 'WebSocketResource',
 
-    # this should really be in Twisted
-    'WSGIRootResource',
+    # this should really be in Twisted - FIXME: see comment for import above
+    # 'WSGIRootResource',
 
     # WAMP support
     'ApplicationSession',
