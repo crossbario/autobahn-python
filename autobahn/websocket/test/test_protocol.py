@@ -26,14 +26,75 @@
 
 from __future__ import absolute_import, print_function
 
+from hashlib import sha1
+from base64 import b64encode
 import unittest2 as unittest
 
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
+from autobahn.websocket.protocol import WebSocketClientProtocol
+from autobahn.websocket.protocol import WebSocketClientFactory
+from autobahn.websocket.protocol import WebSocketProtocol
 from autobahn.test import FakeTransport
 
+from mock import Mock
 
-class WebSocketProtocolTests(unittest.TestCase):
+
+class WebSocketClientProtocolTests(unittest.TestCase):
+
+    def setUp(self):
+        t = FakeTransport()
+        f = WebSocketClientFactory()
+        p = WebSocketClientProtocol()
+        p.factory = f
+        p.transport = t
+
+        p._connectionMade()
+        p.state = p.STATE_OPEN
+        p.websocket_version = 18
+
+        self.protocol = p
+        self.transport = t
+
+    def tearDown(self):
+        for call in [
+                self.protocol.autoPingPendingCall,
+                self.protocol.autoPingTimeoutCall,
+                self.protocol.openHandshakeTimeoutCall,
+                self.protocol.closeHandshakeTimeoutCall,
+        ]:
+            if call is not None:
+                call.cancel()
+
+    def test_auto_ping(self):
+        self.protocol.autoPingInterval = 1
+        self.protocol.websocket_protocols = [Mock()]
+        self.protocol.websocket_extensions = []
+        self.protocol._onOpen = lambda: None
+        self.protocol._wskey = '0' * 24
+        self.protocol.peer = Mock()
+
+        # usually provided by the Twisted or asyncio specific
+        # subclass, but we're testing the parent here...
+        self.protocol._onConnect = Mock()
+        self.protocol._closeConnection = Mock()
+
+        # set up a connection
+        self.protocol.startHandshake()
+
+        key = self.protocol.websocket_key + WebSocketProtocol._WS_MAGIC
+        self.protocol.data = (
+            b"HTTP/1.1 101 Switching Protocols\x0d\x0a"
+            b"Upgrade: websocket\x0d\x0a"
+            b"Connection: upgrade\x0d\x0a"
+            b"Sec-Websocket-Accept: " + b64encode(sha1(key).digest()) + b"\x0d\x0a\x0d\x0a"
+        )
+        self.protocol.processHandshake()
+
+        self.assertTrue(self.protocol.autoPingPendingCall is not None)
+
+
+class WebSocketServerProtocolTests(unittest.TestCase):
     """
     Tests for autobahn.websocket.protocol.WebSocketProtocol.
     """
@@ -50,6 +111,27 @@ class WebSocketProtocolTests(unittest.TestCase):
 
         self.protocol = p
         self.transport = t
+
+    def tearDown(self):
+        for call in [
+                self.protocol.autoPingPendingCall,
+                self.protocol.autoPingTimeoutCall,
+                self.protocol.openHandshakeTimeoutCall,
+                self.protocol.closeHandshakeTimeoutCall,
+        ]:
+            if call is not None:
+                call.cancel()
+
+    def test_auto_ping(self):
+        proto = Mock()
+        self.protocol.autoPingInterval = 1
+        self.protocol.websocket_protocols = [proto]
+        self.protocol.websocket_extensions = []
+        self.protocol._onOpen = lambda: None
+        self.protocol._wskey = '0' * 24
+        self.protocol.succeedHandshake(proto)
+
+        self.assertTrue(self.protocol.autoPingPendingCall is not None)
 
     def test_sendClose_none(self):
         """
