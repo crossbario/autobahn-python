@@ -548,23 +548,33 @@ if service:
         """
         factory = WampWebSocketClientFactory
 
-        def __init__(self, url, realm, make, extra=None,
+        def __init__(self, url, realm, make, extra=None, context_factory=None,
                      debug=False, debug_wamp=False, debug_app=False):
             """
 
             :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
             :type url: unicode
+
             :param realm: The WAMP realm to join the application session to.
             :type realm: unicode
+
             :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
                when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
             :type make: callable
+
             :param extra: Optional extra configuration to forward to the application component.
             :type extra: dict
+
+            :param context_factory: optional, only for secure connections. Passed as contextFactory to
+                the ``listenSSL()`` call; see https://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorSSL.connectSSL.html
+            :type context_factory: twisted.internet.ssl.ClientContextFactory or None
+
             :param debug: Turn on low-level debugging.
             :type debug: bool
+
             :param debug_wamp: Turn on WAMP-level debugging.
             :type debug_wamp: bool
+
             :param debug_app: Turn on app-level debugging.
             :type debug_app: bool
 
@@ -578,6 +588,7 @@ if service:
             self.debug_wamp = debug_wamp
             self.debug_app = debug_app
             self.make = make
+            self.context_factory = context_factory
             service.MultiService.__init__(self)
             self.setupService()
 
@@ -585,7 +596,7 @@ if service:
             """
             Setup the application component.
             """
-            isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+            is_secure, host, port, resource, path, params = parseWsUrl(self.url)
 
             # factory for use ApplicationSession
             def create():
@@ -600,14 +611,19 @@ if service:
 
             # setup the client from a Twisted endpoint
 
-            if isSecure:
+            if is_secure:
                 from twisted.application.internet import SSLClient
-                clientClass = SSLClient
+                ctx = self.context_factory
+                if ctx is None:
+                    from twisted.internet.ssl import optionsForClientTLS
+                    ctx = optionsForClientTLS(host)
+                client = SSLClient(host, port, transport_factory, contextFactory=ctx)
             else:
+                if self.context_factory is not None:
+                    raise Exception("context_factory specified on non-secure URI")
                 from twisted.application.internet import TCPClient
-                clientClass = TCPClient
+                client = TCPClient(host, port, transport_factory)
 
-            client = clientClass(host, port, transport_factory)
             client.setServiceParent(self)
 
 
