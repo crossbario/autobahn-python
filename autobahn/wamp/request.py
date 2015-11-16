@@ -65,12 +65,13 @@ class Subscription(object):
     Object representing a handler subscription.
     """
 
-    __slots__ = ('id', 'active', 'session', 'handler')
+    __slots__ = ('id', 'topic', 'active', 'session', 'handler')
 
-    def __init__(self, subscription_id, session, handler):
+    def __init__(self, subscription_id, topic, session, handler):
         """
         """
         self.id = subscription_id
+        self.topic = topic
         self.active = True
         self.session = session
         self.handler = handler
@@ -185,19 +186,22 @@ class SubscribeRequest(Request):
     Object representing an outstanding request to subscribe to a topic.
     """
 
-    __slots__ = ('handler',)
+    __slots__ = ('handler', 'topic')
 
-    def __init__(self, request_id, on_reply, handler):
+    def __init__(self, request_id, topic, on_reply, handler):
         """
 
         :param request_id: The WAMP request ID.
         :type request_id: int
+        :param topic: The topic URI being subscribed to.
+        :type topic: unicode
         :param on_reply: The Deferred/Future to be fired when the request returns.
         :type on_reply: Deferred/Future
         :param handler: WAMP call options that are in use for this call.
         :type handler: callable
         """
         Request.__init__(self, request_id, on_reply)
+        self.topic = topic
         self.handler = handler
 
 

@@ -428,7 +428,7 @@ class ApplicationSession(BaseSession):
 
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic or subscription.topic)
 
                         def _error(e):
                             errmsg = 'While firing {0} subscribed under {1}.'.format(
@@ -467,7 +467,7 @@ class ApplicationSession(BaseSession):
                     if msg.subscription not in self._subscriptions:
                         self._subscriptions[msg.subscription] = []
 
-                    subscription = Subscription(msg.subscription, self, request.handler)
+                    subscription = Subscription(msg.subscription, request.topic, self, request.handler)
 
                     # add handler to existing subscription
                     self._subscriptions[msg.subscription].append(subscription)
@@ -863,7 +863,7 @@ class ApplicationSession(BaseSession):
             request_id = self._request_id_gen.next()
             on_reply = txaio.create_future()
             handler_obj = Handler(fn, obj, options.details_arg if options else None)
-            self._subscribe_reqs[request_id] = SubscribeRequest(request_id, on_reply, handler_obj)
+            self._subscribe_reqs[request_id] = SubscribeRequest(request_id, topic, on_reply, handler_obj)
 
             if options:
                 msg = message.Subscribe(request_id, topic, **options.message_attr())
