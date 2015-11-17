@@ -88,10 +88,15 @@ class TestSerializer(unittest.TestCase):
         self.serializers.append(serializer.JsonSerializer())
         self.serializers.append(serializer.JsonSerializer(batched=True))
 
-        # MsgPack serializers are optional
+        # MsgPack serializer is optional
         if hasattr(serializer, 'MsgPackSerializer'):
             self.serializers.append(serializer.MsgPackSerializer())
             self.serializers.append(serializer.MsgPackSerializer(batched=True))
+
+        # CBOR serializer is optional
+        if hasattr(serializer, 'CBORSerializer'):
+            self.serializers.append(serializer.CBORSerializer())
+            self.serializers.append(serializer.CBORSerializer(batched=True))
 
     def test_dict_keys_msgpack(self):
         """

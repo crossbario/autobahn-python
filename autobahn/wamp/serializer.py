@@ -385,3 +385,113 @@ else:
     ISerializer.register(MsgPackSerializer)
 
     __all__.append('MsgPackSerializer')
+
+
+# CBOR serialization depends on the `cbor` package being available
+# https://pypi.python.org/pypi/cbor
+# https://bitbucket.org/bodhisnarkva/cbor
+#
+try:
+    import cbor
+except ImportError:
+    pass
+else:
+
+    class CBORObjectSerializer(object):
+
+        BINARY = True
+        """
+        Flag that indicates whether this serializer needs a binary clean transport.
+        """
+
+        def __init__(self, batched=False):
+            """
+            Ctor.
+
+            :param batched: Flag that controls whether serializer operates in batched mode.
+            :type batched: bool
+            """
+            self._batched = batched
+
+        def serialize(self, obj):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+            """
+            data = cbor.dumps(obj)
+            if self._batched:
+                return struct.pack("!L", len(data)) + data
+            else:
+                return data
+
+        def unserialize(self, payload):
+            """
+            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+            """
+
+            if self._batched:
+                msgs = []
+                N = len(payload)
+                i = 0
+                while i < N:
+                    # read message length prefix
+                    if i + 4 > N:
+                        raise Exception("batch format error [1]")
+                    l = struct.unpack("!L", payload[i:i + 4])[0]
+
+                    # read message data
+                    if i + 4 + l > N:
+                        raise Exception("batch format error [2]")
+                    data = payload[i + 4:i + 4 + l]
+
+                    # append parsed raw message
+                    msgs.append(cbor.loads(data))
+
+                    # advance until everything consumed
+                    i = i + 4 + l
+
+                if i != N:
+                    raise Exception("batch format error [3]")
+                return msgs
+
+            else:
+                unpacked = cbor.loads(payload)
+                return [unpacked]
+
+    IObjectSerializer.register(CBORObjectSerializer)
+
+    __all__.append('CBORObjectSerializer')
+
+    class CBORSerializer(Serializer):
+
+        SERIALIZER_ID = "cbor"
+        """
+        ID used as part of the WebSocket subprotocol name to identify the
+        serializer with WAMP-over-WebSocket.
+        """
+
+        RAWSOCKET_SERIALIZER_ID = 3
+        """
+        ID used in lower four bits of second octet in RawSocket opening
+        handshake identify the serializer with WAMP-over-RawSocket.
+        """
+
+        MIME_TYPE = "application/x-cbor"
+        """
+        MIME type announced in HTTP request/response headers when running
+        WAMP-over-Longpoll HTTP fallback.
+        """
+
+        def __init__(self, batched=False):
+            """
+            Ctor.
+
+            :param batched: Flag to control whether to put this serialized into batched mode.
+            :type batched: bool
+            """
+            Serializer.__init__(self, CBORObjectSerializer(batched=batched))
+            if batched:
+                self.SERIALIZER_ID = "cbor.batched"
+
+    ISerializer.register(CBORSerializer)
+
+    __all__.append('CBORSerializer')
