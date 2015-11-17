@@ -77,8 +77,8 @@ class Serializer(object):
         message.Yield.MESSAGE_TYPE: message.Yield
     }
     """
-   Mapping of WAMP message type codes to WAMP message classes.
-   """
+    Mapping of WAMP message type codes to WAMP message classes.
+    """
 
     def __init__(self, serializer):
         """
@@ -136,12 +136,12 @@ class Serializer(object):
         return msgs
 
 
-##
+#
 # JSON serialization is always supported
-##
+#
 try:
     # try import accelerated JSON implementation
-    ##
+    #
     import ujson
 
     _json = ujson
@@ -154,7 +154,7 @@ try:
 
 except ImportError:
     # fallback to stdlib implementation
-    ##
+    #
     import json
 
     _json = json
@@ -169,8 +169,8 @@ finally:
 
         JSON_MODULE = _json
         """
-      The JSON module used (either stdib builtin or ujson).
-      """
+        The JSON module used (either stdib builtin or ujson).
+        """
 
         BINARY = False
 
@@ -246,9 +246,9 @@ class JsonSerializer(Serializer):
 ISerializer.register(JsonSerializer)
 
 
-##
+#
 # MsgPack serialization depends on the `msgpack` package being available
-##
+#
 try:
     import msgpack
 except ImportError:
@@ -259,14 +259,14 @@ else:
 
         BINARY = True
         """
-      Flag that indicates whether this serializer needs a binary clean transport.
-      """
+        Flag that indicates whether this serializer needs a binary clean transport.
+        """
 
         ENABLE_V5 = True
         """
-      Enable version 5 of the MsgPack specification (which differentiates
-      between strings and binary).
-      """
+        Enable version 5 of the MsgPack specification (which differentiates
+        between strings and binary).
+        """
 
         def __init__(self, batched=False):
             """
