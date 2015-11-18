@@ -57,9 +57,6 @@
                                       "role": "authenticated"
                                   }
                               }
-                          },
-                          "anonymous": {
-                              "role": "anonymous"
                           }
                       }
                   }
