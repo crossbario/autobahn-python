@@ -749,7 +749,7 @@ class ApplicationSession(BaseSession):
 
             self._session_id = None
 
-        d = txaio.as_future(self.onDisconnect, wasClean)
+        d = txaio.as_future(self.onDisconnect)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
@@ -799,11 +799,11 @@ class ApplicationSession(BaseSession):
         else:
             raise SessionNotReady(u"Already requested to close the session")
 
-    def onDisconnect(self, wasClean):
+    def onDisconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
-        return self.fire('disconnect', self, wasClean)
+        return self.fire('disconnect', self, True)
 
     def publish(self, topic, *args, **kwargs):
         """
