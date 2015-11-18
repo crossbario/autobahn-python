@@ -116,6 +116,7 @@ class WampWebSocketProtocol(object):
                     print("TX {0}".format(msg))
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
+                self.log.failure("Serialization failure")
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError("WAMP serialization error ({0})".format(e))
             else:

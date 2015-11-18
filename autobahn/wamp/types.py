@@ -162,6 +162,7 @@ class Challenge(HelloReturn):
 
         :param method: The authentication method for the challenge (e.g. ``"wampcra"``).
         :type method: unicode
+
         :param extra: Any extra information for the authentication challenge. This is
            specific to the authentication method.
         :type extra: dict

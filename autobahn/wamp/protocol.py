@@ -372,10 +372,13 @@ class ApplicationSession(BaseSession):
                 d = txaio.as_future(self.onChallenge, challenge)
 
                 def success(signature):
+                    if not isinstance(signature, six.text_type):
+                        raise Exception('signature must be unicode')
                     reply = message.Authenticate(signature)
                     self._transport.send(reply)
 
                 def error(err):
+                    self.onUserError(err, "Authentication failed")
                     reply = message.Abort(u"wamp.error.cannot_authenticate", u"{0}".format(err.value))
                     self._transport.send(reply)
                     # fire callback and close the transport

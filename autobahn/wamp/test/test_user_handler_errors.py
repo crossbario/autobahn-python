@@ -212,7 +212,7 @@ if os.environ.get('USE_TWISTED', False):
             msg = message.Challenge(u"foo")
             session.onMessage(msg)
 
-            self.assertEqual(1, len(session.errors))
+            self.assertEqual(2, len(session.errors))
             self.assertEqual(exception, session.errors[0][0])
 
         def test_on_disconnect_via_close(self):
@@ -255,7 +255,8 @@ if os.environ.get('USE_TWISTED', False):
             # we already handle any onChallenge errors as "abort the
             # connection". So make sure our error showed up in the
             # fake-transport.
-            self.assertEqual(0, len(session.errors))
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(exception, session.errors[0][0])
             self.assertEqual(1, len(session._transport.messages))
             reply = session._transport.messages[0]
             self.assertIsInstance(reply, message.Abort)
@@ -273,7 +274,8 @@ if os.environ.get('USE_TWISTED', False):
             # we already handle any onChallenge errors as "abort the
             # connection". So make sure our error showed up in the
             # fake-transport.
-            self.assertEqual(0, len(session.errors))
+            self.assertEqual(1, len(session.errors))
+            self.assertEqual(session.errors[0][0], exception)
             self.assertEqual(1, len(session._transport.messages))
             reply = session._transport.messages[0]
             self.assertIsInstance(reply, message.Abort)
