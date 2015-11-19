@@ -198,20 +198,20 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
                 if self.factory.debug:
                     self.log.info("WampRawSocketProtocol: opening handshake received - {0}".format(binascii.b2a_hex(self._handshake_bytes)))
 
-                if ord(self._handshake_bytes[0]) != 0x7f:
+                if ord(self._handshake_bytes[0:1]) != 0x7f:
                     if self.factory.debug:
                         self.log.info("WampRawSocketProtocol: invalid magic byte (octet 1) in opening handshake: was 0x{0}, but expected 0x7f".format(binascii.b2a_hex(self._handshake_bytes[0])))
                     self.abort()
 
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
-                self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1]) >> 4))
+                self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1:2]) >> 4))
                 if self.factory.debug:
                     self.log.info("WampRawSocketProtocol: client requests us to send out most {} bytes per message".format(self._max_len_send))
 
                 # client wants to speak this serialization format
                 #
-                ser_id = ord(self._handshake_bytes[1]) & 0x0F
+                ser_id = ord(self._handshake_bytes[1:2]) & 0x0F
                 if ser_id in self.factory._serializers:
                     self._serializer = self.factory._serializers[ser_id]
                     if self.factory.debug:
@@ -279,20 +279,20 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
                 if self.factory.debug:
                     self.log.info("WampRawSocketProtocol: opening handshake received - {0}".format(binascii.b2a_hex(self._handshake_bytes)))
 
-                if ord(self._handshake_bytes[0]) != 0x7f:
+                if ord(self._handshake_bytes[0:1]) != 0x7f:
                     if self.factory.debug:
                         self.log.info("WampRawSocketProtocol: invalid magic byte (octet 1) in opening handshake: was 0x{0}, but expected 0x7f".format(binascii.b2a_hex(self._handshake_bytes[0])))
                     self.abort()
 
                 # peer requests us to send messages of maximum length 2**max_len_exp
                 #
-                self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1]) >> 4))
+                self._max_len_send = 2 ** (9 + (ord(self._handshake_bytes[1:2]) >> 4))
                 if self.factory.debug:
                     self.log.info("WampRawSocketProtocol: server requests us to send out most {} bytes per message".format(self._max_len_send))
 
                 # client wants to speak this serialization format
                 #
-                ser_id = ord(self._handshake_bytes[1]) & 0x0F
+                ser_id = ord(self._handshake_bytes[1:2]) & 0x0F
                 if ser_id != self._serializer.RAWSOCKET_SERIALIZER_ID:
                     if self.factory.debug:
                         self.log.info("WampRawSocketProtocol: opening handshake - no suitable serializer found (server replied {0}, and we requested {1})".format(ser_id, self._serializer.RAWSOCKET_SERIALIZER_ID))
