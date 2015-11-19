@@ -227,7 +227,8 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 
                 # send out handshake reply
                 #
-                reply_octet2 = chr(((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID)
+                reply_octet2 = bytes(bytearray([
+                    ((reply_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID]))
                 self.transport.write(b'\x7F')       # magic byte
                 self.transport.write(reply_octet2)  # max length / serializer
                 self.transport.write(b'\x00\x00')   # reserved octets
@@ -261,7 +262,8 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
 
         # send out handshake reply
         #
-        request_octet2 = chr(((request_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID)
+        request_octet2 = bytes(bytearray([
+            ((request_max_len_exp - 9) << 4) | self._serializer.RAWSOCKET_SERIALIZER_ID]))
         self.transport.write(b'\x7F')         # magic byte
         self.transport.write(request_octet2)  # max length / serializer
         self.transport.write(b'\x00\x00')     # reserved octets
