@@ -222,7 +222,6 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")
         self.transport.startTLS(self.factory.contextFactory)
-        self.startHandshake()
 
 
 class WebSocketAdapterFactory(object):

@@ -3432,8 +3432,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             #
             if self.factory.isSecure:
                 self.startTLS()
-            else:
-                self.startHandshake()
+            self.startHandshake()
 
     def failProxyConnect(self, reason):
         """
