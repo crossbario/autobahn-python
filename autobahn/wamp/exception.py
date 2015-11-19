@@ -215,7 +215,10 @@ class ApplicationError(Error):
 
         :return: unicode
         """
-        return u'{0}: {1}'.format(self.error, u' '.join(self.args))
+        return u'{0}: {1}'.format(
+            self.error,
+            u' '.join([str(a) for a in self.args]),
+        )
 
     def __unicode__(self):
         if self.kwargs and 'traceback' in self.kwargs:
