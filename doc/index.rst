@@ -10,11 +10,11 @@ Latest release: v\ |version| (:ref:`Changelog`)
    .. raw:: html
 
       <p>
-         <a href="https://travis-ci.org/tavendo/AutobahnPython">
-            <img src="https://api.travis-ci.org/tavendo/AutobahnPython.png?branch=master" alt="Build Status" />
+         <a href="https://travis-ci.org/crossbario/autobahn-python">
+            <img src="https://img.shields.io/pypi/v/autobahn.svg" alt="Build Status" />
          </a>
-         <a href="http://pypi.python.org/pypi/autobahn">
-            <img src="https://pypip.in/download/autobahn/badge.png" alt="Downloads" />
+         <a href="https://pypi.python.org/pypi/autobahn">
+            <img src="https://img.shields.io/pypi/dm/autobahn.svg" alt="Downloads" />
          </a>
       </p>
 
@@ -50,7 +50,7 @@ See :ref:`site_contents` for a full site-map. Top-level pages available:
 Autobahn Features
 -----------------
 
-WebSocket allows `bidirectional real-time messaging <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
+WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
 
 |AbL| features:
 
@@ -104,7 +104,7 @@ WAMP is a routed protocol, so you need a WAMP router. We suggest using `Crossbar
 
 More:
 
-* `WebSocket - Why, what, and - can I use it? <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`_
+* `WebSocket - Why, what, and - can I use it? <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_
 * `Why WAMP? <http://wamp.ws/why/>`_
 
 

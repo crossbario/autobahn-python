@@ -52,7 +52,7 @@ Performance Note
 * Running under `PyPy <http://pypy.org/>`_ (recommended!) or
 * on CPython, install the native accelerators `wsaccel <https://pypi.python.org/pypi/wsaccel/>`_ and `ujson <https://pypi.python.org/pypi/ujson/>`_ (you can use the install variant ``acceleration`` for that - see below)
 
-To give you an idea of the performance you can expect, here is a `blog post <http://tavendo.com/blog/post/autobahn-pi-benchmark/>`_ benchmarking |ab| running on the `RaspberryPi <http://www.raspberrypi.org/>`_ (a tiny embedded computer) under `PyPy <http://pypy.org/>`_.
+To give you an idea of the performance you can expect, here is a `blog post <http://crossbario.com/blog/post/autobahn-pi-benchmark/>`_ benchmarking |ab| running on the `RaspberryPi <http://www.raspberrypi.org/>`_ (a tiny embedded computer) under `PyPy <http://pypy.org/>`_.
 
 
 
@@ -88,7 +88,7 @@ To install from sources, clone the repository:
 
 .. code-block:: sh
 
-   git clone git@github.com:tavendo/AutobahnPython.git
+   git clone git@github.com:crossbario/autobahn-python.git
 
 checkout a tagged release:
 

@@ -82,7 +82,7 @@ The new rule for the public API is simple: if something is exported from the mod
 
 ### Cross-platform Considerations
 
-Autobahn supports many different platforms and both major async frameworks. One thing that helps with this is the [txaio](https://github.com/tavendo/txaio) library. This is used for all Deferred/Future operations throughout the code and more recently for logging.
+Autobahn supports many different platforms and both major async frameworks. One thing that helps with this is the [txaio](https://github.com/crossbario/txaio) library. This is used for all Deferred/Future operations throughout the code and more recently for logging.
 
 Here is a recommended way to do **logging**:
 
@@ -230,7 +230,7 @@ Install AutobahnPython from source (the sources that is to be released!) and Aut
 
 ```
 source $HOME/pypy261_1/bin/activate
-cd ~/scm/tavendo/autobahn/AutobahnPython
+cd ~/scm/crossbario/autobahn-python
 make install
 pip install autobahntestsuite
 ```

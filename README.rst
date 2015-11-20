@@ -24,7 +24,7 @@ for Python 2 and 3, and running on `Twisted <http://twistedmatrix.com/>`__ and `
 
 You can use **Autobahn\|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
-**WebSocket** allows `bidirectional real-time messaging on the Web <http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <http://wamp.ws/>`__ adds real-time application communication on top of WebSocket.
+**WebSocket** allows `bidirectional real-time messaging on the Web <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <http://wamp.ws/>`__ adds real-time application communication on top of WebSocket.
 
 **WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <http://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <http://crossbar.io>`__, but there are `other options <http://wamp.ws/implementations/#routers>`__ as well.
 

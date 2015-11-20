@@ -1,7 +1,7 @@
 WebSocket Echo Server with Fallbacks
 ====================================
 
-This example has the [broadest browser](http://www.tavendo.de/webmq/browsers) support currently possible with Autobahn.
+This example has the broadest browser support currently possible with Autobahn.
 
 It supports native WebSocket protocol variants Hybi-10+ and RFC6455.
 

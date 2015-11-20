@@ -4,7 +4,7 @@ The examples here demonstrate how to combine a [Klein](https://github.com/twiste
 
 A detailed discussion of Example 1 (see below) is here:
 
- * [Mixing Web and WAMP code with Twisted Klein](http://tavendo.com/blog/post/mixing-web-and-wamp-code-with-twisted-klein/)
+ * [Mixing Web and WAMP code with Twisted Klein](http://crossbario.com/blog/post/mixing-web-and-wamp-code-with-twisted-klein/)
 
 ### Examples
 

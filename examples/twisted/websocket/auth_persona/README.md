@@ -31,7 +31,6 @@ in your browser.
 
 Here is the log output produced (on server) for a successful login:
 
-    oberstet@COREI7 ~/scm/tavendo/autobahn/AutobahnPython/examples/twisted/websocket/auth_persona (master)
     $ python server.py
     2014-03-11 12:20:05+0100 [-] Log opened.
     2014-03-11 12:20:05+0100 [-] Running Autobahn|Python 0.8.4-3

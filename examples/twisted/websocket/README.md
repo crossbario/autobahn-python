@@ -1,6 +1,6 @@
 # WebSocket programming with Autobahn on Twisted
 
-This folder contains complete working code examples that demonstrate [WebSocket](http://tavendo.com/blog/post/websocket-why-what-can-i-use-it/) programming with **Autobahn**|Python on [Twisted](http://www.twistedmatrix.com/):
+This folder contains complete working code examples that demonstrate [WebSocket](http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/) programming with **Autobahn**|Python on [Twisted](http://www.twistedmatrix.com/):
 
  1. [WebSocket Echo](echo)
  1. [Slow Square](slowsquare)
