@@ -523,6 +523,7 @@ if os.environ.get('USE_TWISTED', False):
 
         def test_on_disconnect_error(self):
             errors = []
+
             class AppSess(ApplicationSession):
                 def onUserError(self, e, msg):
                     errors.append((e.value, msg))
