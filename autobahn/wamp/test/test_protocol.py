@@ -521,6 +521,29 @@ if os.environ.get('USE_TWISTED', False):
             registration = yield handler.register(on_call, u'com.myapp.procedure1')
             yield registration.unregister()
 
+        def test_on_disconnect_error(self):
+            errors = []
+
+            class AppSess(ApplicationSession):
+                def onUserError(self, e, msg):
+                    errors.append((e.value, msg))
+
+                def onDisconnect(self, foo, bar, quux='snark'):
+                    # this over-ridden onDisconnect takes the wrong args
+                    raise RuntimeError("This shouldn't happen")
+
+            s = AppSess()
+            MockTransport(s)
+
+            # when the transport closes, it calls onClose which should
+            # dispatch onDisconnect
+            s.onClose(False)
+
+            # ...but we should collect an error, because our
+            # onDisconnect takes the wrong arguments.
+            self.assertEqual(len(errors), 1)
+            self.assertTrue(isinstance(errors[0][0], TypeError))
+
         @inlineCallbacks
         def test_invoke(self):
             handler = ApplicationSession()
