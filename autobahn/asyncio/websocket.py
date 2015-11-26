@@ -214,6 +214,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         raise Exception("WSS over explicit proxies not implemented")
 
+
 class WebSocketAdapterFactory(object):
     """
     Adapter class for asyncio-based WebSocket client and server factories.
