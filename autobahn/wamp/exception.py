@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import
 
-from six import PY3
+import six
 
 from autobahn.wamp.uri import error
 
@@ -215,7 +215,10 @@ class ApplicationError(Error):
 
         :return: unicode
         """
-        return u'{0}: {1}'.format(self.error, u' '.join(self.args))
+        return u'{0}: {1}'.format(
+            self.error,
+            u' '.join([six.text_type(a) for a in self.args]),
+        )
 
     def __unicode__(self):
         if self.kwargs and 'traceback' in self.kwargs:
@@ -227,7 +230,7 @@ class ApplicationError(Error):
             self.error, self.args, self.kwargs, tb)
 
     def __str__(self):
-        if PY3:
+        if six.PY3:
             return self.__unicode__()
         else:
             return self.__unicode__().encode('utf8')
