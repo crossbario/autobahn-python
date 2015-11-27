@@ -30,6 +30,9 @@ from base64 import b64encode, b64decode
 
 from zope.interface import implementer
 
+import txaio
+txaio.use_twisted()
+
 import twisted.internet.protocol
 from twisted.internet.defer import maybeDeferred
 from twisted.internet.interfaces import ITransport
@@ -41,8 +44,6 @@ from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
     ConnectionDeny
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str
-
-import txaio
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
