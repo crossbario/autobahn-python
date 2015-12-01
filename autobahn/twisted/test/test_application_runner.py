@@ -96,8 +96,12 @@ class TestApplicationRunner(unittest.TestCase):
     def test_runner_bad_proxy(self, fakereactor):
         proxy = u'myproxy'
 
-        with self.assertRaises(AssertionError):
-            ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm', proxy=proxy)
+        self.assertRaises(
+            AssertionError,
+            ApplicationRunner,
+            u'ws://fake:1234/ws', u'dummy realm',
+            proxy=proxy
+        )
 
     @patch('twisted.internet.reactor')
     def test_runner_proxy(self, fakereactor):
