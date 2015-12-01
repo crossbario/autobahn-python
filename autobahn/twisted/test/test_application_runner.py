@@ -91,3 +91,32 @@ class TestApplicationRunner(unittest.TestCase):
         # (just connectTCP() will have been called)
         self.assertEqual(fakereactor.run.call_count, 0)
         self.assertEqual(fakereactor.stop.call_count, 0)
+
+    @patch('twisted.internet.reactor')
+    def test_runner_bad_proxy(self, fakereactor):
+        proxy = u'myproxy'
+
+        with self.assertRaises(AssertionError):
+            ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm', proxy=proxy)
+
+    @patch('twisted.internet.reactor')
+    def test_runner_proxy(self, fakereactor):
+        proto = Mock()
+        fakereactor.connectTCP = Mock(return_value=succeed(proto))
+
+        proxy = {'host': u'myproxy', 'port': 3128}
+
+        runner = ApplicationRunner(u'ws://fake:1234/ws', u'dummy realm', proxy=proxy)
+
+        d = runner.run(Mock(), start_reactor=False)
+
+        # shouldn't have actually connected to anything
+        # successfully, and the run() call shouldn't have inserted
+        # any of its own call/errbacks. (except the cleanup handler)
+        self.assertFalse(d.called)
+        self.assertEqual(1, len(d.callbacks))
+
+        # neither reactor.run() NOR reactor.stop() should have been called
+        # (just connectTCP() will have been called)
+        self.assertEqual(fakereactor.run.call_count, 0)
+        self.assertEqual(fakereactor.stop.call_count, 0)
