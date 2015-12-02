@@ -28,6 +28,9 @@ from __future__ import absolute_import
 
 from collections import deque
 
+import txaio
+txaio.use_asyncio()
+
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 
@@ -43,7 +46,6 @@ except ImportError:
     from trollius import Future
 
 from autobahn.websocket.types import ConnectionDeny
-import txaio
 
 
 __all__ = (
