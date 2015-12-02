@@ -28,7 +28,8 @@ from __future__ import absolute_import
 
 import traceback
 
-from txaio import make_logger
+import txaio
+txaio.use_twisted()
 
 __all__ = (
     'install_optimal_reactor',
@@ -43,14 +44,10 @@ def install_optimal_reactor(verbose=False):
     :param verbose: If ``True``, print what happens.
     :type verbose: bool
     """
-    log = make_logger()
+    log = txaio.make_logger()
 
     import sys
     from twisted.python import reflect
-    import txaio
-    txaio.use_twisted()  # just to be sure...
-    # XXX should I configure txaio.config.loop in here too, or just in
-    # install_reactor()? (I am: see bottom of function)
 
     # determine currently installed reactor, if any
     ##
@@ -132,10 +129,8 @@ def install_reactor(explicit_reactor=None, verbose=False):
     :type verbose: bool
     """
     import sys
-    import txaio
-    txaio.use_twisted()  # just to be sure...
 
-    log = make_logger()
+    log = txaio.make_logger()
 
     if explicit_reactor:
         # install explicitly given reactor
