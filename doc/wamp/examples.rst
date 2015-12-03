@@ -8,7 +8,7 @@ WAMP Examples
 Overview of Examples
 ++++++++++++++++++++
 
-The examples are organized between `asycio <https://docs.python.org/3.4/library/asyncio.html>`__ and `Twisted <https://www.twistedmatrix.com>`__ at the top-level, with similarly-named examples demonstrating the same functionality with the respective framework.
+The examples are organized between `asyncio <https://docs.python.org/3.4/library/asyncio.html>`__ and `Twisted <https://www.twistedmatrix.com>`__ at the top-level, with similarly-named examples demonstrating the same functionality with the respective framework.
 
 Each example typically includes four things:
 
