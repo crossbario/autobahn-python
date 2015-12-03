@@ -18,7 +18,7 @@ If you are new to Autobahn and WAMP, you should start with the following if you'
 ...whereas if you prefer asyncio:
 
  * asyncio/wamp/pubsub/basic/
- * asycnio/wamp/rpc/arguments/
+ * asyncio/wamp/rpc/arguments/
 
 Note that many of the examples use the same URIs for topics or RPC endpoints, so you can mix and match which `backend` or `frontend` script (whether Python or JavaScript) you use. For example, a Web browser tab could load a `backend.html` page that does publishes while you run a Python `frontend.py` that subscribes to those topics.
 
