@@ -112,21 +112,14 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
                            peer=self.peer)
 
         elif isinstance(reason.value, ConnectionLost):
-            # The following is ridiculous, but the treatment of reason.value.args
-            # across py2/3 and tx and over various corner cases is deeply fucked up.
+            message = str(reason.value)
             if hasattr(reason.value, 'message'):
                 message = reason.value.message
-            elif hasattr(reason.value, 'args') and type(reason.value.args) == tuple and len(reason.value.args) > 0:
-                message = reason.value.args[0]
-            else:
-                message = None
-
-            if message:
-                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion: {message}",
-                               peer=self.peer, message=message)
-            else:
-                self.log.debug("Connection to/from {peer} was lost in a non-clean fashion",
-                               peer=self.peer)
+            self.log.debug(
+                "Connection to/from {peer} was lost in a non-clean fashion: {message}",
+                peer=self.peer,
+                message=message,
+            )
 
         # at least: FileDescriptorOverrun, ConnectionFdescWentAway - but maybe others as well?
         else:
