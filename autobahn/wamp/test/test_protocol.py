@@ -544,6 +544,7 @@ if os.environ.get('USE_TWISTED', False):
             self.assertEqual(len(errors), 1)
             self.assertTrue(isinstance(errors[0][0], TypeError))
 
+    class TestInvoker(unittest.TestCase):
         @inlineCallbacks
         def test_invoke(self):
             handler = ApplicationSession()
