@@ -606,7 +606,6 @@ class ApplicationSession(BaseSession):
                                 self._transport.send(reply)
 
                         def error(err):
-                            # errmsg = 'Failure while invoking procedure {0} registered under "{1}: {2}".'.format(endpoint.fn, registration.procedure, err)
                             errmsg = txaio.failure_message(err)
                             try:
                                 self.onUserError(err, errmsg)
