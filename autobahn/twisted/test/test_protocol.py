@@ -27,10 +27,64 @@
 from __future__ import absolute_import, print_function
 
 import unittest2 as unittest
+from mock import Mock
 
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
+from twisted.python.failure import Failure
+from twisted.internet.error import ConnectionDone, ConnectionAborted, \
+    ConnectionLost
 from autobahn.test import FakeTransport
+
+
+class ExceptionHandlingTests(unittest.TestCase):
+    """
+    Tests that we format various exception variations properly during
+    connectionLost
+    """
+
+    def setUp(self):
+        self.factory = WebSocketServerFactory()
+        self.proto = WebSocketServerProtocol()
+        self.proto.factory = self.factory
+        self.proto.log = Mock()
+
+    def test_connection_done(self):
+        # pretend we connected
+        self.proto._connectionMade()
+
+        self.proto.connectionLost(Failure(ConnectionDone()))
+
+        messages = ' '.join([str(x[1]) for x in self.proto.log.mock_calls])
+        self.assertTrue('closed cleanly' in messages)
+
+    def test_connection_aborted(self):
+        # pretend we connected
+        self.proto._connectionMade()
+
+        self.proto.connectionLost(Failure(ConnectionAborted()))
+
+        messages = ' '.join([str(x[1]) for x in self.proto.log.mock_calls])
+        self.assertTrue(' aborted ' in messages)
+
+    def test_connection_lost(self):
+        # pretend we connected
+        self.proto._connectionMade()
+
+        self.proto.connectionLost(Failure(ConnectionLost()))
+
+        messages = ' '.join([str(x[1]) for x in self.proto.log.mock_calls])
+        self.assertTrue(' was lost ' in messages)
+
+    def test_connection_lost_arg(self):
+        # pretend we connected
+        self.proto._connectionMade()
+
+        self.proto.connectionLost(Failure(ConnectionLost("greetings")))
+
+        messages = ' '.join([str(x[1]) + str(x[2]) for x in self.proto.log.mock_calls])
+        self.assertTrue(' was lost ' in messages)
+        self.assertTrue('greetings' in messages)
 
 
 class Hixie76RejectionTests(unittest.TestCase):
