@@ -49,6 +49,16 @@ class ExceptionHandlingTests(unittest.TestCase):
         self.proto.factory = self.factory
         self.proto.log = Mock()
 
+    def tearDown(self):
+        for call in [
+                self.proto.autoPingPendingCall,
+                self.proto.autoPingTimeoutCall,
+                self.proto.openHandshakeTimeoutCall,
+                self.proto.closeHandshakeTimeoutCall,
+        ]:
+            if call is not None:
+                call.cancel()
+
     def test_connection_done(self):
         # pretend we connected
         self.proto._connectionMade()

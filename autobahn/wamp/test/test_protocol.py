@@ -791,6 +791,43 @@ if os.environ.get('USE_TWISTED', False):
             self.assertTrue(got_progress.called)
             self.assertEqual('word', got_progress.result)
 
+        @inlineCallbacks
+        def test_call_exception_runtimeerror(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+            exception = RuntimeError("a simple error")
+
+            def raiser():
+                raise exception
+
+            registration0 = yield handler.register(raiser, u"com.myapp.myproc_error")
+            try:
+                yield handler.call(u'com.myapp.myproc_error')
+                self.fail()
+            except Exception as e:
+                self.assertIsInstance(e, ApplicationError)
+                self.assertEqual(e.error_message(), "wamp.error.runtime_error: a simple error")
+            finally:
+                yield registration0.unregister()
+
+        @inlineCallbacks
+        def test_call_exception_bare(self):
+            handler = ApplicationSession()
+            MockTransport(handler)
+            exception = Exception()
+
+            def raiser():
+                raise exception
+
+            registration0 = yield handler.register(raiser, u"com.myapp.myproc_error")
+            try:
+                yield handler.call(u'com.myapp.myproc_error')
+                self.fail()
+            except Exception as e:
+                self.assertIsInstance(e, ApplicationError)
+            finally:
+                yield registration0.unregister()
+
         # ## variant 1: works
         # def test_publish1(self):
         #    d = self.handler.publish(u'de.myapp.topic1')
