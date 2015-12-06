@@ -55,7 +55,7 @@ WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/
 |AbL| features:
 
 * framework for `WebSocket`_ and `WAMP`_ clients
-* compatible with Python 2.6, 2.7, 3.3 and 3.4
+* compatible with Python 2.7 and 3.3+
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
 * implements WebSocket `RFC6455`_ (and draft versions Hybi-10+)

@@ -27,8 +27,6 @@ Here are the configurations supported by |ab|:
 +---------------+-----------+---------+---------------------------------+
 | Python        | Twisted   | asyncio | Notes                           |
 +---------------+-----------+---------+---------------------------------+
-| CPython 2.6   | yes       | yes     | asyncio support via `trollius`_ |
-+---------------+-----------+---------+---------------------------------+
 | CPython 2.7   | yes       | yes     | asyncio support via `trollius`_ |
 +---------------+-----------+---------+---------------------------------+
 | CPython 3.3   | yes       | yes     | asyncio support via `tulip`_    |
