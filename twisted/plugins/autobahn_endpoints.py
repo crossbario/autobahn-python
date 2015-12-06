@@ -31,8 +31,15 @@ from zope.interface import implementer
 from twisted.plugin import IPlugin
 from twisted.internet.interfaces import IStreamServerEndpointStringParser, \
     IStreamServerEndpoint, \
-    IStreamClientEndpointStringParser, \
     IStreamClientEndpoint
+
+try:
+    from twisted.internet.interfaces import IStreamClientEndpointStringParserWithReactor
+    _HAS_REACTOR_ARG = True
+except ImportError:
+    _HAS_REACTOR_ARG = False
+    from twisted.internet.interfaces import IStreamClientEndpointStringParser as \
+        IStreamClientEndpointStringParserWithReactor
 
 from twisted.internet.endpoints import serverFromString, clientFromString
 
@@ -130,22 +137,25 @@ class AutobahnServerEndpoint(object):
         return self._endpoint.listen(WrappingWebSocketServerFactory(protocolFactory, reactor=self._reactor, **self._options))
 
 
+# note that for older Twisted before the WithReactor variant, we
+# import it under that name so we can share (most of) this
+# implementation...
 @implementer(IPlugin)
-@implementer(IStreamClientEndpointStringParser)
+@implementer(IStreamClientEndpointStringParserWithReactor)
 class AutobahnClientParser(object):
-
     prefix = "autobahn"
 
-# <oberstet> Is there are particular reason why "plugin.parseStreamServer" provides a "reactor" argument while "plugin.parseStreamClient" does not?
-# <oberstet> http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.2.0/twisted/internet/endpoints.py#L1396
-# <oberstet> http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.2.0/twisted/internet/endpoints.py#L1735
-
-# => http://twistedmatrix.com/trac/ticket/4956
-# => https://twistedmatrix.com/trac/ticket/5069
-
-#   def parseStreamClient(self, reactor, description, **options):
-    def parseStreamClient(self, description, **options):
-        from twisted.internet import reactor
+    def parseStreamClient(self, *args, **options):
+        if _HAS_REACTOR_ARG:
+            reactor = args[0]
+            if len(args) != 2:
+                raise RuntimeError("autobahn: client plugin takes exactly one positional argument")
+            description = args[1]
+        else:
+            from twisted.internet import reactor
+            if len(args) != 1:
+                raise RuntimeError("autobahn: client plugin takes exactly one positional argument")
+            description = args[0]
         opts = _parseOptions(options)
         endpoint = clientFromString(reactor, description)
         return AutobahnClientEndpoint(reactor, endpoint, opts)
