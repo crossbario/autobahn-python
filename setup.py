@@ -183,7 +183,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.9.0',       # MIT license
-        'txaio>=2.1.0',     # MIT license
+        'txaio>=2.2.0',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
