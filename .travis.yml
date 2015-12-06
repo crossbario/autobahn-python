@@ -6,30 +6,30 @@ install:
 
 env:
   - TOX_ENV=flake8
+
   - TOX_ENV=py27-tw121
   - TOX_ENV=py27-tw132
   - TOX_ENV=py27-tw155
   - TOX_ENV=py27-twtrunk
   - TOX_ENV=py27-asyncio
-  - TOX_ENV=py34-tw155
-  - TOX_ENV=py34-twtrunk
-  - TOX_ENV=py34-asyncio
+
   - TOX_ENV=pypy-tw121
   - TOX_ENV=pypy-tw132
   - TOX_ENV=pypy-tw155
   - TOX_ENV=pypy-twtrunk
   - TOX_ENV=pypy-asyncio
-  - TOX_ENV=py26-tw121
-  - TOX_ENV=py26-tw132
-  - TOX_ENV=py26-tw154
-  - TOX_ENV=py26-asyncio
+
   - TOX_ENV=py33-tw155
   - TOX_ENV=py33-twtrunk
   - TOX_ENV=py33-asyncio
-# Travis still lacks CPy 3.5 currently (09/25/15)
-#  - TOX_ENV=py35-tw155
-#  - TOX_ENV=py35-twtrunk
-#  - TOX_ENV=py35-asyncio
+
+  - TOX_ENV=py34-tw155
+  - TOX_ENV=py34-twtrunk
+  - TOX_ENV=py34-asyncio
+
+  - TOX_ENV=py35-tw155
+  - TOX_ENV=py35-twtrunk
+  - TOX_ENV=py35-asyncio
 
 script:
   - tox -c tox.ini -e $TOX_ENV
