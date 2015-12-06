@@ -40,6 +40,12 @@ after_script:
 matrix:
   fast_finish: true
 
+  # https://github.com/travis-ci/travis-ci/issues/4794#issuecomment-143758799
+  include:
+    - python: 3.5
+      env:
+      - TOXENV=py35
+
 notifications:
    irc:
       channels:
