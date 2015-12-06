@@ -36,6 +36,7 @@ class PluginTests(TestCase):
 
     def test_parse_client_basic(self):
         from twisted.plugins import autobahn_endpoints
+        self.assertTrue(hasattr(autobahn_endpoints, 'AutobahnClientParser'))
         from twisted.internet.endpoints import clientFromString, quoteStringArgument
         from twisted.internet import reactor
 
