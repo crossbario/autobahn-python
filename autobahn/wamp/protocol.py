@@ -606,8 +606,7 @@ class ApplicationSession(BaseSession):
                                 self._transport.send(reply)
 
                         def error(err):
-                            # errmsg = 'Failure while invoking procedure {0} registered under "{1}: {2}".'.format(endpoint.fn, registration.procedure, err)
-                            errmsg = u"{0}".format(err.value.args[0])
+                            errmsg = txaio.failure_message(err)
                             try:
                                 self.onUserError(err, errmsg)
                             except:
@@ -618,12 +617,12 @@ class ApplicationSession(BaseSession):
 
                             del self._invocations[msg.request]
 
-                            if hasattr(err, 'value'):
-                                exc = err.value
-                            else:
-                                exc = err
-
-                            reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, exc, formatted_tb)
+                            reply = self._message_from_exception(
+                                message.Invocation.MESSAGE_TYPE,
+                                msg.request,
+                                err.value,
+                                formatted_tb,
+                            )
 
                             try:
                                 self._transport.send(reply)
