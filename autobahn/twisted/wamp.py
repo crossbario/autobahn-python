@@ -164,16 +164,20 @@ class ApplicationRunner(object):
             an IProtocol instance, which will actually be an instance
             of :class:`WampWebSocketClientProtocol`
         """
-        from twisted.internet import reactor
-        txaio.use_twisted()
-        txaio.config.loop = reactor
+        if start_reactor:
+            # only select framework, set loop and start logging when we are asked
+            # start the reactor - otherwise we are running in a program that likely
+            # already toolḱ care of all this.
+            from twisted.internet import reactor
+            txaio.use_twisted()
+            txaio.config.loop = reactor
+
+            if self.debug or self.debug_wamp or self.debug_app:
+                txaio.start_logging(level='debug')
+            else:
+                txaio.start_logging(level='info')
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
-
-        if self.debug or self.debug_wamp or self.debug_app:
-            txaio.start_logging(level='debug')
-        else:
-            txaio.start_logging(level='info')
 
         # factory for use ApplicationSession
         def create():
@@ -211,6 +215,7 @@ class ApplicationRunner(object):
             from twisted.internet.ssl import optionsForClientTLS
             context_factory = optionsForClientTLS(host)
 
+        from twisted.internet import reactor
         if self.proxy is not None:
             from twisted.internet.endpoints import TCP4ClientEndpoint
             client = TCP4ClientEndpoint(reactor, self.proxy['host'], self.proxy['port'])
