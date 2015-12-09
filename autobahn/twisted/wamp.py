@@ -167,7 +167,7 @@ class ApplicationRunner(object):
         if start_reactor:
             # only select framework, set loop and start logging when we are asked
             # start the reactor - otherwise we are running in a program that likely
-            # already toolḱ care of all this.
+            # already tool care of all this.
             from twisted.internet import reactor
             txaio.use_twisted()
             txaio.config.loop = reactor
