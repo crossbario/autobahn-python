@@ -27,9 +27,13 @@
 from __future__ import absolute_import
 
 from twisted.trial.unittest import TestCase
+import six
 
 
 class PluginTests(TestCase):
+    if six.PY3:
+        skip = "Plugins don't work under Python3 yet"
+
     def test_import(self):
         from twisted.plugins import autobahn_endpoints
         self.assertTrue(hasattr(autobahn_endpoints, 'AutobahnClientParser'))
