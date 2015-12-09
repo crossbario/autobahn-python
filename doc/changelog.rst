@@ -5,6 +5,11 @@
 Changelog
 =========
 
+0.11.0
+------
+
+`Published 2015-12-09 <https://pypi.python.org/pypi/autobahn/0.11.0>`__
+
 0.10.9
 ------
 
