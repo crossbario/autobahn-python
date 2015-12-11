@@ -2398,7 +2398,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         You may also return a pair of `(protocol, headers)` to send additional
         HTTP headers, with `headers` being a dictionary of key-values.
 
-        Throw :class:`autobahn.websocket.http.HttpException` when you don't want
+        Throw :class:`autobahn.websocket.types.ConnectionDeny` when you don't want
         to accept the WebSocket connection request.
 
         :param request: WebSocket connection request information.

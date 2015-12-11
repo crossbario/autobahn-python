@@ -198,7 +198,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         except ConnectionDeny as e:
             self.failHandshake(e.reason, e.code)
         except Exception as e:
-            self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.http.INTERNAL_SERVER_ERROR)
+            self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.INTERNAL_SERVER_ERROR)
         else:
             self.succeedHandshake(res)
 
