@@ -296,6 +296,12 @@ class ApplicationSession(BaseSession):
         """
         return self._transport is not None
 
+    def is_attached(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
+        """
+        return self._session_id is not None
+
     def onUserError(self, fail, msg):
         """
         This is called when we try to fire a callback, but get an
@@ -784,7 +790,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.leave`
         """
         if not self._session_id:
-            raise Exception("not joined")
+            raise SessionNotReady(u"session hasn't joined a realm")
 
         if not self._goodbye_sent:
             if not reason:
@@ -796,7 +802,7 @@ class ApplicationSession(BaseSession):
             is_closed = self._transport is None or self._transport.is_closed
             return is_closed
         else:
-            raise SessionNotReady(u"Already requested to close the session")
+            raise SessionNotReady(u"session was alread requested to leave")
 
     def onDisconnect(self):
         """

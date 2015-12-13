@@ -235,7 +235,10 @@ class ApplicationRunner(object):
         # fires when the transport gets to STATE_CLOSED
         def cleanup(proto):
             if hasattr(proto, '_session') and proto._session is not None:
-                return proto._session.leave()
+                if proto._session.is_attached():
+                    return proto._session.leave()
+                elif proto._session.is_connected():
+                    return proto._session.disconnect()
 
         # when our proto was created and connected, make sure it's cleaned
         # up properly later on when the reactor shuts down for whatever reason

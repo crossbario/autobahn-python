@@ -286,6 +286,12 @@ class ISession(object):
         """
 
     @abc.abstractmethod
+    def is_attached(self):
+        """
+        Check if the session has currently joined a realm.
+        """
+
+    @abc.abstractmethod
     def on_disconnect(self):
         """
         Callback fired when underlying transport has been closed.
