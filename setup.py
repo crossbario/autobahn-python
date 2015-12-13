@@ -122,7 +122,7 @@ extras_require_compress = [
 #
 extras_require_serialization = [
     "msgpack-python>=0.4.6",    # Apache 2.0 license
-    "cbor>=0.1.22"              # Apache 2.0 license
+    "cbor>=0.1.23"              # Apache 2.0 license
 ]
 
 # everything
