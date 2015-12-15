@@ -201,6 +201,10 @@ class ApplicationRunner(object):
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
                                                        proxy=self.proxy, debug=self.debug, debug_wamp=self.debug_wamp)
 
+        # supress pointless log noise like
+        # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
+        transport_factory.noisy = False
+
         # if user passed ssl= but isn't using isSecure, we'll never
         # use the ssl argument which makes no sense.
         context_factory = None
