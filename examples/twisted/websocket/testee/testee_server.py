@@ -84,7 +84,7 @@ class TesteeServerFactory(WebSocketServerFactory):
         if ident is not None:
             server = ident
         else:
-            server = "AutobahnPython-Twisted/%s" % autobahn.version
+            server = "AutobahnPython-Twisted/%s" % autobahn.__version__
         WebSocketServerFactory.__init__(self, url, debug=debug, debugCodePaths=debug, server=server)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
