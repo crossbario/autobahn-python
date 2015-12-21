@@ -81,6 +81,9 @@ _URI_PAT_STRICT_LAST_EMPTY = re.compile(r"^([0-9a-z_]+\.)*([0-9a-z_]*)$")
 # loose URI check disallowing empty URI components in all but the last component
 _URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
 
+# custom (=implementation specific) WAMP attributes (used in WAMP message details/options)
+_CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
+
 
 def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
     """
@@ -377,7 +380,7 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, session, roles, authid=None, authrole=None, authmethod=None, authprovider=None):
+    def __init__(self, session, roles, authid=None, authrole=None, authmethod=None, authprovider=None, custom_details=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -392,6 +395,7 @@ class Welcome(Message):
         :type authmethod: unicode or None
         :param authprovider: The authentication method in use.
         :type authprovider: unicode or None
+        :param extra_details
         """
         assert(type(session) in six.integer_types)
         assert(type(roles) == dict)
@@ -403,6 +407,10 @@ class Welcome(Message):
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
+        assert(custom_details is None or type(custom_details) == dict)
+        if custom_details:
+            for k in custom_details:
+                assert(_CUSTOM_ATTRIBUTE.match(k))
 
         Message.__init__(self)
         self.session = session
@@ -411,6 +419,7 @@ class Welcome(Message):
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
+        self.custom_details = custom_details or {}
 
     @staticmethod
     def parse(wmsg):
@@ -465,7 +474,12 @@ class Welcome(Message):
 
             roles[role] = role_features
 
-        obj = Welcome(session, roles, authid, authrole, authmethod, authprovider)
+        custom_details = {}
+        for k in details:
+            if _CUSTOM_ATTRIBUTE.match(k):
+                custom_details[k] = details[k]
+
+        obj = Welcome(session, roles, authid, authrole, authmethod, authprovider, custom_details)
 
         return obj
 
@@ -475,9 +489,8 @@ class Welcome(Message):
 
         :returns: list -- The serialized raw message.
         """
-        details = {
-            u'roles': {}
-        }
+        details = {}
+        details.update(self.custom_details)
 
         if self.authid:
             details[u'authid'] = self.authid
@@ -491,6 +504,7 @@ class Welcome(Message):
         if self.authprovider:
             details[u'authprovider'] = self.authprovider
 
+        details[u'roles'] = {}
         for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
             for feature in role.__dict__:
