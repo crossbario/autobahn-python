@@ -31,7 +31,7 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-from autobahn.wamp.types import PublishOptions
+from autobahn.wamp.types import PublishOptions, SubscribeOptions
 
 ENCRYPTION_KEY = u'z1JePdJbQkbRCWjldZYImgj5hpsZ2cEtX7CQmQmdta4='
 
@@ -49,21 +49,32 @@ class Component(ApplicationSession):
         self._keyring = KeyRing()
         self._keyring.add(u'com.myapp.topic1', ENCRYPTION_KEY)
 
-        def on_message(*args, **kwargs):
-            print("received: args={}, kwargs={}".format(args, kwargs))
+        def on_message(msg, details=None):
+            print("event received: msg='{}', details={}".format(msg, details))
 
-        yield self.subscribe(on_message, u'com.myapp.topic1')
-        yield self.subscribe(on_message, u'com.myapp.topic2')
+        options = SubscribeOptions(details_arg='details')
+        yield self.subscribe(on_message, u'com.myapp.topic1', options=options)
+        yield self.subscribe(on_message, u'com.myapp.topic2', options=options)
 
-        options = PublishOptions(acknowledge=True, exclude_me=False)
-        counter = 0
-        while True:
-            msg = u"Hello, world! [{}]".format(counter)
-            yield self.publish(u'com.myapp.topic1', msg, options=options)
-            yield self.publish(u'com.myapp.topic2', msg, options=options)
-            print('published', counter)
-            counter += 1
+        options = PublishOptions(acknowledge=True, exclude_me=False, disclose_me=True)
+        counter = 1
+        while counter < 3:
+            msg = u"Counter is at {}".format(counter)
+            pub = yield self.publish(u'com.myapp.topic1', msg, options=options)
+            print("published: {}".format(pub))
+            pub = yield self.publish(u'com.myapp.topic2', msg, options=options)
+            print("published: {}".format(pub))
             yield sleep(1)
+            counter += 1
+
+        self.leave()
+
+    def onLeave(self, details):
+        self.disconnect()
+
+    def onDisconnect(self):
+        from twisted.internet import reactor
+        reactor.stop()
 
 
 if __name__ == '__main__':

@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 import re
+import binascii
 
 import six
 
@@ -87,6 +88,21 @@ _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 
 # value for algo attribute in end-to-end encrypted messages
 _ED25519_SHA512 = u'ed25519-sha512'
+
+
+def b2a(data, max_len=40):
+    if type(data) == six.text_type:
+        s = data
+    elif type(data) == six.binary_type:
+        s = binascii.b2a_hex(data)
+    elif data is None:
+        s = '-'
+    else:
+        s = u'{}'.format(data)
+    if len(s) > max_len:
+        return s[:max_len] + u'..'
+    else:
+        return s
 
 
 def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
@@ -1199,7 +1215,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8}, ep_algo = {9}, ep_key = {10}, ep_serializer = {11}, ep_payload_len = {12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.ep_algo, self.ep_key, self.ep_serializer, len(self.ep_payload) if self.ep_payload else 0)
+        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8}, ep_algo = {9}, ep_key = {10}, ep_serializer = {11}, ep_payload = {12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.ep_algo, self.ep_key, self.ep_serializer, b2a(self.ep_payload))
 
 
 class Published(Message):
@@ -1773,7 +1789,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5}, ep_algo = {6}, ep_key = {7}, ep_serializer = {8}, ep_payload_len = {9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.ep_algo, self.ep_key, self.ep_serializer, len(self.ep_payload) if self.ep_payload else 0)
+        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5}, ep_algo = {6}, ep_key = {7}, ep_serializer = {8}, ep_payload = {9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.ep_algo, self.ep_key, self.ep_serializer, b2a(self.ep_payload))
 
 
 class Call(Message):

@@ -456,8 +456,6 @@ class ApplicationSession(BaseSession):
                                 handler.fn, msg.subscription)
                             return self._swallow_error(e, errmsg)
 
-                        print("$$", invoke_args)
-
                         future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
                         txaio.add_callbacks(future, None, _error)
 
