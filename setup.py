@@ -135,7 +135,8 @@ extras_require_all = extras_require_twisted + extras_require_asyncio + \
 # development dependencies
 #
 extras_require_dev = [
-    "pep8>=1.6.2",          # MIT license
+    # flake8 will install the version "it needs"
+    # "pep8>=1.6.2",          # MIT license
     "pep8-naming>=0.3.3",   # MIT license
     "flake8>=2.4.1",        # MIT license
     "pyflakes>=0.9.2",      # MIT license

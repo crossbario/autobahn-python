@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 import re
+
 import six
 
 import autobahn
@@ -83,6 +84,9 @@ _URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
 
 # custom (=implementation specific) WAMP attributes (used in WAMP message details/options)
 _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
+
+# value for algo attribute in end-to-end encrypted messages
+_ED25519_SHA512 = u'ed25519-sha512'
 
 
 def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
@@ -967,7 +971,11 @@ class Publish(Message):
                  exclude_me=None,
                  exclude=None,
                  eligible=None,
-                 disclose_me=None):
+                 disclose_me=None,
+                 ep_algo=None,
+                 ep_key=None,
+                 ep_serializer=None,
+                 ep_payload=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -997,13 +1005,20 @@ class Publish(Message):
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
-        assert(args is None or type(args) in [list, tuple])
-        assert(kwargs is None or type(kwargs) == dict)
+        assert(args is None or type(args) in [list, tuple, six.text_type, six.binary_type])
+        assert(kwargs is None or type(kwargs) in [dict, six.text_type, six.binary_type])
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or type(exclude) == list)
         assert(eligible is None or type(eligible) == list)
         assert(disclose_me is None or type(disclose_me) == bool)
+
+        # end-to-end app payload encryption
+        assert(ep_algo is None or ep_algo in [_ED25519_SHA512])
+        assert(ep_key is None or type(ep_key) in [six.text_type, six.binary_type])
+        assert(ep_serializer is None or ep_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(ep_payload is None or (ep_serializer == u'json' and type(ep_payload) == six.text_type) or (ep_serializer in [u'msgpack', u'cbor'] and type(ep_payload) == six.binary_type))
+        assert((ep_algo is None and ep_key is None and ep_serializer is None and ep_payload is None) or (ep_algo is not None and ep_key is not None and ep_serializer is not None and ep_payload is not None))
 
         Message.__init__(self)
         self.request = request
@@ -1015,6 +1030,12 @@ class Publish(Message):
         self.exclude = exclude
         self.eligible = eligible
         self.disclose_me = disclose_me
+
+        # end-to-end app payload encryption
+        self.ep_algo = ep_algo
+        self.ep_key = ep_key
+        self.ep_serializer = ep_serializer
+        self.ep_payload = ep_payload
 
     @staticmethod
     def parse(wmsg):
@@ -1038,16 +1059,39 @@ class Publish(Message):
         topic = check_or_raise_uri(wmsg[3], u"'topic' in PUBLISH")
 
         args = None
-        if len(wmsg) > 4:
-            args = wmsg[4]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in PUBLISH".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 5:
-            kwargs = wmsg[5]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
+
+        ep_algo = None
+        ep_key = None
+        ep_serializer = None
+        ep_payload = None
+
+        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+
+            ep_payload = wmsg[4]
+
+            ep_algo = options.get(u'ep_algo', None)
+            if ep_algo != _ED25519_SHA512:
+                raise ProtocolError("invalid value {0} for 'ep_algo' option in PUBLISH".format(ep_algo))
+
+            ep_key = options.get(u'ep_key', None)
+            if type(ep_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'ep_key' option in PUBLISH".format(type(ep_key)))
+
+            ep_serializer = options.get(u'ep_serializer', None)
+            if ep_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'ep_serializer' option in PUBLISH".format(ep_serializer))
+
+        else:
+            if len(wmsg) > 4:
+                args = wmsg[4]
+                if type(args) not in [list, six.text_type, six.binary_type]:
+                    raise ProtocolError("invalid type {0} for 'args' in PUBLISH".format(type(args)))
+
+            if len(wmsg) > 5:
+                kwargs = wmsg[5]
+                if type(kwargs) not in [dict, six.text_type, six.binary_type]:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in PUBLISH".format(type(kwargs)))
 
         acknowledge = None
         exclude_me = None
@@ -1111,7 +1155,11 @@ class Publish(Message):
                       exclude_me=exclude_me,
                       exclude=exclude,
                       eligible=eligible,
-                      disclose_me=disclose_me)
+                      disclose_me=disclose_me,
+                      ep_algo=ep_algo,
+                      ep_key=ep_key,
+                      ep_serializer=ep_serializer,
+                      ep_payload=ep_payload)
 
         return obj
 
@@ -1134,18 +1182,24 @@ class Publish(Message):
         if self.disclose_me is not None:
             options[u'disclose_me'] = self.disclose_me
 
-        if self.kwargs:
-            return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args, self.kwargs]
-        elif self.args:
-            return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args]
+        if self.ep_payload:
+            options[u'ep_algo'] = self.ep_algo
+            options[u'ep_key'] = self.ep_key
+            options[u'ep_serializer'] = self.ep_serializer
+            return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.ep_payload]
         else:
-            return [Publish.MESSAGE_TYPE, self.request, options, self.topic]
+            if self.kwargs:
+                return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args, self.kwargs]
+            elif self.args:
+                return [Publish.MESSAGE_TYPE, self.request, options, self.topic, self.args]
+            else:
+                return [Publish.MESSAGE_TYPE, self.request, options, self.topic]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
+        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8}, ep_algo = {9}, ep_key = {10}, ep_serializer = {11}, ep_payload_len = {12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.ep_algo, self.ep_key, self.ep_serializer, len(self.ep_payload) if self.ep_payload else 0)
 
 
 class Published(Message):
@@ -1555,7 +1609,8 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None, topic=None):
+    def __init__(self, subscription, publication, args=None, kwargs=None, publisher=None, topic=None,
+                 ep_algo=None, ep_key=None, ep_serializer=None, ep_payload=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1580,6 +1635,13 @@ class Event(Message):
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(topic is None or type(topic) == six.text_type)
 
+        # end-to-end app payload encryption
+        assert(ep_algo is None or ep_algo in [_ED25519_SHA512])
+        assert(ep_key is None or type(ep_key) in [six.text_type, six.binary_type])
+        assert(ep_serializer is None or ep_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(ep_payload is None or (ep_serializer == u'json' and type(ep_payload) == six.text_type) or (ep_serializer in [u'msgpack', u'cbor'] and type(ep_payload) == six.binary_type))
+        assert((ep_algo is None and ep_key is None and ep_serializer is None and ep_payload is None) or (ep_algo is not None and ep_key is not None and ep_serializer is not None and ep_payload is not None))
+
         Message.__init__(self)
         self.subscription = subscription
         self.publication = publication
@@ -1587,6 +1649,12 @@ class Event(Message):
         self.kwargs = kwargs
         self.publisher = publisher
         self.topic = topic
+
+        # end-to-end app payload encryption
+        self.ep_algo = ep_algo
+        self.ep_key = ep_key
+        self.ep_serializer = ep_serializer
+        self.ep_payload = ep_payload
 
     @staticmethod
     def parse(wmsg):
@@ -1610,16 +1678,38 @@ class Event(Message):
         details = check_or_raise_extra(wmsg[3], u"'details' in EVENT")
 
         args = None
-        if len(wmsg) > 4:
-            args = wmsg[4]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in EVENT".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 5:
-            kwargs = wmsg[5]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
+
+        ep_algo = None
+        ep_key = None
+        ep_serializer = None
+        ep_payload = None
+
+        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+
+            ep_payload = wmsg[4]
+
+            ep_algo = details.get(u'ep_algo', None)
+            if ep_algo != _ED25519_SHA512:
+                raise ProtocolError("invalid value {0} for 'ep_algo' detail in EVENT".format(ep_algo))
+
+            ep_key = details.get(u'ep_key', None)
+            if type(ep_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'ep_key' detail in EVENT".format(type(ep_key)))
+
+            ep_serializer = details.get(u'ep_serializer', None)
+            if ep_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'ep_serializer' detail in EVENT".format(ep_serializer))
+
+        else:
+            if len(wmsg) > 4:
+                args = wmsg[4]
+                if type(args) not in [list, six.text_type, six.binary_type]:
+                    raise ProtocolError("invalid type {0} for 'args' in EVENT".format(type(args)))
+            if len(wmsg) > 5:
+                kwargs = wmsg[5]
+                if type(kwargs) not in [dict]:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
 
         publisher = None
         if u'publisher' in details:
@@ -1644,7 +1734,11 @@ class Event(Message):
                     args=args,
                     kwargs=kwargs,
                     publisher=publisher,
-                    topic=topic)
+                    topic=topic,
+                    ep_algo=ep_algo,
+                    ep_key=ep_key,
+                    ep_serializer=ep_serializer,
+                    ep_payload=ep_payload)
 
         return obj
 
@@ -1662,18 +1756,24 @@ class Event(Message):
         if self.topic is not None:
             details[u'topic'] = self.topic
 
-        if self.kwargs:
-            return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args, self.kwargs]
-        elif self.args:
-            return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args]
+        if self.ep_payload:
+            details[u'ep_algo'] = self.ep_algo
+            details[u'ep_key'] = self.ep_key
+            details[u'ep_serializer'] = self.ep_serializer
+            return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.ep_payload]
         else:
-            return [Event.MESSAGE_TYPE, self.subscription, self.publication, details]
+            if self.kwargs:
+                return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args, self.kwargs]
+            elif self.args:
+                return [Event.MESSAGE_TYPE, self.subscription, self.publication, details, self.args]
+            else:
+                return [Event.MESSAGE_TYPE, self.subscription, self.publication, details]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic)
+        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5}, ep_algo = {6}, ep_key = {7}, ep_serializer = {8}, ep_payload_len = {9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.ep_algo, self.ep_key, self.ep_serializer, len(self.ep_payload) if self.ep_payload else 0)
 
 
 class Call(Message):

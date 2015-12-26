@@ -51,13 +51,14 @@ class Publication(object):
     an acknowledged publish).
     """
 
-    __slots__ = ('id')
+    __slots__ = ('id', 'was_encrypted')
 
-    def __init__(self, publication_id):
+    def __init__(self, publication_id, was_encrypted):
         self.id = publication_id
+        self.was_encrypted = was_encrypted
 
     def __str__(self):
-        return "Publication(id={0})".format(self.id)
+        return "Publication(id={0}, was_encrypted={1})".format(self.id, self.was_encrypted)
 
 
 class Subscription(object):
@@ -179,6 +180,12 @@ class PublishRequest(Request):
     """
     Object representing an outstanding request to publish (acknowledged) an event.
     """
+
+    __slots__ = ('was_encrypted')
+
+    def __init__(self, request_id, on_reply, was_encrypted):
+        Request.__init__(self, request_id, on_reply)
+        self.was_encrypted = was_encrypted
 
 
 class SubscribeRequest(Request):

@@ -53,15 +53,21 @@ class ComponentConfig(object):
     provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
     """
 
-    def __init__(self, realm=None, extra=None):
+    def __init__(self, realm=None, extra=None, keyring=None):
         """
         :param realm: The realm the session should join.
         :type realm: unicode
-
         :param extra: Optional user-supplied object with extra
             configuration. This can be any object you like, and is
             accessible in your `ApplicationSession` subclass via
             `self.config.extra`. `dict` is a good default choice.
+        :type extra: dict or None
+        :param keyring: A mapper from WAMP URIs to "from"/"to" Ed25519 keys. When using
+            WAMP end-to-end encryption, application payload is encrypted using a
+            symmetric message key, which in turn is encrypted using the "to" URI (topic being
+            published to or procedure being called) public key and the "from" URI
+            private key. In both cases, the key for the longest matching URI is used.
+        :type keyring: obj implementing IKeyRing
         """
         realm = realm or u'default'
         # FIXME
@@ -71,9 +77,10 @@ class ComponentConfig(object):
             raise RuntimeError('"realm" must be of type Unicode - was {0}'.format(type(realm)))
         self.realm = realm
         self.extra = extra
+        self.keyring = keyring
 
     def __str__(self):
-        return "ComponentConfig(realm = {0}, extra = {1})".format(self.realm, self.extra)
+        return "ComponentConfig(realm = {0}, extra = {1}, keyring = {2})".format(self.realm, self.extra, self.keyring)
 
 
 class HelloReturn(object):
@@ -359,7 +366,7 @@ class PublishOptions(object):
             u'exclude_me': self.exclude_me,
             u'exclude': self.exclude,
             u'eligible': self.eligible,
-            u'disclose_me': self.disclose_me
+            u'disclose_me': self.disclose_me,
         }
 
     def __str__(self):

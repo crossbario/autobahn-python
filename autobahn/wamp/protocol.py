@@ -39,6 +39,7 @@ from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.interfaces import IApplicationSession  # noqa
 from autobahn.wamp.types import SessionDetails
+from autobahn.wamp.keyring import EncryptedPayload
 from autobahn.util import IdGenerator, ObservableMixin
 
 from autobahn.wamp.request import \
@@ -227,6 +228,7 @@ class ApplicationSession(BaseSession):
         self._transport = None
         self._session_id = None
         self._realm = None
+        self._keyring = None
 
         self._goodbye_sent = False
         self._transport_is_closing = False
@@ -430,6 +432,16 @@ class ApplicationSession(BaseSession):
                     for subscription in self._subscriptions[msg.subscription]:
 
                         handler = subscription.handler
+                        topic = msg.topic or subscription.topic
+
+                        if msg.ep_payload:
+                            if self._keyring:
+                                encrypted_payload = EncryptedPayload(msg.ep_algo, msg.ep_key, msg.ep_serializer, msg.ep_payload)
+                                decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                if topic != decrypted_topic:
+                                    raise Exception("envelope topic URI does not match encrypted one")
+                            else:
+                                raise Exception("received encrypted payload, but no keyring active")
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
@@ -437,12 +449,14 @@ class ApplicationSession(BaseSession):
 
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=msg.topic or subscription.topic)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=topic)
 
                         def _error(e):
                             errmsg = 'While firing {0} subscribed under {1}.'.format(
                                 handler.fn, msg.subscription)
                             return self._swallow_error(e, errmsg)
+
+                        print("$$", invoke_args)
 
                         future = txaio.as_future(handler.fn, *invoke_args, **invoke_kwargs)
                         txaio.add_callbacks(future, None, _error)
@@ -458,7 +472,7 @@ class ApplicationSession(BaseSession):
                     publish_request = self._publish_reqs.pop(msg.request)
 
                     # create a new publication object
-                    publication = Publication(msg.publication)
+                    publication = Publication(msg.publication, was_encrypted=publish_request.was_encrypted)
 
                     # resolve deferred/future for publishing successfully
                     txaio.resolve(publish_request.on_reply, publication)
@@ -821,19 +835,36 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        request_id = self._request_id_gen.next()
-
         if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
             options = kwargs.pop('options')
-            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.message_attr())
         else:
             options = None
-            msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
+
+        request_id = self._request_id_gen.next()
+
+        if self._keyring and self._keyring.check(topic):
+            encrypted_payload = self._keyring.encrypt(topic, args, kwargs)
+        else:
+            encrypted_payload = None
+
+        if encrypted_payload:
+            msg = message.Publish(request_id,
+                                  topic,
+                                  ep_algo=encrypted_payload.algo,
+                                  ep_key=encrypted_payload.pkey,
+                                  ep_serializer=encrypted_payload.serializer,
+                                  ep_payload=encrypted_payload.payload,
+                                  **options.message_attr())
+        else:
+            if options:
+                msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.message_attr())
+            else:
+                msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
 
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
             on_reply = txaio.create_future()
-            self._publish_reqs[request_id] = PublishRequest(request_id, on_reply)
+            self._publish_reqs[request_id] = PublishRequest(request_id, on_reply, was_encrypted=(encrypted_payload is not None))
         else:
             on_reply = None
 
