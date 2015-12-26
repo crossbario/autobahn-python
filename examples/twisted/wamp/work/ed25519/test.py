@@ -53,8 +53,8 @@ class Component(ApplicationSession):
             print("event received: msg='{}', details={}".format(msg, details))
 
         options = SubscribeOptions(details_arg='details')
-        yield self.subscribe(on_message, u'com.myapp.topic1', options=options)
-        yield self.subscribe(on_message, u'com.myapp.topic2', options=options)
+        sub1 = yield self.subscribe(on_message, u'com.myapp.topic1', options=options)
+        sub2 = yield self.subscribe(on_message, u'com.myapp.topic2', options=options)
 
         options = PublishOptions(acknowledge=True, exclude_me=False, disclose_me=True)
         counter = 1
@@ -66,6 +66,9 @@ class Component(ApplicationSession):
             print("published: {}".format(pub))
             yield sleep(1)
             counter += 1
+
+        yield sub1.unsubscribe()
+        yield sub2.unsubscribe()
 
         self.leave()
 
