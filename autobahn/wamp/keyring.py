@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import os
 import json
 import binascii
-from types import NoneType
 
 __all__ = (
     'KeyRing',
@@ -138,4 +137,4 @@ if HAS_NACL:
 
 else:
 
-    KeyRing = NoneType
+    KeyRing = type(None)
