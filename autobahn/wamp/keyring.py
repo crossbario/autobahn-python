@@ -31,7 +31,9 @@ import json
 import binascii
 
 __all__ = (
+    'HAS_NACL',
     'KeyRing',
+    'EncryptedPayload'
 )
 
 try:
@@ -52,7 +54,7 @@ class EncryptedPayload(object):
 
 if HAS_NACL:
     from nacl.encoding import Base64Encoder
-    from nacl.public import PrivateKey, Box
+    from nacl.public import PrivateKey, PublicKey, Box
     from nacl.utils import random
 
     from pytrie import StringTrie
@@ -86,22 +88,36 @@ if HAS_NACL:
 
         The client generates a new random message key and encrypt the
         message. The symmetric message encrypted key is then encrypted using
-        the Pub(Receiver_key) and Priv(Sender_key). This encrypted symmetric key
-        is attached to the WAMP message in `option.message_key`.
+        the Pub(Receiver_key) and Priv(Sender_key).
         """
 
         def __init__(self):
+            """
+
+            Create a new key ring to hold Ed25519 public and private keys
+            mapped from an URI space.
+            """
             self._uri_map = StringTrie()
 
-        def add(self, uri_prefix, key_base64=None):
+        def add(self, uri_prefix, key=None):
+            """
+            Adda public or private key, in serialized, base64 format or as
+            an ncal.public.PrivateKey or PublicKey instance.
+            """
             if uri_prefix not in self._uri_map:
-                if key_base64:
-                    key = PrivateKey(key_base64, encoder=Base64Encoder)
+                if key:
+                    if isinstance(key, PrivateKey) or isinstance(key, PublicKey):
+                        pass
+                    elif type(key) == six.text_type:
+                        key = PrivateKey(key, encoder=Base64Encoder)
+                    elif type(key) == six.binary_type:
+                        key = PrivateKey(key)
+                    else:
+                        raise Exception("invalid type {} for key".format(type(key)))
                     box = Box(key, key.public_key)
                 else:
                     box = None
                 self._uri_map[uri_prefix] = box
-                print("key set for {}".format(uri_prefix))
 
         def check(self, uri):
             """
@@ -115,6 +131,9 @@ if HAS_NACL:
                 return False
 
         def encrypt(self, uri, args=None, kwargs=None):
+            """
+            Encrypt the given WAMP URI, args and kwargs into an EncryptedPayload instance.
+            """
             box = self._uri_map.longest_prefix_value(uri)
             payload = {
                 u'uri': uri,
@@ -130,6 +149,9 @@ if HAS_NACL:
             return EncryptedPayload(u'ed25519-sha512', payload_key, u'json', payload_bytes)
 
         def decrypt(self, uri, encrypted_payload):
+            """
+            Decrypt the given WAMP URI and EncryptedPayload into a tuple (uri, args, kwargs).
+            """
             box = self._uri_map.longest_prefix_value(uri)
             payload_ser = box.decrypt(encrypted_payload.payload, encoder=Base64Encoder)
             payload = json.loads(payload_ser)

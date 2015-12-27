@@ -35,6 +35,9 @@ from autobahn.wamp.types import PublishOptions, SubscribeOptions
 
 ENCRYPTION_KEY = u'z1JePdJbQkbRCWjldZYImgj5hpsZ2cEtX7CQmQmdta4='
 
+from nacl.public import PrivateKey
+from nacl.encoding import Base64Encoder
+
 from autobahn.wamp.keyring import KeyRing
 
 
@@ -47,7 +50,9 @@ class Component(ApplicationSession):
     def onJoin(self, details):
         print("session attached")
         self._keyring = KeyRing()
-        self._keyring.add(u'com.myapp.topic1', ENCRYPTION_KEY)
+
+        key = PrivateKey(ENCRYPTION_KEY, encoder=Base64Encoder)
+        self._keyring.add(u'com.myapp.topic1', key)
 
         def on_message(msg, details=None):
             print("event received: msg='{}', details={}".format(msg, details))
