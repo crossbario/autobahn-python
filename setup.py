@@ -125,10 +125,16 @@ extras_require_serialization = [
     "cbor>=0.1.24"              # Apache 2.0 license
 ]
 
+# payload encryption
+#
+extras_require_encryption = [
+    'pynacl>=0.3.0',            # Apache license
+]
+
 # everything
 #
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_serialization
+    extras_require_accelerate + extras_require_serialization + extras_require_encryption
 
 # extras_require_all += extras_require_compress
 
@@ -193,6 +199,7 @@ setup(
         'accelerate': extras_require_accelerate,
         'compress': extras_require_compress,
         'serialization': extras_require_serialization,
+        'encryption': extras_require_encryption,
         'dev': extras_require_dev,
     },
     tests_require=test_requirements,

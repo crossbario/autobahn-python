@@ -30,6 +30,8 @@ import os
 import json
 import binascii
 
+import six
+
 __all__ = (
     'HAS_NACL',
     'KeyRing',
