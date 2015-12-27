@@ -56,7 +56,7 @@ class Component(ApplicationSession):
         self._keyring.add(u'com.myapp.proc2', key)
 
         yield self._test_rpc()
-        yield self._test_pubsub()
+        #yield self._test_pubsub()
 
         self.leave()
 

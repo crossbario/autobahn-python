@@ -227,9 +227,9 @@ class CallRequest(Request):
     Object representing an outstanding request to call a procedure.
     """
 
-    __slots__ = ('options',)
+    __slots__ = ('procedure', 'options',)
 
-    def __init__(self, request_id, on_reply, options):
+    def __init__(self, request_id, procedure, on_reply, options):
         """
 
         :param request_id: The WAMP request ID.
@@ -240,6 +240,7 @@ class CallRequest(Request):
         :type options: dict
         """
         Request.__init__(self, request_id, on_reply)
+        self.procedure = procedure
         self.options = options
 
 

@@ -444,8 +444,9 @@ class ApplicationSession(BaseSession):
                                     decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
                                 except Exception as e:
                                     self.log.warn("failed to decrypt application payload: {error}", error=e)
-                                if topic != decrypted_topic:
-                                    self.log.warn("envelope topic URI does not match encrypted one")
+                                else:
+                                    if topic != decrypted_topic:
+                                        self.log.warn("envelope topic URI does not match encrypted one")
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
                         if msg.args:
@@ -550,6 +551,7 @@ class ApplicationSession(BaseSession):
                     else:
                         # process final call result
                         call_request = self._call_reqs.pop(msg.request)
+                        proc = call_request.procedure
 
                         # the user callback that gets fired
                         on_reply = call_request.on_reply
@@ -566,15 +568,15 @@ class ApplicationSession(BaseSession):
                             else:
                                 try:
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(proc, encrypted_payload)
                                 except Exception as e:
                                     log_msg = u"failed to decrypt application payload: {}".format(e)
                                     self.log.warn(log_msg)
                                     res = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
                                     txaio.reject(on_reply, res)
                                 else:
-                                    if topic != decrypted_topic:
-                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_topic, topic)
+                                    if proc != decrypted_proc:
+                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
                                         self.log.warn(log_msg)
                                         res = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
                                         txaio.reject(on_reply, res)
@@ -614,6 +616,26 @@ class ApplicationSession(BaseSession):
                     else:
                         registration = self._registrations[msg.registration]
                         endpoint = registration.endpoint
+                        proc = msg.procedure or registration.procedure
+
+                        # crypto_box is the only payload encryption currently supported
+                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                            # even if the call returned successfully, with payload encryption, the call
+                            # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
+                            if not self._keyring:
+                                log_msg = u"received encrypted payload, but no keyring active"
+                                self.log.warn(log_msg)
+                            else:
+                                try:
+                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(proc, encrypted_payload)
+                                except Exception as e:
+                                    log_msg = u"failed to decrypt application payload: {}".format(e)
+                                    self.log.warn(log_msg)
+                                else:
+                                    if proc != decrypted_proc:
+                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
+                                        self.log.warn(log_msg)
 
                         if endpoint.obj is not None:
                             invoke_args = (endpoint.obj,)
@@ -634,17 +656,44 @@ class ApplicationSession(BaseSession):
                             else:
                                 progress = None
 
-                            invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=msg.procedure)
+                            invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=proc, enc_algo=msg.enc_algo)
 
                         on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 
                         def success(res):
                             del self._invocations[msg.request]
 
-                            if isinstance(res, types.CallResult):
-                                reply = message.Yield(msg.request, args=res.results, kwargs=res.kwresults)
+                            encrypted_payload = None
+                            if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                                # even if the call returned successfully, with payload encryption, the call
+                                # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
+                                if not self._keyring:
+                                    log_msg = u"trying to send encrypted payload, but no keyring active"
+                                    self.log.warn(log_msg)
+                                else:
+                                    try:
+                                        if isinstance(res, types.CallResult):
+                                            encrypted_payload = self._keyring.encrypt(proc, res.results, res.kwresults)
+                                        else:
+                                            encrypted_payload = self._keyring.encrypt(proc, [res])
+                                    except Exception as e:
+                                        log_msg = u"failed to encrypt application payload: {}".format(e)
+                                        self.log.warn(log_msg)
+
+                            if encrypted_payload:
+                                    reply = message.Yield(msg.request,
+                                                          payload=encrypted_payload.payload,
+                                                          enc_algo=encrypted_payload.algo,
+                                                          enc_key=encrypted_payload.pkey,
+                                                          enc_serializer=encrypted_payload.serializer)
                             else:
-                                reply = message.Yield(msg.request, args=[res])
+                                if isinstance(res, types.CallResult):
+                                    reply = message.Yield(msg.request,
+                                                          args=res.results,
+                                                          kwargs=res.kwresults)
+                                else:
+                                    reply = message.Yield(msg.request,
+                                                          args=[res])
 
                             try:
                                 self._transport.send(reply)
@@ -1065,7 +1114,7 @@ class ApplicationSession(BaseSession):
         # d = Deferred(canceller)
 
         on_reply = txaio.create_future()
-        self._call_reqs[request_id] = CallRequest(request_id, on_reply, options)
+        self._call_reqs[request_id] = CallRequest(request_id, procedure, on_reply, options)
 
         try:
             # Notes:

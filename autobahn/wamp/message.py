@@ -906,6 +906,11 @@ class Error(Message):
         self.kwargs = kwargs
         self.payload = payload
 
+        # end-to-end app payload encryption
+        self.enc_algo = enc_algo
+        self.enc_key = enc_key
+        self.enc_serializer = enc_serializer
+
     @staticmethod
     def parse(wmsg):
         """
@@ -943,6 +948,9 @@ class Error(Message):
         args = None
         kwargs = None
         payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
 
         if len(wmsg) == 6 and type(wmsg[5]) in [six.text_type, six.binary_type]:
 
@@ -970,10 +978,6 @@ class Error(Message):
                 kwargs = wmsg[6]
                 if type(kwargs) != dict:
                     raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
-
-            enc_algo = None
-            enc_key = None
-            enc_serializer = None
 
         obj = Error(request_type,
                     request,
