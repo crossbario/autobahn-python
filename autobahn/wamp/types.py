@@ -297,7 +297,7 @@ class EventDetails(object):
     Provides details on an event when calling an event handler
     previously registered.
     """
-    def __init__(self, publication, publisher=None, topic=None):
+    def __init__(self, publication, publisher=None, topic=None, enc_algo=None):
         """
         Ctor.
 
@@ -306,14 +306,18 @@ class EventDetails(object):
         :param publisher: The WAMP session ID of the original publisher of this event.
         :type publisher: int
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
-        :type topic1: unicode or None
+        :type topic: unicode or None
+        :param enc_algo: Payload encryption algorithm that
+            was in use (currently, either `None` or `"crypto_box"`).
+        :type enc_algo: None or string
         """
         self.publication = publication
         self.publisher = publisher
         self.topic = topic
+        self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication = {0}, publisher = {1}, topic = {2})".format(self.publication, self.publisher, self.topic)
+        return "EventDetails(publication = {0}, publisher = {1}, topic = {2}, enc_algo = {3})".format(self.publication, self.publisher, self.topic, self.enc_algo)
 
 
 class PublishOptions(object):
@@ -411,7 +415,7 @@ class CallDetails(object):
     registered is being called and opted to receive call details.
     """
 
-    def __init__(self, progress=None, caller=None, procedure=None):
+    def __init__(self, progress=None, caller=None, procedure=None, enc_algo=None):
         """
         Ctor.
 
@@ -421,13 +425,17 @@ class CallDetails(object):
         :type caller: int
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
         :type procedure: unicode or None
+        :param enc_algo: Payload encryption algorithm that
+            was in use (currently, either `None` or `"crypto_box"`).
+        :type enc_algo: None or string
         """
         self.progress = progress
         self.caller = caller
         self.procedure = procedure
+        self.enc_algo = enc_algo
 
     def __str__(self):
-        return "CallDetails(progress = {0}, caller = {1}, procedure = {2})".format(self.progress, self.caller, self.procedure)
+        return "CallDetails(progress = {0}, caller = {1}, procedure = {2}, enc_algo = {3})".format(self.progress, self.caller, self.procedure, self.enc_algo)
 
 
 class CallOptions(object):
@@ -491,9 +499,10 @@ class CallResult(object):
         """
         self.results = results
         self.kwresults = kwresults
+        self.enc_algo = kwargs.pop('enc_algo', None)
 
     def __str__(self):
-        return "CallResult(results = {0}, kwresults = {1})".format(self.results, self.kwresults)
+        return "CallResult(results = {0}, kwresults = {1}, enc_algo = {2})".format(self.results, self.kwresults, self.enc_algo)
 
 
 class IPublication(object):

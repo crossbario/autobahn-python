@@ -136,7 +136,11 @@ if HAS_NACL:
             """
             Encrypt the given WAMP URI, args and kwargs into an EncryptedPayload instance.
             """
-            box = self._uri_map.longest_prefix_value(uri)
+            try:
+                box = self._uri_map.longest_prefix_value(uri)
+            except KeyError:
+                return None
+
             payload = {
                 u'uri': uri,
                 u'args': args,
@@ -148,7 +152,7 @@ if HAS_NACL:
             payload_bytes = payload_encr.encode().decode('ascii')
             payload_key = binascii.b2a_base64(os.urandom(32)).strip().decode('ascii')
 
-            return EncryptedPayload(u'wpe3', payload_key, u'json', payload_bytes)
+            return EncryptedPayload(u'crypto_box', payload_key, u'json', payload_bytes)
 
         def decrypt(self, uri, encrypted_payload):
             """

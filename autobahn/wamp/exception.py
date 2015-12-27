@@ -208,6 +208,7 @@ class ApplicationError(Error):
         Exception.__init__(self, *args)
         self.kwargs = kwargs
         self.error = error
+        self.enc_algo = kwargs.pop('enc_algo', None)
 
     def error_message(self):
         """
@@ -226,8 +227,8 @@ class ApplicationError(Error):
             self.kwargs['traceback'] = u'...'
         else:
             tb = u''
-        return u"ApplicationError('{0}', args = {1}, kwargs = {2}){3}".format(
-            self.error, self.args, self.kwargs, tb)
+        return u"ApplicationError('{0}', args = {1}, kwargs = {2}, enc_algo = {3}){4}".format(
+            self.error, self.args, self.kwargs, self.enc_algo, tb)
 
     def __str__(self):
         if six.PY3:

@@ -434,22 +434,25 @@ class ApplicationSession(BaseSession):
                         handler = subscription.handler
                         topic = msg.topic or subscription.topic
 
-                        if msg.payload:
-                            if self._keyring:
+                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                            if not self._keyring:
+                                self.log.warn("received encrypted payload, but no keyring active - ignoring encrypted payload!")
+                            else:
                                 encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                decrypted_topic, args, kwargs = self._keyring.decrypt(topic, encrypted_payload)
+
                                 if topic != decrypted_topic:
                                     raise Exception("envelope topic URI does not match encrypted one")
-                            else:
-                                raise Exception("received encrypted payload, but no keyring active")
+                        else:
+                            args, kwargs = msg.args, msg.kwargs
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
-                        if msg.args:
-                            invoke_args = invoke_args + tuple(msg.args)
+                        if args:
+                            invoke_args = invoke_args + tuple(args)
+                        invoke_kwargs = kwargs if kwargs else dict()
 
-                        invoke_kwargs = msg.kwargs if msg.kwargs else dict()
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=topic)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=topic, enc_algo=msg.enc_algo)
 
                         def _error(e):
                             errmsg = 'While firing {0} subscribed under {1}.'.format(
@@ -840,10 +843,9 @@ class ApplicationSession(BaseSession):
 
         request_id = self._request_id_gen.next()
 
-        if self._keyring and self._keyring.check(topic):
+        encrypted_payload = None
+        if self._keyring:
             encrypted_payload = self._keyring.encrypt(topic, args, kwargs)
-        else:
-            encrypted_payload = None
 
         if encrypted_payload:
             msg = message.Publish(request_id,

@@ -62,7 +62,8 @@ __all__ = ('Message',
            'Interrupt',
            'Yield',
            'check_or_raise_uri',
-           'check_or_raise_id')
+           'check_or_raise_id',
+           'PAYLOAD_ENC_CRYPTO_BOX')
 
 
 # strict URI check allowing empty URI components
@@ -86,9 +87,10 @@ _URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
 # custom (=implementation specific) WAMP attributes (used in WAMP message details/options)
 _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 
-# Value for algo attribute in end-to-end encrypted messages using WPE3, which
-# is a scheme based on Ed25519-SHA512 and Salsa20-Poly1305.
-PAYLOAD_ENC_WPE3 = u'wpe3'
+# Value for algo attribute in end-to-end encrypted messages using crypto_box, which
+# is a scheme based on Curve25519, SHA512, Salsa20 and Poly1305.
+# See: http://cr.yp.to/highspeed/coolnacl-20120725.pdf
+PAYLOAD_ENC_CRYPTO_BOX = u'crypto_box'
 
 
 def b2a(data, max_len=40):
@@ -855,6 +857,7 @@ class Error(Message):
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri]``
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list]``
     * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]``
+    * ``[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 8
@@ -862,7 +865,8 @@ class Error(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, request_type, request, error, args=None, kwargs=None):
+    def __init__(self, request_type, request, error, args=None, kwargs=None, payload=None,
+                 enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param request_type: The WAMP message type code for the original request.
@@ -877,12 +881,22 @@ class Error(Message):
         :param kwargs: Keyword values for application-defined exception.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
+        :type payload: unicode or bytes
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request_type) in six.integer_types)
         assert(type(request) in six.integer_types)
         assert(type(error) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
+        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or (payload is not None and args is None and kwargs is None))
 
         Message.__init__(self)
         self.request_type = request_type
@@ -890,6 +904,7 @@ class Error(Message):
         self.error = error
         self.args = args
         self.kwargs = kwargs
+        self.payload = payload
 
     @staticmethod
     def parse(wmsg):
@@ -922,22 +937,53 @@ class Error(Message):
             raise ProtocolError("invalid value {0} for 'request_type' in ERROR".format(request_type))
 
         request = check_or_raise_id(wmsg[2], u"'request' in ERROR")
-        check_or_raise_extra(wmsg[3], u"'details' in ERROR")
+        details = check_or_raise_extra(wmsg[3], u"'details' in ERROR")
         error = check_or_raise_uri(wmsg[4], u"'error' in ERROR")
 
         args = None
-        if len(wmsg) > 5:
-            args = wmsg[5]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in ERROR".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 6:
-            kwargs = wmsg[6]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
+        payload = None
 
-        obj = Error(request_type, request, error, args=args, kwargs=kwargs)
+        if len(wmsg) == 6 and type(wmsg[5]) in [six.text_type, six.binary_type]:
+
+            payload = wmsg[5]
+
+            enc_algo = details.get(u'enc_algo', None)
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+
+            enc_key = details.get(u'enc_key', None)
+            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+
+            enc_serializer = details.get(u'enc_serializer', None)
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+
+        else:
+            if len(wmsg) > 5:
+                args = wmsg[5]
+                if type(args) != list:
+                    raise ProtocolError("invalid type {0} for 'args' in ERROR".format(type(args)))
+
+            if len(wmsg) > 6:
+                kwargs = wmsg[6]
+                if type(kwargs) != dict:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in ERROR".format(type(kwargs)))
+
+            enc_algo = None
+            enc_key = None
+            enc_serializer = None
+
+        obj = Error(request_type,
+                    request,
+                    error,
+                    args=args,
+                    kwargs=kwargs,
+                    payload=payload,
+                    enc_algo=enc_algo,
+                    enc_key=enc_key,
+                    enc_serializer=enc_serializer)
 
         return obj
 
@@ -949,18 +995,27 @@ class Error(Message):
         """
         details = {}
 
-        if self.kwargs:
-            return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args, self.kwargs]
-        elif self.args:
-            return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args]
+        if self.payload:
+            if self.enc_algo is not None:
+                details[u'enc_algo'] = self.enc_algo
+            if self.enc_key is not None:
+                details[u'enc_key'] = self.enc_key
+            if self.enc_serializer is not None:
+                details[u'enc_serializer'] = self.enc_serializer
+            return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.payload]
         else:
-            return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error]
+            if self.kwargs:
+                return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args, self.kwargs]
+            elif self.args:
+                return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error, self.args]
+            else:
+                return [self.MESSAGE_TYPE, self.request_type, self.request, details, self.error]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4})".format(self.request_type, self.request, self.error, self.args, self.kwargs)
+        return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4}, enc_algo = {5}, enc_key = {6}, enc_serializer = {7}, payload = {8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Publish(Message):
@@ -972,6 +1027,7 @@ class Publish(Message):
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri]``
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list]``
     * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]``
+    * ``[PUBLISH, Request|id, Options|dict, Topic|uri, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 16
@@ -1021,6 +1077,12 @@ class Publish(Message):
         :param disclose_me: If True, request to disclose the publisher of this event
            to subscribers.
         :type disclose_me: bool or None
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
@@ -1035,7 +1097,7 @@ class Publish(Message):
         assert(disclose_me is None or type(disclose_me) == bool)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_WPE3])
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
@@ -1087,7 +1149,7 @@ class Publish(Message):
             payload = wmsg[4]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo != PAYLOAD_ENC_WPE3:
+            if enc_algo and enc_algo != PAYLOAD_ENC_CRYPTO_BOX:
                 raise ProtocolError("invalid value {0} for 'enc_algo' option in PUBLISH".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
@@ -1625,6 +1687,7 @@ class Event(Message):
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict]``
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list]``
     * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]``
+    * ``[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 36
@@ -1652,8 +1715,12 @@ class Event(Message):
         :type publisher: int or None
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "wpe3" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
         :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
@@ -1665,7 +1732,7 @@ class Event(Message):
         assert(topic is None or type(topic) == six.text_type)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_WPE3])
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
@@ -1708,13 +1775,16 @@ class Event(Message):
         args = None
         kwargs = None
         payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
 
         if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
 
             payload = wmsg[4]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_WPE3]:
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
@@ -1734,10 +1804,6 @@ class Event(Message):
                 kwargs = wmsg[5]
                 if type(kwargs) not in [dict]:
                     raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
-
-            enc_algo = None
-            enc_key = None
-            enc_serializer = None
 
         publisher = None
         topic = None
@@ -1817,6 +1883,7 @@ class Call(Message):
     * ``[CALL, Request|id, Options|dict, Procedure|uri]``
     * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list]``
     * ``[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]``
+    * ``[CALL, Request|id, Options|dict, Procedure|uri, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 48
@@ -1829,9 +1896,13 @@ class Call(Message):
                  procedure,
                  args=None,
                  kwargs=None,
+                 payload=None,
                  timeout=None,
                  receive_progress=None,
-                 disclose_me=None):
+                 disclose_me=None,
+                 enc_algo=None,
+                 enc_key=None,
+                 enc_serializer=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1844,6 +1915,8 @@ class Call(Message):
         :param kwargs: Keyword values for application-defined call arguments.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
+        :type payload: unicode or bytes
         :param timeout: If present, let the callee automatically cancel
            the call after this ms.
         :type timeout: int or None
@@ -1852,23 +1925,43 @@ class Call(Message):
         :type receive_progress: bool or None
         :param disclose_me: If ``True``, the caller requests to disclose itself to the callee.
         :type disclose_me: bool or None
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
+        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
         assert(disclose_me is None or type(disclose_me) == bool)
+
+        # end-to-end app payload encryption
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
         self.procedure = procedure
         self.args = args
         self.kwargs = kwargs
+        self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.disclose_me = disclose_me
+
+        # end-to-end app payload encryption
+        self.enc_algo = enc_algo
+        self.enc_key = enc_key
+        self.enc_serializer = enc_serializer
 
     @staticmethod
     def parse(wmsg):
@@ -1892,18 +1985,43 @@ class Call(Message):
         procedure = check_or_raise_uri(wmsg[3], u"'procedure' in CALL")
 
         args = None
-        if len(wmsg) > 4:
-            args = wmsg[4]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in CALL".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 5:
-            kwargs = wmsg[5]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in CALL".format(type(kwargs)))
+        payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
+
+        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+
+            payload = wmsg[4]
+
+            enc_algo = options.get(u'enc_algo', None)
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+
+            enc_key = options.get(u'enc_key', None)
+            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+
+            enc_serializer = options.get(u'enc_serializer', None)
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+
+        else:
+            if len(wmsg) > 4:
+                args = wmsg[4]
+                if type(args) != list:
+                    raise ProtocolError("invalid type {0} for 'args' in CALL".format(type(args)))
+
+            if len(wmsg) > 5:
+                kwargs = wmsg[5]
+                if type(kwargs) != dict:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in CALL".format(type(kwargs)))
 
         timeout = None
+        receive_progress = None
+        disclose_me = None
+
         if u'timeout' in options:
 
             option_timeout = options[u'timeout']
@@ -1915,7 +2033,6 @@ class Call(Message):
 
             timeout = option_timeout
 
-        receive_progress = None
         if u'receive_progress' in options:
 
             option_receive_progress = options[u'receive_progress']
@@ -1924,7 +2041,6 @@ class Call(Message):
 
             receive_progress = option_receive_progress
 
-        disclose_me = None
         if u'disclose_me' in options:
 
             option_disclose_me = options[u'disclose_me']
@@ -1937,9 +2053,13 @@ class Call(Message):
                    procedure,
                    args=args,
                    kwargs=kwargs,
+                   payload=payload,
                    timeout=timeout,
                    receive_progress=receive_progress,
-                   disclose_me=disclose_me)
+                   disclose_me=disclose_me,
+                   enc_algo=enc_algo,
+                   enc_key=enc_key,
+                   enc_serializer=enc_serializer)
 
         return obj
 
@@ -1960,18 +2080,27 @@ class Call(Message):
         if self.disclose_me is not None:
             options[u'disclose_me'] = self.disclose_me
 
-        if self.kwargs:
-            return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
-        elif self.args:
-            return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args]
+        if self.payload:
+            if self.enc_algo is not None:
+                options[u'enc_algo'] = self.enc_algo
+            if self.enc_key is not None:
+                options[u'enc_key'] = self.enc_key
+            if self.enc_serializer is not None:
+                options[u'enc_serializer'] = self.enc_serializer
+            return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.payload]
         else:
-            return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
+            if self.kwargs:
+                return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self.kwargs]
+            elif self.args:
+                return [Call.MESSAGE_TYPE, self.request, options, self.procedure, self.args]
+            else:
+                return [Call.MESSAGE_TYPE, self.request, options, self.procedure]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, disclose_me = {6})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me)
+        return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, disclose_me = {6}, enc_algo = {7}, enc_key = {8}, enc_serializer = {9}, payload = {10})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Cancel(Message):
@@ -2074,6 +2203,7 @@ class Result(Message):
     * ``[RESULT, CALL.Request|id, Details|dict]``
     * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list]``
     * ``[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]``
+    * ``[RESULT, CALL.Request|id, Details|dict, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 50
@@ -2081,7 +2211,8 @@ class Result(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, request, args=None, kwargs=None, progress=None):
+    def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
+                 enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param request: The request ID of the original `CALL` request.
@@ -2092,20 +2223,42 @@ class Result(Message):
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
+        :type payload: unicode or bytes
         :param progress: If ``True``, this result is a progressive call result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
+        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
+
+        # end-to-end app payload encryption
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
         self.args = args
         self.kwargs = kwargs
+        self.payload = payload
         self.progress = progress
+
+        # end-to-end app payload encryption
+        self.enc_algo = enc_algo
+        self.enc_key = enc_key
+        self.enc_serializer = enc_serializer
 
     @staticmethod
     def parse(wmsg):
@@ -2128,16 +2281,38 @@ class Result(Message):
         details = check_or_raise_extra(wmsg[2], u"'details' in RESULT")
 
         args = None
-        if len(wmsg) > 3:
-            args = wmsg[3]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in RESULT".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 4:
-            kwargs = wmsg[4]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
+        payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
+
+        if len(wmsg) == 4 and type(wmsg[3]) in [six.text_type, six.binary_type]:
+
+            payload = wmsg[3]
+
+            enc_algo = details.get(u'enc_algo', None)
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+
+            enc_key = details.get(u'enc_key', None)
+            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+
+            enc_serializer = details.get(u'enc_serializer', None)
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+
+        else:
+            if len(wmsg) > 3:
+                args = wmsg[3]
+                if type(args) != list:
+                    raise ProtocolError("invalid type {0} for 'args' in RESULT".format(type(args)))
+
+            if len(wmsg) > 4:
+                kwargs = wmsg[4]
+                if type(kwargs) != dict:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in RESULT".format(type(kwargs)))
 
         progress = None
 
@@ -2149,7 +2324,14 @@ class Result(Message):
 
             progress = detail_progress
 
-        obj = Result(request, args=args, kwargs=kwargs, progress=progress)
+        obj = Result(request,
+                     args=args,
+                     kwargs=kwargs,
+                     payload=payload,
+                     progress=progress,
+                     enc_algo=enc_algo,
+                     enc_key=enc_key,
+                     enc_serializer=enc_serializer)
 
         return obj
 
@@ -2164,18 +2346,27 @@ class Result(Message):
         if self.progress is not None:
             details[u'progress'] = self.progress
 
-        if self.kwargs:
-            return [Result.MESSAGE_TYPE, self.request, details, self.args, self.kwargs]
-        elif self.args:
-            return [Result.MESSAGE_TYPE, self.request, details, self.args]
+        if self.payload:
+            if self.enc_algo is not None:
+                details[u'enc_algo'] = self.enc_algo
+            if self.enc_key is not None:
+                details[u'enc_key'] = self.enc_key
+            if self.enc_serializer is not None:
+                details[u'enc_serializer'] = self.enc_serializer
+            return [Result.MESSAGE_TYPE, self.request, details, self.payload]
         else:
-            return [Result.MESSAGE_TYPE, self.request, details]
+            if self.kwargs:
+                return [Result.MESSAGE_TYPE, self.request, details, self.args, self.kwargs]
+            elif self.args:
+                return [Result.MESSAGE_TYPE, self.request, details, self.args]
+            else:
+                return [Result.MESSAGE_TYPE, self.request, details]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
+        return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3}, enc_algo = {4}, enc_key = {5}, enc_serializer = {6}, payload = {7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Register(Message):
@@ -2538,6 +2729,7 @@ class Invocation(Message):
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict]``
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list]``
     * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]``
+    * ``[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 68
@@ -2550,10 +2742,14 @@ class Invocation(Message):
                  registration,
                  args=None,
                  kwargs=None,
+                 payload=None,
                  timeout=None,
                  receive_progress=None,
                  caller=None,
-                 procedure=None):
+                 procedure=None,
+                 enc_algo=None,
+                 enc_key=None,
+                 enc_serializer=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2566,6 +2762,8 @@ class Invocation(Message):
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
+        :type payload: unicode or bytes
         :param timeout: If present, let the callee automatically cancels
            the invocation after this ms.
         :type timeout: int or None
@@ -2575,25 +2773,45 @@ class Invocation(Message):
         :type caller: int or None
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request) in six.integer_types)
         assert(type(registration) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
+        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
         assert(caller is None or type(caller) in six.integer_types)
         assert(procedure is None or type(procedure) == six.text_type)
+
+        # end-to-end app payload encryption
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
         self.registration = registration
         self.args = args
         self.kwargs = kwargs
+        self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.caller = caller
         self.procedure = procedure
+
+        # end-to-end app payload encryption
+        self.enc_algo = enc_algo
+        self.enc_key = enc_key
+        self.enc_serializer = enc_serializer
 
     @staticmethod
     def parse(wmsg):
@@ -2617,18 +2835,44 @@ class Invocation(Message):
         details = check_or_raise_extra(wmsg[3], u"'details' in INVOCATION")
 
         args = None
-        if len(wmsg) > 4:
-            args = wmsg[4]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in INVOCATION".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 5:
-            kwargs = wmsg[5]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in INVOCATION".format(type(kwargs)))
+        payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
+
+        if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
+
+            payload = wmsg[4]
+
+            enc_algo = details.get(u'enc_algo', None)
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+
+            enc_key = details.get(u'enc_key', None)
+            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+
+            enc_serializer = details.get(u'enc_serializer', None)
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+
+        else:
+            if len(wmsg) > 4:
+                args = wmsg[4]
+                if type(args) != list:
+                    raise ProtocolError("invalid type {0} for 'args' in INVOCATION".format(type(args)))
+
+            if len(wmsg) > 5:
+                kwargs = wmsg[5]
+                if type(kwargs) != dict:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in INVOCATION".format(type(kwargs)))
 
         timeout = None
+        receive_progress = None
+        caller = None
+        procedure = None
+
         if u'timeout' in details:
 
             detail_timeout = details[u'timeout']
@@ -2640,7 +2884,6 @@ class Invocation(Message):
 
             timeout = detail_timeout
 
-        receive_progress = None
         if u'receive_progress' in details:
 
             detail_receive_progress = details[u'receive_progress']
@@ -2649,7 +2892,6 @@ class Invocation(Message):
 
             receive_progress = detail_receive_progress
 
-        caller = None
         if u'caller' in details:
 
             detail_caller = details[u'caller']
@@ -2658,7 +2900,6 @@ class Invocation(Message):
 
             caller = detail_caller
 
-        procedure = None
         if u'procedure' in details:
 
             detail_procedure = details[u'procedure']
@@ -2671,10 +2912,14 @@ class Invocation(Message):
                          registration,
                          args=args,
                          kwargs=kwargs,
+                         payload=payload,
                          timeout=timeout,
                          receive_progress=receive_progress,
                          caller=caller,
-                         procedure=procedure)
+                         procedure=procedure,
+                         enc_algo=enc_algo,
+                         enc_key=enc_key,
+                         enc_serializer=enc_serializer)
 
         return obj
 
@@ -2698,18 +2943,27 @@ class Invocation(Message):
         if self.procedure is not None:
             options[u'procedure'] = self.procedure
 
-        if self.kwargs:
-            return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
-        elif self.args:
-            return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args]
+        if self.payload:
+            if self.enc_algo is not None:
+                options[u'enc_algo'] = self.enc_algo
+            if self.enc_key is not None:
+                options[u'enc_key'] = self.enc_key
+            if self.enc_serializer is not None:
+                options[u'enc_serializer'] = self.enc_serializer
+            return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.payload]
         else:
-            return [Invocation.MESSAGE_TYPE, self.request, self.registration, options]
+            if self.kwargs:
+                return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args, self.kwargs]
+            elif self.args:
+                return [Invocation.MESSAGE_TYPE, self.request, self.registration, options, self.args]
+            else:
+                return [Invocation.MESSAGE_TYPE, self.request, self.registration, options]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure)
+        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7}, enc_algo = {8}, enc_key = {9}, enc_serializer = {10}, payload = {11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Interrupt(Message):
@@ -2811,6 +3065,7 @@ class Yield(Message):
     * ``[YIELD, INVOCATION.Request|id, Options|dict]``
     * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list]``
     * ``[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]``
+    * ``[YIELD, INVOCATION.Request|id, Options|dict, Payload|string/binary]``
     """
 
     MESSAGE_TYPE = 70
@@ -2818,7 +3073,8 @@ class Yield(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, request, args=None, kwargs=None, progress=None):
+    def __init__(self, request, args=None, kwargs=None, payload=None, progress=None,
+                 enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param request: The WAMP request ID of the original call.
@@ -2829,20 +3085,42 @@ class Yield(Message):
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+        :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
+        :type payload: unicode or bytes
         :param progress: If ``True``, this result is a progressive invocation result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :type enc_algo: unicode
+        :param enc_key: If using payload encryption, the message encryption key.
+        :type enc_key: unicode or binary
+        :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
+        :type enc_serializer: unicode
         """
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
+        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
+
+        # end-to-end app payload encryption
+        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
         self.args = args
         self.kwargs = kwargs
+        self.payload = payload
         self.progress = progress
+
+        # end-to-end app payload encryption
+        self.enc_algo = enc_algo
+        self.enc_key = enc_key
+        self.enc_serializer = enc_serializer
 
     @staticmethod
     def parse(wmsg):
@@ -2865,16 +3143,38 @@ class Yield(Message):
         options = check_or_raise_extra(wmsg[2], u"'options' in YIELD")
 
         args = None
-        if len(wmsg) > 3:
-            args = wmsg[3]
-            if type(args) != list:
-                raise ProtocolError("invalid type {0} for 'args' in YIELD".format(type(args)))
-
         kwargs = None
-        if len(wmsg) > 4:
-            kwargs = wmsg[4]
-            if type(kwargs) != dict:
-                raise ProtocolError("invalid type {0} for 'kwargs' in YIELD".format(type(kwargs)))
+        payload = None
+        enc_algo = None
+        enc_key = None
+        enc_serializer = None
+
+        if len(wmsg) == 4 and type(wmsg[3]) in [six.text_type, six.binary_type]:
+
+            payload = wmsg[3]
+
+            enc_algo = options.get(u'enc_algo', None)
+            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+                raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
+
+            enc_key = options.get(u'enc_key', None)
+            if enc_key and type(enc_key) not in [six.text_type, six.binary_type]:
+                raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
+
+            enc_serializer = options.get(u'enc_serializer', None)
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+                raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
+
+        else:
+            if len(wmsg) > 3:
+                args = wmsg[3]
+                if type(args) != list:
+                    raise ProtocolError("invalid type {0} for 'args' in YIELD".format(type(args)))
+
+            if len(wmsg) > 4:
+                kwargs = wmsg[4]
+                if type(kwargs) != dict:
+                    raise ProtocolError("invalid type {0} for 'kwargs' in YIELD".format(type(kwargs)))
 
         progress = None
 
@@ -2886,7 +3186,14 @@ class Yield(Message):
 
             progress = option_progress
 
-        obj = Yield(request, args=args, kwargs=kwargs, progress=progress)
+        obj = Yield(request,
+                    args=args,
+                    kwargs=kwargs,
+                    payload=payload,
+                    progress=progress,
+                    enc_algo=enc_algo,
+                    enc_key=enc_key,
+                    enc_serializer=enc_serializer)
 
         return obj
 
@@ -2901,15 +3208,24 @@ class Yield(Message):
         if self.progress is not None:
             options[u'progress'] = self.progress
 
-        if self.kwargs:
-            return [Yield.MESSAGE_TYPE, self.request, options, self.args, self.kwargs]
-        elif self.args:
-            return [Yield.MESSAGE_TYPE, self.request, options, self.args]
+        if self.payload:
+            if self.enc_algo is not None:
+                options[u'enc_algo'] = self.enc_algo
+            if self.enc_key is not None:
+                options[u'enc_key'] = self.enc_key
+            if self.enc_serializer is not None:
+                options[u'enc_serializer'] = self.enc_serializer
+            return [Yield.MESSAGE_TYPE, self.request, options, self.payload]
         else:
-            return [Yield.MESSAGE_TYPE, self.request, options]
+            if self.kwargs:
+                return [Yield.MESSAGE_TYPE, self.request, options, self.args, self.kwargs]
+            elif self.args:
+                return [Yield.MESSAGE_TYPE, self.request, options, self.args]
+            else:
+                return [Yield.MESSAGE_TYPE, self.request, options]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return "WAMP YIELD Message (request = {0}, args = {1}, kwargs = {2}, progress = {3})".format(self.request, self.args, self.kwargs, self.progress)
+        return "WAMP YIELD Message (request = {0}, args = {1}, kwargs = {2}, progress = {3}, enc_algo = {4}, enc_key = {5}, enc_serializer = {6}, payload = {7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
