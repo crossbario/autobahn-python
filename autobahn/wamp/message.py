@@ -87,10 +87,10 @@ _URI_PAT_LOOSE_LAST_EMPTY = re.compile(r"^([^\s\.#]+\.)*([^\s\.#]*)$")
 # custom (=implementation specific) WAMP attributes (used in WAMP message details/options)
 _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 
-# Value for algo attribute in end-to-end encrypted messages using crypto_box, which
+# Value for algo attribute in end-to-end encrypted messages using cryptobox, which
 # is a scheme based on Curve25519, SHA512, Salsa20 and Poly1305.
 # See: http://cr.yp.to/highspeed/coolnacl-20120725.pdf
-PAYLOAD_ENC_CRYPTO_BOX = u'crypto_box'
+PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
 
 
 def b2a(data, max_len=40):
@@ -883,7 +883,7 @@ class Error(Message):
         :type kwargs: dict or None
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -1081,7 +1081,7 @@ class Publish(Message):
         :param disclose_me: If True, request to disclose the publisher of this event
            to subscribers.
         :type disclose_me: bool or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -1719,7 +1719,7 @@ class Event(Message):
         :type publisher: int or None
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -1929,7 +1929,7 @@ class Call(Message):
         :type receive_progress: bool or None
         :param disclose_me: If ``True``, the caller requests to disclose itself to the callee.
         :type disclose_me: bool or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -2232,7 +2232,7 @@ class Result(Message):
         :param progress: If ``True``, this result is a progressive call result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -2777,7 +2777,7 @@ class Invocation(Message):
         :type caller: int or None
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
@@ -3094,7 +3094,7 @@ class Yield(Message):
         :param progress: If ``True``, this result is a progressive invocation result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
-        :param enc_algo: If using payload encryption, the algorithm used (currently, only "crypto_box" is valid).
+        :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary

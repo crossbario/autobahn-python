@@ -556,7 +556,7 @@ class ApplicationSession(BaseSession):
                         # the user callback that gets fired
                         on_reply = call_request.on_reply
 
-                        # crypto_box is the only payload encryption currently supported
+                        # cryptobox is the only payload encryption currently supported
                         if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
                             # even if the call returned successfully, with payload encryption, the call
                             # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
@@ -618,7 +618,7 @@ class ApplicationSession(BaseSession):
                         endpoint = registration.endpoint
                         proc = msg.procedure or registration.procedure
 
-                        # crypto_box is the only payload encryption currently supported
+                        # cryptobox is the only payload encryption currently supported
                         if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
                             # even if the call returned successfully, with payload encryption, the call
                             # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)

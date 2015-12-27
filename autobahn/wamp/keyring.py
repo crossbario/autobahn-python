@@ -152,7 +152,7 @@ if HAS_NACL:
             payload_bytes = payload_encr.encode().decode('ascii')
             payload_key = binascii.b2a_base64(os.urandom(32)).strip().decode('ascii')
 
-            return EncryptedPayload(u'crypto_box', payload_key, u'json', payload_bytes)
+            return EncryptedPayload(u'cryptobox', payload_key, u'json', payload_bytes)
 
         def decrypt(self, uri, encrypted_payload):
             """

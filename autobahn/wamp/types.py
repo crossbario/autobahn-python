@@ -308,7 +308,7 @@ class EventDetails(object):
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
         :type topic: unicode or None
         :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either `None` or `"crypto_box"`).
+            was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: None or string
         """
         self.publication = publication
@@ -426,7 +426,7 @@ class CallDetails(object):
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
         :type procedure: unicode or None
         :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either `None` or `"crypto_box"`).
+            was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: None or string
         """
         self.progress = progress

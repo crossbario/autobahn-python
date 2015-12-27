@@ -45,6 +45,7 @@ class Component(ApplicationSession):
     """
     An application component that publishes an event every second.
     """
+    NUM = 2
 
     @inlineCallbacks
     def onJoin(self, details):
@@ -73,7 +74,7 @@ class Component(ApplicationSession):
 
         options = CallOptions(disclose_me=True)
         counter = 1
-        while counter < 3:
+        while counter < self.NUM:
             res = yield self.call(u'com.myapp.proc1', 23, counter, options=options)
             print("called: {}".format(res))
             res = yield self.call(u'com.myapp.proc2', 23, counter, options=options)
@@ -96,7 +97,7 @@ class Component(ApplicationSession):
 
         options = PublishOptions(acknowledge=True, exclude_me=False, disclose_me=True)
         counter = 1
-        while counter < 3:
+        while counter < self.NUM:
             msg = u"Counter is at {}".format(counter)
             pub = yield self.publish(u'com.myapp.topic1', msg, options=options)
             print("published: {}".format(pub))
