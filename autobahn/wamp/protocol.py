@@ -435,21 +435,22 @@ class ApplicationSession(BaseSession):
                         topic = msg.topic or subscription.topic
 
                         if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                            # FIXME: behavior in error cases (no keyring, decrypt issues, URI mismatch, ..)
                             if not self._keyring:
                                 self.log.warn("received encrypted payload, but no keyring active - ignoring encrypted payload!")
                             else:
-                                encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                decrypted_topic, args, kwargs = self._keyring.decrypt(topic, encrypted_payload)
-
+                                try:
+                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                except Exception as e:
+                                    self.log.warn("failed to decrypt application payload: {error}", error=e)
                                 if topic != decrypted_topic:
-                                    raise Exception("envelope topic URI does not match encrypted one")
-                        else:
-                            args, kwargs = msg.args, msg.kwargs
+                                    self.log.warn("envelope topic URI does not match encrypted one")
 
                         invoke_args = (handler.obj,) if handler.obj else tuple()
-                        if args:
-                            invoke_args = invoke_args + tuple(args)
-                        invoke_kwargs = kwargs if kwargs else dict()
+                        if msg.args:
+                            invoke_args = invoke_args + tuple(msg.args)
+                        invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
                         if handler.details_arg:
                             invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=topic, enc_algo=msg.enc_algo)
@@ -547,27 +548,54 @@ class ApplicationSession(BaseSession):
                             pass
 
                     else:
-                        # final result
-                        #
+                        # process final call result
                         call_request = self._call_reqs.pop(msg.request)
 
+                        # the user callback that gets fired
                         on_reply = call_request.on_reply
 
-                        if msg.kwargs:
-                            if msg.args:
-                                res = types.CallResult(*msg.args, **msg.kwargs)
+                        # crypto_box is the only payload encryption currently supported
+                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                            # even if the call returned successfully, with payload encryption, the call
+                            # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
+                            if not self._keyring:
+                                log_msg = u"received encrypted payload, but no keyring active"
+                                self.log.warn(log_msg)
+                                res = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
+                                txaio.reject(on_reply, res)
                             else:
-                                res = types.CallResult(**msg.kwargs)
-                            txaio.resolve(on_reply, res)
-                        else:
-                            if msg.args:
-                                if len(msg.args) > 1:
-                                    res = types.CallResult(*msg.args)
-                                    txaio.resolve(on_reply, res)
+                                try:
+                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                except Exception as e:
+                                    log_msg = u"failed to decrypt application payload: {}".format(e)
+                                    self.log.warn(log_msg)
+                                    res = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
+                                    txaio.reject(on_reply, res)
                                 else:
-                                    txaio.resolve(on_reply, msg.args[0])
+                                    if topic != decrypted_topic:
+                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_topic, topic)
+                                        self.log.warn(log_msg)
+                                        res = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
+                                        txaio.reject(on_reply, res)
+
+                        # above might already have rejected, so we guard ..
+                        if not txaio.is_called(on_reply):
+                            if msg.kwargs:
+                                if msg.args:
+                                    res = types.CallResult(*msg.args, **msg.kwargs)
+                                else:
+                                    res = types.CallResult(**msg.kwargs)
+                                txaio.resolve(on_reply, res)
                             else:
-                                txaio.resolve(on_reply, None)
+                                if msg.args:
+                                    if len(msg.args) > 1:
+                                        res = types.CallResult(*msg.args)
+                                        txaio.resolve(on_reply, res)
+                                    else:
+                                        txaio.resolve(on_reply, msg.args[0])
+                                else:
+                                    txaio.resolve(on_reply, None)
                 else:
                     raise ProtocolError("RESULT received for non-pending request ID {0}".format(msg.request))
 
@@ -836,10 +864,9 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
-        if 'options' in kwargs and isinstance(kwargs['options'], types.PublishOptions):
-            options = kwargs.pop('options')
-        else:
-            options = None
+        options = kwargs.pop('options', None)
+        if options and not isinstance(options, types.PublishOptions):
+            raise Exception("options must be of type a.w.t.PublishOptions")
 
         request_id = self._request_id_gen.next()
 
@@ -848,18 +875,33 @@ class ApplicationSession(BaseSession):
             encrypted_payload = self._keyring.encrypt(topic, args, kwargs)
 
         if encrypted_payload:
-            msg = message.Publish(request_id,
-                                  topic,
-                                  enc_algo=encrypted_payload.algo,
-                                  enc_key=encrypted_payload.pkey,
-                                  enc_serializer=encrypted_payload.serializer,
-                                  payload=encrypted_payload.payload,
-                                  **options.message_attr())
+            if options:
+                msg = message.Publish(request_id,
+                                      topic,
+                                      payload=encrypted_payload.payload,
+                                      enc_algo=encrypted_payload.algo,
+                                      enc_key=encrypted_payload.pkey,
+                                      enc_serializer=encrypted_payload.serializer,
+                                      **options.message_attr())
+            else:
+                msg = message.Publish(request_id,
+                                      topic,
+                                      payload=encrypted_payload.payload,
+                                      enc_algo=encrypted_payload.algo,
+                                      enc_key=encrypted_payload.pkey,
+                                      enc_serializer=encrypted_payload.serializer)
         else:
             if options:
-                msg = message.Publish(request_id, topic, args=args, kwargs=kwargs, **options.message_attr())
+                msg = message.Publish(request_id,
+                                      topic,
+                                      args=args,
+                                      kwargs=kwargs,
+                                      **options.message_attr())
             else:
-                msg = message.Publish(request_id, topic, args=args, kwargs=kwargs)
+                msg = message.Publish(request_id,
+                                      topic,
+                                      args=args,
+                                      kwargs=kwargs)
 
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
@@ -977,16 +1019,46 @@ class ApplicationSession(BaseSession):
         if not self._transport:
             raise exception.TransportLost()
 
+        options = kwargs.pop('options', None)
+        if options and not isinstance(options, types.CallOptions):
+            raise Exception("options must be of type a.w.t.CallOptions")
+
         request_id = self._request_id_gen.next()
 
-        if 'options' in kwargs and isinstance(kwargs['options'], types.CallOptions):
-            options = kwargs.pop('options')
-            msg = message.Call(request_id, procedure, args=args, kwargs=kwargs, **options.message_attr())
-        else:
-            options = None
-            msg = message.Call(request_id, procedure, args=args, kwargs=kwargs)
+        encrypted_payload = None
+        if self._keyring:
+            encrypted_payload = self._keyring.encrypt(procedure, args, kwargs)
 
-        # FIXME
+        if encrypted_payload:
+            if options:
+                msg = message.Call(request_id,
+                                   procedure,
+                                   payload=encrypted_payload.payload,
+                                   enc_algo=encrypted_payload.algo,
+                                   enc_key=encrypted_payload.pkey,
+                                   enc_serializer=encrypted_payload.serializer,
+                                   **options.message_attr())
+            else:
+                msg = message.Call(request_id,
+                                   procedure,
+                                   payload=encrypted_payload.payload,
+                                   enc_algo=encrypted_payload.algo,
+                                   enc_key=encrypted_payload.pkey,
+                                   enc_serializer=encrypted_payload.serializer)
+        else:
+            if options:
+                msg = message.Call(request_id,
+                                   procedure,
+                                   args=args,
+                                   kwargs=kwargs,
+                                   **options.message_attr())
+            else:
+                msg = message.Call(request_id,
+                                   procedure,
+                                   args=args,
+                                   kwargs=kwargs)
+
+        # FIXME: implement call canceling
         # def canceller(_d):
         #   cancel_msg = message.Cancel(request)
         #   self._transport.send(cancel_msg)
@@ -1000,7 +1072,7 @@ class ApplicationSession(BaseSession):
             #
             # * this might raise autobahn.wamp.exception.SerializationError
             #   when the user payload cannot be serialized
-            # * we have to setup a PublishRequest() in _publish_reqs _before_
+            # * we have to setup a CallRequest() in _call_reqs _before_
             #   calling transpor.send(), because a mock- or side-by-side transport
             #   will immediately lead on an incoming WAMP message in onMessage()
             #

@@ -31,7 +31,7 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession, ApplicationRunner
-from autobahn.wamp.types import PublishOptions, SubscribeOptions
+from autobahn.wamp.types import PublishOptions, SubscribeOptions, CallOptions, RegisterOptions
 
 ENCRYPTION_KEY = u'z1JePdJbQkbRCWjldZYImgj5hpsZ2cEtX7CQmQmdta4='
 
@@ -52,7 +52,40 @@ class Component(ApplicationSession):
         self._keyring = KeyRing()
 
         key = PrivateKey(ENCRYPTION_KEY, encoder=Base64Encoder)
-        self._keyring.add(u'com.myapp.topic1', key)
+        self._keyring.add(u'com.myapp.topic2', key)
+        self._keyring.add(u'com.myapp.proc2', key)
+
+        yield self._test_rpc()
+        yield self._test_pubsub()
+
+        self.leave()
+
+    @inlineCallbacks
+    def _test_rpc(self):
+
+        def add2(a, b, details=None):
+            print("call received: a={}, b={}, details={}".format(a, b, details))
+            return a + b
+
+        options = RegisterOptions(details_arg='details')
+        reg1 = yield self.register(add2, u'com.myapp.proc1', options=options)
+        reg2 = yield self.register(add2, u'com.myapp.proc2', options=options)
+
+        options = CallOptions(disclose_me=True)
+        counter = 1
+        while counter < 3:
+            res = yield self.call(u'com.myapp.proc1', 23, counter, options=options)
+            print("called: {}".format(res))
+            res = yield self.call(u'com.myapp.proc2', 23, counter, options=options)
+            print("called: {}".format(res))
+            yield sleep(1)
+            counter += 1
+
+        yield reg1.unregister()
+        yield reg2.unregister()
+
+    @inlineCallbacks
+    def _test_pubsub(self):
 
         def on_message(msg, details=None):
             print("event received: msg='{}', details={}".format(msg, details))
@@ -74,8 +107,6 @@ class Component(ApplicationSession):
 
         yield sub1.unsubscribe()
         yield sub2.unsubscribe()
-
-        self.leave()
 
     def onLeave(self, details):
         self.disconnect()

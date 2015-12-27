@@ -199,6 +199,11 @@ class ApplicationError(Error):
     exclusion of (any) *Callee* providing the procedure (WAMP AP).
     """
 
+    # application payload end-to-end encryption related errors
+    ENC_NO_KEYRING_ACTIVE = u"wamp.error.encryption.no_keyring_active"
+    ENC_TRUSTED_URI_MISMATCH = u"wamp.error.encryption.trusted_uri_mismatch"
+    ENC_DECRYPT_ERROR = u"wamp.error.encryption.decrypt_error"
+
     def __init__(self, error, *args, **kwargs):
         """
 

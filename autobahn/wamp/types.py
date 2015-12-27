@@ -499,7 +499,7 @@ class CallResult(object):
         """
         self.results = results
         self.kwresults = kwresults
-        self.enc_algo = kwargs.pop('enc_algo', None)
+        self.enc_algo = kwresults.pop('enc_algo', None)
 
     def __str__(self):
         return "CallResult(results = {0}, kwresults = {1}, enc_algo = {2})".format(self.results, self.kwresults, self.enc_algo)
