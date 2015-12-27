@@ -434,9 +434,9 @@ class ApplicationSession(BaseSession):
                         handler = subscription.handler
                         topic = msg.topic or subscription.topic
 
-                        if msg.ep_payload:
+                        if msg.payload:
                             if self._keyring:
-                                encrypted_payload = EncryptedPayload(msg.ep_algo, msg.ep_key, msg.ep_serializer, msg.ep_payload)
+                                encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                                 decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
                                 if topic != decrypted_topic:
                                     raise Exception("envelope topic URI does not match encrypted one")
@@ -848,10 +848,10 @@ class ApplicationSession(BaseSession):
         if encrypted_payload:
             msg = message.Publish(request_id,
                                   topic,
-                                  ep_algo=encrypted_payload.algo,
-                                  ep_key=encrypted_payload.pkey,
-                                  ep_serializer=encrypted_payload.serializer,
-                                  ep_payload=encrypted_payload.payload,
+                                  enc_algo=encrypted_payload.algo,
+                                  enc_key=encrypted_payload.pkey,
+                                  enc_serializer=encrypted_payload.serializer,
+                                  payload=encrypted_payload.payload,
                                   **options.message_attr())
         else:
             if options:

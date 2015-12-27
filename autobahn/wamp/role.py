@@ -87,6 +87,8 @@ class RoleBrokerFeatures(RoleFeatures):
                  publisher_exclusion=None,
                  subscription_revocation=None,
                  event_history=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
@@ -97,6 +99,8 @@ class RoleBrokerFeatures(RoleFeatures):
         self.publisher_exclusion = publisher_exclusion
         self.subscription_revocation = subscription_revocation
         self.event_history = event_history
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -114,12 +118,16 @@ class RoleSubscriberFeatures(RoleFeatures):
                  pattern_based_subscription=None,
                  subscription_revocation=None,
                  event_history=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
         self.pattern_based_subscription = pattern_based_subscription
         self.subscription_revocation = subscription_revocation
         self.event_history = event_history
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -135,10 +143,14 @@ class RolePublisherFeatures(RoleFeatures):
                  publisher_identification=None,
                  subscriber_blackwhite_listing=None,
                  publisher_exclusion=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.publisher_identification = publisher_identification
         self.subscriber_blackwhite_listing = subscriber_blackwhite_listing
         self.publisher_exclusion = publisher_exclusion
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -161,6 +173,8 @@ class RoleDealerFeatures(RoleFeatures):
                  call_canceling=None,
                  progressive_call_results=None,
                  registration_revocation=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
@@ -172,6 +186,8 @@ class RoleDealerFeatures(RoleFeatures):
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
         self.registration_revocation = registration_revocation
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -188,11 +204,15 @@ class RoleCallerFeatures(RoleFeatures):
                  call_timeout=None,
                  call_canceling=None,
                  progressive_call_results=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.caller_identification = caller_identification
         self.call_timeout = call_timeout
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -213,6 +233,8 @@ class RoleCalleeFeatures(RoleFeatures):
                  call_canceling=None,
                  progressive_call_results=None,
                  registration_revocation=None,
+                 payload_transparency=None,
+                 payload_encryption_wpe3=None,
                  **kwargs):
         self.caller_identification = caller_identification
         self.call_trustlevels = call_trustlevels
@@ -222,6 +244,8 @@ class RoleCalleeFeatures(RoleFeatures):
         self.call_canceling = call_canceling
         self.progressive_call_results = progressive_call_results
         self.registration_revocation = registration_revocation
+        self.payload_transparency = payload_transparency
+        self.payload_encryption_wpe3 = payload_encryption_wpe3
         self._check_all_bool()
 
 
@@ -238,8 +262,8 @@ ROLE_NAME_TO_CLASS = {
 
 # default role features for client roles supported
 DEFAULT_CLIENT_ROLES = {
-    u'subscriber': RoleSubscriberFeatures(publisher_identification=True, pattern_based_subscription=True, subscription_revocation=True),
-    u'publisher': RolePublisherFeatures(publisher_identification=True, subscriber_blackwhite_listing=True, publisher_exclusion=True),
-    u'caller': RoleCallerFeatures(caller_identification=True, progressive_call_results=True),
-    u'callee': RoleCalleeFeatures(caller_identification=True, pattern_based_registration=True, shared_registration=True, progressive_call_results=True, registration_revocation=True),
+    u'subscriber': RoleSubscriberFeatures(publisher_identification=True, pattern_based_subscription=True, subscription_revocation=True, payload_transparency=True, payload_encryption_wpe3=True),
+    u'publisher': RolePublisherFeatures(publisher_identification=True, subscriber_blackwhite_listing=True, publisher_exclusion=True, payload_transparency=True, payload_encryption_wpe3=True),
+    u'caller': RoleCallerFeatures(caller_identification=True, progressive_call_results=True, payload_transparency=True, payload_encryption_wpe3=True),
+    u'callee': RoleCalleeFeatures(caller_identification=True, pattern_based_registration=True, shared_registration=True, progressive_call_results=True, registration_revocation=True, payload_transparency=True, payload_encryption_wpe3=True),
 }
