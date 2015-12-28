@@ -26,14 +26,13 @@
 
 from __future__ import absolute_import
 
-import os
 import json
-import binascii
 
 import six
 
 __all__ = (
     'HAS_NACL',
+    'Key',
     'KeyRing',
     'EncryptedPayload'
 )
@@ -46,6 +45,9 @@ except ImportError:
 
 
 class EncryptedPayload(object):
+    """
+    Thin-wrapper holding encrypted application payloads.
+    """
 
     def __init__(self, algo, pkey, serializer, payload):
         self.algo = algo
@@ -61,85 +63,123 @@ if HAS_NACL:
 
     from pytrie import StringTrie
 
+    class Key(object):
+        """
+        Holds originator and responder keys for an URI.
+
+        The originator is either a caller or a publisher. The responder is either a callee or subscriber.
+        """
+
+        def __init__(self, originator_priv=None, originator_pub=None, responder_priv=None, responder_pub=None):
+            # the originator private and public keys, as available
+            if originator_priv:
+                self.originator_priv = PrivateKey(originator_priv, encoder=Base64Encoder)
+            else:
+                self.originator_priv = None
+
+            if self.originator_priv:
+                self.originator_pub = self.originator_priv.public_key
+                assert(originator_pub is None or originator_pub == self.originator_pub)
+            else:
+                self.originator_pub = PublicKey(originator_pub, encoder=Base64Encoder)
+
+            # the responder private and public keys, as available
+            if responder_priv:
+                self.responder_priv = PrivateKey(responder_priv, encoder=Base64Encoder)
+            else:
+                self.responder_priv = None
+
+            if self.responder_priv:
+                self.responder_pub = self.responder_priv.public_key
+                assert(responder_pub is None or responder_pub == self.responder_pub)
+            else:
+                self.responder_pub = PublicKey(responder_pub, encoder=Base64Encoder)
+
+            # this crypto box is for originators (callers, publishers):
+            #
+            #  1. _encrypting_ WAMP messages outgoing from originators: CALL*, PUBLISH*
+            #  2. _decrypting_ WAMP messages incoming to originators: RESULT*, ERROR
+            #
+            if self.originator_priv and self.responder_pub:
+                self.originator_box = Box(self.originator_priv, self.responder_pub)
+            else:
+                self.originator_box = None
+
+            # this crypto box is for responders (callees, subscribers):
+            #
+            #  1. _decrypting_ WAMP messages incoming to responders: INVOCATION*, EVENT*
+            #  2. _encrypting_ WAMP messages outgoing from responders: YIELD*, ERROR
+            #
+            if self.responder_priv and self.originator_pub:
+                self.responder_box = Box(self.responder_priv, self.originator_pub)
+            else:
+                self.responder_box = None
+
+            if not (self.originator_box or self.responder_box):
+                raise Exception("insufficient keys provided for at least originator or responder role")
+
     class KeyRing(object):
         """
-        In WAMP, a WAMP client connected to a router in general will
-        send and receive WAMP messages containing application payload
-        in the "args" and "kwargs" message fields.
-
-        Futher, a WAMP client will send the following WAMP message types:
-
-          * PUBLISH
-          * CALL
-          * YIELD
-          * ERROR
-
-        and will receive the following message types
-
-          * EVENT
-          * RESULT
-          * ERROR
-          * INVOCATION
-
-        A keyring maps an URI to a pair of Ed25519 keys, one for the
-        sending side, and one for the receiving side.
-
-        A client wishing to publish to topic T1 first looks up T1 in
-        a keyring. This will return the pair of keys (Sender_key, Receiver_key)
-        that have been stored under an URI K1 such that K1 is a longest match of T1.
-
-        The client generates a new random message key and encrypt the
-        message. The symmetric message encrypted key is then encrypted using
-        the Pub(Receiver_key) and Priv(Sender_key).
+        A keyring holds (cryptobox) public-private key pairs for use with WAMP-cryptobox payload
+        encryption. The keyring can be set on a WAMP session and then transparently will get used
+        for encrypting and decrypting WAMP message payloads.
         """
 
-        def __init__(self):
+        def __init__(self, default_key=None):
             """
 
-            Create a new key ring to hold Ed25519 public and private keys
-            mapped from an URI space.
+            Create a new key ring to hold public and private keys mapped from an URI space.
             """
-            self._uri_map = StringTrie()
+            assert(default_key is None or isinstance(default_key, Key))
+            self._uri_to_key = StringTrie()
+            self._default_key = default_key
 
-        def add(self, uri_prefix, key=None):
+        def set_key(self, uri, key):
             """
-            Adda public or private key, in serialized, base64 format or as
-            an ncal.public.PrivateKey or PublicKey instance.
+            Add a key set for a given URI.
             """
-            if uri_prefix not in self._uri_map:
-                if key:
-                    if isinstance(key, PrivateKey) or isinstance(key, PublicKey):
-                        pass
-                    elif type(key) == six.text_type:
-                        key = PrivateKey(key, encoder=Base64Encoder)
-                    elif type(key) == six.binary_type:
-                        key = PrivateKey(key)
-                    else:
-                        raise Exception("invalid type {} for key".format(type(key)))
-                    box = Box(key, key.public_key)
+            assert(type(uri) == six.text_type)
+            assert(key is None or isinstance(key, Key))
+            if uri == u'':
+                self._default_key = key
+            else:
+                if key is None:
+                    if uri in self._uri_to_key:
+                        del self._uri_to_key[uri]
                 else:
-                    box = None
-                self._uri_map[uri_prefix] = box
+                    self._uri_to_key[uri] = key
 
-        def check(self, uri):
-            """
-            Return True if sending a message to the URI should have it's
-            application payload args and kwargs encrypted.
-            """
+        def _get_box(self, is_originator, uri, match_exact=False):
             try:
-                box = self._uri_map.longest_prefix_value(uri)
-                return box is not None
+                if match_exact:
+                    key = self._uri_to_key[uri]
+                else:
+                    key = self._uri_to_key.longest_prefix_value(uri)
             except KeyError:
-                return False
+                if self._default_key:
+                    key = self._default_key
+                else:
+                    return None
 
-        def encrypt(self, uri, args=None, kwargs=None):
+            if is_originator:
+                return key.originator_box
+            else:
+                return key.responder_box
+
+        def encrypt(self, is_originator, uri, args=None, kwargs=None):
             """
-            Encrypt the given WAMP URI, args and kwargs into an EncryptedPayload instance.
+            Encrypt the given WAMP URI, args and kwargs into an EncryptedPayload instance, or None
+            if the URI should not be encrypted.
             """
-            try:
-                box = self._uri_map.longest_prefix_value(uri)
-            except KeyError:
-                return None
+            assert(type(uri) == six.text_type)
+            assert(type(is_originator) == bool)
+            assert(args is None or type(args) in (list, tuple))
+            assert(kwargs is None or type(kwargs) == dict)
+
+            box = self._get_box(is_originator, uri)
+
+            if not box:
+                return
 
             payload = {
                 u'uri': uri,
@@ -150,18 +190,34 @@ if HAS_NACL:
             payload_ser = json.dumps(payload)
             payload_encr = box.encrypt(payload_ser, nonce, encoder=Base64Encoder)
             payload_bytes = payload_encr.encode().decode('ascii')
-            payload_key = binascii.b2a_base64(os.urandom(32)).strip().decode('ascii')
+            payload_key = None
 
             return EncryptedPayload(u'cryptobox', payload_key, u'json', payload_bytes)
 
-        def decrypt(self, uri, encrypted_payload):
+        def decrypt(self, is_originator, uri, encrypted_payload):
             """
             Decrypt the given WAMP URI and EncryptedPayload into a tuple (uri, args, kwargs).
             """
-            box = self._uri_map.longest_prefix_value(uri)
+            assert(type(uri) == six.text_type)
+            assert(isinstance(encrypted_payload, EncryptedPayload))
+
+            box = self._get_box(is_originator, uri)
+
+            if not box:
+                raise Exception("received encrypted payload, but can't find key!")
+
             payload_ser = box.decrypt(encrypted_payload.payload, encoder=Base64Encoder)
+
+            if encrypted_payload.serializer != u'json':
+                raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encrypted_payload.serializer))
+
             payload = json.loads(payload_ser)
-            return payload[u'uri'], payload[u'args'], payload[u'kwargs']
+
+            uri = payload[u'uri']
+            args = payload.get(u'args', None)
+            kwargs = payload.get(u'kwargs', None)
+
+            return uri, args, kwargs
 
 else:
 

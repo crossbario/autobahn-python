@@ -250,6 +250,11 @@ class ApplicationSession(BaseSession):
         # incoming invocations
         self._invocations = {}
 
+    def set_keyring(self, keyring):
+        """
+        """
+        self._keyring = keyring
+
     def onOpen(self, transport):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
@@ -441,7 +446,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 try:
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(topic, encrypted_payload)
+                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(False, topic, encrypted_payload)
                                 except Exception as e:
                                     self.log.warn("failed to decrypt application payload: {error}", error=e)
                                 else:
@@ -568,7 +573,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 try:
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(proc, encrypted_payload)
+                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(True, proc, encrypted_payload)
                                 except Exception as e:
                                     log_msg = u"failed to decrypt application payload: {}".format(e)
                                     self.log.warn(log_msg)
@@ -628,7 +633,7 @@ class ApplicationSession(BaseSession):
                             else:
                                 try:
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(proc, encrypted_payload)
+                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(False, proc, encrypted_payload)
                                 except Exception as e:
                                     log_msg = u"failed to decrypt application payload: {}".format(e)
                                     self.log.warn(log_msg)
@@ -673,9 +678,9 @@ class ApplicationSession(BaseSession):
                                 else:
                                     try:
                                         if isinstance(res, types.CallResult):
-                                            encrypted_payload = self._keyring.encrypt(proc, res.results, res.kwresults)
+                                            encrypted_payload = self._keyring.encrypt(False, proc, res.results, res.kwresults)
                                         else:
-                                            encrypted_payload = self._keyring.encrypt(proc, [res])
+                                            encrypted_payload = self._keyring.encrypt(False, proc, [res])
                                     except Exception as e:
                                         log_msg = u"failed to encrypt application payload: {}".format(e)
                                         self.log.warn(log_msg)
@@ -921,7 +926,7 @@ class ApplicationSession(BaseSession):
 
         encrypted_payload = None
         if self._keyring:
-            encrypted_payload = self._keyring.encrypt(topic, args, kwargs)
+            encrypted_payload = self._keyring.encrypt(True, topic, args, kwargs)
 
         if encrypted_payload:
             if options:
@@ -1076,7 +1081,7 @@ class ApplicationSession(BaseSession):
 
         encrypted_payload = None
         if self._keyring:
-            encrypted_payload = self._keyring.encrypt(procedure, args, kwargs)
+            encrypted_payload = self._keyring.encrypt(True, procedure, args, kwargs)
 
         if encrypted_payload:
             if options:

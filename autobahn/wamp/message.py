@@ -1104,7 +1104,7 @@ class Publish(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
@@ -1739,7 +1739,7 @@ class Event(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.subscription = subscription
@@ -1950,7 +1950,7 @@ class Call(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2250,7 +2250,7 @@ class Result(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
@@ -2799,7 +2799,7 @@ class Invocation(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
@@ -3112,7 +3112,7 @@ class Yield(Message):
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
-        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and enc_key is not None and payload is not None))
+        assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
         self.request = request
