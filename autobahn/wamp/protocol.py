@@ -155,16 +155,8 @@ class BaseSession(ObservableMixin):
                 error = u"wamp.error.runtime_error"
 
         encrypted_payload = None
-        if enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-            if not self._keyring:
-                log_msg = u"trying to send encrypted payload, but no keyring active"
-                self.log.warn(log_msg)
-            else:
-                try:
-                    encrypted_payload = self._keyring.encrypt(False, error, args, kwargs)
-                except Exception as e:
-                    log_msg = u"failed to encrypt application payload: {}".format(e)
-                    self.log.warn(log_msg)
+        if self._keyring:
+            encrypted_payload = self._keyring.encrypt(False, error, args, kwargs)
 
         if encrypted_payload:
             msg = message.Error(request_type,
