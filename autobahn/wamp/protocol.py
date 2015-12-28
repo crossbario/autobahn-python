@@ -530,64 +530,61 @@ class ApplicationSession(BaseSession):
 
                 if msg.request in self._call_reqs:
 
-                    if msg.progress:
+                    call_request = self._call_reqs[msg.request]
+                    proc = call_request.procedure
+                    enc_err = None
 
-                        # progressive result
-                        call_request = self._call_reqs[msg.request]
-                        if call_request.options.on_progress:
-                            kw = msg.kwargs or dict()
-                            args = msg.args or tuple()
-                            try:
-                                # XXX what if on_progress returns a Deferred/Future?
-                                call_request.options.on_progress(*args, **kw)
-                            except Exception:
-                                try:
-                                    self.onUserError(
-                                        txaio.create_failure(),
-                                        "While firing on_progress",
-                                    )
-                                except:
-                                    pass
+                    if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
 
+                        if not self._keyring:
+                            log_msg = u"received encrypted payload, but no keyring active"
+                            self.log.warn(log_msg)
+                            enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
                         else:
-                            # silently ignore progressive results
-                            pass
+                            try:
+                                encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(True, proc, encrypted_payload)
+                            except Exception as e:
+                                log_msg = u"failed to decrypt application payload 1: {}".format(e)
+                                self.log.warn(log_msg)
+                                enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
+                            else:
+                                if proc != decrypted_proc:
+                                    log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
+                                    self.log.warn(log_msg)
+                                    enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
+
+                    if msg.progress:
+                        # process progressive call result
+
+                        if call_request.options.on_progress:
+                            if enc_err:
+                                self.onUserError(enc_err, "could not deliver progressive call result, because payload decryption failed")
+                            else:
+                                kw = msg.kwargs or dict()
+                                args = msg.args or tuple()
+                                try:
+                                    # XXX what if on_progress returns a Deferred/Future?
+                                    call_request.options.on_progress(*args, **kw)
+                                except Exception:
+                                    try:
+                                        self.onUserError(txaio.create_failure(), "While firing on_progress")
+                                    except:
+                                        pass
 
                     else:
                         # process final call result
-                        call_request = self._call_reqs.pop(msg.request)
-                        proc = call_request.procedure
 
-                        # the user callback that gets fired
+                        # drop original request
+                        del self._call_reqs[msg.request]
+
+                        # user callback that gets fired
                         on_reply = call_request.on_reply
 
-                        # cryptobox is the only payload encryption currently supported
-                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                            # even if the call returned successfully, with payload encryption, the call
-                            # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
-                            if not self._keyring:
-                                log_msg = u"received encrypted payload, but no keyring active"
-                                self.log.warn(log_msg)
-                                res = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
-                                txaio.reject(on_reply, res)
-                            else:
-                                try:
-                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(True, proc, encrypted_payload)
-                                except Exception as e:
-                                    log_msg = u"failed to decrypt application payload: {}".format(e)
-                                    self.log.warn(log_msg)
-                                    res = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
-                                    txaio.reject(on_reply, res)
-                                else:
-                                    if proc != decrypted_proc:
-                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
-                                        self.log.warn(log_msg)
-                                        res = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
-                                        txaio.reject(on_reply, res)
-
                         # above might already have rejected, so we guard ..
-                        if not txaio.is_called(on_reply):
+                        if enc_err:
+                            txaio.reject(on_reply, enc_err)
+                        else:
                             if msg.kwargs:
                                 if msg.args:
                                     res = types.CallResult(*msg.args, **msg.kwargs)
@@ -622,124 +619,131 @@ class ApplicationSession(BaseSession):
                         registration = self._registrations[msg.registration]
                         endpoint = registration.endpoint
                         proc = msg.procedure or registration.procedure
+                        enc_err = None
 
-                        # cryptobox is the only payload encryption currently supported
                         if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                            # even if the call returned successfully, with payload encryption, the call
-                            # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
                             if not self._keyring:
-                                log_msg = u"received encrypted payload, but no keyring active"
+                                log_msg = u"received encrypted INVOCATION payload, but no keyring active"
                                 self.log.warn(log_msg)
+                                enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
                             else:
                                 try:
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                                     decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(False, proc, encrypted_payload)
                                 except Exception as e:
-                                    log_msg = u"failed to decrypt application payload: {}".format(e)
+                                    log_msg = u"failed to decrypt INVOCATION payload: {}".format(e)
                                     self.log.warn(log_msg)
+                                    enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
                                 else:
                                     if proc != decrypted_proc:
-                                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
+                                        log_msg = u"URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
                                         self.log.warn(log_msg)
+                                        enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
 
-                        if endpoint.obj is not None:
-                            invoke_args = (endpoint.obj,)
+                        if enc_err:
+                            # when there was a problem decrypting the INVOCATION payload, we obviously can't invoke
+                            # the endpoint, but return and
+                            reply = self._message_from_exception(message.Invocation.MESSAGE_TYPE, msg.request, enc_err)
+                            self._transport.send(reply)
+
                         else:
-                            invoke_args = tuple()
 
-                        if msg.args:
-                            invoke_args = invoke_args + tuple(msg.args)
-
-                        invoke_kwargs = msg.kwargs if msg.kwargs else dict()
-
-                        if endpoint.details_arg:
-
-                            if msg.receive_progress:
-                                def progress(*args, **kwargs):
-                                    progress_msg = message.Yield(msg.request, args=args, kwargs=kwargs, progress=True)
-                                    self._transport.send(progress_msg)
+                            if endpoint.obj is not None:
+                                invoke_args = (endpoint.obj,)
                             else:
-                                progress = None
+                                invoke_args = tuple()
 
-                            invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=proc, enc_algo=msg.enc_algo)
+                            if msg.args:
+                                invoke_args = invoke_args + tuple(msg.args)
 
-                        on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+                            invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
-                        def success(res):
-                            del self._invocations[msg.request]
+                            if endpoint.details_arg:
 
-                            encrypted_payload = None
-                            if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                                # even if the call returned successfully, with payload encryption, the call
-                                # result might still be an error (no keyring, decrypt issues, URI mismatch, ..)
-                                if not self._keyring:
-                                    log_msg = u"trying to send encrypted payload, but no keyring active"
-                                    self.log.warn(log_msg)
+                                if msg.receive_progress:
+                                    def progress(*args, **kwargs):
+                                        progress_msg = message.Yield(msg.request, args=args, kwargs=kwargs, progress=True)
+                                        self._transport.send(progress_msg)
                                 else:
-                                    try:
-                                        if isinstance(res, types.CallResult):
-                                            encrypted_payload = self._keyring.encrypt(False, proc, res.results, res.kwresults)
-                                        else:
-                                            encrypted_payload = self._keyring.encrypt(False, proc, [res])
-                                    except Exception as e:
-                                        log_msg = u"failed to encrypt application payload: {}".format(e)
+                                    progress = None
+
+                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=proc, enc_algo=msg.enc_algo)
+
+                            on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
+
+                            def success(res):
+                                del self._invocations[msg.request]
+
+                                encrypted_payload = None
+                                if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                                    if not self._keyring:
+                                        log_msg = u"trying to send encrypted payload, but no keyring active"
                                         self.log.warn(log_msg)
+                                    else:
+                                        try:
+                                            if isinstance(res, types.CallResult):
+                                                encrypted_payload = self._keyring.encrypt(False, proc, res.results, res.kwresults)
+                                            else:
+                                                encrypted_payload = self._keyring.encrypt(False, proc, [res])
+                                        except Exception as e:
+                                            log_msg = u"failed to encrypt application payload: {}".format(e)
+                                            self.log.warn(log_msg)
 
-                            if encrypted_payload:
-                                    reply = message.Yield(msg.request,
-                                                          payload=encrypted_payload.payload,
-                                                          enc_algo=encrypted_payload.algo,
-                                                          enc_key=encrypted_payload.pkey,
-                                                          enc_serializer=encrypted_payload.serializer)
-                            else:
-                                if isinstance(res, types.CallResult):
-                                    reply = message.Yield(msg.request,
-                                                          args=res.results,
-                                                          kwargs=res.kwresults)
+                                if encrypted_payload:
+                                        reply = message.Yield(msg.request,
+                                                              payload=encrypted_payload.payload,
+                                                              enc_algo=encrypted_payload.algo,
+                                                              enc_key=encrypted_payload.pkey,
+                                                              enc_serializer=encrypted_payload.serializer)
                                 else:
-                                    reply = message.Yield(msg.request,
-                                                          args=[res])
+                                    if isinstance(res, types.CallResult):
+                                        reply = message.Yield(msg.request,
+                                                              args=res.results,
+                                                              kwargs=res.kwresults)
+                                    else:
+                                        reply = message.Yield(msg.request,
+                                                              args=[res])
 
-                            try:
-                                self._transport.send(reply)
-                            except SerializationError as e:
-                                # the application-level payload returned from the invoked procedure can't be serialized
-                                reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                      args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
-                                self._transport.send(reply)
+                                try:
+                                    self._transport.send(reply)
+                                except SerializationError as e:
+                                    # the application-level payload returned from the invoked procedure can't be serialized
+                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
+                                                          args=[u'success return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                    self._transport.send(reply)
 
-                        def error(err):
-                            errmsg = txaio.failure_message(err)
-                            try:
-                                self.onUserError(err, errmsg)
-                            except:
-                                pass
-                            formatted_tb = None
-                            if self.traceback_app:
-                                formatted_tb = txaio.failure_format_traceback(err)
+                            def error(err):
+                                errmsg = txaio.failure_message(err)
+                                try:
+                                    self.onUserError(err, errmsg)
+                                except:
+                                    pass
+                                formatted_tb = None
+                                if self.traceback_app:
+                                    formatted_tb = txaio.failure_format_traceback(err)
 
-                            del self._invocations[msg.request]
+                                del self._invocations[msg.request]
 
-                            reply = self._message_from_exception(
-                                message.Invocation.MESSAGE_TYPE,
-                                msg.request,
-                                err.value,
-                                formatted_tb,
-                            )
+                                reply = self._message_from_exception(
+                                    message.Invocation.MESSAGE_TYPE,
+                                    msg.request,
+                                    err.value,
+                                    formatted_tb,
+                                )
 
-                            try:
-                                self._transport.send(reply)
-                            except SerializationError as e:
-                                # the application-level payload returned from the invoked procedure can't be serialized
-                                reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
-                                                      args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
-                                self._transport.send(reply)
-                            # we have handled the error, so we eat it
-                            return None
+                                try:
+                                    self._transport.send(reply)
+                                except SerializationError as e:
+                                    # the application-level payload returned from the invoked procedure can't be serialized
+                                    reply = message.Error(message.Invocation.MESSAGE_TYPE, msg.request, ApplicationError.INVALID_PAYLOAD,
+                                                          args=[u'error return value from invoked procedure "{0}" could not be serialized: {1}'.format(registration.procedure, e)])
+                                    self._transport.send(reply)
+                                # we have handled the error, so we eat it
+                                return None
 
-                        self._invocations[msg.request] = InvocationRequest(msg.request, on_reply)
+                            self._invocations[msg.request] = InvocationRequest(msg.request, on_reply)
 
-                        txaio.add_callbacks(on_reply, success, error)
+                            txaio.add_callbacks(on_reply, success, error)
 
             elif isinstance(msg, message.Interrupt):
 
