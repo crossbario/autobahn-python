@@ -1019,7 +1019,7 @@ class Error(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP Error Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4}, enc_algo = {5}, enc_key = {6}, enc_serializer = {7}, payload = {8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return "WAMP ERROR Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4}, enc_algo = {5}, enc_key = {6}, enc_serializer = {7}, payload = {8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Publish(Message):

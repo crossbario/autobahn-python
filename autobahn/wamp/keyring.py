@@ -130,16 +130,30 @@ if HAS_NACL:
 
             Create a new key ring to hold public and private keys mapped from an URI space.
             """
-            assert(default_key is None or isinstance(default_key, Key))
+            assert(default_key is None or isinstance(default_key, Key) or type(default_key == six.text_type))
             self._uri_to_key = StringTrie()
+            if type(default_key) == six.text_type:
+                default_key = Key(originator_priv=default_key, responder_priv=default_key)
             self._default_key = default_key
+
+        def generate_key(self):
+            """
+            Generate a new private key and return a pair with the base64 encodings
+            of (priv_key, pub_key).
+            """
+            key = PrivateKey.generate()
+            priv_key = key.encode(encoder=Base64Encoder)
+            pub_key = key.public_key.encode(encoder=Base64Encoder)
+            return (u'{}'.format(priv_key), u''.format(pub_key))
 
         def set_key(self, uri, key):
             """
             Add a key set for a given URI.
             """
             assert(type(uri) == six.text_type)
-            assert(key is None or isinstance(key, Key))
+            assert(key is None or isinstance(key, Key) or type(key) == six.text_type)
+            if type(key) == six.text_type:
+                key = Key(originator_priv=key, responder_priv=key)
             if uri == u'':
                 self._default_key = key
             else:

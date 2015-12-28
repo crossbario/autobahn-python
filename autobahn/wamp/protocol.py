@@ -117,7 +117,7 @@ class BaseSession(ObservableMixin):
             self._ecls_to_uri_pat[exception] = [uri.Pattern(six.u(error), uri.Pattern.URI_TARGET_HANDLER)]
             self._uri_to_ecls[six.u(error)] = exception
 
-    def _message_from_exception(self, request_type, request, exc, tb=None):
+    def _message_from_exception(self, request_type, request, exc, tb=None, enc_algo=None):
         """
         Create a WAMP error message from an exception.
 
@@ -130,6 +130,8 @@ class BaseSession(ObservableMixin):
         :param tb: Optional traceback. If present, it'll be included with the WAMP error message.
         :type tb: list or None
         """
+        assert(enc_algo is None or enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX)
+
         args = None
         if hasattr(exc, 'args'):
             args = list(exc.args)  # make sure tuples are made into lists
@@ -152,7 +154,32 @@ class BaseSession(ObservableMixin):
             else:
                 error = u"wamp.error.runtime_error"
 
-        msg = message.Error(request_type, request, error, args, kwargs)
+        encrypted_payload = None
+        if enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+            if not self._keyring:
+                log_msg = u"trying to send encrypted payload, but no keyring active"
+                self.log.warn(log_msg)
+            else:
+                try:
+                    encrypted_payload = self._keyring.encrypt(False, error, args, kwargs)
+                except Exception as e:
+                    log_msg = u"failed to encrypt application payload: {}".format(e)
+                    self.log.warn(log_msg)
+
+        if encrypted_payload:
+            msg = message.Error(request_type,
+                                request,
+                                error,
+                                payload=encrypted_payload.payload,
+                                enc_algo=encrypted_payload.algo,
+                                enc_key=encrypted_payload.pkey,
+                                enc_serializer=encrypted_payload.serializer)
+        else:
+            msg = message.Error(request_type,
+                                request,
+                                error,
+                                args,
+                                kwargs)
 
         return msg
 
@@ -169,6 +196,30 @@ class BaseSession(ObservableMixin):
         # 2. extract additional args/kwargs from error URI
 
         exc = None
+        enc_err = None
+
+        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+
+            if not self._keyring:
+                log_msg = u"received encrypted payload, but no keyring active"
+                self.log.warn(log_msg)
+                enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg, enc_algo=msg.enc_algo)
+            else:
+                try:
+                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                    decrypted_error, msg.args, msg.kwargs = self._keyring.decrypt(True, msg.error, encrypted_payload)
+                except Exception as e:
+                    log_msg = u"failed to decrypt application payload 1: {}".format(e)
+                    self.log.warn(log_msg)
+                    enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg, enc_algo=msg.enc_algo)
+                else:
+                    if msg.error != decrypted_error:
+                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_error, msg.error)
+                        self.log.warn(log_msg)
+                        enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg, enc_algo=msg.enc_algo)
+
+        if enc_err:
+            return enc_err
 
         if msg.error in self._uri_to_ecls:
             ecls = self._uri_to_ecls[msg.error]
@@ -207,6 +258,9 @@ class BaseSession(ObservableMixin):
                     exc = exception.ApplicationError(msg.error, *msg.args)
                 else:
                     exc = exception.ApplicationError(msg.error)
+
+        if hasattr(exc, 'enc_algo'):
+            exc.enc_algo = msg.enc_algo
 
         return exc
 
@@ -661,8 +715,27 @@ class ApplicationSession(BaseSession):
                             if endpoint.details_arg:
 
                                 if msg.receive_progress:
+
                                     def progress(*args, **kwargs):
-                                        progress_msg = message.Yield(msg.request, args=args, kwargs=kwargs, progress=True)
+                                        encrypted_payload = None
+                                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                                            if not self._keyring:
+                                                raise Exception(u"trying to send encrypted payload, but no keyring active")
+                                            encrypted_payload = self._keyring.encrypt(False, proc, args, kwargs)
+
+                                        if encrypted_payload:
+                                            progress_msg = message.Yield(msg.request,
+                                                                         payload=encrypted_payload.payload,
+                                                                         progress=True,
+                                                                         enc_algo=encrypted_payload.algo,
+                                                                         enc_key=encrypted_payload.pkey,
+                                                                         enc_serializer=encrypted_payload.serializer)
+                                        else:
+                                            progress_msg = message.Yield(msg.request,
+                                                                         args=args,
+                                                                         kwargs=kwargs,
+                                                                         progress=True)
+
                                         self._transport.send(progress_msg)
                                 else:
                                     progress = None
@@ -690,11 +763,11 @@ class ApplicationSession(BaseSession):
                                             self.log.warn(log_msg)
 
                                 if encrypted_payload:
-                                        reply = message.Yield(msg.request,
-                                                              payload=encrypted_payload.payload,
-                                                              enc_algo=encrypted_payload.algo,
-                                                              enc_key=encrypted_payload.pkey,
-                                                              enc_serializer=encrypted_payload.serializer)
+                                    reply = message.Yield(msg.request,
+                                                          payload=encrypted_payload.payload,
+                                                          enc_algo=encrypted_payload.algo,
+                                                          enc_key=encrypted_payload.pkey,
+                                                          enc_serializer=encrypted_payload.serializer)
                                 else:
                                     if isinstance(res, types.CallResult):
                                         reply = message.Yield(msg.request,
@@ -713,22 +786,25 @@ class ApplicationSession(BaseSession):
                                     self._transport.send(reply)
 
                             def error(err):
+                                del self._invocations[msg.request]
+
                                 errmsg = txaio.failure_message(err)
+
                                 try:
                                     self.onUserError(err, errmsg)
                                 except:
                                     pass
+
                                 formatted_tb = None
                                 if self.traceback_app:
                                     formatted_tb = txaio.failure_format_traceback(err)
-
-                                del self._invocations[msg.request]
 
                                 reply = self._message_from_exception(
                                     message.Invocation.MESSAGE_TYPE,
                                     msg.request,
                                     err.value,
                                     formatted_tb,
+                                    msg.enc_algo
                                 )
 
                                 try:
