@@ -172,9 +172,9 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     .. seealso:: http://en.wikipedia.org/wiki/PBKDF2
 
     :param secret: The secret.
-    :type secret: bytes
+    :type secret: bytes or unicode
     :param salt: The salt to be used.
-    :type salt: bytes
+    :type salt: bytes or unicode
     :param iterations: Number of iterations of derivation algorithm to run.
     :type iterations: int
     :param keylen: Length of the key to derive in bits.
@@ -183,10 +183,14 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :return: The derived key in Base64 encoding.
     :rtype: bytes
     """
-    assert(type(secret) == bytes)
-    assert(type(salt) == bytes)
+    assert(type(secret) in [six.text_type, six.binary_type])
+    assert(type(salt) in [six.text_type, six.binary_type])
     assert(type(iterations) in six.integer_types)
     assert(type(keylen) in six.integer_types)
+    if type(secret) == six.text_type:
+        secret = secret.encode('utf8')
+    if type(salt) == six.text_type:
+        salt = salt.encode('utf8')
     key = pbkdf2(secret, salt, iterations, keylen)
     return binascii.b2a_base64(key).strip()
 
@@ -230,7 +234,11 @@ def compute_wcs(key, challenge):
     :return: The authentication signature.
     :rtype: bytes
     """
-    assert(type(key) == bytes)
-    assert(type(challenge) == bytes)
+    assert(type(key) in [six.text_type, six.binary_type])
+    assert(type(challenge) in [six.text_type, six.binary_type])
+    if type(key) == six.text_type:
+        key = key.encode('utf8')
+    if type(challenge) == six.text_type:
+        challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
