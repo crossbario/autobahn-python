@@ -238,6 +238,14 @@ class WampWebSocketFactory(object):
         if serializers is None:
             serializers = []
 
+            # try CBOR WAMP serializer
+            try:
+                from autobahn.wamp.serializer import CBORSerializer
+                serializers.append(CBORSerializer(batched=True))
+                serializers.append(CBORSerializer())
+            except ImportError:
+                pass
+
             # try MsgPack WAMP serializer
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
