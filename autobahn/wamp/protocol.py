@@ -101,6 +101,9 @@ class BaseSession(ObservableMixin):
         self._authmethod = None
         self._authprovider = None
 
+        # end-to-end encryption keyring
+        self._keyring = None
+
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
 
@@ -274,7 +277,6 @@ class ApplicationSession(BaseSession):
         self._transport = None
         self._session_id = None
         self._realm = None
-        self._keyring = None
 
         self._goodbye_sent = False
         self._transport_is_closing = False
