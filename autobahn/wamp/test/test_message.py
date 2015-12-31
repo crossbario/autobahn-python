@@ -97,7 +97,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld..foo",
                   u"hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, allowEmptyComponents=True))
+            self.assertEqual(u, message.check_or_raise_uri(u, allow_empty_components=True))
 
     def test_invalid_uris_loose_empty(self):
         for u in [0,
@@ -113,7 +113,7 @@ class TestUris(unittest.TestCase):
                   u"com.myapp.product#",
                   u"com.#.product",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allowEmptyComponents=True)
+            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, allow_empty_components=True)
 
     def test_valid_uris_strict_nonempty(self):
         for u in [u"com.myapp.topic1",
@@ -156,7 +156,7 @@ class TestUris(unittest.TestCase):
                   u".",
                   u"",
                   ]:
-            self.assertEqual(u, message.check_or_raise_uri(u, strict=True, allowEmptyComponents=True))
+            self.assertEqual(u, message.check_or_raise_uri(u, strict=True, allow_empty_components=True))
 
     def test_invalid_uris_strict_empty(self):
         for u in [0,
@@ -178,7 +178,7 @@ class TestUris(unittest.TestCase):
                   u"hello\xE2\x82\xACworld..foo",
                   u"hello\xF0\xA4\xAD\xA2world..foo",
                   ]:
-            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True, allowEmptyComponents=True)
+            self.assertRaises(ProtocolError, message.check_or_raise_uri, u, strict=True, allow_empty_components=True)
 
 
 class TestErrorMessage(unittest.TestCase):

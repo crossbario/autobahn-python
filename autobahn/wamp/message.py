@@ -138,7 +138,7 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
             raise ProtocolError(u"{0}: URI cannot be null".format(message))
 
     if type(value) != six.text_type:
-        if value is None and not allow_none:
+        if not (value is None and allow_none):
             raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
 
     if strict:
