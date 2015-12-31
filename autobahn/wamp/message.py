@@ -108,7 +108,7 @@ def b2a(data, max_len=40):
         return s
 
 
-def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allowEmptyComponents=False):
+def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allow_empty_components=False, allow_none=False):
     """
     Check a value for being a valid WAMP URI.
 
@@ -116,29 +116,38 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
     Otherwise return the value.
 
     :param value: The value to check.
-    :type value: unicode
+    :type value: unicode or None
     :param message: Prefix for message in exception raised when value is invalid.
     :type message: unicode
     :param strict: If ``True``, do a strict check on the URI (the WAMP spec SHOULD behavior).
     :type strict: bool
-    :param allowEmptyComponents: If ``True``, allow empty URI components (for pattern based
+    :param allow_empty_components: If ``True``, allow empty URI components (for pattern based
        subscriptions and registrations).
-    :type allowEmptyComponents: bool
+    :type allow_empty_components: bool
+    :param allow_none: If ``True``, allow ``None`` for URIs.
+    :type allow_none: bool
 
     :returns: The URI value (if valid).
     :rtype: unicode
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
+    if value is None:
+        if allow_none:
+            return
+        else:
+            raise ProtocolError(u"{0}: URI cannot be null".format(message))
+
     if type(value) != six.text_type:
-        raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
+        if value is None and not allow_none:
+            raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
 
     if strict:
-        if allowEmptyComponents:
+        if allow_empty_components:
             pat = _URI_PAT_STRICT_EMPTY
         else:
             pat = _URI_PAT_STRICT_NON_EMPTY
     else:
-        if allowEmptyComponents:
+        if allow_empty_components:
             pat = _URI_PAT_LOOSE_EMPTY
         else:
             pat = _URI_PAT_LOOSE_NON_EMPTY
@@ -259,19 +268,21 @@ class Hello(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, realm, roles, authmethods=None, authid=None):
+    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
         :type realm: unicode
-        :param roles: The WAMP roles to announce.
+        :param roles: The WAMP session roles and features to announce.
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
         :param authmethods: The authentication methods to announce.
         :type authmethods: list of unicode or None
         :param authid: The authentication ID to announce.
         :type authid: unicode or None
+        :param authrole: The authentication role to announce.
+        :type authrole: unicode or None
         """
-        assert(type(realm) == six.text_type)
+        assert(realm is None or type(realm) == six.text_type)
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
@@ -282,12 +293,14 @@ class Hello(Message):
             for authmethod in authmethods:
                 assert(type(authmethod) == six.text_type)
         assert(authid is None or type(authid) == six.text_type)
+        assert(authrole is None or type(authrole) == six.text_type)
 
         Message.__init__(self)
         self.realm = realm
         self.roles = roles
         self.authmethods = authmethods
         self.authid = authid
+        self.authrole = authrole
 
     @staticmethod
     def parse(wmsg):
@@ -306,7 +319,7 @@ class Hello(Message):
         if len(wmsg) != 3:
             raise ProtocolError("invalid message length {0} for HELLO".format(len(wmsg)))
 
-        realm = check_or_raise_uri(wmsg[1], u"'realm' in HELLO")
+        realm = check_or_raise_uri(wmsg[1], u"'realm' in HELLO", allow_none=True)
         details = check_or_raise_extra(wmsg[2], u"'details' in HELLO")
 
         roles = {}
@@ -357,7 +370,15 @@ class Hello(Message):
 
             authid = details_authid
 
-        obj = Hello(realm, roles, authmethods, authid)
+        authrole = None
+        if u'authrole' in details:
+            details_authrole = details[u'authrole']
+            if type(details_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'authrole' detail in HELLO".format(type(details_authrole)))
+
+            authrole = details_authrole
+
+        obj = Hello(realm, roles, authmethods, authid, authrole)
 
         return obj
 
@@ -382,13 +403,16 @@ class Hello(Message):
         if self.authid:
             details[u'authid'] = self.authid
 
+        if self.authrole:
+            details[u'authrole'] = self.authrole
+
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
     def __str__(self):
         """
         Return a string representation of this message.
         """
-        return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3})".format(self.realm, self.roles, self.authmethods, self.authid)
+        return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3}, authrole = {4})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole)
 
 
 class Welcome(Message):
@@ -403,13 +427,15 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, session, roles, authid=None, authrole=None, authmethod=None, authprovider=None, custom_details=None):
+    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, custom_details=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
         :type session: int
         :param roles: The WAMP roles to announce.
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
+        :param realm: The effective realm the session is joined on.
+        :type realm: unicode or None
         :param authid: The authentication ID assigned.
         :type authid: unicode or None
         :param authrole: The authentication role assigned.
@@ -426,6 +452,7 @@ class Welcome(Message):
         for role in roles:
             assert(role in [u'broker', u'dealer'])
             assert(isinstance(roles[role], autobahn.wamp.role.ROLE_NAME_TO_CLASS[role]))
+        assert(realm is None or type(realm) == six.text_type)
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
@@ -438,6 +465,7 @@ class Welcome(Message):
         Message.__init__(self)
         self.session = session
         self.roles = roles
+        self.realm = realm
         self.authid = authid
         self.authrole = authrole
         self.authmethod = authmethod
@@ -464,6 +492,8 @@ class Welcome(Message):
         session = check_or_raise_id(wmsg[1], u"'session' in WELCOME")
         details = check_or_raise_extra(wmsg[2], u"'details' in WELCOME")
 
+        # FIXME: tigher value checking (types, URIs etc)
+        realm = details.get(u'realm', None)
         authid = details.get(u'authid', None)
         authrole = details.get(u'authrole', None)
         authmethod = details.get(u'authmethod', None)
@@ -502,7 +532,7 @@ class Welcome(Message):
             if _CUSTOM_ATTRIBUTE.match(k):
                 custom_details[k] = details[k]
 
-        obj = Welcome(session, roles, authid, authrole, authmethod, authprovider, custom_details)
+        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, custom_details)
 
         return obj
 
@@ -514,6 +544,9 @@ class Welcome(Message):
         """
         details = {}
         details.update(self.custom_details)
+
+        if self.realm:
+            details[u'realm'] = self.realm
 
         if self.authid:
             details[u'authid'] = self.authid
@@ -542,7 +575,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP WELCOME Message (session = {0}, roles = {1}, authid = {2}, authrole = {3}, authmethod = {4}, authprovider = {5})".format(self.session, self.roles, self.authid, self.authrole, self.authmethod, self.authprovider)
+        return "WAMP WELCOME Message (session = {0}, roles = {1}, realm = {2}, authid = {3}, authrole = {4}, authmethod = {5}, authprovider = {6})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 class Abort(Message):
@@ -1412,7 +1445,7 @@ class Subscribe(Message):
 
         request = check_or_raise_id(wmsg[1], u"'request' in SUBSCRIBE")
         options = check_or_raise_extra(wmsg[2], u"'options' in SUBSCRIBE")
-        topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allowEmptyComponents=True)
+        topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allow_empty_components=True)
 
         match = Subscribe.MATCH_EXACT
 
@@ -2440,7 +2473,7 @@ class Register(Message):
 
         request = check_or_raise_id(wmsg[1], u"'request' in REGISTER")
         options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
-        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allowEmptyComponents=True)
+        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allow_empty_components=True)
 
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE

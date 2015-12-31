@@ -131,7 +131,7 @@ class ApplicationRunner(object):
         :type proxy: dict or None
         """
         assert(type(url) == six.text_type)
-        assert(type(realm) == six.text_type)
+        assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
         assert(proxy is None or type(proxy) == dict)
         self.url = url

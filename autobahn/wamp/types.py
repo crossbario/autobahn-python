@@ -19,7 +19,7 @@
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 # AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# OUT OF OR IN CONNECT<ION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
 ###############################################################################
@@ -69,18 +69,17 @@ class ComponentConfig(object):
             private key. In both cases, the key for the longest matching URI is used.
         :type keyring: obj implementing IKeyRing
         """
-        realm = realm or u'default'
         # FIXME
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
-        if type(realm) != six.text_type:
+        if realm is not None and type(realm) != six.text_type:
             raise RuntimeError('"realm" must be of type Unicode - was {0}'.format(type(realm)))
         self.realm = realm
         self.extra = extra
         self.keyring = keyring
 
     def __str__(self):
-        return "ComponentConfig(realm = {0}, extra = {1}, keyring = {2})".format(self.realm, self.extra, self.keyring)
+        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2})".format(self.realm, self.extra, self.keyring)
 
 
 class HelloReturn(object):
@@ -94,9 +93,11 @@ class Accept(HelloReturn):
     Information to accept a ``HELLO``.
     """
 
-    def __init__(self, authid=None, authrole=None, authmethod=None, authprovider=None):
+    def __init__(self, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None):
         """
 
+        :param realm: The realm the client is joined to.
+        :type realm: unicode
         :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
         :type authid: unicode
         :param authrole: The authentication role the client is assigned, e.g. ``"anonymous"``, ``"user"`` or ``"com.myapp.user"``.
@@ -106,7 +107,10 @@ class Accept(HelloReturn):
         :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
         :type authprovider: unicode
         """
+        # FIXME:
         if six.PY2:
+            if type(realm) == str:
+                realm = six.u(realm)
             if type(authid) == str:
                 authid = six.u(authid)
             if type(authrole) == str:
@@ -116,18 +120,20 @@ class Accept(HelloReturn):
             if type(authprovider) == str:
                 authprovider = six.u(authprovider)
 
+        assert(realm is None or type(realm) == six.text_type)
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
 
+        self.realm = realm
         self.authid = authid
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
 
     def __str__(self):
-        return "Accept(authid = {0}, authrole = {1}, authmethod = {2}, authprovider = {3})".format(self.authid, self.authrole, self.authmethod, self.authprovider)
+        return "Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 class Deny(HelloReturn):
@@ -156,7 +162,7 @@ class Deny(HelloReturn):
         self.message = message
 
     def __str__(self):
-        return "Deny(reason = {0}, message = '{1}')".format(self.reason, self.message)
+        return "Deny(reason=<{0}>, message='{1}')".format(self.reason, self.message)
 
 
 class Challenge(HelloReturn):
@@ -182,7 +188,7 @@ class Challenge(HelloReturn):
         self.extra = extra or {}
 
     def __str__(self):
-        return "Challenge(method = {0}, extra = {1})".format(self.method, self.extra)
+        return "Challenge(method={0}, extra={1})".format(self.method, self.extra)
 
 
 class HelloDetails(object):
@@ -190,25 +196,31 @@ class HelloDetails(object):
     Provides details of a WAMP session while still attaching.
     """
 
-    def __init__(self, roles=None, authmethods=None, authid=None, pending_session=None):
+    def __init__(self, realm=None, authmethods=None, authid=None, authrole=None, session_roles=None, pending_session=None):
         """
 
-        :param roles: The WAMP roles and features supported by the attaching client.
-        :type roles: dict
+        :param realm: The realm the client wants to join.
+        :type realm: unicode or None
         :param authmethods: The authentication methods the client is willing to perform.
-        :type authmethods: list
-        :param authid: The authentication ID the client wants to authenticate as. Required for WAMP-CRA.
-        :type authid: str
+        :type authmethods: list or None
+        :param authid: The authid the client wants to authenticate as.
+        :type authid: unicode or None
+        :param authrole: The authrole the client wants to authenticate as.
+        :type authrole: unicode or None
+        :param session_roles: The WAMP session roles and features by the connecting client.
+        :type session_roles: dict or None
         :param pending_session: The session ID the session will get once successfully attached.
-        :type pending_session: int
+        :type pending_session: int or None
         """
-        self.roles = roles
+        self.realm = realm
         self.authmethods = authmethods
         self.authid = authid
+        self.authrole = authrole
+        self.session_roles = session_roles
         self.pending_session = pending_session
 
     def __str__(self):
-        return "HelloDetails(roles = {0}, authmethods = {1}, authid = {2}, pending_session = {3})".format(self.roles, self.authmethods, self.authid, self.pending_session)
+        return "HelloDetails(realm=<0>, authmethods={1}, authid=<{2}>, authrole=<{3}>, session_roles={4}, pending_session={5})".format(self.realm, self.authmethods, self.authid, self.authrole, self.session_roles, self.pending_session)
 
 
 class SessionDetails(object):
@@ -235,7 +247,7 @@ class SessionDetails(object):
         self.authprovider = authprovider
 
     def __str__(self):
-        return "SessionDetails(realm = {0}, session = {1}, authid = {2}, authrole = {3}, authmethod = {4})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod)
+        return "SessionDetails(realm=<{0}>, session={1}, authid=<{2}>, authrole=<{3}>, authmethod={4}, authprovider={5})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider)
 
 
 class CloseDetails(object):
@@ -259,7 +271,7 @@ class CloseDetails(object):
         self.message = message
 
     def __str__(self):
-        return "CloseDetails(reason = {0}, message = '{1}'')".format(self.reason, self.message)
+        return "CloseDetails(reason=<{0}>, message='{1}')".format(self.reason, self.message)
 
 
 class SubscribeOptions(object):
@@ -289,7 +301,7 @@ class SubscribeOptions(object):
         }
 
     def __str__(self):
-        return "SubscribeOptions(match = {0}, details_arg = {1})".format(self.match, self.details_arg)
+        return "SubscribeOptions(match={0}, details_arg={1})".format(self.match, self.details_arg)
 
 
 class EventDetails(object):
@@ -317,7 +329,7 @@ class EventDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication = {0}, publisher = {1}, topic = {2}, enc_algo = {3})".format(self.publication, self.publisher, self.topic, self.enc_algo)
+        return "EventDetails(publication={0}, publisher={1}, topic=<{2}>, enc_algo={3})".format(self.publication, self.publisher, self.topic, self.enc_algo)
 
 
 class PublishOptions(object):
@@ -374,7 +386,7 @@ class PublishOptions(object):
         }
 
     def __str__(self):
-        return "PublishOptions(acknowledge = {0}, exclude_me = {1}, exclude = {2}, eligible = {3}, disclose_me = {4})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
+        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, eligible={3}, disclose_me={4})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
 
 
 class RegisterOptions(object):
@@ -406,7 +418,7 @@ class RegisterOptions(object):
         }
 
     def __str__(self):
-        return "RegisterOptions(match = {0}, invoke = {1}, details_arg = {2})".format(self.match, self.invoke, self.details_arg)
+        return "RegisterOptions(match={0}, invoke={1}, details_arg={2})".format(self.match, self.invoke, self.details_arg)
 
 
 class CallDetails(object):
@@ -435,7 +447,7 @@ class CallDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "CallDetails(progress = {0}, caller = {1}, procedure = {2}, enc_algo = {3})".format(self.progress, self.caller, self.procedure, self.enc_algo)
+        return "CallDetails(progress={0}, caller={1}, procedure=<{2}>, enc_algo={3})".format(self.progress, self.caller, self.procedure, self.enc_algo)
 
 
 class CallOptions(object):
@@ -479,7 +491,7 @@ class CallOptions(object):
         return res
 
     def __str__(self):
-        return "CallOptions(on_progress = {0}, timeout = {1}, disclose_me = {2})".format(self.on_progress, self.timeout, self.disclose_me)
+        return "CallOptions(on_progress={0}, timeout={1}, disclose_me={2})".format(self.on_progress, self.timeout, self.disclose_me)
 
 
 class CallResult(object):
@@ -502,7 +514,7 @@ class CallResult(object):
         self.enc_algo = kwresults.pop('enc_algo', None)
 
     def __str__(self):
-        return "CallResult(results = {0}, kwresults = {1}, enc_algo = {2})".format(self.results, self.kwresults, self.enc_algo)
+        return "CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
 
 
 class IPublication(object):

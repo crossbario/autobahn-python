@@ -232,8 +232,8 @@ class ApplicationError(Error):
             self.kwargs['traceback'] = u'...'
         else:
             tb = u''
-        return u"ApplicationError('{0}', args = {1}, kwargs = {2}, enc_algo = {3}){4}".format(
-            self.error, self.args, self.kwargs, self.enc_algo, tb)
+        return u"ApplicationError(error=<{0}>, args={1}, kwargs={2}, enc_algo={3}){4}".format(
+            self.error, list(self.args), self.kwargs, self.enc_algo, tb)
 
     def __str__(self):
         if six.PY3:

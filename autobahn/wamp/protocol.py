@@ -320,22 +320,30 @@ class ApplicationSession(BaseSession):
         """
         self.join(self.config.realm)
 
-    def join(self, realm, authmethods=None, authid=None):
+    def join(self, realm, authmethods=None, authid=None, authrole=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
+        # FIXME
         if six.PY2 and type(realm) == str:
             realm = six.u(realm)
         if six.PY2 and type(authid) == str:
             authid = six.u(authid)
+        if six.PY2 and type(authrole) == str:
+            authrole = six.u(authrole)
 
         if self._session_id:
             raise Exception("already joined")
 
+        # store the realm requested by client, though this might be overwritten later,
+        # when realm redirection kicks in
+        self._realm = realm
+
+        # closing handshake state
         self._goodbye_sent = False
 
-        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid)
-        self._realm = realm
+        # send HELLO message to router
+        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid, authrole)
         self._transport.send(msg)
 
     def disconnect(self):
@@ -408,6 +416,10 @@ class ApplicationSession(BaseSession):
 
             # the first message must be WELCOME, ABORT or CHALLENGE ..
             if isinstance(msg, message.Welcome):
+
+                if msg.realm:
+                    self._realm = msg.realm
+
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
