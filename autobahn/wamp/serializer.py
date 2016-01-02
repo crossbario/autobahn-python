@@ -477,7 +477,7 @@ else:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = "application/x-cbor"
+        MIME_TYPE = "application/cbor"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
