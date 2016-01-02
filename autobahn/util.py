@@ -34,8 +34,11 @@ import re
 import base64
 import math
 import random
+import string
 from datetime import datetime, timedelta
 from pprint import pformat
+
+import six
 
 import txaio
 
@@ -210,6 +213,54 @@ def newid(length=16):
     """
     l = int(math.ceil(float(length) * 6. / 8.))
     return base64.b64encode(os.urandom(l))[:length].decode('ascii')
+
+
+_DEFAULT_RTOKEN_CHARS = string.digits + string.ascii_uppercase
+
+
+def rtoken(char_groups=3, chars_per_group=4, chars=None):
+    """
+    Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
+    These can be used e.g. for used-only-once activation tokens or the like.
+
+    The returned token has an entropy of:
+
+       math.log(float(len(chars)), 2.) * chars_per_group * char_groups
+
+    bits.
+
+    With the default values (`rtoken(3, 4)`), the returned token has an entropy of
+    slightly more than 62 bits.
+
+    With `rtoken(5, 5)`, the returned token has >129 bits entropy.
+
+        u'F6EX-J5H6-R5RW'
+        >>> rtoken(3, 4)
+        u'EDVT-UYE7-9AOI'
+        >>> rtoken(5, 5)
+        u'RGEDH-XETG1-6Y8IM-9TPQG-XC2F2'
+        >>> rtoken(2, 3)
+        u'X02-Q6O'
+        >>> rtoken(2, 5)
+        u'4NFBB-PLPA3'
+
+    :param char_groups: Number of characters per character group.
+    :type char_groups: int
+    :param chars_per_group: Number of character groups.
+    :type chars_per_group: int
+    :param chars: Characters to choose from. Default is the ISO basic Latin alphabet
+        of 36 characters (the arabic numerals 0-9 and the upper Latin letters 0-9).
+    :type chars: unicode or None
+
+    :returns: The generated token.
+    :rtype: unicode
+    """
+    assert(type(char_groups) in six.integer_types)
+    assert(type(chars_per_group) in six.integer_types)
+    assert(chars is None or type(chars) == six.text_type)
+    chars = chars or _DEFAULT_RTOKEN_CHARS
+    s = u''.join(random.SystemRandom().choice(chars) for _ in range(char_groups * chars_per_group))
+    return u'-'.join(map(u''.join, zip(*[iter(s)] * chars_per_group)))
 
 
 # Select the most precise walltime measurement function available
