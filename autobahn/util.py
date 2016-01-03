@@ -34,7 +34,6 @@ import re
 import base64
 import math
 import random
-import string
 from datetime import datetime, timedelta
 from pprint import pformat
 
@@ -53,7 +52,11 @@ __all__ = ("utcnow",
            "Tracker",
            "EqualityMixin",
            "ObservableMixin",
-           "IdGenerator")
+           "IdGenerator",
+           "generate_token",
+           "generate_activation_code",
+           "generate_serial_number",
+           "generate_user_password")
 
 
 def utcstr(ts=None):
@@ -215,42 +218,69 @@ def newid(length=16):
     return base64.b64encode(os.urandom(l))[:length].decode('ascii')
 
 
-_DEFAULT_RTOKEN_CHARS = string.digits + string.ascii_uppercase
+# a standard base36 character set
+# DEFAULT_TOKEN_CHARS = string.digits + string.ascii_uppercase
+
+# we take out the following 9 chars (leaving 27), because there
+# is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z
+DEFAULT_TOKEN_CHARS = u'345679ACEFGHJKLMNPQRSTUVWXY'
+"""
+Default set of characters to create rtokens from.
+"""
+
+DEFAULT_ZBASE32_CHARS = u'13456789abcdefghijkmnopqrstuwxyz'
+"""
+http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
+
+Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
+reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
+mistaken for `1' or `i', that `v' is potentially mistaken for `u' or `r'
+(especially in handwriting) and that `2' is potentially mistaken for `z'
+(especially in handwriting).
+
+Note that we choose to focus on typed and written transcription more than on
+vocal, since humans already have a well-established system of disambiguating
+spoken alphanumerics, such as the United States military's "Alpha Bravo Charlie
+Delta" and telephone operators' "Is that 'd' as in 'dog'?".
+"""
 
 
-def rtoken(char_groups=3, chars_per_group=4, chars=None):
+def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_case=False):
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
 
     The returned token has an entropy of:
 
-       math.log(float(len(chars)), 2.) * chars_per_group * char_groups
+       math.log(len(chars), 2.) * chars_per_group * char_groups
 
-    bits.
+    bits. With the default charset and 4 characters per group, rtoken() produces
+    tokens with the following entropy:
 
-    With the default values (`rtoken(3, 4)`), the returned token has an entropy of
-    slightly more than 62 bits.
+        character groups    entropy (at least)  recommended use
 
-    With `rtoken(5, 5)`, the returned token has >129 bits entropy.
+        2                    38 bits
+        3                    57 bits            one-time activation or pairing code
+        4                    76 bits            secure user password
+        5                    95 bits
+        6                   114 bits            globally unique serial / product code
+        7                   133 bits
 
-        u'F6EX-J5H6-R5RW'
-        >>> rtoken(3, 4)
-        u'EDVT-UYE7-9AOI'
-        >>> rtoken(5, 5)
-        u'RGEDH-XETG1-6Y8IM-9TPQG-XC2F2'
-        >>> rtoken(2, 3)
-        u'X02-Q6O'
-        >>> rtoken(2, 5)
-        u'4NFBB-PLPA3'
+    Here are 3 examples:
 
-    :param char_groups: Number of characters per character group.
+        * token(3): 9QXT-UXJW-7R4H
+        * token(4): LPNN-JMET-KWEP-YK45
+        * token(6): NXW9-74LU-6NUH-VLPV-X6AG-QUE3
+
+    :param char_groups: Number of character groups (or characters if chars_per_group == 1).
     :type char_groups: int
-    :param chars_per_group: Number of character groups.
+    :param chars_per_group: Number of characters per character group (or 1 to return a token with no grouping).
     :type chars_per_group: int
-    :param chars: Characters to choose from. Default is the ISO basic Latin alphabet
-        of 36 characters (the arabic numerals 0-9 and the upper Latin letters 0-9).
+    :param chars: Characters to choose from. Default is 27 character subset
+        of the ISO basic Latin alphabet (see: DEFAULT_TOKEN_CHARS).
     :type chars: unicode or None
+    :param sep: When separating groups in the token, the separater string.
+    :type sep: unicode
 
     :returns: The generated token.
     :rtype: unicode
@@ -258,9 +288,23 @@ def rtoken(char_groups=3, chars_per_group=4, chars=None):
     assert(type(char_groups) in six.integer_types)
     assert(type(chars_per_group) in six.integer_types)
     assert(chars is None or type(chars) == six.text_type)
-    chars = chars or _DEFAULT_RTOKEN_CHARS
-    s = u''.join(random.SystemRandom().choice(chars) for _ in range(char_groups * chars_per_group))
-    return u'-'.join(map(u''.join, zip(*[iter(s)] * chars_per_group)))
+    chars = chars or DEFAULT_TOKEN_CHARS
+    if lower_case:
+        chars = chars.lower()
+    sep = sep or u'-'
+    rng = random.SystemRandom()
+    token_value = u''.join(rng.choice(chars) for _ in range(char_groups * chars_per_group))
+    if chars_per_group > 1:
+        return sep.join(map(u''.join, zip(*[iter(token_value)] * chars_per_group)))
+    else:
+        return token_value
+
+
+generate_activation_code = lambda: generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
+
+generate_user_password = lambda: generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
+
+generate_serial_number = lambda: generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
 # Select the most precise walltime measurement function available
@@ -545,3 +589,9 @@ class ObservableMixin(object):
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
         return txaio.gather(res)
+
+
+if __name__ == '__main__':
+    print(generate_activation_code())
+    print(generate_serial_number())
+    print(generate_user_password())
