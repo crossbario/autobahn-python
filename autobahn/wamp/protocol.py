@@ -445,10 +445,12 @@ class ApplicationSession(BaseSession):
                 d = txaio.as_future(self.onChallenge, challenge)
 
                 def success(signature):
+                    if signature is None:
+                        raise Exception('onChallenge user callback did not return a signature')
                     if type(signature) == six.binary_type:
                         signature = signature.decode('utf8')
                     if type(signature) != six.text_type:
-                        raise Exception('signature must be unicode')
+                        raise Exception('signature must be unicode (was {})'.format(type(signature)))
                     reply = message.Authenticate(signature)
                     self._transport.send(reply)
 

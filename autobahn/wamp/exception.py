@@ -172,6 +172,11 @@ class ApplicationError(Error):
     not run to end.
     """
 
+    NO_AUTH_METHOD = u"wamp.error.no_auth_method"
+    """
+    No authentication method the peer offered is available or active.
+    """
+
     NO_SUCH_REALM = u"wamp.error.no_such_realm"
     """
     Peer wanted to join a non-existing realm (and the *Router* did not allow to auto-create
