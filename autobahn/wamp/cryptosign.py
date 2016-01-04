@@ -62,7 +62,7 @@ class Key(object):
 
     def sign_challenge(self, challenge):
         data = challenge.extra['challenge']
-        signature = self.sign(data.encode('utf8'))
+        signature = self.sign(binascii.a2b_hex(data))
         return binascii.b2a_hex(signature)
 
     def public_key(self):
@@ -71,7 +71,7 @@ class Key(object):
         """
         if isinstance(self._key, signing.SigningKey):
             return self._key.verify_key.encode(encoder=encoding.HexEncoder)
-        elif isinstance(self._key, signing.PrivateKey):
+        elif isinstance(self._key, public.PrivateKey):
             return self._key.public_key.encode(encoder=encoding.HexEncoder)
         else:
             return self._key.encode(encoder=encoding.HexEncoder)
@@ -144,6 +144,6 @@ class Key(object):
 if __name__ == '__main__':
     import sys
 
-    key = Key.from_raw(sys.argv[1], u'client02@example.com')
-    # key = Key.from_ssh(sys.argv[1])
+    # key = Key.from_raw(sys.argv[1], u'client02@example.com')
+    key = Key.from_ssh(sys.argv[1])
     print(key)
