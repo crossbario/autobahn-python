@@ -427,7 +427,7 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, custom_details=None):
+    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, custom=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -444,7 +444,10 @@ class Welcome(Message):
         :type authmethod: unicode or None
         :param authprovider: The authentication method in use.
         :type authprovider: unicode or None
-        :param extra_details
+        :param authextra: Application-specific "extra data" to be forwarded to the client.
+        :type authextra: arbitrary or None
+        :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
+        :type custom: dict or None
         """
         assert(type(session) in six.integer_types)
         assert(type(roles) == dict)
@@ -457,9 +460,9 @@ class Welcome(Message):
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
-        assert(custom_details is None or type(custom_details) == dict)
-        if custom_details:
-            for k in custom_details:
+        assert(custom is None or type(custom) == dict)
+        if custom:
+            for k in custom:
                 assert(_CUSTOM_ATTRIBUTE.match(k))
 
         Message.__init__(self)
@@ -470,7 +473,8 @@ class Welcome(Message):
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
-        self.custom_details = custom_details or {}
+        self.authextra = authextra
+        self.custom = custom or {}
 
     @staticmethod
     def parse(wmsg):
@@ -498,6 +502,7 @@ class Welcome(Message):
         authrole = details.get(u'authrole', None)
         authmethod = details.get(u'authmethod', None)
         authprovider = details.get(u'authprovider', None)
+        authextra = details.get(u'authextra', None)
 
         roles = {}
 
@@ -527,12 +532,12 @@ class Welcome(Message):
 
             roles[role] = role_features
 
-        custom_details = {}
+        custom = {}
         for k in details:
             if _CUSTOM_ATTRIBUTE.match(k):
-                custom_details[k] = details[k]
+                custom[k] = details[k]
 
-        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, custom_details)
+        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, authextra, custom)
 
         return obj
 
@@ -543,7 +548,7 @@ class Welcome(Message):
         :returns: list -- The serialized raw message.
         """
         details = {}
-        details.update(self.custom_details)
+        details.update(self.custom)
 
         if self.realm:
             details[u'realm'] = self.realm
@@ -560,6 +565,9 @@ class Welcome(Message):
         if self.authprovider:
             details[u'authprovider'] = self.authprovider
 
+        if self.authextra:
+            details[u'authextra'] = self.authextra
+
         details[u'roles'] = {}
         for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
@@ -575,7 +583,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP WELCOME Message (session = {0}, roles = {1}, realm = {2}, authid = {3}, authrole = {4}, authmethod = {5}, authprovider = {6})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider)
+        return "WAMP WELCOME Message (session = {0}, roles = {1}, realm = {2}, authid = {3}, authrole = {4}, authmethod = {5}, authprovider = {6}, authextra = {7})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 class Abort(Message):

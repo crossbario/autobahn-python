@@ -61,7 +61,7 @@ class ComponentConfig(object):
             configuration. This can be any object you like, and is
             accessible in your `ApplicationSession` subclass via
             `self.config.extra`. `dict` is a good default choice.
-        :type extra: dict or None
+        :type extra: arbitrary or None
         :param keyring: A mapper from WAMP URIs to "from"/"to" Ed25519 keys. When using
             WAMP end-to-end encryption, application payload is encrypted using a
             symmetric message key, which in turn is encrypted using the "to" URI (topic being
@@ -93,7 +93,7 @@ class Accept(HelloReturn):
     Information to accept a ``HELLO``.
     """
 
-    def __init__(self, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None):
+    def __init__(self, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None):
         """
 
         :param realm: The realm the client is joined to.
@@ -106,6 +106,8 @@ class Accept(HelloReturn):
         :type authmethod: unicode
         :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
         :type authprovider: unicode
+        :param authextra: Application-specific authextra to be forwarded to the client in `WELCOME.details.authextra`.
+        :type authextra: arbitrary
         """
         # FIXME:
         if six.PY2:
@@ -131,9 +133,10 @@ class Accept(HelloReturn):
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
+        self.authextra = authextra
 
     def __str__(self):
-        return "Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider)
+        return "Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4}, authextra={5})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 class Deny(HelloReturn):
@@ -230,7 +233,7 @@ class SessionDetails(object):
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
     """
 
-    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None):
+    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None):
         """
         Ctor.
 
@@ -245,14 +248,15 @@ class SessionDetails(object):
         self.authrole = authrole
         self.authmethod = authmethod
         self.authprovider = authprovider
+        self.authextra = authextra
 
     def __str__(self):
-        return "SessionDetails(realm=<{0}>, session={1}, authid=<{2}>, authrole=<{3}>, authmethod={4}, authprovider={5})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider)
+        return "SessionDetails(realm=<{0}>, session={1}, authid=<{2}>, authrole=<{3}>, authmethod={4}, authprovider={5}, authextra={6})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 class CloseDetails(object):
     """
-    Provides details for a WAMP session upon open.
+    Provides details for a WAMP session upon close.
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
     """

@@ -166,6 +166,12 @@ class ApplicationError(Error):
     *itself* failed. E.g. a custom authorizer did run into an error.
     """
 
+    AUTHENTICATION_FAILED = u"wamp.error.authentication_failed"
+    """
+    Something failed with the authentication itself, that is, authentication could
+    not run to end.
+    """
+
     NO_SUCH_REALM = u"wamp.error.no_such_realm"
     """
     Peer wanted to join a non-existing realm (and the *Router* did not allow to auto-create
@@ -177,6 +183,11 @@ class ApplicationError(Error):
     A *Peer* was to be authenticated under a Role that does not (or no longer) exists on the Router.
     For example, the *Peer* was successfully authenticated, but the Role configured does not
     exists - hence there is some misconfiguration in the Router.
+    """
+
+    NO_SUCH_PRINCIPAL = u"wamp.error.no_such_principal"
+    """
+    A *Peer* was authenticated for an authid that does not or longer exists.
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!

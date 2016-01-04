@@ -422,7 +422,7 @@ class ApplicationSession(BaseSession):
 
                 self._session_id = msg.session
 
-                details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod)
+                details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod, msg.authprovider, msg.authextra)
                 d = txaio.as_future(self.onJoin, details)
 
                 def _error(e):
