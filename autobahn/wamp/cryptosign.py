@@ -80,7 +80,7 @@ class Key(object):
         return u'Key(comment="{}", is_private={}, public_key={})'.format(self._comment, self._is_private, self.public_key())
 
     @classmethod
-    def from_raw(cls, filename, comment):
+    def from_raw(cls, filename, comment=None):
         """
         Load a Ed25519 private key (actually, the seed for the key) from a raw file of 32 bytes length.
         This can be any random byte sequence, such as generated from Python code like
@@ -98,7 +98,7 @@ class Key(object):
         return cls(key, comment, True)
 
     @classmethod
-    def from_ssh_agent(cls, comment):
+    def from_ssh_agent(cls, comment=None):
         """
         Create a proxy for a key held in SSH agent.
 
