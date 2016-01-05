@@ -268,7 +268,7 @@ class Hello(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None):
+    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
@@ -281,6 +281,8 @@ class Hello(Message):
         :type authid: unicode or None
         :param authrole: The authentication role to announce.
         :type authrole: unicode or None
+        :param authextra: Application-specific "extra data" to be forwarded to the client.
+        :type authextra: arbitrary or None
         """
         assert(realm is None or type(realm) == six.text_type)
         assert(type(roles) == dict)
@@ -294,6 +296,7 @@ class Hello(Message):
                 assert(type(authmethod) == six.text_type)
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
+        assert(authextra is None or type(authextra) == dict)
 
         Message.__init__(self)
         self.realm = realm
@@ -301,6 +304,7 @@ class Hello(Message):
         self.authmethods = authmethods
         self.authid = authid
         self.authrole = authrole
+        self.authextra = authextra
 
     @staticmethod
     def parse(wmsg):
@@ -378,7 +382,15 @@ class Hello(Message):
 
             authrole = details_authrole
 
-        obj = Hello(realm, roles, authmethods, authid, authrole)
+        authextra = None
+        if u'authextra' in details:
+            details_authextra = details[u'authextra']
+            if type(details_authextra) != dict:
+                raise ProtocolError("invalid type {0} for 'authextra' detail in HELLO".format(type(details_authextra)))
+
+            authextra = details_authextra
+
+        obj = Hello(realm, roles, authmethods, authid, authrole, authextra)
 
         return obj
 
@@ -406,13 +418,16 @@ class Hello(Message):
         if self.authrole:
             details[u'authrole'] = self.authrole
 
+        if self.authextra:
+            details[u'authextra'] = self.authextra
+
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
     def __str__(self):
         """
         Return a string representation of this message.
         """
-        return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3}, authrole = {4})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole)
+        return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3}, authrole = {4}, authextra = {5})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra)
 
 
 class Welcome(Message):
@@ -442,7 +457,7 @@ class Welcome(Message):
         :type authrole: unicode or None
         :param authmethod: The authentication method in use.
         :type authmethod: unicode or None
-        :param authprovider: The authentication method in use.
+        :param authprovider: The authentication provided in use.
         :type authprovider: unicode or None
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
@@ -460,6 +475,7 @@ class Welcome(Message):
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
+        assert(authextra is None or type(authextra) == dict)
         assert(custom is None or type(custom) == dict)
         if custom:
             for k in custom:

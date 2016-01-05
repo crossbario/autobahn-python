@@ -320,7 +320,7 @@ class ApplicationSession(BaseSession):
         """
         self.join(self.config.realm)
 
-    def join(self, realm, authmethods=None, authid=None, authrole=None):
+    def join(self, realm, authmethods=None, authid=None, authrole=None, authextra=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
@@ -343,7 +343,7 @@ class ApplicationSession(BaseSession):
         self._goodbye_sent = False
 
         # send HELLO message to router
-        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid, authrole)
+        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid, authrole, authextra)
         self._transport.send(msg)
 
     def disconnect(self):

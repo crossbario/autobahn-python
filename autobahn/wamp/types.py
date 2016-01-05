@@ -199,7 +199,7 @@ class HelloDetails(object):
     Provides details of a WAMP session while still attaching.
     """
 
-    def __init__(self, realm=None, authmethods=None, authid=None, authrole=None, session_roles=None, pending_session=None):
+    def __init__(self, realm=None, authmethods=None, authid=None, authrole=None, authextra=None, session_roles=None, pending_session=None):
         """
 
         :param realm: The realm the client wants to join.
@@ -210,6 +210,8 @@ class HelloDetails(object):
         :type authid: unicode or None
         :param authrole: The authrole the client wants to authenticate as.
         :type authrole: unicode or None
+        :param authextra: Any extra information the specific authentication method requires the client to send.
+        :type authextra: arbitrary or None
         :param session_roles: The WAMP session roles and features by the connecting client.
         :type session_roles: dict or None
         :param pending_session: The session ID the session will get once successfully attached.
@@ -219,11 +221,12 @@ class HelloDetails(object):
         self.authmethods = authmethods
         self.authid = authid
         self.authrole = authrole
+        self.authextra = authextra
         self.session_roles = session_roles
         self.pending_session = pending_session
 
     def __str__(self):
-        return "HelloDetails(realm=<0>, authmethods={1}, authid=<{2}>, authrole=<{3}>, session_roles={4}, pending_session={5})".format(self.realm, self.authmethods, self.authid, self.authrole, self.session_roles, self.pending_session)
+        return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session)
 
 
 class SessionDetails(object):

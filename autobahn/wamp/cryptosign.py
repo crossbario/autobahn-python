@@ -98,6 +98,19 @@ class Key(object):
         return cls(key, comment, True)
 
     @classmethod
+    def from_ssh_agent(cls, comment):
+        """
+        Create a proxy for a key held in SSH agent.
+
+        * run an SSH key agent under a dedicated auth agent account
+        * add private keys for WAMP client running on this host under the agent
+        * have the SSH agent Unix domain socket only accesible for the WAMP client (or WAMP router)
+        * nobody but the dedicated auth agent account has access to private keys
+        * access to the auth agent and it's signing service is restricted
+        """
+        raise Exception("not yet implemented")
+
+    @classmethod
     def from_ssh(cls, filename):
         """
         Load a Ed25519 public key from a SSH public key file.
