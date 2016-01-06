@@ -63,18 +63,19 @@ class Key(object):
     def sign_challenge(self, challenge):
         data = challenge.extra['challenge']
         signature = self.sign(binascii.a2b_hex(data))
-        return binascii.b2a_hex(signature)
+        return binascii.b2a_hex(signature).decode('ascii')
 
     def public_key(self):
         """
         Returns the public key.
         """
         if isinstance(self._key, signing.SigningKey):
-            return self._key.verify_key.encode(encoder=encoding.HexEncoder)
+            key = self._key.verify_key.encode(encoder=encoding.HexEncoder)
         elif isinstance(self._key, public.PrivateKey):
-            return self._key.public_key.encode(encoder=encoding.HexEncoder)
+            key = self._key.public_key.encode(encoder=encoding.HexEncoder)
         else:
-            return self._key.encode(encoder=encoding.HexEncoder)
+            key = self._key.encode(encoder=encoding.HexEncoder)
+        return key.decode('ascii')
 
     def __str__(self):
         return u'Key(comment="{}", is_private={}, public_key={})'.format(self._comment, self._is_private, self.public_key())
