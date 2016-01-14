@@ -296,7 +296,7 @@ class WrappingWebSocketAdapter(object):
                 if p in self.factory._subprotocols:
                     self._binaryMode = (p != 'base64')
                     return p
-            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, u"this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
         elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
