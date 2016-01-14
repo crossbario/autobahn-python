@@ -1,4 +1,4 @@
-###############################################################################
+##############################################################################
 #
 # The MIT License (MIT)
 #
@@ -29,11 +29,16 @@ from __future__ import absolute_import, print_function
 import unittest2 as unittest
 from mock import Mock
 
+from autobahn.websocket.types import ConnectionRequest, ConnectionDeny
+
 from autobahn.twisted.websocket import WebSocketServerFactory
 from autobahn.twisted.websocket import WebSocketServerProtocol
+from autobahn.twisted.websocket import WrappingWebSocketServerFactory
 from twisted.python.failure import Failure
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
+from twisted.internet.protocol import Protocol, Factory
+from twisted.internet.address import IPv4Address
 from autobahn.test import FakeTransport
 
 
@@ -120,3 +125,35 @@ class Hixie76RejectionTests(unittest.TestCase):
         p.processHandshake()
         self.assertIn(b"HTTP/1.1 400", t._written)
         self.assertIn(b"Hixie76 protocol not supported", t._written)
+
+
+class WrappingWebSocketServerProtocolTests(unittest.TestCase):
+    '''
+    Tests for autobahn.twisted.protocol.WrappingWebSocketServerProtocol
+    '''
+
+    def setUp(self):
+        self.addr = IPv4Address('TCP', b'127.0.0.1', 65534)
+        self.wrappedFactory = Factory()
+        self.wrappedFactory.protocol = Protocol
+        self.serverFactory = WrappingWebSocketServerFactory(self.wrappedFactory, u'ws://localhost')
+        self.serverProtocol = self.serverFactory.buildProtocol(self.addr)
+
+    def test_onConnect_with_unacceptable_subprotocol(self):
+        '''
+        onConnect raises ConnectionDeny when called with a request
+        that doesn't support any allowed subprotocols.
+        '''
+        emptyProtocols = []
+        fakeRequest = ConnectionRequest(peer='ignored',
+                                        headers={},
+                                        host='ignored',
+                                        path='ignored',
+                                        params={},
+                                        version=-1,
+                                        origin=None,
+                                        protocols=emptyProtocols,
+                                        extensions=[])
+
+        with self.assertRaises(ConnectionDeny):
+            self.serverProtocol.onConnect(fakeRequest)
