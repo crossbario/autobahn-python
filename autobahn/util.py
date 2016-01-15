@@ -300,11 +300,16 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
         return token_value
 
 
-generate_activation_code = lambda: generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
+def generate_activation_code():
+    return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
-generate_user_password = lambda: generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
 
-generate_serial_number = lambda: generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
+def generate_user_password():
+    return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
+
+
+def generate_serial_number():
+    return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
 # Select the most precise walltime measurement function available
