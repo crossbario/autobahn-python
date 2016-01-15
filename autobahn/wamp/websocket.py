@@ -183,7 +183,7 @@ class WampWebSocketServerProtocol(WampWebSocketProtocol):
                 return subprotocol, headers
 
         if self.STRICT_PROTOCOL_NEGOTIATION:
-            raise ConnectionDeny(ConnectionDeny.BAD_REQUEST, "This server only speaks WebSocket subprotocols %s" % ', '.join(self.factory.protocols))
+            raise ConnectionDeny(ConnectionDeny.BAD_REQUEST, u'This server only speaks WebSocket subprotocols {0}'.format(u', '.join(self.factory.protocols)))
         else:
             # assume wamp.2.json
             self._serializer = self.factory._serializers['json']

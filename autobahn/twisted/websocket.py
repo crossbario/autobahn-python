@@ -296,11 +296,11 @@ class WrappingWebSocketAdapter(object):
                 if p in self.factory._subprotocols:
                     self._binaryMode = (p != 'base64')
                     return p
-            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, "this server only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+            raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, u'this server only speaks {0} WebSocket subprotocols'.format(self.factory._subprotocols))
         elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
-                self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, "this client only speaks %s WebSocket subprotocols" % self.factory._subprotocols)
+                self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, 'this client only speaks {0} WebSocket subprotocols'.format(self.factory._subprotocols))
             self._binaryMode = (response.protocol != 'base64')
         else:
             # should not arrive here
@@ -311,14 +311,13 @@ class WrappingWebSocketAdapter(object):
 
     def onMessage(self, payload, isBinary):
         if isBinary != self._binaryMode:
-            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA, "message payload type does not match the negotiated subprotocol")
+            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA, 'message payload type does not match the negotiated subprotocol')
         else:
             if not isBinary:
                 try:
                     payload = b64decode(payload)
                 except Exception as e:
-                    self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, "message payload base64 decoding error: {0}".format(e))
-            # print("forwarding payload: {0}".format(binascii.hexlify(payload)))
+                    self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, 'message payload base64 decoding error: {0}'.format(e))
             self._proto.dataReceived(payload)
 
     # noinspection PyUnusedLocal
@@ -326,7 +325,6 @@ class WrappingWebSocketAdapter(object):
         self._proto.connectionLost(None)
 
     def write(self, data):
-        # print("sending payload: {0}".format(binascii.hexlify(data)))
         # part of ITransport
         assert(type(data) == bytes)
         if self._binaryMode:

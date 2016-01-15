@@ -182,6 +182,10 @@ class ConnectionAccept(object):
             for k, v in headers.items():
                 assert(type(k) == six.text_type)
                 assert(type(v) == six.text_type or type(v) == list or type(v) == tuple)
+                if type(v) == list or type(v) == tuple:
+                    for vv in v:
+                        assert(type(vv) == six.text_type)
+
         self.subprotocol = subprotocol
         self.headers = headers
 
@@ -191,6 +195,8 @@ class ConnectionDeny(Exception):
     Throw an instance of this class to deny a WebSocket connection
     during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
     """
+
+    __slots__ = ('code', 'reason')
 
     BAD_REQUEST = 400
     """
@@ -243,6 +249,7 @@ class ConnectionDeny(Exception):
         """
         assert(type(code) == int)
         assert(reason is None or type(reason) == six.text_type)
+
         self.code = code
         self.reason = reason
 
@@ -328,4 +335,5 @@ class Ping(object):
         if payload is not None:
             assert(len(payload) < 126), \
                 ("WebSocket ping payload too long ({} bytes) - must be <= 125 bytes".format(len(payload)))
+
         self.payload = payload
