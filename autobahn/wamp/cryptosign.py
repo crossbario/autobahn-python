@@ -28,20 +28,19 @@ from __future__ import absolute_import
 
 import os
 import binascii
-from binascii import a2b_hex, b2a_hex, b2a_base64
 import struct
 
 import six
-
 from nacl import public, encoding, signing
 
 from txaio import create_future_success
 
 from autobahn.wamp.types import Challenge
 
-from nacl.signing import SigningKey, VerifyKey
-from nacl.signing import SignedMessage
-from nacl.exceptions import BadSignatureError
+from twisted.internet.defer import inlineCallbacks, returnValue
+from twisted.internet.protocol import Factory
+from twisted.internet.endpoints import UNIXClientEndpoint
+from twisted.conch.ssh.agent import SSHAgentClient
 
 
 def unpack(keydata):
@@ -72,30 +71,38 @@ def pack(keyparts):
     return b''.join(parts)
 
 
-def _read_ssh_ed25519_pubkey(filename):
-    # Read a SSH public key of type Ed25519 and return the raw public key (32 bytes).
-    with open(filename, 'r') as f:
-        filedata = f.read().strip()
+def _read_ssh_ed25519_pubkey(keydata):
+    """
+    Parse a Ed25519 SSH public key from a string into a raw public key.
 
-        parts = filedata.split()
-        if len(parts) != 3:
-            raise Exception('invalid SSH Ed25519 public key')
-        algo, keydata, comment = parts
+    :param keydata: The public Ed25519 SSH key to parse.
+    :type keydata: unicode
 
-        if algo != u'ssh-ed25519':
-            raise Exception('not a Ed25519 SSH public key (but {})'.format(algo))
+    :returns: The raw public keys (32 bytes).
+    :rtype: binary
+    """
+    if type(keydata) != six.text_type:
+        raise Exception("invalid type {} for keydata".format(type(keydata)))
 
-        blob = binascii.a2b_base64(keydata)
+    parts = keydata.strip().split()
+    if len(parts) != 3:
+        raise Exception('invalid SSH Ed25519 public key')
+    algo, keydata, comment = parts
 
-        try:
-            key = unpack(blob)[1]
-        except Exception as e:
-            raise Exception('could not parse key ({})'.format(e))
+    if algo != u'ssh-ed25519':
+        raise Exception('not a Ed25519 SSH public key (but {})'.format(algo))
 
-        if len(key) != 32:
-            raise Exception('invalid length {} for embedded raw key (must be 32 bytes)'.format(len(key)))
+    blob = binascii.a2b_base64(keydata)
 
-        return key
+    try:
+        key = unpack(blob)[1]
+    except Exception as e:
+        raise Exception('could not parse key ({})'.format(e))
+
+    if len(key) != 32:
+        raise Exception('invalid length {} for embedded raw key (must be 32 bytes)'.format(len(key)))
+
+    return key
 
 
 # SigningKey from
@@ -108,7 +115,7 @@ def _read_ssh_ed25519_pubkey(filename):
 #   - SSH public key string or key file
 
 
-class Key(object):
+class SigningKey(object):
     """
     A cryptosign private key for signing, and hence usable for authentication or a
     public key usable for verification (but can't be used for signing).
@@ -120,7 +127,7 @@ class Key(object):
         :param key: A Ed25519 private signing key or a Ed25519 public verification key.
         :type key: instance of nacl.public.VerifyKey or instance of nacl.public.SigningKey
         """
-        if not (isinstance(key, VerifyKey) or isinstance(key, SigningKey)):
+        if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
             raise Exception("invalid type {} for key".format(type(key)))
 
         if not (comment is None or type(comment) == six.text_type):
@@ -151,7 +158,7 @@ class Key(object):
         """
         return self._comment
 
-    def public_key(self):
+    def public_key(self, binary=False):
         """
         Returns the public key part of a signing key or the (public) verification key.
 
@@ -159,10 +166,14 @@ class Key(object):
         :rtype: unicode or None
         """
         if isinstance(self._key, signing.SigningKey):
-            key = self._key.verify_key.encode(encoder=encoding.HexEncoder)
+            key = self._key.verify_key
         else:
-            key = self._key.encode(encoder=encoding.HexEncoder)
-        return key.decode('ascii')
+            key = self._key
+
+        if binary:
+            return key.encode()
+        else:
+            return key.encode(encoder=encoding.HexEncoder).decode('ascii')
 
     def sign(self, data):
         """
@@ -180,8 +191,9 @@ class Key(object):
         if type(data) != six.binary_type:
             raise Exception("data to be signed must be binary")
 
-        return self._key.sign(data)
+        return create_future_success(self._key.sign(data))
 
+    @inlineCallbacks
     def sign_challenge(self, challenge):
         """
         Sign WAMP-cryptosign challenge.
@@ -198,17 +210,19 @@ class Key(object):
         if u'challenge' not in challenge.extra:
             raise Exception("missing challenge value in challenge.extra")
 
+        challenge_hex = challenge.extra[u'challenge']
+
         # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
-        challenge_raw = binascii.a2b_hex(challenge.extra[u'challenge'])
+        challenge_raw = binascii.a2b_hex(challenge_hex)
 
         # a raw byte string is signed, and the signature is also a raw byte string
-        signature_raw = self.sign(challenge_raw)
+        signature_raw = yield self.sign(challenge_raw)
 
         # convert the raw signature into a hex encode value (unicode string)
-        signature = binascii.b2a_hex(signature_raw).decode('ascii')
+        signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
 
         # we always return a future/deferred, so handling is uniform
-        return create_future_success(signature)
+        returnValue(signature_hex + challenge_hex)
 
     @classmethod
     def from_raw_key(cls, filename, comment=None):
@@ -258,43 +272,47 @@ class Key(object):
         with open(filename, 'r') as f:
             keydata = f.read().strip()
 
-        if keydata.startswith(SSH_BEGIN):
+        if keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END):
             # SSH private key
-            ssh_end = keydata.find(SSH_END)
-            keydata = keydata[len(SSH_BEGIN):ssh_end]
-            keydata = u''.join([x.strip() for x in keydata.split()])
-            blob = binascii.a2b_base64(keydata)
-            print(blob)
-            prefix = 'openssh-key-v1\x00'
-            data = unpack(blob[len(prefix):])
-            print(data)
+            # ssh_end = keydata.find(SSH_END)
+            # keydata = keydata[len(SSH_BEGIN):ssh_end]
+            # keydata = u''.join([x.strip() for x in keydata.split()])
+            # blob = binascii.a2b_base64(keydata)
+            # prefix = 'openssh-key-v1\x00'
+            # data = unpack(blob[len(prefix):])
             raise Exception("loading private keys not implemented")
         else:
             # SSH public key
             keydata = _read_ssh_ed25519_pubkey(filename)
-            key = signing.VerifyKey(keydata)
-            return cls(key, comment)
+            key = public.PublicKey(keydata)
+            return cls(key)
+
+
+class SSHAgentSigningKey(SigningKey):
+    """
+    A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
+    actually held in SSH agent.
+
+    An instance of this class must be create via the class method new().
+    The instance only holds the public key part, whereas the private key
+    counterpart is held in SSH agent.
+    """
+
+    def __init__(self, key, comment=None, reactor=None):
+        SigningKey.__init__(self, key, comment)
+        if not reactor:
+            from twisted.internet import reactor
+        self._reactor = reactor
 
     @classmethod
-    def from_ssh_agent(cls, pubkey=None, pubkey_file=None, reactor=None):
+    def new(cls, pubkey=None, reactor=None):
         """
         Create a proxy for a key held in SSH agent.
 
-        * run an SSH key agent under a dedicated auth agent account
-        * add private keys for WAMP client running on this host under the agent
-        * have the SSH agent Unix domain socket only accesible for the WAMP client (or WAMP router)
-        * nobody but the dedicated auth agent account has access to private keys
-        * access to the auth agent and it's signing service is restricted
+        :param pubkey: A string with a public Ed25519 key in SSH format.
+        :type pubkey: unicode
         """
-        if pubkey and pubkey_file:
-            raise Exception("either pubkey or pubkey_file must be provided, not both")
-        if not (pubkey or pubkey_file):
-            raise Exception("at least one of pubkey or pubkey_file must be provided")
-
-        if pubkey_file:
-            pubkey = _read_ssh_ed25519_pubkey(pubkey_file)
-        else:
-            pubkey = a2b_hex(pubkey)
+        pubkey = _read_ssh_ed25519_pubkey(pubkey)
 
         if not reactor:
             from twisted.internet import reactor
@@ -322,7 +340,6 @@ class Key(object):
             key_comment = None
 
             for blob, comment in keys:
-                print(comment)
                 raw = unpack(blob)
                 algo = raw[0]
                 if algo == u'ssh-ed25519':
@@ -335,25 +352,49 @@ class Key(object):
             agent.transport.loseConnection()
 
             if key_data:
-                key = SigningKey(key_data)
-                returnValue(cls(key, key_comment))
+                key = signing.VerifyKey(key_data)
+                returnValue(cls(key, key_comment, reactor))
             else:
                 raise Exception("Ed25519 key not held in ssh-agent")
 
         return d.addCallback(on_connect)
 
+    def sign(self, challenge):
+        if "SSH_AUTH_SOCK" not in os.environ:
+            raise Exception("no ssh-agent is running!")
+
+        factory = Factory()
+        factory.protocol = SSHAgentClient
+        endpoint = UNIXClientEndpoint(self._reactor, os.environ["SSH_AUTH_SOCK"])
+        d = endpoint.connect(factory)
+
+        @inlineCallbacks
+        def on_connect(agent):
+            # we are now connected to the locally running ssh-agent
+            # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
+            # default the gnome-keyring / ssh-askpass-gnome application
+            blob = pack(['ssh-ed25519', self.public_key(binary=True)])
+
+            # now ask the agent
+            signature_blob = yield agent.signData(blob, challenge)
+            algo, signature = unpack(signature_blob)
+
+            agent.transport.loseConnection()
+
+            returnValue(signature)
+
+        return d.addCallback(on_connect)
+
 
 if __name__ == '__main__':
-    import sys
-
     # key = Key.from_raw(sys.argv[1], u'client02@example.com')
     # key = Key.from_ssh(sys.argv[1])
 
-    pubkey = read_ssh_pubkey(u'/home/oberstet/.ssh/id_ed25519.pub')
+    pubkey = _read_ssh_ed25519_pubkey(u'/home/oberstet/.ssh/id_ed25519.pub')
     print(pubkey)
 
     def test(reactor):
-        return Key.from_ssh_agent(pubkey)
+        return SigningKey.from_ssh_agent(pubkey)
 
     from twisted.internet.task import react
     react(test, [])
