@@ -326,6 +326,7 @@ class SSHAgentSigningKey(SigningKey):
             raise Exception("no ssh-agent is running!")
 
         factory = Factory()
+        factory.noisy = False
         factory.protocol = SSHAgentClient
         endpoint = UNIXClientEndpoint(reactor, os.environ["SSH_AUTH_SOCK"])
         d = endpoint.connect(factory)
@@ -364,6 +365,7 @@ class SSHAgentSigningKey(SigningKey):
             raise Exception("no ssh-agent is running!")
 
         factory = Factory()
+        factory.noisy = False
         factory.protocol = SSHAgentClient
         endpoint = UNIXClientEndpoint(self._reactor, os.environ["SSH_AUTH_SOCK"])
         d = endpoint.connect(factory)
@@ -390,11 +392,13 @@ if __name__ == '__main__':
     # key = Key.from_raw(sys.argv[1], u'client02@example.com')
     # key = Key.from_ssh(sys.argv[1])
 
-    pubkey = _read_ssh_ed25519_pubkey(u'/home/oberstet/.ssh/id_ed25519.pub')
-    print(pubkey)
+    with open(u'/home/oberstet/.ssh/id_ed25519.pub', 'r') as f:
+        pubkey = f.read().decode('ascii')
 
+    @inlineCallbacks
     def test(reactor):
-        return SigningKey.from_ssh_agent(pubkey)
+        key = yield SSHAgentSigningKey.new(pubkey)
+        print(key.public_key())
 
     from twisted.internet.task import react
     react(test, [])
