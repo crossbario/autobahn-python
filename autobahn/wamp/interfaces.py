@@ -166,6 +166,50 @@ class ITransport(object):
         detected attacks.
         """
 
+    @abc.abstractmethod
+    def get_channel_id(self):
+        """
+        Return the unique channel ID of the underlying transport. This is used to
+        mitigate credential forwarding man-in-the-middle attacks when running
+        application level authentication (eg WAMP-cryptosign) which are decoupled
+        from the underlying transport.
+
+        The channel ID is only available when running over TLS (either WAMP-WebSocket
+        or WAMP-RawSocket). It is not available for non-TLS transports (plain TCP or
+        Unix domain sockets). It is also not available for WAMP-over-HTTP/Longpoll.
+        Further, it is currently unimplemented for asyncio (only works on Twisted).
+
+        The channel ID is computed as follows:
+
+           - for a client, the SHA512 over the "TLS Finished" message sent by the client
+             to the server is returned.
+
+           - for a server, the SHA512 over the "TLS Finished" message the server expected
+             the client to send
+
+        Note: this is similar to `tls-unique` as described in RFC5929, but instead
+        of returning the raw "TLS Finished" message, it returns a SHA512 over such a
+        message. The reason is that we use the channel ID mainly with WAMP-cryptosign,
+        which is based on Ed25519, where keys are always 32 bytes. And having a channel ID
+        which is always 32 bytes (independent of the TLS ciphers/hashfuns in use) allows
+        use to easily XOR channel IDs with Ed25519 keys and WAMP-cryptosign challenges.
+
+        WARNING: For safe use of this (that is, for safely binding app level authentication
+        to the underlying transport), you MUST use TLS, and you SHOULD deactivate both
+        TLS session renegotiation and TLS session resumption.
+
+        References:
+
+           - https://tools.ietf.org/html/rfc5056
+           - https://tools.ietf.org/html/rfc5929
+           - http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_finished
+           - http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
+
+        :returns: The channel ID (if available) of the underlying WAMP transport. The
+            channel ID is a 32 bytes value.
+        :rtype: binary or None
+        """
+
 
 @six.add_metaclass(abc.ABCMeta)
 class ITransportHandler(object):

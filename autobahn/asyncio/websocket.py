@@ -177,6 +177,13 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         if yields(res):
             asyncio.async(res)
 
+    def get_channel_id(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
+        """
+        # FIXME
+        raise Exception("transport channel binding not implemented for asyncio")
+
     def registerProducer(self, producer, streaming):
         raise Exception("not implemented")
 

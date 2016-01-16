@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import hashlib
 from base64 import b64encode, b64decode
 
 from zope.interface import implementer
@@ -79,7 +80,9 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     """
     Adapter class for Twisted WebSocket client and server protocols.
     """
+
     peer = '<never connected>'
+
     log = txaio.make_logger()
 
     def connectionMade(self):
@@ -204,6 +207,23 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 
         res.addErrback(forwardError)
 
+    def get_channel_id(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
+        """
+        if hasattr(self.transport, '_tlsConnection'):
+            # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
+            # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
+
+            # for routers (=servers), the channel ID is based on the TLS Finished message we
+            # expected to receive from the client
+            tls_finished_msg = self.transport._tlsConnection.get_peer_finished()
+            m = hashlib.sha512()
+            m.update(tls_finished_msg)
+            return m.digest()
+        else:
+            return None
+
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
@@ -216,6 +236,23 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def startTLS(self):
         self.log.debug("Starting TLS upgrade")
         self.transport.startTLS(self.factory.contextFactory)
+
+    def get_channel_id(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
+        """
+        if hasattr(self.transport, '_tlsConnection'):
+            # Obtain latest TLS Finished message that we sent, or None if handshake is not completed.
+            # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_finished
+
+            # for clients, the channel ID is based on the TLS Finished message we sent
+            # to the router (=server)
+            tls_finished_msg = self.transport._tlsConnection.get_finished()
+            m = hashlib.sha512()
+            m.update(tls_finished_msg)
+            return m.digest()
+        else:
+            return None
 
 
 class WebSocketAdapterFactory(object):
