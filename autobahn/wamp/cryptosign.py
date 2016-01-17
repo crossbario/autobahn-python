@@ -35,6 +35,7 @@ from nacl import public, encoding, signing
 
 from txaio import create_future_success
 
+from autobahn import util
 from autobahn.wamp.types import Challenge
 
 from twisted.internet.defer import inlineCallbacks, returnValue
@@ -194,7 +195,7 @@ class SigningKey(object):
         return create_future_success(self._key.sign(data))
 
     @inlineCallbacks
-    def sign_challenge(self, challenge):
+    def sign_challenge(self, session, challenge):
         """
         Sign WAMP-cryptosign challenge.
 
@@ -210,19 +211,31 @@ class SigningKey(object):
         if u'challenge' not in challenge.extra:
             raise Exception("missing challenge value in challenge.extra")
 
+        # the challenge sent by the router (a 32 bytes random value)
         challenge_hex = challenge.extra[u'challenge']
 
         # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
         challenge_raw = binascii.a2b_hex(challenge_hex)
 
+        # if the transport has a channel ID, the message to be signed by the client actually
+        # is the XOR of the challenge and the channel ID
+        channel_id_raw = session._transport.get_channel_id()
+        if channel_id_raw:
+            data = util.xor(challenge_raw, channel_id_raw)
+        else:
+            data = challenge_raw
+
         # a raw byte string is signed, and the signature is also a raw byte string
-        signature_raw = yield self.sign(challenge_raw)
+        signature_raw = yield self.sign(data)
 
         # convert the raw signature into a hex encode value (unicode string)
         signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
 
+        # we return the concatenation of the signature and the message signed (96 bytes)
+        data_hex = binascii.b2a_hex(data).decode('ascii')
+
         # we always return a future/deferred, so handling is uniform
-        returnValue(signature_hex + challenge_hex)
+        returnValue(signature_hex + data_hex)
 
     @classmethod
     def from_raw_key(cls, filename, comment=None):
