@@ -181,14 +181,14 @@ class ITransport(object):
 
         The channel ID is computed as follows:
 
-           - for a client, the SHA512 over the "TLS Finished" message sent by the client
+           - for a client, the SHA256 over the "TLS Finished" message sent by the client
              to the server is returned.
 
-           - for a server, the SHA512 over the "TLS Finished" message the server expected
+           - for a server, the SHA256 over the "TLS Finished" message the server expected
              the client to send
 
         Note: this is similar to `tls-unique` as described in RFC5929, but instead
-        of returning the raw "TLS Finished" message, it returns a SHA512 over such a
+        of returning the raw "TLS Finished" message, it returns a SHA256 over such a
         message. The reason is that we use the channel ID mainly with WAMP-cryptosign,
         which is based on Ed25519, where keys are always 32 bytes. And having a channel ID
         which is always 32 bytes (independent of the TLS ciphers/hashfuns in use) allows

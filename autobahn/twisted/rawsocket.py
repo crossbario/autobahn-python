@@ -258,7 +258,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
             # for routers (=servers), the channel ID is based on the TLS Finished message we
             # expected to receive from the client
             tls_finished_msg = self.transport._tlsConnection.get_peer_finished()
-            m = hashlib.sha512()
+            m = hashlib.sha256()
             m.update(tls_finished_msg)
             return m.digest()
         else:
@@ -342,7 +342,7 @@ class WampRawSocketClientProtocol(WampRawSocketProtocol):
             # for clients, the channel ID is based on the TLS Finished message we sent
             # to the router (=server)
             tls_finished_msg = self.transport._tlsConnection.get_finished()
-            m = hashlib.sha512()
+            m = hashlib.sha256()
             m.update(tls_finished_msg)
             return m.digest()
         else:
