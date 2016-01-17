@@ -42,7 +42,8 @@ import six
 import txaio
 
 
-__all__ = ("utcnow",
+__all__ = ("xor",
+           "utcnow",
            "utcstr",
            "id",
            "rid",
@@ -57,6 +58,27 @@ __all__ = ("utcnow",
            "generate_activation_code",
            "generate_serial_number",
            "generate_user_password")
+
+
+def xor(d1, d2):
+    """
+    XOR two binary strings of arbitrary (equal) length.
+
+    :param d1: The first binary string.
+    :type d1: binary
+    :param d2: The second binary string.
+    :type d2: binary
+
+    :returns: XOR(d1, d2)
+    :rtype: binary
+    """
+    if type(d1) != six.binary_type:
+        raise Exception("invalid type {} for d1 - must be binary".format(type(d1)))
+    if type(d2) != six.binary_type:
+        raise Exception("invalid type {} for d2 - must be binary".format(type(d2)))
+    if len(d1) != len(d2):
+        raise Exception("cannot XOR binary string of differing length ({} != {})".format(len(d1), len(d2)))
+    return b''.join(chr(ord(x) ^ ord(y)) for x, y in zip(d1, d2))
 
 
 def utcstr(ts=None):
