@@ -507,6 +507,22 @@ The :class:`ApplicationSession <autobahn.twisted.wamp.ApplicationSession>` will 
             print("transport disconnected")
 
 
+Logging
+=======
+
+Internally, |Ab| uses `txaio <https://github.com/crossbario/txaio>`_ as an abstraction layer over Twisted and asyncio APIs. `txaio`_ also provides an abstracted logging API, which is what both |Ab| and Crossbar_ use.
+
+There is a `txaio Programming Guide <http://txaio.readthedocs.org/en/latest/programming-guide.html#logging>`_ which includes information on logging. If you are writing new code, you can choose the txaio_ APIs for maximum compatibility and runtime-efficiency (see below). If you prefer to write idiomatic logging code to "go with" the event-based frameword you've chosen, that's possible as well. For asyncio_ this is Python's built-in `logging <https://docs.python.org/3.5/library/logging.html>`_ module; for Twisted it is the `post-15.2.0 logging API <http://twistedmatrix.com/documents/current/core/howto/logger.html>`_. The logging system in `txaio`_ is able to interoperate with the legacy Twisted logging API as well.
+
+The txaio_ API encourages a more structured approach while still achieving easily-rendered text logging messages. The basic idiom is to use new-style Python formatting strings and pass any "data" as kwargs. So a typical logging call might look like: ``self.log.info("Knob {frob.name} moved {degrees} right.", knob=an_obj, degrees=42)`` and if the "info" log level is not enabled, the string won't be "interpolated" (i.e. ``str()`` will not be invoked on any of the args, and a new string won't be produced). On top of that, logging observers may examine the ``kwargs`` and do things beyond "normal" logging. This is very much inspired by ``twisted.logger``; you can read the `Twisted logging documentation <http://twistedmatrix.com/documents/current/core/howto/logger.html>`_ for more insight.
+
+Before any logging happens of course you must activate the logging system. There is a convenience method in `txaio`_ called ``txaio.start_logging``. This will use ``twisted.logger.globalLogBeginner`` on Twisted or ``logging.Logger.addHandler`` under asyncio and allows you to specify and output stream and/or a log level. Valid levels are the list of strings in ``txaio.interfaces.log_levels``.
+
+If you have instead got your own log-starting code (e.g. ``twistd``) or Twisted/asyncio specific log handlers (``logging.Handler`` subclass on asyncio and ``ILogObserver`` implementer under Twisted) then you will still get |Ab| and `Crossbar`_ messages. Probably the formatting will be slightly different from what ``txaio.start_logging`` provides. In either case, **do not depend on the formatting** of the messages e.g. by "screen-scraping" the logs.
+
+We very much **recommend using the ``txaio.start_logging()`` method** of activating the logging system, as we've gone to pains to ensure that over-level logs are a "no-op" and incur minimal runtime cost. We achieve this by re-binding all out-of-scope methods on any logger created by ``txaio.make_logger()`` to a do-nothing function (by saving weak-refs of all the loggers created); at least on `PyPy`_ this is very well optimized out. This allows us to be generous with ``.debug()`` or ``.trace()`` calls without incurring very much overhead. Your Milage May Vary using other methods. If you haven't called ``txaio.start_logging()`` this optimization is not activated.
+
+
 Upgrading
 =========
 
