@@ -128,9 +128,9 @@ else:
     def _pbkdf2(data, salt, iterations, keylen, hashfunc):
         mac = hmac.new(data, None, hashfunc)
         buf = []
-        for block in xrange(1, -(-keylen // mac.digest_size) + 1):
+        for block in range(1, -(-keylen // mac.digest_size) + 1):
             rv = u = _pseudorandom(salt + _pack_int(block), mac)
-            for i in xrange(iterations - 1):
+            for i in range(iterations - 1):
                 u = _pseudorandom(''.join(map(chr, u)), mac)
                 rv = starmap(xor, izip(rv, u))
             buf.extend(rv)

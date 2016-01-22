@@ -129,6 +129,7 @@ extras_require_serialization = [
 #
 extras_require_encryption = [
     'pynacl>=0.3.0',            # Apache license
+    'pytrie>=0.2'               # BSD license
 ]
 
 # everything
