@@ -26,7 +26,6 @@
 
 from __future__ import absolute_import
 
-import hashlib
 from base64 import b64encode, b64decode
 
 from zope.interface import implementer
@@ -44,7 +43,7 @@ from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
     ConnectionDeny
 from autobahn.websocket import protocol
-from autobahn.twisted.util import peer2str
+from autobahn.twisted.util import peer2str, transport_channel_id
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept, \
@@ -207,22 +206,11 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 
         res.addErrback(forwardError)
 
-    def get_channel_id(self):
+    def get_channel_id(self, channel_id_type=u'tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        if hasattr(self.transport, '_tlsConnection'):
-            # Obtain latest TLS Finished message that we expected from peer, or None if handshake is not completed.
-            # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_peer_finished
-
-            # for routers (=servers), the channel ID is based on the TLS Finished message we
-            # expected to receive from the client
-            tls_finished_msg = self.transport._tlsConnection.get_peer_finished()
-            m = hashlib.sha256()
-            m.update(tls_finished_msg)
-            return m.digest()
-        else:
-            return None
+        return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
@@ -237,22 +225,11 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
         self.log.debug("Starting TLS upgrade")
         self.transport.startTLS(self.factory.contextFactory)
 
-    def get_channel_id(self):
+    def get_channel_id(self, channel_id_type=u'tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        if hasattr(self.transport, '_tlsConnection'):
-            # Obtain latest TLS Finished message that we sent, or None if handshake is not completed.
-            # http://www.pyopenssl.org/en/stable/api/ssl.html#OpenSSL.SSL.Connection.get_finished
-
-            # for clients, the channel ID is based on the TLS Finished message we sent
-            # to the router (=server)
-            tls_finished_msg = self.transport._tlsConnection.get_finished()
-            m = hashlib.sha256()
-            m.update(tls_finished_msg)
-            return m.digest()
-        else:
-            return None
+        return transport_channel_id(self.transport, is_server=False, channel_id_type=channel_id_type)
 
 
 class WebSocketAdapterFactory(object):

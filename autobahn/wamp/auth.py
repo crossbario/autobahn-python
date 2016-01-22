@@ -59,10 +59,10 @@ def generate_totp_secret(length=10):
 
     :returns: The generated secret in Base32 (letters ``A-Z`` and digits ``2-7``).
        The length of the generated secret is ``length * 8 / 5`` octets.
-    :rtype: bytes
+    :rtype: unicode
     """
     assert(type(length) in six.integer_types)
-    return base64.b32encode(os.urandom(length))
+    return base64.b32encode(os.urandom(length)).decode('ascii')
 
 
 def compute_totp(secret, offset=0):
@@ -70,14 +70,14 @@ def compute_totp(secret, offset=0):
     Computes the current TOTP code.
 
     :param secret: Base32 encoded secret.
-    :type secret: bytes
+    :type secret: unicode
     :param offset: Time offset for which to compute TOTP.
     :type offset: int
 
     :returns: TOTP for current time (+/- offset).
-    :rtype: bytes
+    :rtype: unicode
     """
-    assert(type(secret) == bytes)
+    assert(type(secret) == six.text_type)
     assert(type(offset) in six.integer_types)
     try:
         key = base64.b32decode(secret)
@@ -88,15 +88,43 @@ def compute_totp(secret, offset=0):
     digest = hmac.new(key, msg, hashlib.sha1).digest()
     o = 15 & (digest[19] if six.PY3 else ord(digest[19]))
     token = (struct.unpack('>I', digest[o:o + 4])[0] & 0x7fffffff) % 1000000
-    return '{0:06d}'.format(token).encode('ascii')
+    return u'{0:06d}'.format(token)
 
 
-##
+def check_totp(secret, ticket):
+    """
+    The Internet can be slow, and clocks might not match exactly, so some leniency is allowed. RFC6238 recommends looking an extra time step in either direction, which essentially opens the window from 30 seconds to 90 seconds.
+    """
+    pass
+
+
+def qrcode_from_totp(secret, label, issuer):
+    if type(secret) != six.text_type:
+        raise Exception('secret must be of type unicode, not {}'.format(type(secret)))
+
+    if type(label) != six.text_type:
+        raise Exception('label must be of type unicode, not {}'.format(type(label)))
+
+    try:
+        import pyqrcode
+    except ImportError:
+        raise Exception('pyqrcode not installed')
+
+    import io
+    buffer = io.BytesIO()
+
+    data = pyqrcode.create(u'otpauth://totp/{}?secret={}&issuer={}'.format(label, secret, issuer))
+    data.svg(buffer, omithw=True)
+
+    return buffer.getvalue()
+
+
+#
 # The following code is adapted from the pbkdf2_bin() function
 # in here https://github.com/mitsuhiko/python-pbkdf2
 # Copyright 2011 by Armin Ronacher. Licensed under BSD license.
 # https://github.com/mitsuhiko/python-pbkdf2/blob/master/LICENSE
-##
+#
 _pack_int = Struct('>I').pack
 
 if six.PY3:
@@ -242,3 +270,8 @@ def compute_wcs(key, challenge):
         challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
+
+
+if __name__ == '__main__':
+    with open('test.svg', 'w') as f:
+        f.write(qrcode_from_totp(u'CACKN3GRF3KQZMEK', u'tobias1', u'Tavendo'))
