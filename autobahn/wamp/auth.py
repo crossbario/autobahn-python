@@ -71,7 +71,8 @@ def compute_totp(secret, offset=0):
 
     :param secret: Base32 encoded secret.
     :type secret: unicode
-    :param offset: Time offset for which to compute TOTP.
+    :param offset: Time offset (in steps, use eg -1, 0, +1 for compliance with RFC6238)
+        for which to compute TOTP.
     :type offset: int
 
     :returns: TOTP for current time (+/- offset).
@@ -93,9 +94,28 @@ def compute_totp(secret, offset=0):
 
 def check_totp(secret, ticket):
     """
-    The Internet can be slow, and clocks might not match exactly, so some leniency is allowed. RFC6238 recommends looking an extra time step in either direction, which essentially opens the window from 30 seconds to 90 seconds.
+    Check a TOTP value received from a principal trying to authenticate against
+    the expected value computed from the secret shared between the principal and
+    the authenticating entity.
+
+    The Internet can be slow, and clocks might not match exactly, so some
+    leniency is allowed. RFC6238 recommends looking an extra time step in either
+    direction, which essentially opens the window from 30 seconds to 90 seconds.
+
+    :param secret: The secret shared between the principal (eg a client) that
+        is authenticating, and the authenticating entity (eg a server).
+    :type secret: unicode
+    :param ticket: The TOTP value to be checked.
+    :type ticket: unicode
+
+    :returns: ``True`` if the TOTP value is correct, else ``False``.
+    :rtype: bool
     """
-    pass
+    for offset in [0, 1, -1]:
+        if ticket == compute_totp(secret, offset):
+            print("check_totp matched at offset {}".format(offset))
+            return True
+    return False
 
 
 def qrcode_from_totp(secret, label, issuer):
