@@ -75,8 +75,8 @@ packages = [
 # as we make claims to support older Twisted!)
 #
 extras_require_twisted = [
-    "zope.interface>=3.6",  # Zope Public License
-    "Twisted>=12.1"         # MIT license
+    "zope.interface>=4.1.3", # Zope Public License
+    "Twisted>=15.5"          # MIT license
 ]
 
 # asyncio dependencies
@@ -94,7 +94,7 @@ else:
     # backport of asyncio for Python 2
     extras_require_asyncio = [
         "trollius>=2.0",            # Apache 2.0
-        "futures>=3.0.3"            # BSD license
+        "futures>=3.0.4"            # BSD license
     ]
 
 # C-based WebSocket acceleration
@@ -128,8 +128,9 @@ extras_require_serialization = [
 # payload encryption
 #
 extras_require_encryption = [
-    'pynacl>=0.3.0',            # Apache license
-    'pytrie>=0.2'               # BSD license
+    'pynacl>=1.0',              # Apache license
+    'pytrie>=0.2',              # BSD license
+    'pyqrcode>=1.1'             # BSD license
 ]
 
 # everything
@@ -145,17 +146,17 @@ extras_require_dev = [
     # flake8 will install the version "it needs"
     # "pep8>=1.6.2",          # MIT license
     "pep8-naming>=0.3.3",   # MIT license
-    "flake8>=2.4.1",        # MIT license
-    "pyflakes>=0.9.2",      # MIT license
+    "flake8>=2.5.1",        # MIT license
+    "pyflakes>=1.0.0",      # MIT license
     "mock>=1.3.0",          # BSD license
-    "pytest>=2.7.2",        # MIT license
+    "pytest>=2.8.6",        # MIT license
     "unittest2>=1.1.0"      # BSD license
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 #
 test_requirements = [
-    "pytest>=2.7.2",        # MIT license
+    "pytest>=2.8.6",        # MIT license
     "mock>=1.3.0"           # BSD license
 ]
 
@@ -190,8 +191,8 @@ setup(
     url='http://autobahn.ws/python',
     platforms='Any',
     install_requires=[
-        'six>=1.9.0',       # MIT license
-        'txaio>=2.2.0',     # MIT license
+        'six>=1.10.0',      # MIT license
+        'txaio>=2.2.1',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
