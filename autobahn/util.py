@@ -36,6 +36,7 @@ import math
 import random
 from datetime import datetime, timedelta
 from pprint import pformat
+from array import array
 
 import six
 
@@ -78,7 +79,17 @@ def xor(d1, d2):
         raise Exception("invalid type {} for d2 - must be binary".format(type(d2)))
     if len(d1) != len(d2):
         raise Exception("cannot XOR binary string of differing length ({} != {})".format(len(d1), len(d2)))
-    return b''.join(chr(ord(x) ^ ord(y)) for x, y in zip(d1, d2))
+
+    d1 = array('B', d1)
+    d2 = array('B', d2)
+
+    for i in range(len(d1)):
+        d1[i] ^= d2[i]
+
+    if six.PY3:
+        return d1.tobytes()
+    else:
+        return d1.tostring()
 
 
 def utcstr(ts=None):

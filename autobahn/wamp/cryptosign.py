@@ -41,7 +41,14 @@ from autobahn.wamp.types import Challenge
 from twisted.internet.defer import inlineCallbacks, returnValue
 from twisted.internet.protocol import Factory
 from twisted.internet.endpoints import UNIXClientEndpoint
-from twisted.conch.ssh.agent import SSHAgentClient
+
+try:
+    from twisted.conch.ssh.agent import SSHAgentClient
+except ImportError:
+    # twisted.conch is not yet fully ported to Python 3
+    _HAS_SSH_AGENT_SUPPORT = False
+else:
+    _HAS_SSH_AGENT_SUPPORT = True
 
 
 def unpack(keydata):
@@ -325,15 +332,13 @@ class SSHAgentSigningKey(SigningKey):
         :param pubkey: A string with a public Ed25519 key in SSH format.
         :type pubkey: unicode
         """
+        if not _HAS_SSH_AGENT_SUPPORT:
+            raise Exception("SSH agent integration is not supported on this platform")
+
         pubkey = _read_ssh_ed25519_pubkey(pubkey)
 
         if not reactor:
             from twisted.internet import reactor
-
-        from twisted.internet.defer import inlineCallbacks, returnValue
-        from twisted.internet.protocol import Factory
-        from twisted.internet.endpoints import UNIXClientEndpoint
-        from twisted.conch.ssh.agent import SSHAgentClient
 
         if "SSH_AUTH_SOCK" not in os.environ:
             raise Exception("no ssh-agent is running!")
