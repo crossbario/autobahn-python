@@ -10,9 +10,6 @@ all:
 
 # install locally
 install:
-	#python setup.py install
-#	pip install -e .[twisted]
-#	pip install -e .[asyncio,twisted,accelerate,compress,serialization]
 	pip install --upgrade -e .[all,dev]
 
 # cleanup everything
@@ -25,6 +22,7 @@ clean:
 	rm -rf ./.tox
 	rm -rf ./.eggs
 	rm -f  ./twisted/plugins/dropin.cache
+	find . -name "*dropin.cache.new" -type f -exec rm -f {} \;
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;

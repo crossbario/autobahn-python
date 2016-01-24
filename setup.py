@@ -99,7 +99,8 @@ else:
 
 # C-based WebSocket acceleration
 #
-if CPY:
+if CPY and sys.platform != 'win32':
+    # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
     extras_require_accelerate = [
         "wsaccel>=0.6.2"            # Apache 2.0
     ]
