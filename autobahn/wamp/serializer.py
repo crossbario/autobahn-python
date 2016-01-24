@@ -46,6 +46,7 @@ class Serializer(object):
     parsed WAMP message objects and the bytes on wire (the transport).
     """
 
+    # WAMP defines the following 24 message types
     MESSAGE_TYPE_MAP = {
         message.Hello.MESSAGE_TYPE: message.Hello,
         message.Welcome.MESSAGE_TYPE: message.Welcome,
@@ -54,20 +55,16 @@ class Serializer(object):
         message.Authenticate.MESSAGE_TYPE: message.Authenticate,
         message.Goodbye.MESSAGE_TYPE: message.Goodbye,
         message.Error.MESSAGE_TYPE: message.Error,
-
         message.Publish.MESSAGE_TYPE: message.Publish,
         message.Published.MESSAGE_TYPE: message.Published,
-
         message.Subscribe.MESSAGE_TYPE: message.Subscribe,
         message.Subscribed.MESSAGE_TYPE: message.Subscribed,
         message.Unsubscribe.MESSAGE_TYPE: message.Unsubscribe,
         message.Unsubscribed.MESSAGE_TYPE: message.Unsubscribed,
         message.Event.MESSAGE_TYPE: message.Event,
-
         message.Call.MESSAGE_TYPE: message.Call,
         message.Cancel.MESSAGE_TYPE: message.Cancel,
         message.Result.MESSAGE_TYPE: message.Result,
-
         message.Register.MESSAGE_TYPE: message.Register,
         message.Registered.MESSAGE_TYPE: message.Registered,
         message.Unregister.MESSAGE_TYPE: message.Unregister,
@@ -138,9 +135,7 @@ class Serializer(object):
         return msgs
 
 
-#
 # JSON serialization is always supported
-#
 try:
     # try import accelerated JSON implementation
     #
@@ -215,7 +210,7 @@ IObjectSerializer.register(JsonObjectSerializer)
 
 class JsonSerializer(Serializer):
 
-    SERIALIZER_ID = "json"
+    SERIALIZER_ID = u"json"
     """
     ID used as part of the WebSocket subprotocol name to identify the
     serializer with WAMP-over-WebSocket.
@@ -227,7 +222,7 @@ class JsonSerializer(Serializer):
     handshake identify the serializer with WAMP-over-RawSocket.
     """
 
-    MIME_TYPE = "application/json"
+    MIME_TYPE = u"application/json"
     """
     MIME type announced in HTTP request/response headers when running
     WAMP-over-Longpoll HTTP fallback.
@@ -242,7 +237,7 @@ class JsonSerializer(Serializer):
         """
         Serializer.__init__(self, JsonObjectSerializer(batched=batched))
         if batched:
-            self.SERIALIZER_ID = "json.batched"
+            self.SERIALIZER_ID = u"json.batched"
 
 
 ISerializer.register(JsonSerializer)
@@ -355,7 +350,7 @@ else:
 
     class MsgPackSerializer(Serializer):
 
-        SERIALIZER_ID = "msgpack"
+        SERIALIZER_ID = u"msgpack"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -367,7 +362,7 @@ else:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = "application/x-msgpack"
+        MIME_TYPE = u"application/x-msgpack"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -382,7 +377,7 @@ else:
             """
             Serializer.__init__(self, MsgPackObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = "msgpack.batched"
+                self.SERIALIZER_ID = u"msgpack.batched"
 
     ISerializer.register(MsgPackSerializer)
 
@@ -465,7 +460,7 @@ else:
 
     class CBORSerializer(Serializer):
 
-        SERIALIZER_ID = "cbor"
+        SERIALIZER_ID = u"cbor"
         """
         ID used as part of the WebSocket subprotocol name to identify the
         serializer with WAMP-over-WebSocket.
@@ -477,7 +472,7 @@ else:
         handshake identify the serializer with WAMP-over-RawSocket.
         """
 
-        MIME_TYPE = "application/cbor"
+        MIME_TYPE = u"application/cbor"
         """
         MIME type announced in HTTP request/response headers when running
         WAMP-over-Longpoll HTTP fallback.
@@ -492,7 +487,7 @@ else:
             """
             Serializer.__init__(self, CBORObjectSerializer(batched=batched))
             if batched:
-                self.SERIALIZER_ID = "cbor.batched"
+                self.SERIALIZER_ID = u"cbor.batched"
 
     ISerializer.register(CBORSerializer)
 
