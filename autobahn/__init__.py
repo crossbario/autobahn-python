@@ -31,7 +31,7 @@ from __future__ import absolute_import
 # out public API
 from autobahn.util import utcnow, utcstr
 
-__version__ = u"0.11.0"
+__version__ = u"0.11.1"
 """
 AutobahnPython library version.
 """
