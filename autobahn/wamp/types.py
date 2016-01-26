@@ -410,7 +410,7 @@ class RegisterOptions(object):
         :type details_arg: str
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
-        assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
+        assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random', u'balance']))
         assert(details_arg is None or type(details_arg) == str)
 
         self.match = match

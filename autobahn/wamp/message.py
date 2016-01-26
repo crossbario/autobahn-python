@@ -2452,6 +2452,7 @@ class Register(Message):
     INVOKE_ROUNDROBIN = u'roundrobin'
     INVOKE_RANDOM = u'random'
     INVOKE_ALL = u'all'
+    INVOKE_BALANCE = u'balance'
 
     def __init__(self, request, procedure, match=None, invoke=None):
         """
@@ -2470,7 +2471,7 @@ class Register(Message):
         assert(match is None or type(match) == six.text_type)
         assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
         assert(invoke is None or type(invoke) == six.text_type)
-        assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
+        assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM, Register.INVOKE_BALANCE])
 
         Message.__init__(self)
         self.request = request
@@ -2519,7 +2520,7 @@ class Register(Message):
             if type(option_invoke) != six.text_type:
                 raise ProtocolError("invalid type {0} for 'invoke' option in REGISTER".format(type(option_invoke)))
 
-            if option_invoke not in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM]:
+            if option_invoke not in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM, Register.INVOKE_BALANCE]:
                 raise ProtocolError("invalid value {0} for 'invoke' option in REGISTER".format(option_invoke))
 
             invoke = option_invoke

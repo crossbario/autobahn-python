@@ -60,6 +60,7 @@ def generate_test_messages():
         message.Register(123456, u'com.myapp.procedure1'),
         message.Register(123456, u'com.myapp.procedure1', match=u'prefix'),
         message.Register(123456, u'com.myapp.procedure1', invoke=u'roundrobin'),
+        message.Register(123456, u'com.myapp.procedure1', invoke=u'balance'),
         message.Event(123456, 789123),
         message.Event(123456, 789123, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
         message.Event(123456, 789123, publisher=300),
