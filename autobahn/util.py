@@ -627,9 +627,3 @@ class ObservableMixin(object):
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
         return txaio.gather(res)
-
-
-if __name__ == '__main__':
-    print(generate_activation_code())
-    print(generate_serial_number())
-    print(generate_user_password())

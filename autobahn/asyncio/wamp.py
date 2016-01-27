@@ -131,9 +131,8 @@ class ApplicationRunner(object):
             cfg = ComponentConfig(self.realm, self.extra)
             try:
                 session = make(cfg)
-            except Exception as e:
-                # the app component could not be created .. fatal
-                print(e)
+            except Exception:
+                self.log.failure("App session could not be created! ")
                 asyncio.get_event_loop().stop()
             else:
                 session.debug_app = self.debug_app

@@ -113,7 +113,6 @@ def check_totp(secret, ticket):
     """
     for offset in [0, 1, -1]:
         if ticket == compute_totp(secret, offset):
-            print("check_totp matched at offset {}".format(offset))
             return True
     return False
 

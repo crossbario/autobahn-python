@@ -26,6 +26,9 @@
 
 from __future__ import absolute_import
 
+import txaio
+txaio.use_twisted()
+
 from twisted.python import usage
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.protocol import Factory, Protocol
@@ -35,17 +38,19 @@ from twisted.application import service
 
 class DestEndpointForwardingProtocol(Protocol):
 
+    log = txaio.make_logger()
+
     def connectionMade(self):
-        # print("DestEndpointForwardingProtocol.connectionMade")
+        self.log.debug("DestEndpointForwardingProtocol.connectionMade")
         pass
 
     def dataReceived(self, data):
-        # print("DestEndpointForwardingProtocol.dataReceived: {0}".format(data))
+        self.log.debug("DestEndpointForwardingProtocol.dataReceived: {0}".format(data))
         if self.factory._sourceProtocol:
             self.factory._sourceProtocol.transport.write(data)
 
     def connectionLost(self, reason):
-        # print("DestEndpointForwardingProtocol.connectionLost")
+        self.log.debug("DestEndpointForwardingProtocol.connectionLost")
         if self.factory._sourceProtocol:
             self.factory._sourceProtocol.transport.loseConnection()
 
@@ -64,21 +69,23 @@ class DestEndpointForwardingFactory(Factory):
 
 class EndpointForwardingProtocol(Protocol):
 
+    log = txaio.make_logger()
+
     @inlineCallbacks
     def connectionMade(self):
-        # print("EndpointForwardingProtocol.connectionMade")
+        self.log.debug("EndpointForwardingProtocol.connectionMade")
         self._destFactory = DestEndpointForwardingFactory(self)
         self._destEndpoint = clientFromString(self.factory.service._reactor,
                                               self.factory.service._destEndpointDescriptor)
         self._destEndpointPort = yield self._destEndpoint.connect(self._destFactory)
 
     def dataReceived(self, data):
-        # print("EndpointForwardingProtocol.dataReceived: {0}".format(data))
+        self.log.debug("EndpointForwardingProtocol.dataReceived: {0}".format(data))
         if self._destFactory._proto:
             self._destFactory._proto.transport.write(data)
 
     def connectionLost(self, reason):
-        # print("EndpointForwardingProtocol.connectionLost")
+        self.log.debug("EndpointForwardingProtocol.connectionLost")
         if self._destFactory._proto:
             self._destFactory._proto.transport.loseConnection()
 

@@ -86,12 +86,12 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
             peer = transport.get_extra_info('peername')
             try:
                 # FIXME: tcp4 vs tcp6
-                self.peer = "tcp:%s:%d" % (peer[0], peer[1])
+                self.peer = u"tcp:%s:%d" % (peer[0], peer[1])
             except:
                 # e.g. Unix Domain sockets don't have host/port
-                self.peer = "unix:{0}".format(peer)
+                self.peer = u"unix:{0}".format(peer)
         except:
-            self.peer = "?"
+            self.peer = u"?"
 
         self._connectionMade()
 
@@ -107,8 +107,6 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
                 data = self.receive_queue.popleft()
                 if self.transport:
                     self._dataReceived(data)
-                else:
-                    print("WebSocketAdapterProtocol._consume: no transport")
             self._consume()
 
         self.waiter.add_done_callback(process)

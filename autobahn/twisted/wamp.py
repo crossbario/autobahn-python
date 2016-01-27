@@ -261,7 +261,6 @@ class ApplicationRunner(object):
 
                 def __call__(self, failure):
                     self.exception = failure.value
-                    # print(failure.getErrorMessage())
                     reactor.stop()
             connect_error = ErrorCollector()
             d.addErrback(connect_error)
