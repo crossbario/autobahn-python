@@ -431,7 +431,7 @@ class Hello(Message):
         """
         Return a string representation of this message.
         """
-        return "WAMP HELLO Message (realm = {0}, roles = {1}, authmethods = {2}, authid = {3}, authrole = {4}, authextra = {5})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra)
+        return u"Hello(realm={0}, roles={1}, authmethods={2}, authid={3}, authrole={4}, authextra={5})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra)
 
 
 class Welcome(Message):
@@ -603,7 +603,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP WELCOME Message (session = {0}, roles = {1}, realm = {2}, authid = {3}, authrole = {4}, authmethod = {5}, authprovider = {6}, authextra = {7})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return u"Welcome(session={0}, roles={1}, realm={2}, authid={3}, authrole={4}, authmethod={5}, authprovider={6}, authextra={7})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
 class Abort(Message):
@@ -683,7 +683,7 @@ class Abort(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP ABORT Message (message = {0}, reason = {1})".format(self.message, self.reason)
+        return u"Abort(message={0}, reason={1})".format(self.message, self.reason)
 
 
 class Challenge(Message):
@@ -752,7 +752,7 @@ class Challenge(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP CHALLENGE Message (method = {0}, extra = {1})".format(self.method, self.extra)
+        return u"Challenge(method={0}, extra={1})".format(self.method, self.extra)
 
 
 class Authenticate(Message):
@@ -821,7 +821,7 @@ class Authenticate(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP AUTHENTICATE Message (signature = {0}, extra = {1})".format(self.signature, self.extra)
+        return u"Authenticate(signature={0}, extra={1})".format(self.signature, self.extra)
 
 
 class Goodbye(Message):
@@ -906,7 +906,7 @@ class Goodbye(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP GOODBYE Message (message = {0}, reason = {1})".format(self.message, self.reason)
+        return u"Goodbye(message={0}, reason={1})".format(self.message, self.reason)
 
 
 class Error(Message):
@@ -1080,7 +1080,7 @@ class Error(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP ERROR Message (request_type = {0}, request = {1}, error = {2}, args = {3}, kwargs = {4}, enc_algo = {5}, enc_key = {6}, enc_serializer = {7}, payload = {8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Error(request_type={0}, request={1}, error={2}, args={3}, kwargs={4}, enc_algo={5}, enc_key={6}, enc_serializer={7}, payload={8})".format(self.request_type, self.request, self.error, self.args, self.kwargs, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Publish(Message):
@@ -1349,7 +1349,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP PUBLISH Message (request = {0}, topic = {1}, args = {2}, kwargs = {3}, acknowledge = {4}, exclude_me = {5}, exclude = {6}, eligible = {7}, disclose_me = {8}, enc_algo = {9}, enc_key = {10}, enc_serializer = {11}, payload = {12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, eligible={7}, disclose_me={8}, enc_algo={9}, enc_key={10}, enc_serializer={11}, payload={12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Published(Message):
@@ -1415,7 +1415,7 @@ class Published(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP PUBLISHED Message (request = {0}, publication = {1})".format(self.request, self.publication)
+        return u"Published(request={0}, publication={1})".format(self.request, self.publication)
 
 
 class Subscribe(Message):
@@ -1509,7 +1509,7 @@ class Subscribe(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP SUBSCRIBE Message (request = {0}, topic = {1}, match = {2})".format(self.request, self.topic, self.match)
+        return u"Subscribe(request={0}, topic={1}, match={2})".format(self.request, self.topic, self.match)
 
 
 class Subscribed(Message):
@@ -1575,7 +1575,7 @@ class Subscribed(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP SUBSCRIBED Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
+        return u"Subscribed(request={0}, subscription={1})".format(self.request, self.subscription)
 
 
 class Unsubscribe(Message):
@@ -1641,7 +1641,7 @@ class Unsubscribe(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP UNSUBSCRIBE Message (request = {0}, subscription = {1})".format(self.request, self.subscription)
+        return u"Unsubscribe(request={0}, subscription={1})".format(self.request, self.subscription)
 
 
 class Unsubscribed(Message):
@@ -1740,7 +1740,7 @@ class Unsubscribed(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP UNSUBSCRIBED Message (request = {0}, reason = {1}, subscription = {2})".format(self.request, self.reason, self.subscription)
+        return u"Unsubscribed(request={0}, reason={1}, subscription={2})".format(self.request, self.reason, self.subscription)
 
 
 class Event(Message):
@@ -1936,7 +1936,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP EVENT Message (subscription = {0}, publication = {1}, args = {2}, kwargs = {3}, publisher = {4}, topic = {5}, enc_algo = {6}, enc_key = {7}, enc_serializer = {8}, payload = {9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, topic={5}, enc_algo={6}, enc_key={7}, enc_serializer={8}, payload={9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Call(Message):
@@ -2165,7 +2165,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP CALL Message (request = {0}, procedure = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, disclose_me = {6}, enc_algo = {7}, enc_key = {8}, enc_serializer = {9}, payload = {10})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Call(request={0}, procedure={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, disclose_me={6}, enc_algo={7}, enc_key={8}, enc_serializer={9}, payload={10})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Cancel(Message):
@@ -2256,7 +2256,7 @@ class Cancel(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP CANCEL Message (request = {0}, mode = '{1}'')".format(self.request, self.mode)
+        return u"Cancel(request={0}, mode={1})".format(self.request, self.mode)
 
 
 class Result(Message):
@@ -2431,7 +2431,7 @@ class Result(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP RESULT Message (request = {0}, args = {1}, kwargs = {2}, progress = {3}, enc_algo = {4}, enc_key = {5}, enc_serializer = {6}, payload = {7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Result(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Register(Message):
@@ -2568,7 +2568,7 @@ class Register(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP REGISTER Message (request = {0}, procedure = {1}, match = {2}, invoke = {3})".format(self.request, self.procedure, self.match, self.invoke)
+        return u"Register(request={0}, procedure={1}, match={2}, invoke={3})".format(self.request, self.procedure, self.match, self.invoke)
 
 
 class Registered(Message):
@@ -2634,7 +2634,7 @@ class Registered(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP REGISTERED Message (request = {0}, registration = {1})".format(self.request, self.registration)
+        return u"Registered(request={0}, registration={1})".format(self.request, self.registration)
 
 
 class Unregister(Message):
@@ -2700,7 +2700,7 @@ class Unregister(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP UNREGISTER Message (request = {0}, registration = {1})".format(self.request, self.registration)
+        return u"Unregister(request={0}, registration={1})".format(self.request, self.registration)
 
 
 class Unregistered(Message):
@@ -2798,7 +2798,7 @@ class Unregistered(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP UNREGISTERED Message (request = {0}, reason = {1}, registration = {2})".format(self.request, self.reason, self.registration)
+        return u"Unregistered(request={0}, reason={1}, registration={2})".format(self.request, self.reason, self.registration)
 
 
 class Invocation(Message):
@@ -3044,7 +3044,7 @@ class Invocation(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP INVOCATION Message (request = {0}, registration = {1}, args = {2}, kwargs = {3}, timeout = {4}, receive_progress = {5}, caller = {6}, procedure = {7}, enc_algo = {8}, enc_key = {9}, enc_serializer = {10}, payload = {11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, procedure={7}, enc_algo={8}, enc_key={9}, enc_serializer={10}, payload={11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Interrupt(Message):
@@ -3134,7 +3134,7 @@ class Interrupt(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP INTERRUPT Message (request = {0}, mode = '{1}')".format(self.request, self.mode)
+        return u"Interrupt(request={0}, mode={1})".format(self.request, self.mode)
 
 
 class Yield(Message):
@@ -3309,4 +3309,4 @@ class Yield(Message):
         """
         Returns string representation of this message.
         """
-        return "WAMP YIELD Message (request = {0}, args = {1}, kwargs = {2}, progress = {3}, enc_algo = {4}, enc_key = {5}, enc_serializer = {6}, payload = {7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Yield(request={0}, args={1}, kwargs={2}, progress={3}, enc_algo={4}, enc_key={5}, enc_serializer={6}, payload={7})".format(self.request, self.args, self.kwargs, self.progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))

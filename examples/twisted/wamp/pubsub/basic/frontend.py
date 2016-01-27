@@ -67,7 +67,7 @@ if __name__ == '__main__':
         extra=dict(
             max_events=5,  # [A] pass in additional configuration
         ),
-        debug_wamp=False,  # optional; log many WAMP details
+
         debug=False,  # optional; log even more details
     )
     runner.run(Component)

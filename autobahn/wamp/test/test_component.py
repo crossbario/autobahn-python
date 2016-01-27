@@ -207,7 +207,6 @@ if os.environ.get('USE_TWISTED', False):
                     realm=self.realm,
                     make=component,
                     debug=bool(os.environ.get('debug_websocket', False)),
-                    debug_wamp=bool(os.environ.get('debug_lowlevel', False)),
                     debug_app=bool(os.environ.get('debug_app', False))
                 )
                 c.setServiceParent(app)

@@ -92,7 +92,7 @@ class ApplicationRunner(object):
     log = txaio.make_logger()
 
     def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_wamp=False, debug_app=False,
+                 debug=False, debug_app=False,
                  ssl=None, proxy=None):
         """
 
@@ -111,9 +111,6 @@ class ApplicationRunner(object):
 
         :param debug: Turn on low-level debugging.
         :type debug: bool
-
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
 
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
@@ -139,7 +136,6 @@ class ApplicationRunner(object):
         self.extra = extra or dict()
         self.serializers = serializers
         self.debug = debug
-        self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.ssl = ssl
         self.proxy = proxy
@@ -172,7 +168,7 @@ class ApplicationRunner(object):
             txaio.use_twisted()
             txaio.config.loop = reactor
 
-            if self.debug or self.debug_wamp or self.debug_app:
+            if self.debug or self.debug_app:
                 txaio.start_logging(level='debug')
             else:
                 txaio.start_logging(level='info')
@@ -199,7 +195,7 @@ class ApplicationRunner(object):
 
         # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
-                                                       proxy=self.proxy, debug=self.debug, debug_wamp=self.debug_wamp)
+                                                       proxy=self.proxy, debug=self.debug)
 
         # supress pointless log noise like
         # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
@@ -381,7 +377,7 @@ class Application(object):
         return self.session
 
     def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1",
-            debug=False, debug_wamp=False, debug_app=False,
+            debug=False, debug_app=False,
             start_reactor=True):
         """
         Run the application.
@@ -392,13 +388,11 @@ class Application(object):
         :type realm: unicode
         :param debug: Turn on low-level debugging.
         :type debug: bool
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
         """
         runner = ApplicationRunner(url, realm,
-                                   debug=debug, debug_wamp=debug_wamp, debug_app=debug_app)
+                                   debug=debug, debug_app=debug_app)
         runner.run(self.__call__, start_reactor)
 
     def register(self, uri=None):
@@ -570,7 +564,7 @@ if service:
         factory = WampWebSocketClientFactory
 
         def __init__(self, url, realm, make, extra=None, context_factory=None,
-                     debug=False, debug_wamp=False, debug_app=False):
+                     debug=False, debug_app=False):
             """
 
             :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -593,9 +587,6 @@ if service:
             :param debug: Turn on low-level debugging.
             :type debug: bool
 
-            :param debug_wamp: Turn on WAMP-level debugging.
-            :type debug_wamp: bool
-
             :param debug_app: Turn on app-level debugging.
             :type debug_app: bool
 
@@ -606,7 +597,6 @@ if service:
             self.realm = realm
             self.extra = extra or dict()
             self.debug = debug
-            self.debug_wamp = debug_wamp
             self.debug_app = debug_app
             self.make = make
             self.context_factory = context_factory
@@ -627,8 +617,7 @@ if service:
                 return session
 
             # create a WAMP-over-WebSocket transport client factory
-            transport_factory = self.factory(create, url=self.url,
-                                             debug=self.debug, debug_wamp=self.debug_wamp)
+            transport_factory = self.factory(create, url=self.url, debug=self.debug)
 
             # setup the client from a Twisted endpoint
 

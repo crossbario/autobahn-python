@@ -79,7 +79,7 @@ class ApplicationRunner(object):
     """
 
     def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_wamp=False, debug_app=False,
+                 debug=False, debug_app=False,
                  ssl=None):
         """
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -98,9 +98,6 @@ class ApplicationRunner(object):
         :param debug: Turn on low-level debugging.
         :type debug: bool
 
-        :param debug_wamp: Turn on WAMP-level debugging.
-        :type debug_wamp: bool
-
         :param debug_app: Turn on app-level debugging.
         :type debug_app: bool
 
@@ -118,7 +115,6 @@ class ApplicationRunner(object):
         self.extra = extra or dict()
         self.serializers = serializers
         self.debug = debug
-        self.debug_wamp = debug_wamp
         self.debug_app = debug_app
         self.ssl = ssl
 
@@ -157,7 +153,7 @@ class ApplicationRunner(object):
 
         # 2) create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
-                                                       debug=self.debug, debug_wamp=self.debug_wamp)
+                                                       debug=self.debug)
 
         # 3) start the client
         loop = asyncio.get_event_loop()
