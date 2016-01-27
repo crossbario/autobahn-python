@@ -108,7 +108,7 @@ def b2a(data, max_len=40):
         return s
 
 
-def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allow_empty_components=False, allow_none=False):
+def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, allow_empty_components=False, allow_last_empty=False, allow_none=False):
     """
     Check a value for being a valid WAMP URI.
 
@@ -142,18 +142,22 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
             raise ProtocolError(u"{0}: invalid type {1} for URI".format(message, type(value)))
 
     if strict:
-        if allow_empty_components:
+        if allow_last_empty:
+            pat = _URI_PAT_STRICT_LAST_EMPTY
+        elif allow_empty_components:
             pat = _URI_PAT_STRICT_EMPTY
         else:
             pat = _URI_PAT_STRICT_NON_EMPTY
     else:
-        if allow_empty_components:
+        if allow_last_empty:
+            pat = _URI_PAT_LOOSE_LAST_EMPTY
+        elif allow_empty_components:
             pat = _URI_PAT_LOOSE_EMPTY
         else:
             pat = _URI_PAT_LOOSE_NON_EMPTY
 
     if not pat.match(value):
-        raise ProtocolError(u"{0}: invalid value '{1}' for URI".format(message, value))
+        raise ProtocolError(u"{0}: invalid value '{1}' for URI (did not match pattern {2}, strict={3}, allow_empty_components={4}, allow_last_empty={5}, allow_none={6})".format(message, value, pat.pattern, strict, allow_empty_components, allow_last_empty, allow_none))
     else:
         return value
 
@@ -2497,7 +2501,6 @@ class Register(Message):
 
         request = check_or_raise_id(wmsg[1], u"'request' in REGISTER")
         options = check_or_raise_extra(wmsg[2], u"'options' in REGISTER")
-        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allow_empty_components=True)
 
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE
@@ -2512,6 +2515,23 @@ class Register(Message):
                 raise ProtocolError("invalid value {0} for 'match' option in REGISTER".format(option_match))
 
             match = option_match
+
+        if match == Register.MATCH_EXACT:
+            allow_empty_components = False
+            allow_last_empty = False
+
+        elif match == Register.MATCH_PREFIX:
+            allow_empty_components = False
+            allow_last_empty = True
+
+        elif match == Register.MATCH_WILDCARD:
+            allow_empty_components = True
+            allow_last_empty = False
+
+        else:
+            raise Exception("logic error")
+
+        procedure = check_or_raise_uri(wmsg[3], u"'procedure' in REGISTER", allow_empty_components=allow_empty_components, allow_last_empty=allow_last_empty)
 
         if u'invoke' in options:
 
