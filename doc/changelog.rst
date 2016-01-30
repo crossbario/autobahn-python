@@ -5,6 +5,23 @@
 Changelog
 =========
 
+0.12.0
+------
+
+`Published 2015-01-30 <https://pypi.python.org/pypi/autobahn/0.12.0>`__
+
+* new: support CBOR serialization in WAMP
+* new: support WAMP payload transparency
+* new: beta version of WAMP-cryptosign authentication method
+* new: alpha version of WAMP-cryptobox end-to-end encryption
+* new: support user provided authextra data in WAMP authentication
+* new: support WAMP channel binding
+* new: WAMP authentication util functions for TOTP
+* fix: support skewed time leniency for TOTP
+* fix: use the new logging system in WAMP implementation
+* fix: some remaining Python 3 issues
+* fix: allow WAMP prefix matching register/subscribe with dot at end of URI
+
 0.11.0
 ------
 

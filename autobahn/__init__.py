@@ -25,18 +25,7 @@
 ###############################################################################
 
 
-from __future__ import absolute_import
-
-# we use the following in code examples, so it must be part of
-# out public API
-from autobahn.util import utcnow, utcstr
-
-__version__ = u"0.11.1"
+__version__ = u"0.12.0"
 """
 AutobahnPython library version.
 """
-
-__all__ = (
-    'utcnow',
-    'utcstr',
-)
