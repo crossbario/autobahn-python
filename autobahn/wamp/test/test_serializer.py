@@ -66,7 +66,7 @@ def generate_test_messages():
         message.Published(123456, 789123),
         message.Publish(123456, u'com.myapp.topic1'),
         message.Publish(123456, u'com.myapp.topic1', args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
-        message.Publish(123456, u'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300], disclose_me=True),
+        message.Publish(123456, u'com.myapp.topic1', exclude_me=False, exclude=[300], eligible=[100, 200, 300]),
         message.Unsubscribed(123456),
         message.Unsubscribe(123456, 789123),
         message.Subscribed(123456, 789123),

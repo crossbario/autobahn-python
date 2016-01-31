@@ -14,6 +14,7 @@ install:
 
 # cleanup everything
 clean:
+	rm -rf ./.cache
 	rm -rf ./autobahn.egg-info
 	rm -rf ./build
 	rm -rf ./dist

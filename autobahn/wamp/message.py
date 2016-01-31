@@ -1110,7 +1110,6 @@ class Publish(Message):
                  exclude_me=None,
                  exclude=None,
                  eligible=None,
-                 disclose_me=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None):
@@ -1139,9 +1138,6 @@ class Publish(Message):
         :type exclude: list of int or None
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int or None
-        :param disclose_me: If True, request to disclose the publisher of this event
-           to subscribers.
-        :type disclose_me: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -1159,7 +1155,6 @@ class Publish(Message):
         assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or type(exclude) == list)
         assert(eligible is None or type(eligible) == list)
-        assert(disclose_me is None or type(disclose_me) == bool)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
@@ -1177,7 +1172,6 @@ class Publish(Message):
         self.exclude_me = exclude_me
         self.exclude = exclude
         self.eligible = eligible
-        self.disclose_me = disclose_me
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -1244,7 +1238,6 @@ class Publish(Message):
         exclude_me = None
         exclude = None
         eligible = None
-        disclose_me = None
 
         if u'acknowledge' in options:
 
@@ -1286,14 +1279,6 @@ class Publish(Message):
 
             eligible = option_eligible
 
-        if u'disclose_me' in options:
-
-            option_disclose_me = options[u'disclose_me']
-            if type(option_disclose_me) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_me' option in PUBLISH".format(type(option_disclose_me)))
-
-            disclose_me = option_disclose_me
-
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1303,7 +1288,6 @@ class Publish(Message):
                       exclude_me=exclude_me,
                       exclude=exclude,
                       eligible=eligible,
-                      disclose_me=disclose_me,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
                       enc_serializer=enc_serializer)
@@ -1326,8 +1310,6 @@ class Publish(Message):
             options[u'exclude'] = self.exclude
         if self.eligible is not None:
             options[u'eligible'] = self.eligible
-        if self.disclose_me is not None:
-            options[u'disclose_me'] = self.disclose_me
 
         if self.payload:
             if self.enc_algo is not None:
@@ -1349,7 +1331,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, eligible={7}, disclose_me={8}, enc_algo={9}, enc_key={10}, enc_serializer={11}, payload={12})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, eligible={7}, enc_algo={8}, enc_key={9}, enc_serializer={10}, payload={11})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Published(Message):
@@ -1964,7 +1946,6 @@ class Call(Message):
                  payload=None,
                  timeout=None,
                  receive_progress=None,
-                 disclose_me=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None):
@@ -1988,8 +1969,6 @@ class Call(Message):
         :param receive_progress: If ``True``, indicates that the caller wants to receive
            progressive call results.
         :type receive_progress: bool or None
-        :param disclose_me: If ``True``, the caller requests to disclose itself to the callee.
-        :type disclose_me: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -2005,7 +1984,6 @@ class Call(Message):
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
-        assert(disclose_me is None or type(disclose_me) == bool)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
@@ -2021,7 +1999,6 @@ class Call(Message):
         self.payload = payload
         self.timeout = timeout
         self.receive_progress = receive_progress
-        self.disclose_me = disclose_me
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -2085,7 +2062,6 @@ class Call(Message):
 
         timeout = None
         receive_progress = None
-        disclose_me = None
 
         if u'timeout' in options:
 
@@ -2106,14 +2082,6 @@ class Call(Message):
 
             receive_progress = option_receive_progress
 
-        if u'disclose_me' in options:
-
-            option_disclose_me = options[u'disclose_me']
-            if type(option_disclose_me) != bool:
-                raise ProtocolError("invalid type {0} for 'disclose_me' option in CALL".format(type(option_disclose_me)))
-
-            disclose_me = option_disclose_me
-
         obj = Call(request,
                    procedure,
                    args=args,
@@ -2121,7 +2089,6 @@ class Call(Message):
                    payload=payload,
                    timeout=timeout,
                    receive_progress=receive_progress,
-                   disclose_me=disclose_me,
                    enc_algo=enc_algo,
                    enc_key=enc_key,
                    enc_serializer=enc_serializer)
@@ -2141,9 +2108,6 @@ class Call(Message):
 
         if self.receive_progress is not None:
             options[u'receive_progress'] = self.receive_progress
-
-        if self.disclose_me is not None:
-            options[u'disclose_me'] = self.disclose_me
 
         if self.payload:
             if self.enc_algo is not None:
@@ -2165,7 +2129,7 @@ class Call(Message):
         """
         Returns string representation of this message.
         """
-        return u"Call(request={0}, procedure={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, disclose_me={6}, enc_algo={7}, enc_key={8}, enc_serializer={9}, payload={10})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.disclose_me, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Call(request={0}, procedure={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, enc_algo={6}, enc_key={7}, enc_serializer={8}, payload={9})".format(self.request, self.procedure, self.args, self.kwargs, self.timeout, self.receive_progress, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Cancel(Message):

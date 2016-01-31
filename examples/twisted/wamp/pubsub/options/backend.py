@@ -53,7 +53,6 @@ class Component(ApplicationSession):
             print("publish: com.myapp.topic1", counter)
             pub_options = PublishOptions(
                 acknowledge=True,
-                disclose_me=True,
                 exclude_me=False
             )
             publication = yield self.publish(

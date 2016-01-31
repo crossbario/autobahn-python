@@ -349,8 +349,7 @@ class PublishOptions(object):
                  acknowledge=None,
                  exclude_me=None,
                  exclude=None,
-                 eligible=None,
-                 disclose_me=None):
+                 eligible=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -363,9 +362,6 @@ class PublishOptions(object):
         :type exclude: list of int
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int
-        :param disclose_me: If ``True``, request to disclose the publisher of this event
-           to subscribers.
-        :type disclose_me: bool
         """
         # filter out None entries from exclude list, so it's easier for callers
         if type(exclude) == list:
@@ -374,13 +370,11 @@ class PublishOptions(object):
         assert(exclude_me is None or type(exclude_me) == bool)
         assert(exclude is None or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))
         assert(eligible is None or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
-        assert(disclose_me is None or type(disclose_me) == bool)
 
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me
         self.exclude = exclude
         self.eligible = eligible
-        self.disclose_me = disclose_me
 
     def message_attr(self):
         # options dict as sent within WAMP message
@@ -388,12 +382,11 @@ class PublishOptions(object):
             u'acknowledge': self.acknowledge,
             u'exclude_me': self.exclude_me,
             u'exclude': self.exclude,
-            u'eligible': self.eligible,
-            u'disclose_me': self.disclose_me,
+            u'eligible': self.eligible
         }
 
     def __str__(self):
-        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, eligible={3}, disclose_me={4})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.disclose_me)
+        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, eligible={3})".format(self.acknowledge, self.exclude_me, self.exclude, self.eligible)
 
 
 class RegisterOptions(object):
@@ -464,8 +457,7 @@ class CallOptions(object):
 
     def __init__(self,
                  on_progress=None,
-                 timeout=None,
-                 disclose_me=None):
+                 timeout=None):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
@@ -473,32 +465,24 @@ class CallOptions(object):
         :type on_progress: callable
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
-        :param disclose_me: Request to disclose the identity of the caller (it's WAMP session ID)
-           to Callees. Note that a Dealer, depending on Dealer configuration, might
-           reject the request, or might disclose the Callee's identity without
-           a request to do so.
-        :type disclose_me: bool
         """
         assert(on_progress is None or callable(on_progress))
         assert(timeout is None or (type(timeout) in list(six.integer_types) + [float] and timeout > 0))
-        assert(disclose_me is None or type(disclose_me) == bool)
 
         self.on_progress = on_progress
         self.timeout = timeout
-        self.disclose_me = disclose_me
 
     def message_attr(self):
         # options dict as sent within WAMP message
         res = {
             u'timeout': self.timeout,
-            u'disclose_me': self.disclose_me
         }
         if self.on_progress:
             res['receive_progress'] = True
         return res
 
     def __str__(self):
-        return "CallOptions(on_progress={0}, timeout={1}, disclose_me={2})".format(self.on_progress, self.timeout, self.disclose_me)
+        return "CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
 
 
 class CallResult(object):

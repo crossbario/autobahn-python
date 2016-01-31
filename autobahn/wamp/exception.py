@@ -202,12 +202,6 @@ class ApplicationError(Error):
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
-    OPTION_DISALLOWED_DISCLOSE_ME = u"wamp.error.option_disallowed.disclose_me"
-    """
-    A Router rejected client request to disclose its identity (WAMP AP).
-    """
-
-    # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     NO_ELIGIBLE_CALLEE = u"wamp.error.no_eligible_callee"
     """
     A *Dealer* could not perform a call, since a procedure with the given URI is registered,
