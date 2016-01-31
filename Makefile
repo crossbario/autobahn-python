@@ -26,7 +26,9 @@ clean:
 	find . -name "*.tar.gz" -type f -exec rm -f {} \;
 	find . -name "*.egg" -type f -exec rm -f {} \;
 	find . -name "*.pyc" -type f -exec rm -f {} \;
-	find . -name "*__pycache__" -type d -exec rm -rf {} \;
+
+	# Learn to love the shell! http://unix.stackexchange.com/a/115869/52500
+	find . \( -name "*__pycache__" -type d \) -prune -exec rm -rf {} +
 
 # publish to PyPI
 publish: clean
