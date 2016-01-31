@@ -1109,7 +1109,11 @@ class Publish(Message):
                  acknowledge=None,
                  exclude_me=None,
                  exclude=None,
+                 exclude_authid=None,
+                 exclude_authrole=None,
                  eligible=None,
+                 eligible_authid=None,
+                 eligible_authrole=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None):
@@ -1136,8 +1140,16 @@ class Publish(Message):
         :type exclude_me: bool or None
         :param exclude: List of WAMP session IDs to exclude from receiving this event.
         :type exclude: list of int or None
+        :param exclude_authid: List of WAMP authids to exclude from receiving this event.
+        :type exclude_authid: list of unicode or None
+        :param exclude_authrole: List of WAMP authroles to exclude from receiving this event.
+        :type exclude_authrole: list of unicode or None
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int or None
+        :param eligible_authid: List of WAMP authids eligible to receive this event.
+        :type eligible_authid: list of unicode or None
+        :param eligible_authrole: List of WAMP authroles eligible to receive this event.
+        :type eligible_authrole: list of unicode or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -1152,9 +1164,39 @@ class Publish(Message):
         assert(payload is None or type(payload) in [six.text_type, six.binary_type])
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
+
+        # publisher exlusion and black-/whitelisting
         assert(exclude_me is None or type(exclude_me) == bool)
+
         assert(exclude is None or type(exclude) == list)
+        if exclude:
+            for sessionid in exclude:
+                assert(type(sessionid) in six.integer_types)
+
+        assert(exclude_authid is None or type(exclude_authid) == list)
+        if exclude_authid:
+            for authid in exclude_authid:
+                assert(type(authid) == six.text_type)
+
+        assert(exclude_authrole is None or type(exclude_authrole) == list)
+        if exclude_authrole:
+            for authrole in exclude_authrole:
+                assert(type(authrole) == six.text_type)
+
         assert(eligible is None or type(eligible) == list)
+        if eligible:
+            for sessionid in eligible:
+                assert(type(sessionid) in six.integer_types)
+
+        assert(eligible_authid is None or type(eligible_authid) == list)
+        if eligible_authid:
+            for authid in eligible_authid:
+                assert(type(authid) == six.text_type)
+
+        assert(eligible_authrole is None or type(eligible_authrole) == list)
+        if eligible_authrole:
+            for authrole in eligible_authrole:
+                assert(type(authrole) == six.text_type)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
@@ -1169,9 +1211,15 @@ class Publish(Message):
         self.kwargs = kwargs
         self.payload = payload
         self.acknowledge = acknowledge
+
+        # publisher exlusion and black-/whitelisting
         self.exclude_me = exclude_me
         self.exclude = exclude
+        self.exclude_authid = exclude_authid
+        self.exclude_authrole = exclude_authrole
         self.eligible = eligible
+        self.eligible_authid = eligible_authid
+        self.eligible_authrole = eligible_authrole
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -1235,9 +1283,14 @@ class Publish(Message):
             enc_serializer = None
 
         acknowledge = None
+
         exclude_me = None
         exclude = None
+        exclude_authid = None
+        exclude_authrole = None
         eligible = None
+        eligible_authid = None
+        eligible_authrole = None
 
         if u'acknowledge' in options:
 
@@ -1261,11 +1314,35 @@ class Publish(Message):
             if type(option_exclude) != list:
                 raise ProtocolError("invalid type {0} for 'exclude' option in PUBLISH".format(type(option_exclude)))
 
-            for sessionId in option_exclude:
-                if type(sessionId) not in six.integer_types:
-                    raise ProtocolError("invalid type {0} for value in 'exclude' option in PUBLISH".format(type(sessionId)))
+            for _sessionid in option_exclude:
+                if type(_sessionid) not in six.integer_types:
+                    raise ProtocolError("invalid type {0} for value in 'exclude' option in PUBLISH".format(type(_sessionid)))
 
             exclude = option_exclude
+
+        if u'exclude_authid' in options:
+
+            option_exclude_authid = options[u'exclude_authid']
+            if type(option_exclude_authid) != list:
+                raise ProtocolError("invalid type {0} for 'exclude_authid' option in PUBLISH".format(type(option_exclude_authid)))
+
+            for _authid in option_exclude_authid:
+                if type(_authid) == six.text_type:
+                    raise ProtocolError("invalid type {0} for value in 'exclude_authid' option in PUBLISH".format(type(_authid)))
+
+            exclude_authid = option_exclude_authid
+
+        if u'exclude_authrole' in options:
+
+            option_exclude_authrole = options[u'exclude_authrole']
+            if type(option_exclude_authrole) != list:
+                raise ProtocolError("invalid type {0} for 'exclude_authrole' option in PUBLISH".format(type(option_exclude_authrole)))
+
+            for _authrole in option_exclude_authrole:
+                if type(_authrole) == six.text_type:
+                    raise ProtocolError("invalid type {0} for value in 'exclude_authrole' option in PUBLISH".format(type(_authrole)))
+
+            exclude_authrole = option_exclude_authrole
 
         if u'eligible' in options:
 
@@ -1279,6 +1356,30 @@ class Publish(Message):
 
             eligible = option_eligible
 
+        if u'eligible_authid' in options:
+
+            option_eligible_authid = options[u'eligible_authid']
+            if type(option_eligible_authid) != list:
+                raise ProtocolError("invalid type {0} for 'eligible_authid' option in PUBLISH".format(type(option_eligible_authid)))
+
+            for _authid in option_eligible_authid:
+                if type(_authid) == six.text_type:
+                    raise ProtocolError("invalid type {0} for value in 'eligible_authid' option in PUBLISH".format(type(_authid)))
+
+            eligible_authid = option_eligible_authid
+
+        if u'eligible_authrole' in options:
+
+            option_eligible_authrole = options[u'eligible_authrole']
+            if type(option_eligible_authrole) != list:
+                raise ProtocolError("invalid type {0} for 'eligible_authrole' option in PUBLISH".format(type(option_eligible_authrole)))
+
+            for _authrole in option_exclude_authrole:
+                if type(_authrole) == six.text_type:
+                    raise ProtocolError("invalid type {0} for value in 'eligible_authrole' option in PUBLISH".format(type(_authrole)))
+
+            eligible_authrole = option_eligible_authrole
+
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1287,7 +1388,11 @@ class Publish(Message):
                       acknowledge=acknowledge,
                       exclude_me=exclude_me,
                       exclude=exclude,
+                      exclude_authid=exclude_authid,
+                      exclude_authrole=exclude_authrole,
                       eligible=eligible,
+                      eligible_authid=eligible_authid,
+                      eligible_authrole=eligible_authrole,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
                       enc_serializer=enc_serializer)
@@ -1304,12 +1409,21 @@ class Publish(Message):
 
         if self.acknowledge is not None:
             options[u'acknowledge'] = self.acknowledge
+
         if self.exclude_me is not None:
             options[u'exclude_me'] = self.exclude_me
         if self.exclude is not None:
             options[u'exclude'] = self.exclude
+        if self.exclude_authid is not None:
+            options[u'exclude_authid'] = self.exclude_authid
+        if self.eligible_authrole is not None:
+            options[u'eligible_authrole'] = self.eligible_authrole
         if self.eligible is not None:
             options[u'eligible'] = self.eligible
+        if self.eligible_authid is not None:
+            options[u'eligible_authid'] = self.eligible_authid
+        if self.eligible_authrole is not None:
+            options[u'eligible_authrole'] = self.eligible_authrole
 
         if self.payload:
             if self.enc_algo is not None:
@@ -1331,7 +1445,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, eligible={7}, enc_algo={8}, enc_key={9}, enc_serializer={10}, payload={11})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.eligible, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, exclude_authid={7}, exclude_authrole={8}, eligible={9}, eligible_authid={10}, eligible_authrole={11}, enc_algo={12}, enc_key={13}, enc_serializer={14}, payload={15})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Published(Message):
