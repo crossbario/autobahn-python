@@ -357,10 +357,15 @@ class SubscribeOptions(object):
         self.details_arg = details_arg
 
     def message_attr(self):
-        # options dict as sent within WAMP message
-        return {
-            'match': self.match
-        }
+        """
+        Returns options dict as sent within WAMP messages.
+        """
+        options = {}
+
+        if self.match:
+            options[u'match'] = self.match
+
+        return options
 
     def __str__(self):
         return "SubscribeOptions(match={0}, details_arg={1})".format(self.match, self.details_arg)
@@ -486,17 +491,36 @@ class PublishOptions(object):
         self.eligible_authrole = eligible_authrole
 
     def message_attr(self):
-        # options dict as sent within WAMP message
-        return {
-            u'acknowledge': self.acknowledge,
-            u'exclude_me': self.exclude_me,
-            u'exclude': self.exclude,
-            u'exclude_authid': self.exclude_authid,
-            u'exclude_authrole': self.exclude_authrole,
-            u'eligible': self.eligible,
-            u'eligible_authid': self.eligible_authid,
-            u'eligible_authrole': self.eligible_authrole,
-        }
+        """
+        Returns options dict as sent within WAMP messages.
+        """
+        options = {}
+
+        if self.acknowledge:
+            options[u'acknowledge'] = self.acknowledge
+
+        if self.exclude_me:
+            options[u'exclude_me'] = self.exclude_me
+
+        if self.exclude:
+            options[u'exclude'] = self.exclude
+
+        if self.exclude_authid:
+            options[u'exclude_authid'] = self.exclude_authid
+
+        if self.exclude_authrole:
+            options[u'exclude_authrole'] = self.exclude_authrole
+
+        if self.eligible:
+            options[u'eligible'] = self.eligible
+
+        if self.eligible_authid:
+            options[u'eligible_authid'] = self.eligible_authid
+
+        if self.eligible_authrole:
+            options[u'eligible_authrole'] = self.eligible_authrole
+
+        return options
 
     def __str__(self):
         return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole)
@@ -530,11 +554,18 @@ class RegisterOptions(object):
         self.details_arg = details_arg
 
     def message_attr(self):
-        # options dict as sent within WAMP message
-        return {
-            u'match': self.match,
-            u'invoke': self.invoke
-        }
+        """
+        Returns options dict as sent within WAMP messages.
+        """
+        options = {}
+
+        if self.match:
+            options[u'match'] = self.match
+
+        if self.invoke:
+            options[u'invoke'] = self.invoke
+
+        return options
 
     def __str__(self):
         return "RegisterOptions(match={0}, invoke={1}, details_arg={2})".format(self.match, self.invoke, self.details_arg)
@@ -621,13 +652,18 @@ class CallOptions(object):
         self.timeout = timeout
 
     def message_attr(self):
-        # options dict as sent within WAMP message
-        res = {
-            u'timeout': self.timeout,
-        }
+        """
+        Returns options dict as sent within WAMP messages.
+        """
+        options = {}
+
+        if self.timeout:
+            options[u'timeout'] = self.timeout
+
         if self.on_progress:
-            res['receive_progress'] = True
-        return res
+            options[u'receive_progress'] = True
+
+        return options
 
     def __str__(self):
         return "CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
