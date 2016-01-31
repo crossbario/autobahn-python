@@ -55,6 +55,7 @@ if os.environ.get('USE_TWISTED', False):
         def __init__(self, *args, **kw):
             ApplicationSession.__init__(self, *args, **kw)
             self.errors = []
+            self._realm = u'dummy'
             self._transport = MockTransport()
 
         def onUserError(self, e, msg):
