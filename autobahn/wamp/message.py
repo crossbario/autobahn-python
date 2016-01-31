@@ -1742,7 +1742,8 @@ class Event(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, subscription, publication, args=None, kwargs=None, payload=None, publisher=None, topic=None,
+    def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
+                 publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
                  enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
@@ -1758,8 +1759,12 @@ class Event(Message):
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
         :type kwargs: dict or None
-        :param publisher: If present, the WAMP session ID of the publisher of this event.
-        :type publisher: int or None
+        :param publisher: The WAMP session ID of the pubisher. Only filled if pubisher is disclosed.
+        :type publisher: None or int
+        :param publisher_authid: The WAMP authid of the pubisher. Only filled if pubisher is disclosed.
+        :type publisher_authid: None or unicode
+        :param publisher_authrole: The WAMP authrole of the pubisher. Only filled if pubisher is disclosed.
+        :type publisher_authrole: None or unicode
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
@@ -1776,6 +1781,8 @@ class Event(Message):
         assert(payload is None or type(payload) in [six.text_type, six.binary_type])
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(publisher is None or type(publisher) in six.integer_types)
+        assert(publisher_authid is None or type(publisher_authid) == six.text_type)
+        assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
 
         # end-to-end app payload encryption
@@ -1791,6 +1798,8 @@ class Event(Message):
         self.kwargs = kwargs
         self.payload = payload
         self.publisher = publisher
+        self.publisher_authid = publisher_authid
+        self.publisher_authrole = publisher_authrole
         self.topic = topic
 
         # end-to-end app payload encryption
@@ -1853,6 +1862,8 @@ class Event(Message):
                     raise ProtocolError("invalid type {0} for 'kwargs' in EVENT".format(type(kwargs)))
 
         publisher = None
+        publisher_authid = None
+        publisher_authrole = None
         topic = None
 
         if u'publisher' in details:
@@ -1862,6 +1873,22 @@ class Event(Message):
                 raise ProtocolError("invalid type {0} for 'publisher' detail in EVENT".format(type(detail_publisher)))
 
             publisher = detail_publisher
+
+        if u'publisher_authid' in details:
+
+            detail_publisher_authid = details[u'publisher_authid']
+            if type(detail_publisher_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'publisher_authid' detail in INVOCATION".format(type(detail_publisher_authid)))
+
+            publisher_authid = detail_publisher_authid
+
+        if u'publisher_authrole' in details:
+
+            detail_publisher_authrole = details[u'publisher_authrole']
+            if type(detail_publisher_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'publisher_authrole' detail in INVOCATION".format(type(detail_publisher_authrole)))
+
+            publisher_authrole = detail_publisher_authrole
 
         if u'topic' in details:
 
@@ -1877,6 +1904,8 @@ class Event(Message):
                     kwargs=kwargs,
                     payload=payload,
                     publisher=publisher,
+                    publisher_authid=publisher_authid,
+                    publisher_authrole=publisher_authrole,
                     topic=topic,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
@@ -1894,6 +1923,12 @@ class Event(Message):
 
         if self.publisher is not None:
             details[u'publisher'] = self.publisher
+
+        if self.publisher_authid is not None:
+            details[u'publisher_authid'] = self.publisher_authid
+
+        if self.publisher_authrole is not None:
+            details[u'publisher_authrole'] = self.publisher_authrole
 
         if self.topic is not None:
             details[u'topic'] = self.topic
@@ -1918,7 +1953,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, topic={5}, enc_algo={6}, enc_key={7}, enc_serializer={8}, payload={9})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, publisher_authid={5}, publisher_authrole={6}, topic={7}, enc_algo={8}, enc_key={9}, enc_serializer={9}, payload={10})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Call(Message):
@@ -2791,6 +2826,8 @@ class Invocation(Message):
                  timeout=None,
                  receive_progress=None,
                  caller=None,
+                 caller_authid=None,
+                 caller_authrole=None,
                  procedure=None,
                  enc_algo=None,
                  enc_key=None,
@@ -2814,8 +2851,12 @@ class Invocation(Message):
         :type timeout: int or None
         :param receive_progress: Indicates if the callee should produce progressive results.
         :type receive_progress: bool or None
-        :param caller: The WAMP session ID of the caller.
-        :type caller: int or None
+        :param caller: The WAMP session ID of the caller. Only filled if caller is disclosed.
+        :type caller: None or int
+        :param caller_authid: The WAMP authid of the caller. Only filled if caller is disclosed.
+        :type caller_authid: None or unicode
+        :param caller_authrole: The WAMP authrole of the caller. Only filled if caller is disclosed.
+        :type caller_authrole: None or unicode
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
@@ -2834,6 +2875,8 @@ class Invocation(Message):
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
         assert(caller is None or type(caller) in six.integer_types)
+        assert(caller_authid is None or type(caller_authid) == six.text_type)
+        assert(caller_authrole is None or type(caller_authrole) == six.text_type)
         assert(procedure is None or type(procedure) == six.text_type)
 
         # end-to-end app payload encryption
@@ -2851,6 +2894,8 @@ class Invocation(Message):
         self.timeout = timeout
         self.receive_progress = receive_progress
         self.caller = caller
+        self.caller_authid = caller_authid
+        self.caller_authrole = caller_authrole
         self.procedure = procedure
 
         # end-to-end app payload encryption
@@ -2916,6 +2961,8 @@ class Invocation(Message):
         timeout = None
         receive_progress = None
         caller = None
+        caller_authid = None
+        caller_authrole = None
         procedure = None
 
         if u'timeout' in details:
@@ -2945,6 +2992,22 @@ class Invocation(Message):
 
             caller = detail_caller
 
+        if u'caller_authid' in details:
+
+            detail_caller_authid = details[u'caller_authid']
+            if type(detail_caller_authid) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller_authid' detail in INVOCATION".format(type(detail_caller_authid)))
+
+            caller_authid = detail_caller_authid
+
+        if u'caller_authrole' in details:
+
+            detail_caller_authrole = details[u'caller_authrole']
+            if type(detail_caller_authrole) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'caller_authrole' detail in INVOCATION".format(type(detail_caller_authrole)))
+
+            caller_authrole = detail_caller_authrole
+
         if u'procedure' in details:
 
             detail_procedure = details[u'procedure']
@@ -2961,6 +3024,8 @@ class Invocation(Message):
                          timeout=timeout,
                          receive_progress=receive_progress,
                          caller=caller,
+                         caller_authid=caller_authid,
+                         caller_authrole=caller_authrole,
                          procedure=procedure,
                          enc_algo=enc_algo,
                          enc_key=enc_key,
@@ -2985,6 +3050,12 @@ class Invocation(Message):
         if self.caller is not None:
             options[u'caller'] = self.caller
 
+        if self.caller_authid is not None:
+            options[u'caller_authid'] = self.caller_authid
+
+        if self.caller_authrole is not None:
+            options[u'caller_authrole'] = self.caller_authrole
+
         if self.procedure is not None:
             options[u'procedure'] = self.procedure
 
@@ -3008,7 +3079,7 @@ class Invocation(Message):
         """
         Returns string representation of this message.
         """
-        return u"Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, procedure={7}, enc_algo={8}, enc_key={9}, enc_serializer={10}, payload={11})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Invocation(request={0}, registration={1}, args={2}, kwargs={3}, timeout={4}, receive_progress={5}, caller={6}, caller_authid={7}, caller_authrole={8}, procedure={9}, enc_algo={10}, enc_key={11}, enc_serializer={12}, payload={13})".format(self.request, self.registration, self.args, self.kwargs, self.timeout, self.receive_progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Interrupt(Message):

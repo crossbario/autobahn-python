@@ -523,7 +523,7 @@ class ApplicationSession(BaseSession):
                         invoke_kwargs = msg.kwargs if msg.kwargs else dict()
 
                         if handler.details_arg:
-                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, topic=topic, enc_algo=msg.enc_algo)
+                            invoke_kwargs[handler.details_arg] = types.EventDetails(publication=msg.publication, publisher=msg.publisher, publisher_authid=msg.publisher_authid, publisher_authrole=msg.publisher_authrole, topic=topic, enc_algo=msg.enc_algo)
 
                         def _error(e):
                             errmsg = 'While firing {0} subscribed under {1}.'.format(
@@ -750,7 +750,7 @@ class ApplicationSession(BaseSession):
                                 else:
                                     progress = None
 
-                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, procedure=proc, enc_algo=msg.enc_algo)
+                                invoke_kwargs[endpoint.details_arg] = types.CallDetails(progress, caller=msg.caller, caller_authid=msg.caller_authid, caller_authrole=msg.caller_authrole, procedure=proc, enc_algo=msg.enc_algo)
 
                             on_reply = txaio.as_future(endpoint.fn, *invoke_args, **invoke_kwargs)
 

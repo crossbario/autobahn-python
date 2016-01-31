@@ -316,27 +316,37 @@ class EventDetails(object):
     Provides details on an event when calling an event handler
     previously registered.
     """
-    def __init__(self, publication, publisher=None, topic=None, enc_algo=None):
+    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, enc_algo=None):
         """
         Ctor.
 
         :param publication: The publication ID of the event (always present).
         :type publication: int
         :param publisher: The WAMP session ID of the original publisher of this event.
-        :type publisher: int
+            Only filled when publisher is disclosed.
+        :type publisher: None or int
+        :param publisher_authid: The WAMP authid of the original publisher of this event.
+            Only filled when publisher is disclosed.
+        :type publisher_authid: None or unicode
+        :param publisher_authrole: The WAMP authrole of the original publisher of this event.
+            Only filled when publisher is disclosed.
+        :type publisher_authrole: None or unicode
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
-        :type topic: unicode or None
+            Only filled for pattern-based subscriptions.
+        :type topic: None or unicode
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
-        :type enc_algo: None or string
+        :type enc_algo: None or unicode
         """
         self.publication = publication
         self.publisher = publisher
+        self.publisher_authid = publisher_authid
+        self.publisher_authrole = publisher_authrole
         self.topic = topic
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication={0}, publisher={1}, topic=<{2}>, enc_algo={3})".format(self.publication, self.publisher, self.topic, self.enc_algo)
+        return "EventDetails(publication={0}, publisher={1}, publisher_authid={2}, publisher_authrole={3}, topic=<{4}>, enc_algo={5})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo)
 
 
 class PublishOptions(object):
@@ -427,27 +437,36 @@ class CallDetails(object):
     registered is being called and opted to receive call details.
     """
 
-    def __init__(self, progress=None, caller=None, procedure=None, enc_algo=None):
+    def __init__(self, progress=None, caller=None, caller_authid=None, caller_authrole=None, procedure=None, enc_algo=None):
         """
         Ctor.
 
         :param progress: A callable that will receive progressive call results.
         :type progress: callable
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
+            Only filled when caller is disclosed.
         :type caller: int
+        :param caller_authid: The WAMP authid of the original caller of this event.
+            Only filled when caller is disclosed.
+        :type caller_authid: None or unicode
+        :param caller_authrole: The WAMP authrole of the original caller of this event.
+            Only filled when caller is disclosed.
+        :type caller_authrole: None or unicode
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
-        :type procedure: unicode or None
+        :type procedure: None or unicode
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: None or string
         """
         self.progress = progress
         self.caller = caller
+        self.caller_authid = caller_authid
+        self.caller_authrole = caller_authrole
         self.procedure = procedure
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "CallDetails(progress={0}, caller={1}, procedure=<{2}>, enc_algo={3})".format(self.progress, self.caller, self.procedure, self.enc_algo)
+        return "CallDetails(progress={0}, caller={1}, caller_authid={2}, caller_authrole={3}, procedure=<{4}>, enc_algo={3})".format(self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
 
 
 class CallOptions(object):
