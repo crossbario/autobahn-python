@@ -933,7 +933,7 @@ class ApplicationSession(BaseSession):
 
         if self._session_id:
             # fire callback and close the transport
-            d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message="WAMP transport was lost without closing the session before"))
+            d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message=u"WAMP transport was lost without closing the session before"))
 
             def _error(e):
                 return self._swallow_error(e, "While firing onLeave")
