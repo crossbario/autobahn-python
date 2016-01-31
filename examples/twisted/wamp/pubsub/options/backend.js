@@ -16,7 +16,7 @@ connection.onopen = function (session) {
 
    setInterval(function () {
 
-      var options = {acknowledge: true, disclose_me: true};
+      var options = {acknowledge: true};
 
       session.publish('com.myapp.topic1', [counter], {}, options).then(
          function (publication) {

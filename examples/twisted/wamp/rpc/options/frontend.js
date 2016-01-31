@@ -25,7 +25,7 @@ connection.onopen = function (session) {
    var vals = [2, 0, -2];
    for (var i = 0; i < vals.length; ++i) {
 
-      dl.push(session.call('com.myapp.square', [vals[i]], {}, {disclose_me: true}).then(
+      dl.push(session.call('com.myapp.square', [vals[i]], {}, {}).then(
          function (res) {
             console.log("Squared", res);
          },
