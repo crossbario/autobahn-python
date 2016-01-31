@@ -1,6 +1,4 @@
 {
-    "controller": {
-    },
     "workers": [
         {
             "type": "router",
@@ -70,6 +68,7 @@
                                     }
                                 },
                                 "anonymous": {
+                                    "type": "static",
                                     "role": "anonymous"
                                 }
                             }
