@@ -64,11 +64,12 @@ class ComponentConfig(object):
 
         :param realm: The realm the session should join.
         :type realm: unicode
-        :param extra: Optional user-supplied object with extra
-            configuration. This can be any object you like, and is
-            accessible in your `ApplicationSession` subclass via
-            `self.config.extra`. `dict` is a good default choice.
-        :type extra: dict
+        :param extra: Optional user-supplied object with extra configuration.
+            This can be any object you like, and is accessible in your
+            `ApplicationSession` subclass via `self.config.extra`. `dict` is
+            a good default choice. Important: if the component is to be hosted
+            by Crossbar.io, the supplied value must be JSON serializable.
+        :type extra: arbitrary
         :param keyring: A mapper from WAMP URIs to "from"/"to" Ed25519 keys. When using
             WAMP end-to-end encryption, application payload is encrypted using a
             symmetric message key, which in turn is encrypted using the "to" URI (topic being
@@ -77,7 +78,6 @@ class ComponentConfig(object):
         :type keyring: obj implementing IKeyRing
         """
         assert(realm is None or type(realm) == six.text_type)
-        assert(extra is None or type(extra) == dict)
         # assert(keyring is None or ...) # FIXME
 
         self.realm = realm
@@ -459,27 +459,27 @@ class PublishOptions(object):
         :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
         :type exclude_me: bool or None
-        :param exclude: List of WAMP session IDs to exclude from receiving this event.
-        :type exclude: list of int or None
-        :param exclude_authid: List of WAMP authids to exclude from receiving this event.
-        :type exclude_authid: list of unicode or None
-        :param exclude_authrole: List of WAMP authroles to exclude from receiving this event.
+        :param exclude: A single WAMP session ID or a list thereof to exclude from receiving this event.
+        :type exclude: int or list of int or None
+        :param exclude_authid: A single WAMP authid or a list thereof to exclude from receiving this event.
+        :type exclude_authid: unicode or list of unicode or None
+        :param exclude_authrole: A single WAMP authrole or a list thereof to exclude from receiving this event.
         :type exclude_authrole: list of unicode or None
-        :param eligible: List of WAMP session IDs eligible to receive this event.
-        :type eligible: list of int or None
-        :param eligible_authid: List of WAMP authids eligible to receive this event.
-        :type eligible_authid: list of unicode or None
-        :param eligible_authrole: List of WAMP authroles eligible to receive this event.
-        :type eligible_authrole: list of unicode or None
+        :param eligible: A single WAMP session ID or a list thereof eligible to receive this event.
+        :type eligible: int or list of int or None
+        :param eligible_authid: A single WAMP authid or a list thereof eligible to receive this event.
+        :type eligible_authid: unicode or list of unicode or None
+        :param eligible_authrole: A single WAMP authrole or a list thereof eligible to receive this event.
+        :type eligible_authrole: unicode or list of unicode or None
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
-        assert(exclude is None or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))
-        assert(exclude_authid is None or (type(exclude_authid) == list and all(type(x) == six.text_type for x in exclude_authid)))
-        assert(exclude_authrole is None or (type(exclude_authrole) == list and all(type(x) == six.text_type for x in exclude_authrole)))
-        assert(eligible is None or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
-        assert(eligible_authid is None or (type(eligible_authid) == list and all(type(x) == six.text_type for x in eligible_authid)))
-        assert(eligible_authrole is None or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
+        assert(exclude is None or type(exclude) in six.integer_types or (type(exclude) == list and all(type(x) in six.integer_types for x in exclude)))
+        assert(exclude_authid is None or type(exclude_authid) == six.text_type or (type(exclude_authid) == list and all(type(x) == six.text_type for x in exclude_authid)))
+        assert(exclude_authrole is None or type(exclude_authrole) == six.text_type or (type(exclude_authrole) == list and all(type(x) == six.text_type for x in exclude_authrole)))
+        assert(eligible is None or type(eligible) in six.integer_types or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
+        assert(eligible_authid is None or type(eligible_authid) == six.text_type or (type(eligible_authid) == list and all(type(x) == six.text_type for x in eligible_authid)))
+        assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
 
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me
@@ -503,22 +503,22 @@ class PublishOptions(object):
             options[u'exclude_me'] = self.exclude_me
 
         if self.exclude:
-            options[u'exclude'] = self.exclude
+            options[u'exclude'] = self.exclude if type(self.exclude) == list else [self.exclude]
 
         if self.exclude_authid:
-            options[u'exclude_authid'] = self.exclude_authid
+            options[u'exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else self.exclude_authid
 
         if self.exclude_authrole:
-            options[u'exclude_authrole'] = self.exclude_authrole
+            options[u'exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else self.exclude_authrole
 
         if self.eligible:
-            options[u'eligible'] = self.eligible
+            options[u'eligible'] = self.eligible if type(self.eligible) == list else self.eligible
 
         if self.eligible_authid:
-            options[u'eligible_authid'] = self.eligible_authid
+            options[u'eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else self.eligible_authid
 
         if self.eligible_authrole:
-            options[u'eligible_authrole'] = self.eligible_authrole
+            options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else self.eligible_authrole
 
         return options
 
