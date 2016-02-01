@@ -13,26 +13,10 @@ autobahn.twisted.choosereactor
     :undoc-members:
     :show-inheritance:
 
-autobahn.twisted.flashpolicy
-----------------------------
-
-.. automodule:: autobahn.twisted.flashpolicy
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 autobahn.twisted.forwarder
 --------------------------
 
 .. automodule:: autobahn.twisted.forwarder
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.twisted.longpoll
--------------------------
-
-.. automodule:: autobahn.twisted.longpoll
     :members:
     :undoc-members:
     :show-inheritance:

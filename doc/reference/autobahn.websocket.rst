@@ -44,14 +44,6 @@ autobahn.websocket.compress_snappy
     :undoc-members:
     :show-inheritance:
 
-autobahn.websocket.http
------------------------
-
-.. automodule:: autobahn.websocket.http
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 autobahn.websocket.interfaces
 -----------------------------
 
@@ -64,14 +56,6 @@ autobahn.websocket.protocol
 ---------------------------
 
 .. automodule:: autobahn.websocket.protocol
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.useragent
-----------------------------
-
-.. automodule:: autobahn.websocket.useragent
     :members:
     :undoc-members:
     :show-inheritance:
