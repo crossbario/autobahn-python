@@ -290,11 +290,19 @@ def parseHttpHeader(data):
     FOR INTERNAL USE ONLY!
 
     :param data: The HTTP header data up to the \n\n line.
-    :type data: str
+    :type data: bytes
 
     :returns: tuple -- Tuple of HTTP status line, headers and headers count.
     """
-    raw = data.decode('utf8').splitlines()
+    # By default, message header field parameters in Hypertext Transfer
+    # Protocol (HTTP) messages cannot carry characters outside the ISO-
+    # 8859-1 character set.
+    #
+    # See:
+    #   - http://tools.ietf.org/html/rfc5987
+    #   - https://github.com/crossbario/autobahn-python/issues/533
+    #
+    raw = data.decode('iso-8859-1').splitlines()
     http_status_line = raw[0].strip()
     http_headers = {}
     http_headers_cnt = {}
@@ -303,8 +311,6 @@ def parseHttpHeader(data):
         if i > 0:
             # HTTP header keys are case-insensitive
             key = h[:i].strip().lower()
-
-            # not sure if UTF-8 is allowed for HTTP header values..
             value = h[i + 1:].strip()
 
             # handle HTTP headers split across multiple lines
@@ -2446,7 +2452,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # extract HTTP status line and headers
             #
-            (self.http_status_line, self.http_headers, http_headers_cnt) = parseHttpHeader(self.http_request_data)
+            try:
+                self.http_status_line, self.http_headers, http_headers_cnt = parseHttpHeader(self.http_request_data)
+            except Exception as e:
+                return self.failHandshake("Error during parsing of HTTP status line / request headers : {0}".format(e))
 
             # validate WebSocket opening handshake client request
             #
