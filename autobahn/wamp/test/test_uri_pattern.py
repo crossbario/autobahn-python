@@ -48,6 +48,7 @@ class TestUris(unittest.TestCase):
         for u in [u"com.myapp.proc1",
                   u"123",
                   u"com.myapp.<product:int>.update",
+                  u"com.myapp.<category:string>.<subcategory>.list"
                   ]:
             p = Pattern(u, Pattern.URI_TARGET_ENDPOINT)
             self.assertIsInstance(p, Pattern)
@@ -66,6 +67,19 @@ class TestUris(unittest.TestCase):
                 (u"com.myapp.box.update", {u'product': u'box'}),
                 (u"com.myapp.123456.update", {u'product': u'123456'}),
                 (u"com.myapp..update", None),
+            ]
+            ),
+            (u"com.myapp.<product>.update", [
+                (u"com.myapp.0.update", {u'product': u'0'}),
+                (u"com.myapp.abc.update", {u'product': u'abc'}),
+                (u"com.myapp..update", None),
+            ]
+            ),
+            (u"com.myapp.<category:string>.<subcategory:string>.list", [
+                (u"com.myapp.cosmetic.shampoo.list", {u'category': u'cosmetic', u'subcategory': u'shampoo'}),
+                (u"com.myapp...list", None),
+                (u"com.myapp.cosmetic..list", None),
+                (u"com.myapp..shampoo.list", None),
             ]
             )
         ]
