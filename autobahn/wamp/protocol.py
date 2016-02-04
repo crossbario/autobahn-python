@@ -404,8 +404,11 @@ class ApplicationSession(BaseSession):
         '''
         try:
             self.onUserError(fail, msg)
-        except:
-            pass
+        except Exception:
+            self.log.error(
+                "Internal error: {tb}",
+                tb=txaio.failure_format_traceback(txaio.create_failure()),
+            )
         return None
 
     def onMessage(self, msg):
