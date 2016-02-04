@@ -161,6 +161,11 @@ class ApplicationRunner(object):
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
         (transport, protocol) = loop.run_until_complete(coro)
 
+        if self.debug or self.debug_app:
+            txaio.start_logging(level='debug')
+        else:
+            txaio.start_logging(level='info')
+
         try:
             loop.add_signal_handler(signal.SIGTERM, loop.stop)
         except NotImplementedError:
