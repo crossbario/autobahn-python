@@ -132,7 +132,7 @@ class Pattern(object):
                     raise Exception("invalid URI")
 
                 nc[name] = str
-                pl.append("(?P<{0}>[a-z][a-z0-9_]*)".format(name))
+                pl.append("(?P<{0}>[a-z0-9_]+)".format(name))
                 continue
 
             match = Pattern._URI_COMPONENT.match(component)
