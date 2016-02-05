@@ -72,7 +72,15 @@ class BaseSession(ObservableMixin):
         """
 
         """
-        ObservableMixin.__init__(self)
+        self.set_valid_events(
+            valid_events=[
+                'join',         # right before onJoin runs
+                'leave',        # after onLeave has run
+                'ready',        # after onJoin and all 'join' listeners have completed
+                'connect',      # right before onConnect
+                'disconnect',   # right after onDisconnect
+            ]
+        )
 
         # this is for library level debugging
         self.debug = False
