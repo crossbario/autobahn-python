@@ -72,7 +72,15 @@ class BaseSession(ObservableMixin):
         """
 
         """
-        ObservableMixin.__init__(self)
+        self.set_valid_events(
+            valid_events=[
+                'join',         # right before onJoin runs
+                'leave',        # after onLeave has run
+                'ready',        # after onJoin and all 'join' listeners have completed
+                'connect',      # right before onConnect
+                'disconnect',   # right after onDisconnect
+            ]
+        )
 
         # this is for library level debugging
         self.debug = False
@@ -308,11 +316,16 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
         """
         self._transport = transport
-        d = txaio.as_future(self.onConnect)
-
-        def _error(e):
-            return self._swallow_error(e, "While firing onConnect")
-        txaio.add_callbacks(d, None, _error)
+        d = self.fire('connect', self, transport)
+        txaio.add_callbacks(
+            d, None,
+            lambda fail: self._swallow_error(fail, "While notifying 'connect'")
+        )
+        txaio.add_callbacks(
+            d,
+            lambda _: txaio.as_future(self.onConnect),
+            None,
+        )
 
     def onConnect(self):
         """
@@ -415,6 +428,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
         """
+
         if self._session_id is None:
 
             # the first message must be WELCOME, ABORT or CHALLENGE ..
@@ -426,11 +440,40 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod, msg.authprovider, msg.authextra)
-                d = txaio.as_future(self.onJoin, details)
-
-                def _error(e):
-                    return self._swallow_error(e, "While firing onJoin")
-                txaio.add_callbacks(d, None, _error)
+                # firing 'join' *before* running onJoin, so that the
+                # idiom where you "do stuff" in onJoin -- possibly
+                # including self.leave() -- works properly. Besides,
+                # there's "ready" that fires after 'join' and onJoin
+                # have all completed...
+                d = self.fire('join', self, details)
+                # add a logging errback first, which will ignore any
+                # errors from fire()
+                txaio.add_callbacks(
+                    d, None,
+                    lambda e: self._swallow_error(e, "While notifying 'join'")
+                )
+                # this should run regardless
+                txaio.add_callbacks(
+                    d,
+                    lambda _: txaio.as_future(self.onJoin, details),
+                    None
+                )
+                # ignore any errors from onJoin (XXX or, should that be fatal?)
+                txaio.add_callbacks(
+                    d, None,
+                    lambda e: self._swallow_error(e, "While firing onJoin")
+                )
+                # this instance is now "ready"...
+                txaio.add_callbacks(
+                    d,
+                    lambda _: self.fire('ready', self),
+                    None
+                )
+                # ignore any errors from 'ready'
+                txaio.add_callbacks(
+                    d, None,
+                    lambda e: self._swallow_error(e, "While notifying 'ready'")
+                )
 
             elif isinstance(msg, message.Abort):
 
@@ -438,9 +481,14 @@ class ApplicationSession(BaseSession):
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = txaio.as_future(self.onLeave, details)
 
+                def success(arg):
+                    # XXX also: handle async
+                    self.fire('leave', self, details)
+                    return arg
+
                 def _error(e):
                     return self._swallow_error(e, "While firing onLeave")
-                txaio.add_callbacks(d, None, _error)
+                txaio.add_callbacks(d, success, _error)
 
             elif isinstance(msg, message.Challenge):
 
@@ -465,9 +513,14 @@ class ApplicationSession(BaseSession):
                     details = types.CloseDetails(reply.reason, reply.message)
                     d = txaio.as_future(self.onLeave, details)
 
+                    def success(arg):
+                        # XXX also: handle async
+                        self.fire('leave', self, details)
+                        return arg
+
                     def _error(e):
                         return self._swallow_error(e, "While firing onLeave")
-                    txaio.add_callbacks(d, None, _error)
+                    txaio.add_callbacks(d, success, _error)
                     # switching to the callback chain, effectively
                     # cancelling error (which we've now handled)
                     return d
@@ -491,10 +544,15 @@ class ApplicationSession(BaseSession):
                 details = types.CloseDetails(msg.reason, msg.message)
                 d = txaio.as_future(self.onLeave, details)
 
+                def success(arg):
+                    # XXX also: handle async
+                    self.fire('leave', self, details)
+                    return arg
+
                 def _error(e):
                     errmsg = 'While firing onLeave for reason "{0}" and message "{1}"'.format(msg.reason, msg.message)
                     return self._swallow_error(e, errmsg)
-                txaio.add_callbacks(d, None, _error)
+                txaio.add_callbacks(d, success, _error)
 
             elif isinstance(msg, message.Event):
 
@@ -936,15 +994,29 @@ class ApplicationSession(BaseSession):
 
         if self._session_id:
             # fire callback and close the transport
-            d = txaio.as_future(self.onLeave, types.CloseDetails(reason=types.CloseDetails.REASON_TRANSPORT_LOST, message=u"WAMP transport was lost without closing the session before"))
+            details = types.CloseDetails(
+                reason=types.CloseDetails.REASON_TRANSPORT_LOST,
+                message=(u"WAMP transport was lost without closing the"
+                         u" session before"),
+            )
+            d = txaio.as_future(self.onLeave, details)
+
+            def success(arg):
+                # XXX also: handle async
+                self.fire('leave', self, details)
+                return arg
 
             def _error(e):
                 return self._swallow_error(e, "While firing onLeave")
-            txaio.add_callbacks(d, None, _error)
+            txaio.add_callbacks(d, success, _error)
 
             self._session_id = None
 
         d = txaio.as_future(self.onDisconnect)
+
+        def success(arg):
+            # XXX do we care about returning 'arg' properly?
+            return self.fire('disconnect', self, was_clean=wasClean)
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
@@ -960,7 +1032,6 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
-        return self.fire('join', self, details)
 
     def onLeave(self, details):
         """
@@ -968,8 +1039,6 @@ class ApplicationSession(BaseSession):
         """
         if details.reason.startswith('wamp.error.'):
             self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
-
-        self.fire('leave', self, details)
 
         if self._transport:
             self.disconnect()
@@ -998,7 +1067,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
-        return self.fire('disconnect', self, True)
+        pass  # return self.fire('disconnect', self, True)
 
     def publish(self, topic, *args, **kwargs):
         """

@@ -598,20 +598,83 @@ def wildcards2patterns(wildcards):
 
 
 class ObservableMixin(object):
+    """
+    Internal utility for enabling event-listeners on particular objects
+    """
 
-    def __init__(self, parent=None):
-        self._parent = parent
-        self._listeners = {}
+    # A "helper" style composable class (as opposed to a mix-in) might
+    # be a lot easier to deal with here.  Having an __init__ method
+    # with a "mix in" style class can be fragile and error-prone,
+    # especially if it takes arguments. Since we don't use the
+    # "parent" beavior anywhere, I didn't add a .set_parent() (yet?)
+
+    # these are class-level globals; individual instances are
+    # initialized as-needed (e.g. the first .on() call adds a
+    # _listeners dict). Thus, subclasses don't have to call super()
+    # properly etc.
+    _parent = None
+    _valid_events = None
+    _listeners = None
+
+    def set_valid_events(self, valid_events=None):
+        """
+        :param valid_events: if non-None, .on() or .fire() with an event
+            not listed in valid_events raises an exception.
+        """
+        self._valid_events = list(valid_events)
+
+    def _check_event(self, event):
+        """
+        Internal helper. Throws RuntimeError if we have a valid_events
+        list, and the given event isnt' in it. Does nothing otherwise.
+        """
+        if self._valid_events and event not in self._valid_events:
+            raise RuntimeError(
+                "Invalid event '{event}'. Expected one of: {events}",
+                event=event,
+                events = ', '.join(self._valid_events),
+            )
 
     def on(self, event, handler):
+        """
+        Add a handler for an event.
+
+        :param event: the name of the event
+
+        :param handler: a callable thats invoked when .fire() is
+            called for this events. Arguments will be whatever are given
+            to .fire()
+        """
+        # print("adding '{}' to '{}': {}".format(event, hash(self), handler))
+        self._check_event(event)
+        if self._listeners is None:
+            self._listeners = dict()
         if event not in self._listeners:
             self._listeners[event] = set()
         self._listeners[event].add(handler)
 
     def off(self, event=None, handler=None):
+        """
+        Stop listening for a single event, or all events.
+
+        :param event: if None, remove all listeners. Otherwise, remove
+            listeners for the single named event.
+
+        :param handler: if None, remove all handlers for the named
+            event; otherwise remove just the given handler.
+        """
         if event is None:
-            self._listeners = {}
+            if handler is not None:
+                # maybe this should mean "remove the given handler
+                # from any event at all that contains it"...?
+                raise RuntimeError(
+                    "Can't specificy a specific handler without an event"
+                )
+            self._listeners = dict()
         else:
+            if self._listeners is None:
+                return
+            self._check_event(event)
             if event in self._listeners:
                 if handler is None:
                     del self._listeners[event]
@@ -619,11 +682,24 @@ class ObservableMixin(object):
                     self._listeners[event].discard(handler)
 
     def fire(self, event, *args, **kwargs):
+        """
+        Fire a particular event.
+
+        :param event: the event to fire. All other args and kwargs are
+            passed on to the handler(s) for the event.
+
+        :return: a Deferred/Future gathering all async results from
+            all handlers and/or parent handlers.
+        """
+        # print("firing '{}' from '{}'".format(event, hash(self)))
+        if self._listeners is None:
+            return txaio.create_future(result=[])
+
+        self._check_event(event)
         res = []
-        if event in self._listeners:
-            for handler in self._listeners[event]:
-                value = txaio.as_future(handler, *args, **kwargs)
-                res.append(value)
+        for handler in self._listeners.get(event, set()):
+            future = txaio.as_future(handler, *args, **kwargs)
+            res.append(future)
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
-        return txaio.gather(res)
+        return txaio.gather(res, consume_exceptions=False)
