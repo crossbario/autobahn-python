@@ -24,6 +24,14 @@
 #
 ###############################################################################
 
+import sys
+import platform
+
+import txaio
+txaio.use_twisted()
+
+from twisted.internet import reactor
+
 import autobahn
 
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
@@ -32,68 +40,63 @@ from autobahn.twisted.websocket import WebSocketServerProtocol, \
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateOfferAccept
 
-
+# FIXME: streaming mode API is currently incompatible with permessage-deflate!
 USE_STREAMING_TESTEE = False
 
 
-if USE_STREAMING_TESTEE:
+class TesteeServerProtocol(WebSocketServerProtocol):
+    """
+    A message-based WebSocket echo server.
+    """
 
-    class StreamingTesteeServerProtocol(WebSocketServerProtocol):
+    def onMessage(self, payload, isBinary):
+        self.sendMessage(payload, isBinary)
 
-        """
-        A streaming WebSocket echo server.
-        """
 
-        def onMessageBegin(self, isBinary):
-            WebSocketServerProtocol.onMessageBegin(self, isBinary)
-            self.beginMessage(isBinary)
+class StreamingTesteeServerProtocol(WebSocketServerProtocol):
+    """
+    A streaming WebSocket echo server.
+    """
 
-        def onMessageFrameBegin(self, length):
-            WebSocketServerProtocol.onMessageFrameBegin(self, length)
-            self.beginMessageFrame(length)
+    def onMessageBegin(self, isBinary):
+        WebSocketServerProtocol.onMessageBegin(self, isBinary)
+        self.beginMessage(isBinary)
 
-        def onMessageFrameData(self, payload):
-            self.sendMessageFrameData(payload)
+    def onMessageFrameBegin(self, length):
+        WebSocketServerProtocol.onMessageFrameBegin(self, length)
+        self.beginMessageFrame(length)
 
-        def onMessageFrameEnd(self):
-            pass
+    def onMessageFrameData(self, payload):
+        self.sendMessageFrameData(payload)
 
-        def onMessageEnd(self):
-            self.endMessage()
+    def onMessageFrameEnd(self):
+        pass
 
-else:
-
-    class TesteeServerProtocol(WebSocketServerProtocol):
-
-        """
-        A message-based WebSocket echo server.
-        """
-
-        def onMessage(self, payload, isBinary):
-            self.sendMessage(payload, isBinary)
+    def onMessageEnd(self):
+        self.endMessage()
 
 
 class TesteeServerFactory(WebSocketServerFactory):
+
+    log = txaio.make_logger()
 
     if USE_STREAMING_TESTEE:
         protocol = StreamingTesteeServerProtocol
     else:
         protocol = TesteeServerProtocol
 
-    def __init__(self, url, ident=None):
-        if ident is not None:
-            server = ident
-        else:
-            server = "AutobahnPython-Twisted/%s" % autobahn.__version__
-        WebSocketServerFactory.__init__(self, url, server=server)
+    def __init__(self, url):
+        testee_ident = autobahn.twisted.__ident__
+        self.log.info("Testee identification: {testee_ident}", testee_ident=testee_ident)
+        WebSocketServerFactory.__init__(self, url, server=testee_ident)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
+        # self.setProtocolOptions(utf8validateIncoming = False)
 
         if USE_STREAMING_TESTEE:
             self.setProtocolOptions(failByDrop=True)  # needed for streaming mode
         else:
-            # enable permessage-deflate (which is not working with streaming currently)
-            #
+            # enable permessage-deflate WebSocket protocol extension
             def accept(offers):
                 for offer in offers:
                     if isinstance(offer, PerMessageDeflateOffer):
@@ -101,17 +104,10 @@ class TesteeServerFactory(WebSocketServerFactory):
 
             self.setProtocolOptions(perMessageCompressionAccept=accept)
 
-        # self.setProtocolOptions(utf8validateIncoming = False)
-
 
 if __name__ == '__main__':
 
-    import sys
-
-    from twisted.python import log
-    from twisted.internet import reactor
-
-    log.startLogging(sys.stdout)
+    txaio.start_logging(level='info')
 
     factory = TesteeServerFactory(u"ws://127.0.0.1:9001")
 

@@ -27,6 +27,11 @@
 
 from __future__ import absolute_import
 
+import sys
+import platform
+
+import autobahn
+
 # WebSocket protocol support
 from autobahn.asyncio.websocket import \
     WebSocketServerProtocol, \
@@ -45,3 +50,8 @@ __all__ = (
     'WebSocketClientFactory',
     'ApplicationSession',
 )
+
+__ident__ = u'Autobahn/{}-asyncio-{}/{}'.format(autobahn.__version__, platform.python_implementation(), '.'.join([str(x) for x in list(sys.version_info[:3])]))
+"""
+AutobahnPython library implementation (eg. "Autobahn/0.13.0-asyncio-CPython/3.5.1")
+"""

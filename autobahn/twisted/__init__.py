@@ -27,6 +27,13 @@
 
 from __future__ import absolute_import
 
+import sys
+import platform
+
+import twisted
+
+import autobahn
+
 # Twisted specific utilities (these should really be in Twisted, but
 # they aren't, and we use these in example code, so it must be part of
 # the public API)
@@ -75,3 +82,8 @@ __all__ = (
     # WAMP support
     'ApplicationSession',
 )
+
+__ident__ = u'Autobahn/{}-Twisted/{}-{}/{}'.format(autobahn.__version__, twisted.__version__, platform.python_implementation(), '.'.join([str(x) for x in list(sys.version_info[:3])]))
+"""
+AutobahnPython library implementation (eg. "Autobahn/0.13.0-Twisted/15.5.0-CPython/3.5.1")
+"""

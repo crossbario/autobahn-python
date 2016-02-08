@@ -24,21 +24,40 @@
 #
 ###############################################################################
 
+import txaio
+txaio.use_asyncio()
+
+try:
+    import asyncio
+except ImportError:
+    # Trollius >= 0.3 was renamed
+    import trollius as asyncio
+
 import autobahn
 
 from autobahn.asyncio.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
 
-from autobahn.websocket.compress import *
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateOfferAccept
+
+# FIXME: streaming mode API is currently incompatible with permessage-deflate!
+USE_STREAMING_TESTEE = False
 
 
 class TesteeServerProtocol(WebSocketServerProtocol):
+    """
+    A message-based WebSocket echo server.
+    """
 
     def onMessage(self, payload, isBinary):
         self.sendMessage(payload, isBinary)
 
 
 class StreamingTesteeServerProtocol(WebSocketServerProtocol):
+    """
+    A streaming WebSocket echo server.
+    """
 
     def onMessageBegin(self, isBinary):
         WebSocketServerProtocol.onMessageBegin(self, isBinary)
@@ -60,41 +79,37 @@ class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
 class TesteeServerFactory(WebSocketServerFactory):
 
-    # protocol = TesteeServerProtocol
-    protocol = StreamingTesteeServerProtocol
+    if USE_STREAMING_TESTEE:
+        protocol = StreamingTesteeServerProtocol
+    else:
+        protocol = TesteeServerProtocol
 
-    def __init__(self, url, ident=None):
-        if ident is not None:
-            server = ident
-        else:
-            server = "AutobahnPython-Asyncio/%s" % autobahn.version
-        WebSocketServerFactory.__init__(self, url, server=server)
+    def __init__(self, url):
+        WebSocketServerFactory.__init__(self, url, server="AutobahnPython-asyncio/{}".format(autobahn.__version__))
+
         self.setProtocolOptions(failByDrop=False)  # spec conformance
-        self.setProtocolOptions(failByDrop=True)  # needed for streaming mode
         # self.setProtocolOptions(utf8validateIncoming = False)
 
-        # enable permessage-deflate
-        ##
-        def accept(offers):
-            for offer in offers:
-                if isinstance(offer, PerMessageDeflateOffer):
-                    return PerMessageDeflateOfferAccept(offer)
+        if USE_STREAMING_TESTEE:
+            self.setProtocolOptions(failByDrop=True)  # needed for streaming mode
+        else:
+            # enable permessage-deflate WebSocket protocol extension
+            def accept(offers):
+                for offer in offers:
+                    if isinstance(offer, PerMessageDeflateOffer):
+                        return PerMessageDeflateOfferAccept(offer)
 
-        self.setProtocolOptions(perMessageCompressionAccept=accept)
+            self.setProtocolOptions(perMessageCompressionAccept=accept)
 
 
 if __name__ == '__main__':
 
-    try:
-        import asyncio
-    except ImportError:
-        # Trollius >= 0.3 was renamed
-        import trollius as asyncio
+    txaio.start_logging(level='info')
 
-    factory = TesteeServerFactory(u"ws://127.0.0.1:9002")
+    factory = TesteeServerFactory(u"ws://127.0.0.1:9001")
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(factory, port=9002)
+    coro = loop.create_server(factory, port=9001)
     server = loop.run_until_complete(coro)
 
     try:
