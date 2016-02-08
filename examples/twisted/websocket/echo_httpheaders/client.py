@@ -57,19 +57,11 @@ if __name__ == '__main__':
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
-    if len(sys.argv) > 2 and sys.argv[2] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
     headers = {'MyCustomClientHeader': 'Bazbar'}
 
-    factory = WebSocketClientFactory(sys.argv[1],
-                                     headers=headers,
-                                     debug=debug,
-                                     debugCodePaths=debug)
-
+    factory = WebSocketClientFactory(sys.argv[1], headers=headers)
     factory.protocol = EchoClientProtocol
     connectWS(factory)
 

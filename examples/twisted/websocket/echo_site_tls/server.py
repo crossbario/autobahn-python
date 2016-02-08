@@ -45,18 +45,12 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = WebSocketServerFactory(u"wss://127.0.0.1:8080",
-                                     debug=debug,
-                                     debugCodePaths=debug)
+    factory = WebSocketServerFactory(u"wss://127.0.0.1:8080")
     factory.protocol = EchoServerProtocol
 
     resource = WebSocketResource(factory)

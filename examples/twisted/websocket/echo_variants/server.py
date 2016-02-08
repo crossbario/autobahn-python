@@ -44,16 +44,9 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000",
-                                     debug=debug,
-                                     debugCodePaths=debug)
-
+    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
     factory.protocol = EchoServerProtocol
     listenWS(factory)
 

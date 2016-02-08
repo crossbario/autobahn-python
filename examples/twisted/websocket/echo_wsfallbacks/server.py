@@ -46,32 +46,22 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
     wsPort = 9000
 
     # Our WebSocket server
-    ##
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % wsPort,
-                                     debug=debug,
-                                     debugCodePaths=debug)
-
+    factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % wsPort)
     factory.protocol = EchoServerProtocol
     listenWS(factory)
 
     # We need to start a "Flash Policy Server" on TCP/843
     # which Adobe Flash player will contact to check if
     # it is allowed to connect to the WebSocket port.
-    ##
     flashPolicyFactory = FlashPolicyFactory()
     reactor.listenTCP(843, flashPolicyFactory)
 
     # Static Web server
-    ##
     webdir = File("./web")
     web = Site(webdir)
     reactor.listenTCP(8080, web)

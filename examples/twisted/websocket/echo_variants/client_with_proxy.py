@@ -61,16 +61,9 @@ if __name__ == '__main__':
     proxyHost, proxyPort = sys.argv[2].split(":")
     proxy = {'host': proxyHost, 'port': int(proxyPort)}
 
-    if len(sys.argv) > 3 and sys.argv[3] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
-    factory = WebSocketClientFactory(sys.argv[1],
-                                     proxy=proxy,
-                                     debug=debug,
-                                     debugCodePaths=debug)
+    factory = WebSocketClientFactory(sys.argv[1], proxy=proxy)
     factory.protocol = EchoClientProtocol
     connectWS(factory)
 

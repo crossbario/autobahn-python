@@ -211,11 +211,6 @@ if os.environ.get('USE_TWISTED', False):
             """
             autoping and autoping-timeout timing
             """
-            if False:
-                self.proto.debug = True
-                self.proto.factory._log = print
-                self.proto.debugCodePaths = True
-
             # options are evaluated in succeedHandshake, called below
             self.proto.autoPingInterval = 5
             self.proto.autoPingTimeout = 2
@@ -265,11 +260,6 @@ if os.environ.get('USE_TWISTED', False):
             """
             auto-ping with correct reply cancels timeout
             """
-            if False:
-                self.proto.debug = True
-                self.proto.factory._log = print
-                self.proto.debugCodePaths = True
-
             # options are evaluated in succeedHandshake, called below
             self.proto.autoPingInterval = 5
             self.proto.autoPingTimeout = 2

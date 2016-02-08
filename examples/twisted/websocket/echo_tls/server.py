@@ -44,21 +44,14 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
     # SSL server context: load server key and certificate
     # We use this for both WS and Web!
-    #
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = WebSocketServerFactory(u"wss://127.0.0.1:9000",
-                                     debug=debug,
-                                     debugCodePaths=debug)
+    factory = WebSocketServerFactory(u"wss://127.0.0.1:9000")
 
     factory.protocol = EchoServerProtocol
     listenWS(factory, contextFactory)

@@ -529,7 +529,6 @@ class WebSocketProtocol(object):
     """Status codes allowed to send in close."""
 
     CONFIG_ATTRS_COMMON = ['debug',
-                           'debugCodePaths',
                            'logOctets',
                            'logFrames',
                            'trackTimings',
@@ -664,15 +663,13 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
-        if self.debug:
-            self.log.debug("WebSocketProtocol.onMessage")
+        self.log.debug("WebSocketProtocol.onMessage(payload=<{payload_len} bytes)>, isBinary={isBinary}", payload_len=(len(payload) if payload else 0), isBinary=isBinary)
 
     def onPing(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
         """
-        if self.debug:
-            self.log.debug("WebSocketProtocol.onPing")
+        self.log.debug("WebSocketProtocol.onPing(payload=<{payload_len} bytes>)", payload_len=(len(payload) if payload else 0))
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.sendPong(payload)
 
@@ -680,28 +677,13 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
-        if self.debug:
-            self.log.debug("WebSocketProtocol.onPong")
+        self.log.debug("WebSocketProtocol.onPong(payload=<{payload_len} bytes>)", payload_len=(len(payload) if payload else 0))
 
     def onClose(self, wasClean, code, reason):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
-        if self.debugCodePaths:
-            s = "WebSocketProtocol.onClose:\n"
-            s += "wasClean=%s\n" % wasClean
-            s += "code=%s\n" % code
-            s += "reason=%s\n" % reason
-            s += "self.closedByMe=%s\n" % self.closedByMe
-            s += "self.failedByMe=%s\n" % self.failedByMe
-            s += "self.droppedByMe=%s\n" % self.droppedByMe
-            s += "self.wasClean=%s\n" % self.wasClean
-            s += "self.wasNotCleanReason=%s\n" % self.wasNotCleanReason
-            s += "self.localCloseCode=%s\n" % self.localCloseCode
-            s += "self.localCloseReason=%s\n" % self.localCloseReason
-            s += "self.remoteCloseCode=%s\n" % self.remoteCloseCode
-            s += "self.remoteCloseReason=%s\n" % self.remoteCloseReason
-            self.log.debug(s)
+        self.log.debug("WebSocketProtocol.onClose(wasClean={wasClean}, code={code}, reason={reason})", wasClean=wasClean, code=code, reason=reason)
 
     def onCloseFrame(self, code, reasonRaw):
         """
@@ -711,13 +693,10 @@ class WebSocketProtocol(object):
         (when we are a client and expect the server to drop the TCP).
 
         :param code: Close status code, if there was one (:class:`WebSocketProtocol`.CLOSE_STATUS_CODE_*).
-        :type code: int or None
+        :type code: int
         :param reasonRaw: Close reason (when present, a status code MUST have been also be present).
-        :type reason: str or None
+        :type reasonRaw: bytes
         """
-        if self.debugCodePaths:
-            self.log.debug("WebSocketProtocol.onCloseFrame")
-
         self.remoteCloseCode = code
 
         # reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
@@ -749,8 +728,7 @@ class WebSocketProtocol(object):
             # cancel any closing HS timer if present
             #
             if self.closeHandshakeTimeoutCall is not None:
-                if self.debugCodePaths:
-                    self.log.debug("closeHandshakeTimeoutCall.cancel")
+                self.log.debug("connection closed properly: canceling closing handshake timeout")
                 self.closeHandshakeTimeoutCall.cancel()
                 self.closeHandshakeTimeoutCall = None
 
@@ -809,15 +787,14 @@ class WebSocketProtocol(object):
         """
         self.serverConnectionDropTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("onServerConnectionDropTimeout")
+            self.log.debug("timeout: server did not drop TCP connection (in time)")
             self.wasClean = False
             self.wasNotCleanReason = u'server did not drop TCP connection (in time)'
             self.wasServerConnectionDropTimeout = True
             self.dropConnection(abort=True)
         else:
-            if self.debugCodePaths:
-                self.log.debug("skipping onServerConnectionDropTimeout since connection is already closed")
+            # ok, connection is already closed!
+            pass
 
     def onOpenHandshakeTimeout(self):
         """
@@ -827,21 +804,19 @@ class WebSocketProtocol(object):
         """
         self.openHandshakeTimeoutCall = None
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
-            if self.debugCodePaths:
-                self.log.debug("onOpenHandshakeTimeout fired")
+            self.log.debug("opening handshake timeout: peer did not finish (in time) the opening handshake")
             self.wasClean = False
             self.wasNotCleanReason = u'peer did not finish (in time) the opening handshake'
             self.wasOpenHandshakeTimeout = True
             self.dropConnection(abort=True)
         elif self.state == WebSocketProtocol.STATE_OPEN:
-            if self.debugCodePaths:
-                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is open (opening handshake already finished)")
+            self.log.debug("skipping opening handshake timeout: WebSocket connection is open (opening handshake already finished)")
+
         elif self.state == WebSocketProtocol.STATE_CLOSING:
-            if self.debugCodePaths:
-                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection is closing")
+            self.log.debug("skipping opening handshake timeout: WebSocket connection is already closing ..")
+
         elif self.state == WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("skipping onOpenHandshakeTimeout since WebSocket connection already closed")
+            self.log.debug("skipping opening handshake timeout: WebSocket connection is already closed")
         else:
             # should not arrive here
             raise Exception("logic error")
@@ -854,23 +829,20 @@ class WebSocketProtocol(object):
         """
         self.closeHandshakeTimeoutCall = None
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("onCloseHandshakeTimeout fired")
+            self.log.debug("closing handshake timeout: peer did not finish (in time) the closing handshake")
             self.wasClean = False
             self.wasNotCleanReason = u'peer did not respond (in time) in closing handshake'
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
-            if self.debugCodePaths:
-                self.log.debug("skipping onCloseHandshakeTimeout since connection is already closed")
+            self.log.debug("skipping closing handshake timeout: WebSocket connection is already closed")
 
     def onAutoPingTimeout(self):
         """
         When doing automatic ping/pongs to detect broken connection, the peer
         did not reply in time to our ping. We drop the connection.
         """
-        if self.debugCodePaths:
-            self.log.debug("Auto ping/pong: onAutoPingTimeout fired")
+        self.log.debug("Auto ping/pong: onAutoPingTimeout fired")
 
         self.autoPingTimeoutCall = None
         self.dropConnection(abort=True)
@@ -891,8 +863,7 @@ class WebSocketProtocol(object):
 
             self._closeConnection(abort)
         else:
-            if self.debugCodePaths:
-                self.log.debug("skipping dropConnection since connection is already closed")
+            self.log.debug("skipping dropConnection since connection is already closed")
 
     def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason=u'going away'):
         """
@@ -919,8 +890,7 @@ class WebSocketProtocol(object):
                     self.dropConnection(abort=False)
 
         else:
-            if self.debugCodePaths:
-                self.log.debug("skipping failConnection since connection is already closed")
+            self.log.debug("skipping failConnection since connection is already closed")
 
     def _protocol_violation(self, reason):
         """
@@ -931,9 +901,10 @@ class WebSocketProtocol(object):
 
         :returns: bool -- True, when any further processing should be discontinued.
         """
-        if self.debugCodePaths:
-            self.log.debug("Protocol violation: {reason}", reason=reason)
+        self.log.debug("Protocol violation: {reason}", reason=reason)
+
         self._fail_connection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
+
         if self.failByDrop:
             return True
         else:
@@ -952,9 +923,10 @@ class WebSocketProtocol(object):
 
         :returns: bool -- True, when any further processing should be discontinued.
         """
-        if self.debugCodePaths:
-            self.log.debug("Invalid payload: {reason}", reason=reason)
+        self.log.debug("Invalid payload: {reason}", reason=reason)
+
         self._fail_connection(WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, reason)
+
         if self.failByDrop:
             return True
         else:
@@ -1099,23 +1071,21 @@ class WebSocketProtocol(object):
         # cancel any server connection drop timer if present
         #
         self.log.debug('_connectionLost: {reason}', reason=reason)
+
         if not self.factory.isServer and self.serverConnectionDropTimeoutCall is not None:
-            if self.debugCodePaths:
-                self.log.debug("serverConnectionDropTimeoutCall.cancel")
+            self.log.debug("serverConnectionDropTimeoutCall.cancel")
             self.serverConnectionDropTimeoutCall.cancel()
             self.serverConnectionDropTimeoutCall = None
 
         # cleanup auto ping/pong timers
         #
         if self.autoPingPendingCall:
-            if self.debugCodePaths:
-                self.log.debug("Auto ping/pong: canceling autoPingPendingCall upon lost connection")
+            self.log.debug("Auto ping/pong: canceling autoPingPendingCall upon lost connection")
             self.autoPingPendingCall.cancel()
             self.autoPingPendingCall = None
 
         if self.autoPingTimeoutCall:
-            if self.debugCodePaths:
-                self.log.debug("Auto ping/pong: canceling autoPingTimeoutCall upon lost connection")
+            self.log.debug("Auto ping/pong: canceling autoPingTimeoutCall upon lost connection")
             self.autoPingTimeoutCall.cancel()
             self.autoPingTimeoutCall = None
 
@@ -1234,8 +1204,7 @@ class WebSocketProtocol(object):
 
             # ignore any data received after WS was closed
             #
-            if self.debugCodePaths:
-                self.log.debug("received data in STATE_CLOSED")
+            self.log.debug("received data in STATE_CLOSED")
 
         # should not arrive here (invalid state)
         #
@@ -1283,8 +1252,8 @@ class WebSocketProtocol(object):
                 if self.logOctets:
                     self.logTxOctets(e[0], e[1])
             else:
-                if self.debugCodePaths:
-                    self.log.debug("skipped delayed write, since connection is closed")
+                self.log.debug("skipped delayed write, since connection is closed")
+
             # we need to reenter the reactor to make the latter
             # reenter the OS network stack, so that octets
             # can get on the wire. Note: this is a "heuristic",
@@ -1735,8 +1704,7 @@ class WebSocketProtocol(object):
             if self.autoPingPending:
                 try:
                     if payload == self.autoPingPending:
-                        if self.debugCodePaths:
-                            self.log.debug("Auto ping/pong: received pending pong for auto-ping/pong")
+                        self.log.debug("Auto ping/pong: received pending pong for auto-ping/pong")
 
                         if self.autoPingTimeoutCall:
                             self.autoPingTimeoutCall.cancel()
@@ -1747,11 +1715,9 @@ class WebSocketProtocol(object):
                         if self.autoPingInterval:
                             self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
                     else:
-                        if self.debugCodePaths:
-                            self.log.debug("Auto ping/pong: received non-pending pong")
-                except:
-                    if self.debugCodePaths:
                         self.log.debug("Auto ping/pong: received non-pending pong")
+                except:
+                    self.log.debug("Auto ping/pong: received non-pending pong")
 
             # fire app-level callback
             #
@@ -1873,8 +1839,7 @@ class WebSocketProtocol(object):
 
     def _sendAutoPing(self):
         # Sends an automatic ping and sets up a timeout.
-        if self.debugCodePaths:
-            self.log.debug("Auto ping/pong: sending ping auto-ping/pong")
+        self.log.debug("Auto ping/pong: sending ping auto-ping/pong")
 
         self.autoPingPendingCall = None
 
@@ -1883,8 +1848,7 @@ class WebSocketProtocol(object):
         self.sendPing(self.autoPingPending)
 
         if self.autoPingTimeout:
-            if self.debugCodePaths:
-                self.log.debug("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
+            self.log.debug("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
             self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
 
     def sendPong(self, payload=None):
@@ -1908,12 +1872,10 @@ class WebSocketProtocol(object):
         frame with invalid payload.
         """
         if self.state == WebSocketProtocol.STATE_CLOSING:
-            if self.debugCodePaths:
-                self.log.debug("ignoring sendCloseFrame since connection is closing")
+            self.log.debug("ignoring sendCloseFrame since connection is closing")
 
         elif self.state == WebSocketProtocol.STATE_CLOSED:
-            if self.debugCodePaths:
-                self.log.debug("ignoring sendCloseFrame since connection already closed")
+            self.log.debug("ignoring sendCloseFrame since connection already closed")
 
         elif self.state in [WebSocketProtocol.STATE_PROXY_CONNECTING, WebSocketProtocol.STATE_CONNECTING]:
             raise Exception("cannot close a connection not yet connected")
@@ -2528,8 +2490,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     if port != self.factory.externalPort:
                         return self.failHandshake("port %d in HTTP Host header '%s' does not match server listening port %s" % (port, str(self.http_request_host), self.factory.externalPort))
                 else:
-                    if self.debugCodePaths:
-                        self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
+                    self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
                 self.http_request_host = h
 
@@ -2539,8 +2500,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     if not ((self.factory.isSecure and self.factory.externalPort == 443) or (not self.factory.isSecure and self.factory.externalPort == 80)):
                         return self.failHandshake("missing port in HTTP Host header '%s' and server runs on non-standard port %d (wss = %s)" % (str(self.http_request_host), self.factory.externalPort, self.factory.isSecure))
                 else:
-                    if self.debugCodePaths:
-                        self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
+                    self.log.debug("skipping opening handshake port checking - neither WS URL nor external port set")
 
             # Upgrade
             #
@@ -2567,16 +2527,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         url = self.http_request_params['redirect'][0]
                         if 'after' in self.http_request_params and len(self.http_request_params['after']) > 0:
                             after = int(self.http_request_params['after'][0])
-                            if self.debugCodePaths:
-                                self.log.debug("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
+                            self.log.debug("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
                             self.sendServerStatus(url, after)
                         else:
-                            if self.debugCodePaths:
-                                self.log.debug("HTTP Upgrade header missing : 303-redirecting to %s" % url)
+                            self.log.debug("HTTP Upgrade header missing : 303-redirecting to %s" % url)
                             self.sendRedirect(url)
                     else:
-                        if self.debugCodePaths:
-                            self.log.debug("HTTP Upgrade header missing : render server status page")
+                        self.log.debug("HTTP Upgrade header missing : render server status page")
                         self.sendServerStatus()
                     self.dropConnection(abort=False)
                     return
@@ -2605,12 +2562,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
             # Sec-WebSocket-Version PLUS determine mode: Hybi or Hixie
             #
             if 'sec-websocket-version' not in self.http_headers:
-                if self.debugCodePaths:
-                    self.log.debug("Hixie76 protocol detected")
+                self.log.debug("Hixie76 protocol detected")
                 return self.failHandshake("WebSocket connection denied - Hixie76 protocol not supported.")
             else:
-                if self.debugCodePaths:
-                    self.log.debug("Hybi protocol detected")
+                self.log.debug("Hybi protocol detected")
                 if http_headers_cnt["sec-websocket-version"] > 1:
                     return self.failHandshake("HTTP Sec-WebSocket-Version header appears more than once in opening handshake request")
                 try:
@@ -2893,8 +2848,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # cancel any opening HS timer if present
         #
         if self.openHandshakeTimeoutCall is not None:
-            if self.debugCodePaths:
-                self.log.debug("openHandshakeTimeoutCall.cancel")
+            self.log.debug("openHandshakeTimeoutCall.cancel")
             self.openHandshakeTimeoutCall.cancel()
             self.openHandshakeTimeoutCall = None
 
@@ -3033,8 +2987,7 @@ class WebSocketServerFactory(WebSocketFactory):
                  server="AutobahnPython/%s" % __version__,
                  headers=None,
                  externalPort=None,
-                 debug=False,
-                 debugCodePaths=False):
+                 debug=False):
         """
         Create instance of WebSocket server factory.
 
@@ -3052,11 +3005,8 @@ class WebSocketServerFactory(WebSocketFactory):
         :type externalPort: int
         :param debug: Debug mode (default: `False`).
         :type debug: bool
-        :param debugCodePaths: Debug code paths mode (default: `False`).
-        :type debugCodePaths: bool
         """
         self.debug = debug
-        self.debugCodePaths = debugCodePaths
 
         self.logOctets = debug
         self.logFrames = debug
@@ -3697,8 +3647,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # cancel any opening HS timer if present
             #
             if self.openHandshakeTimeoutCall is not None:
-                if self.debugCodePaths:
-                    self.log.debug("openHandshakeTimeoutCall.cancel")
+                self.log.debug("openHandshakeTimeoutCall.cancel")
                 self.openHandshakeTimeoutCall.cancel()
                 self.openHandshakeTimeoutCall = None
 
@@ -3773,8 +3722,7 @@ class WebSocketClientFactory(WebSocketFactory):
                  useragent="AutobahnPython/%s" % __version__,
                  headers=None,
                  proxy=None,
-                 debug=False,
-                 debugCodePaths=False):
+                 debug=False):
         """
         Create instance of WebSocket client factory.
 
@@ -3798,11 +3746,8 @@ class WebSocketClientFactory(WebSocketFactory):
         :type proxy: dict or None
         :param debug: Debug mode (default: `False`).
         :type debug: bool
-        :param debugCodePaths: Debug code paths mode (default: `False`).
-        :type debugCodePaths: bool
         """
         self.debug = debug
-        self.debugCodePaths = debugCodePaths
 
         self.logOctets = debug
         self.logFrames = debug

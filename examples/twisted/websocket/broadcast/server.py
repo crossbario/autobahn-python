@@ -58,8 +58,8 @@ class BroadcastServerFactory(WebSocketServerFactory):
     currently connected clients.
     """
 
-    def __init__(self, url, debug=False, debugCodePaths=False):
-        WebSocketServerFactory.__init__(self, url, debug=debug, debugCodePaths=debugCodePaths)
+    def __init__(self, url):
+        WebSocketServerFactory.__init__(self, url)
         self.clients = []
         self.tickcount = 0
         self.tick()
@@ -103,19 +103,12 @@ class BroadcastPreparedServerFactory(BroadcastServerFactory):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
     ServerFactory = BroadcastServerFactory
     # ServerFactory = BroadcastPreparedServerFactory
 
-    factory = ServerFactory(u"ws://127.0.0.1:9000",
-                            debug=debug,
-                            debugCodePaths=debug)
-
+    factory = ServerFactory(u"ws://127.0.0.1:9000")
     factory.protocol = BroadcastServerProtocol
     listenWS(factory)
 

@@ -208,8 +208,8 @@ class EchoServerFactory(WebSocketServerFactory):
 
     protocol = EchoServerProtocol
 
-    def __init__(self, wsuri, debug=False):
-        WebSocketServerFactory.__init__(self, wsuri, debug=debug, debugCodePaths=debug)
+    def __init__(self, wsuri):
+        WebSocketServerFactory.__init__(self, wsuri)
         self.stats = Stats()
 
 
@@ -283,7 +283,7 @@ def worker(options):
         p.cpu_affinity([options.cpuid])
         print "affinity [after]", p.cpu_affinity()
 
-    factory = EchoServerFactory(options.wsuri, debug=options.debug)
+    factory = EchoServerFactory(options.wsuri)
 
     # The master already created the socket, just start listening and accepting
     ##

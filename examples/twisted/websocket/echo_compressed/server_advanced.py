@@ -52,23 +52,15 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
-    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000",
-                                     debug=debug,
-                                     debugCodePaths=debug)
-
+    factory = WebSocketServerFactory(u"ws://127.0.0.1:9000")
     factory.protocol = EchoServerProtocol
 
 #   factory.setProtocolOptions(autoFragmentSize = 4)
 
     # Enable WebSocket extension "permessage-deflate". This is all you
     # need to do (unless you know what you are doing .. see below)!
-    ##
     def accept0(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
@@ -76,7 +68,6 @@ if __name__ == '__main__':
 
     # Enable experimental compression extensions "permessage-snappy"
     # and "permessage-bzip2"
-    ##
     def accept1(offers):
         for offer in offers:
             if isinstance(offer, PerMessageSnappyOffer):
@@ -90,7 +81,6 @@ if __name__ == '__main__':
 
     # permessage-deflate, server requests the client to do no
     # context takeover
-    ##
     def accept2(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
@@ -99,7 +89,6 @@ if __name__ == '__main__':
 
     # permessage-deflate, server requests the client to do no
     # context takeover, and does not context takeover also
-    ##
     def accept3(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
@@ -108,7 +97,6 @@ if __name__ == '__main__':
 
     # permessage-deflate, server requests the client to do use
     # max window bits specified
-    ##
     def accept4(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):

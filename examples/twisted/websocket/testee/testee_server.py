@@ -80,12 +80,12 @@ class TesteeServerFactory(WebSocketServerFactory):
     else:
         protocol = TesteeServerProtocol
 
-    def __init__(self, url, debug=False, ident=None):
+    def __init__(self, url, ident=None):
         if ident is not None:
             server = ident
         else:
             server = "AutobahnPython-Twisted/%s" % autobahn.__version__
-        WebSocketServerFactory.__init__(self, url, debug=debug, debugCodePaths=debug, server=server)
+        WebSocketServerFactory.__init__(self, url, server=server)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
 
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     log.startLogging(sys.stdout)
 
-    factory = TesteeServerFactory(u"ws://127.0.0.1:9001", debug=False)
+    factory = TesteeServerFactory(u"ws://127.0.0.1:9001")
 
     reactor.listenTCP(9001, factory)
     reactor.run()

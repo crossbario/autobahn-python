@@ -63,12 +63,12 @@ class TesteeServerFactory(WebSocketServerFactory):
     # protocol = TesteeServerProtocol
     protocol = StreamingTesteeServerProtocol
 
-    def __init__(self, url, debug=False, ident=None):
+    def __init__(self, url, ident=None):
         if ident is not None:
             server = ident
         else:
             server = "AutobahnPython-Asyncio/%s" % autobahn.version
-        WebSocketServerFactory.__init__(self, url, debug=debug, debugCodePaths=debug, server=server)
+        WebSocketServerFactory.__init__(self, url, server=server)
         self.setProtocolOptions(failByDrop=False)  # spec conformance
         self.setProtocolOptions(failByDrop=True)  # needed for streaming mode
         # self.setProtocolOptions(utf8validateIncoming = False)
@@ -91,7 +91,7 @@ if __name__ == '__main__':
         # Trollius >= 0.3 was renamed
         import trollius as asyncio
 
-    factory = TesteeServerFactory(u"ws://127.0.0.1:9002", debug=False)
+    factory = TesteeServerFactory(u"ws://127.0.0.1:9002")
 
     loop = asyncio.get_event_loop()
     coro = loop.create_server(factory, port=9002)

@@ -62,20 +62,12 @@ if __name__ == '__main__':
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
-    if len(sys.argv) > 2 and sys.argv[2] == 'debug':
-        log.startLogging(sys.stdout)
-        debug = True
-    else:
-        debug = False
+    log.startLogging(sys.stdout)
 
-    factory = WebSocketClientFactory(sys.argv[1],
-                                     debug=debug,
-                                     debugCodePaths=debug)
-
+    factory = WebSocketClientFactory(sys.argv[1])
     factory.protocol = EchoClientProtocol
 
     # Enable WebSocket extension "permessage-deflate".
-    ##
 
     # The extensions offered to the server ..
     offers = [PerMessageDeflateOffer()]
@@ -89,6 +81,5 @@ if __name__ == '__main__':
     factory.setProtocolOptions(perMessageCompressionAccept=accept)
 
     # run client
-    ##
     connectWS(factory)
     reactor.run()
