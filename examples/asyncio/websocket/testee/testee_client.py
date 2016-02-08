@@ -25,14 +25,12 @@
 ###############################################################################
 
 import txaio
-txaio.use_twisted()
-
-from twisted.internet import reactor
+txaio.use_asyncio()
 
 import autobahn
 
-from autobahn.twisted.websocket import connectWS, WebSocketClientFactory, \
-    WebSocketClientProtocol
+from autobahn.asyncio.websocket import WebSocketClientProtocol, \
+    WebSocketClientFactory
 
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, PerMessageDeflateResponseAccept
@@ -63,7 +61,7 @@ class TesteeClientFactory(WebSocketClientFactory):
     protocol = TesteeClientProtocol
 
     def __init__(self, url):
-        self.agent = autobahn.twisted.__ident__
+        self.agent = autobahn.asyncio.__ident__
         WebSocketClientFactory.__init__(self, url, useragent=self.agent)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
@@ -84,6 +82,7 @@ class TesteeClientFactory(WebSocketClientFactory):
         self.updateReports = True
         self.resource = "/getCaseCount"
 
+    # FIXME: port to asyncio
     def clientConnectionLost(self, connector, reason):
         self.currentCaseId += 1
         if self.currentCaseId <= self.endCaseId:
@@ -96,6 +95,7 @@ class TesteeClientFactory(WebSocketClientFactory):
         else:
             reactor.stop()
 
+    # FIXME: port to asyncio
     def clientConnectionFailed(self, connector, reason):
         self.log.info("Connection to {url} failed: {error_message}", url=self.url, error_message=reason.getErrorMessage())
         reactor.stop()
@@ -105,7 +105,16 @@ if __name__ == '__main__':
 
     txaio.start_logging(level='info')
 
+    try:
+        import asyncio
+    except ImportError:
+        # Trollius >= 0.3 was renamed
+        import trollius as asyncio
+
     factory = TesteeClientFactory(u"ws://127.0.0.1:9001")
 
-    connectWS(factory)
-    reactor.run()
+    loop = asyncio.get_event_loop()
+    coro = loop.create_connection(factory, '127.0.0.1', 9001)
+    loop.run_until_complete(coro)
+    loop.run_forever()
+    loop.close()

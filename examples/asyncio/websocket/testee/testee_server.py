@@ -79,13 +79,17 @@ class StreamingTesteeServerProtocol(WebSocketServerProtocol):
 
 class TesteeServerFactory(WebSocketServerFactory):
 
+    log = txaio.make_logger()
+
     if USE_STREAMING_TESTEE:
         protocol = StreamingTesteeServerProtocol
     else:
         protocol = TesteeServerProtocol
 
     def __init__(self, url):
-        WebSocketServerFactory.__init__(self, url, server="AutobahnPython-asyncio/{}".format(autobahn.__version__))
+        testee_ident = autobahn.asyncio.__ident__
+        self.log.info("Testee identification: {testee_ident}", testee_ident=testee_ident)
+        WebSocketServerFactory.__init__(self, url, server=testee_ident)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
         # self.setProtocolOptions(utf8validateIncoming = False)
