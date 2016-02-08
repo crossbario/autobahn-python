@@ -80,19 +80,17 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
     Adapter class for Twisted WebSocket client and server protocols.
     """
 
-    peer = '<never connected>'
+    peer = u'<never connected>'
 
     log = txaio.make_logger()
 
     def connectionMade(self):
         # the peer we are connected to
         try:
-            peer = self.transport.getPeer()
+            self.peer = peer2str(self.transport.getPeer())
         except AttributeError:
             # ProcessProtocols lack getPeer()
-            self.peer = "process {}".format(self.transport.pid)
-        else:
-            self.peer = peer2str(peer)
+            self.peer = u'process:{}'.format(self.transport.pid)
 
         self._connectionMade()
         self.log.debug('Connection made to {peer}', peer=self.peer)
@@ -308,14 +306,14 @@ class WrappingWebSocketAdapter(object):
             request = requestOrResponse
             for p in request.protocols:
                 if p in self.factory._subprotocols:
-                    self._binaryMode = (p != 'base64')
+                    self._binaryMode = (p != u'base64')
                     return p
             raise ConnectionDeny(ConnectionDeny.NOT_ACCEPTABLE, u'this server only speaks {0} WebSocket subprotocols'.format(self.factory._subprotocols))
         elif isinstance(requestOrResponse, ConnectionResponse):
             response = requestOrResponse
             if response.protocol not in self.factory._subprotocols:
-                self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, 'this client only speaks {0} WebSocket subprotocols'.format(self.factory._subprotocols))
-            self._binaryMode = (response.protocol != 'base64')
+                self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, u'this client only speaks {0} WebSocket subprotocols'.format(self.factory._subprotocols))
+            self._binaryMode = (response.protocol != u'base64')
         else:
             # should not arrive here
             raise Exception("logic error")
@@ -325,13 +323,13 @@ class WrappingWebSocketAdapter(object):
 
     def onMessage(self, payload, isBinary):
         if isBinary != self._binaryMode:
-            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA, 'message payload type does not match the negotiated subprotocol')
+            self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_UNSUPPORTED_DATA, u'message payload type does not match the negotiated subprotocol')
         else:
             if not isBinary:
                 try:
                     payload = b64decode(payload)
                 except Exception as e:
-                    self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, 'message payload base64 decoding error: {0}'.format(e))
+                    self.failConnection(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, u'message payload base64 decoding error: {0}'.format(e))
             self._proto.dataReceived(payload)
 
     # noinspection PyUnusedLocal
@@ -398,7 +396,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
         :type url: unicode
         """
         self._factory = factory
-        self._subprotocols = ['binary', 'base64']
+        self._subprotocols = [u'binary', u'base64']
         if subprotocol:
             self._subprotocols.append(subprotocol)
 
@@ -463,7 +461,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
         :type url: unicode
         """
         self._factory = factory
-        self._subprotocols = ['binary', 'base64']
+        self._subprotocols = [u'binary', u'base64']
         if subprotocol:
             self._subprotocols.append(subprotocol)
 
@@ -533,7 +531,7 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
 
     if factory.proxy is not None:
         factory.contextFactory = contextFactory
-        conn = reactor.connectTCP(factory.proxy['host'], factory.proxy['port'], factory, timeout, bindAddress)
+        conn = reactor.connectTCP(factory.proxy[u'host'], factory.proxy[u'port'], factory, timeout, bindAddress)
     else:
         if factory.isSecure:
             conn = reactor.connectSSL(factory.host, factory.port, factory, contextFactory, timeout, bindAddress)

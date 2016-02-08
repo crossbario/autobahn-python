@@ -61,6 +61,48 @@ __all__ = ("xor",
            "generate_user_password")
 
 
+def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
+    """
+    Given a string, return a truncated version of the string such that
+    the UTF8 encoding of the string is smaller than the given limit.
+
+    This function correctly truncates even in the presence of Unicode code
+    points that encode to multi-byte encodings which must not be truncated
+    in the middle.
+
+    :param text: The Unicode string to truncate.
+    :type text: unicode
+    :param limit: The number of bytes to limit the UTF8 encoding to.
+    :type limit: int
+
+    :returns: The truncated Unicode string.
+    :rtype: unicode
+    """
+    assert(type(text) == six.text_type)
+    assert(type(limit) in six.integer_types)
+    assert(limit >= 0)
+
+    # encode the given string in the specified encoding
+    s = text.encode(encoding)
+
+    # when the resulting byte string is longer than the given limit ..
+    if len(s) > limit:
+        # .. truncate, and
+        s = s[:limit]
+
+        # decode back, ignoring errors that result from truncation
+        # in the middle of multi-byte encodings
+        text = s.decode(encoding, 'ignore')
+
+        if return_encoded:
+            s = text.encode(encoding)
+
+    if return_encoded:
+        return s
+    else:
+        return text
+
+
 def xor(d1, d2):
     """
     XOR two binary strings of arbitrary (equal) length.
@@ -632,7 +674,7 @@ class ObservableMixin(object):
             raise RuntimeError(
                 "Invalid event '{event}'. Expected one of: {events}",
                 event=event,
-                events = ', '.join(self._valid_events),
+                events=', '.join(self._valid_events),
             )
 
     def on(self, event, handler):

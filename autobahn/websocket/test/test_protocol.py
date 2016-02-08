@@ -163,17 +163,6 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         self.assertEqual(self.transport._written[2:], b"\x03\xe8oh no")
         self.assertEqual(self.protocol.state, self.protocol.STATE_CLOSING)
 
-    def test_sendClose_nonstr_reason(self):
-        """
-        sendClose with a non-str reason still closes the connection, coercing
-        it to a string.
-        """
-        self.protocol.sendClose(code=1000, reason=12)
-
-        # We closed properly
-        self.assertEqual(self.transport._written[2:], b"\x03\xe812")
-        self.assertEqual(self.protocol.state, self.protocol.STATE_CLOSING)
-
     def test_sendClose_toolong(self):
         """
         sendClose with a too-long reason will truncate it.
@@ -182,7 +171,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
 
         # We closed properly
         self.assertEqual(self.transport._written[2:],
-                         b"\x03\xe8" + (b"abc" * 40) + b"...")
+                         b"\x03\xe8" + (b"abc" * 41))
         self.assertEqual(self.protocol.state, self.protocol.STATE_CLOSING)
 
     def test_sendClose_reason_with_no_code(self):
@@ -205,7 +194,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             self.protocol.sendClose(code="134")
 
-        self.assertIn("invalid type ", str(e.exception))
+        self.assertIn("invalid type", str(e.exception))
 
         # We shouldn't have closed
         self.assertEqual(self.transport._written, b"")

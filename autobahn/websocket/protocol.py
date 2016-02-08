@@ -48,7 +48,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
 
-from autobahn.util import Stopwatch, newid, wildcards2patterns
+from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
@@ -465,6 +465,7 @@ class WebSocketProtocol(object):
     SEND_STATE_INSIDE_MESSAGE_FRAME = 3
 
     # WebSocket protocol close codes
+    # See:https://www.iana.org/assignments/websocket/websocket.xml#close-code-number-rules
     #
     CLOSE_STATUS_CODE_NORMAL = 1000
     """Normal close of connection."""
@@ -502,6 +503,15 @@ class WebSocketProtocol(object):
     CLOSE_STATUS_CODE_INTERNAL_ERROR = 1011
     """The peer encountered an unexpected condition or internal error."""
 
+    CLOSE_STATUS_CODE_SERVICE_RESTART = 1012
+    """Service restart."""
+
+    CLOSE_STATUS_CODE_TRY_AGAIN_LATER = 1013
+    """Try again later."""
+
+    CLOSE_STATUS_CODE_UNASSIGNED1 = 1014
+    """Unassiged."""
+
     CLOSE_STATUS_CODE_TLS_HANDSHAKE_FAILED = 1015  # MUST NOT be set in close frame!
     """TLS handshake failed, i.e. server certificate could not be verified. (MUST NOT be used as status code when sending a close)."""
 
@@ -513,7 +523,9 @@ class WebSocketProtocol(object):
                                   CLOSE_STATUS_CODE_POLICY_VIOLATION,
                                   CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
                                   CLOSE_STATUS_CODE_MANDATORY_EXTENSION,
-                                  CLOSE_STATUS_CODE_INTERNAL_ERROR]
+                                  CLOSE_STATUS_CODE_INTERNAL_ERROR,
+                                  CLOSE_STATUS_CODE_SERVICE_RESTART,
+                                  CLOSE_STATUS_CODE_TRY_AGAIN_LATER]
     """Status codes allowed to send in close."""
 
     CONFIG_ATTRS_COMMON = ['debug',
@@ -594,13 +606,13 @@ class WebSocketProtocol(object):
                 self.wasMaxMessagePayloadSizeExceeded = True
                 self.failConnection(
                     WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
-                    "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize
+                    u'message exceeds payload limit of {} octets'.format(self.maxMessagePayloadSize)
                 )
             elif 0 < self.maxFramePayloadSize < length:
                 self.wasMaxFramePayloadSizeExceeded = True
                 self.failConnection(
                     WebSocketProtocol.CLOSE_STATUS_CODE_POLICY_VIOLATION,
-                    "frame exceeds payload limit of %d octets" % self.maxFramePayloadSize
+                    u'frame exceeds payload limit of {} octets'.format(self.maxFramePayloadSize)
                 )
 
     def onMessageFrameData(self, payload):
@@ -612,7 +624,10 @@ class WebSocketProtocol(object):
                 self.message_data_total_length += len(payload)
                 if 0 < self.maxMessagePayloadSize < self.message_data_total_length:
                     self.wasMaxMessagePayloadSizeExceeded = True
-                    self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG, "message exceeds payload limit of %d octets" % self.maxMessagePayloadSize)
+                    self.failConnection(
+                        WebSocketProtocol.CLOSE_STATUS_CODE_MESSAGE_TOO_BIG,
+                        u'message exceeds payload limit of {} octets'.format(self.maxMessagePayloadSize)
+                    )
                 self.message_data.append(payload)
             else:
                 self.frame_data.append(payload)
@@ -708,7 +723,7 @@ class WebSocketProtocol(object):
         # reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
         #
         if code is not None and (code < 1000 or (1000 <= code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
-            if self.protocolViolation("invalid close code %d" % code):
+            if self.protocolViolation(u'invalid close code {}'.format(code)):
                 return True
 
         # closing reason
@@ -721,7 +736,7 @@ class WebSocketProtocol(object):
             u = Utf8Validator()
             val = u.validate(reasonRaw)
             if not val[0]:
-                if self.invalidPayload("invalid close reason (non-UTF-8 payload)"):
+                if self.invalidPayload(u'invalid close reason (non-UTF8 payload)'):
                     return True
             self.remoteCloseReason = reasonRaw.decode('utf8')
 
@@ -797,7 +812,7 @@ class WebSocketProtocol(object):
             if self.debugCodePaths:
                 self.log.debug("onServerConnectionDropTimeout")
             self.wasClean = False
-            self.wasNotCleanReason = "server did not drop TCP connection (in time)"
+            self.wasNotCleanReason = u'server did not drop TCP connection (in time)'
             self.wasServerConnectionDropTimeout = True
             self.dropConnection(abort=True)
         else:
@@ -815,7 +830,7 @@ class WebSocketProtocol(object):
             if self.debugCodePaths:
                 self.log.debug("onOpenHandshakeTimeout fired")
             self.wasClean = False
-            self.wasNotCleanReason = "peer did not finish (in time) the opening handshake"
+            self.wasNotCleanReason = u'peer did not finish (in time) the opening handshake'
             self.wasOpenHandshakeTimeout = True
             self.dropConnection(abort=True)
         elif self.state == WebSocketProtocol.STATE_OPEN:
@@ -842,7 +857,7 @@ class WebSocketProtocol(object):
             if self.debugCodePaths:
                 self.log.debug("onCloseHandshakeTimeout fired")
             self.wasClean = False
-            self.wasNotCleanReason = "peer did not respond (in time) in closing handshake"
+            self.wasNotCleanReason = u'peer did not respond (in time) in closing handshake'
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
@@ -879,7 +894,7 @@ class WebSocketProtocol(object):
             if self.debugCodePaths:
                 self.log.debug("skipping dropConnection since connection is already closed")
 
-    def failConnection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason="Going Away"):
+    def failConnection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason=u'going away'):
         """
         Fails the WebSocket connection.
         """
@@ -891,13 +906,13 @@ class WebSocketProtocol(object):
             if self.failByDrop:
                 # brutally drop the TCP connection
                 self.wasClean = False
-                self.wasNotCleanReason = "I failed the WebSocket connection by dropping the TCP connection"
+                self.wasNotCleanReason = u'I failed the WebSocket connection by dropping the TCP connection'
                 self.dropConnection(abort=True)
 
             else:
                 if self.state != WebSocketProtocol.STATE_CLOSING:
                     # perform WebSocket closing handshake
-                    self.sendCloseFrame(code=code, reasonUtf8=reason.encode("UTF-8")[:125 - 2], isReply=False)
+                    self.sendCloseFrame(code=code, reasonUtf8=encode_truncate(reason, 123), isReply=False)
                 else:
                     # already performing closing handshake .. we now drop the TCP
                     # (this can happen e.g. if we encounter a 2nd protocol violation during closing HS)
@@ -917,7 +932,7 @@ class WebSocketProtocol(object):
         :returns: bool -- True, when any further processing should be discontinued.
         """
         if self.debugCodePaths:
-            self.log.debug("Protocol violation : %s" % reason)
+            self.log.debug("Protocol violation: {reason}", reason=reason)
         self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason)
         if self.failByDrop:
             return True
@@ -938,7 +953,7 @@ class WebSocketProtocol(object):
         :returns: bool -- True, when any further processing should be discontinued.
         """
         if self.debugCodePaths:
-            self.log.debug("Invalid payload : %s" % reason)
+            self.log.debug("Invalid payload: {reason}", reason=reason)
         self.failConnection(WebSocketProtocol.CLOSE_STATUS_CODE_INVALID_PAYLOAD, reason)
         if self.failByDrop:
             return True
@@ -999,7 +1014,7 @@ class WebSocketProtocol(object):
         else:
             self.state = WebSocketProtocol.STATE_CONNECTING
         self.send_state = WebSocketProtocol.SEND_STATE_GROUND
-        self.data = b""
+        self.data = b''
 
         # for chopped/synched sends, we need to queue to maintain
         # ordering when recalling the reactor to actually "force"
@@ -1116,7 +1131,7 @@ class WebSocketProtocol(object):
         else:
             if not self.wasClean:
                 if not self.droppedByMe and self.wasNotCleanReason is None:
-                    self.wasNotCleanReason = "peer dropped the TCP connection without previous WebSocket closing handshake"
+                    self.wasNotCleanReason = u'peer dropped the TCP connection without previous WebSocket closing handshake'
                 self._onClose(self.wasClean, WebSocketProtocol.CLOSE_STATUS_CODE_ABNORMAL_CLOSE, "connection was closed uncleanly (%s)" % self.wasNotCleanReason)
             else:
                 self._onClose(self.wasClean, self.remoteCloseCode, self.remoteCloseReason)
@@ -1366,19 +1381,19 @@ class WebSocketProtocol(object):
                     if self._perMessageCompress is not None and frame_rsv == 4:
                         pass
                     else:
-                        if self.protocolViolation("RSV = %d and no extension negotiated" % frame_rsv):
+                        if self.protocolViolation(u'RSV = {} and no extension negotiated'.format(frame_rsv)):
                             return False
 
                 # all client-to-server frames MUST be masked
                 #
                 if self.factory.isServer and self.requireMaskedClientFrames and not frame_masked:
-                    if self.protocolViolation("unmasked client-to-server frame"):
+                    if self.protocolViolation(u'unmasked client-to-server frame'):
                         return False
 
                 # all server-to-client frames MUST NOT be masked
                 #
                 if not self.factory.isServer and not self.acceptMaskedServerFrames and frame_masked:
-                    if self.protocolViolation("masked server-to-client frame"):
+                    if self.protocolViolation(u'masked server-to-client frame'):
                         return False
 
                 # check frame
@@ -1388,32 +1403,32 @@ class WebSocketProtocol(object):
                     # control frames MUST NOT be fragmented
                     #
                     if not frame_fin:
-                        if self.protocolViolation("fragmented control frame"):
+                        if self.protocolViolation(u'fragmented control frame'):
                             return False
 
                     # control frames MUST have payload 125 octets or less
                     #
                     if frame_payload_len1 > 125:
-                        if self.protocolViolation("control frame with payload length > 125 octets"):
+                        if self.protocolViolation(u'control frame with payload length > 125 octets'):
                             return False
 
                     # check for reserved control frame opcodes
                     #
                     if frame_opcode not in [8, 9, 10]:
-                        if self.protocolViolation("control frame using reserved opcode %d" % frame_opcode):
+                        if self.protocolViolation(u'control frame using reserved opcode {}'.format(frame_opcode)):
                             return False
 
                     # close frame : if there is a body, the first two bytes of the body MUST be a 2-byte
                     # unsigned integer (in network byte order) representing a status code
                     #
                     if frame_opcode == 8 and frame_payload_len1 == 1:
-                        if self.protocolViolation("received close control frame with payload len 1"):
+                        if self.protocolViolation(u'received close control frame with payload len 1'):
                             return False
 
                     # control frames MUST NOT be compressed
                     #
                     if self._perMessageCompress is not None and frame_rsv == 4:
-                        if self.protocolViolation("received compressed control frame [%s]" % self._perMessageCompress.EXTENSION_NAME):
+                        if self.protocolViolation(u'received compressed control frame [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
                             return False
 
                 else:  # data frame
@@ -1421,25 +1436,25 @@ class WebSocketProtocol(object):
                     # check for reserved data frame opcodes
                     #
                     if frame_opcode not in [0, 1, 2]:
-                        if self.protocolViolation("data frame using reserved opcode %d" % frame_opcode):
+                        if self.protocolViolation(u'data frame using reserved opcode {}'.format(frame_opcode)):
                             return False
 
                     # check opcode vs message fragmentation state 1/2
                     #
                     if not self.inside_message and frame_opcode == 0:
-                        if self.protocolViolation("received continuation data frame outside fragmented message"):
+                        if self.protocolViolation(u'received continuation data frame outside fragmented message'):
                             return False
 
                     # check opcode vs message fragmentation state 2/2
                     #
                     if self.inside_message and frame_opcode != 0:
-                        if self.protocolViolation("received non-continuation data frame while inside fragmented message"):
+                        if self.protocolViolation(u'received non-continuation data frame while inside fragmented message'):
                             return False
 
                     # continuation data frames MUST NOT have the compressed bit set
                     #
                     if self._perMessageCompress is not None and frame_rsv == 4 and self.inside_message:
-                        if self.protocolViolation("received continuation data frame with compress bit set [%s]" % self._perMessageCompress.EXTENSION_NAME):
+                        if self.protocolViolation(u'received continuation data frame with compress bit set [{}]'.format(self._perMessageCompress.EXTENSION_NAME)):
                             return False
 
                 # compute complete header length
@@ -1472,16 +1487,16 @@ class WebSocketProtocol(object):
                     if frame_payload_len1 == 126:
                         frame_payload_len = struct.unpack("!H", self.data[i:i + 2])[0]
                         if frame_payload_len < 126:
-                            if self.protocolViolation("invalid data frame length (not using minimal length encoding)"):
+                            if self.protocolViolation(u'invalid data frame length (not using minimal length encoding)'):
                                 return False
                         i += 2
                     elif frame_payload_len1 == 127:
                         frame_payload_len = struct.unpack("!Q", self.data[i:i + 8])[0]
                         if frame_payload_len > 0x7FFFFFFFFFFFFFFF:  # 2**63
-                            if self.protocolViolation("invalid data frame length (>2^63)"):
+                            if self.protocolViolation(u'invalid data frame length (>2^63)'):
                                 return False
                         if frame_payload_len < 65536:
-                            if self.protocolViolation("invalid data frame length (not using minimal length encoding)"):
+                            if self.protocolViolation(u'invalid data frame length (not using minimal length encoding)'):
                                 return False
                         i += 8
                     else:
@@ -1641,7 +1656,7 @@ class WebSocketProtocol(object):
             if self.utf8validateIncomingCurrentMessage:
                 self.utf8validateLast = self.utf8validator.validate(payload)
                 if not self.utf8validateLast[0]:
-                    if self.invalidPayload("encountered invalid UTF-8 while processing text message at payload octet index %d" % self.utf8validateLast[3]):
+                    if self.invalidPayload(u'encountered invalid UTF-8 while processing text message at payload octet index {}'.format(self.utf8validateLast[3])):
                         return False
 
             self._onMessageFrameData(payload)
@@ -1673,11 +1688,8 @@ class WebSocketProtocol(object):
                 #
                 if self.utf8validateIncomingCurrentMessage:
                     if not self.utf8validateLast[1]:
-                        if self.invalidPayload("UTF-8 text message payload ended within Unicode code point at payload octet index %d" % self.utf8validateLast[3]):
+                        if self.invalidPayload(u'UTF-8 text message payload ended within Unicode code point at payload octet index {}'.format(self.utf8validateLast[3])):
                             return False
-
-                # if self.debug:
-                #   self.log.debug("Traffic statistics:\n" + str(self.trafficStats))
 
                 if self.state == WebSocketProtocol.STATE_OPEN:
                     self.trafficStats.incomingWebSocketMessages += 1
@@ -1936,31 +1948,28 @@ class WebSocketProtocol(object):
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.sendClose`
         """
         if code is not None:
-            if type(code) != int:
-                raise Exception("invalid type %s for close code" % type(code))
+            if type(code) not in six.integer_types:
+                raise Exception("invalid type '{}' for close code (must be an integer)".format(type(code)))
+
+            # 1000 Normal Closure
+            # 3000-3999 First Come First Served
+            # 4000-4999 Reserved for Private Use
+            # See: https://www.iana.org/assignments/websocket/websocket.xml#close-code-number-rules
+            #
             if code != 1000 and not (3000 <= code <= 4999):
-                raise Exception("invalid close code %d" % code)
+                raise Exception("invalid close code {} (must be 1000 or from [3000, 4999])".format(code))
 
         if reason is not None:
             if code is None:
                 raise Exception("close reason without close code")
 
-            if type(reason) not in (str, six.text_type):
-                # If it's not UTF-8 encodable (str or unicode), coerce it to a
-                # string so we can close properly.
-                reason = str(reason)
+            if type(reason) != six.text_type:
+                raise Exception("reason must be of type unicode (was '{}')".format(type(reason)))
 
-            reasonUtf8 = reason.encode("utf8")
-
-            if len(reasonUtf8) + 2 > 125:
-                # If it's too long, truncate it. A partial message is not
-                # unlikely (for example, an exception), and it is better to
-                # give the start of the message than drop the connection
-                # forever.
-                reasonUtf8 = reasonUtf8[:120] + b"..."
-                assert not len(reasonUtf8) + 2 > 125
+            reasonUtf8 = encode_truncate(reason, 123)
         else:
             reasonUtf8 = None
+
         self.sendCloseFrame(code=code, reasonUtf8=reasonUtf8, isReply=False)
 
     def beginMessage(self, isBinary=False, doNotCompress=False):
@@ -3719,7 +3728,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             except Exception as e:
                 # immediately close the WS connection
                 #
-                self.failConnection(1000, str(e))
+                self.failConnection(1000, u'{}'.format(e))
             else:
                 # fire handler on derived class
                 #

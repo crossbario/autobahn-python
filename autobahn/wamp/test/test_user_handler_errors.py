@@ -108,6 +108,8 @@ if os.environ.get('USE_TWISTED', False):
         # twice)...but that would mean switching all test-running over
         # to py-test
 
+        skip = True
+
         def test_on_join(self):
             session = MockApplicationSession()
             exception = RuntimeError("blammo")
