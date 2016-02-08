@@ -79,23 +79,19 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # start Twisted logging to stdout
-    ##
     log.startLogging(sys.stdout)
 
     # we use an Autobahn utility to install the "best" available Twisted reactor
-    ##
     from autobahn.choosereactor import install_reactor
     reactor = install_reactor()
     print("Running on reactor {}".format(reactor))
 
     # start a WebSocket server
-    ##
-    wsfactory = EchoServerFactory(args.wsurl, debug=args.debug)
+    wsfactory = EchoServerFactory(args.wsurl)
     wsserver = serverFromString(reactor, args.websocket)
     wsserver.listen(wsfactory)
 
     # start a Web server
-    ##
     if args.web != "":
         from twisted.web.server import Site
         from twisted.web.static import File
@@ -105,5 +101,4 @@ if __name__ == '__main__':
         webserver.listen(webfactory)
 
     # now enter the Twisted reactor loop
-    ##
     reactor.run()

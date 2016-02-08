@@ -117,7 +117,6 @@ if os.environ.get('USE_TWISTED', False):
             """
 
             if False:
-                self.proto.debug = True
                 self.proto.factory._log = print
 
             # get to STATE_OPEN
@@ -149,11 +148,6 @@ if os.environ.get('USE_TWISTED', False):
 
     class TestPing(unittest.TestCase):
         def setUp(self):
-            if False:
-                # debug leftover reactor events
-                import twisted.internet.base
-                twisted.internet.base.DelayedCall.debug = True
-
             self.factory = WebSocketServerFactory(protocols=['wamp.2.json'])
             self.factory.protocol = WebSocketServerProtocol
             self.factory.doStart()
@@ -178,10 +172,6 @@ if os.environ.get('USE_TWISTED', False):
             # STATE_OPEN
             # XXX double-check this is the correct code-path to get here
             # "normally"?
-
-            if False:
-                self.proto.debug = True
-                self.proto.factory._log = print
 
             # get to STATE_OPEN
             self.proto.data = mock_handshake_client

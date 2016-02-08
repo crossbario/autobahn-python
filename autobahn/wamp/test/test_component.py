@@ -192,7 +192,6 @@ if os.environ.get('USE_TWISTED', False):
                     "WAMP router to run WAMP integration tests")
 
         def setUp(self):
-            self.debug = False
             self.url = os.environ.get("WAMP_ROUTER_URL")
             self.realm = u"realm1"
 
@@ -206,8 +205,6 @@ if os.environ.get('USE_TWISTED', False):
                     extra=dict(test=self),
                     realm=self.realm,
                     make=component,
-                    debug=bool(os.environ.get('debug_websocket', False)),
-                    debug_app=bool(os.environ.get('debug_app', False))
                 )
                 c.setServiceParent(app)
 

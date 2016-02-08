@@ -386,8 +386,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
                  reactor=None,
                  enableCompression=True,
                  autoFragmentSize=0,
-                 subprotocol=None,
-                 debug=False):
+                 subprotocol=None):
         """
 
         :param factory: Stream-based factory to be wrapped.
@@ -403,8 +402,7 @@ class WrappingWebSocketServerFactory(WebSocketServerFactory):
         WebSocketServerFactory.__init__(self,
                                         url=url,
                                         reactor=reactor,
-                                        protocols=self._subprotocols,
-                                        debug=debug)
+                                        protocols=self._subprotocols)
 
         # automatically fragment outgoing traffic into WebSocket frames
         # of this size
@@ -451,8 +449,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
                  reactor=None,
                  enableCompression=True,
                  autoFragmentSize=0,
-                 subprotocol=None,
-                 debug=False):
+                 subprotocol=None):
         """
 
         :param factory: Stream-based factory to be wrapped.
@@ -468,8 +465,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
         WebSocketClientFactory.__init__(self,
                                         url=url,
                                         reactor=reactor,
-                                        protocols=self._subprotocols,
-                                        debug=debug)
+                                        protocols=self._subprotocols)
 
         # automatically fragment outgoing traffic into WebSocket frames
         # of this size

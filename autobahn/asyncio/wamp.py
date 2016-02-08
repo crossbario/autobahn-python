@@ -78,9 +78,7 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
-    def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_app=False,
-                 ssl=None):
+    def __init__(self, url, realm, extra=None, serializers=None, ssl=None):
         """
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
         :type url: unicode
@@ -95,12 +93,6 @@ class ApplicationRunner(object):
            Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
 
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
-
         :param ssl: An (optional) SSL context instance or a bool. See
            the documentation for the `loop.create_connection` asyncio
            method, to which this value is passed as the ``ssl=``
@@ -114,8 +106,6 @@ class ApplicationRunner(object):
         self.realm = realm
         self.extra = extra or dict()
         self.serializers = serializers
-        self.debug = debug
-        self.debug_app = debug_app
         self.ssl = ssl
 
     def run(self, make):
@@ -135,7 +125,6 @@ class ApplicationRunner(object):
                 self.log.failure("App session could not be created! ")
                 asyncio.get_event_loop().stop()
             else:
-                session.debug_app = self.debug_app
                 return session
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
@@ -151,8 +140,7 @@ class ApplicationRunner(object):
             ssl = self.ssl
 
         # 2) create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
-                                                       debug=self.debug)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers)
 
         # 3) start the client
         loop = asyncio.get_event_loop()
@@ -161,10 +149,8 @@ class ApplicationRunner(object):
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
         (transport, protocol) = loop.run_until_complete(coro)
 
-        if self.debug or self.debug_app:
-            txaio.start_logging(level='debug')
-        else:
-            txaio.start_logging(level='info')
+        # start logging
+        txaio.start_logging(level='info')
 
         try:
             loop.add_signal_handler(signal.SIGTERM, loop.stop)

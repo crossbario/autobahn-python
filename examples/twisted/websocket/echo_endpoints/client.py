@@ -81,21 +81,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # start Twisted logging to stdout
-    ##
     log.startLogging(sys.stdout)
 
     # we use an Autobahn utility to import the "best" available Twisted reactor
-    ##
     from autobahn.choosereactor import install_reactor
     reactor = install_reactor()
     print("Running on reactor {}".format(reactor))
 
     # start a WebSocket client
-    ##
-    wsfactory = EchoClientFactory(args.wsurl, debug=args.debug)
+    wsfactory = EchoClientFactory(args.wsurl)
     wsclient = clientFromString(reactor, args.websocket)
     wsclient.connect(wsfactory)
 
     # now enter the Twisted reactor loop
-    ##
     reactor.run()

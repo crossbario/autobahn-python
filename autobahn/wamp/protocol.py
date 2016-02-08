@@ -82,14 +82,6 @@ class BaseSession(ObservableMixin):
             ]
         )
 
-        # this is for library level debugging
-        self.debug = False
-
-        # this is for app level debugging. exceptions raised in user code
-        # will get logged (that is, when invoking remoted procedures or
-        # when invoking event handlers)
-        self.debug_app = False
-
         # this is for marshalling traceback from exceptions thrown in user
         # code within WAMP error messages (that is, when invoking remoted
         # procedures)

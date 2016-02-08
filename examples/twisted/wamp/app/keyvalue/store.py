@@ -78,11 +78,7 @@ if __name__ == '__main__':
     import argparse
 
     # parse command line arguments
-    ##
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Enable debug output.")
 
     parser.add_argument("--web", type=int, default=8080,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
@@ -92,33 +88,24 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.debug:
-        from twisted.python import log
-        log.startLogging(sys.stdout)
+    from twisted.python import log
+    log.startLogging(sys.stdout)
 
     # import Twisted reactor
-    ##
     from twisted.internet import reactor
     print("Using Twisted reactor {0}".format(reactor.__class__))
 
     # create embedded web server for static files
-    ##
     if args.web:
         from twisted.web.server import Site
         from twisted.web.static import File
         reactor.listenTCP(args.web, Site(File(".")))
 
     # run WAMP application component
-    ##
     from autobahn.twisted.wamp import ApplicationRunner
     router = args.router or u'ws://127.0.0.1:9000'
 
-    runner = ApplicationRunner(router, u"realm1", standalone=not args.router,
-                               debug=False,             # low-level logging
-                               debug_wamp=args.debug,   # WAMP level logging
-                               debug_app=args.debug     # app-level logging
-                               )
+    runner = ApplicationRunner(router, u"realm1", standalone=not args.router)
 
     # start the component and the Twisted reactor ..
-    ##
     runner.run(KeyValueStore)

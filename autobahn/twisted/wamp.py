@@ -91,9 +91,7 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, url, realm, extra=None, serializers=None,
-                 debug=False, debug_app=False,
-                 ssl=None, proxy=None):
+    def __init__(self, url, realm, extra=None, serializers=None, ssl=None, proxy=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -108,12 +106,6 @@ class ApplicationRunner(object):
         :param serializers: A list of WAMP serializers to use (or None for default serializers).
            Serializers must implement :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
-
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
 
         :param ssl: (Optional). If specified this should be an
             instance suitable to pass as ``sslContextFactory`` to
@@ -135,8 +127,6 @@ class ApplicationRunner(object):
         self.realm = realm
         self.extra = extra or dict()
         self.serializers = serializers
-        self.debug = debug
-        self.debug_app = debug_app
         self.ssl = ssl
         self.proxy = proxy
 
@@ -167,11 +157,7 @@ class ApplicationRunner(object):
             from twisted.internet import reactor
             txaio.use_twisted()
             txaio.config.loop = reactor
-
-            if self.debug or self.debug_app:
-                txaio.start_logging(level='debug')
-            else:
-                txaio.start_logging(level='info')
+            txaio.start_logging(level='info')
 
         isSecure, host, port, resource, path, params = parseWsUrl(self.url)
 
@@ -190,12 +176,10 @@ class ApplicationRunner(object):
                     # caller to deal with errors
                     raise
             else:
-                session.debug_app = self.debug_app
                 return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers,
-                                                       proxy=self.proxy, debug=self.debug)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy)
 
         # supress pointless log noise like
         # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
@@ -375,9 +359,7 @@ class Application(object):
         self.session = _ApplicationSession(config, self)
         return self.session
 
-    def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1",
-            debug=False, debug_app=False,
-            start_reactor=True):
+    def run(self, url=u"ws://localhost:8080/ws", realm=u"realm1", start_reactor=True):
         """
         Run the application.
 
@@ -385,13 +367,8 @@ class Application(object):
         :type url: unicode
         :param realm: The realm on the WAMP router to join.
         :type realm: unicode
-        :param debug: Turn on low-level debugging.
-        :type debug: bool
-        :param debug_app: Turn on app-level debugging.
-        :type debug_app: bool
         """
-        runner = ApplicationRunner(url, realm,
-                                   debug=debug, debug_app=debug_app)
+        runner = ApplicationRunner(url, realm)
         runner.run(self.__call__, start_reactor)
 
     def register(self, uri=None):
@@ -562,8 +539,7 @@ if service:
         """
         factory = WampWebSocketClientFactory
 
-        def __init__(self, url, realm, make, extra=None, context_factory=None,
-                     debug=False, debug_app=False):
+        def __init__(self, url, realm, make, extra=None, context_factory=None):
             """
 
             :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -583,20 +559,12 @@ if service:
                 the ``listenSSL()`` call; see https://twistedmatrix.com/documents/current/api/twisted.internet.interfaces.IReactorSSL.connectSSL.html
             :type context_factory: twisted.internet.ssl.ClientContextFactory or None
 
-            :param debug: Turn on low-level debugging.
-            :type debug: bool
-
-            :param debug_app: Turn on app-level debugging.
-            :type debug_app: bool
-
             You can replace the attribute factory in order to change connectionLost or connectionFailed behaviour.
             The factory attribute must return a WampWebSocketClientFactory object
             """
             self.url = url
             self.realm = realm
             self.extra = extra or dict()
-            self.debug = debug
-            self.debug_app = debug_app
             self.make = make
             self.context_factory = context_factory
             service.MultiService.__init__(self)
@@ -612,11 +580,10 @@ if service:
             def create():
                 cfg = ComponentConfig(self.realm, self.extra)
                 session = self.make(cfg)
-                session.debug_app = self.debug_app
                 return session
 
             # create a WAMP-over-WebSocket transport client factory
-            transport_factory = self.factory(create, url=self.url, debug=self.debug)
+            transport_factory = self.factory(create, url=self.url)
 
             # setup the client from a Twisted endpoint
 

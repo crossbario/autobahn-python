@@ -80,11 +80,7 @@ if __name__ == '__main__':
     import argparse
 
     # parse command line arguments
-    ##
     parser = argparse.ArgumentParser()
-
-    parser.add_argument("-d", "--debug", action="store_true",
-                        help="Enable debug output.")
 
     parser.add_argument("--web", type=int, default=8080,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
@@ -94,18 +90,14 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.debug:
-        from twisted.python import log
-        log.startLogging(sys.stdout)
+    from twisted.python import log
+    log.startLogging(sys.stdout)
 
     # run WAMP application component
-    ##
     from autobahn.twisted.wamp import ApplicationRunner
 
     runner = ApplicationRunner(
         environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws"),
         u"crossbardemo",
-
-        debug=False,  # optional; log even more details
     )
     runner.run(Calculator)

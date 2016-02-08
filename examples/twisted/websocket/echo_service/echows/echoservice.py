@@ -53,13 +53,12 @@ class EchoService(service.Service):
     echo server running under path "/ws".
     """
 
-    def __init__(self, port=8080, debug=False):
+    def __init__(self, port=8080):
         self.port = port
-        self.debug = debug
 
     def startService(self):
 
-        factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % self.port, debug=self.debug)
+        factory = WebSocketServerFactory(u"ws://127.0.0.1:%d" % self.port)
         factory.protocol = EchoServerProtocol
 
         # FIXME: Site.start/stopFactory should start/stop factories wrapped as Resources

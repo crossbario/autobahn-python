@@ -38,9 +38,8 @@ class AppService(MultiService):
     """
 
     def startService(self):
-
         # create WebSocket echo service and make it a child of our app service
-        svc = EchoService(self.port, self.debug)
+        svc = EchoService(self.port)
         svc.setName("EchoService")
         svc.setServiceParent(self)
 
@@ -48,7 +47,6 @@ class AppService(MultiService):
 
 
 class Options(usage.Options):
-    optFlags = [['debug', 'd', 'Emit debug messages']]
     optParameters = [["port", "p", 8080, "Listening port (for both Web and WebSocket) - default 8080."]]
 
 
@@ -61,6 +59,5 @@ def makeService(options):
     # create application service and forward command line options ..
     service = AppService()
     service.port = int(options['port'])
-    service.debug = options['debug']
 
     return service
