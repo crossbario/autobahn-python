@@ -108,7 +108,7 @@ class WampWebSocketProtocol(object):
                 self.log.trace("WAMP SEND: message={message}, session={session}, authid={authid}", authid=self._session._authid, session=self._session._session_id, message=msg)
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
-                self.log.failure("WAMP message serialization error")
+                self.log.error("WAMP message serialization error")
                 # all exceptions raised from above should be serialization errors ..
                 raise SerializationError(u"WAMP message serialization error: {0}".format(e))
             else:
