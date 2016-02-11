@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import os
 import re
 import sys
 import platform
@@ -128,6 +129,8 @@ extras_require_serialization = [
 
 # payload encryption
 #
+# enforce use of bundled libsodium
+os.environ['SODIUM_INSTALL'] = 'bundled'
 extras_require_encryption = [
     'pynacl>=1.0',              # Apache license
     'pytrie>=0.2',              # BSD license
