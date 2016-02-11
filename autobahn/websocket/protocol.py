@@ -698,27 +698,33 @@ class WebSocketProtocol(object):
         :param reasonRaw: Close reason (when present, a status code MUST have been also be present).
         :type reasonRaw: bytes
         """
-        self.remoteCloseCode = code
+        self.remoteCloseCode = None
+        self.remoteCloseReason = None
 
         # reserved close codes: 0-999, 1004, 1005, 1006, 1011-2999, >= 5000
         #
         if code is not None and (code < 1000 or (1000 <= code <= 2999 and code not in WebSocketProtocol.CLOSE_STATUS_CODES_ALLOWED) or code >= 5000):
             if self._protocol_violation(u'invalid close code {}'.format(code)):
                 return True
+            else:
+                self.remoteCloseCode = WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL
+        else:
+            self.remoteCloseCode = code
 
         # closing reason
         #
-        if reasonRaw is None:
-            self.remoteCloseReason = None
-        else:
+        if reasonRaw is not None:
             # we use our own UTF-8 validator to get consistent and fully conformant
             # UTF-8 validation behavior
             u = Utf8Validator()
             val = u.validate(reasonRaw)
-            if not val[0]:
+
+            # the UTF8 must be valid _and_ end on a Unicode code point
+            if not (val[0] and val[1]):
                 if self._invalid_payload(u'invalid close reason (non-UTF8 payload)'):
                     return True
-            self.remoteCloseReason = reasonRaw.decode('utf8')
+            else:
+                self.remoteCloseReason = reasonRaw.decode('utf8')
 
         # handle receive of close frame depending on protocol state
         #
@@ -759,7 +765,7 @@ class WebSocketProtocol(object):
             else:
                 # Either reply with same code/reason, or code == NORMAL/reason=None
                 if self.echoCloseCodeReason:
-                    self.sendCloseFrame(code=code, reasonUtf8=self.remoteCloseReason, isReply=True)
+                    self.sendCloseFrame(code=self.remoteCloseCode, reasonUtf8=encode_truncate(self.remoteCloseReason, 123), isReply=True)
                 else:
                     self.sendCloseFrame(code=WebSocketProtocol.CLOSE_STATUS_CODE_NORMAL, isReply=True)
 

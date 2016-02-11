@@ -78,9 +78,12 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     :returns: The truncated Unicode string.
     :rtype: unicode
     """
-    assert(type(text) == six.text_type)
+    assert(text is None or type(text) == six.text_type)
     assert(type(limit) in six.integer_types)
     assert(limit >= 0)
+
+    if text is None:
+        return
 
     # encode the given string in the specified encoding
     s = text.encode(encoding)
