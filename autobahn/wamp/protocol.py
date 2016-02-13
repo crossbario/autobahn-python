@@ -390,10 +390,10 @@ class ApplicationSession(BaseSession):
             self.log.error(fail.value.error_message())
         else:
             self.log.error(
-                u'{msg}: {traceback}',
+                u'{msg}: {traceback}'.format(
                 msg=msg,
                 traceback=txaio.failure_format_traceback(fail),
-            )
+            ))
 
     def _swallow_error(self, fail, msg):
         '''
@@ -411,8 +411,8 @@ class ApplicationSession(BaseSession):
             self.onUserError(fail, msg)
         except Exception:
             self.log.error(
-                "Internal error: {tb}",
-                tb=txaio.failure_format_traceback(txaio.create_failure()),
+                "Internal error: {tb}".format(
+                tb=txaio.failure_format_traceback(txaio.create_failure())),
             )
         return None
 
@@ -565,7 +565,7 @@ class ApplicationSession(BaseSession):
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                                     decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(False, topic, encrypted_payload)
                                 except Exception as e:
-                                    self.log.warn("failed to decrypt application payload: {error}", error=e)
+                                    self.log.warn("failed to decrypt application payload: {error}".format(error=e))
                                 else:
                                     if topic != decrypted_topic:
                                         self.log.warn("envelope topic URI does not match encrypted one")
