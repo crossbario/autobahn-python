@@ -1030,7 +1030,7 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
         """
         if details.reason.startswith('wamp.error.'):
-            self.log.error('{reason}: {wamp_message}', reason=details.reason, wamp_message=details.message)
+            self.log.error('{reason}: {wamp_message}'.format(reason=details.reason, wamp_message=details.message))
 
         if self._transport:
             self.disconnect()
