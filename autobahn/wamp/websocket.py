@@ -48,7 +48,7 @@ class WampWebSocketProtocol(object):
 
     def _bailout(self, code, reason=None):
         self.log.debug('Failing WAMP-over-WebSocket transport: code={code}, reason="{reason}"', code=code, reason=reason)
-        self.failConnection(code, reason)
+        self._fail_connection(code, reason)
 
     def onOpen(self):
         """

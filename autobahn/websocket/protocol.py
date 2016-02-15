@@ -877,7 +877,7 @@ class WebSocketProtocol(object):
         Fails the WebSocket connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.log.debug("Failing connection: {code}: {reason}", code=code, reason=reason)
+            self.log.debug("failing connection: {code}: {reason}", code=code, reason=reason)
 
             self.failedByMe = True
 
@@ -897,7 +897,7 @@ class WebSocketProtocol(object):
                     self.dropConnection(abort=False)
 
         else:
-            self.log.debug("skipping failConnection since connection is already closed")
+            self.log.debug("skip failing of connection since connection is already closed")
 
     def _protocol_violation(self, reason):
         """
