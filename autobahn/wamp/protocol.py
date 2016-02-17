@@ -387,7 +387,9 @@ class ApplicationSession(BaseSession):
             suggested you log this immediately after the exception.
         """
         if isinstance(fail.value, exception.ApplicationError):
-            self.log.error(fail.value.error_message())
+            # silence on errors raised explicitly from the app
+            # previous code: self.log.error(fail.value.error_message())
+            pass
         else:
             self.log.error(
                 u'{msg}: {traceback}',
