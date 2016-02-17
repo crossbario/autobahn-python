@@ -8,7 +8,7 @@ Changelog
 0.12.0
 ------
 
-`Published 2015-01-30 <https://pypi.python.org/pypi/autobahn/0.12.0>`__
+`Published 2016-01-30 <https://pypi.python.org/pypi/autobahn/0.12.0>`__
 
 * new: support CBOR serialization in WAMP
 * new: support WAMP payload transparency
