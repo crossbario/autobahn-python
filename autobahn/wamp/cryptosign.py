@@ -143,7 +143,7 @@ class SigningKey(object):
 
         self._key = key
         self._comment = comment
-        self._can_sign = isinstance(key, SigningKey)
+        self._can_sign = isinstance(key, signing.SigningKey)
 
     def __str__(self):
         return u'Key(can_sign={}, comment="{}", public_key={})'.format(self.can_sign(), self.comment(), self.public_key())
@@ -193,8 +193,8 @@ class SigningKey(object):
         :returns: The signature.
         :rtype: bytes
         """
-        if not self._is_private:
-            raise Exception("private key required to sign")
+        if not self._can_sign:
+            raise Exception("a signing key required to sign")
 
         if type(data) != six.binary_type:
             raise Exception("data to be signed must be binary")
