@@ -199,7 +199,14 @@ class SigningKey(object):
         if type(data) != six.binary_type:
             raise Exception("data to be signed must be binary")
 
-        return create_future_success(self._key.sign(data))
+        # sig is a nacl.signing.SignedMessage
+        sig = self._key.sign(data)
+
+        # we only return the actual signature! if we return "sig",
+        # it get coerced into the concatenation of message + signature
+        # not sure which order, but we don't want that. we only want
+        # the signature
+        return create_future_success(sig.signature)
 
     @inlineCallbacks
     def sign_challenge(self, session, challenge):
