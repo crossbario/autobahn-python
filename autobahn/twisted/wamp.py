@@ -369,7 +369,7 @@ class Application(object):
         :type realm: unicode
         """
         runner = ApplicationRunner(url, realm)
-        runner.run(self.__call__, start_reactor)
+        return runner.run(self.__call__, start_reactor)
 
     def register(self, uri=None):
         """
