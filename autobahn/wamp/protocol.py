@@ -31,6 +31,7 @@ import txaio
 import inspect
 
 from autobahn import wamp
+from autobahn.util import IdGenerator, ObservableMixin
 from autobahn.wamp import uri
 from autobahn.wamp import message
 from autobahn.wamp import types
@@ -39,9 +40,7 @@ from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
 from autobahn.wamp.interfaces import IApplicationSession  # noqa
 from autobahn.wamp.types import SessionDetails
-from autobahn.wamp.keyring import EncryptedPayload
-from autobahn.util import IdGenerator, ObservableMixin
-
+from autobahn.wamp.cryptobox import EncryptedPayload
 from autobahn.wamp.request import \
     Publication, \
     Subscription, \

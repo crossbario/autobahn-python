@@ -31,7 +31,6 @@ import binascii
 import struct
 
 import six
-from nacl import public, encoding, signing
 
 from txaio import create_future_success
 
@@ -39,19 +38,34 @@ from autobahn import util
 from autobahn.wamp.types import Challenge
 
 from twisted.internet.defer import inlineCallbacks, returnValue
-from twisted.internet.protocol import Factory
-from twisted.internet.endpoints import UNIXClientEndpoint
+
+__all__ = []
 
 try:
-    from twisted.conch.ssh.agent import SSHAgentClient
+    # try to import everything that is optional for Autobahn in
+    # general, but which we need for WAMP-cryptosign
+    from nacl import public, encoding, signing
 except ImportError:
-    # twisted.conch is not yet fully ported to Python 3
-    _HAS_SSH_AGENT_SUPPORT = False
+    HAS_CRYPTOSIGN = False
+    HAS_CRYPTOSIGN_SSHAGENT = False
 else:
-    _HAS_SSH_AGENT_SUPPORT = True
+    HAS_CRYPTOSIGN = True
+    __all__.append('SigningKey')
+    try:
+        # WAMP-cryptosign support for SSH agent is currently
+        # only available on Twisted (on Python 2)
+        from twisted.internet.protocol import Factory
+        from twisted.internet.endpoints import UNIXClientEndpoint
+        from twisted.conch.ssh.agent import SSHAgentClient
+    except ImportError:
+        # twisted.conch is not yet fully ported to Python 3
+        HAS_CRYPTOSIGN_SSHAGENT = False
+    else:
+        HAS_CRYPTOSIGN_SSHAGENT = True
+        __all__.append('SSHAgentSigningKey')
 
 
-def unpack(keydata):
+def _unpack(keydata):
     """
     Unpack a SSH agent key blob into parts.
 
@@ -68,7 +82,7 @@ def unpack(keydata):
     return parts
 
 
-def pack(keyparts):
+def _pack(keyparts):
     """
     Pack parts into a SSH key blob.
     """
@@ -103,7 +117,7 @@ def _read_ssh_ed25519_pubkey(keydata):
     blob = binascii.a2b_base64(keydata)
 
     try:
-        key = unpack(blob)[1]
+        key = _unpack(blob)[1]
     except Exception as e:
         raise Exception('could not parse key ({})'.format(e))
 
@@ -122,292 +136,295 @@ def _read_ssh_ed25519_pubkey(keydata):
 #   - raw byte string or file with raw bytes
 #   - SSH public key string or key file
 
+if HAS_CRYPTOSIGN:
 
-class SigningKey(object):
-    """
-    A cryptosign private key for signing, and hence usable for authentication or a
-    public key usable for verification (but can't be used for signing).
-    """
-
-    def __init__(self, key, comment=None):
+    class SigningKey(object):
+        """
+        A cryptosign private key for signing, and hence usable for authentication or a
+        public key usable for verification (but can't be used for signing).
         """
 
-        :param key: A Ed25519 private signing key or a Ed25519 public verification key.
-        :type key: instance of nacl.public.VerifyKey or instance of nacl.public.SigningKey
-        """
-        if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
-            raise Exception("invalid type {} for key".format(type(key)))
+        def __init__(self, key, comment=None):
+            """
 
-        if not (comment is None or type(comment) == six.text_type):
-            raise Exception("invalid type {} for comment".format(type(comment)))
+            :param key: A Ed25519 private signing key or a Ed25519 public verification key.
+            :type key: instance of nacl.public.VerifyKey or instance of nacl.public.SigningKey
+            """
+            if not (isinstance(key, signing.VerifyKey) or isinstance(key, signing.SigningKey)):
+                raise Exception("invalid type {} for key".format(type(key)))
 
-        self._key = key
-        self._comment = comment
-        self._can_sign = isinstance(key, signing.SigningKey)
+            if not (comment is None or type(comment) == six.text_type):
+                raise Exception("invalid type {} for comment".format(type(comment)))
 
-    def __str__(self):
-        return u'Key(can_sign={}, comment="{}", public_key={})'.format(self.can_sign(), self.comment(), self.public_key())
+            self._key = key
+            self._comment = comment
+            self._can_sign = isinstance(key, signing.SigningKey)
 
-    def can_sign(self):
-        """
-        Check if the key can be used to sign.
+        def __str__(self):
+            return u'Key(can_sign={}, comment="{}", public_key={})'.format(self.can_sign(), self.comment(), self.public_key())
 
-        :returns: `True`, iff the key can sign.
-        :rtype: bool
-        """
-        return self._can_sign
+        def can_sign(self):
+            """
+            Check if the key can be used to sign.
 
-    def comment(self):
-        """
-        Get the key comment (if any).
+            :returns: `True`, iff the key can sign.
+            :rtype: bool
+            """
+            return self._can_sign
 
-        :returns: The comment (if any) from the key.
-        :rtype: unicode or None
-        """
-        return self._comment
+        def comment(self):
+            """
+            Get the key comment (if any).
 
-    def public_key(self, binary=False):
-        """
-        Returns the public key part of a signing key or the (public) verification key.
+            :returns: The comment (if any) from the key.
+            :rtype: unicode or None
+            """
+            return self._comment
 
-        :returns: The public key in Hex encoding.
-        :rtype: unicode or None
-        """
-        if isinstance(self._key, signing.SigningKey):
-            key = self._key.verify_key
-        else:
-            key = self._key
+        def public_key(self, binary=False):
+            """
+            Returns the public key part of a signing key or the (public) verification key.
 
-        if binary:
-            return key.encode()
-        else:
-            return key.encode(encoder=encoding.HexEncoder).decode('ascii')
-
-    def sign(self, data):
-        """
-        Sign some data.
-
-        :param data: The data to be signed.
-        :type data: bytes
-
-        :returns: The signature.
-        :rtype: bytes
-        """
-        if not self._can_sign:
-            raise Exception("a signing key required to sign")
-
-        if type(data) != six.binary_type:
-            raise Exception("data to be signed must be binary")
-
-        # sig is a nacl.signing.SignedMessage
-        sig = self._key.sign(data)
-
-        # we only return the actual signature! if we return "sig",
-        # it get coerced into the concatenation of message + signature
-        # not sure which order, but we don't want that. we only want
-        # the signature
-        return create_future_success(sig.signature)
-
-    @inlineCallbacks
-    def sign_challenge(self, session, challenge):
-        """
-        Sign WAMP-cryptosign challenge.
-
-        :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
-        :type challenge: instance of autobahn.wamp.types.Challenge
-
-        :returns: A Deferred/Future that resolves to the computed signature.
-        :rtype: unicode
-        """
-        if not isinstance(challenge, Challenge):
-            raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
-
-        if u'challenge' not in challenge.extra:
-            raise Exception("missing challenge value in challenge.extra")
-
-        # the challenge sent by the router (a 32 bytes random value)
-        challenge_hex = challenge.extra[u'challenge']
-
-        # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
-        challenge_raw = binascii.a2b_hex(challenge_hex)
-
-        # if the transport has a channel ID, the message to be signed by the client actually
-        # is the XOR of the challenge and the channel ID
-        channel_id_raw = session._transport.get_channel_id()
-        if channel_id_raw:
-            data = util.xor(challenge_raw, channel_id_raw)
-        else:
-            data = challenge_raw
-
-        # a raw byte string is signed, and the signature is also a raw byte string
-        signature_raw = yield self.sign(data)
-
-        # convert the raw signature into a hex encode value (unicode string)
-        signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
-
-        # we return the concatenation of the signature and the message signed (96 bytes)
-        data_hex = binascii.b2a_hex(data).decode('ascii')
-
-        # we always return a future/deferred, so handling is uniform
-        returnValue(signature_hex + data_hex)
-
-    @classmethod
-    def from_raw_key(cls, filename, comment=None):
-        """
-        Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
-        This can be any random byte sequence, such as generated from Python code like
-
-            os.urandom(32)
-
-        or from the shell
-
-            dd if=/dev/urandom of=client02.key bs=1 count=32
-
-        :param filename: Filename of the key.
-        :type filename: unicode
-        :param comment: Comment for key (optional).
-        :type comment: unicode or None
-        """
-        if not (comment is None or type(comment) == six.text_type):
-            raise Exception("invalid type {} for comment".format(type(comment)))
-
-        if type(filename) != six.text_type:
-            raise Exception("invalid type {} for filename".format(filename))
-
-        with open(filename, 'rb') as f:
-            keydata = f.read()
-
-        if len(keydata) != 32:
-            raise Exception("invalid key length {}".format(len(keydata)))
-
-        key = signing.SigningKey(keydata)
-        return cls(key, comment)
-
-    @classmethod
-    def from_ssh_key(cls, filename):
-        """
-        Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
-        key (from a SSH private key file) or a (public) verification key (from a SSH
-        public key file). A private key file must be passphrase-less.
-        """
-        # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
-        # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
-
-        SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
-        SSH_END = u'-----END OPENSSH PRIVATE KEY-----'
-
-        with open(filename, 'r') as f:
-            keydata = f.read().strip()
-
-        if keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END):
-            # SSH private key
-            # ssh_end = keydata.find(SSH_END)
-            # keydata = keydata[len(SSH_BEGIN):ssh_end]
-            # keydata = u''.join([x.strip() for x in keydata.split()])
-            # blob = binascii.a2b_base64(keydata)
-            # prefix = 'openssh-key-v1\x00'
-            # data = unpack(blob[len(prefix):])
-            raise Exception("loading private keys not implemented")
-        else:
-            # SSH public key
-            keydata = _read_ssh_ed25519_pubkey(filename)
-            key = public.PublicKey(keydata)
-            return cls(key)
-
-
-class SSHAgentSigningKey(SigningKey):
-    """
-    A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
-    actually held in SSH agent.
-
-    An instance of this class must be create via the class method new().
-    The instance only holds the public key part, whereas the private key
-    counterpart is held in SSH agent.
-    """
-
-    def __init__(self, key, comment=None, reactor=None):
-        SigningKey.__init__(self, key, comment)
-        if not reactor:
-            from twisted.internet import reactor
-        self._reactor = reactor
-
-    @classmethod
-    def new(cls, pubkey=None, reactor=None):
-        """
-        Create a proxy for a key held in SSH agent.
-
-        :param pubkey: A string with a public Ed25519 key in SSH format.
-        :type pubkey: unicode
-        """
-        if not _HAS_SSH_AGENT_SUPPORT:
-            raise Exception("SSH agent integration is not supported on this platform")
-
-        pubkey = _read_ssh_ed25519_pubkey(pubkey)
-
-        if not reactor:
-            from twisted.internet import reactor
-
-        if "SSH_AUTH_SOCK" not in os.environ:
-            raise Exception("no ssh-agent is running!")
-
-        factory = Factory()
-        factory.noisy = False
-        factory.protocol = SSHAgentClient
-        endpoint = UNIXClientEndpoint(reactor, os.environ["SSH_AUTH_SOCK"])
-        d = endpoint.connect(factory)
-
-        @inlineCallbacks
-        def on_connect(agent):
-            keys = yield agent.requestIdentities()
-
-            # if the key is found in ssh-agent, the raw public key (32 bytes), and the
-            # key comment as returned from ssh-agent
-            key_data = None
-            key_comment = None
-
-            for blob, comment in keys:
-                raw = unpack(blob)
-                algo = raw[0]
-                if algo == u'ssh-ed25519':
-                    algo, _pubkey = raw
-                    if _pubkey == pubkey:
-                        key_data = _pubkey
-                        key_comment = comment.decode('utf8')
-                        break
-
-            agent.transport.loseConnection()
-
-            if key_data:
-                key = signing.VerifyKey(key_data)
-                returnValue(cls(key, key_comment, reactor))
+            :returns: The public key in Hex encoding.
+            :rtype: unicode or None
+            """
+            if isinstance(self._key, signing.SigningKey):
+                key = self._key.verify_key
             else:
-                raise Exception("Ed25519 key not held in ssh-agent")
+                key = self._key
 
-        return d.addCallback(on_connect)
+            if binary:
+                return key.encode()
+            else:
+                return key.encode(encoder=encoding.HexEncoder).decode('ascii')
 
-    def sign(self, challenge):
-        if "SSH_AUTH_SOCK" not in os.environ:
-            raise Exception("no ssh-agent is running!")
+        def sign(self, data):
+            """
+            Sign some data.
 
-        factory = Factory()
-        factory.noisy = False
-        factory.protocol = SSHAgentClient
-        endpoint = UNIXClientEndpoint(self._reactor, os.environ["SSH_AUTH_SOCK"])
-        d = endpoint.connect(factory)
+            :param data: The data to be signed.
+            :type data: bytes
+
+            :returns: The signature.
+            :rtype: bytes
+            """
+            if not self._can_sign:
+                raise Exception("a signing key required to sign")
+
+            if type(data) != six.binary_type:
+                raise Exception("data to be signed must be binary")
+
+            # sig is a nacl.signing.SignedMessage
+            sig = self._key.sign(data)
+
+            # we only return the actual signature! if we return "sig",
+            # it get coerced into the concatenation of message + signature
+            # not sure which order, but we don't want that. we only want
+            # the signature
+            return create_future_success(sig.signature)
 
         @inlineCallbacks
-        def on_connect(agent):
-            # we are now connected to the locally running ssh-agent
-            # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
-            # default the gnome-keyring / ssh-askpass-gnome application
-            blob = pack(['ssh-ed25519', self.public_key(binary=True)])
+        def sign_challenge(self, session, challenge):
+            """
+            Sign WAMP-cryptosign challenge.
 
-            # now ask the agent
-            signature_blob = yield agent.signData(blob, challenge)
-            algo, signature = unpack(signature_blob)
+            :param challenge: The WAMP-cryptosign challenge object for which a signature should be computed.
+            :type challenge: instance of autobahn.wamp.types.Challenge
 
-            agent.transport.loseConnection()
+            :returns: A Deferred/Future that resolves to the computed signature.
+            :rtype: unicode
+            """
+            if not isinstance(challenge, Challenge):
+                raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
 
-            returnValue(signature)
+            if u'challenge' not in challenge.extra:
+                raise Exception("missing challenge value in challenge.extra")
 
-        return d.addCallback(on_connect)
+            # the challenge sent by the router (a 32 bytes random value)
+            challenge_hex = challenge.extra[u'challenge']
+
+            # the challenge for WAMP-cryptosign is a 32 bytes random value in Hex encoding (that is, a unicode string)
+            challenge_raw = binascii.a2b_hex(challenge_hex)
+
+            # if the transport has a channel ID, the message to be signed by the client actually
+            # is the XOR of the challenge and the channel ID
+            channel_id_raw = session._transport.get_channel_id()
+            if channel_id_raw:
+                data = util.xor(challenge_raw, channel_id_raw)
+            else:
+                data = challenge_raw
+
+            # a raw byte string is signed, and the signature is also a raw byte string
+            signature_raw = yield self.sign(data)
+
+            # convert the raw signature into a hex encode value (unicode string)
+            signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
+
+            # we return the concatenation of the signature and the message signed (96 bytes)
+            data_hex = binascii.b2a_hex(data).decode('ascii')
+
+            # we always return a future/deferred, so handling is uniform
+            returnValue(signature_hex + data_hex)
+
+        @classmethod
+        def from_raw_key(cls, filename, comment=None):
+            """
+            Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
+            This can be any random byte sequence, such as generated from Python code like
+
+                os.urandom(32)
+
+            or from the shell
+
+                dd if=/dev/urandom of=client02.key bs=1 count=32
+
+            :param filename: Filename of the key.
+            :type filename: unicode
+            :param comment: Comment for key (optional).
+            :type comment: unicode or None
+            """
+            if not (comment is None or type(comment) == six.text_type):
+                raise Exception("invalid type {} for comment".format(type(comment)))
+
+            if type(filename) != six.text_type:
+                raise Exception("invalid type {} for filename".format(filename))
+
+            with open(filename, 'rb') as f:
+                keydata = f.read()
+
+            if len(keydata) != 32:
+                raise Exception("invalid key length {}".format(len(keydata)))
+
+            key = signing.SigningKey(keydata)
+            return cls(key, comment)
+
+        @classmethod
+        def from_ssh_key(cls, filename):
+            """
+            Load an Ed25519 key from a SSH key file. The key file can be a (private) signing
+            key (from a SSH private key file) or a (public) verification key (from a SSH
+            public key file). A private key file must be passphrase-less.
+            """
+            # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
+            # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
+
+            SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
+            SSH_END = u'-----END OPENSSH PRIVATE KEY-----'
+
+            with open(filename, 'r') as f:
+                keydata = f.read().strip()
+
+            if keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END):
+                # SSH private key
+                # ssh_end = keydata.find(SSH_END)
+                # keydata = keydata[len(SSH_BEGIN):ssh_end]
+                # keydata = u''.join([x.strip() for x in keydata.split()])
+                # blob = binascii.a2b_base64(keydata)
+                # prefix = 'openssh-key-v1\x00'
+                # data = unpack(blob[len(prefix):])
+                raise Exception("loading private keys not implemented")
+            else:
+                # SSH public key
+                keydata = _read_ssh_ed25519_pubkey(filename)
+                key = public.PublicKey(keydata)
+                return cls(key)
+
+
+if HAS_CRYPTOSIGN_SSHAGENT:
+
+    class SSHAgentSigningKey(SigningKey):
+        """
+        A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
+        actually held in SSH agent.
+
+        An instance of this class must be create via the class method new().
+        The instance only holds the public key part, whereas the private key
+        counterpart is held in SSH agent.
+        """
+
+        def __init__(self, key, comment=None, reactor=None):
+            SigningKey.__init__(self, key, comment)
+            if not reactor:
+                from twisted.internet import reactor
+            self._reactor = reactor
+
+        @classmethod
+        def new(cls, pubkey=None, reactor=None):
+            """
+            Create a proxy for a key held in SSH agent.
+
+            :param pubkey: A string with a public Ed25519 key in SSH format.
+            :type pubkey: unicode
+            """
+            if not HAS_CRYPTOSIGN_SSHAGENT:
+                raise Exception("SSH agent integration is not supported on this platform")
+
+            pubkey = _read_ssh_ed25519_pubkey(pubkey)
+
+            if not reactor:
+                from twisted.internet import reactor
+
+            if "SSH_AUTH_SOCK" not in os.environ:
+                raise Exception("no ssh-agent is running!")
+
+            factory = Factory()
+            factory.noisy = False
+            factory.protocol = SSHAgentClient
+            endpoint = UNIXClientEndpoint(reactor, os.environ["SSH_AUTH_SOCK"])
+            d = endpoint.connect(factory)
+
+            @inlineCallbacks
+            def on_connect(agent):
+                keys = yield agent.requestIdentities()
+
+                # if the key is found in ssh-agent, the raw public key (32 bytes), and the
+                # key comment as returned from ssh-agent
+                key_data = None
+                key_comment = None
+
+                for blob, comment in keys:
+                    raw = _unpack(blob)
+                    algo = raw[0]
+                    if algo == u'ssh-ed25519':
+                        algo, _pubkey = raw
+                        if _pubkey == pubkey:
+                            key_data = _pubkey
+                            key_comment = comment.decode('utf8')
+                            break
+
+                agent.transport.loseConnection()
+
+                if key_data:
+                    key = signing.VerifyKey(key_data)
+                    returnValue(cls(key, key_comment, reactor))
+                else:
+                    raise Exception("Ed25519 key not held in ssh-agent")
+
+            return d.addCallback(on_connect)
+
+        def sign(self, challenge):
+            if "SSH_AUTH_SOCK" not in os.environ:
+                raise Exception("no ssh-agent is running!")
+
+            factory = Factory()
+            factory.noisy = False
+            factory.protocol = SSHAgentClient
+            endpoint = UNIXClientEndpoint(self._reactor, os.environ["SSH_AUTH_SOCK"])
+            d = endpoint.connect(factory)
+
+            @inlineCallbacks
+            def on_connect(agent):
+                # we are now connected to the locally running ssh-agent
+                # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
+                # default the gnome-keyring / ssh-askpass-gnome application
+                blob = _pack(['ssh-ed25519', self.public_key(binary=True)])
+
+                # now ask the agent
+                signature_blob = yield agent.signData(blob, challenge)
+                algo, signature = _unpack(signature_blob)
+
+                agent.transport.loseConnection()
+
+                returnValue(signature)
+
+            return d.addCallback(on_connect)
