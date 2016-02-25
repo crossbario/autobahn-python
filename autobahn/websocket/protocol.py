@@ -1130,33 +1130,36 @@ class WebSocketProtocol(object):
         but only when self.logFrames == True.
         """
         data = b''.join(payload)
-        info = (self.peer,
-                frameHeader.fin,
-                frameHeader.rsv,
-                frameHeader.opcode,
-                binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
-                frameHeader.length,
-                data if frameHeader.opcode == 1 else binascii.b2a_hex(data))
+        self.log.debug(
+            "RX Frame from {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}, mask = {mask}, length = {length}, payload = {payload}",
+            peer=self.peer,
+            fin=frameHeader.fin,
+            rsv=frameHeader.rsv,
+            opcode=frameHeader.opcode,
+            mask=binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
+            length=frameHeader.length,
+            payload=repr(data) if frameHeader.opcode == 1 else binascii.b2a_hex(data),
+        )
 
-        self.log.debug("RX Frame from %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, payload = %s" % info)
 
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
         """
         Hook fired right after WebSocket frame has been encoded and sent, but
         only when self.logFrames == True.
         """
-        info = (self.peer,
-                frameHeader.fin,
-                frameHeader.rsv,
-                frameHeader.opcode,
-                binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
-                frameHeader.length,
-                repeatLength,
-                chopsize,
-                sync,
-                payload if frameHeader.opcode == 1 else binascii.b2a_hex(payload))
-
-        self.log.debug("TX Frame to %s : fin = %s, rsv = %s, opcode = %s, mask = %s, length = %s, repeat_length = %s, chopsize = %s, sync = %s, payload = %s" % info)
+        self.log.debug(
+            "TX Frame to {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}, mask = {mask}, length = {length}, repeat_length = {repeat_length}, chopsize = {chopsize}, sync = {sync}, payload = {payload}",
+            peer=self.peer,
+            fin=frameHeader.fin,
+            rsv=frameHeader.rsv,
+            opcode=frameHeader.opcode,
+            mask=binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
+            length=frameHeader.length,
+            repeat_length=repeatLength,
+            chopsize=chopsize,
+            sync=sync,
+            payload=repr(payload) if frameHeader.opcode == 1 else binascii.b2a_hex(payload),
+        )
 
     def _dataReceived(self, data):
         """
