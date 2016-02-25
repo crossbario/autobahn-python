@@ -1141,7 +1141,6 @@ class WebSocketProtocol(object):
             payload=repr(data) if frameHeader.opcode == 1 else binascii.b2a_hex(data),
         )
 
-
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
         """
         Hook fired right after WebSocket frame has been encoded and sent, but
