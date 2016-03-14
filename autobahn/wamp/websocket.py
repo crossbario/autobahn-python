@@ -60,7 +60,7 @@ class WampWebSocketProtocol(object):
             self._session = self.factory._factory()
             self._session.onOpen(self)
         except Exception as e:
-            self.log.critical(traceback.format_exc())
+            self.log.critical("{tb}", tb=traceback.format_exc())
             reason = u'WAMP Internal Error ({0})'.format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
@@ -90,12 +90,12 @@ class WampWebSocketProtocol(object):
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
-            self.log.critical(traceback.format_exc())
+            self.log.critical("{tb}", tb=traceback.format_exc())
             reason = u'WAMP Protocol Error ({0})'.format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_PROTOCOL_ERROR, reason=reason)
 
         except Exception as e:
-            self.log.critical(traceback.format_exc())
+            self.log.critical("{tb}", tb=traceback.format_exc())
             reason = u'WAMP Internal Error ({0})'.format(e)
             self._bailout(protocol.WebSocketProtocol.CLOSE_STATUS_CODE_INTERNAL_ERROR, reason=reason)
 
