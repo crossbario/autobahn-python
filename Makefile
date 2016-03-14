@@ -10,6 +10,8 @@ all:
 
 # install locally
 install:
+	# enforce use of bundled libsodium
+	export SODIUM_INSTALL=bundled
 	pip install --upgrade -e .[all,dev]
 
 # cleanup everything
