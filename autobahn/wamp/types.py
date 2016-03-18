@@ -362,7 +362,7 @@ class SubscribeOptions(object):
         """
         options = {}
 
-        if self.match:
+        if self.match is not None:
             options[u'match'] = self.match
 
         return options
@@ -559,10 +559,10 @@ class RegisterOptions(object):
         """
         options = {}
 
-        if self.match:
+        if self.match is not None:
             options[u'match'] = self.match
 
-        if self.invoke:
+        if self.invoke is not None:
             options[u'invoke'] = self.invoke
 
         return options
@@ -657,10 +657,10 @@ class CallOptions(object):
         """
         options = {}
 
-        if self.timeout:
+        if self.timeout is not None:
             options[u'timeout'] = self.timeout
 
-        if self.on_progress:
+        if self.on_progress is not None:
             options[u'receive_progress'] = True
 
         return options
