@@ -496,28 +496,28 @@ class PublishOptions(object):
         """
         options = {}
 
-        if self.acknowledge:
+        if self.acknowledge is not None:
             options[u'acknowledge'] = self.acknowledge
 
-        if self.exclude_me:
+        if self.exclude_me is not None:
             options[u'exclude_me'] = self.exclude_me
 
-        if self.exclude:
+        if self.exclude is not None:
             options[u'exclude'] = self.exclude if type(self.exclude) == list else [self.exclude]
 
-        if self.exclude_authid:
+        if self.exclude_authid is not None:
             options[u'exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else self.exclude_authid
 
-        if self.exclude_authrole:
+        if self.exclude_authrole is not None:
             options[u'exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else self.exclude_authrole
 
-        if self.eligible:
+        if self.eligible is not None:
             options[u'eligible'] = self.eligible if type(self.eligible) == list else self.eligible
 
-        if self.eligible_authid:
+        if self.eligible_authid is not None:
             options[u'eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else self.eligible_authid
 
-        if self.eligible_authrole:
+        if self.eligible_authrole is not None:
             options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else self.eligible_authrole
 
         return options
