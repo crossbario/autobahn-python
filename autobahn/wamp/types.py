@@ -57,9 +57,10 @@ class ComponentConfig(object):
         'realm',
         'extra',
         'keyring',
+        'controller'
     )
 
-    def __init__(self, realm=None, extra=None, keyring=None):
+    def __init__(self, realm=None, extra=None, keyring=None, controller=None):
         """
 
         :param realm: The realm the session should join.
@@ -75,7 +76,10 @@ class ComponentConfig(object):
             symmetric message key, which in turn is encrypted using the "to" URI (topic being
             published to or procedure being called) public key and the "from" URI
             private key. In both cases, the key for the longest matching URI is used.
-        :type keyring: obj implementing IKeyRing
+        :type keyring: obj implementing IKeyRing or None
+        :param controller: A WAMP ApplicationSession instance that holds a session to
+            a controlling entity.
+        :type controller: instance of ApplicationSession or None
         """
         assert(realm is None or type(realm) == six.text_type)
         # assert(keyring is None or ...) # FIXME
@@ -83,9 +87,10 @@ class ComponentConfig(object):
         self.realm = realm
         self.extra = extra
         self.keyring = keyring
+        self.controller = controller
 
     def __str__(self):
-        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2})".format(self.realm, self.extra, self.keyring)
+        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3})".format(self.realm, self.extra, self.keyring, self.controller)
 
 
 class HelloReturn(object):
