@@ -276,7 +276,7 @@ On the other hand, for a WebSocket client protocol, ``onConnect()`` will fire wi
       def onConnect(self, response):
          print("Connected to Server: {}".format(response.peer))
 
-In this callback you can do thing like
+In this callback you can do things like
 
 * checking or setting cookies or other HTTP headers
 * verifying the client IP address
