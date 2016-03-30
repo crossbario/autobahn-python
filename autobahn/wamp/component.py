@@ -33,7 +33,7 @@ import six
 import txaio
 
 from autobahn.util import ObservableMixin
-from autobahn.websocket.protocol import parseWsUrl
+from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig
 
 __all__ = ('Connection')
@@ -190,7 +190,7 @@ class Component(ObservableMixin):
         # allows to provide an URL instead of a list of transports
         if type(transports) == six.text_type:
             url = transports
-            is_secure, host, port, resource, path, params = parseWsUrl(url)
+            is_secure, host, port, resource, path, params = parse_url(url)
             transport = {
                 'type': 'websocket',
                 'url': url,

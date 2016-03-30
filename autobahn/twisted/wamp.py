@@ -34,7 +34,7 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.websocket.protocol import parseWsUrl
+from autobahn.websocket.util import parse_url
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 
 # new API
@@ -159,7 +159,7 @@ class ApplicationRunner(object):
             txaio.config.loop = reactor
             txaio.start_logging(level='info')
 
-        isSecure, host, port, resource, path, params = parseWsUrl(self.url)
+        isSecure, host, port, resource, path, params = parse_url(self.url)
 
         # factory for use ApplicationSession
         def create():
@@ -574,7 +574,7 @@ if service:
             """
             Setup the application component.
             """
-            is_secure, host, port, resource, path, params = parseWsUrl(self.url)
+            is_secure, host, port, resource, path, params = parse_url(self.url)
 
             # factory for use ApplicationSession
             def create():

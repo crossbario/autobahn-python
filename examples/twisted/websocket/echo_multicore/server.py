@@ -63,7 +63,7 @@ from twisted.internet.protocol import Factory
 from twisted.web.server import Site
 from twisted.web.static import File
 
-from autobahn.websocket.protocol import parseWsUrl
+from autobahn.websocket.util import parse_url
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol
@@ -377,7 +377,7 @@ if __name__ == '__main__':
 
     # parse WS URI into components and forward via options
     # FIXME: add TLS support
-    isSecure, host, wsport, resource, path, params = parseWsUrl(options.wsuri)
+    isSecure, host, wsport, resource, path, params = parse_url(options.wsuri)
     options.wsport = wsport
 
     # if not options.silence:
