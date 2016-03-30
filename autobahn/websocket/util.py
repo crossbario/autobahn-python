@@ -55,6 +55,7 @@ __all__ = (
     "parse_url",
 )
 
+
 def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     """
     Create a WebSocket URL from components.
