@@ -52,7 +52,7 @@ from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
-from autobahn.websocket.util import parse_ws_url
+from autobahn.websocket.util import parse_url
 
 from six.moves import urllib
 import txaio
@@ -2929,7 +2929,7 @@ class WebSocketServerFactory(WebSocketFactory):
         :type externalPort: int
         """
         # parse WebSocket URI into components
-        (isSecure, host, port, resource, path, params) = parse_ws_url(url or "ws://localhost")
+        (isSecure, host, port, resource, path, params) = parse_url(url or "ws://localhost")
         if len(params) > 0:
             raise Exception("query parameters specified for server WebSocket URL")
         self.url = url
@@ -3656,7 +3656,7 @@ class WebSocketClientFactory(WebSocketFactory):
         :type proxy: dict or None
         """
         # parse WebSocket URI into components
-        (isSecure, host, port, resource, path, params) = parse_ws_url(url or "ws://localhost")
+        (isSecure, host, port, resource, path, params) = parse_url(url or "ws://localhost")
         self.url = url
         self.isSecure = isSecure
         self.host = host
