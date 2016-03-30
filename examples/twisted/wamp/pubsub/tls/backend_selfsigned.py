@@ -68,7 +68,5 @@ if __name__ == '__main__':
         environ.get("AUTOBAHN_DEMO_ROUTER", u"wss://127.0.0.1:8083/ws"),
         u"crossbardemo",
         ssl=options,  # try removing this, but still use self-signed cert
-
-        debug=False,  # optional; log even more details
     )
     runner.run(Component)
