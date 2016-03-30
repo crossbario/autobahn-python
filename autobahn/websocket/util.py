@@ -51,11 +51,11 @@ urlparse.uses_query.extend(wsschemes)
 urlparse.uses_fragment.extend(wsschemes)
 
 __all__ = (
-    "createWsUrl",
-    "parseWsUrl",
+    "create_ws_url",
+    "parse_ws_url",
 )
 
-def createWsUrl(hostname, port=None, isSecure=False, path=None, params=None):
+def create_ws_url(hostname, port=None, isSecure=False, path=None, params=None):
     """
     Create a WebSocket URL from components.
 
@@ -102,7 +102,7 @@ def createWsUrl(hostname, port=None, isSecure=False, path=None, params=None):
     return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
-def parseWsUrl(url):
+def parse_ws_url(url):
     """
     Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource, path, params).
 
