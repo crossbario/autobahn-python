@@ -79,7 +79,7 @@ If all that is too many options to consider, you want to do this:
 4. In terminal 2 run ``python ./examples/twisted/wamp/rpc/arguments/backend.py``
 5. In terminal 3 run ``python ./examples/twisted/wamp/rpc/arguments/frontend.py``
 
-The above procedure is gone over in this `this asciicast <https://asciinema.org/a/2vl1eahfaxptoen9bnevd06lq.png)](https://asciinema.org/a/2vl1eahfaxptoen9bnevd06lq>`_:
+The above procedure is gone over in this `this asciicast <https://asciinema.org/a/2vl1eahfaxptoen9bnevd06lq>`_:
 
 .. raw:: html
 

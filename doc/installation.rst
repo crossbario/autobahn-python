@@ -57,6 +57,21 @@ To give you an idea of the performance you can expect, here is a `blog post <htt
 Installing Autobahn
 -------------------
 
+
+Using Docker
+............
+
+We offer `Docker Images <https://hub.docker.com/r/crossbario/autobahn-python/>`_ with |ab| pre-installed. To use this, if you have Docker already installed, just do
+
+   ``sudo docker run -it crossbario/autobahn-python:cpy2 python client.py --url ws://IP _of_WAMP_router:8080/ws --realm realm1``
+
+This starts up a Docker container and `client.py`, which connects to a Crossbar.io router at the given URL and to the given realm.
+
+There are several docker images to choose from, depending on whether you are using Python 2, 3 or PyPy (Python 2 only for now).
+
+There are the flavors which are based on the official Python 2, 3 and PyPy images, plus Python 2 and 3 versions using Alpine Linux, which have a smaller footprint. (Note: Footprint only matters for the download once per machine, after that the cached image is used. Containers off the same image/layers only take up space corresponding to how different from the image they are, so image size is relatively less important when using multiple containers.)
+
+
 Install from PyPI
 .................
 
