@@ -5,7 +5,24 @@
 Changelog
 =========
 
-0.12.0
+0.13.0
+------
+
+`Published 2016-03-15 <https://pypi.python.org/pypi/autobahn/0.13.0>`_
+
+* fix: better traceback logging (`#613 <https://github.com/crossbario/autobahn-python/pull/613>`_)
+* fix: unicode handling in debug messages (`#606 <https://github.com/crossbario/autobahn-python/pull/606>`_)
+* fix: return Deferred from ``run()`` (`#603 <https://github.com/crossbario/autobahn-python/pull/603>`_).
+* fix: more debug logging improvements
+* fix: more `Pattern` tests, fix edge case (`#592 <https://github.com/crossbario/autobahn-python/pull/592>`_).
+* fix: better logging from ``asyncio`` ApplicationRunner
+* new: ``disclose`` becomes a strict router-side feature (`#586 <https://github.com/crossbario/autobahn-python/issues/586>`_).
+* new: subscriber black/whitelisting using authid/authrole
+* new: asyncio websocket testee
+* new: refine Observable API (`#593 <https://github.com/crossbario/autobahn-python/pull/593>`_).
+
+
+0.12.1
 ------
 
 `Published 2016-01-30 <https://pypi.python.org/pypi/autobahn/0.12.0>`__
