@@ -8,6 +8,29 @@ import sphinx_bootstrap_theme
 sys.path.insert(0, os.path.abspath('./_extensions'))
 sys.path.insert(0, os.path.abspath('..'))
 
+# monkey-patch txaio so that we can "use" both twisted *and* asyncio,
+# at least at import time -- this is so the autodoc stuff can
+# successfully import autobahn.twisted.* as well as autobahn.asyncio.*
+# (usually, you can only import one or the other in a single Python
+# interpreter)
+
+if True:
+   import txaio
+
+   def use_tx():
+      "monkey-patched for doc-building"
+      from txaio import tx
+      txaio._use_framework(tx)
+
+   def use_aio():
+      "monkey-patched for doc-building"
+      from txaio import aio
+      txaio._use_framework(aio)
+
+   txaio.use_twisted = use_tx
+   txaio.use_asyncio = use_aio
+
+
 extensions = [
    'sphinx.ext.autodoc',
    'sphinx.ext.doctest',
