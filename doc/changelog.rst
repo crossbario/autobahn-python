@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.13.1
+------
+
+`Published 2016-04-09 <https://pypi.python.org/pypi/autobahn/0.13.1>`_
+
+* moved helper funs for WebSocket URL handling to ``autobahn.websocket.util``
+* fix: marshal WAMP options only when needed
+* fix: various smallish examples fixes
+
 0.13.0
 ------
 
