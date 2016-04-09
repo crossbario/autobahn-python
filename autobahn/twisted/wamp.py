@@ -82,6 +82,8 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
 
 class ApplicationRunner(object):
     """
+    @public
+
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.
 
