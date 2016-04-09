@@ -24,18 +24,15 @@
 #
 ###############################################################################
 
-import sys
+import txaio
 
 from twisted.internet import reactor
-from twisted.python import log
-from twisted.web.server import Site
-from twisted.web.static import File
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol, \
     listenWS
 
-from autobahn.websocket.http import HttpException
+from autobahn.websocket.types import ConnectionDeny
 
 
 class BaseService:
@@ -46,6 +43,7 @@ class BaseService:
 
     def __init__(self, proto):
         self.proto = proto
+        self.is_closed = False
 
     def onOpen(self):
         pass
@@ -90,6 +88,7 @@ class ServiceServerProtocol(WebSocketServerProtocol):
 
     def __init__(self):
         self.service = None
+        self.is_closed = txaio.create_future()
 
     def onConnect(self, request):
         # request has all the information from the initial
@@ -115,7 +114,7 @@ class ServiceServerProtocol(WebSocketServerProtocol):
         else:
             err = "No service under %s" % request.path
             print(err)
-            raise HttpException(404, err)
+            raise ConnectionDeny(404, unicode(err))
 
     def onOpen(self):
         if self.service:
