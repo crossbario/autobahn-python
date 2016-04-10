@@ -51,24 +51,26 @@ class PerMessageDeflateMixin(object):
 
     EXTENSION_NAME = "permessage-deflate"
     """
-   Name of this WebSocket extension.
-   """
+    Name of this WebSocket extension.
+    """
 
     WINDOW_SIZE_PERMISSIBLE_VALUES = [8, 9, 10, 11, 12, 13, 14, 15]
     """
-   Permissible value for window size parameter.
-   Higher values use more memory, but produce smaller output. The default is 15.
-   """
+    Permissible value for window size parameter.
+    Higher values use more memory, but produce smaller output. The default is 15.
+    """
 
     MEM_LEVEL_PERMISSIBLE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     """
-   Permissible value for memory level parameter.
-   Higher values use more memory, but are faster and produce smaller output. The default is 8.
-   """
+    Permissible value for memory level parameter.
+    Higher values use more memory, but are faster and produce smaller output. The default is 8.
+    """
 
 
 class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
     """
+    @public
+
     Set of extension parameters for `permessage-deflate` WebSocket extension
     offered by a client to a server.
     """
@@ -163,7 +165,6 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                  requestNoContextTakeover=False,
                  requestMaxWindowBits=0):
         """
-        Constructor.
 
         :param acceptNoContextTakeover: Iff true, client accepts "no context takeover" feature.
         :type acceptNoContextTakeover: bool
@@ -234,6 +235,8 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
 
 class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDeflateMixin):
     """
+    @public
+
     Set of parameters with which to accept an `permessage-deflate` offer
     from a client by a server.
     """
@@ -246,7 +249,6 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
                  windowBits=None,
                  memLevel=None):
         """
-        Constructor.
 
         :param offer: The offer being accepted.
         :type offer: Instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
@@ -461,7 +463,6 @@ class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessa
                  windowBits=None,
                  memLevel=None):
         """
-        Constructor.
 
         :param response: The response being accepted.
         :type response: Instance of :class:`autobahn.compress.PerMessageDeflateResponse`.

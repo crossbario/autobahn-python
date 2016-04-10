@@ -30,6 +30,8 @@ from hashlib import sha1
 from base64 import b64encode
 import unittest2 as unittest
 
+import txaio
+
 from autobahn.websocket.protocol import WebSocketServerProtocol
 from autobahn.websocket.protocol import WebSocketServerFactory
 from autobahn.websocket.protocol import WebSocketClientProtocol
@@ -44,8 +46,16 @@ class WebSocketClientProtocolTests(unittest.TestCase):
 
     def setUp(self):
         t = FakeTransport()
+
+        # note: the following are actually "abstract classes" normally.
+        # that is, they aren't instantiated as-is, but only the networking
+        # framework specific flavors are ...
         f = WebSocketClientFactory()
         p = WebSocketClientProtocol()
+
+        # a logger is only set on concrete classes normally
+        p.log = txaio.make_logger()
+
         p.factory = f
         p.transport = t
 
@@ -100,8 +110,16 @@ class WebSocketServerProtocolTests(unittest.TestCase):
     """
     def setUp(self):
         t = FakeTransport()
+
+        # note: the following are actually "abstract classes" normally.
+        # that is, they aren't instantiated as-is, but only the networking
+        # framework specific flavors are ...
         f = WebSocketServerFactory()
         p = WebSocketServerProtocol()
+
+        # a logger is only set on concrete classes normally
+        p.log = txaio.make_logger()
+
         p.factory = f
         p.transport = t
 

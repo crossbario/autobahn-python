@@ -58,6 +58,8 @@ __all__ = (
 
 def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     """
+    @public
+
     Create a WebSocket URL from components.
 
     :param hostname: WebSocket server hostname.
@@ -105,6 +107,8 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
 
 def parse_url(url):
     """
+    @public
+
     Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource, path, params).
 
      - ``isSecure`` is a flag which is True for wss URLs.

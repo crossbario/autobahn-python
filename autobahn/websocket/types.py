@@ -42,6 +42,8 @@ __all__ = (
 
 class ConnectionRequest(object):
     """
+    @public
+
     Thin-wrapper for WebSocket connection request information provided in
     :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
     a WebSocket client want to establish a connection to a WebSocket server.
@@ -108,6 +110,8 @@ class ConnectionRequest(object):
 
 class ConnectionResponse(object):
     """
+    @public
+
     Thin-wrapper for WebSocket connection response information provided in
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
     a WebSocket server has accepted a connection request by a client.
@@ -123,7 +127,6 @@ class ConnectionResponse(object):
 
     def __init__(self, peer, headers, version, protocol, extensions):
         """
-        Constructor.
 
         :param peer: Descriptor of the connected server (e.g. IP address/port in case of TCP transport).
         :type peer: str
@@ -155,6 +158,8 @@ class ConnectionResponse(object):
 
 class ConnectionAccept(object):
     """
+    @public
+
     Used by WebSocket servers to accept an incoming WebSocket connection.
     If the client announced one or multiple subprotocols, the server MUST
     select one of the subprotocols announced by the client.
@@ -192,6 +197,8 @@ class ConnectionAccept(object):
 
 class ConnectionDeny(Exception):
     """
+    @public
+
     Throw an instance of this class to deny a WebSocket connection
     during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
     """
@@ -240,7 +247,6 @@ class ConnectionDeny(Exception):
 
     def __init__(self, code, reason=None):
         """
-        Constructor.
 
         :param code: HTTP error code.
         :type code: int

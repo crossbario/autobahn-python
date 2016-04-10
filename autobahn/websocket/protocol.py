@@ -468,8 +468,6 @@ class WebSocketProtocol(object):
     Configuration attributes specific to clients.
     """
 
-    log = txaio.make_logger()
-
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
