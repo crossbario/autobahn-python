@@ -27,19 +27,25 @@
 
 from __future__ import absolute_import
 
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
-    ConnectionAccept, ConnectionDeny, Message, IncomingMessage, OutgoingMessage
-from autobahn.websocket.interfaces import IWebSocketChannel
+from autobahn.websocket.util import create_url, parse_url
+
+from autobahn.websocket.types import \
+    ConnectionRequest, \
+    ConnectionResponse, \
+    ConnectionAccept, \
+    ConnectionDeny
+
+from autobahn.websocket.compress_deflate import \
+    PerMessageDeflateOffer, \
+    PerMessageDeflateOfferAccept
 
 __all__ = (
-    'IWebSocketChannel',
-
-    'Message',
-    'IncomingMessage',
-    'OutgoingMessage',
-
+    'create_url',
+    'parse_url',
     'ConnectionRequest',
     'ConnectionResponse',
     'ConnectionAccept',
     'ConnectionDeny',
+    'PerMessageDeflateOffer',
+    'PerMessageDeflateOfferAccept'
 )

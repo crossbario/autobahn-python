@@ -76,6 +76,8 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     Adapter class for asyncio-based WebSocket client and server protocols.
     """
 
+    log = txaio.make_logger()
+
     def connection_made(self, transport):
         self.transport = transport
 
