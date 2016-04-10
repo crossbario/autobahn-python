@@ -43,10 +43,11 @@ CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
 PY33 = (3, 3) <= sys.version_info < (3, 4)
 
-# get version string: this defines __version__
-execfile('autobahn/__init__.py')
+# read version string
+with open('autobahn/__init__.py') as f:
+    exec(f.read())  # defines __version__
 
-# read package long description from README.rst
+# read package long description
 with open('README.rst') as f:
     docstr = f.read()
 
