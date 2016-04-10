@@ -140,6 +140,8 @@ def xor(d1, d2):
 
 def utcstr(ts=None):
     """
+    @public
+
     Format UTC timestamp in ISO 8601 format.
 
     Note: to parse an ISO 8601 formatted string, use the **iso8601**
@@ -159,6 +161,8 @@ def utcstr(ts=None):
 
 def utcnow():
     """
+    @public
+
     Get current time in UTC as ISO 8601 string.
 
     :returns: Current time as string in ISO 8601 format.
@@ -304,12 +308,14 @@ def newid(length=16):
 # is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z
 DEFAULT_TOKEN_CHARS = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """
+@public
+
 Default set of characters to create rtokens from.
 """
 
 DEFAULT_ZBASE32_CHARS = u'13456789abcdefghijkmnopqrstuwxyz'
 """
-http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
+@public
 
 Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
 reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
@@ -321,42 +327,48 @@ Note that we choose to focus on typed and written transcription more than on
 vocal, since humans already have a well-established system of disambiguating
 spoken alphanumerics, such as the United States military's "Alpha Bravo Charlie
 Delta" and telephone operators' "Is that 'd' as in 'dog'?".
+
+http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
 """
 
 
 def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_case=False):
     """
+    @public
+
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
 
-    The returned token has an entropy of:
+    The returned token has an entropy of
+    ``math.log(len(chars), 2.) * chars_per_group * char_groups``
+    bits.
 
-       math.log(len(chars), 2.) * chars_per_group * char_groups
+    With the default charset and 4 characters per group, ``generate_token()`` produces
+    strings with the following entropy:
 
-    bits. With the default charset and 4 characters per group, rtoken() produces
-    tokens with the following entropy:
+    ================   ===================  ========================================
+    character groups    entropy (at least)  recommended use
+    ================   ===================  ========================================
+    2                    38 bits
+    3                    57 bits            one-time activation or pairing code
+    4                    76 bits            secure user password
+    5                    95 bits
+    6                   114 bits            globally unique serial / product code
+    7                   133 bits
+    ================   ===================  ========================================
 
-        character groups    entropy (at least)  recommended use
+    Here are some examples:
 
-        2                    38 bits
-        3                    57 bits            one-time activation or pairing code
-        4                    76 bits            secure user password
-        5                    95 bits
-        6                   114 bits            globally unique serial / product code
-        7                   133 bits
-
-    Here are 3 examples:
-
-        * token(3): 9QXT-UXJW-7R4H
-        * token(4): LPNN-JMET-KWEP-YK45
-        * token(6): NXW9-74LU-6NUH-VLPV-X6AG-QUE3
+    * token(3): ``9QXT-UXJW-7R4H``
+    * token(4): ``LPNN-JMET-KWEP-YK45``
+    * token(6): ``NXW9-74LU-6NUH-VLPV-X6AG-QUE3``
 
     :param char_groups: Number of character groups (or characters if chars_per_group == 1).
     :type char_groups: int
     :param chars_per_group: Number of characters per character group (or 1 to return a token with no grouping).
     :type chars_per_group: int
     :param chars: Characters to choose from. Default is 27 character subset
-        of the ISO basic Latin alphabet (see: DEFAULT_TOKEN_CHARS).
+        of the ISO basic Latin alphabet (see: ``DEFAULT_TOKEN_CHARS``).
     :type chars: unicode or None
     :param sep: When separating groups in the token, the separater string.
     :type sep: unicode
@@ -380,14 +392,41 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
 
 
 def generate_activation_code():
+    """
+    @public
+
+    Generate a one-time activation code or token of the form ``u'W97F-96MJ-YGJL'``.
+    The generated value is cryptographically strong and has (at least) 57 bits of entropy.
+
+    :returns: The generated activation code.
+    :rtype: unicode
+    """
     return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
 def generate_user_password():
+    """
+    @public
+
+    Generate a secure, random user password of the form ``u'kgojzi61dn5dtb6d'``.
+    The generated value is cryptographically strong and has (at least) 76 bits of entropy.
+
+    :returns: The generated password.
+    :rtype: unicode
+    """
     return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
 
 
 def generate_serial_number():
+    """
+    @public
+
+    Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
+    The generated value is cryptographically strong and has (at least) 114 bits of entropy.
+
+    :returns: The generated serial number / product code.
+    :rtype: unicode
+    """
     return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
@@ -411,6 +450,8 @@ else:
 
 rtime = _rtime
 """
+@public
+
 Precise wallclock time.
 
 :returns: The current wallclock in seconds. Returned values are only guaranteed
