@@ -35,8 +35,8 @@ clean:
 
 # publish to PyPI
 publish: clean
-	python setup.py register
-	python setup.py sdist upload
+	python setup.py sdist bdist_wheel
+	twine upload dist/*
 
 test_styleguide:
 	flake8 --statistics --max-line-length=119 -qq autobahn
