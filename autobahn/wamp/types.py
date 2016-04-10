@@ -49,6 +49,8 @@ __all__ = (
 
 class ComponentConfig(object):
     """
+    @public
+
     WAMP application component configuration. An instance of this class is
     provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
     """
@@ -260,6 +262,8 @@ class HelloDetails(object):
 
 class SessionDetails(object):
     """
+    @public
+
     Provides details for a WAMP session upon open.
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
@@ -305,6 +309,8 @@ class SessionDetails(object):
 
 class CloseDetails(object):
     """
+    @public
+
     Provides details for a WAMP session upon close.
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
@@ -337,6 +343,8 @@ class CloseDetails(object):
 
 class SubscribeOptions(object):
     """
+    @public
+
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
     """
@@ -378,6 +386,8 @@ class SubscribeOptions(object):
 
 class EventDetails(object):
     """
+    @public
+
     Provides details on an event when calling an event handler
     previously registered.
     """
@@ -432,6 +442,8 @@ class EventDetails(object):
 
 class PublishOptions(object):
     """
+    @public
+
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.IPublisher.publish`.
     """
@@ -533,6 +545,8 @@ class PublishOptions(object):
 
 class RegisterOptions(object):
     """
+    @public
+
     Used to provide options for registering in
     :func:`autobahn.wamp.interfaces.ICallee.register`.
     """
@@ -578,6 +592,8 @@ class RegisterOptions(object):
 
 class CallDetails(object):
     """
+    @public
+
     Provides details on a call when an endpoint previously
     registered is being called and opted to receive call details.
     """
@@ -631,6 +647,8 @@ class CallDetails(object):
 
 class CallOptions(object):
     """
+    @public
+
     Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
     """
 
@@ -676,6 +694,8 @@ class CallOptions(object):
 
 class CallResult(object):
     """
+    @public
+
     Wrapper for remote procedure call results that contain multiple positional
     return values or keyword return values.
     """

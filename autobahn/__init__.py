@@ -26,5 +26,7 @@
 
 __version__ = u'0.13.0'
 """
+@public
+
 AutobahnPython library version.
 """
