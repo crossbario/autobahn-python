@@ -27,7 +27,6 @@
 from __future__ import absolute_import
 
 import os
-import re
 import sys
 import platform
 from setuptools import setup
@@ -44,44 +43,22 @@ CPY = platform.python_implementation() == 'CPython'
 PY3 = sys.version_info >= (3,)
 PY33 = (3, 3) <= sys.version_info < (3, 4)
 
-LONGSDESC = open('README.rst').read()
+# read version string
+with open('autobahn/__init__.py') as f:
+    exec(f.read())  # defines __version__
 
-# get version string from "autobahn/__init__.py"
-# See: http://stackoverflow.com/a/7071358/884770
-#
-VERSIONFILE = "autobahn/__init__.py"
-verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = u['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
-if mo:
-    verstr = mo.group(1)
-else:
-    raise RuntimeError("Unable to find version string in %s." % (VERSIONFILE,))
-
-
-# Autobahn core packages
-#
-packages = [
-    'autobahn',
-    'autobahn.wamp',
-    'autobahn.wamp.test',
-    'autobahn.websocket',
-    'autobahn.websocket.test',
-    'autobahn.asyncio',
-    'autobahn.twisted',
-    'twisted.plugins'
-]
+# read package long description
+with open('README.rst') as f:
+    docstr = f.read()
 
 # Twisted dependencies (be careful bumping these minimal versions,
 # as we make claims to support older Twisted!)
-#
 extras_require_twisted = [
     "zope.interface>=4.1.3", # Zope Public License
     "Twisted>=15.5"          # MIT license
 ]
 
 # asyncio dependencies
-#
 if PY3:
     if PY33:
         # "Tulip"
@@ -98,8 +75,7 @@ else:
         "futures>=3.0.4"            # BSD license
     ]
 
-# C-based WebSocket acceleration
-#
+# C-based WebSocket acceleration (only use on CPython, not PyPy!)
 if CPY and sys.platform != 'win32':
     # wsaccel does not provide wheels: https://github.com/methane/wsaccel/issues/12
     extras_require_accelerate = [
@@ -121,16 +97,13 @@ extras_require_compress = [
 ]
 
 # non-JSON WAMP serialization support (namely MsgPack and CBOR)
-#
 extras_require_serialization = [
     "msgpack-python>=0.4.6",    # Apache 2.0 license
     "cbor>=0.1.24"              # Apache 2.0 license
 ]
 
-# payload encryption
-#
-# enforce use of bundled libsodium
-os.environ['SODIUM_INSTALL'] = 'bundled'
+# payload encryption (required for WAMP-cryptosign support!)
+os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
     'pynacl>=1.0',              # Apache license
     'pytrie>=0.2',              # BSD license
@@ -138,14 +111,12 @@ extras_require_encryption = [
 ]
 
 # everything
-#
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
     extras_require_accelerate + extras_require_serialization + extras_require_encryption
 
 # extras_require_all += extras_require_compress
 
 # development dependencies
-#
 extras_require_dev = [
     # flake8 will install the version "it needs"
     # "pep8>=1.6.2",          # MIT license
@@ -154,21 +125,25 @@ extras_require_dev = [
     "pyflakes>=1.0.0",      # MIT license
     "mock>=1.3.0",          # BSD license
     "pytest>=2.8.6",        # MIT license
-    "unittest2>=1.1.0"      # BSD license
+    "unittest2>=1.1.0",     # BSD license
+    "twine>=1.6.5",         # Apache 2.0
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
-#
 test_requirements = [
     "pytest>=2.8.6",        # MIT license
     "mock>=1.3.0"           # BSD license
 ]
 
 
-# pytest integration for setuptools. see:
-# http://pytest.org/latest/goodpractises.html#integration-with-setuptools-test-commands
-# https://github.com/pyca/cryptography/pull/678/files
 class PyTest(test_command):
+    """
+    pytest integration for setuptools.
+
+    see:
+      - http://pytest.org/latest/goodpractises.html#integration-with-setuptools-test-commands
+      - https://github.com/pyca/cryptography/pull/678/files
+    """
 
     def finalize_options(self):
         test_command.finalize_options(self)
@@ -182,13 +157,11 @@ class PyTest(test_command):
         sys.exit(errno)
 
 
-# Now install Autobahn ..
-#
 setup(
     name='autobahn',
-    version=verstr,
+    version=__version__,
     description='WebSocket client & server library, WAMP real-time framework',
-    long_description=LONGSDESC,
+    long_description=docstr,
     license='MIT License',
     author='Tavendo GmbH',
     author_email='autobahnws@googlegroups.com',
@@ -196,7 +169,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
-        'txaio>=2.3.0',     # MIT license
+        'txaio>=2.3.1',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
@@ -209,11 +182,21 @@ setup(
         'dev': extras_require_dev,
     },
     tests_require=test_requirements,
-    cmdclass={'test': PyTest},
-    packages=packages,
+    cmdclass={
+        'test': PyTest
+    },
+    packages=[
+        'autobahn',
+        'autobahn.wamp',
+        'autobahn.wamp.test',
+        'autobahn.websocket',
+        'autobahn.websocket.test',
+        'autobahn.asyncio',
+        'autobahn.twisted',
+        'twisted.plugins'
+    ],
     zip_safe=False,
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
-    #
     classifiers=["License :: OSI Approved :: MIT License",
                  "Development Status :: 5 - Production/Stable",
                  "Environment :: No Input/Output (Daemon)",
@@ -241,6 +224,7 @@ setup(
 )
 
 
+# regenerate Twisted plugin cache
 try:
     from twisted.internet import reactor
     print("Twisted found (default reactor is {0})".format(reactor.__class__))
