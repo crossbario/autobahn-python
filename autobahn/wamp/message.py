@@ -1327,7 +1327,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude_authid' option in PUBLISH".format(type(option_exclude_authid)))
 
             for _authid in option_exclude_authid:
-                if type(_authid) == six.text_type:
+                if type(_authid) != six.text_type:
                     raise ProtocolError("invalid type {0} for value in 'exclude_authid' option in PUBLISH".format(type(_authid)))
 
             exclude_authid = option_exclude_authid
@@ -1339,7 +1339,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'exclude_authrole' option in PUBLISH".format(type(option_exclude_authrole)))
 
             for _authrole in option_exclude_authrole:
-                if type(_authrole) == six.text_type:
+                if type(_authrole) != six.text_type:
                     raise ProtocolError("invalid type {0} for value in 'exclude_authrole' option in PUBLISH".format(type(_authrole)))
 
             exclude_authrole = option_exclude_authrole
@@ -1363,7 +1363,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'eligible_authid' option in PUBLISH".format(type(option_eligible_authid)))
 
             for _authid in option_eligible_authid:
-                if type(_authid) == six.text_type:
+                if type(_authid) != six.text_type:
                     raise ProtocolError("invalid type {0} for value in 'eligible_authid' option in PUBLISH".format(type(_authid)))
 
             eligible_authid = option_eligible_authid
@@ -1374,8 +1374,8 @@ class Publish(Message):
             if type(option_eligible_authrole) != list:
                 raise ProtocolError("invalid type {0} for 'eligible_authrole' option in PUBLISH".format(type(option_eligible_authrole)))
 
-            for _authrole in option_exclude_authrole:
-                if type(_authrole) == six.text_type:
+            for _authrole in option_eligible_authrole:
+                if type(_authrole) != six.text_type:
                     raise ProtocolError("invalid type {0} for value in 'eligible_authrole' option in PUBLISH".format(type(_authrole)))
 
             eligible_authrole = option_eligible_authrole
