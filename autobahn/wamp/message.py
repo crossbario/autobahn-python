@@ -1374,7 +1374,7 @@ class Publish(Message):
             if type(option_eligible_authrole) != list:
                 raise ProtocolError("invalid type {0} for 'eligible_authrole' option in PUBLISH".format(type(option_eligible_authrole)))
 
-            for _authrole in option_exclude_authrole:
+            for _authrole in option_eligible_authrole:
                 if type(_authrole) == six.text_type:
                     raise ProtocolError("invalid type {0} for value in 'eligible_authrole' option in PUBLISH".format(type(_authrole)))
 
