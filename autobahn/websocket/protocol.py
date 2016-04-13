@@ -49,6 +49,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
+from autobahn.util import _LazyHexFormatter
 from autobahn.websocket.utf8validator import Utf8Validator
 from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
@@ -557,13 +558,20 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onMessage`
         """
-        self.log.debug("WebSocketProtocol.onMessage(payload=<{payload_len} bytes)>, isBinary={isBinary}", payload_len=(len(payload) if payload else 0), isBinary=isBinary)
+        self.log.debug(
+            "WebSocketProtocol.onMessage(payload=<{payload_len} bytes)>, isBinary={isBinary}",
+            payload_len=(len(payload) if payload else 0),
+            isBinary=isBinary,
+        )
 
     def onPing(self, payload):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPing`
         """
-        self.log.debug("WebSocketProtocol.onPing(payload=<{payload_len} bytes>)", payload_len=(len(payload) if payload else 0))
+        self.log.debug(
+            "WebSocketProtocol.onPing(payload=<{payload_len} bytes>)",
+            payload_len=(len(payload) if payload else 0),
+        )
         if self.state == WebSocketProtocol.STATE_OPEN:
             self.sendPong(payload)
 
@@ -571,13 +579,21 @@ class WebSocketProtocol(object):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onPong`
         """
-        self.log.debug("WebSocketProtocol.onPong(payload=<{payload_len} bytes>)", payload_len=(len(payload) if payload else 0))
+        self.log.debug(
+            "WebSocketProtocol.onPong(payload=<{payload_len} bytes>)",
+            payload_len=(len(payload) if payload else 0),
+        )
 
     def onClose(self, wasClean, code, reason):
         """
         Implements :func:`autobahn.websocket.interfaces.IWebSocketChannel.onClose`
         """
-        self.log.debug("WebSocketProtocol.onClose(wasClean={wasClean}, code={code}, reason={reason})", wasClean=wasClean, code=code, reason=reason)
+        self.log.debug(
+            "WebSocketProtocol.onClose(wasClean={wasClean}, code={code}, reason={reason})",
+            wasClean=wasClean,
+            code=code,
+            reason=reason,
+        )
 
     def onCloseFrame(self, code, reasonRaw):
         """
@@ -866,7 +882,7 @@ class WebSocketProtocol(object):
                 configAttrSource = self.__class__.__name__
             configAttrLog.append((configAttr, getattr(self, configAttr), configAttrSource))
 
-        self.log.debug("\n" + pformat(configAttrLog))
+        self.log.debug("\n{attrs}", attrs=pformat(configAttrLog))
 
         # permessage-compress extension
         self._perMessageCompress = None
@@ -1008,14 +1024,23 @@ class WebSocketProtocol(object):
         Hook fired right after raw octets have been received, but only when
         self.logOctets == True.
         """
-        self.log.debug("RX Octets from %s : octets = %s" % (self.peer, binascii.b2a_hex(data)))
+        self.log.debug(
+            "RX Octets from {peer} : octets = {octets}",
+            peer=self.peer,
+            octets=_LazyHexFormatter(data),
+        )
 
     def logTxOctets(self, data, sync):
         """
         Hook fired right after raw octets have been sent, but only when
         self.logOctets == True.
         """
-        self.log.debug("TX Octets to %s : sync = %s, octets = %s" % (self.peer, sync, binascii.b2a_hex(data)))
+        self.log.debug(
+            "TX Octets to {peer} : sync = {sync}, octets = {octets}",
+            peer=self.peer,
+            sync=sync,
+            octets=_LazyHexFormatter(data),
+        )
 
     def logRxFrame(self, frameHeader, payload):
         """
@@ -1024,14 +1049,15 @@ class WebSocketProtocol(object):
         """
         data = b''.join(payload)
         self.log.debug(
-            "RX Frame from {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}, mask = {mask}, length = {length}, payload = {payload}",
+            "RX Frame from {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}"
+            ", mask = {mask}, length = {length}, payload = {payload}",
             peer=self.peer,
             fin=frameHeader.fin,
             rsv=frameHeader.rsv,
             opcode=frameHeader.opcode,
             mask=binascii.b2a_hex(frameHeader.mask) if frameHeader.mask else "-",
             length=frameHeader.length,
-            payload=repr(data) if frameHeader.opcode == 1 else binascii.b2a_hex(data),
+            payload=repr(data) if frameHeader.opcode == 1 else _LazyHexFormatter(data),
         )
 
     def logTxFrame(self, frameHeader, payload, repeatLength, chopsize, sync):
@@ -1040,7 +1066,9 @@ class WebSocketProtocol(object):
         only when self.logFrames == True.
         """
         self.log.debug(
-            "TX Frame to {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}, mask = {mask}, length = {length}, repeat_length = {repeat_length}, chopsize = {chopsize}, sync = {sync}, payload = {payload}",
+            "TX Frame to {peer} : fin = {fin}, rsv = {rsv}, opcode = {opcode}, "
+            "mask = {mask}, length = {length}, repeat_length = {repeat_length},"
+            " chopsize = {chopsize}, sync = {sync}, payload = {payload}",
             peer=self.peer,
             fin=frameHeader.fin,
             rsv=frameHeader.rsv,
@@ -1050,7 +1078,7 @@ class WebSocketProtocol(object):
             repeat_length=repeatLength,
             chopsize=chopsize,
             sync=sync,
-            payload=repr(payload) if frameHeader.opcode == 1 else binascii.b2a_hex(payload),
+            payload=repr(payload) if frameHeader.opcode == 1 else _LazyHexFormatter(payload),
         )
 
     def _dataReceived(self, data):
@@ -1505,7 +1533,11 @@ class WebSocketProtocol(object):
             #
             if self._isMessageCompressed:
                 compressedLen = len(payload)
-                self.log.debug("RX compressed [%d]: %s" % (compressedLen, binascii.b2a_hex(payload)))
+                self.log.debug(
+                    "RX compressed [length]: octets",
+                    legnth=compressedLen,
+                    octets=_LazyHexFormatter(payload),
+                )
 
                 payload = self._perMessageCompress.decompressMessageData(payload)
                 uncompressedLen = len(payload)
@@ -1746,7 +1778,10 @@ class WebSocketProtocol(object):
         self.sendPing(self.autoPingPending)
 
         if self.autoPingTimeout:
-            self.log.debug("Auto ping/pong: expecting ping in {0} seconds for auto-ping/pong".format(self.autoPingTimeout))
+            self.log.debug(
+                "Expecting ping in {seconds} seconds for auto-ping/pong",
+                seconds=self.autoPingTimeout,
+            )
             self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
 
     def sendPong(self, payload=None):
@@ -2287,7 +2322,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         """
         WebSocketProtocol._connectionMade(self)
         self.factory.countConnections += 1
-        self.log.debug("connection accepted from peer %s" % self.peer)
+        self.log.debug("connection accepted from peer {peer}", peer=self.peer)
 
     def _connectionLost(self, reason):
         """
@@ -2312,7 +2347,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if end_of_header >= 0:
 
             self.http_request_data = self.data[:end_of_header + 4]
-            self.log.debug("received HTTP request:\n\n%s\n\n" % self.http_request_data)
+            self.log.debug(
+                "received HTTP request:\n\n{data}\n\n",
+                data=self.http_request_data,
+            )
 
             # extract HTTP status line and headers
             #
@@ -2323,8 +2361,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
             # validate WebSocket opening handshake client request
             #
-            self.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
-            self.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
+            self.log.debug(
+                "received HTTP status line in opening handshake : {status}",
+                status=self.http_status_line,
+            )
+            self.log.debug(
+                "received HTTP headers in opening handshake : {headers}",
+                headers=self.http_headers,
+            )
 
             # HTTP Request line : METHOD, VERSION
             #
@@ -2419,10 +2463,18 @@ class WebSocketServerProtocol(WebSocketProtocol):
                         url = self.http_request_params['redirect'][0]
                         if 'after' in self.http_request_params and len(self.http_request_params['after']) > 0:
                             after = int(self.http_request_params['after'][0])
-                            self.log.debug("HTTP Upgrade header missing : render server status page and meta-refresh-redirecting to %s after %d seconds" % (url, after))
+                            self.log.debug(
+                                "HTTP Upgrade header missing : render server status page and "
+                                "meta-refresh-redirecting to {url} after {duration} seconds",
+                                url=url,
+                                duration=after,
+                            )
                             self.sendServerStatus(url, after)
                         else:
-                            self.log.debug("HTTP Upgrade header missing : 303-redirecting to %s" % url)
+                            self.log.debug(
+                                "HTTP Upgrade header missing : 303-redirecting to {url}",
+                                url=url,
+                            )
                             self.sendRedirect(url)
                     else:
                         self.log.debug("HTTP Upgrade header missing : render server status page")
@@ -2590,7 +2642,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 self.log.debug("received Flash Socket Policy File request")
 
                 if self.serveFlashSocketPolicy:
-                    self.log.debug("sending Flash Socket Policy File :\n%s" % self.flashSocketPolicy)
+                    self.log.debug(
+                        "sending Flash Socket Policy File :\n{policy}",
+                        policy=self.flashSocketPolicy,
+                    )
 
                     self.sendData(self.flashSocketPolicy.encode('utf8'))
 
@@ -2598,7 +2653,13 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
                     self.dropConnection()
                 else:
-                    self.log.debug("No Flash Policy File served. You might want to serve a Flask Socket Policy file on the destination port since you received a request for it. See WebSocketServerFactory.serveFlashSocketPolicy and WebSocketServerFactory.flashSocketPolicy")
+                    self.log.debug(
+                        "No Flash Policy File served. You might want to serve a"
+                        " Flask Socket Policy file on the destination port "
+                        "since you received a request for it. See "
+                        "WebSocketServerFactory.serveFlashSocketPolicy and "
+                        "WebSocketServerFactory.flashSocketPolicy"
+                    )
 
     def succeedHandshake(self, res):
         """
@@ -2634,7 +2695,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         for (extension, params) in self.websocket_extensions:
 
-            self.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
+            self.log.debug(
+                "parsed WebSocket extension '{extension}' with params '{params}'",
+                extension=extension,
+                params=params,
+            )
 
             # process permessage-compress extension
             #
@@ -2649,7 +2714,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     return self.failHandshake(str(e))
 
             else:
-                self.log.debug("client requested '%s' extension we don't support or which is not activated" % extension)
+                self.log.debug(
+                    "client requested '{extension}' extension we don't support "
+                    "or which is not activated",
+                    extension=extension,
+                )
 
         # handle permessage-compress offers by the client
         #
@@ -2661,7 +2730,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 self.websocket_extensions_in_use.append(self._perMessageCompress)
                 extensionResponse.append(accept.getExtensionString())
             else:
-                self.log.debug("client request permessage-compress extension, but we did not accept any offer [%s]" % pmceOffers)
+                self.log.debug(
+                    "client request permessage-compress extension, but we did "
+                    "not accept any offer [{offers}]",
+                    offers=pmceOffers,
+                )
 
         # build response to complete WebSocket handshake
         #
@@ -2714,11 +2787,14 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
         # send out opening handshake response
         #
-        self.log.debug("sending HTTP response:\n\n%s" % response)
+        self.log.debug("sending HTTP response:\n\n{response}", response=response)
         self.sendData(response.encode('utf8'))
 
         if response_body:
-            self.log.debug("sending HTTP response body:\n\n%s" % binascii.b2a_hex(response_body))
+            self.log.debug(
+                "sending HTTP response body:\n\n{octets}",
+                octets=_LazyHexFormatter(response_body),
+            )
             self.sendData(response_body)
 
         # save response for testsuite
@@ -3174,7 +3250,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         implementation _before_ your code.
         """
         WebSocketProtocol._connectionMade(self)
-        self.log.debug("connection to %s established" % self.peer)
+        self.log.debug("connection to {peer} established", peer=self.peer)
 
         if not self.factory.isServer and self.factory.proxy is not None:
             # start by doing a HTTP/CONNECT for explicit proxies
@@ -3202,7 +3278,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         request += "Host: %s:%d\x0d\x0a" % (self.factory.host.encode("utf-8"), self.factory.port)
         request += "\x0d\x0a"
 
-        self.log.debug(request)
+        self.log.debug("{request}", request=request)
 
         self.sendData(request)
 
@@ -3216,7 +3292,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
         if end_of_header >= 0:
 
             http_response_data = self.data[:end_of_header + 4]
-            self.log.debug("received HTTP response:\n\n%s\n\n" % http_response_data)
+            self.log.debug(
+                "received HTTP response:\n\n{response}\n\n",
+                response=http_response_data,
+            )
 
             # extract HTTP status line and headers
             #
@@ -3224,8 +3303,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # validate proxy connect response
             #
-            self.log.debug("received HTTP status line for proxy connect request : %s" % str(http_status_line))
-            self.log.debug("received HTTP headers for proxy connect request : %s" % str(http_headers))
+            self.log.debug(
+                "received HTTP status line for proxy connect request : {status}",
+                status=http_status_line,
+            )
+            self.log.debug(
+                "received HTTP headers for proxy connect request : {headers}",
+                headers=http_headers,
+            )
 
             # Response Line
             #
@@ -3281,7 +3366,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         During initial explicit proxy connect, the server response indicates some failure and we drop the
         connection.
         """
-        self.log.debug("failing proxy connect ('%s')" % reason)
+        self.log.debug("failing proxy connect ('{reason}')", reason=reason)
         self.dropConnection(abort=True)
 
     def startHandshake(self):
@@ -3353,7 +3438,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         self.http_request_data = request.encode('utf8')
         self.sendData(self.http_request_data)
 
-        self.log.debug(request)
+        self.log.debug("{request}", request=request)
 
     def processHandshake(self):
         """
@@ -3365,7 +3450,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
         if end_of_header >= 0:
 
             self.http_response_data = self.data[:end_of_header + 4]
-            self.log.debug("received HTTP response:\n\n%s\n\n" % self.http_response_data)
+            self.log.debug(
+                "received HTTP response:\n\n{response}\n\n",
+                response=self.http_response_data,
+            )
 
             # extract HTTP status line and headers
             #
@@ -3373,8 +3461,14 @@ class WebSocketClientProtocol(WebSocketProtocol):
 
             # validate WebSocket opening handshake server response
             #
-            self.log.debug("received HTTP status line in opening handshake : %s" % str(self.http_status_line))
-            self.log.debug("received HTTP headers in opening handshake : %s" % str(self.http_headers))
+            self.log.debug(
+                "received HTTP status line in opening handshake : {status}",
+                status=self.http_status_line,
+            )
+            self.log.debug(
+                "received HTTP headers in opening handshake : {headers}",
+                headers=self.http_headers,
+            )
 
             # Response Line
             #
@@ -3460,7 +3554,11 @@ class WebSocketClientProtocol(WebSocketProtocol):
                 #
                 for (extension, params) in websocket_extensions:
 
-                    self.log.debug("parsed WebSocket extension '%s' with params '%s'" % (extension, params))
+                    self.log.debug(
+                        "parsed WebSocket extension '{extension}' with params '{params}'",
+                        extension=extension,
+                        params=params,
+                    )
 
                     # process permessage-compress extension
                     #
@@ -3565,7 +3663,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
         connection.
         """
         self.wasNotCleanReason = reason
-        self.log.info("failing WebSocket opening handshake ('{reason}')", reason=reason)
+        self.log.info(
+            "failing WebSocket opening handshake ('{reason}')",
+            reason=reason,
+        )
         self.dropConnection(abort=True)
 
 

@@ -169,7 +169,7 @@ class ApplicationRunner(object):
             except Exception as e:
                 if start_reactor:
                     # the app component could not be created .. fatal
-                    self.log.error(str(e))
+                    self.log.error("{err}", err=e)
                     reactor.stop()
                 else:
                     # if we didn't start the reactor, it's up to the
@@ -519,7 +519,7 @@ class Application(object):
                 yield handler(*args, **kwargs)
             except Exception as e:
                 # FIXME
-                self.log.info("Warning: exception in signal handler swallowed", e)
+                self.log.info("Warning: exception in signal handler swallowed: {err}", err=e)
 
 
 if service:

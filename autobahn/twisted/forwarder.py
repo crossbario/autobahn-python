@@ -45,7 +45,10 @@ class DestEndpointForwardingProtocol(Protocol):
         pass
 
     def dataReceived(self, data):
-        self.log.debug("DestEndpointForwardingProtocol.dataReceived: {0}".format(data))
+        self.log.debug(
+            "DestEndpointForwardingProtocol.dataReceived: {data}",
+            data=data,
+        )
         if self.factory._sourceProtocol:
             self.factory._sourceProtocol.transport.write(data)
 
@@ -80,7 +83,10 @@ class EndpointForwardingProtocol(Protocol):
         self._destEndpointPort = yield self._destEndpoint.connect(self._destFactory)
 
     def dataReceived(self, data):
-        self.log.debug("EndpointForwardingProtocol.dataReceived: {0}".format(data))
+        self.log.debug(
+            "EndpointForwardingProtocol.dataReceived: {data}",
+            data=data,
+        )
         if self._destFactory._proto:
             self._destFactory._proto.transport.write(data)
 

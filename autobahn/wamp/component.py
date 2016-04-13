@@ -232,7 +232,7 @@ class Component(ObservableMixin):
             'connecting once using transport type "{transport_type}" '
             'over endpoint type "{endpoint_type}"',
             transport_type=transport_config['type'],
-            endpoint_type=transport_config['endpoint']['type']
+            endpoint_type=transport_config['endpoint']['type'],
         )
 
         done = txaio.create_future()
@@ -262,7 +262,7 @@ class Component(ObservableMixin):
                             txaio.resolve(done, None)
 
                         def main_error(err):
-                            self.log.debug("main_error", err)
+                            self.log.debug("main_error: {err}", err=err)
                             txaio.reject(done, err)
 
                         txaio.add_callbacks(d, main_success, main_error)
@@ -279,7 +279,7 @@ class Component(ObservableMixin):
                             self.log.debug("setup_success")
 
                         def setup_error(err):
-                            self.log.debug("setup_error", err)
+                            self.log.debug("setup_error: {err}", err=err)
 
                         txaio.add_callbacks(d, setup_success, setup_error)
 

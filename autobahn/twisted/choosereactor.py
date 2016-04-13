@@ -68,7 +68,7 @@ def install_optimal_reactor(verbose=False):
                 kqreactor.install()
             except:
                 log.critical("Running on *BSD or MacOSX, but cannot install kqueue Twisted reactor")
-                log.warn(traceback.format_exc())
+                log.warn("{tb}", tb=traceback.format_exc())
             else:
                 log.debug("Running on *BSD or MacOSX and optimal reactor (kqueue) was installed.")
         else:
@@ -84,7 +84,7 @@ def install_optimal_reactor(verbose=False):
                 iocpreactor.install()
             except:
                 log.critical("Running on Windows, but cannot install IOCP Twisted reactor")
-                log.warn(traceback.format_exc())
+                log.warn("{tb}", tb=traceback.format_exc())
             else:
                 log.debug("Running on Windows and optimal reactor (ICOP) was installed.")
         else:
@@ -100,7 +100,7 @@ def install_optimal_reactor(verbose=False):
                 epollreactor.install()
             except:
                 log.critical("Running on Linux, but cannot install Epoll Twisted reactor")
-                log.warn(traceback.format_exc())
+                log.warn("{tb}", tb=traceback.format_exc())
             else:
                 log.debug("Running on Linux and optimal reactor (epoll) was installed.")
         else:
@@ -112,7 +112,7 @@ def install_optimal_reactor(verbose=False):
             defaultreactor.install()
         except:
             log.critical("Could not install default Twisted reactor for this platform")
-            log.warn(traceback.format_exc())
+            log.warn("{tb}", tb=traceback.format_exc())
 
     from twisted.internet import reactor
     txaio.config.loop = reactor
