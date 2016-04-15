@@ -192,10 +192,11 @@ html_static_path = ['_static']
 # <sphinx.application.Sphinx object at 0x2b0192ab2f90> class __module__ autobahn.asyncio.websocket True {'show-inheritance': True, 'members': <object object at 0x2b018c791710>, 'undoc-members': True}
 #
 def autodoc_skip_member(app, what, name, obj, skip, options):
-    if hasattr(obj, '__doc__') and obj.__doc__ is not None and obj.__doc__ != '':
-        if '@public' not in obj.__doc__:
-            return True
-    return skip
+    # skip everything that isn't decorated with @autobahn.public or ..
+    if hasattr(obj, '_is_public') and obj._is_public:
+        return False
+    else:
+        return True
 
 def setup(app):
     # additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)

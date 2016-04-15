@@ -28,6 +28,8 @@ from __future__ import absolute_import
 
 import six
 
+from autobahn import public
+
 __all__ = (
     'ComponentConfig',
     'HelloReturn',
@@ -47,10 +49,9 @@ __all__ = (
 )
 
 
+@public
 class ComponentConfig(object):
     """
-    @public
-
     WAMP application component configuration. An instance of this class is
     provided to the constructor of :class:`autobahn.wamp.protocol.ApplicationSession`.
     """
@@ -260,10 +261,9 @@ class HelloDetails(object):
         return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session)
 
 
+@public
 class SessionDetails(object):
     """
-    @public
-
     Provides details for a WAMP session upon open.
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onJoin`
@@ -307,10 +307,9 @@ class SessionDetails(object):
         return "SessionDetails(realm=<{0}>, session={1}, authid=<{2}>, authrole=<{3}>, authmethod={4}, authprovider={5}, authextra={6})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
+@public
 class CloseDetails(object):
     """
-    @public
-
     Provides details for a WAMP session upon close.
 
     .. seealso:: :func:`autobahn.wamp.interfaces.ISession.onLeave`
@@ -341,10 +340,9 @@ class CloseDetails(object):
         return "CloseDetails(reason=<{0}>, message='{1}')".format(self.reason, self.message)
 
 
+@public
 class SubscribeOptions(object):
     """
-    @public
-
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
     """
@@ -384,10 +382,9 @@ class SubscribeOptions(object):
         return "SubscribeOptions(match={0}, details_arg={1})".format(self.match, self.details_arg)
 
 
+@public
 class EventDetails(object):
     """
-    @public
-
     Provides details on an event when calling an event handler
     previously registered.
     """
@@ -440,10 +437,9 @@ class EventDetails(object):
         return "EventDetails(publication={0}, publisher={1}, publisher_authid={2}, publisher_authrole={3}, topic=<{4}>, enc_algo={5})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo)
 
 
+@public
 class PublishOptions(object):
     """
-    @public
-
     Used to provide options for subscribing in
     :func:`autobahn.wamp.interfaces.IPublisher.publish`.
     """
@@ -543,10 +539,9 @@ class PublishOptions(object):
         return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole)
 
 
+@public
 class RegisterOptions(object):
     """
-    @public
-
     Used to provide options for registering in
     :func:`autobahn.wamp.interfaces.ICallee.register`.
     """
@@ -590,10 +585,9 @@ class RegisterOptions(object):
         return "RegisterOptions(match={0}, invoke={1}, details_arg={2})".format(self.match, self.invoke, self.details_arg)
 
 
+@public
 class CallDetails(object):
     """
-    @public
-
     Provides details on a call when an endpoint previously
     registered is being called and opted to receive call details.
     """
@@ -645,10 +639,9 @@ class CallDetails(object):
         return "CallDetails(progress={0}, caller={1}, caller_authid={2}, caller_authrole={3}, procedure=<{4}>, enc_algo={5})".format(self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
 
 
+@public
 class CallOptions(object):
     """
-    @public
-
     Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
     """
 
@@ -692,10 +685,9 @@ class CallOptions(object):
         return "CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
 
 
+@public
 class CallResult(object):
     """
-    @public
-
     Wrapper for remote procedure call results that contain multiple positional
     return values or keyword return values.
     """

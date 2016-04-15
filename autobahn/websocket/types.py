@@ -29,6 +29,8 @@ from __future__ import absolute_import
 import json
 import six
 
+from autobahn import public
+
 __all__ = (
     'ConnectionRequest',
     'ConnectionResponse',
@@ -40,10 +42,9 @@ __all__ = (
 )
 
 
+@public
 class ConnectionRequest(object):
     """
-    @public
-
     Thin-wrapper for WebSocket connection request information provided in
     :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect` when
     a WebSocket client want to establish a connection to a WebSocket server.
@@ -108,10 +109,9 @@ class ConnectionRequest(object):
         return json.dumps(self.__json__())
 
 
+@public
 class ConnectionResponse(object):
     """
-    @public
-
     Thin-wrapper for WebSocket connection response information provided in
     :meth:`autobahn.websocket.protocol.WebSocketClientProtocol.onConnect` when
     a WebSocket server has accepted a connection request by a client.
@@ -156,10 +156,9 @@ class ConnectionResponse(object):
         return json.dumps(self.__json__())
 
 
+@public
 class ConnectionAccept(object):
     """
-    @public
-
     Used by WebSocket servers to accept an incoming WebSocket connection.
     If the client announced one or multiple subprotocols, the server MUST
     select one of the subprotocols announced by the client.
@@ -195,10 +194,9 @@ class ConnectionAccept(object):
         self.headers = headers
 
 
+@public
 class ConnectionDeny(Exception):
     """
-    @public
-
     Throw an instance of this class to deny a WebSocket connection
     during handshake in :meth:`autobahn.websocket.protocol.WebSocketServerProtocol.onConnect`.
     """

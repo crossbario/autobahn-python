@@ -43,6 +43,8 @@ else:
     # Python 3
     from urllib import parse as urlparse
 
+from autobahn import public
+
 wsschemes = ["ws", "wss"]
 urlparse.uses_relative.extend(wsschemes)
 urlparse.uses_netloc.extend(wsschemes)
@@ -56,10 +58,9 @@ __all__ = (
 )
 
 
+@public
 def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     """
-    @public
-
     Create a WebSocket URL from components.
 
     :param hostname: WebSocket server hostname.
@@ -105,10 +106,9 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
+@public
 def parse_url(url):
     """
-    @public
-
     Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource, path, params).
 
      - ``isSecure`` is a flag which is True for wss URLs.

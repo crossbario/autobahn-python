@@ -32,6 +32,7 @@ import six
 
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn import public
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.util import parse_url
@@ -80,10 +81,9 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
 
 
+@public
 class ApplicationRunner(object):
     """
-    @public
-
     This class is a convenience tool mainly for development and quick hosting
     of WAMP application components.
 
