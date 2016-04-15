@@ -81,7 +81,7 @@ class ComponentConfig(object):
             a controlling entity.
         :type controller: instance of ApplicationSession or None
         """
-        assert(realm is None or type(realm) == six.text_type)
+        # assert(realm is None or type(realm) == six.text_type) # FIXME
         # assert(keyring is None or ...) # FIXME
 
         self.realm = realm
