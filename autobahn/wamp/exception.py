@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import six
 
+from autobahn import public
 from autobahn.wamp.uri import error
 
 __all__ = (
@@ -42,123 +43,99 @@ __all__ = (
 )
 
 
+@public
 class Error(RuntimeError):
     """
-    @public
-
     Base class for all exceptions related to WAMP.
     """
 
 
+@public
 class SessionNotReady(Error):
     """
-    @public
-
     The application tried to perform a WAMP interaction, but the
     session is not yet fully established.
     """
 
 
+@public
 class SerializationError(Error):
     """
-    @public
-
     Exception raised when the WAMP serializer could not serialize the
     application payload (``args`` or ``kwargs`` for ``CALL``, ``PUBLISH``, etc).
     """
 
 
+@public
 class ProtocolError(Error):
     """
-    @public
-
     Exception raised when WAMP protocol was violated. Protocol errors
     are fatal and are handled by the WAMP implementation. They are
     not supposed to be handled at the application level.
     """
 
 
+@public
 class TransportLost(Error):
     """
-    @public
-
     Exception raised when the transport underlying the WAMP session
     was lost or is not connected.
     """
 
 
+@public
 class ApplicationError(Error):
     """
-    @public
-
     Base class for all exceptions that can/may be handled
     at the application level.
     """
 
     INVALID_URI = u"wamp.error.invalid_uri"
     """
-    @public
-
     Peer provided an incorrect URI for a URI-based attribute of a WAMP message
     such as a realm, topic or procedure.
     """
 
     INVALID_PAYLOAD = u"wamp.error.invalid_payload"
     """
-    @public
-
     The application payload could not be serialized.
     """
 
     NO_SUCH_PROCEDURE = u"wamp.error.no_such_procedure"
     """
-    @public
-
     A Dealer could not perform a call, since not procedure is currently registered
     under the given URI.
     """
 
     PROCEDURE_ALREADY_EXISTS = u"wamp.error.procedure_already_exists"
     """
-    @public
-
     A procedure could not be registered, since a procedure with the given URI is
     already registered.
     """
 
     PROCEDURE_EXISTS_INVOCATION_POLICY_CONFLICT = u"wamp.error.procedure_exists_with_different_invocation_policy"
     """
-    @public
-
     A procedure could not be registered, since a procedure with the given URI is
     already registered, and the registration has a conflicting invocation policy.
     """
 
     NO_SUCH_REGISTRATION = u"wamp.error.no_such_registration"
     """
-    @public
-
     A Dealer could not perform a unregister, since the given registration is not active.
     """
 
     NO_SUCH_SUBSCRIPTION = u"wamp.error.no_such_subscription"
     """
-    @public
-
     A Broker could not perform a unsubscribe, since the given subscription is not active.
     """
 
     NO_SUCH_SESSION = u"wamp.error.no_such_session"
     """
-    @public
-
     A router could not perform an operation, since a session ID specified was non-existant.
     """
 
     INVALID_ARGUMENT = u"wamp.error.invalid_argument"
     """
-    @public
-
     A call failed, since the given argument types or values are not acceptable to the
     called procedure - in which case the *Callee* may throw this error. Or a Router
     performing *payload validation* checked the payload (``args`` / ``kwargs``) of a call,
@@ -168,39 +145,29 @@ class ApplicationError(Error):
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     SYSTEM_SHUTDOWN = u"wamp.error.system_shutdown"
     """
-    @public
-
     The *Peer* is shutting down completely - used as a ``GOODBYE`` (or ``ABORT``) reason.
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     CLOSE_REALM = u"wamp.error.close_realm"
     """
-    @public
-
     The *Peer* want to leave the realm - used as a ``GOODBYE`` reason.
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     GOODBYE_AND_OUT = u"wamp.error.goodbye_and_out"
     """
-    @public
-
     A *Peer* acknowledges ending of a session - used as a ``GOOBYE`` reply reason.
     """
 
     NOT_AUTHORIZED = u"wamp.error.not_authorized"
     """
-    @public
-
     A call, register, publish or subscribe failed, since the session is not authorized
     to perform the operation.
     """
 
     AUTHORIZATION_FAILED = u"wamp.error.authorization_failed"
     """
-    @public
-
     A Dealer or Broker could not determine if the *Peer* is authorized to perform
     a join, call, register, publish or subscribe, since the authorization operation
     *itself* failed. E.g. a custom authorizer did run into an error.
@@ -208,31 +175,23 @@ class ApplicationError(Error):
 
     AUTHENTICATION_FAILED = u"wamp.error.authentication_failed"
     """
-    @public
-
     Something failed with the authentication itself, that is, authentication could
     not run to end.
     """
 
     NO_AUTH_METHOD = u"wamp.error.no_auth_method"
     """
-    @public
-
     No authentication method the peer offered is available or active.
     """
 
     NO_SUCH_REALM = u"wamp.error.no_such_realm"
     """
-    @public
-
     Peer wanted to join a non-existing realm (and the *Router* did not allow to auto-create
     the realm).
     """
 
     NO_SUCH_ROLE = u"wamp.error.no_such_role"
     """
-    @public
-
     A *Peer* was to be authenticated under a Role that does not (or no longer) exists on the Router.
     For example, the *Peer* was successfully authenticated, but the Role configured does not
     exists - hence there is some misconfiguration in the Router.
@@ -240,24 +199,18 @@ class ApplicationError(Error):
 
     NO_SUCH_PRINCIPAL = u"wamp.error.no_such_principal"
     """
-    @public
-
     A *Peer* was authenticated for an authid that does not or longer exists.
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     CANCELED = u"wamp.error.canceled"
     """
-    @public
-
     A Dealer or Callee canceled a call previously issued (WAMP AP).
     """
 
     # FIXME: this currently isn't used neither in Autobahn nor Crossbar. Check!
     NO_ELIGIBLE_CALLEE = u"wamp.error.no_eligible_callee"
     """
-    @public
-
     A *Dealer* could not perform a call, since a procedure with the given URI is registered,
     but *Callee Black- and Whitelisting* and/or *Caller Exclusion* lead to the
     exclusion of (any) *Callee* providing the procedure (WAMP AP).
@@ -265,22 +218,16 @@ class ApplicationError(Error):
 
     ENC_NO_KEYRING_ACTIVE = u"wamp.error.encryption.no_keyring_active"
     """
-    @public
-
     WAMP-cryptobox application payload end-to-end encryption error.
     """
 
     ENC_TRUSTED_URI_MISMATCH = u"wamp.error.encryption.trusted_uri_mismatch"
     """
-    @public
-
     WAMP-cryptobox application payload end-to-end encryption error.
     """
 
     ENC_DECRYPT_ERROR = u"wamp.error.encryption.decrypt_error"
     """
-    @public
-
     WAMP-cryptobox application payload end-to-end encryption error.
     """
 
@@ -295,10 +242,9 @@ class ApplicationError(Error):
         self.error = error
         self.enc_algo = kwargs.pop('enc_algo', None)
 
+    @public
     def error_message(self):
         """
-        @public
-
         Get the error message of this exception.
 
         :return: unicode
@@ -324,6 +270,7 @@ class ApplicationError(Error):
             return self.__unicode__().encode('utf8')
 
 
+@public
 @error(ApplicationError.NOT_AUTHORIZED)
 class NotAuthorized(Exception):
     """
@@ -331,6 +278,7 @@ class NotAuthorized(Exception):
     """
 
 
+@public
 @error(ApplicationError.INVALID_URI)
 class InvalidUri(Exception):
     """
@@ -338,6 +286,7 @@ class InvalidUri(Exception):
     """
 
 
+@public
 @error(ApplicationError.INVALID_PAYLOAD)
 class InvalidPayload(Exception):
     """

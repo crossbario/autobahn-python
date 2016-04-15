@@ -41,7 +41,7 @@ from array import array
 import six
 
 import txaio
-
+from autobahn import public
 
 __all__ = ("xor",
            "utcnow",
@@ -137,10 +137,9 @@ def xor(d1, d2):
         return d1.tostring()
 
 
+@public
 def utcstr(ts=None):
     """
-    @public
-
     Format UTC timestamp in ISO 8601 format.
 
     Note: to parse an ISO 8601 formatted string, use the **iso8601**
@@ -158,10 +157,9 @@ def utcstr(ts=None):
     return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
+@public
 def utcnow():
     """
-    @public
-
     Get current time in UTC as ISO 8601 string.
 
     :returns: Current time as string in ISO 8601 format.
@@ -307,15 +305,11 @@ def newid(length=16):
 # is visual ambiguity: 0/O/D, 1/I, 8/B, 2/Z
 DEFAULT_TOKEN_CHARS = u'345679ACEFGHJKLMNPQRSTUVWXY'
 """
-@public
-
 Default set of characters to create rtokens from.
 """
 
 DEFAULT_ZBASE32_CHARS = u'13456789abcdefghijkmnopqrstuwxyz'
 """
-@public
-
 Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
 reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
 mistaken for `1' or `i', that `v' is potentially mistaken for `u' or `r'
@@ -331,10 +325,9 @@ http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
 """
 
 
+@public
 def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_case=False):
     """
-    @public
-
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
 
@@ -390,10 +383,9 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
         return token_value
 
 
+@public
 def generate_activation_code():
     """
-    @public
-
     Generate a one-time activation code or token of the form ``u'W97F-96MJ-YGJL'``.
     The generated value is cryptographically strong and has (at least) 57 bits of entropy.
 
@@ -403,10 +395,9 @@ def generate_activation_code():
     return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
+@public
 def generate_user_password():
     """
-    @public
-
     Generate a secure, random user password of the form ``u'kgojzi61dn5dtb6d'``.
     The generated value is cryptographically strong and has (at least) 76 bits of entropy.
 
@@ -416,10 +407,9 @@ def generate_user_password():
     return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
 
 
+@public
 def generate_serial_number():
     """
-    @public
-
     Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
     The generated value is cryptographically strong and has (at least) 114 bits of entropy.
 
@@ -447,16 +437,16 @@ else:
     _rtime = time.time
 
 
-rtime = _rtime
-"""
 @public
+def rtime():
+    """
+    Precise wallclock time.
 
-Precise wallclock time.
-
-:returns: The current wallclock in seconds. Returned values are only guaranteed
-   to be meaningful relative to each other.
-:rtype: float
-"""
+    :returns: The current wallclock in seconds. Returned values are only guaranteed
+       to be meaningful relative to each other.
+    :rtype: float
+    """
+    return _rtime()
 
 
 class Stopwatch(object):

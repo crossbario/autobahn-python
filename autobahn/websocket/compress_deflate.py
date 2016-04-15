@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import zlib
 
+from autobahn import public
 from autobahn.websocket.compress_base import PerMessageCompressOffer, \
     PerMessageCompressOfferAccept, \
     PerMessageCompressResponse, \
@@ -67,10 +68,9 @@ class PerMessageDeflateMixin(object):
     """
 
 
+@public
 class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
     """
-    @public
-
     Set of extension parameters for `permessage-deflate` WebSocket extension
     offered by a client to a server.
     """
@@ -233,10 +233,9 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
         return "PerMessageDeflateOffer(acceptNoContextTakeover = %s, acceptMaxWindowBits = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s)" % (self.acceptNoContextTakeover, self.acceptMaxWindowBits, self.requestNoContextTakeover, self.requestMaxWindowBits)
 
 
+@public
 class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDeflateMixin):
     """
-    @public
-
     Set of parameters with which to accept an `permessage-deflate` offer
     from a client by a server.
     """
