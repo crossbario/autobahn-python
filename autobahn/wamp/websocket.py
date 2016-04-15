@@ -77,7 +77,7 @@ class WampWebSocketProtocol(object):
                 self.log.debug('WAMP-over-WebSocket transport lost: wasClean={wasClean}, code={code}, reason="{reason}"', wasClean=wasClean, code=code, reason=reason)
                 self._session.onClose(wasClean)
             except Exception:
-                self.log.critical(traceback.format_exc())
+                self.log.critical("{tb}", tb=traceback.format_exc())
             self._session = None
 
     def onMessage(self, payload, isBinary):
@@ -105,7 +105,12 @@ class WampWebSocketProtocol(object):
         """
         if self.isOpen():
             try:
-                self.log.trace("WAMP SEND: message={message}, session={session}, authid={authid}", authid=self._session._authid, session=self._session._session_id, message=msg)
+                self.log.trace(
+                    "WAMP SEND: message={message}, session={session}, authid={authid}",
+                    authid=self._session._authid,
+                    session=self._session._session_id,
+                    message=msg,
+                )
                 payload, isBinary = self._serializer.serialize(msg)
             except Exception as e:
                 self.log.error("WAMP message serialization error")

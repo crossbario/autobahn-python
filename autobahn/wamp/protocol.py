@@ -203,14 +203,24 @@ class BaseSession(ObservableMixin):
                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                     decrypted_error, msg.args, msg.kwargs = self._keyring.decrypt(True, msg.error, encrypted_payload)
                 except Exception as e:
-                    log_msg = u"failed to decrypt application payload 1: {}".format(e)
-                    self.log.warn(log_msg)
-                    enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg, enc_algo=msg.enc_algo)
+                    self.log.warn("failed to decrypt application payload 1: {err}", err=e)
+                    enc_err = ApplicationError(
+                        ApplicationError.ENC_DECRYPT_ERROR,
+                        u"failed to decrypt application payload 1: {}".format(e),
+                        enc_algo=msg.enc_algo,
+                    )
                 else:
                     if msg.error != decrypted_error:
-                        log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_error, msg.error)
-                        self.log.warn(log_msg)
-                        enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg, enc_algo=msg.enc_algo)
+                        self.log.warn(
+                            u"URI within encrypted payload ('{decrypted_error}') does not match the envelope ('{error}')",
+                            decrypted_error=decrypted_error,
+                            error=msg.error,
+                        )
+                        enc_err = ApplicationError(
+                            ApplicationError.ENC_TRUSTED_URI_MISMATCH,
+                            u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_error, msg.error),
+                            enc_algo=msg.enc_algo,
+                        )
 
         if enc_err:
             return enc_err
@@ -663,14 +673,25 @@ class ApplicationSession(BaseSession):
                                 encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                                 decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(True, proc, encrypted_payload)
                             except Exception as e:
-                                log_msg = u"failed to decrypt application payload 1: {}".format(e)
-                                self.log.warn(log_msg)
-                                enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
+                                self.log.warn(
+                                    "failed to decrypt application payload 1: {err}",
+                                    err=e,
+                                )
+                                enc_err = ApplicationError(
+                                    ApplicationError.ENC_DECRYPT_ERROR,
+                                    u"failed to decrypt application payload 1: {}".format(e),
+                                )
                             else:
                                 if proc != decrypted_proc:
-                                    log_msg = u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
-                                    self.log.warn(log_msg)
-                                    enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
+                                    self.log.warn(
+                                        "URI within encrypted payload ('{decrypted_proc}') does not match the envelope ('{proc}')",
+                                        decrypted_proc=decrypted_proc,
+                                        proc=proc,
+                                    )
+                                    enc_err = ApplicationError(
+                                        ApplicationError.ENC_TRUSTED_URI_MISMATCH,
+                                        u"URI within encrypted payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
+                                    )
 
                     if msg.progress:
                         # process progressive call result
@@ -749,14 +770,26 @@ class ApplicationSession(BaseSession):
                                     encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
                                     decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(False, proc, encrypted_payload)
                                 except Exception as e:
-                                    log_msg = u"failed to decrypt INVOCATION payload: {}".format(e)
-                                    self.log.warn(log_msg)
-                                    enc_err = ApplicationError(ApplicationError.ENC_DECRYPT_ERROR, log_msg)
+                                    self.log.warn(
+                                        "failed to decrypt INVOCATION payload: {err}",
+                                        err=e,
+                                    )
+                                    enc_err = ApplicationError(
+                                        ApplicationError.ENC_DECRYPT_ERROR,
+                                        "failed to decrypt INVOCATION payload: {}".format(e),
+                                    )
                                 else:
                                     if proc != decrypted_proc:
-                                        log_msg = u"URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc)
-                                        self.log.warn(log_msg)
-                                        enc_err = ApplicationError(ApplicationError.ENC_TRUSTED_URI_MISMATCH, log_msg)
+                                        self.log.warn(
+                                            "URI within encrypted INVOCATION payload ('{decrypted_proc}') "
+                                            "does not match the envelope ('{proc}')",
+                                            decrypted_proc=decrypted_proc,
+                                            proc=proc,
+                                        )
+                                        enc_err = ApplicationError(
+                                            ApplicationError.ENC_TRUSTED_URI_MISMATCH,
+                                            u"URI within encrypted INVOCATION payload ('{}') does not match the envelope ('{}')".format(decrypted_proc, proc),
+                                        )
 
                         if enc_err:
                             # when there was a problem decrypting the INVOCATION payload, we obviously can't invoke
@@ -823,8 +856,10 @@ class ApplicationSession(BaseSession):
                                             else:
                                                 encrypted_payload = self._keyring.encrypt(False, proc, [res])
                                         except Exception as e:
-                                            log_msg = u"failed to encrypt application payload: {}".format(e)
-                                            self.log.warn(log_msg)
+                                            self.log.warn(
+                                                "failed to encrypt application payload: {err}",
+                                                err=e,
+                                            )
 
                                 if encrypted_payload:
                                     reply = message.Yield(msg.request,

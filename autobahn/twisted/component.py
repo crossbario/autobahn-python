@@ -265,7 +265,11 @@ class Component(component.Component):
             # if the transport hasn't reached max. connect count
             if transport.can_reconnect():
                 delay = transport.next_delay()
-                self.log.debug('trying transport {transport_idx} using connect delay {transport_delay}', transport_idx=transport.idx, transport_delay=delay)
+                self.log.debug(
+                    'trying transport {transport_idx} using connect delay {transport_delay}',
+                    transport_idx=transport.idx,
+                    transport_delay=delay,
+                )
                 yield sleep(delay)
                 try:
                     transport.connect_attempts += 1

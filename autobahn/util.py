@@ -34,6 +34,7 @@ import re
 import base64
 import math
 import random
+import binascii
 from datetime import datetime, timedelta
 from pprint import pformat
 from array import array
@@ -748,3 +749,22 @@ class ObservableMixin(object):
         if self._parent is not None:
             res.append(self._parent.fire(event, *args, **kwargs))
         return txaio.gather(res, consume_exceptions=False)
+
+
+class _LazyHexFormatter(object):
+    """
+    This is used to avoid calling binascii.hexlify() on data given to
+    log.debug() calls unless debug is active (for example). Like::
+
+        self.log.debug(
+            "Some data: {octets}",
+            octets=_LazyHexFormatter(os.urandom(32)),
+        )
+    """
+    __slots__ = ('obj',)
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __str__(self):
+        return binascii.hexlify(self.obj)
