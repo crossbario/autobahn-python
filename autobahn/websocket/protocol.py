@@ -51,7 +51,7 @@ from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
 from autobahn.websocket.utf8validator import Utf8Validator
-from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
+from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
 
@@ -1404,7 +1404,7 @@ class WebSocketProtocol(object):
                         i += 4
 
                     if frame_masked and frame_payload_len > 0 and self.applyMask:
-                        self.current_frame_masker = createXorMasker(frame_mask, frame_payload_len)
+                        self.current_frame_masker = create_xor_masker(frame_mask, frame_payload_len)
                     else:
                         self.current_frame_masker = XorMaskerNull()
 
@@ -1714,7 +1714,7 @@ class WebSocketProtocol(object):
             # mask frame payload
             #
             if l > 0 and self.applyMask:
-                masker = createXorMasker(mask, l)
+                masker = create_xor_masker(mask, l)
                 plm = masker.process(pl)
             else:
                 plm = pl
@@ -1924,7 +1924,7 @@ class WebSocketProtocol(object):
         # payload masker
         #
         if self.send_message_frame_mask and length > 0 and self.applyMask:
-            self.send_message_frame_masker = createXorMasker(self.send_message_frame_mask, length)
+            self.send_message_frame_masker = create_xor_masker(self.send_message_frame_mask, length)
         else:
             self.send_message_frame_masker = XorMaskerNull()
 
@@ -2222,7 +2222,7 @@ class PreparedMessage(object):
             if l == 0:
                 plm = payload
             else:
-                plm = createXorMasker(mask, l).process(payload)
+                plm = create_xor_masker(mask, l).process(payload)
         else:
             b1 = 0
             mask = b''

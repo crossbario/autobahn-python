@@ -45,12 +45,12 @@ else:
 
 from autobahn import public
 
-wsschemes = ["ws", "wss"]
-urlparse.uses_relative.extend(wsschemes)
-urlparse.uses_netloc.extend(wsschemes)
-urlparse.uses_params.extend(wsschemes)
-urlparse.uses_query.extend(wsschemes)
-urlparse.uses_fragment.extend(wsschemes)
+WEBSOCKET_SCHEMES = ["ws", "wss"]
+urlparse.uses_relative.extend(WEBSOCKET_SCHEMES)
+urlparse.uses_netloc.extend(WEBSOCKET_SCHEMES)
+urlparse.uses_params.extend(WEBSOCKET_SCHEMES)
+urlparse.uses_query.extend(WEBSOCKET_SCHEMES)
+urlparse.uses_fragment.extend(WEBSOCKET_SCHEMES)
 
 __all__ = (
     "create_url",
@@ -59,7 +59,7 @@ __all__ = (
 
 
 @public
-def create_url(hostname, port=None, isSecure=False, path=None, params=None):
+def create_url(hostname, port=None, is_secure=False, path=None, params=None):
     """
     Assemble a WebSocket URL from components.
 
@@ -67,11 +67,11 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     :type hostname: str
 
     :param port: WebSocket service port or ``None`` (to select default
-        ports 80/443 depending on ``isSecure``).
+        ports 80/443 depending on ``is_secure``).
     :type port: int
 
-    :param isSecure: Set ``True`` for secure WebSocket (``wss`` scheme).
-    :type isSecure: bool
+    :param is_secure: Set ``True`` for secure WebSocket (``wss`` scheme).
+    :type is_secure: bool
 
     :param path: Path component of addressed resource (will be
         properly URL escaped).
@@ -88,11 +88,11 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     if port is not None:
         netloc = "%s:%d" % (hostname, port)
     else:
-        if isSecure:
+        if is_secure:
             netloc = "%s:443" % hostname
         else:
             netloc = "%s:80" % hostname
-    if isSecure:
+    if is_secure:
         scheme = "wss"
     else:
         scheme = "ws"

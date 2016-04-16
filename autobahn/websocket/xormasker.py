@@ -28,9 +28,10 @@ import six
 
 
 # use Cython implementation of XorMasker validator if available
-##
 try:
-    from wsaccel.xormask import XorMaskerNull, createXorMasker
+    from wsaccel.xormask import XorMaskerNull
+    from wsaccel.xromask import createXorMasker
+    create_xor_masker = createXorMasker
 
 except ImportError:
     # fallback to pure Python implementation
@@ -122,7 +123,7 @@ except ImportError:
             else:
                 return payload.tostring()
 
-    def createXorMasker(mask, length=None):
+    def create_xor_masker(mask, length=None):
         if length is None or length < 128:
             return XorMaskerSimple(mask)
         else:
