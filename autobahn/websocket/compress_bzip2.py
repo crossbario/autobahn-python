@@ -348,7 +348,7 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
         self.response = response
 
         if compress_level is not None:
-            if compress_level not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
+            if compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                 raise Exception("invalid value %s for compress_level - permissible values %s" % (compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
             if response.client_max_compress_level != 0 and compress_level > response.client_max_compress_level:

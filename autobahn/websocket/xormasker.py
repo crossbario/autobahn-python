@@ -26,18 +26,21 @@
 
 import six
 
-
-# use Cython implementation of XorMasker validator if available
 try:
+    # use Cython implementation of XorMasker validator if available
+
     from wsaccel.xormask import XorMaskerNull
+    # noinspection PyUnresolvedReferences
     from wsaccel.xromask import createXorMasker
     create_xor_masker = createXorMasker
 
 except ImportError:
-    # fallback to pure Python implementation
+
+    # fallback to pure Python implementation (this is faster on PyPy than above!)
 
     # http://stackoverflow.com/questions/15014310/python3-xrange-lack-hurts
     try:
+        # noinspection PyUnresolvedReferences
         xrange
     except NameError:
         # Python 3
@@ -48,39 +51,43 @@ except ImportError:
 
     class XorMaskerNull(object):
 
+        __slots__ = ('_ptr',)
+
         # noinspection PyUnusedLocal
         def __init__(self, mask=None):
-            self.ptr = 0
+            self._ptr = 0
 
         def pointer(self):
-            return self.ptr
+            return self._ptr
 
         def reset(self):
-            self.ptr = 0
+            self._ptr = 0
 
         def process(self, data):
-            self.ptr += len(data)
+            self._ptr += len(data)
             return data
 
     class XorMaskerSimple(object):
 
+        __slots__ = ('_ptr', '_msk')
+
         def __init__(self, mask):
             assert len(mask) == 4
-            self.ptr = 0
-            self.msk = array('B', mask)
+            self._ptr = 0
+            self._msk = array('B', mask)
 
         def pointer(self):
-            return self.ptr
+            return self._ptr
 
         def reset(self):
-            self.ptr = 0
+            self._ptr = 0
 
         def process(self, data):
             dlen = len(data)
             payload = array('B', data)
             for k in xrange(dlen):
-                payload[k] ^= self.msk[self.ptr & 3]
-                self.ptr += 1
+                payload[k] ^= self._msk[self._ptr & 3]
+                self._ptr += 1
             if six.PY3:
                 return payload.tobytes()
             else:
@@ -88,36 +95,38 @@ except ImportError:
 
     class XorMaskerShifted1(object):
 
+        __slots__ = ('_ptr', '_mskarray')
+
         def __init__(self, mask):
             assert len(mask) == 4
-            self.ptr = 0
-            self.mskarray = [array('B'), array('B'), array('B'), array('B')]
+            self._ptr = 0
+            self._mskarray = [array('B'), array('B'), array('B'), array('B')]
             if six.PY3:
                 for j in xrange(4):
-                    self.mskarray[0].append(mask[j & 3])
-                    self.mskarray[1].append(mask[(j + 1) & 3])
-                    self.mskarray[2].append(mask[(j + 2) & 3])
-                    self.mskarray[3].append(mask[(j + 3) & 3])
+                    self._mskarray[0].append(mask[j & 3])
+                    self._mskarray[1].append(mask[(j + 1) & 3])
+                    self._mskarray[2].append(mask[(j + 2) & 3])
+                    self._mskarray[3].append(mask[(j + 3) & 3])
             else:
                 for j in xrange(4):
-                    self.mskarray[0].append(ord(mask[j & 3]))
-                    self.mskarray[1].append(ord(mask[(j + 1) & 3]))
-                    self.mskarray[2].append(ord(mask[(j + 2) & 3]))
-                    self.mskarray[3].append(ord(mask[(j + 3) & 3]))
+                    self._mskarray[0].append(ord(mask[j & 3]))
+                    self._mskarray[1].append(ord(mask[(j + 1) & 3]))
+                    self._mskarray[2].append(ord(mask[(j + 2) & 3]))
+                    self._mskarray[3].append(ord(mask[(j + 3) & 3]))
 
         def pointer(self):
-            return self.ptr
+            return self._ptr
 
         def reset(self):
-            self.ptr = 0
+            self._ptr = 0
 
         def process(self, data):
             dlen = len(data)
             payload = array('B', data)
-            msk = self.mskarray[self.ptr & 3]
+            msk = self._mskarray[self._ptr & 3]
             for k in xrange(dlen):
                 payload[k] ^= msk[k & 3]
-            self.ptr += dlen
+            self._ptr += dlen
             if six.PY3:
                 return payload.tobytes()
             else:
