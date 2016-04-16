@@ -68,18 +68,21 @@ class ComponentConfig(object):
 
         :param realm: The realm the session should join.
         :type realm: unicode
+
         :param extra: Optional user-supplied object with extra configuration.
             This can be any object you like, and is accessible in your
             `ApplicationSession` subclass via `self.config.extra`. `dict` is
             a good default choice. Important: if the component is to be hosted
             by Crossbar.io, the supplied value must be JSON serializable.
         :type extra: arbitrary
+
         :param keyring: A mapper from WAMP URIs to "from"/"to" Ed25519 keys. When using
             WAMP end-to-end encryption, application payload is encrypted using a
             symmetric message key, which in turn is encrypted using the "to" URI (topic being
             published to or procedure being called) public key and the "from" URI
             private key. In both cases, the key for the longest matching URI is used.
         :type keyring: obj implementing IKeyRing or None
+
         :param controller: A WAMP ApplicationSession instance that holds a session to
             a controlling entity.
         :type controller: instance of ApplicationSession or None
@@ -121,14 +124,19 @@ class Accept(HelloReturn):
 
         :param realm: The realm the client is joined to.
         :type realm: unicode
+
         :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
         :type authid: unicode
+
         :param authrole: The authentication role the client is assigned, e.g. ``"anonymous"``, ``"user"`` or ``"com.myapp.user"``.
         :type authrole: unicode
+
         :param authmethod: The authentication method that was used to authenticate the client, e.g. ``"cookie"`` or ``"wampcra"``.
         :type authmethod: unicode
+
         :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
         :type authprovider: unicode
+
         :param authextra: Application-specific authextra to be forwarded to the client in `WELCOME.details.authextra`.
         :type authextra: dict
         """
@@ -165,6 +173,7 @@ class Deny(HelloReturn):
 
         :param reason: The reason of denying the authentication (an URI, e.g. ``wamp.error.not_authorized``)
         :type reason: unicode
+
         :param message: A human readable message (for logging purposes).
         :type message: unicode
         """
@@ -228,16 +237,22 @@ class HelloDetails(object):
 
         :param realm: The realm the client wants to join.
         :type realm: unicode or None
+
         :param authmethods: The authentication methods the client is willing to perform.
         :type authmethods: list of unicode or None
+
         :param authid: The authid the client wants to authenticate as.
         :type authid: unicode or None
+
         :param authrole: The authrole the client wants to authenticate as.
         :type authrole: unicode or None
+
         :param authextra: Any extra information the specific authentication method requires the client to send.
         :type authextra: arbitrary or None
+
         :param session_roles: The WAMP session roles and features by the connecting client.
         :type session_roles: dict or None
+
         :param pending_session: The session ID the session will get once successfully attached.
         :type pending_session: int or None
         """
@@ -284,6 +299,7 @@ class SessionDetails(object):
 
         :param realm: The realm this WAMP session is attached to.
         :type realm: unicode
+
         :param session: WAMP session ID of this session.
         :type session: int
         """
@@ -327,6 +343,7 @@ class CloseDetails(object):
 
         :param reason: The close reason (an URI, e.g. ``wamp.close.normal``)
         :type reason: unicode
+
         :param message: Closing log message.
         :type message: unicode
         """
@@ -357,6 +374,7 @@ class SubscribeOptions(object):
 
         :param match: The topic matching method to be used for the subscription.
         :type match: unicode
+
         :param details_arg: When invoking the handler, provide event details
           in this keyword argument to the callable.
         :type details_arg: str
@@ -403,20 +421,25 @@ class EventDetails(object):
 
         :param publication: The publication ID of the event (always present).
         :type publication: int
+
         :param publisher: The WAMP session ID of the original publisher of this event.
             Only filled when publisher is disclosed.
         :type publisher: None or int
+
         :param publisher_authid: The WAMP authid of the original publisher of this event.
             Only filled when publisher is disclosed.
         :type publisher_authid: None or unicode
+
         :param publisher_authrole: The WAMP authrole of the original publisher of this event.
             Only filled when publisher is disclosed.
         :type publisher_authrole: None or unicode
+
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
             Only filled for pattern-based subscriptions.
         :type topic: None or unicode
+
         :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either `None` or `"cryptobox"`).
+            was in use (currently, either ``None`` or ``u'cryptobox'``).
         :type enc_algo: None or unicode
         """
         assert(type(publication) in six.integer_types)
@@ -469,19 +492,26 @@ class PublishOptions(object):
         :param acknowledge: If ``True``, acknowledge the publication with a success or
            error response.
         :type acknowledge: bool
+
         :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
         :type exclude_me: bool or None
+
         :param exclude: A single WAMP session ID or a list thereof to exclude from receiving this event.
         :type exclude: int or list of int or None
+
         :param exclude_authid: A single WAMP authid or a list thereof to exclude from receiving this event.
         :type exclude_authid: unicode or list of unicode or None
+
         :param exclude_authrole: A single WAMP authrole or a list thereof to exclude from receiving this event.
         :type exclude_authrole: list of unicode or None
+
         :param eligible: A single WAMP session ID or a list thereof eligible to receive this event.
         :type eligible: int or list of int or None
+
         :param eligible_authid: A single WAMP authid or a list thereof eligible to receive this event.
         :type eligible_authid: unicode or list of unicode or None
+
         :param eligible_authrole: A single WAMP authrole or a list thereof eligible to receive this event.
         :type eligible_authrole: unicode or list of unicode or None
         """
@@ -555,6 +585,12 @@ class RegisterOptions(object):
     def __init__(self, match=None, invoke=None, details_arg=None):
         """
 
+        :param match: The procedure matching method to be used for the registration.
+        :type match: unicode
+
+        :param invoke: The invocation policy to be used for the registration.
+        :type invoke: unicode
+
         :param details_arg: When invoking the endpoint, provide call details
            in this keyword argument to the callable.
         :type details_arg: str
@@ -606,19 +642,23 @@ class CallDetails(object):
 
         :param progress: A callable that will receive progressive call results.
         :type progress: callable
+
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
             Only filled when caller is disclosed.
         :type caller: int
+
         :param caller_authid: The WAMP authid of the original caller of this event.
             Only filled when caller is disclosed.
         :type caller_authid: None or unicode
+
         :param caller_authrole: The WAMP authrole of the original caller of this event.
             Only filled when caller is disclosed.
         :type caller_authrole: None or unicode
+
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
         :type procedure: None or unicode
-        :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either `None` or `"cryptobox"`).
+
+        :param enc_algo: Payload encryption algorithm that was in use (currently, either ``None`` or ``u'cryptobox'``).
         :type enc_algo: None or string
         """
         assert(progress is None or callable(progress))
@@ -656,8 +696,9 @@ class CallOptions(object):
         """
 
         :param on_progress: A callback that will be called when the remote endpoint
-           called yields interim call progress results.
+            called yields interim call progress results.
         :type on_progress: callable
+
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
         """
@@ -703,6 +744,7 @@ class CallResult(object):
 
         :param results: The positional result values.
         :type results: list
+
         :param kwresults: The keyword result values.
         :type kwresults: dict
         """

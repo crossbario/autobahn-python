@@ -77,9 +77,10 @@ class Serializer(object):
     Mapping of WAMP message type codes to WAMP message classes.
     """
 
+    __slots__ = ('_serializer',)
+
     def __init__(self, serializer):
         """
-        Constructor.
 
         :param serializer: The object serializer to use for WAMP wire-level serialization.
         :type serializer: An object that implements :class:`autobahn.interfaces.IObjectSerializer`.
@@ -92,13 +93,13 @@ class Serializer(object):
         """
         return msg.serialize(self._serializer), self._serializer.BINARY
 
-    def unserialize(self, payload, isBinary=None):
+    def unserialize(self, payload, is_binary=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
         """
-        if isBinary is not None:
-            if isBinary != self._serializer.BINARY:
-                raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(isBinary, self._serializer.BINARY))
+        if is_binary is not None:
+            if is_binary != self._serializer.BINARY:
+                raise ProtocolError("invalid serialization of WAMP message (binary {0}, but expected {1})".format(is_binary, self._serializer.BINARY))
 
         try:
             raw_msgs = self._serializer.unserialize(payload)
@@ -122,13 +123,13 @@ class Serializer(object):
                 # https://bitbucket.org/bodhisnarkva/cbor/issues/6/number-types-dont-roundtrip
                 raise ProtocolError("invalid type {0} for WAMP message type".format(type(message_type)))
 
-            Klass = self.MESSAGE_TYPE_MAP.get(message_type)
+            klass = self.MESSAGE_TYPE_MAP.get(message_type)
 
-            if Klass is None:
+            if klass is None:
                 raise ProtocolError("invalid WAMP message type {0}".format(message_type))
 
             # this might again raise `ProtocolError` ..
-            msg = Klass.parse(raw_msg)
+            msg = klass.parse(raw_msg)
 
             msgs.append(msg)
 
@@ -137,8 +138,9 @@ class Serializer(object):
 
 # JSON serialization is always supported
 try:
-    # try import accelerated JSON implementation
-    #
+    # use accelerated JSON implementation
+
+    # noinspection PyUnresolvedReferences
     import ujson
 
     _json = ujson
@@ -150,8 +152,9 @@ try:
         return ujson.dumps(obj, double_precision=15, ensure_ascii=False)
 
 except ImportError:
-    # fallback to stdlib implementation
-    #
+
+    # fallback to stdlib implementation (this is faster on PyPy!)
+
     import json
 
     _json = json
@@ -171,9 +174,10 @@ finally:
 
         BINARY = False
 
+        __slots__ = ('_batched',)
+
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
@@ -228,9 +232,11 @@ class JsonSerializer(Serializer):
     WAMP-over-Longpoll HTTP fallback.
     """
 
+    # FIXME: builtins.ValueError: 'SERIALIZER_ID' in __slots__ conflicts with class variable
+    # __slots__ = ('SERIALIZER_ID',)
+
     def __init__(self, batched=False):
         """
-        Ctor.
 
         :param batched: Flag to control whether to put this serialized into batched mode.
         :type batched: bool
@@ -243,10 +249,9 @@ class JsonSerializer(Serializer):
 ISerializer.register(JsonSerializer)
 
 
-#
 # MsgPack serialization depends on the `msgpack` package being available
-#
 try:
+    # noinspection PyUnresolvedReferences
     import msgpack
 except ImportError:
     pass
@@ -265,9 +270,10 @@ else:
         between strings and binary).
         """
 
+        __slots__ = ('_batched',)
+
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
@@ -290,14 +296,13 @@ else:
             """
 
             def ensure_string_keys(d):
-                """
-                under python 2, with use_bin_type=True, most dict keys end up
-                getting encoded as bytes (any syntax except {u"key":
-                u"value"}) so instead of recursively looking through
-                everything that's getting serialized, we fix them up
-                on the way out using msgpack's `object_hook` as
-                there's no corresponding hook for serialization...
-                """
+                # FIXME:
+                # under python 2, with use_bin_type=True, most dict keys end up
+                # getting encoded as bytes (any syntax except {u"key":
+                # u"value"}) so instead of recursively looking through
+                # everything that's getting serialized, we fix them up
+                # on the way out using msgpack's `object_hook` as
+                # there's no corresponding hook for serialization...
                 for (k, v) in six.iteritems(d):
                     if not isinstance(k, six.text_type):
                         newk = six.text_type(k, encoding='utf8')
@@ -307,16 +312,16 @@ else:
 
             if self._batched:
                 msgs = []
-                N = len(payload)
+                n = len(payload)
                 i = 0
-                while i < N:
+                while i < n:
                     # read message length prefix
-                    if i + 4 > N:
+                    if i + 4 > n:
                         raise Exception("batch format error [1]")
                     l = struct.unpack("!L", payload[i:i + 4])[0]
 
                     # read message data
-                    if i + 4 + l > N:
+                    if i + 4 + l > n:
                         raise Exception("batch format error [2]")
                     data = payload[i + 4:i + 4 + l]
 
@@ -332,7 +337,7 @@ else:
                     # advance until everything consumed
                     i = i + 4 + l
 
-                if i != N:
+                if i != n:
                     raise Exception("batch format error [3]")
                 return msgs
 
@@ -368,9 +373,11 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
+        # FIXME
+        # __slots__ = ('SERIALIZER_ID',)
+
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
@@ -389,6 +396,7 @@ else:
 # https://bitbucket.org/bodhisnarkva/cbor
 #
 try:
+    # noinspection PyUnresolvedReferences
     import cbor
 except ImportError:
     pass
@@ -401,9 +409,10 @@ else:
         Flag that indicates whether this serializer needs a binary clean transport.
         """
 
+        __slots__ = ('_batched',)
+
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
@@ -427,16 +436,16 @@ else:
 
             if self._batched:
                 msgs = []
-                N = len(payload)
+                n = len(payload)
                 i = 0
-                while i < N:
+                while i < n:
                     # read message length prefix
-                    if i + 4 > N:
+                    if i + 4 > n:
                         raise Exception("batch format error [1]")
                     l = struct.unpack("!L", payload[i:i + 4])[0]
 
                     # read message data
-                    if i + 4 + l > N:
+                    if i + 4 + l > n:
                         raise Exception("batch format error [2]")
                     data = payload[i + 4:i + 4 + l]
 
@@ -446,7 +455,7 @@ else:
                     # advance until everything consumed
                     i = i + 4 + l
 
-                if i != N:
+                if i != n:
                     raise Exception("batch format error [3]")
                 return msgs
 
@@ -478,9 +487,11 @@ else:
         WAMP-over-Longpoll HTTP fallback.
         """
 
+        # FIXME
+        # __slots__ = ('SERIALIZER_ID',)
+
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag to control whether to put this serialized into batched mode.
             :type batched: bool
