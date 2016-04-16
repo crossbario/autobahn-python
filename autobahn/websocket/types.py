@@ -65,23 +65,31 @@ class ConnectionRequest(object):
     def __init__(self, peer, headers, host, path, params, version, origin, protocols, extensions):
         """
 
-        :param peer: Descriptor of the connecting client (e.g. IP address/port in case of TCP transports).
+        :param peer: Descriptor of the connecting client (e.g. IP address/port in case
+                of TCP transports).
         :type peer: str
         :param headers: HTTP headers from opening handshake request.
         :type headers: dict
         :param host: Host from opening handshake HTTP header.
         :type host: str
-        :param path: Path from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `/myservice`.
+        :param path: Path from requested HTTP resource URI. For example, a resource URI of
+            ``/myservice?foo=23&foo=66&bar=2`` will be parsed to ``/myservice``.
         :type path: str
-        :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `{'foo': ['23', '66'], 'bar': ['2']}`.
-        :type params: dict of arrays of strings
-        :param version: The WebSocket protocol version the client announced (and will be spoken, when connection is accepted).
+        :param params: Query parameters (if any) from requested HTTP resource URI. For example,
+            a resource URI of ``/myservice?foo=23&foo=66&bar=2`` will be parsed to
+            ``{'foo': ['23', '66'], 'bar': ['2']}``.
+        :type params: dict of list of str
+        :param version: The WebSocket protocol version the client announced (and will be
+                spoken, when connection is accepted).
         :type version: int
-        :param origin: The WebSocket origin header or None. Note that this only a reliable source of information for browser clients!
+        :param origin: The WebSocket origin header or None. Note that this only a reliable
+            source of information for browser clients!
         :type origin: str
-        :param protocols: The WebSocket (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
+        :param protocols: The WebSocket (sub)protocols the client announced. You must select
+            and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
         :type protocols: list of str
-        :param extensions: The WebSocket extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
+        :param extensions: The WebSocket extensions the client requested and the server
+            accepted (and thus will be spoken, when WS connection is established).
         :type extensions: list of str
         """
         self.peer = peer
@@ -128,7 +136,8 @@ class ConnectionResponse(object):
     def __init__(self, peer, headers, version, protocol, extensions):
         """
 
-        :param peer: Descriptor of the connected server (e.g. IP address/port in case of TCP transport).
+        :param peer: Descriptor of the connected server (e.g. IP address/port
+                in case of TCP transport).
         :type peer: str
         :param headers: HTTP headers from opening handshake response.
         :type headers: dict
@@ -174,10 +183,10 @@ class ConnectionAccept(object):
             as defined by RFC 2616.
         :type subprotocol: unicode or None
         :param headers: Additional HTTP headers to send on the WebSocket
-            opening handshake reply, e.g. cookies. The keys must be unicode,
-            and the values either unicode or tuple/list. In the latter case
+            opening handshake reply, e.g. cookies. The keys must be ``unicode``,
+            and the values either unicode or ``tuple``/``list``. In the latter case,
             a separate HTTP header line will be sent for each item in
-            tuple/list.
+            ``tuple``/``list``.
         :type headers: dict or None
         """
         assert(subprotocol is None or type(subprotocol) == six.text_type)
@@ -249,7 +258,7 @@ class ConnectionDeny(Exception):
         :param code: HTTP error code.
         :type code: int
         :param reason: HTTP error reason.
-        :type reason: unicode
+        :type reason: str
         """
         assert(type(code) == int)
         assert(reason is None or type(reason) == six.text_type)

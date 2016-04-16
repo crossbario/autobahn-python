@@ -310,4 +310,5 @@ rst_prolog = """
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
 autoclass_content = 'both'
 
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
 autodoc_member_order = 'bysource'

@@ -37,7 +37,10 @@ from autobahn.websocket.types import \
 
 from autobahn.websocket.compress_deflate import \
     PerMessageDeflateOffer, \
-    PerMessageDeflateOfferAccept
+    PerMessageDeflateOfferAccept, \
+    PerMessageDeflateResponse, \
+    PerMessageDeflateResponseAccept
+
 
 __all__ = (
     'create_url',
@@ -47,5 +50,7 @@ __all__ = (
     'ConnectionAccept',
     'ConnectionDeny',
     'PerMessageDeflateOffer',
-    'PerMessageDeflateOfferAccept'
+    'PerMessageDeflateOfferAccept',
+    'PerMessageDeflateResponse',
+    'PerMessageDeflateResponseAccept'
 )
