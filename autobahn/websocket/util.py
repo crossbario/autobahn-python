@@ -26,8 +26,18 @@
 
 from __future__ import absolute_import
 
+from autobahn import public
+
 import six
 from six.moves import urllib
+
+if not six.PY3:
+    # Python 2
+    import urlparse
+else:
+    # Python 3
+    from urllib import parse as urlparse
+
 # The Python urlparse module currently does not contain the ws/wss
 # schemes, so we add those dynamically (which is a hack of course).
 # Since the urllib from six.moves does not seem to expose the stuff
@@ -36,21 +46,12 @@ from six.moves import urllib
 # Important: if you change this stuff (you shouldn't), make sure
 # _all_ our unit tests for WS URLs succeed
 #
-if not six.PY3:
-    # Python 2
-    import urlparse
-else:
-    # Python 3
-    from urllib import parse as urlparse
-
-from autobahn import public
-
-WEBSOCKET_SCHEMES = ["ws", "wss"]
-urlparse.uses_relative.extend(WEBSOCKET_SCHEMES)
-urlparse.uses_netloc.extend(WEBSOCKET_SCHEMES)
-urlparse.uses_params.extend(WEBSOCKET_SCHEMES)
-urlparse.uses_query.extend(WEBSOCKET_SCHEMES)
-urlparse.uses_fragment.extend(WEBSOCKET_SCHEMES)
+_WEBSOCKET_SCHEMES = ["ws", "wss"]
+urlparse.uses_relative.extend(_WEBSOCKET_SCHEMES)
+urlparse.uses_netloc.extend(_WEBSOCKET_SCHEMES)
+urlparse.uses_params.extend(_WEBSOCKET_SCHEMES)
+urlparse.uses_query.extend(_WEBSOCKET_SCHEMES)
+urlparse.uses_fragment.extend(_WEBSOCKET_SCHEMES)
 
 __all__ = (
     "create_url",

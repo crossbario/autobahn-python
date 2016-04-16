@@ -26,13 +26,6 @@
 
 from __future__ import absolute_import
 
-from autobahn.websocket.compress_base import \
-    PerMessageCompressOffer, \
-    PerMessageCompressOfferAccept, \
-    PerMessageCompressResponse, \
-    PerMessageCompressResponseAccept, \
-    PerMessageCompress
-
 from autobahn.websocket.compress_deflate import \
     PerMessageDeflateMixin, \
     PerMessageDeflateOffer, \
@@ -44,11 +37,6 @@ from autobahn.websocket.compress_deflate import \
 # this must be a list (not tuple), since we dynamically
 # extend it ..
 __all__ = [
-    "PerMessageCompressOffer",
-    "PerMessageCompressOfferAccept",
-    "PerMessageCompressResponse",
-    "PerMessageCompressResponseAccept",
-    "PerMessageCompress",
     "PerMessageDeflateOffer",
     "PerMessageDeflateOfferAccept",
     "PerMessageDeflateResponse",
@@ -57,9 +45,9 @@ __all__ = [
     "PERMESSAGE_COMPRESSION_EXTENSION"
 ]
 
-# class for "permessage-deflate" is always available
-#
+# map of available compression extensions
 PERMESSAGE_COMPRESSION_EXTENSION = {
+    # class for "permessage-deflate" is always available
     PerMessageDeflateMixin.EXTENSION_NAME: {
         'Offer': PerMessageDeflateOffer,
         'OfferAccept': PerMessageDeflateOfferAccept,
@@ -71,7 +59,6 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 
 
 # include "permessage-bzip2" classes if bzip2 is available
-#
 try:
     import bz2
 except ImportError:
@@ -102,7 +89,6 @@ else:
 
 
 # include "permessage-snappy" classes if Snappy is available
-#
 try:
     # noinspection PyPackageRequirements
     import snappy
