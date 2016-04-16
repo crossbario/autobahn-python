@@ -49,19 +49,19 @@ class TestCreateWsUrl(unittest.TestCase):
         self.assertEqual(create_url("localhost", path="/ws/foobar"), "ws://localhost:80/ws/foobar")
 
     def test_create_url06(self):
-        self.assertEqual(create_url("localhost", isSecure=True), "wss://localhost:443/")
+        self.assertEqual(create_url("localhost", is_secure=True), "wss://localhost:443/")
 
     def test_create_url07(self):
-        self.assertEqual(create_url("localhost", isSecure=True, port=443), "wss://localhost:443/")
+        self.assertEqual(create_url("localhost", is_secure=True, port=443), "wss://localhost:443/")
 
     def test_create_url08(self):
-        self.assertEqual(create_url("localhost", isSecure=True, port=80), "wss://localhost:80/")
+        self.assertEqual(create_url("localhost", is_secure=True, port=80), "wss://localhost:80/")
 
     def test_create_url09(self):
-        self.assertEqual(create_url("localhost", isSecure=True, port=9090, path="ws", params={'foo': 'bar'}), "wss://localhost:9090/ws?foo=bar")
+        self.assertEqual(create_url("localhost", is_secure=True, port=9090, path="ws", params={'foo': 'bar'}), "wss://localhost:9090/ws?foo=bar")
 
     def test_create_url10(self):
-        wsurl = create_url("localhost", isSecure=True, port=9090, path="ws", params={'foo': 'bar', 'moo': 23})
+        wsurl = create_url("localhost", is_secure=True, port=9090, path="ws", params={'foo': 'bar', 'moo': 23})
         self.assertTrue(wsurl == "wss://localhost:9090/ws?foo=bar&moo=23" or wsurl == "wss://localhost:9090/ws?moo=23&foo=bar")
 
     def test_create_url11(self):

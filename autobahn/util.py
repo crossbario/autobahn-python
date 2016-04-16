@@ -70,13 +70,18 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     points that encode to multi-byte encodings which must not be truncated
     in the middle.
 
-    :param text: The Unicode string to truncate.
-    :type text: unicode
+    :param text: The (Unicode) string to truncate.
+    :type text: str
     :param limit: The number of bytes to limit the UTF8 encoding to.
     :type limit: int
+    :param encoding: Truncate the string in this encoding (default is ``utf-8``).
+    :type encoding: str
+    :param return_encoded: If ``True``, return the string encoded into bytes
+        according to the specified encoding, else return the string as a string.
+    :type return_encoded: bool
 
-    :returns: The truncated Unicode string.
-    :rtype: unicode
+    :returns: The truncated string.
+    :rtype: str or bytes
     """
     assert(text is None or type(text) == six.text_type)
     assert(type(limit) in six.integer_types)
@@ -115,8 +120,8 @@ def xor(d1, d2):
     :param d2: The second binary string.
     :type d2: binary
 
-    :returns: XOR(d1, d2)
-    :rtype: binary
+    :returns: XOR of the binary strings (``XOR(d1, d2)``)
+    :rtype: bytes
     """
     if type(d1) != six.binary_type:
         raise Exception("invalid type {} for d1 - must be binary".format(type(d1)))
@@ -146,7 +151,7 @@ def utcstr(ts=None):
     module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``).
 
     :param ts: The timestamp to format.
-    :type ts: instance of :py:class:`datetime.datetime` or None
+    :type ts: instance of :py:class:`datetime.datetime` or ``None``
 
     :returns: Timestamp formatted in ISO 8601 format.
     :rtype: unicode
@@ -357,13 +362,19 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
 
     :param char_groups: Number of character groups (or characters if chars_per_group == 1).
     :type char_groups: int
+
     :param chars_per_group: Number of characters per character group (or 1 to return a token with no grouping).
     :type chars_per_group: int
+
     :param chars: Characters to choose from. Default is 27 character subset
         of the ISO basic Latin alphabet (see: ``DEFAULT_TOKEN_CHARS``).
     :type chars: unicode or None
+
     :param sep: When separating groups in the token, the separater string.
     :type sep: unicode
+
+    :param lower_case: If ``True``, generate token in lower-case.
+    :type lower_case: bool
 
     :returns: The generated token.
     :rtype: unicode
@@ -440,7 +451,7 @@ else:
 @public
 def rtime():
     """
-    Precise wallclock time.
+    Precise, fast wallclock time.
 
     :returns: The current wallclock in seconds. Returned values are only guaranteed
        to be meaningful relative to each other.
