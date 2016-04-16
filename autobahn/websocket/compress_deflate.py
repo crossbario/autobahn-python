@@ -166,13 +166,14 @@ class PerMessageDeflateOffer(PerMessageCompressOffer, PerMessageDeflateMixin):
                  requestMaxWindowBits=0):
         """
 
-        :param acceptNoContextTakeover: Iff true, client accepts "no context takeover" feature.
+        :param acceptNoContextTakeover: When ``True``, the client accepts the "no context takeover" feature.
         :type acceptNoContextTakeover: bool
-        :param acceptMaxWindowBits: Iff true, client accepts setting "max window size".
+        :param acceptMaxWindowBits: When ``True``, the client accepts setting "max window size".
         :type acceptMaxWindowBits: bool
-        :param requestNoContextTakeover: Iff true, client request "no context takeover" feature.
+        :param requestNoContextTakeover: When ``True``, the client request the "no context takeover" feature.
         :type requestNoContextTakeover: bool
-        :param requestMaxWindowBits: Iff non-zero, client requests given "max window size" - must be 8-15.
+        :param requestMaxWindowBits: When non-zero, the client requests the given "max window size" (must be
+            and integer from the interval ``[8..15]``).
         :type requestMaxWindowBits: int
         """
         if type(acceptNoContextTakeover) != bool:
@@ -251,13 +252,16 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
 
         :param offer: The offer being accepted.
         :type offer: Instance of :class:`autobahn.compress.PerMessageDeflateOffer`.
-        :param requestNoContextTakeover: Iff true, server request "no context takeover" feature.
+        :param requestNoContextTakeover: When ``True``, the server requests the "no context takeover" feature.
         :type requestNoContextTakeover: bool
-        :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
+        :param requestMaxCompressLevel: When non-zero, the server requests the given "maximum compression level"
+            (must be an integer from the interval ``[1, 9]``).
         :type requestMaxCompressLevel: int
-        :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
+        :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must
+                be compatible with the offer).
         :type noContextTakeover: bool
-        :param windowBits: Override server ("server-to-client direction") window size (this must be compatible with offer).
+        :param windowBits: Override server ("server-to-client direction") window size (this must be
+                compatible with the offer).
         :type windowBits: int
         :param memLevel: Set server ("server-to-client direction") memory level.
         :type memLevel: int
@@ -347,6 +351,7 @@ class PerMessageDeflateOfferAccept(PerMessageCompressOfferAccept, PerMessageDefl
         return "PerMessageDeflateOfferAccept(offer = %s, requestNoContextTakeover = %s, requestMaxWindowBits = %s, noContextTakeover = %s, windowBits = %s, memLevel = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.requestMaxWindowBits, self.noContextTakeover, self.windowBits, self.memLevel)
 
 
+@public
 class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMixin):
     """
     Set of parameters for `permessage-deflate` responded by server.
@@ -450,6 +455,7 @@ class PerMessageDeflateResponse(PerMessageCompressResponse, PerMessageDeflateMix
         return "PerMessageDeflateResponse(client_max_window_bits = %s, client_no_context_takeover = %s, server_max_window_bits = %s, server_no_context_takeover = %s)" % (self.client_max_window_bits, self.client_no_context_takeover, self.server_max_window_bits, self.server_no_context_takeover)
 
 
+@public
 class PerMessageDeflateResponseAccept(PerMessageCompressResponseAccept, PerMessageDeflateMixin):
     """
     Set of parameters with which to accept an `permessage-deflate` response
