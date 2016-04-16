@@ -84,24 +84,24 @@ if __name__ == '__main__':
     def accept2(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
-                if offer.acceptNoContextTakeover:
-                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True)
+                if offer.accept_no_context_takeover:
+                    return PerMessageDeflateOfferAccept(offer, request_no_context_takeover=True)
 
     # permessage-deflate, server requests the client to do no
     # context takeover, and does not context takeover also
     def accept3(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
-                if offer.acceptNoContextTakeover:
-                    return PerMessageDeflateOfferAccept(offer, requestNoContextTakeover=True, noContextTakeover=True)
+                if offer.accept_no_context_takeover:
+                    return PerMessageDeflateOfferAccept(offer, request_no_context_takeover=True, no_context_takeover=True)
 
     # permessage-deflate, server requests the client to do use
     # max window bits specified
     def accept4(offers):
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
-                if offer.acceptMaxWindowBits:
-                    return PerMessageDeflateOfferAccept(offer, requestMaxWindowBits=8)
+                if offer.accept_max_window_bits:
+                    return PerMessageDeflateOfferAccept(offer, request_max_window_bits=8)
 
 
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept0)
