@@ -98,6 +98,11 @@ class TestSerializer(unittest.TestCase):
             self.serializers.append(serializer.CBORSerializer())
             self.serializers.append(serializer.CBORSerializer(batched=True))
 
+        # UBJSON serializer is optional
+        if hasattr(serializer, 'UBJSONSerializer'):
+            self.serializers.append(serializer.UBJSONSerializer())
+            self.serializers.append(serializer.UBJSONSerializer(batched=True))
+
     def test_dict_keys_msgpack(self):
         """
         dict keys should always be strings. the data provided is from
