@@ -30,18 +30,22 @@ import json
 
 import six
 
-__all__ = (
-    'HAS_NACL',
-    'Key',
-    'KeyRing',
+__all__ = [
+    'HAS_CRYPTOBOX',
     'EncryptedPayload'
-)
+]
 
 try:
-    import nacl  # noqa
-    HAS_NACL = True
+    # try to import everything we need for WAMP-cryptobox
+    from nacl.encoding import Base64Encoder
+    from nacl.public import PrivateKey, PublicKey, Box
+    from nacl.utils import random
+    from pytrie import StringTrie
 except ImportError:
-    HAS_NACL = False
+    HAS_CRYPTOBOX = False
+else:
+    HAS_CRYPTOBOX = True
+    __all__.extend(['Key', 'KeyRing'])
 
 
 class EncryptedPayload(object):
@@ -56,12 +60,7 @@ class EncryptedPayload(object):
         self.payload = payload
 
 
-if HAS_NACL:
-    from nacl.encoding import Base64Encoder
-    from nacl.public import PrivateKey, PublicKey, Box
-    from nacl.utils import random
-
-    from pytrie import StringTrie
+if HAS_CRYPTOBOX:
 
     class Key(object):
         """
@@ -232,7 +231,3 @@ if HAS_NACL:
             kwargs = payload.get(u'kwargs', None)
 
             return uri, args, kwargs
-
-else:
-
-    KeyRing = type(None)

@@ -39,11 +39,13 @@ from autobahn.wamp.types import Challenge
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 
-__all__ = []
+__all__ = [
+    'HAS_CRYPTOSIGN',
+    'HAS_CRYPTOSIGN_SSHAGENT'
+]
 
 try:
-    # try to import everything that is optional for Autobahn in
-    # general, but which we need for WAMP-cryptosign
+    # try to import everything we need for WAMP-cryptosign
     from nacl import public, encoding, signing
 except ImportError:
     HAS_CRYPTOSIGN = False
