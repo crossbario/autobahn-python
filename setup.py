@@ -96,10 +96,12 @@ extras_require_compress = [
     "lz4>=0.7.0"                # BSD license
 ]
 
-# non-JSON WAMP serialization support (namely MsgPack and CBOR)
+# non-JSON WAMP serialization support (namely MsgPack, CBOR and UBJSON)
+os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
 extras_require_serialization = [
     "msgpack-python>=0.4.6",    # Apache 2.0 license
-    "cbor>=0.1.24"              # Apache 2.0 license
+    "cbor>=0.1.24",             # Apache 2.0 license
+    "py-ubjson>=0.8.3"          # Apache 2.0 license
 ]
 
 # payload encryption (required for WAMP-cryptosign support!)

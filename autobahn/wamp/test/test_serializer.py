@@ -98,6 +98,11 @@ class TestSerializer(unittest.TestCase):
             self.serializers.append(serializer.CBORSerializer())
             self.serializers.append(serializer.CBORSerializer(batched=True))
 
+        # UBJSON serializer is optional
+        if hasattr(serializer, 'UBJSONSerializer'):
+            self.serializers.append(serializer.UBJSONSerializer())
+            self.serializers.append(serializer.UBJSONSerializer(batched=True))
+
     def test_dict_keys_msgpack(self):
         """
         dict keys should always be strings. the data provided is from
@@ -143,9 +148,12 @@ class TestSerializer(unittest.TestCase):
         self.assertTrue('unicode' in msg_out.kwargs)
 
     def test_roundtrip(self):
-        for msg in generate_test_messages():
-            for ser in self.serializers:
+        msgs = generate_test_messages()
 
+        print("\n")
+        for ser in self.serializers:
+            print("Testing WAMP serializer <{}>".format(ser.SERIALIZER_ID))
+            for msg in msgs:
                 # serialize message
                 payload, binary = ser.serialize(msg)
 
@@ -154,6 +162,7 @@ class TestSerializer(unittest.TestCase):
 
                 # must be equal: message roundtrips via the serializer
                 self.assertEqual([msg], msg2)
+        print("")
 
     def test_caching(self):
         for msg in generate_test_messages():
