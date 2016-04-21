@@ -138,6 +138,7 @@ asyncio is very new (August 2014). So the amount of material on the Web is still
 * `Tulip: Async I/O for Python 3 <http://www.youtube.com/watch?v=1coLC-MUCJc>`_
 * `Python 3.4 docs - asyncio <http://docs.python.org/3.4/library/asyncio.html>`_
 * `PEP-3156 - Asynchronous IO Support Rebooted <http://www.python.org/dev/peps/pep-3156/>`_
+* `OSB 2015 - How Do Python Coroutines Work? - A. Jesse Jiryu Davis <http://www.youtube.com/watch?v=GSk0tIjDT10>`_
 
 However, we quickly introduce core asynchronous programming primitives provided by `Twisted <https://twistedmatrix.com/>`__ and `asyncio <https://docs.python.org/3.4/library/asyncio.html>`__:
 
@@ -340,7 +341,7 @@ First, consider this program using plain ``asyncio.Future``. We simulate calling
    loop.run_until_complete(test())
    loop.close()
 
-Using asyncio in this way is probably quite unusual. This is becomes asyncio os opinionated towards using coroutines from the beginning. Anyway, here is what above code does:
+Using asyncio in this way is probably quite unusual. This is because asyncio is opinionated towards using coroutines from the beginning. Anyway, here is what above code does:
 
 1. We create a ``Future`` to be returned by our ``slow_square`` function (line 4)
 2. We create a function ``resolve`` (a closure) in which we resolve the previously created Future with the result (lines 6-7)
