@@ -1026,7 +1026,7 @@ class Error(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -1201,7 +1201,7 @@ class Publish(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -1264,7 +1264,7 @@ class Publish(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' option in PUBLISH".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' option in PUBLISH".format(enc_serializer))
 
         else:
@@ -1902,7 +1902,7 @@ class Event(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -1962,7 +1962,7 @@ class Event(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -2137,7 +2137,7 @@ class Call(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -2195,7 +2195,7 @@ class Call(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -2423,7 +2423,7 @@ class Result(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -2478,7 +2478,7 @@ class Result(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -2996,7 +2996,7 @@ class Invocation(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -3058,7 +3058,7 @@ class Invocation(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = details.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:
@@ -3337,7 +3337,7 @@ class Yield(Message):
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
-        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor'])
+        assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
 
         Message.__init__(self)
@@ -3392,7 +3392,7 @@ class Yield(Message):
                 raise ProtocolError("invalid type {0} for 'enc_key' detail in EVENT".format(type(enc_key)))
 
             enc_serializer = options.get(u'enc_serializer', None)
-            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor']:
+            if enc_serializer and enc_serializer not in [u'json', u'msgpack', u'cbor', u'ubjson']:
                 raise ProtocolError("invalid value {0} for 'enc_serializer' detail in EVENT".format(enc_serializer))
 
         else:

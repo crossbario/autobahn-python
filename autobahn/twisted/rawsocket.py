@@ -383,6 +383,14 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
             except ImportError:
                 pass
 
+            # try UBJSON WAMP serializer
+            try:
+                from autobahn.wamp.serializer import UBJSONSerializer
+                serializers.append(UBJSONSerializer(batched=True))
+                serializers.append(UBJSONSerializer())
+            except ImportError:
+                pass
+
             # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
@@ -434,6 +442,15 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
             try:
                 from autobahn.wamp.serializer import MsgPackSerializer
                 serializer = MsgPackSerializer()
+            except ImportError:
+                pass
+
+        if serializer is None:
+
+            # try UBJSON WAMP serializer
+            try:
+                from autobahn.wamp.serializer import UBJSONSerializer
+                serializer = UBJSONSerializer()
             except ImportError:
                 pass
 
