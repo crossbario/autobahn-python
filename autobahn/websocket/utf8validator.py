@@ -54,17 +54,15 @@ UTF8_REJECT = 1
 
 
 # use Cython implementation of UTF8 validator if available
-#
 try:
     from wsaccel.utf8validator import Utf8Validator
 
 except ImportError:
-    #
+
     # Fallback to pure Python implementation - also for PyPy.
     #
     # Do NOT touch this code unless you know what you are doing!
     # https://github.com/oberstet/scratchbox/tree/master/python/utf8
-    #
 
     import six
 
@@ -83,7 +81,16 @@ except ImportError:
             Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
             """
 
+            __slots__ = (
+                '_codepoint',
+                '_state',
+                '_index',
+            )
+
             def __init__(self):
+                self._codepoint = None
+                self._state = None
+                self._index = None
                 self.reset()
 
             def decode(self, b):
@@ -98,20 +105,20 @@ except ImportError:
                 Returns some other positive integer when more octets need to be eaten.
                 """
                 tt = UTF8VALIDATOR_DFA_S[b]
-                if self.state != UTF8_ACCEPT:
-                    self.codepoint = (b & 0x3f) | (self.codepoint << 6)
+                if self._state != UTF8_ACCEPT:
+                    self._codepoint = (b & 0x3f) | (self._codepoint << 6)
                 else:
-                    self.codepoint = (0xff >> tt) & b
-                self.state = UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt]
-                return self.state
+                    self._codepoint = (0xff >> tt) & b
+                self._state = UTF8VALIDATOR_DFA_S[256 + self._state * 16 + tt]
+                return self._state
 
             def reset(self):
                 """
                 Reset validator to start new incremental UTF-8 decode/validation.
                 """
-                self.state = UTF8_ACCEPT  # the empty string is valid UTF8
-                self.codepoint = 0
-                self.i = 0
+                self._state = UTF8_ACCEPT  # the empty string is valid UTF8
+                self._codepoint = 0
+                self._index = 0
 
             def validate(self, ba):
                 """
@@ -132,18 +139,18 @@ except ImportError:
                 #
                 l = len(ba)
                 i = 0
-                state = self.state
+                state = self._state
                 while i < l:
                     # optimized version of decode(), since we are not interested in actual code points
                     state = UTF8VALIDATOR_DFA_S[256 + (state << 4) + UTF8VALIDATOR_DFA_S[ba[i]]]
                     if state == UTF8_REJECT:
-                        self.state = state
-                        self.i += i
-                        return False, False, i, self.i
+                        self._state = state
+                        self._index += i
+                        return False, False, i, self._index
                     i += 1
-                self.state = state
-                self.i += l
-                return True, state == UTF8_ACCEPT, l, self.i
+                self._state = state
+                self._index += l
+                return True, state == UTF8_ACCEPT, l, self._index
 
     else:
 
@@ -158,7 +165,16 @@ except ImportError:
             Bjoern Hoehrmann (http://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
             """
 
+            __slots__ = (
+                '_codepoint',
+                '_state',
+                '_index',
+            )
+
             def __init__(self):
+                self._codepoint = None
+                self._state = None
+                self._index = None
                 self.reset()
 
             def decode(self, b):
@@ -173,20 +189,20 @@ except ImportError:
                 Returns some other positive integer when more octets need to be eaten.
                 """
                 tt = ord(UTF8VALIDATOR_DFA_S[b])
-                if self.state != UTF8_ACCEPT:
-                    self.codepoint = (b & 0x3f) | (self.codepoint << 6)
+                if self._state != UTF8_ACCEPT:
+                    self._codepoint = (b & 0x3f) | (self._codepoint << 6)
                 else:
-                    self.codepoint = (0xff >> tt) & b
-                self.state = ord(UTF8VALIDATOR_DFA_S[256 + self.state * 16 + tt])
-                return self.state
+                    self._codepoint = (0xff >> tt) & b
+                self._state = ord(UTF8VALIDATOR_DFA_S[256 + self._state * 16 + tt])
+                return self._state
 
             def reset(self):
                 """
                 Reset validator to start new incremental UTF-8 decode/validation.
                 """
-                self.state = UTF8_ACCEPT  # the empty string is valid UTF8
-                self.codepoint = 0
-                self.i = 0
+                self._state = UTF8_ACCEPT  # the empty string is valid UTF8
+                self._codepoint = 0
+                self._index = 0
 
             def validate(self, ba):
                 """
@@ -207,15 +223,15 @@ except ImportError:
                 #
                 l = len(ba)
                 i = 0
-                state = self.state
+                state = self._state
                 while i < l:
                     # optimized version of decode(), since we are not interested in actual code points
                     state = ord(UTF8VALIDATOR_DFA_S[256 + (state << 4) + ord(UTF8VALIDATOR_DFA_S[ord(ba[i])])])
                     if state == UTF8_REJECT:
-                        self.state = state
-                        self.i += i
-                        return False, False, i, self.i
+                        self._state = state
+                        self._index += i
+                        return False, False, i, self._index
                     i += 1
-                self.state = state
-                self.i += l
-                return True, state == UTF8_ACCEPT, l, self.i
+                self._state = state
+                self._index += l
+                return True, state == UTF8_ACCEPT, l, self._index

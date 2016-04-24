@@ -1,86 +1,50 @@
 autobahn.websocket
 ==================
 
-Submodules
-----------
+This module contains the parts of the public API that are related to WebSocket and which are independent of the networking framework (Twisted/asyncio) used.
 
-autobahn.websocket.compress
----------------------------
 
-.. automodule:: autobahn.websocket.compress
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_base
---------------------------------
-
-.. automodule:: autobahn.websocket.compress_base
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_bzip2
----------------------------------
-
-.. automodule:: autobahn.websocket.compress_bzip2
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_deflate
------------------------------------
-
-.. automodule:: autobahn.websocket.compress_deflate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_snappy
+WebSocket Connection Establishment
 ----------------------------------
 
-.. automodule:: autobahn.websocket.compress_snappy
+Objects of the following classes are used in the initial WebSocket opening handshake for negotiation.
+
+.. autoclass:: autobahn.websocket.ConnectionRequest
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.websocket.interfaces
------------------------------
-
-.. automodule:: autobahn.websocket.interfaces
+.. autoclass:: autobahn.websocket.ConnectionResponse
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.websocket.protocol
----------------------------
-
-.. automodule:: autobahn.websocket.protocol
+.. autoclass:: autobahn.websocket.ConnectionAccept
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.websocket.utf8validator
---------------------------------
-
-.. automodule:: autobahn.websocket.utf8validator
+.. autoclass:: autobahn.websocket.ConnectionDeny
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.websocket.xormasker
-----------------------------
 
-.. automodule:: autobahn.websocket.xormasker
+WebSocket Compression Negotiation
+---------------------------------
+
+Objects of the following classes are used during negotiation of WebSocket compression in the initial WebSocket opening handshake.
+
+.. autoclass:: autobahn.websocket.PerMessageDeflateOffer
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-
-Module contents
----------------
-
-.. automodule:: autobahn.websocket
+.. autoclass:: autobahn.websocket.PerMessageDeflateOfferAccept
     :members:
-    :undoc-members:
-    :show-inheritance:
+
+.. autoclass:: autobahn.websocket.PerMessageDeflateResponse
+    :members:
+
+.. autoclass:: autobahn.websocket.PerMessageDeflateResponseAccept
+    :members:
+
+
+WebSocket URL Helpers
+---------------------
+
+The following helper functions can be used to assembled and parse proper WebSocket URLs.
+
+.. autofunction:: autobahn.websocket.create_url
+
+.. autofunction:: autobahn.websocket.parse_url

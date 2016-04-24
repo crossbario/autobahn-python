@@ -29,6 +29,8 @@ from __future__ import absolute_import
 import json
 import six
 
+from autobahn import public
+
 __all__ = (
     'ConnectionRequest',
     'ConnectionResponse',
@@ -37,9 +39,11 @@ __all__ = (
     'Message',
     'IncomingMessage',
     'OutgoingMessage',
+    'Ping',
 )
 
 
+@public
 class ConnectionRequest(object):
     """
     Thin-wrapper for WebSocket connection request information provided in
@@ -62,23 +66,39 @@ class ConnectionRequest(object):
     def __init__(self, peer, headers, host, path, params, version, origin, protocols, extensions):
         """
 
-        :param peer: Descriptor of the connecting client (e.g. IP address/port in case of TCP transports).
+        :param peer: Descriptor of the connecting client (e.g. IP address/port in case
+                of TCP transports).
         :type peer: str
+
         :param headers: HTTP headers from opening handshake request.
         :type headers: dict
+
         :param host: Host from opening handshake HTTP header.
         :type host: str
-        :param path: Path from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `/myservice`.
+
+        :param path: Path from requested HTTP resource URI. For example, a resource URI of
+            ``/myservice?foo=23&foo=66&bar=2`` will be parsed to ``/myservice``.
         :type path: str
-        :param params: Query parameters (if any) from requested HTTP resource URI. For example, a resource URI of `/myservice?foo=23&foo=66&bar=2` will be parsed to `{'foo': ['23', '66'], 'bar': ['2']}`.
-        :type params: dict of arrays of strings
-        :param version: The WebSocket protocol version the client announced (and will be spoken, when connection is accepted).
+
+        :param params: Query parameters (if any) from requested HTTP resource URI. For example,
+            a resource URI of ``/myservice?foo=23&foo=66&bar=2`` will be parsed to
+            ``{'foo': ['23', '66'], 'bar': ['2']}``.
+        :type params: dict of list of str
+
+        :param version: The WebSocket protocol version the client announced (and will be
+                spoken, when connection is accepted).
         :type version: int
-        :param origin: The WebSocket origin header or None. Note that this only a reliable source of information for browser clients!
+
+        :param origin: The WebSocket origin header or None. Note that this only a reliable
+            source of information for browser clients!
         :type origin: str
-        :param protocols: The WebSocket (sub)protocols the client announced. You must select and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
+
+        :param protocols: The WebSocket (sub)protocols the client announced. You must select
+            and return one of those (or None) in :meth:`autobahn.websocket.WebSocketServerProtocol.onConnect`.
         :type protocols: list of str
-        :param extensions: The WebSocket extensions the client requested and the server accepted (and thus will be spoken, when WS connection is established).
+
+        :param extensions: The WebSocket extensions the client requested and the server
+            accepted (and thus will be spoken, when WS connection is established).
         :type extensions: list of str
         """
         self.peer = peer
@@ -106,6 +126,7 @@ class ConnectionRequest(object):
         return json.dumps(self.__json__())
 
 
+@public
 class ConnectionResponse(object):
     """
     Thin-wrapper for WebSocket connection response information provided in
@@ -123,16 +144,20 @@ class ConnectionResponse(object):
 
     def __init__(self, peer, headers, version, protocol, extensions):
         """
-        Constructor.
 
-        :param peer: Descriptor of the connected server (e.g. IP address/port in case of TCP transport).
+        :param peer: Descriptor of the connected server (e.g. IP address/port
+                in case of TCP transport).
         :type peer: str
+
         :param headers: HTTP headers from opening handshake response.
         :type headers: dict
+
         :param version: The WebSocket protocol version that is spoken.
         :type version: int
+
         :param protocol: The WebSocket (sub)protocol in use.
         :type protocol: str
+
         :param extensions: The WebSocket extensions in use.
         :type extensions: list of str
         """
@@ -153,6 +178,7 @@ class ConnectionResponse(object):
         return json.dumps(self.__json__())
 
 
+@public
 class ConnectionAccept(object):
     """
     Used by WebSocket servers to accept an incoming WebSocket connection.
@@ -169,11 +195,12 @@ class ConnectionAccept(object):
             this WebSocket subprotocol chosen. The value must be a token
             as defined by RFC 2616.
         :type subprotocol: unicode or None
+
         :param headers: Additional HTTP headers to send on the WebSocket
-            opening handshake reply, e.g. cookies. The keys must be unicode,
-            and the values either unicode or tuple/list. In the latter case
+            opening handshake reply, e.g. cookies. The keys must be ``unicode``,
+            and the values either unicode or ``tuple``/``list``. In the latter case,
             a separate HTTP header line will be sent for each item in
-            tuple/list.
+            ``tuple``/``list``.
         :type headers: dict or None
         """
         assert(subprotocol is None or type(subprotocol) == six.text_type)
@@ -190,6 +217,7 @@ class ConnectionAccept(object):
         self.headers = headers
 
 
+@public
 class ConnectionDeny(Exception):
     """
     Throw an instance of this class to deny a WebSocket connection
@@ -240,12 +268,12 @@ class ConnectionDeny(Exception):
 
     def __init__(self, code, reason=None):
         """
-        Constructor.
 
         :param code: HTTP error code.
         :type code: int
+
         :param reason: HTTP error reason.
-        :type reason: unicode
+        :type reason: str
         """
         assert(type(code) == int)
         assert(reason is None or type(reason) == six.text_type)
@@ -275,6 +303,7 @@ class IncomingMessage(Message):
         :param payload: The WebSocket message payload, which can be UTF-8
             encoded text or a binary string.
         :type payload: bytes
+
         :param is_binary: ``True`` iff payload is binary, else the payload
             contains UTF-8 encoded text.
         :type is_binary: bool
@@ -291,30 +320,32 @@ class OutgoingMessage(Message):
     An outgoing WebSocket message.
     """
 
-    __slots__ = ('payload', 'is_binary', 'dont_compress')
+    __slots__ = ('payload', 'is_binary', 'do_not_compress')
 
-    def __init__(self, payload, is_binary=False, dont_compress=False):
+    def __init__(self, payload, is_binary=False, do_not_compress=False):
         """
 
         :param payload: The WebSocket message payload, which can be UTF-8
             encoded text or a binary string.
         :type payload: bytes
+
         :param is_binary: ``True`` iff payload is binary, else the payload
             contains UTF-8 encoded text.
         :type is_binary: bool
-        :param dont_compress: Iff ``True``, never compress this message.
+
+        :param do_not_compress: Iff ``True``, never compress this message.
             This only has an effect when WebSocket compression has been negotiated
             on the WebSocket connection. Use when you know the payload is
             incompressible (e.g. encrypted or already compressed).
-        :type dont_compress: bool
+        :type do_not_compress: bool
         """
         assert(type(payload) == bytes)
         assert(type(is_binary) == bool)
-        assert(type(dont_compress) == bool)
+        assert(type(do_not_compress) == bool)
 
         self.payload = payload
         self.is_binary = is_binary
-        self.dont_compress = dont_compress
+        self.do_not_compress = do_not_compress
 
 
 class Ping(object):
@@ -322,7 +353,7 @@ class Ping(object):
     A WebSocket ping message.
     """
 
-    __slots__ = ('payload')
+    __slots__ = ('payload',)
 
     def __init__(self, payload=None):
         """

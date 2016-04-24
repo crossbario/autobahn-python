@@ -51,7 +51,7 @@ from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
 from autobahn.websocket.utf8validator import Utf8Validator
-from autobahn.websocket.xormasker import XorMaskerNull, createXorMasker
+from autobahn.websocket.xormasker import XorMaskerNull, create_xor_masker
 from autobahn.websocket.compress import PERMESSAGE_COMPRESSION_EXTENSION
 from autobahn.websocket.util import parse_url
 
@@ -467,8 +467,6 @@ class WebSocketProtocol(object):
     """
     Configuration attributes specific to clients.
     """
-
-    log = txaio.make_logger()
 
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
@@ -1406,7 +1404,7 @@ class WebSocketProtocol(object):
                         i += 4
 
                     if frame_masked and frame_payload_len > 0 and self.applyMask:
-                        self.current_frame_masker = createXorMasker(frame_mask, frame_payload_len)
+                        self.current_frame_masker = create_xor_masker(frame_mask, frame_payload_len)
                     else:
                         self.current_frame_masker = XorMaskerNull()
 
@@ -1498,7 +1496,7 @@ class WebSocketProtocol(object):
                 #
                 if self._perMessageCompress is not None and self.current_frame.rsv == 4:
                     self._isMessageCompressed = True
-                    self._perMessageCompress.startDecompressMessage()
+                    self._perMessageCompress.start_decompress_message()
                 else:
                     self._isMessageCompressed = False
 
@@ -1539,7 +1537,7 @@ class WebSocketProtocol(object):
                     octets=_LazyHexFormatter(payload),
                 )
 
-                payload = self._perMessageCompress.decompressMessageData(payload)
+                payload = self._perMessageCompress.decompress_message_data(payload)
                 uncompressedLen = len(payload)
             else:
                 l = len(payload)
@@ -1581,7 +1579,7 @@ class WebSocketProtocol(object):
                 # handle end of compressed message
                 #
                 if self._isMessageCompressed:
-                    self._perMessageCompress.endDecompressMessage()
+                    self._perMessageCompress.end_decompress_message()
 
                 # verify UTF8 has actually ended
                 #
@@ -1716,7 +1714,7 @@ class WebSocketProtocol(object):
             # mask frame payload
             #
             if l > 0 and self.applyMask:
-                masker = createXorMasker(mask, l)
+                masker = create_xor_masker(mask, l)
                 plm = masker.process(pl)
             else:
                 plm = pl
@@ -1886,7 +1884,7 @@ class WebSocketProtocol(object):
         #
         if self._perMessageCompress is not None and not doNotCompress:
             self.send_compressed = True
-            self._perMessageCompress.startCompressMessage()
+            self._perMessageCompress.start_compress_message()
         else:
             self.send_compressed = False
 
@@ -1926,7 +1924,7 @@ class WebSocketProtocol(object):
         # payload masker
         #
         if self.send_message_frame_mask and length > 0 and self.applyMask:
-            self.send_message_frame_masker = createXorMasker(self.send_message_frame_mask, length)
+            self.send_message_frame_masker = create_xor_masker(self.send_message_frame_mask, length)
         else:
             self.send_message_frame_masker = XorMaskerNull()
 
@@ -2035,7 +2033,7 @@ class WebSocketProtocol(object):
         #   raise Exception("WebSocketProtocol.endMessage invalid in current sending state [%d]" % self.send_state)
 
         if self.send_compressed:
-            payload = self._perMessageCompress.endCompressMessage()
+            payload = self._perMessageCompress.end_compress_message()
             self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
         else:
             # send continuation frame with empty payload and FIN set to end message
@@ -2053,7 +2051,7 @@ class WebSocketProtocol(object):
 
         if self.send_compressed:
             self.trafficStats.outgoingOctetsAppLevel += len(payload)
-            payload = self._perMessageCompress.compressMessageData(payload)
+            payload = self._perMessageCompress.compress_message_data(payload)
 
         self.beginMessageFrame(len(payload))
         self.sendMessageFrameData(payload, sync)
@@ -2089,12 +2087,12 @@ class WebSocketProtocol(object):
         if self._perMessageCompress is not None and not doNotCompress:
             sendCompressed = True
 
-            self._perMessageCompress.startCompressMessage()
+            self._perMessageCompress.start_compress_message()
 
             self.trafficStats.outgoingOctetsAppLevel += len(payload)
 
-            payload1 = self._perMessageCompress.compressMessageData(payload)
-            payload2 = self._perMessageCompress.endCompressMessage()
+            payload1 = self._perMessageCompress.compress_message_data(payload)
+            payload2 = self._perMessageCompress.end_compress_message()
             payload = b''.join([payload1, payload2])
 
             self.trafficStats.outgoingOctetsWebSocketLevel += len(payload)
@@ -2224,7 +2222,7 @@ class PreparedMessage(object):
             if l == 0:
                 plm = payload
             else:
-                plm = createXorMasker(mask, l).process(payload)
+                plm = create_xor_masker(mask, l).process(payload)
         else:
             b1 = 0
             mask = b''
@@ -2726,9 +2724,9 @@ class WebSocketServerProtocol(WebSocketProtocol):
             accept = self.perMessageCompressionAccept(pmceOffers)
             if accept is not None:
                 PMCE = PERMESSAGE_COMPRESSION_EXTENSION[accept.EXTENSION_NAME]
-                self._perMessageCompress = PMCE['PMCE'].createFromOfferAccept(self.factory.isServer, accept)
+                self._perMessageCompress = PMCE['PMCE'].create_from_offer_accept(self.factory.isServer, accept)
                 self.websocket_extensions_in_use.append(self._perMessageCompress)
-                extensionResponse.append(accept.getExtensionString())
+                extensionResponse.append(accept.get_extension_string())
             else:
                 self.log.debug(
                     "client request permessage-compress extension, but we did "
@@ -3424,7 +3422,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
         # permessage-compress offers
         #
         for offer in self.perMessageCompressionOffers:
-            extensions.append(offer.getExtensionString())
+            extensions.append(offer.get_extension_string())
 
         if len(extensions) > 0:
             request += "Sec-WebSocket-Extensions: %s\x0d\x0a" % ', '.join(extensions)
@@ -3581,7 +3579,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
                         if accept is None:
                             return self.failHandshake("WebSocket permessage-compress extension response from server denied by client")
 
-                        self._perMessageCompress = PMCE['PMCE'].createFromResponseAccept(self.factory.isServer, accept)
+                        self._perMessageCompress = PMCE['PMCE'].create_from_response_accept(self.factory.isServer, accept)
 
                         self.websocket_extensions_in_use.append(self._perMessageCompress)
 

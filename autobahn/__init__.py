@@ -28,3 +28,14 @@ __version__ = u'0.13.1'
 """
 AutobahnPython library version.
 """
+
+
+def public(obj):
+    """
+    The public user API of Autobahn is marked using this decorator.
+
+    Everything that is not decorated @public is library internal, can
+    change at any time and should not be used in user program code.
+    """
+    obj._is_public = True
+    return obj

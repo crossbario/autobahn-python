@@ -185,10 +185,25 @@ html_theme_options = {
 html_static_path = ['_static']
 
 
-## additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)
-##
+# http://stackoverflow.com/a/21449475/884770
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html#event-autodoc-skip-member
+
+# app, what, name, obj, skip, options:
+# <sphinx.application.Sphinx object at 0x2b0192ab2f90> class __module__ autobahn.asyncio.websocket True {'show-inheritance': True, 'members': <object object at 0x2b018c791710>, 'undoc-members': True}
+#
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    # skip everything that isn't decorated with @autobahn.public or ..
+    if hasattr(obj, '_is_public') and obj._is_public:
+        return False
+    else:
+        return True
+
 def setup(app):
-   app.add_config_value('no_network', False, True)
+    # additional variables which become accessible in RST (e.g. .. ifconfig:: not no_network)
+    app.add_config_value('no_network', False, True)
+
+    # wire up our custom checker to skip member
+    app.connect('autodoc-skip-member', autodoc_skip_member)
 
 no_network = None
 
@@ -295,4 +310,5 @@ rst_prolog = """
 # http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
 autoclass_content = 'both'
 
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
 autodoc_member_order = 'bysource'

@@ -51,8 +51,8 @@ class PerMessageSnappyMixin(object):
 
     EXTENSION_NAME = "permessage-snappy"
     """
-   Name of this WebSocket extension.
-   """
+    Name of this WebSocket extension.
+    """
 
 
 class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
@@ -69,16 +69,14 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
         :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
         :type params: list
 
-        :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
+        :returns: A new instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
+        :rtype: obj
         """
         # extension parameter defaults
-        ##
-        acceptNoContextTakeover = False
-        requestNoContextTakeover = False
+        accept_no_context_takeover = False
+        request_no_context_takeover = False
 
-        ##
         # verify/parse client ("client-to-server direction") parameters of permessage-snappy offer
-        ##
         for p in params:
 
             if len(params[p]) > 1:
@@ -91,73 +89,75 @@ class PerMessageSnappyOffer(PerMessageCompressOffer, PerMessageSnappyMixin):
                 if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
-                    acceptNoContextTakeover = True
+                    accept_no_context_takeover = True
 
             elif p == 'server_no_context_takeover':
                 # noinspection PySimplifyBooleanCheck
                 if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
-                    requestNoContextTakeover = True
+                    request_no_context_takeover = True
 
             else:
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
-        offer = cls(acceptNoContextTakeover,
-                    requestNoContextTakeover)
+        offer = cls(accept_no_context_takeover,
+                    request_no_context_takeover)
         return offer
 
     def __init__(self,
-                 acceptNoContextTakeover=True,
-                 requestNoContextTakeover=False):
+                 accept_no_context_takeover=True,
+                 request_no_context_takeover=False):
         """
-        Constructor.
 
-        :param acceptNoContextTakeover: Iff true, client accepts "no context takeover" feature.
-        :type acceptNoContextTakeover: bool
-        :param requestNoContextTakeover: Iff true, client request "no context takeover" feature.
-        :type requestNoContextTakeover: bool
+        :param accept_no_context_takeover: Iff true, client accepts "no context takeover" feature.
+        :type accept_no_context_takeover: bool
+        :param request_no_context_takeover: Iff true, client request "no context takeover" feature.
+        :type request_no_context_takeover: bool
         """
-        if type(acceptNoContextTakeover) != bool:
-            raise Exception("invalid type %s for acceptNoContextTakeover" % type(acceptNoContextTakeover))
+        if type(accept_no_context_takeover) != bool:
+            raise Exception("invalid type %s for accept_no_context_takeover" % type(accept_no_context_takeover))
 
-        self.acceptNoContextTakeover = acceptNoContextTakeover
+        self.accept_no_context_takeover = accept_no_context_takeover
 
-        if type(requestNoContextTakeover) != bool:
-            raise Exception("invalid type %s for requestNoContextTakeover" % type(requestNoContextTakeover))
+        if type(request_no_context_takeover) != bool:
+            raise Exception("invalid type %s for request_no_context_takeover" % type(request_no_context_takeover))
 
-        self.requestNoContextTakeover = requestNoContextTakeover
+        self.request_no_context_takeover = request_no_context_takeover
 
-    def getExtensionString(self):
+    def get_extension_string(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
 
-        :returns: str -- PMCE configuration string.
+        :returns: PMCE configuration string.
+        :rtype: str
         """
-        pmceString = self.EXTENSION_NAME
-        if self.acceptNoContextTakeover:
-            pmceString += "; client_no_context_takeover"
-        if self.requestNoContextTakeover:
-            pmceString += "; server_no_context_takeover"
-        return pmceString
+        pmce_string = self.EXTENSION_NAME
+        if self.accept_no_context_takeover:
+            pmce_string += "; client_no_context_takeover"
+        if self.request_no_context_takeover:
+            pmce_string += "; server_no_context_takeover"
+        return pmce_string
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
-                'acceptNoContextTakeover': self.acceptNoContextTakeover,
-                'requestNoContextTakeover': self.requestNoContextTakeover}
+                'accept_no_context_takeover': self.accept_no_context_takeover,
+                'request_no_context_takeover': self.request_no_context_takeover}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageSnappyOffer(acceptNoContextTakeover = %s, requestNoContextTakeover = %s)" % (self.acceptNoContextTakeover, self.requestNoContextTakeover)
+        return "PerMessageSnappyOffer(accept_no_context_takeover = %s, request_no_context_takeover = %s)" % (self.accept_no_context_takeover, self.request_no_context_takeover)
 
 
 class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnappyMixin):
@@ -168,71 +168,73 @@ class PerMessageSnappyOfferAccept(PerMessageCompressOfferAccept, PerMessageSnapp
 
     def __init__(self,
                  offer,
-                 requestNoContextTakeover=False,
-                 noContextTakeover=None):
+                 request_no_context_takeover=False,
+                 no_context_takeover=None):
         """
-        Constructor.
 
         :param offer: The offer being accepted.
         :type offer: Instance of :class:`autobahn.compress.PerMessageSnappyOffer`.
-        :param requestNoContextTakeover: Iff true, server request "no context takeover" feature.
-        :type requestNoContextTakeover: bool
-        :param noContextTakeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
-        :type noContextTakeover: bool
+        :param request_no_context_takeover: Iff true, server request "no context takeover" feature.
+        :type request_no_context_takeover: bool
+        :param no_context_takeover: Override server ("server-to-client direction") context takeover (this must be compatible with offer).
+        :type no_context_takeover: bool
         """
         if not isinstance(offer, PerMessageSnappyOffer):
             raise Exception("invalid type %s for offer" % type(offer))
 
         self.offer = offer
 
-        if type(requestNoContextTakeover) != bool:
-            raise Exception("invalid type %s for requestNoContextTakeover" % type(requestNoContextTakeover))
+        if type(request_no_context_takeover) != bool:
+            raise Exception("invalid type %s for request_no_context_takeover" % type(request_no_context_takeover))
 
-        if requestNoContextTakeover and not offer.acceptNoContextTakeover:
-            raise Exception("invalid value %s for requestNoContextTakeover - feature unsupported by client" % requestNoContextTakeover)
+        if request_no_context_takeover and not offer.accept_no_context_takeover:
+            raise Exception("invalid value %s for request_no_context_takeover - feature unsupported by client" % request_no_context_takeover)
 
-        self.requestNoContextTakeover = requestNoContextTakeover
+        self.request_no_context_takeover = request_no_context_takeover
 
-        if noContextTakeover is not None:
-            if type(noContextTakeover) != bool:
-                raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
+        if no_context_takeover is not None:
+            if type(no_context_takeover) != bool:
+                raise Exception("invalid type %s for no_context_takeover" % type(no_context_takeover))
 
-            if offer.requestNoContextTakeover and not noContextTakeover:
-                raise Exception("invalid value %s for noContextTakeover - client requested feature" % noContextTakeover)
+            if offer.request_no_context_takeover and not no_context_takeover:
+                raise Exception("invalid value %s for no_context_takeover - client requested feature" % no_context_takeover)
 
-        self.noContextTakeover = noContextTakeover
+        self.no_context_takeover = no_context_takeover
 
-    def getExtensionString(self):
+    def get_extension_string(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
 
-        :returns: str -- PMCE configuration string.
+        :returns: PMCE configuration string.
+        :rtype: str
         """
-        pmceString = self.EXTENSION_NAME
-        if self.offer.requestNoContextTakeover:
-            pmceString += "; server_no_context_takeover"
-        if self.requestNoContextTakeover:
-            pmceString += "; client_no_context_takeover"
-        return pmceString
+        pmce_string = self.EXTENSION_NAME
+        if self.offer.request_no_context_takeover:
+            pmce_string += "; server_no_context_takeover"
+        if self.request_no_context_takeover:
+            pmce_string += "; client_no_context_takeover"
+        return pmce_string
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'offer': self.offer.__json__(),
-                'requestNoContextTakeover': self.requestNoContextTakeover,
-                'noContextTakeover': self.noContextTakeover}
+                'request_no_context_takeover': self.request_no_context_takeover,
+                'no_context_takeover': self.no_context_takeover}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageSnappyAccept(offer = %s, requestNoContextTakeover = %s, noContextTakeover = %s)" % (self.offer.__repr__(), self.requestNoContextTakeover, self.noContextTakeover)
+        return "PerMessageSnappyAccept(offer = %s, request_no_context_takeover = %s, no_context_takeover = %s)" % (self.offer.__repr__(), self.request_no_context_takeover, self.no_context_takeover)
 
 
 class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin):
@@ -248,7 +250,8 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
         :type params: list
 
-        :returns: object -- A new instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
+        :returns: A new instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
+        :rtype: obj
         """
         client_no_context_takeover = False
         server_no_context_takeover = False
@@ -291,7 +294,8 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'client_no_context_takeover': self.client_no_context_takeover,
@@ -301,7 +305,8 @@ class PerMessageSnappyResponse(PerMessageCompressResponse, PerMessageSnappyMixin
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
         return "PerMessageSnappyResponse(client_no_context_takeover = %s, server_no_context_takeover = %s)" % (self.client_no_context_takeover, self.server_no_context_takeover)
 
@@ -314,46 +319,47 @@ class PerMessageSnappyResponseAccept(PerMessageCompressResponseAccept, PerMessag
 
     def __init__(self,
                  response,
-                 noContextTakeover=None):
+                 no_context_takeover=None):
         """
-        Constructor.
 
         :param response: The response being accepted.
         :type response: Instance of :class:`autobahn.compress.PerMessageSnappyResponse`.
-        :param noContextTakeover: Override client ("client-to-server direction") context takeover (this must be compatible with response).
-        :type noContextTakeover: bool
+        :param no_context_takeover: Override client ("client-to-server direction") context takeover (this must be compatible with response).
+        :type no_context_takeover: bool
         """
         if not isinstance(response, PerMessageSnappyResponse):
             raise Exception("invalid type %s for response" % type(response))
 
         self.response = response
 
-        if noContextTakeover is not None:
-            if type(noContextTakeover) != bool:
-                raise Exception("invalid type %s for noContextTakeover" % type(noContextTakeover))
+        if no_context_takeover is not None:
+            if type(no_context_takeover) != bool:
+                raise Exception("invalid type %s for no_context_takeover" % type(no_context_takeover))
 
-            if response.client_no_context_takeover and not noContextTakeover:
-                raise Exception("invalid value %s for noContextTakeover - server requested feature" % noContextTakeover)
+            if response.client_no_context_takeover and not no_context_takeover:
+                raise Exception("invalid value %s for no_context_takeover - server requested feature" % no_context_takeover)
 
-        self.noContextTakeover = noContextTakeover
+        self.no_context_takeover = no_context_takeover
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'response': self.response.__json__(),
-                'noContextTakeover': self.noContextTakeover}
+                'no_context_takeover': self.no_context_takeover}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageSnappyResponseAccept(response = %s, noContextTakeover = %s)" % (self.response.__repr__(), self.noContextTakeover)
+        return "PerMessageSnappyResponseAccept(response = %s, no_context_takeover = %s)" % (self.response.__repr__(), self.no_context_takeover)
 
 
 class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
@@ -362,24 +368,24 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
     """
 
     @classmethod
-    def createFromResponseAccept(cls, isServer, accept):
-        pmce = cls(isServer,
+    def create_from_response_accept(cls, is_server, accept):
+        pmce = cls(is_server,
                    accept.response.server_no_context_takeover,
-                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.response.client_no_context_takeover)
+                   accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover)
         return pmce
 
     @classmethod
-    def createFromOfferAccept(cls, isServer, accept):
-        pmce = cls(isServer,
-                   accept.noContextTakeover if accept.noContextTakeover is not None else accept.offer.requestNoContextTakeover,
-                   accept.requestNoContextTakeover)
+    def create_from_offer_accept(cls, is_server, accept):
+        pmce = cls(is_server,
+                   accept.no_context_takeover if accept.no_context_takeover is not None else accept.offer.request_no_context_takeover,
+                   accept.request_no_context_takeover)
         return pmce
 
     def __init__(self,
-                 isServer,
+                 is_server,
                  server_no_context_takeover,
                  client_no_context_takeover):
-        self._isServer = isServer
+        self._is_server = is_server
         self.server_no_context_takeover = server_no_context_takeover
         self.client_no_context_takeover = client_no_context_takeover
 
@@ -392,32 +398,32 @@ class PerMessageSnappy(PerMessageCompress, PerMessageSnappyMixin):
                 'client_no_context_takeover': self.client_no_context_takeover}
 
     def __repr__(self):
-        return "PerMessageSnappy(isServer = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)" % (self._isServer, self.server_no_context_takeover, self.client_no_context_takeover)
+        return "PerMessageSnappy(is_server = %s, server_no_context_takeover = %s, client_no_context_takeover = %s)" % (self._is_server, self.server_no_context_takeover, self.client_no_context_takeover)
 
-    def startCompressMessage(self):
-        if self._isServer:
+    def start_compress_message(self):
+        if self._is_server:
             if self._compressor is None or self.server_no_context_takeover:
                 self._compressor = snappy.StreamCompressor()
         else:
             if self._compressor is None or self.client_no_context_takeover:
                 self._compressor = snappy.StreamCompressor()
 
-    def compressMessageData(self, data):
+    def compress_message_data(self, data):
         return self._compressor.add_chunk(data)
 
-    def endCompressMessage(self):
+    def end_compress_message(self):
         return ""
 
-    def startDecompressMessage(self):
-        if self._isServer:
+    def start_decompress_message(self):
+        if self._is_server:
             if self._decompressor is None or self.client_no_context_takeover:
                 self._decompressor = snappy.StreamDecompressor()
         else:
             if self._decompressor is None or self.server_no_context_takeover:
                 self._decompressor = snappy.StreamDecompressor()
 
-    def decompressMessageData(self, data):
+    def decompress_message_data(self, data):
         return self._decompressor.decompress(data)
 
-    def endDecompressMessage(self):
+    def end_decompress_message(self):
         pass

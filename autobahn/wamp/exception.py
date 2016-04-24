@@ -28,6 +28,7 @@ from __future__ import absolute_import
 
 import six
 
+from autobahn import public
 from autobahn.wamp.uri import error
 
 __all__ = (
@@ -42,12 +43,14 @@ __all__ = (
 )
 
 
+@public
 class Error(RuntimeError):
     """
     Base class for all exceptions related to WAMP.
     """
 
 
+@public
 class SessionNotReady(Error):
     """
     The application tried to perform a WAMP interaction, but the
@@ -55,6 +58,7 @@ class SessionNotReady(Error):
     """
 
 
+@public
 class SerializationError(Error):
     """
     Exception raised when the WAMP serializer could not serialize the
@@ -62,6 +66,7 @@ class SerializationError(Error):
     """
 
 
+@public
 class ProtocolError(Error):
     """
     Exception raised when WAMP protocol was violated. Protocol errors
@@ -70,6 +75,7 @@ class ProtocolError(Error):
     """
 
 
+@public
 class TransportLost(Error):
     """
     Exception raised when the transport underlying the WAMP session
@@ -77,6 +83,7 @@ class TransportLost(Error):
     """
 
 
+@public
 class ApplicationError(Error):
     """
     Base class for all exceptions that can/may be handled
@@ -209,10 +216,20 @@ class ApplicationError(Error):
     exclusion of (any) *Callee* providing the procedure (WAMP AP).
     """
 
-    # application payload end-to-end encryption related errors
     ENC_NO_KEYRING_ACTIVE = u"wamp.error.encryption.no_keyring_active"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
+
     ENC_TRUSTED_URI_MISMATCH = u"wamp.error.encryption.trusted_uri_mismatch"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
+
     ENC_DECRYPT_ERROR = u"wamp.error.encryption.decrypt_error"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
 
     def __init__(self, error, *args, **kwargs):
         """
@@ -225,6 +242,7 @@ class ApplicationError(Error):
         self.error = error
         self.enc_algo = kwargs.pop('enc_algo', None)
 
+    @public
     def error_message(self):
         """
         Get the error message of this exception.
@@ -252,6 +270,7 @@ class ApplicationError(Error):
             return self.__unicode__().encode('utf8')
 
 
+@public
 @error(ApplicationError.NOT_AUTHORIZED)
 class NotAuthorized(Exception):
     """
@@ -259,6 +278,7 @@ class NotAuthorized(Exception):
     """
 
 
+@public
 @error(ApplicationError.INVALID_URI)
 class InvalidUri(Exception):
     """
@@ -266,6 +286,7 @@ class InvalidUri(Exception):
     """
 
 
+@public
 @error(ApplicationError.INVALID_PAYLOAD)
 class InvalidPayload(Exception):
     """
