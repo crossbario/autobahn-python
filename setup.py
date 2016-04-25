@@ -189,6 +189,7 @@ setup(
     },
     packages=[
         'autobahn',
+        'autobahn.test',
         'autobahn.wamp',
         'autobahn.wamp.test',
         'autobahn.websocket',
