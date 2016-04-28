@@ -469,6 +469,10 @@ class WebSocketProtocol(object):
     """
 
     log = txaio.make_logger()
+    ping_timer = txaio.make_batched_timer(
+        bucket_seconds=0.200,
+        chunk_size=100,
+    )
 
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
@@ -657,11 +661,10 @@ class WebSocketProtocol(object):
                 # When we are a client, the server should drop the TCP
                 # If that doesn't happen, we do. And that will set wasClean = False.
                 if self.serverConnectionDropTimeout > 0:
-                    call = txaio.call_later(
+                    self.serverConnectionDropTimeoutCall = txaio.call_later(
                         self.serverConnectionDropTimeout,
                         self.onServerConnectionDropTimeout,
                     )
-                    self.serverConnectionDropTimeoutCall = call
 
         elif self.state == WebSocketProtocol.STATE_OPEN:
             # The peer initiates a closing handshake, so we reply
@@ -969,13 +972,14 @@ class WebSocketProtocol(object):
         self.openHandshakeTimeoutCall = None
         self.closeHandshakeTimeoutCall = None
 
+        self.autoPingTimeoutCall = None
+        self.autoPingPending = None
+        self.autoPingPendingCall = None
+
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
             self.openHandshakeTimeoutCall = txaio.call_later(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
 
-        self.autoPingTimeoutCall = None
-        self.autoPingPending = None
-        self.autoPingPendingCall = None
 
     def _connectionLost(self, reason):
         """
@@ -1643,7 +1647,10 @@ class WebSocketProtocol(object):
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
-                            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+                            self.autoPingPendingCall = self.ping_timer.call_later(
+                                self.autoPingInterval,
+                                self._sendAutoPing,
+                            )
                     else:
                         self.log.debug("Auto ping/pong: received non-pending pong")
                 except:
@@ -1782,7 +1789,10 @@ class WebSocketProtocol(object):
                 "Expecting ping in {seconds} seconds for auto-ping/pong",
                 seconds=self.autoPingTimeout,
             )
-            self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
+            self.autoPingTimeoutCall = self.ping_timer.call_later(
+                self.autoPingTimeout,
+                self.onAutoPingTimeout,
+            )
 
     def sendPong(self, payload=None):
         """
@@ -2820,7 +2830,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # automatic ping/pong
         #
         if self.autoPingInterval:
-            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+            self.autoPingPendingCall = self.ping_timer.call_later(
+                self.autoPingInterval,
+                self._sendAutoPing,
+            )
 
         # fire handler on derived class
         #
@@ -3627,7 +3640,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # automatic ping/pong
             #
             if self.autoPingInterval:
-                self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+                self.autoPingPendingCall = self.ping_timer.call_later(
+                    self.autoPingInterval,
+                    self._sendAutoPing,
+                )
 
             # we handle this symmetrical to server-side .. that is, give the
             # client a chance to bail out .. i.e. on no subprotocol selected
