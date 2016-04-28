@@ -471,7 +471,11 @@ class WebSocketProtocol(object):
     log = txaio.make_logger()
     ping_timer = txaio.make_batched_timer(
         bucket_seconds=0.200,
-        chunk_size=100,
+        chunk_size=1000,
+    )
+    handshake_timer = txaio.make_batched_timer(
+        bucket_seconds=0.200,
+        chunk_size=1000,
     )
 
     def __init__(self):
@@ -978,7 +982,10 @@ class WebSocketProtocol(object):
 
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
-            self.openHandshakeTimeoutCall = txaio.call_later(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
+            self.openHandshakeTimeoutCall = self.handshake_timer.call_later(
+                self.openHandshakeTimeout,
+                self.onOpenHandshakeTimeout,
+            )
 
 
     def _connectionLost(self, reason):
