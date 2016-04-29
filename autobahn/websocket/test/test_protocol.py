@@ -124,6 +124,7 @@ class WebSocketServerProtocolTests(unittest.TestCase):
 
     def test_auto_ping(self):
         proto = Mock()
+        proto._get_seconds = Mock(return_value=1)
         self.protocol.autoPingInterval = 1
         self.protocol.websocket_protocols = [proto]
         self.protocol.websocket_extensions = []

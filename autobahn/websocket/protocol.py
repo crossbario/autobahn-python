@@ -987,7 +987,6 @@ class WebSocketProtocol(object):
                 self.onOpenHandshakeTimeout,
             )
 
-
     def _connectionLost(self, reason):
         """
         This is called by network framework when a transport connection was

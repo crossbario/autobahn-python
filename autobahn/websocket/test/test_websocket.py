@@ -213,8 +213,6 @@ if os.environ.get('USE_TWISTED', False):
 
                 # we should have scheduled an autoPing
                 self.assertEqual(1, len(reactor.calls))
-                self.assertEqual(self.proto._sendAutoPing, reactor.calls[0].func)
-                # ^^ un-unit-testy to assert on internal method?
 
                 # advance past first auto-ping timeout
                 reactor.advance(5)
@@ -239,7 +237,6 @@ if os.environ.get('USE_TWISTED', False):
                 # Because we have autoPingTimeout there should be
                 # another delayed-called created now
                 self.assertEqual(1, len(reactor.calls))
-                self.assertEqual(self.proto.onAutoPingTimeout, reactor.calls[0].func)
                 self.assertNotEqual(self.proto.state, self.proto.STATE_CLOSED)
 
                 # ...which we'll now cause to trigger, aborting the connection
@@ -262,7 +259,6 @@ if os.environ.get('USE_TWISTED', False):
 
                 # we should have scheduled an autoPing
                 self.assertEqual(1, len(reactor.calls))
-                self.assertEqual(self.proto._sendAutoPing, reactor.calls[0].func)
                 # ^^ un-unit-testy to assert on internal method?
 
                 # advance past first auto-ping timeout
@@ -271,7 +267,6 @@ if os.environ.get('USE_TWISTED', False):
                 # should have an auto-ping timeout scheduled, and we
                 # save it for later (to check it got cancelled)
                 self.assertEqual(1, len(reactor.calls))
-                self.assertEqual(self.proto.onAutoPingTimeout, reactor.calls[0].func)
                 timeout_call = reactor.calls[0]
 
                 # elsewhere we check that we actually send an opcode-9
