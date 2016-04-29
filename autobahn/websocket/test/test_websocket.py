@@ -259,7 +259,6 @@ if os.environ.get('USE_TWISTED', False):
 
                 # we should have scheduled an autoPing
                 self.assertEqual(1, len(reactor.calls))
-                # ^^ un-unit-testy to assert on internal method?
 
                 # advance past first auto-ping timeout
                 reactor.advance(5)
