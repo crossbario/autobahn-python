@@ -28,6 +28,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import unittest2 as unittest
+from txaio.testutil import replace_loop
 
 if os.environ.get('USE_TWISTED', False):
     from mock import patch
@@ -121,14 +122,14 @@ else:
             context object that is passed (as ssl) to the __init__ method of
             ApplicationRunner.
             '''
-            loop = Mock()
-            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-            with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                ssl = {}
-                runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm',
-                                           ssl=ssl)
-                runner.run('_unused_')
-                self.assertIs(ssl, loop.create_connection.call_args[1]['ssl'])
+            with replace_loop(Mock()) as loop:
+                with patch.object(asyncio, 'get_event_loop', return_value=loop):
+                    loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
+                    ssl = {}
+                    runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm',
+                                               ssl=ssl)
+                    runner.run('_unused_')
+                    self.assertIs(ssl, loop.create_connection.call_args[1]['ssl'])
 
         def test_omitted_SSLContext_insecure(self):
             '''
@@ -136,12 +137,12 @@ else:
             if no ssl argument is passed to the __init__ method of
             ApplicationRunner and the websocket URL starts with "ws:".
             '''
-            loop = Mock()
-            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-            with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm')
-                runner.run('_unused_')
-                self.assertIs(False, loop.create_connection.call_args[1]['ssl'])
+            with replace_loop(Mock()) as loop:
+                with patch.object(asyncio, 'get_event_loop', return_value=loop):
+                    loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
+                    runner = ApplicationRunner(u'ws://127.0.0.1:8080/ws', u'realm')
+                    runner.run('_unused_')
+                    self.assertIs(False, loop.create_connection.call_args[1]['ssl'])
 
         def test_omitted_SSLContext_secure(self):
             '''
@@ -149,21 +150,20 @@ else:
             if no ssl argument is passed to the __init__ method of
             ApplicationRunner and the websocket URL starts with "wss:".
             '''
-            loop = Mock()
-            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-            with patch.object(asyncio, 'get_event_loop', return_value=loop):
-                runner = ApplicationRunner(u'wss://127.0.0.1:8080/wss', u'realm')
-                runner.run('_unused_')
-                self.assertIs(True, loop.create_connection.call_args[1]['ssl'])
+            with replace_loop(Mock()) as loop:
+                with patch.object(asyncio, 'get_event_loop', return_value=loop):
+                    loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
+                    runner = ApplicationRunner(u'wss://127.0.0.1:8080/wss', u'realm')
+                    runner.run(self.fail)
+                    self.assertIs(True, loop.create_connection.call_args[1]['ssl'])
 
         def test_conflict_SSL_True_with_ws_url(self):
             '''
             ApplicationRunner must raise an exception if given an ssl value of True
             but only a "ws:" URL.
             '''
-            loop = Mock()
-            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-            with patch.object(asyncio, 'get_event_loop', return_value=loop):
+            with replace_loop(Mock()) as loop:
+                loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=True)
                 error = ('^ssl argument value passed to ApplicationRunner '
@@ -194,9 +194,8 @@ else:
             else:
                 context = ssl.create_default_context()
 
-            loop = Mock()
-            loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
-            with patch.object(asyncio, 'get_event_loop', return_value=loop):
+            with replace_loop(Mock()) as loop:
+                loop.run_until_complete = Mock(return_value=(Mock(), Mock()))
                 runner = ApplicationRunner(u'ws://127.0.0.1:8080/wss', u'realm',
                                            ssl=context)
                 error = ('^ssl argument value passed to ApplicationRunner '
