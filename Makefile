@@ -1,3 +1,5 @@
+.PHONY: test docs pep8
+
 all:
 	@echo "Targets:"
 	@echo ""
@@ -37,6 +39,12 @@ clean:
 publish: clean
 	python setup.py sdist bdist_wheel
 	twine upload dist/*
+
+docs:
+	cd docs && make html
+
+spelling:
+	cd docs && sphinx-build -b spelling . _spelling
 
 test_styleguide:
 	flake8 --statistics --max-line-length=119 -qq autobahn
