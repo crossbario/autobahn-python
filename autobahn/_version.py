@@ -24,8 +24,7 @@
 #
 ###############################################################################
 
-from __future__ import absolute_import
-
-from autobahn._version import __version__
-
-version = __version__
+__version__ = u'0.13.1'
+"""
+AutobahnPython library version.
+"""
