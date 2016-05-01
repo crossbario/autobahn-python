@@ -25,8 +25,3 @@ in your browser.
 To run the Python client, do
 
     python client.py wss://localhost:9000
-
-For both server and client you can add `debug` to the command line to **activate wire logging** of all sent and received WebSocket messages.
-
-
-

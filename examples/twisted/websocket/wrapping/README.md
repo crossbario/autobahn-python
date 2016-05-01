@@ -69,7 +69,6 @@ There are a couple of optional arguments to `WrappingWebSocketClientFactory` for
 
  * `enableCompression` can be used to enable/disable WebSocket compression ("permessage-deflate")
  * `autoFragmentSize` can be used to automatically fragment the stream data into WebSocket frames of at most this size
- * `debug` enables/disables debug log output
 
 You can find a complete example for both client and server in these files:
 
@@ -100,12 +99,12 @@ You can find a complete example for both client and server in these files:
 
  1. `"autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000"`
  1. `"autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000:compress=false"`
- 1. `"autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000:autofrag=4096:debug=true"`
+ 1. `"autobahn:tcp\:localhost\:9000:url=ws\:// localhost\:9000:autofrag=4096"`
 
 *Example Server Endpoint Descriptors*
 
  1. `"autobahn:tcp\:9000:url=ws\://localhost\:9000"`
- 1. `"autobahn:tcp\:9000:url=ws\://localhost\:9000:autofrag=4096:debug=true"`
+ 1. `"autobahn:tcp\:9000:url=ws\://localhost\:9000:autofrag=4096"`
  1. `"autobahn:tcp\:9000\:interface\=0.0.0.0:url=ws\://localhost\:9000:compress=true"`
 
 
