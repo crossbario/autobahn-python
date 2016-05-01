@@ -204,7 +204,7 @@ make publish
 
 ### WebSocket Test Reports
 
-[AutobahnTestsuite](http://autobahn.ws/testsuite/) provides a fully automated test suite to verify client and server implementations of the WebSocket Protocol for specification conformance and implementation robustness.
+[AutobahnTestsuite](http://crossbar.io/autobahn#testsuite) provides a fully automated test suite to verify client and server implementations of the WebSocket Protocol for specification conformance and implementation robustness.
 
 We use that to test AutobahnPython at the WebSocket level, both client and server mode.
 

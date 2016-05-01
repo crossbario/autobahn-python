@@ -2935,7 +2935,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       <p>
          For more information, please see:
          <ul>
-            <li><a href="http://autobahn.ws/python">AutobahnPython</a></li>
+            <li><a href="http://crossbar.io/autobahn">Autobahn</a></li>
          </ul>
       </p>
    </body>
