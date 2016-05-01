@@ -22,9 +22,9 @@ It lets you react, using callback defined via decorators, to 3 things :
 
    from autobahn.twisted.wamp import Application
    from autobahn.wamp.types import PublishOptions
- 
+
    app = Application()
- 
+
    # Register a function to allow calling it from outside
    # via RPC
    @app.register('a_procedure_name')
@@ -37,14 +37,14 @@ It lets you react, using callback defined via decorators, to 3 things :
                           # force publisher to receive its
                           # own event
                           options=PublishOptions(excludeMe=False))
- 
+
    # Register a callback that will be called when the
    # event 'an_event' is triggered
    @app.subscribe('an_event')
    def an_event(val):
       print('Received an event with something :')
       print(val)
- 
+
    # This will be called once the application is connected
    # to the server
    @app.signal('onjoin')
@@ -52,7 +52,7 @@ It lets you react, using callback defined via decorators, to 3 things :
       print('The application is connected !')
       # Calling a_procedure()
       app.session.call('a_procedure_name', True, False)
- 
+
    if __name__ == "__main__":
       # By default, the application run on port 8080
       print('Before the app start')
@@ -74,7 +74,7 @@ It lets you react, using callback defined via decorators, to 3 things :
 
 Ok, this example is cheating a little bit because the application triggers
 events and listen to them, and it calls it's own code via RPC. You may want
-to call them from a Web page using autobahn.js (http://autobahn.ws/js/) for
+to call them from a Web page using autobahn.js (http://crossbar.io/autobahn#js) for
 a more convincing demo.
 
 If you use "yield" inside any of the callbacks, `@inlineCallbacks` will

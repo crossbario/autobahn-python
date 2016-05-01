@@ -16,9 +16,6 @@ Compared are 4 variants of above functionality:
  * streaming API with producer-consumer pattern
 
 
-You can find complete tutorials [here](http://autobahn.ws/python/tutorials/streaming) and [here](http://autobahn.ws/python/tutorials/producerconsumer).
-
-
 Message-based Processing
 ------------------------
 

@@ -48,7 +48,7 @@ def do_commands(lines):
 commands = [
     "clear",
     colors.red('# Welcome! Here we set up and run one basic'),
-    colors.red('# http://autobahn.ws example'),
+    colors.red('# http://crossbar.io/autobahn example'),
     colors.red('# (Note there are many other examples to try)'),
     colors.red('#'),
     colors.red("# I presume you've got a clone of https://github.com/crossbario/autobahn-python"),
@@ -72,7 +72,7 @@ commands = [
     colors.red('# ...and a frontend that calls those methods'),
     "./venv-autobahn/bin/" + colors.bold("python examples/twisted/wamp/rpc/arguments/frontend.py"),
     colors.red('# Thanks for watching!'),
-    colors.red('# http://autobahn.ws/python/wamp/examples.html'),
+    colors.red('# https://autobahn-python.readthedocs.io/en/latest/wamp/examples.html'),
     "sleep 5",
 ]
 

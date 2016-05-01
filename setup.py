@@ -168,7 +168,7 @@ setup(
     license='MIT License',
     author='Tavendo GmbH',
     author_email='autobahnws@googlegroups.com',
-    url='http://autobahn.ws/python',
+    url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
@@ -224,7 +224,7 @@ setup(
                  "Topic :: Software Development :: Libraries",
                  "Topic :: Software Development :: Libraries :: Python Modules",
                  "Topic :: Software Development :: Object Brokering"],
-    keywords='autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
+    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
 

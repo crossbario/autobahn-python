@@ -2462,11 +2462,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     if 'redirect' in self.http_request_params and len(self.http_request_params['redirect']) > 0:
                         # To specify an URL for redirection, encode the URL, i.e. from JavaScript:
                         #
-                        # var url = encodeURIComponent("http://autobahn.ws/python");
+                        # var url = encodeURIComponent("http://crossbar.io/autobahn");
                         #
                         # and append the encoded string as a query parameter 'redirect'
                         #
-                        # http://localhost:9000?redirect=http%3A%2F%2Fautobahn.ws%2Fpython
+                        # http://localhost:9000?redirect=http%3A%2F%2Fcrossbar.io%2Fautobahn
                         # https://localhost:9000?redirect=https%3A%2F%2Ftwitter.com%2F
                         #
                         # This will perform an immediate HTTP-303 redirection. If you provide
@@ -2935,7 +2935,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       <p>
          For more information, please see:
          <ul>
-            <li><a href="http://autobahn.ws/python">AutobahnPython</a></li>
+            <li><a href="http://crossbar.io/autobahn">Autobahn</a></li>
          </ul>
       </p>
    </body>

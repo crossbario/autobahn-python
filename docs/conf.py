@@ -282,21 +282,18 @@ rst_epilog = """
 .. |Ab| replace:: **Autobahn**
 .. |abL| replace:: Autobahn|Python
 .. |AbL| replace:: **Autobahn**\|Python
-.. _Autobahn: http://autobahn.ws
-.. _AutobahnJS: http://autobahn.ws/js
+.. _Autobahn: http://crossbar.io/autobahn#python
+.. _AutobahnJS: http://crossbar.io/autobahn#js
 .. _AutobahnPython: **Autobahn**\|Python
 .. _WebSocket: http://tools.ietf.org/html/rfc6455
 .. _RFC6455: http://tools.ietf.org/html/rfc6455
-.. _WAMP: http://wamp.ws/
+.. _WAMP: http://wamp-proto.org/
 .. _Twisted: http://twistedmatrix.com/
 .. _asyncio: http://docs.python.org/3.4/library/asyncio.html
 .. _CPython: http://python.org/
 .. _PyPy: http://pypy.org/
 .. _Jython: http://jython.org/
-.. _WAMP: http://wamp.ws/
-.. _WAMPv1: http://wamp.ws/spec/wamp1/
-.. _WAMPv2: https://github.com/wamp-proto/wamp-proto/blob/master/spec/README.md
-.. _AutobahnTestsuite: http://autobahn.ws/testsuite
+.. _AutobahnTestsuite: http://crossbar.io/autobahn#testsuite
 .. _trollius: https://pypi.python.org/pypi/trollius/
 .. _tulip: https://pypi.python.org/pypi/asyncio/
 """

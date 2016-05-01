@@ -9,8 +9,8 @@
 
 |AbL| is part of the `Autobahn`_ project and provides open-source implementations of
 
-* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
-* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
+* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
+* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`__
 
 in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
 
@@ -37,7 +37,7 @@ See :ref:`site_contents` for a full site-map. Top-level pages available:
 Autobahn Features
 -----------------
 
-WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
+`WebSocket`_ allows `bidirectional real-time messaging <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`__ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
 
 |AbL| features:
 
@@ -46,10 +46,10 @@ WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
 * implements WebSocket `RFC6455`_ (and draft versions Hybi-10+)
-* implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
+* implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
 * implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
-* Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`_)
+* Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
 
 ...and much more.
 
