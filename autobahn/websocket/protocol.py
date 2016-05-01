@@ -469,11 +469,7 @@ class WebSocketProtocol(object):
     """
 
     log = txaio.make_logger()
-    ping_timer = txaio.make_batched_timer(
-        bucket_seconds=0.200,
-        chunk_size=1000,
-    )
-    handshake_timer = txaio.make_batched_timer(
+    _batched_timer = txaio.make_batched_timer(
         bucket_seconds=0.200,
         chunk_size=1000,
     )
@@ -982,7 +978,7 @@ class WebSocketProtocol(object):
 
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
-            self.openHandshakeTimeoutCall = self.handshake_timer.call_later(
+            self.openHandshakeTimeoutCall = self._batched_timer.call_later(
                 self.openHandshakeTimeout,
                 self.onOpenHandshakeTimeout,
             )
@@ -1653,7 +1649,7 @@ class WebSocketProtocol(object):
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
-                            self.autoPingPendingCall = self.ping_timer.call_later(
+                            self.autoPingPendingCall = self._batched_timer.call_later(
                                 self.autoPingInterval,
                                 self._sendAutoPing,
                             )
@@ -1795,7 +1791,7 @@ class WebSocketProtocol(object):
                 "Expecting ping in {seconds} seconds for auto-ping/pong",
                 seconds=self.autoPingTimeout,
             )
-            self.autoPingTimeoutCall = self.ping_timer.call_later(
+            self.autoPingTimeoutCall = self._batched_timer.call_later(
                 self.autoPingTimeout,
                 self.onAutoPingTimeout,
             )
@@ -1849,7 +1845,10 @@ class WebSocketProtocol(object):
 
             # drop connection when timeout on receiving close handshake reply
             if self.closedByMe and self.closeHandshakeTimeout > 0:
-                self.closeHandshakeTimeoutCall = txaio.call_later(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
+                self.closeHandshakeTimeoutCall = self._batched_timer.call_later(
+                    self.closeHandshakeTimeout,
+                    self.onCloseHandshakeTimeout,
+                )
 
         else:
             raise Exception("logic error")
@@ -2836,7 +2835,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # automatic ping/pong
         #
         if self.autoPingInterval:
-            self.autoPingPendingCall = self.ping_timer.call_later(
+            self.autoPingPendingCall = self._batched_timer.call_later(
                 self.autoPingInterval,
                 self._sendAutoPing,
             )
@@ -3646,7 +3645,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # automatic ping/pong
             #
             if self.autoPingInterval:
-                self.autoPingPendingCall = self.ping_timer.call_later(
+                self.autoPingPendingCall = self._batched_timer.call_later(
                     self.autoPingInterval,
                     self._sendAutoPing,
                 )
