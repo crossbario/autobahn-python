@@ -184,8 +184,6 @@ if os.environ.get('USE_TWISTED', False):
 
                 # check we scheduled a call
                 self.assertEqual(len(reactor.calls), 1)
-                self.assertEqual(reactor.calls[0].func, self.proto.onCloseHandshakeTimeout)
-                self.assertEqual(reactor.calls[0].getTime(), self.proto.closeHandshakeTimeout)
 
                 # now, advance the clock past the call (and thereby
                 # execute it)
