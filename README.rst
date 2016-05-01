@@ -3,43 +3,43 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Downloads| |Build Status| |Coverage|
+| |Version| |Downloads| |Build Status| |Coverage| |Docs|
 
 --------------
 
-| **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <http://autobahn.ws/python>`__ - `WebSocket Examples <http://autobahn.ws/python/websocket/examples.html>`__ - `WAMP Examples <http://autobahn.ws/python/wamp/examples.html>`__
+| **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <https://autobahn-python.readthedocs.io/en/latest/>`__ - `WebSocket Examples <https://autobahn-python.readthedocs.io/en/latest/websocket/examples.html>`__ - `WAMP Examples <https://autobahn-python.readthedocs.io/en/latest/wamp/examples.html>`__
 | **Community**: `Mailing list <http://groups.google.com/group/autobahnws>`__ - `StackOverflow <http://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
 | **Companion Projects**: `Autobahn|JS <https://github.com/crossbario/autobahn-js/>`__ - `Autobahn|Cpp <https://github.com/crossbario/autobahn-cpp>`__ - `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ - `Crossbar.io <http://crossbar.io>`__ - `WAMP <http://wamp.ws>`__
 
 Introduction
 ------------
 
-**Autobahn\|Python** is a subproject of `Autobahn <http://autobahn.ws/>`__ and provides open-source
+**Autobahn\|Python** is a subproject of `Autobahn <http://crossbar.io/autobahn>`__ and provides open-source
 implementations of
 
 -  `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
--  `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`__
+-  `The Web Application Messaging Protocol (WAMP) <http://wamp-proto.org/>`__
 
 for Python 2 and 3, and running on `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__.
 
 You can use **Autobahn\|Python** to create clients and servers in Python speaking just plain WebSocket or WAMP.
 
-**WebSocket** allows `bidirectional real-time messaging on the Web <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <http://wamp.ws/>`__ adds real-time application communication on top of WebSocket.
+**WebSocket** allows `bidirectional real-time messaging on the Web <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`__ and beyond, while `WAMP <http://wamp-proto.org/>`__ adds real-time application communication on top of WebSocket.
 
-**WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <http://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <http://crossbar.io>`__, but there are `other options <http://wamp.ws/implementations/#routers>`__ as well.
+**WAMP** provides asynchronous **Remote Procedure Calls** and **Publish & Subscribe** for applications in *one* protocol running over `WebSocket <http://tools.ietf.org/html/rfc6455>`__. WAMP is a *routed* protocol, so you need a **WAMP Router** to connect your **Autobahn\|Python** based clients. We provide `Crossbar.io <http://crossbar.io>`__, but there are `other options <http://wamp-proto.org/implementations/#routers>`__ as well.
 
 Features
 --------
 
--  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp.ws/>`__ clients and servers
+-  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp-proto.org/>`__ clients and servers
 -  compatible with Python 2.6, 2.7, 3.3 and 3.4
 -  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
 -  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
    `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
 -  implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
--  implements `WAMP <http://wamp.ws/>`__, the Web Application Messaging Protocol
+-  implements `WAMP <http://wamp-proto.org/>`__, the Web Application Messaging Protocol
 -  high-performance, fully asynchronous implementation
--  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://autobahn.ws/testsuite>`__: `Server Test Report <http://autobahn.ws/python/testreport/servers/index.html>`__ / `Client Test Report <http://autobahn.ws/python/testreport/clients/index.html>`__)
+-  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://crossbar.io/autobahn#testsuite>`__)
 -  message-, frame- and streaming-APIs for WebSocket
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
@@ -142,3 +142,6 @@ Above code will work on Twisted and asyncio by changing a single line
 
 .. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
    :target: https://codecov.io/github/crossbario/autobahn-python
+
+.. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
+   :target: https://autobahn-python.readthedocs.io/en/latest/
