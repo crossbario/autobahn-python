@@ -3734,8 +3734,6 @@ class WebSocketClientFactory(WebSocketFactory):
         :type headers: dict
         :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
         :type proxy: dict or None
-        :param debug: Debug mode (default: `False`).
-        :type debug: bool
         """
         self.logOctets = False
         self.logFrames = False

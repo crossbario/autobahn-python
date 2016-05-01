@@ -217,7 +217,7 @@ class PersonaServerFactory(WebSocketServerFactory):
     protocol = PersonaServerProtocol
 
     def __init__(self, url):
-        WebSocketServerFactory.__init__(self, url, debug=False)
+        WebSocketServerFactory.__init__(self, url)
 
         # map of cookies
         self._cookies = {}

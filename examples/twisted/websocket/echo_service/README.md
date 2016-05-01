@@ -29,8 +29,4 @@ and open
 
 in your browser.
 
-To activate debug output on the server, start it
-
-    twistd echows -d
-
 This will show up all WebSocket messages exchanged between clients and server.
