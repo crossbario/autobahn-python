@@ -1,24 +1,11 @@
 |AbL|
 =====
 
+| |Version| |Downloads| |Build Status| |Coverage| |Docs|
+
+--------------
+
 *Open-source (MIT) real-time framework for Web, Mobile & Internet of Things.*
-
-Latest release: v\ |version| (:ref:`changelog`)
-
-.. ifconfig:: not no_network
-
-   .. raw:: html
-
-      <p>
-         <a href="https://travis-ci.org/crossbario/autobahn-python">
-            <img src="https://img.shields.io/pypi/v/autobahn.svg" alt="Build Status" />
-         </a>
-         <a href="https://pypi.python.org/pypi/autobahn">
-            <img src="https://img.shields.io/pypi/dm/autobahn.svg" alt="Downloads" />
-         </a>
-      </p>
-
------
 
 |AbL| is part of the `Autobahn`_ project and provides open-source implementations of
 
@@ -242,3 +229,25 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    reference/autobahn
    contribute
    changelog
+
+
+.. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
+   :target: https://pypi.python.org/pypi/autobahn
+
+.. |Downloads| image:: https://img.shields.io/pypi/dm/autobahn.svg
+   :target: https://pypi.python.org/pypi/autobahn
+
+.. |GitHub Stars| image:: https://img.shields.io/github/stars/crossbario/autobahn-python.svg?style=social&label=Star
+   :target: https://github.com/crossbario/autobahn-python
+
+.. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
+   :target: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+
+.. |Build Status| image:: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+   :target: https://travis-ci.org/crossbario/autobahn-python
+
+.. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
+   :target: https://codecov.io/github/crossbario/autobahn-python
+
+.. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
+   :target: http://autobahn.readthedocs.org/en/latest/

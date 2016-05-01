@@ -44,7 +44,7 @@ PY3 = sys.version_info >= (3,)
 PY33 = (3, 3) <= sys.version_info < (3, 4)
 
 # read version string
-with open('autobahn/__init__.py') as f:
+with open('autobahn/_version.py') as f:
     exec(f.read())  # defines __version__
 
 # read package long description
@@ -99,7 +99,7 @@ extras_require_compress = [
 # non-JSON WAMP serialization support (namely MsgPack, CBOR and UBJSON)
 os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
 extras_require_serialization = [
-    "msgpack-python>=0.4.6",    # Apache 2.0 license
+    "u-msgpack-python>=2.1",    # MIT license
     "cbor>=0.1.24",             # Apache 2.0 license
     "py-ubjson>=0.8.3"          # Apache 2.0 license
 ]
@@ -114,21 +114,26 @@ extras_require_encryption = [
 
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_serialization + extras_require_encryption
+    extras_require_accelerate + extras_require_compress + \
+    extras_require_serialization + extras_require_encryption
 
 # extras_require_all += extras_require_compress
 
 # development dependencies
 extras_require_dev = [
     # flake8 will install the version "it needs"
-    # "pep8>=1.6.2",          # MIT license
-    "pep8-naming>=0.3.3",   # MIT license
-    "flake8>=2.5.1",        # MIT license
-    "pyflakes>=1.0.0",      # MIT license
-    "mock>=1.3.0",          # BSD license
-    "pytest>=2.8.6",        # MIT license
-    "unittest2>=1.1.0",     # BSD license
-    "twine>=1.6.5",         # Apache 2.0
+    # "pep8>=1.6.2",                      # MIT license
+    "pep8-naming>=0.3.3",               # MIT license
+    "flake8>=2.5.1",                    # MIT license
+    "pyflakes>=1.0.0",                  # MIT license
+    "mock>=1.3.0",                      # BSD license
+    "pytest>=2.8.6",                    # MIT license
+    "unittest2>=1.1.0",                 # BSD license
+    "twine>=1.6.5",                     # Apache 2.0
+    'sphinx>=1.2.3',                    # BSD
+    'pyenchant>=1.6.6',                 # LGPL
+    'sphinxcontrib-spelling>=2.1.2',    # BSD
+    'sphinx_rtd_theme>=0.1.9',          # BSD
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
