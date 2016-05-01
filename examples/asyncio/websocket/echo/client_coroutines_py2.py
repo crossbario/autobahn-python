@@ -57,7 +57,7 @@ class MyClientProtocol(WebSocketClientProtocol):
 
 if __name__ == '__main__':
 
-    factory = WebSocketClientFactory(u"ws://127.0.0.1:9000", debug=False)
+    factory = WebSocketClientFactory(u"ws://127.0.0.1:9000")
     factory.protocol = MyClientProtocol
 
     loop = trollius.get_event_loop()

@@ -49,7 +49,7 @@ class BroadcastServerFactory(WebSocketServerFactory):
     protocol = BroadcastServerProtocol
 
     def __init__(self, url):
-        WebSocketServerFactory.__init__(self, url, debug=False)
+        WebSocketServerFactory.__init__(self, url)
         self.clients = []
 
     def register(self, client):

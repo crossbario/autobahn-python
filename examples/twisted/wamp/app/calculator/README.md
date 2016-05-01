@@ -25,11 +25,6 @@ and open
 
 in your browser.
 
-To activate debug output, start it
-
-    python calculator.py --debug
-
-
 
 Background
 ----------

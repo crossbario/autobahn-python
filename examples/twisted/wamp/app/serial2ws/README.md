@@ -50,10 +50,10 @@ in your browser.
 
 **Examples**
 
-Arduino Yun running an embedded Web server and WAMP router and enabling debug output:
+Arduino Yun running an embedded Web server and WAMP router:
 
-	python serial2ws.py --debug --port /dev/ttyATH0
+	python serial2ws.py --port /dev/ttyATH0
 
-Arduino Yun running disabling the embedded Web server and connecting to an uplink WAMP router and enabling debug output:
+Arduino Yun running disabling the embedded Web server and connecting to an uplink WAMP router:
 
-	python serial2ws.py --debug --port /dev/ttyATH0 --web 0 --router ws://192.168.1.130:8080/ws
+	python serial2ws.py --port /dev/ttyATH0 --web 0 --router ws://192.168.1.130:8080/ws

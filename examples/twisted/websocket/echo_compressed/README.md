@@ -19,17 +19,9 @@ in your browser.
 > Note: Currently (06/04/2013), the only browsers implementing WebSocket `permessage-deflate` are [Chrome Canary](https://www.google.com/intl/en/chrome/browser/canary.html) and [Chromium (Dev Channel)](http://www.chromium.org/getting-involved/dev-channel).
 > To enable, go to `chrome://flags/` and enable the "experimental WebSocket implementation".
 
-To activate debug output on the server, start it
-
-    python server.py debug
-
 To run the Python client, do
 
     python client.py ws://127.0.0.1:9000
-
-To activate debug output on the client, start it
-
-    python client.py ws://127.0.0.1:9000 debug
 
 
 Advanced Usage
