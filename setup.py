@@ -54,8 +54,8 @@ with open('README.rst') as f:
 # Twisted dependencies (be careful bumping these minimal versions,
 # as we make claims to support older Twisted!)
 extras_require_twisted = [
-    "zope.interface>=4.1.3", # Zope Public License
-    "Twisted>=15.5"          # MIT license
+    "zope.interface>=4.1.3",        # Zope Public License
+    "Twisted>=15.5,<=16.1.1"        # MIT license
 ]
 
 # asyncio dependencies
@@ -81,10 +81,6 @@ if CPY and sys.platform != 'win32':
     extras_require_accelerate = [
         "wsaccel>=0.6.2"            # Apache 2.0
     ]
-
-    # ujson is broken on Windows (https://github.com/esnme/ultrajson/issues/184)
-    if sys.platform != 'win32':
-        extras_require_accelerate.append("ujson>=1.33")     # BSD license
 else:
     extras_require_accelerate = []
 
