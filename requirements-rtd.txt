@@ -1,0 +1,5 @@
+# requirements for building the docs on RTD
+txaio
+twisted
+trollius; python_version <= '2.7'
+asyncio; python_version == '3.3'

@@ -20,26 +20,10 @@ autobahn.websocket.compress_base
     :undoc-members:
     :show-inheritance:
 
-autobahn.websocket.compress_bzip2
----------------------------------
-
-.. automodule:: autobahn.websocket.compress_bzip2
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 autobahn.websocket.compress_deflate
 -----------------------------------
 
 .. automodule:: autobahn.websocket.compress_deflate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_snappy
-----------------------------------
-
-.. automodule:: autobahn.websocket.compress_snappy
     :members:
     :undoc-members:
     :show-inheritance:
