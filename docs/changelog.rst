@@ -5,6 +5,19 @@
 Changelog
 =========
 
+0.14.0
+------
+
+`Published 2016-05-01 <https://pypi.python.org/pypi/autobahn/0.14.0>`_
+
+* new: use of batched/chunked timers to massively reduce CPU load with WebSocket auto-ping/pong
+* new: support new UBJSON WAMP serialization format
+* new: publish universal wheels
+* fix: replaced `msgpack-python` with `u-msgpack-python`
+* fix: some glitches with `eligible / exlude` when used with `authid / authrole`
+* fix: some logging glitches
+* fix: pin Twisted at 16.1.1 (for now)
+
 0.13.1
 ------
 
