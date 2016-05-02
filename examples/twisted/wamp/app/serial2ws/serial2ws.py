@@ -149,8 +149,7 @@ if __name__ == '__main__':
     router = args.router or u'ws://127.0.0.1:8080'
 
     runner = ApplicationRunner(router, u"realm1",
-                               extra={'port': args.port, 'baudrate': args.baudrate},
-                               standalone=not args.router)
+                               extra={'port': args.port, 'baudrate': args.baudrate})
 
     # start the component and the Twisted reactor ..
     runner.run(McuComponent)
