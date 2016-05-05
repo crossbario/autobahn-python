@@ -5,6 +5,14 @@
 Changelog
 =========
 
+master
+------
+
+*Not yet published.*
+
+* new: added ``showServerVersion`` (defaulting to ``False``) to control whether the full Autobahn version is shown in the ``X-Powered-By:`` header.
+
+
 0.14.0
 ------
 
