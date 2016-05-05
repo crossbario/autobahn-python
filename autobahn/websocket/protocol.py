@@ -445,6 +445,7 @@ class WebSocketProtocol(object):
     """
 
     CONFIG_ATTRS_SERVER = ['versions',
+                           'showServerVersion',
                            'webStatus',
                            'requireMaskedClientFrames',
                            'maskServerFrames',
@@ -2758,7 +2759,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         if self.factory.server is not None and self.factory.server != "":
             response += "Server: %s\x0d\x0a" % self.factory.server
 
-        response += "X-Powered-By: AutobahnPython/{0}\x0d\x0a".format(__version__)
+        if self.showServerVersion:
+            response += "X-Powered-By: AutobahnPython/{0}\x0d\x0a".format(__version__)
+        else:
+            response += "X-Powered-By: AutobahnPython\x0d\x0a".format(__version__)
 
         response += "Upgrade: WebSocket\x0d\x0a"
         response += "Connection: Upgrade\x0d\x0a"
@@ -2962,7 +2966,7 @@ class WebSocketServerFactory(WebSocketFactory):
     def __init__(self,
                  url=None,
                  protocols=None,
-                 server="AutobahnPython/%s" % __version__,
+                 server=None,
                  headers=None,
                  externalPort=None):
         """
@@ -3036,6 +3040,11 @@ class WebSocketServerFactory(WebSocketFactory):
 
         self.protocols = protocols or []
         self.server = server
+        if self.server is None:
+            if getattr(self, 'showServerVersion', False):
+                self.server = "AutobahnPython/{}".format(__version__)
+            else:
+                self.server = "AutobahnPython"
         self.headers = headers or {}
 
         if externalPort:
@@ -3050,6 +3059,7 @@ class WebSocketServerFactory(WebSocketFactory):
         Reset all WebSocket protocol options to defaults.
         """
         self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
+        self.showServerVersion = False
         self.webStatus = True
         self.utf8validateIncoming = True
         self.requireMaskedClientFrames = True
@@ -3087,6 +3097,7 @@ class WebSocketServerFactory(WebSocketFactory):
 
     def setProtocolOptions(self,
                            versions=None,
+                           showServerVersion=None,
                            webStatus=None,
                            utf8validateIncoming=None,
                            maskServerFrames=None,
@@ -3113,6 +3124,8 @@ class WebSocketServerFactory(WebSocketFactory):
 
         :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
         :type versions: list of ints or None
+        :param showServerVersion: if True, additionlly show server version in HTTP headers
+        :type showServerVersion: bool or None
         :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
         :type webStatus: bool or None
         :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
@@ -3165,6 +3178,9 @@ class WebSocketServerFactory(WebSocketFactory):
                     raise Exception("invalid WebSocket protocol version %s (allowed values: %s)" % (v, str(WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS)))
             if set(versions) != set(self.versions):
                 self.versions = versions
+
+        if showServerVersion is not None and showServerVersion != self.showServerVersion:
+            self.showServerVersion = showServerVersion
 
         if webStatus is not None and webStatus != self.webStatus:
             self.webStatus = webStatus
