@@ -238,15 +238,25 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
         return transport_endpoint.connect(transport_factory)
 
+# XXX fixme we can't use inlineCallbacks, can we?
     @inlineCallbacks
-    def start(self, reactor=None):
+    def start(self, reactor):
+        """
+        This starts the Component, which means it will start connecting
+        (and re-connecting) to its configured transports. A Component
+        runs until it is "done", which means one of:
+
+        - There was a "main" function defined, and it completed successfully;
+        - Something called ``.leave()`` on our session, and we left successfully;
+        - ``.stop()`` was called, and completed successfully;
+        - none of our transports were able to connect successfully (failure);
+
+        :returns: a Deferred that fires (with ``None``) when we are
+            "done" or with a Failure if something went wrong.
+        """
         if reactor is None:
+            self.log.warn("Using default reactor")
             from twisted.internet import reactor
-
-        # txaio.use_twisted()
-        # txaio.config.loop = reactor
-
-        # txaio.start_logging(level='debug')
 
         yield self.fire('start', reactor, self)
 
@@ -255,7 +265,7 @@ class Component(component.Component):
 
         reconnect = True
 
-        self.log.info('entering recomponent loop')
+        self.log.info('Entering re-connect loop')
 
         while reconnect:
             # cycle through all transports forever ..
@@ -277,7 +287,14 @@ class Component(component.Component):
                     transport.connect_sucesses += 1
                 except Exception as e:
                     transport.connect_failures += 1
-                    self.log.error(u'component failed: {error}', error=e)
+                    f = txaio.create_failure()
+                    self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
+                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
+                    # need concept of "fatal errors", for which a
+                    # connection is *never* going to work
+                    if isinstance(e, ApplicationError):
+                        if e.reason in [u'wamp.error.no_such_realm']:
+                            reconnect = False
                 else:
                     reconnect = False
             else:
