@@ -220,6 +220,7 @@ class Component(ObservableMixin):
             self._transports.append(Transport(idx, transport))
             idx += 1
 
+        # XXX FIXME
         self._realm = u'realm1'
         self._extra = None
 
