@@ -141,7 +141,7 @@ class Component(ObservableMixin):
     TYPE_MAIN = 1
     TYPE_SETUP = 2
 
-    def __init__(self, main=None, setup=None, transports=None, config=None):
+    def __init__(self, main=None, setup=None, transports=None, config=None, realm=u'realm1'):
         """
 
         :param main: A callable that runs user code for the component. The component will be
@@ -220,8 +220,9 @@ class Component(ObservableMixin):
             self._transports.append(Transport(idx, transport))
             idx += 1
 
-        # XXX FIXME
-        self._realm = u'realm1'
+        # XXX decide if 'realm' is part of the transport config, or a
+        # Component 'global' parameter
+        self._realm = realm
         self._extra = None
 
     def _can_reconnect(self):
