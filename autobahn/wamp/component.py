@@ -129,11 +129,11 @@ class Transport(object):
 
 class Component(ObservableMixin):
     """
-    A WAMP application component. A component holds configuration for and knows how to create
-    transports and sessions.
+    A WAMP application component. A component holds configuration for
+    (and knows how to create) transports and sessions.
     """
 
-    session = None
+    session_factory = None
     """
     The factory of the session we will instantiate.
     """
@@ -159,14 +159,21 @@ class Component(ObservableMixin):
         :type transports: None or unicode or list
         :param config: Session configuration.
         :type config: None or dict
+
+        :param realm: the realm to join (XXX move to transport config? or config, above?)
+        :type realm: unicode
+
         """
-        ObservableMixin.__init__(self)
-
-        if main is None and setup is None:
-            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component')
-
-        if main is not None and setup is not None:
-            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component (not both)')
+        self.set_valid_events(
+            [
+                'start',        # fired by base class
+                'connect',      # fired by ApplicationSession
+                'join',         # fired by ApplicationSession
+                'ready',        # fired by ApplicationSession
+                'leave',        # fired by ApplicationSession
+                'disconnect',   # fired by ApplicationSession
+            ]
+        )
 
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')
@@ -241,7 +248,7 @@ class Component(ObservableMixin):
         def create_session():
             cfg = ComponentConfig(self._realm, self._extra)
             try:
-                session = self.session(cfg)
+                session = self.session_factory(cfg)
             except Exception:
                 # couldn't instantiate session calls, which is fatal.
                 # let the reconnection logic deal with that
