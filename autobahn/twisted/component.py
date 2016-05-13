@@ -225,7 +225,7 @@ class Component(component.Component):
 
     log = txaio.make_logger()
 
-    session = ApplicationSession
+    session_factory = ApplicationSession
     """
     The factory of the session we will instantiate.
     """
