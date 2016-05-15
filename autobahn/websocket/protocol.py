@@ -2755,10 +2755,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         response = "HTTP/1.1 101 Switching Protocols\x0d\x0a"
 
-        if self.factory.server is not None and self.factory.server != "":
+        if self.factory.server:
             response += "Server: %s\x0d\x0a" % self.factory.server
-
-        response += "X-Powered-By: AutobahnPython/{0}\x0d\x0a".format(__version__)
 
         response += "Upgrade: WebSocket\x0d\x0a"
         response += "Connection: Upgrade\x0d\x0a"
