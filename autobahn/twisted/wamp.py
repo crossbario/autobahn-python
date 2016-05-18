@@ -133,7 +133,7 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
-    def run(self, make, start_reactor=True, auto_reconnect=False):
+    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info'):
         """
         Run the application component.
 
@@ -160,7 +160,7 @@ class ApplicationRunner(object):
             from twisted.internet import reactor
             txaio.use_twisted()
             txaio.config.loop = reactor
-            txaio.start_logging(level='info')
+            txaio.start_logging(level=log_level)
 
         if callable(make):
             # factory for use ApplicationSession
