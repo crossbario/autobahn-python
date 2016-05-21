@@ -36,10 +36,25 @@ class PrefixProtocol(asyncio.Protocol):
         self.log.debug('RawSocker Asyncio: Connection made with peer {peer}'.format(peer=self.peer))
         self._buffer=b''
         self._header=None
+        self._wait_closed=asyncio.Future()
+    
+    @property    
+    def is_closed(self):
+        if hasattr(self,'_wait_closed'):
+            return self._wait_closed
+        else:
+            f=asyncio.Future()
+            f.set_result(True)
+            return f
         
     def connection_lost(self, exc):
         self.log.debug('RawSocker Asyncio: Connection lost')
         self.transport=None
+        self._wait_closed.set_result(True)
+        self._on_connection_lost(exc)
+        
+    def _on_connection_lost(self,exc):
+        pass
         
     def protocol_error(self, msg):
         self.log.error(msg)
@@ -283,8 +298,7 @@ class WampRawSocketMixinAsyncio():
     Base class for asyncio-based WAMP-over-RawSocket protocols.
     """
 
-    def connection_lost(self, exc):
-        
+    def _on_connection_lost(self, exc):
         try:
             wasClean = exc is None
             self._session.onClose(wasClean)

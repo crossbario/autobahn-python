@@ -248,8 +248,9 @@ class ApplicationRunnerRawSocket(object):
 
         transport_factory = WampRawSocketClientFactory(create, serializer=self.serializer)
 
-        # 3) start the client
         loop = asyncio.get_event_loop()
+        if logging_level=='debug':
+            loop.set_debug(True)
         txaio.use_asyncio()
         txaio.config.loop = loop
         
@@ -274,6 +275,7 @@ class ApplicationRunnerRawSocket(object):
 
         # give Goodbye message a chance to go through, if we still
         # have an active session
+        # it's not working now - because protocol is_closed must return Future
         if protocol._session:
             loop.run_until_complete(protocol._session.leave())
 

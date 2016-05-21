@@ -1,0 +1,70 @@
+{
+    "version": 2,
+    "workers": [
+        {
+            "type": "router",
+            "realms": [
+                {
+                    "name": "realm1",
+                    "roles": [
+                        {
+                            "name": "backend",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "transports": [
+                 {
+                	"type":"rawsocket",
+                	"endpoint": {
+                		"type":"unix",
+                		"path":"socket1"
+                	},
+                	"max_message_size": 16777216,
+                	"auth":{
+        				"anonymous": {
+        					"type":"static",
+        					"role":"backend"
+        					}
+                	
+                	}
+                },
+                
+                {
+                	"type":"rawsocket",
+                	"endpoint": {
+                		"type":"tcp",
+                		"port":9090,
+                		"interface": "127.0.0.1"
+                	},
+                	"max_message_size": 16777216,
+                	"auth":{
+        				"anonymous": {
+        					"type":"static",
+        					"role":"backend"
+        					}
+                	
+                	}
+                }
+                
+            ]
+        }
+    ]
+}

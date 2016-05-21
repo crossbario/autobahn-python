@@ -61,7 +61,25 @@ class Test(TestCase):
         receiver.assert_has_calls([call(b'abcd'), call(b'12345')])
         self.assertEqual(p._buffer, b'\x00' )
         
+    def test_is_closed(self):
+        class CP(RawSocketClientProtocol):
+            @property
+            def serializer_id(self):
+                return 1
+        client=CP()
         
+        on_hs=Mock()
+        transport=Mock()
+        receiver=Mock()
+        client.stringReceived=receiver
+        client._on_handshake_complete=on_hs
+        self.assertTrue(client.is_closed.done())
+        client.connection_made(transport)
+        self.assertFalse(client.is_closed.done())
+        client.connection_lost(None)
+        
+        self.assertTrue(client.is_closed.done())
+            
     def test_raw_socket_server1(self):
         
         server=RawSocketServerProtocol(max_size=10000)
