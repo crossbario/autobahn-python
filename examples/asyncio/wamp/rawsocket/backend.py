@@ -3,9 +3,9 @@ import asyncio
 from datetime import datetime
 import os.path
 import logging
-log=logging.getLogger('backend')
+log = logging.getLogger('backend')
 
-sys.path=[os.path.join(os.path.dirname(__file__), '../../../..')]+sys.path
+sys.path = [os.path.join(os.path.dirname(__file__), '../../../..')]+sys.path
 
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunnerRawSocket
 
@@ -24,16 +24,16 @@ class MyComponent(ApplicationSession):
         # publish an event every second. The event payloads can be
         # anything JSON- and msgpack- serializable
         while True:
-            self.publish(u'com.myapp.hello', 'Hello, world! Time is %s'% datetime.utcnow())
+            self.publish(u'com.myapp.hello', 'Hello, world! Time is %s' % datetime.utcnow())
             log.debug('Published msg')
             yield from asyncio.sleep(1)
 
 
 if __name__ == '__main__':
-    level='info'
-    if len(sys.argv)>1 and sys.argv[1]=='debug':
-        level='debug'
-    path=os.path.join(os.path.dirname(__file__), '.crossbar/socket1')
+    level = 'info'
+    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
+        level = 'debug'
+    path = os.path.join(os.path.dirname(__file__), '.crossbar/socket1')
     runner = ApplicationRunnerRawSocket(
         path,
         u"realm1",
