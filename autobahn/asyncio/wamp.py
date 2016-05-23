@@ -172,9 +172,9 @@ class ApplicationRunner(object):
             loop.run_until_complete(protocol._session.leave())
 
         loop.close()
-        
 
-#TODO - unify with previous class 
+
+# TODO - unify with previous class
 class ApplicationRunnerRawSocket(object):
     """
     This class is a convenience tool mainly for development and quick hosting
@@ -198,8 +198,6 @@ class ApplicationRunnerRawSocket(object):
 
         :param serializer:  WAMP serializer to use (or None for default serializer).
         :type serializer: `autobahn.wamp.interfaces.ISerializer`
-
-        
         """
         assert(type(url) == six.text_type)
         assert(type(realm) == six.text_type)
@@ -208,7 +206,6 @@ class ApplicationRunnerRawSocket(object):
         self.realm = realm
         self.extra = extra or dict()
         self.serializer = serializer
-        
 
     def run(self, make, logging_level='info'):
         """
@@ -218,11 +215,11 @@ class ApplicationRunnerRawSocket(object):
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
         """
-        
-        #make imports local for now not to infere with rest of module
+
+        # make imports local for now not to infere with rest of module
         from six.moves.urllib.parse import urlparse
         from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
-        
+
         def create():
             cfg = ComponentConfig(self.realm, self.extra)
             try:
@@ -233,34 +230,32 @@ class ApplicationRunnerRawSocket(object):
             else:
                 return session
 
-        parsed_url=urlparse(self.url)
-        
-        if parsed_url.scheme=='tcp':
-            is_unix=False
+        parsed_url = urlparse(self.url)
+
+        if parsed_url.scheme == 'tcp':
+            is_unix = False
             if not parsed_url.hostname or not parsed_url.port:
                 raise ValueError('Host and port is required in URL')
-        elif parsed_url.scheme=='unix' or parsed_url.scheme=='':
-            is_unix=True
+        elif parsed_url.scheme == 'unix' or parsed_url.scheme == '':
+            is_unix = True
             if not parsed_url.path:
                 raise ValueError('Path to unix socket must be in URL')
-
-        
 
         transport_factory = WampRawSocketClientFactory(create, serializer=self.serializer)
 
         loop = asyncio.get_event_loop()
-        if logging_level=='debug':
+        if logging_level == 'debug':
             loop.set_debug(True)
         txaio.use_asyncio()
         txaio.config.loop = loop
-        
+
         if is_unix:
             coro = loop.create_unix_connection(transport_factory, parsed_url.path)
         else:
             coro = loop.create_connection(transport_factory, parsed_url.hostname, parsed_url.port)
-        (transport, protocol) = loop.run_until_complete(coro)
+        (_transport, protocol) = loop.run_until_complete(coro)
 
-        txaio.start_logging(level=logging_level)
+        txaio.start_logging(level=logging_level)  # @UndefinedVariable
 
         try:
             loop.add_signal_handler(signal.SIGTERM, loop.stop)
