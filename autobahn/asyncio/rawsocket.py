@@ -1,6 +1,10 @@
-# from __future__ import absolute_import
+from __future__ import absolute_import
 
-import asyncio  # TODO:  should we support trollious -  it has been deprecated - http://trollius.readthedocs.io/deprecated.htm
+try:
+    import asyncio
+except ImportError:
+    # trollious for py2 support - however it has been deprecated
+    import trollius as asyncio
 import struct
 import math
 from autobahn.asyncio.util import _LazyHexFormatter
@@ -21,6 +25,8 @@ FRAME_TYPE_DATA = 0
 FRAME_TYPE_PING = 1
 FRAME_TYPE_PONG = 2
 
+MAGIC_BYTE = 0x7F
+
 
 class PrefixProtocol(asyncio.Protocol):
 
@@ -34,7 +40,7 @@ class PrefixProtocol(asyncio.Protocol):
         self.transport = transport
         peer = transport.get_extra_info('peername')
         self.peer = peer2str(peer)
-        self.log.debug('RawSocker Asyncio: Connection made with peer {peer}'.format(peer=self.peer))
+        self.log.debug('RawSocker Asyncio: Connection made with peer {peer}', peer=self.peer)
         self._buffer = b''
         self._header = None
         self._wait_closed = asyncio.Future()
@@ -84,17 +90,17 @@ class PrefixProtocol(asyncio.Protocol):
             if self._header:
                 frame_type, frame_length = self._header
             else:
-                header = self._buffer[pos:pos+self.prefix_length]
-                frame_type = header[0] & 0b00000111
+                header = self._buffer[pos:pos + self.prefix_length]
+                frame_type = ord(header[0:1]) & 0b00000111
                 if frame_type > FRAME_TYPE_PONG:
                     self.protocol_error('Invalid frame type')
                     return
-                frame_length = struct.unpack(self.prefix_format, b'\0'+header[1:])[0]
+                frame_length = struct.unpack(self.prefix_format, b'\0' + header[1:])[0]
                 if frame_length > self.max_length:
                     self.protocol_error('Frame too big')
                     return
 
-            if remaining-self.prefix_length >= frame_length:
+            if remaining - self.prefix_length >= frame_length:
                 self._header = None
                 pos += self.prefix_length
                 remaining -= self.prefix_length
@@ -123,7 +129,7 @@ class RawSocketProtocol(PrefixProtocol):
 
     def __init__(self, max_size=None):
         if max_size:
-            exp = math.ceil(math.log2(max_size))-9
+            exp = int(math.ceil(math.log(max_size, 2))) - 9
             if exp > 15:
                 raise ValueError('Maximum length is 16M')
             self.max_length = 2**(exp + 9)
@@ -140,14 +146,14 @@ class RawSocketProtocol(PrefixProtocol):
         raise NotImplementedError()
 
     def parse_handshake(self):
-        if self._buffer[0] != 0x7F:
+        buf = bytearray(self._buffer[:4])
+        if buf[0] != MAGIC_BYTE:
             raise HandshakeError('Invalid magic byte in handshake')
             return
-        b1 = self._buffer[1]
-        ser = b1 & 0x0F
-        lexp = b1 >> 4
+        ser = buf[1] & 0x0F
+        lexp = buf[1] >> 4
         self.max_length_send = 2**(lexp + 9)
-        if self._buffer[2] != 0 or self._buffer[3] != 0:
+        if buf[2] != 0 or buf[3] != 0:
             raise HandshakeError('Reserved bytes must be zero')
         return ser, lexp
 
@@ -176,17 +182,17 @@ class RawSocketProtocol(PrefixProtocol):
 ERR_SERIALIZER_UNSUPPORTED = 1
 
 ERRMAP = {
-       0: "illegal (must not be used)",
-       1: "serializer unsupported",
-       2: "maximum message length unacceptable",
-       3: "use of reserved bits (unsupported feature)",
-       4: "maximum connection count reached"
-    }
+    0: "illegal (must not be used)",
+    1: "serializer unsupported",
+    2: "maximum message length unacceptable",
+    3: "use of reserved bits (unsupported feature)",
+    4: "maximum connection count reached"
+}
 
 
 class HandshakeError(Exception):
     def __init__(self, msg, code=0):
-        Exception.__init__(self, msg if not code else msg+' : %s' % ERRMAP.get(code))
+        Exception.__init__(self, msg if not code else msg + ' : %s' % ERRMAP.get(code))
 
 
 class RawSocketClientProtocol(RawSocketProtocol):
@@ -212,9 +218,9 @@ class RawSocketClientProtocol(RawSocketProtocol):
     def connection_made(self, transport):
         RawSocketProtocol.connection_made(self, transport)
         # start handshake
-        hs = bytes([0x7F,
-                    self._length_exp << 4 | self.serializer_id,
-                    0, 0])
+        hs = bytes(bytearray([MAGIC_BYTE,
+                              self._length_exp << 4 | self.serializer_id,
+                              0, 0]))
         transport.write(hs)
         self.log.debug('RawSocket Asyncio: Client handshake sent')
 
@@ -230,7 +236,7 @@ class RawSocketServerProtocol(RawSocketProtocol):
     def process_handshake(self):
         def send_response(lexp, ser_id):
             b2 = lexp << 4 | (ser_id & 0x0f)
-            self.transport.write(bytes(bytearray([0x7F, b2, 0, 0])))
+            self.transport.write(bytes(bytearray([MAGIC_BYTE, b2, 0, 0])))
         ser_id, _lexp = self.parse_handshake()
         if not self.supports_serializer(ser_id):
             send_response(ERR_SERIALIZER_UNSUPPORTED, 0)

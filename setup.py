@@ -196,7 +196,6 @@ setup(
         'autobahn.websocket',
         'autobahn.websocket.test',
         'autobahn.asyncio',
-        'autobahn.asyncio.test',
         'autobahn.twisted',
         'twisted.plugins'
     ],
