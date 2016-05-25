@@ -238,7 +238,8 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
         return transport_endpoint.connect(transport_factory)
 
-# XXX fixme we can't use inlineCallbacks, can we?
+# XXX fixme we can't use inlineCallbacks, can we? or can we because
+# we're in a "twisted-only" class?
     @inlineCallbacks
     def start(self, reactor):
         """
