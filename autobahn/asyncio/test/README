@@ -1,0 +1,26 @@
+**DO NOT ADD a __init__.py file in this directory**
+
+"Why not?" you ask; read on!
+
+1. If we're running asyncio tests, we can't ever call txaio.use_twisted()
+
+2. If we're running twisted tests, we can't ever call txaio.use_asycnio()...
+
+3. ...and these are decided/called at import time
+
+4. so: we can't *import* any of the autobahn.asyncio.* modules if we're
+   running twisted tests (or vice versa)
+
+5. ...but test-runners (py.test and trial) import things automagically
+   (to "discover" tests)
+
+6. We use py.test to run asyncio tests; see "setup.cfg" where we tell
+   it "norecursedirs = autobahn/twisted/*" so it doesn't ipmort twisted
+   stuff (and hence call txaio.use_twisted())
+
+7. We use trial to run twisted tests; the lack of __init__ in here
+   stops it from trying to import this (and hence the parent
+   package). (The only files matching test_*.py are in this
+   directory.)
+
+*Therefore*, we don't put a __init__ file in this directory.
