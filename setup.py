@@ -54,8 +54,8 @@ with open('README.rst') as f:
 # Twisted dependencies (be careful bumping these minimal versions,
 # as we make claims to support older Twisted!)
 extras_require_twisted = [
-    "zope.interface>=4.1.3",        # Zope Public License
-    "Twisted>=15.5,<=16.1.1"        # MIT license
+    "zope.interface>=3.6.0",        # Zope Public License
+    "Twisted>=12.1.0"               # MIT license
 ]
 
 # asyncio dependencies
@@ -96,14 +96,14 @@ extras_require_compress = [
 os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
 extras_require_serialization = [
     "u-msgpack-python>=2.1",    # MIT license
-    "cbor>=0.1.24",             # Apache 2.0 license
-    "py-ubjson>=0.8.3"          # Apache 2.0 license
+    "cbor>=1.0.0",              # Apache 2.0 license
+    "py-ubjson>=0.8.4"          # Apache 2.0 license
 ]
 
 # payload encryption (required for WAMP-cryptosign support!)
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
-    'pynacl>=1.0',              # Apache license
+    'pynacl>=1.0.1',            # Apache license
     'pytrie>=0.2',              # BSD license
     'pyqrcode>=1.1'             # BSD license
 ]
