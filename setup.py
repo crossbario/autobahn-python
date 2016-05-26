@@ -55,7 +55,7 @@ with open('README.rst') as f:
 # as we make claims to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=4.1.3",        # Zope Public License
-    "Twisted>=15.5,<=16.1.1"        # MIT license
+    "Twisted>=16.2.0"               # MIT license
 ]
 
 # asyncio dependencies
