@@ -78,6 +78,18 @@ class ApplicationRunnerRawSocket(object):
         txaio.use_asyncio()
         txaio.config.loop = loop
 
+        try:
+            loop.add_signal_handler(signal.SIGTERM, loop.stop)
+        except NotImplementedError:
+            # signals are not available on Windows
+            pass
+
+        def handle_error(loop, context):
+            self.log.error('Application Error: {err}', err=context)
+            loop.stop()
+
+        loop.set_exception_handler(handle_error)
+
         if is_unix:
             coro = loop.create_unix_connection(transport_factory, parsed_url.path)
         else:
@@ -87,16 +99,10 @@ class ApplicationRunnerRawSocket(object):
         txaio.start_logging(level=logging_level)  # @UndefinedVariable
 
         try:
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
-        except NotImplementedError:
-            # signals are not available on Windows
-            pass
-
-        try:
             loop.run_forever()
         except KeyboardInterrupt:
             pass
-        self.log('Left main loop waiting for completiotion')
+        self.log.debug('Left main loop waiting for completion')
         # give Goodbye message a chance to go through, if we still
         # have an active session
         # it's not working now - because protocol is_closed must return Future

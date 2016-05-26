@@ -35,7 +35,7 @@ class MyComponent(ApplicationSession):
 
 if __name__ == '__main__':
     level = 'info'
-    if len(sys.argv) > 1 and sys.argv[1] == ' debug':
+    if len(sys.argv) > 1 and sys.argv[1] == 'debug':
         level = 'debug'
     runner = ApplicationRunnerRawSocket(
         "tcp://localhost:9090",
