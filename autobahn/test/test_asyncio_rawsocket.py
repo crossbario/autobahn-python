@@ -1,6 +1,6 @@
 import os
 
-if os.environ.get('USE_ASYNCIO'):
+if os.environ.get('USE_ASYNCIO', False):
     from unittest import TestCase, main
     try:
         from unittest.mock import Mock, call
