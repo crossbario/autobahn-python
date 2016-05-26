@@ -39,7 +39,7 @@ try:
     _TLS = True
     from twisted.internet.endpoints import SSL4ClientEndpoint
     from twisted.internet.ssl import optionsForClientTLS, CertificateOptions
-    from twisted.internet.interfaces import IOpenSSLClientComponentCreator
+    from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
 except ImportError:
     _TLS = False
 
@@ -168,7 +168,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                     raise RuntimeError('TLS configured in transport, but TLS support is not installed (eg OpenSSL?)')
 
                 # FIXME: create TLS context from configuration
-                if IOpenSSLClientComponentCreator.providedBy(tls):
+                if IOpenSSLClientConnectionCreator.providedBy(tls):
                     # eg created from twisted.internet.ssl.optionsForClientTLS()
                     context = IOpenSSLClientComponentCreator(tls)
 
