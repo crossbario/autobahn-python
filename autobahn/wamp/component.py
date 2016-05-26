@@ -268,7 +268,7 @@ class Component(ObservableMixin):
 
                         def main_success(_):
                             self.log.debug("main_success")
-                            txaio.resolve(done, None)
+                            session.leave()
 
                         def main_error(err):
                             self.log.debug("main_error: {err}", err=err)
