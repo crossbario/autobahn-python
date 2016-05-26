@@ -59,21 +59,34 @@ def check_endpoint(endpoint, check_native_endpoint=None):
             assert(False), 'should not arrive here'
 
 
-def check_transport(transport, check_native_endpoint=None):
+def _normalize_transport(transport, check_native_endpoint=None):
     """
-    Check a WAMP connecting transport configuration.
+    Check a WAMP connecting transport configuration, and add any
+    defaults that we can. These are:
+
+    - type: websocket
+    - endpoint: if not specified, fill in from URL
     """
     if type(transport) != dict:
         raise RuntimeError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
 
     if 'type' not in transport:
-        raise RuntimeError('missing type in transport')
+        transport['type'] = 'websocket'
 
     if transport['type'] not in ['websocket', 'rawsocket']:
         raise RuntimeError('invalid transport type {}'.format(transport['type']))
 
     if transport['type'] == 'websocket':
-        pass
+        if 'url' not in transport:
+            raise ValueError("Missing 'url' in transport")
+        if 'endpoint' not in transport:
+            is_secure, host, port, resource, path, params = parse_url(transport['url'])
+            transport['endpoint'] = {
+                'type': 'tcp',
+                'host': host,
+                'port': port,
+                'tls': False if not is_secure else dict(hostname=host),
+            }
     elif transport['type'] == 'rawsocket':
         pass
     else:
@@ -197,26 +210,18 @@ class Component(ObservableMixin):
         # allows to provide an URL instead of a list of transports
         if type(transports) == six.text_type:
             url = transports
-            is_secure, host, port, resource, path, params = parse_url(url)
+            # 'endpoint' will get filled in by parsing the 'url'
             transport = {
                 'type': 'websocket',
                 'url': url,
-                'endpoint': {
-                    'type': 'tcp',
-                    'host': host,
-                    'port': port
-                }
             }
-            if is_secure:
-                # FIXME
-                transport['endpoint']['tls'] = {}
             transports = [transport]
 
         # now check and save list of transports
         self._transports = []
         idx = 0
         for transport in transports:
-            check_transport(transport)
+            _normalize_transport(transport, self._check_native_transport)
             self._transports.append(Transport(idx, transport))
             idx += 1
 
