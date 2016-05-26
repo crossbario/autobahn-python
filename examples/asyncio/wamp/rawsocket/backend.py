@@ -7,7 +7,8 @@ log = logging.getLogger('backend')
 
 sys.path = [os.path.join(os.path.dirname(__file__), '../../../..')]+sys.path
 
-from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunnerRawSocket
+from autobahn.asyncio.wamp import ApplicationSession
+from runner import ApplicationRunnerRawSocket
 
 
 class MyComponent(ApplicationSession):
