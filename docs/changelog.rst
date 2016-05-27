@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.14.1
+------
+
+`Published 2016-05-26 <https://pypi.python.org/pypi/autobahn/0.14.1>`_
+
+* fix: unpinned Twisted version again
+* fix: remove X-Powered-By header
+* fix: removed decrecated args to ApplicationRunner
+
 0.14.0
 ------
 
