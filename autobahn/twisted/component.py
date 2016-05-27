@@ -230,6 +230,29 @@ class Component(component.Component):
     The factory of the session we will instantiate.
     """
 
+    def _check_native_endpoint(self, endpoint):
+        self.log.error("_check_native_endpoint")
+        if isinstance(endpoint, dict):
+            return
+        if IStreamClientEndpoint.providedBy(endpoint):
+            return
+        if 'tls' in endpoint:
+            tls = endpoint['tls']
+            if isinstance(tls, (dict, bool)):
+                return
+            if IOpenSSLClientConnectionCreator.providedBy(tls):
+                return
+            if isinstance(tls, CertificateOptions):
+                return
+            raise ValueError(
+                "'tls' configuration must be a dict, CertificateOptions or"
+                " IOpenSSLClientConnectionCreator provider"
+            )
+        raise ValueError(
+            "'endpoint' configuration must be a dict or IStreamClientEndpoint"
+            " provider"
+        )
+
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
         Create and connect a WAMP-over-XXX transport.

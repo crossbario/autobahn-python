@@ -39,24 +39,56 @@ from autobahn.wamp.types import ComponentConfig
 __all__ = ('Connection')
 
 
-def check_endpoint(endpoint, check_native_endpoint=None):
+def _normalize_endpoint(endpoint, check_native_endpoint=None):
     """
     Check a WAMP connecting endpoint configuration.
     """
-    if type(endpoint) != dict:
-        check_native_endpoint(endpoint)
+    if not isinstance(endpoint, dict):
+        if check_native_endpoint:
+            check_native_endpoint(endpoint)
+        else:
+            raise ValueError(
+                "'endpoint' must be a dict"
+            )
     else:
+        # XXX what about filling in anything missing from the URL? Or
+        # is that only for when *nothing* is provided for endpoint?
         if 'type' not in endpoint:
-            raise RuntimeError('missing type in endpoint')
+            # could maybe just make tcp the default?
+            raise ValueError("'type' required in endpoint configuration")
         if endpoint['type'] not in ['tcp', 'unix']:
-            raise RuntimeError('invalid type "{}" in endpoint'.format(endpoint['type']))
+            raise ValueError('invalid type "{}" in endpoint'.format(endpoint['type']))
+
+        for k in endpoint.keys():
+            if k not in ['type', 'host', 'port', 'path', 'tls']:
+                raise ValueError(
+                    "Invalid key '{}' in endpoint configuration".format(k)
+                )
 
         if endpoint['type'] == 'tcp':
-            pass
+            for k in ['host', 'port']:
+                if k not in endpoint:
+                    raise ValueError(
+                        "'{}' required in 'tcp' endpoint config".format(k)
+                    )
+            for k in ['path']:
+                if k in endpoint:
+                    raise ValueError(
+                        "'{}' not valid in 'tcp' endpoint config".format(k)
+                    )
         elif endpoint['type'] == 'unix':
-            pass
+            for k in ['path']:
+                if k not in endpoint:
+                    raise ValueError(
+                        "'{}' required for 'tcp' endpoint config".format(k)
+                    )
+            for k in ['host', 'port', 'tls']:
+                if k in endpoint:
+                    raise ValueError(
+                        "'{}' not valid for in 'tcp' endpoint config".format(k)
+                    )
         else:
-            assert(False), 'should not arrive here'
+            assert False, 'should not arrive here'
 
 
 def _normalize_transport(transport, check_native_endpoint=None):
@@ -87,10 +119,13 @@ def _normalize_transport(transport, check_native_endpoint=None):
                 'port': port,
                 'tls': False if not is_secure else dict(hostname=host),
             }
+        _normalize_endpoint(transport['endpoint'], check_native_endpoint)
+
     elif transport['type'] == 'rawsocket':
         pass
+
     else:
-        assert(False), 'should not arrive here'
+        assert False, 'should not arrive here'
 
 
 class Transport(object):
@@ -221,7 +256,7 @@ class Component(ObservableMixin):
         self._transports = []
         idx = 0
         for transport in transports:
-            _normalize_transport(transport, self._check_native_transport)
+            _normalize_transport(transport, self._check_native_endpoint)
             self._transports.append(Transport(idx, transport))
             idx += 1
 
