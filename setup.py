@@ -199,6 +199,7 @@ setup(
         'autobahn.twisted',
         'twisted.plugins'
     ],
+    package_data={'autobahn.asyncio': ['test/*']},
     zip_safe=False,
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
