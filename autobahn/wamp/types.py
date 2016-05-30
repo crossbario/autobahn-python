@@ -511,19 +511,19 @@ class PublishOptions(object):
             options[u'exclude'] = self.exclude if type(self.exclude) == list else [self.exclude]
 
         if self.exclude_authid is not None:
-            options[u'exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else self.exclude_authid
+            options[u'exclude_authid'] = self.exclude_authid if type(self.exclude_authid) == list else [self.exclude_authid]
 
         if self.exclude_authrole is not None:
-            options[u'exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else self.exclude_authrole
+            options[u'exclude_authrole'] = self.exclude_authrole if type(self.exclude_authrole) == list else [self.exclude_authrole]
 
         if self.eligible is not None:
-            options[u'eligible'] = self.eligible if type(self.eligible) == list else self.eligible
+            options[u'eligible'] = self.eligible if type(self.eligible) == list else [self.eligible]
 
         if self.eligible_authid is not None:
-            options[u'eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else self.eligible_authid
+            options[u'eligible_authid'] = self.eligible_authid if type(self.eligible_authid) == list else [self.eligible_authid]
 
         if self.eligible_authrole is not None:
-            options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else self.eligible_authrole
+            options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else [self.eligible_authrole]
 
         return options
 
