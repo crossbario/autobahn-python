@@ -30,3 +30,7 @@ htmlcov/
 *.pid
 .cache/
 node.key
+/.project
+/.pydevproject
+/.venv/
+/my_tests/
