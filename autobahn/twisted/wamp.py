@@ -91,7 +91,7 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, url, realm, extra=None, serializers=None, ssl=None, proxy=None):
+    def __init__(self, url, realm, extra=None, serializers=None, ssl=None, proxy=None, headers=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -129,6 +129,7 @@ class ApplicationRunner(object):
         self.serializers = serializers
         self.ssl = ssl
         self.proxy = proxy
+        self.headers = headers
 
     def run(self, make, start_reactor=True):
         """
@@ -179,7 +180,7 @@ class ApplicationRunner(object):
                 return session
 
         # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy)
+        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
 
         # supress pointless log noise like
         # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
