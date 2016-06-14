@@ -379,19 +379,49 @@ def _run(reactor, components):
         components = [components]
 
     if type(components) != list:
-        raise RuntimeError('"components" must be a list of Component objects - encountered {0}'.format(type(components)))
+        raise ValueError(
+            '"components" must be a list of Component objects - encountered'
+            ' {0}'.format(type(components))
+        )
 
     for c in components:
         if not isinstance(c, Component):
-            raise RuntimeError('"components" must be a list of Component objects - encountered item of type {0}'.format(type(c)))
+            raise ValueError(
+                '"components" must be a list of Component objects - encountered'
+                'item of type {0}'.format(type(c))
+            )
+
+    log = txaio.make_logger()
+
+    def component_success(c, arg):
+        log.debug("Component {c} successfully completed: {arg}", c=c, arg=arg)
+        return arg
+
+    def component_failure(f):
+        log.error("Component error: {msg}", msg=txaio.failure_message(f))
+        log.debug("Component error: {tb}", tb=txaio.failure_format_traceback(f))
+        return None
+
 
     # all components are started in parallel
     dl = []
     for c in components:
         # a component can be of type MAIN or SETUP
-        dl.append(c.start(reactor))
+        d = c.start(reactor)
+        txaio.add_callbacks(d, partial(component_success, c), component_failure)
+        dl.append(d)
 
-    d = txaio.gather(dl, consume_exceptions=True)
+
+    d = txaio.gather(dl, consume_exceptions=False)
+
+    def all_done(arg):
+        log.debug("All components ended; stopping reactor")
+        try:
+            reactor.stop()
+        except ReactorNotRunning:
+            pass
+
+    txaio.add_callbacks(d, all_done, all_done)
 
     return d
 
