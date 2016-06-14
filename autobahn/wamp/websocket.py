@@ -86,7 +86,12 @@ class WampWebSocketProtocol(object):
         """
         try:
             for msg in self._serializer.unserialize(payload, isBinary):
-                self.log.trace("WAMP RECV: message={message}, session={session}, authid={authid}", authid=self._session._authid, session=self._session._session_id, message=msg)
+                self.log.trace(
+                    "WAMP RECV: message={message}, session={session}, authid={authid}",
+                    authid=self._session._authid,
+                    session=self._session._session_id,
+                    message=msg,
+                )
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
