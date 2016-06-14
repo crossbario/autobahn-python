@@ -46,14 +46,19 @@ def _normalize_endpoint(endpoint, check_native_endpoint=None):
     """
     Check a WAMP connecting endpoint configuration.
     """
-    if not isinstance(endpoint, dict):
-        if check_native_endpoint:
-            check_native_endpoint(endpoint)
-        else:
-            raise ValueError(
-                "'endpoint' must be a dict"
-            )
-    else:
+    if check_native_endpoint:
+        check_native_endpoint(endpoint)
+    elif not isinstance(endpoint, dict):
+        raise ValueError(
+            "'endpoint' must be a dict"
+        )
+
+    # note, we're falling through here -- check_native_endpoint can
+    # disallow or allow dict-based config as it likes, but if it
+    # *does* allow a dict through, we want to check "base options"
+    # here so that both Twisted and asyncio don't have to check these
+    # things as well.
+    if isinstance(endpoint, dict):
         # XXX what about filling in anything missing from the URL? Or
         # is that only for when *nothing* is provided for endpoint?
         if 'type' not in endpoint:
@@ -123,9 +128,11 @@ def _normalize_transport(transport, check_native_endpoint=None):
                 'tls': False if not is_secure else dict(hostname=host),
             }
         _normalize_endpoint(transport['endpoint'], check_native_endpoint)
+        # XXX can/should we check e.g. serializers here?
 
     elif transport['type'] == 'rawsocket':
-        pass
+        if 'endpoint' not in transport:
+            raise ValueError("Missing 'endpoint' in transport")
 
     else:
         assert False, 'should not arrive here'

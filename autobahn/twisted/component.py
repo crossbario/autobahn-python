@@ -28,11 +28,13 @@
 from __future__ import absolute_import, print_function
 
 import itertools
+from functools import partial
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
+from twisted.internet.error import ReactorNotRunning
 from twisted.internet.task import react
 
 try:
@@ -77,7 +79,7 @@ def _unique_list(seq):
     """
     Return a list with unique elements from sequence, preserving order.
     """
-    seen = set(seq)
+    seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
@@ -114,7 +116,7 @@ def _create_transport_serializers(transport_config):
     Create a list of serializers to use with a WAMP protocol factory.
     """
     if u'serializers' in transport_config:
-        serializer_ids = _unique_list(transport_config['serializers'])
+        serializer_ids = _unique_list(transport_config[u'serializers'])
     else:
         serializer_ids = [u'msgpack', u'json']
 
@@ -131,7 +133,7 @@ def _create_transport_serializers(transport_config):
                 serializers.append(MsgPackSerializer(batched=True))
                 serializers.append(MsgPackSerializer())
 
-        if serializer_id == u'json':
+        elif serializer_id == u'json':
             # try JSON WAMP serializer
             try:
                 from autobahn.wamp.serializer import JsonSerializer
@@ -140,6 +142,11 @@ def _create_transport_serializers(transport_config):
             else:
                 serializers.append(JsonSerializer(batched=True))
                 serializers.append(JsonSerializer())
+
+        else:
+            raise RuntimeError(
+                "Unknown serializer '{}'".format(serializer_id)
+            )
 
     return serializers
 
@@ -247,26 +254,26 @@ class Component(component.Component):
     """
 
     def _check_native_endpoint(self, endpoint):
-        self.log.error("_check_native_endpoint")
-        if isinstance(endpoint, dict):
-            return
         if IStreamClientEndpoint.providedBy(endpoint):
-            return
-        if 'tls' in endpoint:
-            tls = endpoint['tls']
-            if isinstance(tls, (dict, bool)):
-                return
-            if IOpenSSLClientConnectionCreator.providedBy(tls):
-                return
-            if isinstance(tls, CertificateOptions):
-                return
+            pass
+        elif isinstance(endpoint, dict):
+            if 'tls' in endpoint:
+                tls = endpoint['tls']
+                if isinstance(tls, (dict, bool)):
+                    pass
+                elif IOpenSSLClientConnectionCreator.providedBy(tls):
+                    pass
+                elif isinstance(tls, CertificateOptions):
+                    pass
+                else:
+                    raise ValueError(
+                        "'tls' configuration must be a dict, CertificateOptions or"
+                        " IOpenSSLClientConnectionCreator provider"
+                    )
+        else:
             raise ValueError(
-                "'tls' configuration must be a dict, CertificateOptions or"
-                " IOpenSSLClientConnectionCreator provider"
-            )
-        raise ValueError(
-            "'endpoint' configuration must be a dict or IStreamClientEndpoint"
-            " provider"
+                "'endpoint' configuration must be a dict or IStreamClientEndpoint"
+                " provider"
         )
 
     def _connect_transport(self, reactor, transport_config, session_factory):
