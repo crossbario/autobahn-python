@@ -40,8 +40,11 @@ try:
     from twisted.internet.endpoints import SSL4ClientEndpoint
     from twisted.internet.ssl import optionsForClientTLS, CertificateOptions
     from twisted.internet.interfaces import IOpenSSLClientConnectionCreator
-except ImportError:
+    from OpenSSL import SSL
+except ImportError as e:
     _TLS = False
+    if 'OpenSSL' not in str(e):
+        raise
 
 import txaio
 
@@ -52,9 +55,22 @@ from autobahn.wamp import component
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import ApplicationSession
+from autobahn.wamp.exception import ApplicationError
 
 
 __all__ = ('Component')
+
+def _is_ssl_error(e):
+    """
+    Internal helper.
+
+    This is so we can just return False if we didn't import any
+    TLS/SSL libraries. Otherwise, returns True if this is an
+    OpenSSL.SSL.Error
+    """
+    if _TLS:
+        return isinstance(e, SSL.Error)
+    return False
 
 
 def _unique_list(seq):
@@ -306,25 +322,48 @@ class Component(component.Component):
                 )
                 yield sleep(delay)
                 try:
-                    transport.connect_attempts += 1
-                    yield self._connect_once(reactor, transport.config)
-                    transport.connect_sucesses += 1
+                    yield self._connect_once(reactor, transport)
+                    self.log.info('Component completed successfully')
+
                 except Exception as e:
-                    transport.connect_failures += 1
-                    f = txaio.create_failure()
-                    self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
-                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
                     # need concept of "fatal errors", for which a
-                    # connection is *never* going to work
+                    # connection is *never* going to work. Might want
+                    # to also add, for example, things like
+                    # SyntaxError
                     if isinstance(e, ApplicationError):
-                        if e.reason in [u'wamp.error.no_such_realm']:
+#                        self.log.error(u"{error}: {message}", error=e.error, message=e.message)
+                        if e.error in [u'wamp.error.no_such_realm']:
                             reconnect = False
+                            self.log.error(u"Fatal error, not reconnecting")
+                            raise
+                    elif _is_ssl_error(e):
+                        # Quoting pyOpenSSL docs: "Whenever
+                        # [SSL.Error] is raised directly, it has a
+                        # list of error messages from the OpenSSL
+                        # error queue, where each item is a tuple
+                        # (lib, function, reason). Here lib, function
+                        # and reason are all strings, describing where
+                        # and what the problem is. See err(3) for more
+                        # information."
+                        for (lib, fn, reason) in e.args[0]:
+                            self.log.error(u"TLS failure: {reason}", reason=reason)
+                            self.log.error(u"Marking this transport as failed")
+                            transport.failed()
+                    else:
+                        f = txaio.create_failure()
+                        self.log.error(u'Connection failed: {error}', error=txaio.failure_message(f))
+                        # some types of errors should probably have
+                        # stacktraces logged immediately at error
+                        # level, e.g. SyntaxError?
+                        self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
+                        raise
                 else:
                     reconnect = False
             else:
                 # check if there is any transport left we can use
                 # to connect
                 if not self._can_reconnect():
+                    self.log.info("No remaining transports to try")
                     reconnect = False
 
 
