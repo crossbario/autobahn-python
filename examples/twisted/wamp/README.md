@@ -47,7 +47,7 @@ _We still need to explain these. For starters, here's the list:_
   * [Keyvalue](app/keyvalue): _to be explained..._
   * [Klein](app/klein): _to be explained..._
   * [Serial2ws](app/serial2ws): _to be explained..._
-  * [Subscribe upon call](app/subscribe_uipon_call): _to be explained..._
+  * [Subscribe upon call](app/subscribe_upon_call): _to be explained..._
 
 ## How to run
 
