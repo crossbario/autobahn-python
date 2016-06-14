@@ -27,14 +27,17 @@
 
 from __future__ import absolute_import
 
-import random
 import six
+import random
+from functools import wraps
 
 import txaio
 
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.exception import ApplicationError
+
 
 __all__ = ('Connection')
 
@@ -137,8 +140,8 @@ class Transport(object):
                  initial_retry_delay=1.5, retry_delay_growth=1.5,
                  retry_delay_jitter=0.1):
         """
-
-        :param config: The transport configuration.
+        :param config: The transport configuration. Should already be
+            validated + normalized
         :type config: dict
         """
         self.idx = idx
@@ -150,6 +153,8 @@ class Transport(object):
         self.retry_delay_growth = retry_delay_growth
         self.retry_delay_jitter = retry_delay_jitter
 
+        self._permanent_failure = False
+
         self.reset()
 
     def reset(self):
@@ -158,7 +163,17 @@ class Transport(object):
         self.connect_failures = 0
         self.retry_delay = self.initial_retry_delay
 
+    def failed(self):
+        """
+        Mark this transport as failed, meaning we won't try to connect to
+        it any longer (can_reconnect() will always return False afer
+        calling this).
+        """
+        self._permanent_failure = True
+
     def can_reconnect(self):
+        if self._permanent_failure:
+            return False
         return self.connect_attempts < self.max_retries
 
     def next_delay(self):
@@ -275,13 +290,11 @@ class Component(ObservableMixin):
     def start(self, reactor):
         raise RuntimeError('not implemented')
 
-    def _connect_once(self, reactor, transport_config):
-
+    def _connect_once(self, reactor, transport):
         self.log.info(
-            'connecting once using transport type "{transport_type}" '
-            'over endpoint type "{endpoint_type}"',
-            transport_type=transport_config['type'],
-            endpoint_type=transport_config['endpoint']['type'],
+            'connecting to URL "{url}" with "{transport_type}" transport',
+            transport_type=transport.config['type'],
+            url=transport.config['url'],
         )
 
         done = txaio.create_future()
@@ -291,19 +304,34 @@ class Component(ObservableMixin):
             cfg = ComponentConfig(self._realm, self._extra)
             try:
                 session = self.session_factory(cfg)
-            except Exception:
+            except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
                 # let the reconnection logic deal with that
+                f = txaio.create_failure(e)
+                txaio.reject(done, f)
                 raise
             else:
                 # hook up the listener to the parent so we can bubble
-                # up events happning on the session onto the connection
+                # up events happning on the session onto the
+                # connection. This lets you do component.on('join',
+                # cb) which will work just as if you called
+                # session.on('join', cb) for every session created.
                 session._parent = self
 
+                # the only difference bewteen MAIN and SETUP-type
+                # entry-points is that we want to shut down the
+                # component when a MAIN-type entrypoint's Deferred is
+                # done.
                 if self._entry_type == Component.TYPE_MAIN:
 
                     def on_join(session, details):
                         self.log.debug("session on_join: {details}", details=details)
+                        transport.connect_sucesses += 1
+                        self.log.info(
+                            'Successfully connected to transport #{transport_idx}: url={url}',
+                            transport_idx=transport.idx,
+                            url=transport.config['url'],
+                        )
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def main_success(_):
@@ -313,6 +341,7 @@ class Component(ObservableMixin):
                         def main_error(err):
                             self.log.debug("main_error: {err}", err=err)
                             txaio.reject(done, err)
+                            # I guess .leave() here too...?
 
                         txaio.add_callbacks(d, main_success, main_error)
 
@@ -322,6 +351,11 @@ class Component(ObservableMixin):
 
                     def on_join(session, details):
                         self.log.debug("session on_join: {details}", details=details)
+                        self.log.info(
+                            'Successfully connected to transport #{transport_idx}: url={url}',
+                            transport_idx=transport.idx,
+                            url=transport.config['url'],
+                        )
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def setup_success(_):
@@ -329,6 +363,7 @@ class Component(ObservableMixin):
 
                         def setup_error(err):
                             self.log.debug("setup_error: {err}", err=err)
+                            txaio.reject(done, err)
 
                         txaio.add_callbacks(d, setup_success, setup_error)
 
@@ -339,8 +374,14 @@ class Component(ObservableMixin):
 
                 # listen on leave events
                 def on_leave(session, details):
-                    self.log.debug("session on_leave: {details}", details=details)
-
+                    self.log.info("session on_leave: {details}", details=details)
+                    # this could be a "leave" that's expected e.g. our
+                    # main() exited, or it could be an error
+                    if not txaio.is_called(done):
+                        if details.reason.startswith('wamp.error.'):
+                            txaio.reject(done, ApplicationError(details.reason, details.message))
+                        else:
+                            txaio.resolve(done, None)
                 session.on('leave', on_leave)
 
                 # listen on disconnect events
@@ -359,13 +400,27 @@ class Component(ObservableMixin):
                 # return the fresh session object
                 return session
 
-        d = self._connect_transport(reactor, transport_config, create_session)
+        transport.connect_attempts += 1
+        d = self._connect_transport(reactor, transport.config, create_session)
 
         def on_connect_sucess(proto):
-            # FIXME: leave / cleanup proto when reactor stops?
-            pass
+            # if e.g. an SSL handshake fails, we will have
+            # successfully connected (here) but need to listen for the
+            # "connectionLost" from the underlying protocol in case of
+            # handshake failure .. so we wrap it. Also, we don't
+            # increment transport.success_count here.
+            orig = proto.connectionLost
+
+            @wraps(orig)
+            def lost(fail):
+                rtn = orig(fail)
+                if not txaio.is_called(done):
+                    txaio.reject(done, fail)
+                return rtn
+            proto.connectionLost = lost
 
         def on_connect_failure(err):
+            transport.connect_failures += 1
             # failed to establish a connection in the first place
             done.errback(err)
 
