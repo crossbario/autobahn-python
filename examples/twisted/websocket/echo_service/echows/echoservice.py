@@ -70,8 +70,9 @@ class EchoService(service.Service):
         webdir = os.path.abspath(pkg_resources.resource_filename("echows", "web"))
         root = File(webdir)
 
-        # and our WebSocket server under "/ws"
-        root.putChild(u"ws", resource)
+        # and our WebSocket server under "/ws" (note that Twisted uses
+        # bytes for URIs)
+        root.putChild(b"ws", resource)
 
         # both under one Twisted Web Site
         site = Site(root)

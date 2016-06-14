@@ -52,7 +52,7 @@ if __name__ == '__main__':
     resource = WebSocketResource(factory)
 
     root = File(".")
-    root.putChild(u"ws", resource)
+    root.putChild(b"ws", resource)
     site = Site(root)
 
     reactor.listenTCP(8080, site)
