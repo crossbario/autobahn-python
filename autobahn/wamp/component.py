@@ -211,7 +211,7 @@ class Component(ObservableMixin):
     TYPE_MAIN = 1
     TYPE_SETUP = 2
 
-    def __init__(self, main=None, setup=None, transports=None, config=None, realm=u'realm1'):
+    def __init__(self, main=None, setup=None, transports=None, config=None, realm=u'public'):
         """
 
         :param main: A callable that runs user code for the component. The component will be
@@ -227,6 +227,7 @@ class Component(ObservableMixin):
         :type setup: callable
         :param transports: Transport configurations for creating transports.
         :type transports: None or unicode or list
+
         :param config: Session configuration.
         :type config: None or dict
 
@@ -285,7 +286,7 @@ class Component(ObservableMixin):
         # XXX decide if 'realm' is part of the transport config, or a
         # Component 'global' parameter
         self._realm = realm
-        self._extra = None
+        self._extra = None  # XXX FIXME
 
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left

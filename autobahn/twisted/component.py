@@ -284,6 +284,7 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
         return transport_endpoint.connect(transport_factory)
 
+
 # XXX fixme we can't use inlineCallbacks, can we? or can we because
 # we're in a "twisted-only" class?
     @inlineCallbacks
@@ -312,7 +313,7 @@ class Component(component.Component):
 
         reconnect = True
 
-        self.log.info('Entering re-connect loop')
+        self.log.debug('Entering re-connect loop')
 
         while reconnect:
             # cycle through all transports forever ..
