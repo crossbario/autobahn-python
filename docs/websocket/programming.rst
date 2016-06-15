@@ -490,6 +490,58 @@ You can find complete code for above examples here:
 * `WebSocket Echo (Asyncio-based) <https://github.com/crossbario/autobahn-python/tree/master/examples/asyncio/websocket/echo>`_
 
 
+WebSocket Options
+-----------------
+
+You can pass various options on both client and server side WebSockets; these are accomplished by calling :meth:`autobahn.websocket.WebSocketServerFactory.setProtocolOptions` or :meth:`autobahn.websocket.WebSocketClientFactory.setProtocolOptions` with keyword arguments for each option.
+
+
+Common Options (server and client)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ - logOctets: if True, log every byte
+ - logFrames: if True, log information about each frame
+ - trackTimings: if True, enable debug timing code
+ - utf8validateIncoming: if True (default), validate all incoming UTF8
+ - applyMask: if True (default) apply mask to frames, when available
+ - maxFramePayloadSize: if 0 (default), unlimited-sized frames allowed
+ - maxMessagePayloadSize: if 0 (default), unlimited re-assembled payloads
+ - autoFragmentSize: if 0 (default), don't fragment
+ - failByDrop: if True (default), failed connections are terminated immediately
+ - echoCloseCodeReason: if True, echo back the close reason/code
+ - openHandshakeTimeout: timeout in seconds after which opening handshake will be failed (default: no timeout)
+ - closeHandshakeTimeout: timeout in seconds after which close handshake will be failed (default: no timeout)
+ - tcpNoDelay: if True (default), set NODELAY (Nagle) socket option
+ - autoPingInterval: if set, seconds between auto-pings
+ - autoPingTimeout: if set, seconds until a ping is considered timed-out
+ - autoPingSize: bytes of random data to send in ping messages (between 4 [default] and 125)
+
+
+Server-Only Options
+~~~~~~~~~~~~~~~~~~~
+
+- versions: what versions to claim support for (default 8, 13)
+- webStatus: if True (default), show a web page if visiting this endpoint without an Upgrade header
+- requireMaskedClientFrames: if True (default), client-to-server frames must be masked
+- maskServerFrames: if True, server-to-client frames must be masked
+- perMessageCompressionAccept: if provided, a single-argument callable
+- serveFlashSocketPolicy: if True, server a flash policy file (default: False)
+- flashSocketPolicy: the actual flash policy to serve (default one allows everything)
+- allowedOrigins: a list of origins to allow, with embedded `*`'s for wildcards; these are turned into regular expressions (e.g. `*.example.com` becomes `^.*\.example\.com$`)
+- maxConnections: total concurrent connections allowed (default 0, unlimited)
+
+
+Client-Only Options
+~~~~~~~~~~~~~~~~~~~
+
+- version: which version we are (default: 18)
+- acceptMaskedServerFrames: if True, accept masked server-to-client frames (default False)
+- maskClientFrames: if True (default), mask client-to-server frames
+- serverConnectionDropTimeout: how long (in seconds) to wait for server to drop the connection when closing (default 1)
+- perMessageCompressionOffers:
+- perMessageCompressionAccept:
+
+
 Upgrading
 ---------
 
