@@ -158,6 +158,8 @@ if os.environ.get('USE_TWISTED', False):
             self.proto.connectionMade()
 
         def tearDown(self):
+            if self.proto.openHandshakeTimeoutCall:
+                self.proto.openHandshakeTimeoutCall.cancel()
             self.factory.doStop()
             # not really necessary, but ...
             del self.factory

@@ -527,7 +527,7 @@ Server-Only Options
 - perMessageCompressionAccept: if provided, a single-argument callable
 - serveFlashSocketPolicy: if True, server a flash policy file (default: False)
 - flashSocketPolicy: the actual flash policy to serve (default one allows everything)
-- allowedOrigins: a list of origins to allow, with embedded `*`'s for wildcards; these are turned into regular expressions (e.g. `*.example.com` becomes `^.*\.example\.com$`)
+- allowedOrigins: a list of origins to allow, with embedded `*`'s for wildcards; these are turned into regular expressions (e.g. `https://*.example.com:443` becomes `^https://.*\.example\.com:443$`). When doing the matching, the origin is **always** of the form `scheme://host:port` with an explicit port. By default, we match with `*` (that is, anything). To match all subdomains of `example.com` on any scheme and port, you'd need `*://*.example.com:*`
 - maxConnections: total concurrent connections allowed (default 0, unlimited)
 
 

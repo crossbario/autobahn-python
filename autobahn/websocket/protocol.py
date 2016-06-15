@@ -74,6 +74,83 @@ __all__ = ("ConnectionRequest",
            "WebSocketClientFactory")
 
 
+def _url_to_origin(url):
+    """
+    Given an RFC6455 Origin URL, this returns the (scheme, host, port)
+    triple. If there's no port, and the scheme isn't http or https
+    then port will be None
+    """
+    if url.lower() == 'null':
+        return 'null'
+
+    res = urllib.parse.urlsplit(url)
+    scheme = res.scheme.lower()
+    if scheme == 'file':
+        # when browsing local files, Chrome sends file:// URLs,
+        # Firefox sends 'null'
+        return 'null'
+
+    host = res.hostname
+    port = res.port
+    if port is None:
+        try:
+            port = {'https': 443, 'http': 80}[scheme]
+        except KeyError:
+            port = None
+
+    if not host:
+        raise ValueError("No host part in Origin '{}'".format(url))
+    return scheme, host, port
+
+
+def _is_same_origin(websocket_origin, host_scheme, host_port, host_policy):
+    """
+    Internal helper. Returns True if the provided websocket_origin
+    triple should be considered valid given the provided policy and
+    expected host_port.
+
+    Currently, the policy is just the list of allowedOriginsPatterns
+    from the WebSocketProtocol instance. Schemes and ports are matched
+    first, and only if there is not a mismatch do we compare each
+    allowed-origin pattern against the host.
+    """
+
+    if websocket_origin == 'null':
+        # nothing is the same as the null origin
+        return False
+
+    if not isinstance(websocket_origin, tuple) or not len(websocket_origin) == 3:
+        raise ValueError("'websocket_origin' must be a 3-tuple")
+
+    (origin_scheme, origin_host, origin_port) = websocket_origin
+
+    # so, theoretically we should match on the 3-tuple of (scheme,
+    # origin, port) to follow the RFC. However, the existing API just
+    # allows you to pass a list of regular expressions that match
+    # against the Origin header -- so to keep that API working, we
+    # just match a reconstituted/sanitized Origin line against the
+    # regular expressions. We *do* explicitly match the scheme first,
+    # however!
+
+    # therefore, the default of "*" will still match everything (even
+    # if things are on weird ports). To be "actually secure" and pass
+    # explicit ports, you can put it in your matcher
+    # (e.g. "https://*.example.com:1234")
+
+    template = '{scheme}://{host}:{port}'
+    origin_header = template.format(
+        scheme=origin_scheme,
+        host=origin_host,
+        port=origin_port,
+    )
+    # so, this will be matching against e.g. "http://example.com:8080"
+    for origin_pattern in host_policy:
+        if origin_pattern.match(origin_header):
+            return True
+
+    return False
+
+
 class TrafficStats(object):
 
     def __init__(self):
@@ -453,6 +530,7 @@ class WebSocketProtocol(object):
                            'flashSocketPolicy',
                            'allowedOrigins',
                            'allowedOriginsPatterns',
+                           'allowNullOrigin',
                            'maxConnections']
     """
     Configuration attributes specific to servers.
@@ -2577,19 +2655,32 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 if http_headers_cnt[websocket_origin_header_key] > 1:
                     return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
                 self.websocket_origin = self.http_headers[websocket_origin_header_key].strip()
+                try:
+                    origin_tuple = _url_to_origin(self.websocket_origin)
+                except ValueError as e:
+                    return self.failHandshake(
+                        "HTTP Origin header invalid: {}".format(e)
+                    )
+                have_origin = True
             else:
                 # non-browser clients are allowed to omit this header
-                pass
+                have_origin = False
 
-            # check allowed WebSocket origins
-            #
-            origin_is_allowed = False
-            for origin_pattern in self.allowedOriginsPatterns:
-                if origin_pattern.match(self.websocket_origin):
+            if have_origin:
+                if origin_tuple == 'null' and self.factory.allowNullOrigin:
                     origin_is_allowed = True
-                    break
-            if not origin_is_allowed:
-                return self.failHandshake("WebSocket connection denied: origin '{0}' not allowed".format(self.websocket_origin))
+                else:
+                    origin_is_allowed = _is_same_origin(
+                        origin_tuple,
+                        'https' if self.factory.isSecure else 'http',
+                        self.factory.externalPort or self.factory.port,
+                        self.allowedOriginsPatterns,
+                    )
+                if not origin_is_allowed:
+                    return self.failHandshake(
+                        "WebSocket connection denied: origin '{0}' "
+                        "not allowed".format(self.websocket_origin)
+                    )
 
             # Sec-WebSocket-Key
             #
@@ -3079,6 +3170,7 @@ class WebSocketServerFactory(WebSocketFactory):
         # check WebSocket origin against this list
         self.allowedOrigins = ["*"]
         self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
+        self.allowNullOrigin = True
 
         # maximum number of concurrent connections
         self.maxConnections = 0
@@ -3105,6 +3197,7 @@ class WebSocketServerFactory(WebSocketFactory):
                            serveFlashSocketPolicy=None,
                            flashSocketPolicy=None,
                            allowedOrigins=None,
+                           allowNullOrigin=False,
                            maxConnections=None):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
@@ -3152,8 +3245,13 @@ class WebSocketServerFactory(WebSocketFactory):
         :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
            and when Flash tried to connect to the destination port. It must end with a null character.
         :type flashSocketPolicy: str or None
+
         :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
         :type allowedOrigins: list or None
+
+        :param allowNullOrigin: if True, allow WebSocket connections whose `Origin:` is `"null"`.
+        :type allowNullOrigin: bool
+
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
         """
@@ -3226,6 +3324,10 @@ class WebSocketServerFactory(WebSocketFactory):
         if allowedOrigins is not None and allowedOrigins != self.allowedOrigins:
             self.allowedOrigins = allowedOrigins
             self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
+
+        if allowNullOrigin not in [True, False]:
+            raise ValueError('allowNullOrigin must be a bool')
+        self.allowNullOrigin = allowNullOrigin
 
         if maxConnections is not None and maxConnections != self.maxConnections:
             assert(type(maxConnections) in six.integer_types)

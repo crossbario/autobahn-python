@@ -637,10 +637,15 @@ def wildcards2patterns(wildcards):
 
     :param wildcards: List of wildcard strings to compute regular expression patterns for.
     :type wildcards: list of str
+
     :returns: Computed regular expressions.
     :rtype: list of obj
     """
-    return [re.compile(wc.replace('.', '\.').replace('*', '.*')) for wc in wildcards]
+    # note that we add the ^ and $ so that the *entire* string must
+    # match. Without this, e.g. a prefix will match:
+    # re.match('.*good\\.com', 'good.com.evil.com')  # match!
+    # re.match('.*good\\.com$', 'good.com.evil.com') # no match!
+    return [re.compile('^' + wc.replace('.', '\.').replace('*', '.*') + '$') for wc in wildcards]
 
 
 class ObservableMixin(object):
