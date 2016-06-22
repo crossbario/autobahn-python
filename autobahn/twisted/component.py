@@ -62,6 +62,7 @@ from autobahn.wamp.exception import ApplicationError
 
 __all__ = ('Component')
 
+
 def _is_ssl_error(e):
     """
     Internal helper.
@@ -193,7 +194,7 @@ def _create_transport_endpoint(reactor, endpoint_config):
                 # FIXME: create TLS context from configuration
                 if IOpenSSLClientConnectionCreator.providedBy(tls):
                     # eg created from twisted.internet.ssl.optionsForClientTLS()
-                    context = IOpenSSLClientComponentCreator(tls)
+                    context = IOpenSSLClientConnectionCreator(tls)
 
                 elif isinstance(tls, CertificateOptions):
                     context = tls
@@ -274,7 +275,7 @@ class Component(component.Component):
             raise ValueError(
                 "'endpoint' configuration must be a dict or IStreamClientEndpoint"
                 " provider"
-        )
+            )
 
     def _connect_transport(self, reactor, transport_config, session_factory):
         """
@@ -339,11 +340,11 @@ class Component(component.Component):
                     # to also add, for example, things like
                     # SyntaxError
                     if isinstance(e, ApplicationError):
-#                        self.log.error(u"{error}: {message}", error=e.error, message=e.message)
                         if e.error in [u'wamp.error.no_such_realm']:
                             reconnect = False
                             self.log.error(u"Fatal error, not reconnecting")
                             raise
+                        # self.log.error(u"{error}: {message}", error=e.error, message=e.message)
                     elif _is_ssl_error(e):
                         # Quoting pyOpenSSL docs: "Whenever
                         # [SSL.Error] is raised directly, it has a
@@ -403,7 +404,6 @@ def _run(reactor, components):
         log.debug("Component error: {tb}", tb=txaio.failure_format_traceback(f))
         return None
 
-
     # all components are started in parallel
     dl = []
     for c in components:
@@ -411,8 +411,6 @@ def _run(reactor, components):
         d = c.start(reactor)
         txaio.add_callbacks(d, partial(component_success, c), component_failure)
         dl.append(d)
-
-
     d = txaio.gather(dl, consume_exceptions=False)
 
     def all_done(arg):
