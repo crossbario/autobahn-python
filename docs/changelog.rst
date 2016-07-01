@@ -5,6 +5,11 @@
 Changelog
 =========
 
+0.14.2
+------
+
+* fix: `#691 <https://github.com/crossbario/autobahn-python/issues/691>`_ (**security**) If the `allowedOrigins` websocket option was set, the resulting matching was insufficient and would allow more origins than intended
+
 0.14.1
 ------
 

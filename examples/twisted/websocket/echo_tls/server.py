@@ -27,9 +27,10 @@
 import sys
 
 from twisted.internet import reactor, ssl
-from twisted.python import log
 from twisted.web.server import Site
 from twisted.web.static import File
+
+import txaio
 
 from autobahn.twisted.websocket import WebSocketServerFactory, \
     WebSocketServerProtocol, \
@@ -44,7 +45,7 @@ class EchoServerProtocol(WebSocketServerProtocol):
 
 if __name__ == '__main__':
 
-    log.startLogging(sys.stdout)
+    txaio.start_logging(level='debug')
 
     # SSL server context: load server key and certificate
     # We use this for both WS and Web!
@@ -52,6 +53,17 @@ if __name__ == '__main__':
                                                       'keys/server.crt')
 
     factory = WebSocketServerFactory(u"wss://127.0.0.1:9000")
+    # by default, allowedOrigins is "*" and will work fine out of the
+    # box, but we can do better and be more-explicit about what we
+    # allow. We are serving the Web content on 8080, but our WebSocket
+    # listener is on 9000 so the Origin sent by the browser will be
+    # from port 8080...
+    factory.setProtocolOptions(
+        allowedOrigins=[
+            "https://127.0.0.1:8080",
+            "https://localhost:8080",
+        ]
+    )
 
     factory.protocol = EchoServerProtocol
     listenWS(factory, contextFactory)
@@ -59,7 +71,7 @@ if __name__ == '__main__':
     webdir = File(".")
     webdir.contentTypes['.crt'] = 'application/x-x509-ca-cert'
     web = Site(webdir)
-    # reactor.listenSSL(8080, web, contextFactory)
-    reactor.listenTCP(8080, web)
+    reactor.listenSSL(8080, web, contextFactory)
+    #reactor.listenTCP(8080, web)
 
     reactor.run()
