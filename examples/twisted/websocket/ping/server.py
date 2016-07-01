@@ -84,7 +84,8 @@ if __name__ == '__main__':
     resource = WebSocketResource(factory)
 
     root = File(".")
-    root.putChild(u"ws", resource)
+    # note that Twisted uses bytes for URLs, which mostly affects Python3
+    root.putChild(b"ws", resource)
     site = Site(root)
 
     reactor.listenSSL(8080, site, contextFactory)

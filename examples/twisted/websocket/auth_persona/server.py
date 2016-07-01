@@ -235,9 +235,10 @@ if __name__ == '__main__':
     # we serve static files under "/" ..
     root = File(".")
 
-    # .. and our WebSocket server under "/ws"
+    # .. and our WebSocket server under "/ws" (note that Twisted uses
+    # bytes for URIs)
     resource = WebSocketResource(factory)
-    root.putChild(u"ws", resource)
+    root.putChild(b"ws", resource)
 
     # run both under one Twisted Web Site
     site = Site(root)
