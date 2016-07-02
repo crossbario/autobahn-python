@@ -114,9 +114,9 @@ class ApplicationRunner(object):
 
         :param isSecure: value extracted from url.
 
-        :returns: :class:`ssl.SSLContext` or bool -- An (optional) SSL context 
-           instance or a bool. See the documentation for the 
-           `loop.create_connection` asyncio method, to which this value is 
+        :returns: :class:`ssl.SSLContext` or bool -- An (optional) SSL context
+           instance or a bool. See the documentation for the
+           `loop.create_connection` asyncio method, to which this value is
            passed as the ``ssl=`` kwarg.
 
         """
