@@ -16,8 +16,4 @@ and open
 
 in your browser.
 
-To activate debug output on the server, start it
-
-    python server.py debug
-
 This will show up all WebSocket messages exchanged between clients and server.

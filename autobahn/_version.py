@@ -24,41 +24,4 @@
 #
 ###############################################################################
 
-if __name__ == "__main__":
-
-   import sys
-   import argparse
-   import mimetypes
-
-   from twisted.python import log
-   from twisted.internet import reactor
-   from twisted.web.server import Site
-   from twisted.web.static import File
-   from twisted.internet.endpoints import serverFromString
-
-   mimetypes.add_type('image/svg+xml', '.svg')
-   mimetypes.add_type('text/javascript', '.jgz')
-
-   parser = argparse.ArgumentParser()
-
-   parser.add_argument("--root", type = str, default = ".",
-                       help = 'Web document root directory')
-
-   parser.add_argument("--endpoint", type = str, default = "tcp:8080",
-                       help = 'Twisted server endpoint descriptor, e.g. "tcp:8080" or "unix:/tmp/mywebsocket".')
-
-   parser.add_argument("-s", "--silence", action = "store_true",
-                       help = "Disable access logging.")
-
-   args = parser.parse_args()
-   log.startLogging(sys.stdout)
-
-   factory = Site(File(args.root))
-   if args.silence:
-      factory.log = lambda _: None
-      factory.noisy = False
-
-   server = serverFromString(reactor, args.endpoint)
-   server.listen(factory)
-
-   reactor.run()
+__version__ = u'0.14.1'

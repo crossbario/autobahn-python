@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     # create a WS server factory with our protocol
     ##
-    factory = WebSocketClientFactory(options.url, debug=False)
+    factory = WebSocketClientFactory(options.url)
     factory.protocol = EchoClientProtocol
 
     # SSL client context: default

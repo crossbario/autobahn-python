@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import six
+
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.serialport import SerialPort
 from twisted.protocols.basic import LineReceiver
@@ -102,38 +104,34 @@ if __name__ == '__main__':
     import argparse
 
     # parse command line arguments
-    ##
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--baudrate", type=int, default=9600, choices=[300, 1200, 2400, 4800, 9600, 19200, 57600, 115200],
                         help='Serial port baudrate.')
 
-    parser.add_argument("--port", type=str, default='2',
+    parser.add_argument("--port", type=six.text_type, default=u'/dev/ttyACM0',
                         help='Serial port to use (e.g. 3 for a COM port on Windows, /dev/ttyATH0 for Arduino Yun, /dev/ttyACM0 for Serial-over-USB on RaspberryPi.')
 
     parser.add_argument("--web", type=int, default=8000,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
 
-    parser.add_argument("--router", type=str, default=None,
-                        help='If given, connect to this WAMP router. Else run an embedded router on 8080.')
+    parser.add_argument("--router", type=six.text_type, default=u'ws://localhost:8080/ws',
+                        help='WAMP router URL (a WAMP-over-WebSocket endpoint, default: "ws://localhost:8080/ws")')
+
+    parser.add_argument("--realm", type=six.text_type, default=u'realm1',
+                        help='WAMP realm to join (default: "realm1")')
 
     args = parser.parse_args()
 
-    try:
-        # on Windows, we need port to be an integer
-        args.port = int(args.port)
-    except ValueError:
-        pass
-
-    from twisted.python import log
-    log.startLogging(sys.stdout)
-
     # import Twisted reactor
     if sys.platform == 'win32':
-        # on windows, we need to use the following reactor for serial support
+        # on Windows, we need to use the following reactor for serial support
         # http://twistedmatrix.com/trac/ticket/3802
         from twisted.internet import win32eventreactor
         win32eventreactor.install()
+
+        # on Windows, we need port to be an integer
+        args.port = int(args.port)
 
     from twisted.internet import reactor
     print("Using Twisted reactor {0}".format(reactor.__class__))
@@ -146,11 +144,8 @@ if __name__ == '__main__':
 
     # run WAMP application component
     from autobahn.twisted.wamp import ApplicationRunner
-    router = args.router or u'ws://127.0.0.1:8080'
-
-    runner = ApplicationRunner(router, u"realm1",
-                               extra={'port': args.port, 'baudrate': args.baudrate},
-                               standalone=not args.router)
+    runner = ApplicationRunner(args.router, args.realm,
+                               extra={'port': args.port, 'baudrate': args.baudrate})
 
     # start the component and the Twisted reactor ..
     runner.run(McuComponent)

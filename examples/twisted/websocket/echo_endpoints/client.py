@@ -84,7 +84,7 @@ if __name__ == '__main__':
     log.startLogging(sys.stdout)
 
     # we use an Autobahn utility to import the "best" available Twisted reactor
-    from autobahn.choosereactor import install_reactor
+    from autobahn.twisted.choosereactor import install_reactor
     reactor = install_reactor()
     print("Running on reactor {}".format(reactor))
 

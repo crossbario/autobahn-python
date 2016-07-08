@@ -1,29 +1,16 @@
 |AbL|
 =====
 
+| |Version| |Downloads| |Build Status| |Coverage| |Docs|
+
+--------------
+
 *Open-source (MIT) real-time framework for Web, Mobile & Internet of Things.*
-
-Latest release: v\ |version| (:ref:`changelog`)
-
-.. ifconfig:: not no_network
-
-   .. raw:: html
-
-      <p>
-         <a href="https://travis-ci.org/crossbario/autobahn-python">
-            <img src="https://img.shields.io/pypi/v/autobahn.svg" alt="Build Status" />
-         </a>
-         <a href="https://pypi.python.org/pypi/autobahn">
-            <img src="https://img.shields.io/pypi/dm/autobahn.svg" alt="Downloads" />
-         </a>
-      </p>
-
------
 
 |AbL| is part of the `Autobahn`_ project and provides open-source implementations of
 
-* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`_
-* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`_
+* `The WebSocket Protocol <http://tools.ietf.org/html/rfc6455>`__
+* `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`__
 
 in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
 
@@ -50,7 +37,7 @@ See :ref:`site_contents` for a full site-map. Top-level pages available:
 Autobahn Features
 -----------------
 
-WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP <http://wamp.ws/>`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`_ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
+`WebSocket`_ allows `bidirectional real-time messaging <http://crossbario.com/blog/post/websocket-why-what-can-i-use-it/>`_ on the Web while `WAMP`_ provides applications with `high-level communication abstractions <http://wamp.ws/why/>`__ (remote procedure calling and publish/subscribe) in an open standard WebSocket-based protocol.
 
 |AbL| features:
 
@@ -59,10 +46,10 @@ WebSocket allows `bidirectional real-time messaging <http://crossbario.com/blog/
 * runs on `CPython`_, `PyPy`_ and `Jython`_
 * runs under `Twisted`_ and `asyncio`_
 * implements WebSocket `RFC6455`_ (and draft versions Hybi-10+)
-* implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`_
+* implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
 * implements `WAMP`_, the Web Application Messaging Protocol
 * supports TLS (secure WebSocket) and proxies
-* Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`_)
+* Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
 
 ...and much more.
 
@@ -242,3 +229,25 @@ Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
    reference/autobahn
    contribute
    changelog
+
+
+.. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
+   :target: https://pypi.python.org/pypi/autobahn
+
+.. |Downloads| image:: https://img.shields.io/pypi/dm/autobahn.svg
+   :target: https://pypi.python.org/pypi/autobahn
+
+.. |GitHub Stars| image:: https://img.shields.io/github/stars/crossbario/autobahn-python.svg?style=social&label=Star
+   :target: https://github.com/crossbario/autobahn-python
+
+.. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
+   :target: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+
+.. |Build Status| image:: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master
+   :target: https://travis-ci.org/crossbario/autobahn-python
+
+.. |Coverage| image:: https://img.shields.io/codecov/c/github/crossbario/autobahn-python/master.svg
+   :target: https://codecov.io/github/crossbario/autobahn-python
+
+.. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
+   :target: http://autobahn.readthedocs.org/en/latest/

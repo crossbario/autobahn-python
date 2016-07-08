@@ -11,7 +11,7 @@
 
             var wsuri;
             var wsproto;
-            
+
             if (window.location.protocol === "https:") {
                wsproto = "wss";
             } else {
@@ -29,7 +29,6 @@
                sock = new MozWebSocket(wsuri);
             } else {
                log("Browser does not support WebSocket!");
-               window.location = "http://autobahn.ws/unsupportedbrowser";
             }
 
             if (sock) {

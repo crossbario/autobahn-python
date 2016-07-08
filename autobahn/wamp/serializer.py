@@ -243,11 +243,12 @@ class JsonSerializer(Serializer):
 ISerializer.register(JsonSerializer)
 
 
-#
-# MsgPack serialization depends on the `msgpack` package being available
+# MsgPack serialization depends on the `u-msgpack` package being available
+# https://pypi.python.org/pypi/u-msgpack-python
+# https://github.com/vsergeev/u-msgpack-python
 #
 try:
-    import msgpack
+    import umsgpack
 except ImportError:
     pass
 else:
@@ -259,15 +260,8 @@ else:
         Flag that indicates whether this serializer needs a binary clean transport.
         """
 
-        ENABLE_V5 = True
-        """
-        Enable version 5 of the MsgPack specification (which differentiates
-        between strings and binary).
-        """
-
         def __init__(self, batched=False):
             """
-            Ctor.
 
             :param batched: Flag that controls whether serializer operates in batched mode.
             :type batched: bool
@@ -278,7 +272,7 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
             """
-            data = msgpack.packb(obj, use_bin_type=self.ENABLE_V5)
+            data = umsgpack.packb(obj)
             if self._batched:
                 return struct.pack("!L", len(data)) + data
             else:
@@ -288,22 +282,6 @@ else:
             """
             Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
             """
-
-            def ensure_string_keys(d):
-                """
-                under python 2, with use_bin_type=True, most dict keys end up
-                getting encoded as bytes (any syntax except {u"key":
-                u"value"}) so instead of recursively looking through
-                everything that's getting serialized, we fix them up
-                on the way out using msgpack's `object_hook` as
-                there's no corresponding hook for serialization...
-                """
-                for (k, v) in six.iteritems(d):
-                    if not isinstance(k, six.text_type):
-                        newk = six.text_type(k, encoding='utf8')
-                        del d[k]
-                        d[newk] = v
-                return d
 
             if self._batched:
                 msgs = []
@@ -321,13 +299,7 @@ else:
                     data = payload[i + 4:i + 4 + l]
 
                     # append parsed raw message
-                    msgs.append(
-                        msgpack.unpackb(
-                            data,
-                            encoding='utf-8',
-                            object_hook=ensure_string_keys,
-                        )
-                    )
+                    msgs.append(umsgpack.unpackb(data))
 
                     # advance until everything consumed
                     i = i + 4 + l
@@ -337,11 +309,7 @@ else:
                 return msgs
 
             else:
-                unpacked = msgpack.unpackb(
-                    payload,
-                    encoding='utf-8',
-                    object_hook=ensure_string_keys,
-                )
+                unpacked = umsgpack.unpackb(payload)
                 return [unpacked]
 
     IObjectSerializer.register(MsgPackObjectSerializer)

@@ -19,10 +19,6 @@ in your browser.
 
 Click to install the server certificate and start the echo client example.
 
-To activate debug output on the server, start it
-
-    python server.py debug
-
 This will show up all WAMP messages exchanged between clients and server.
 
 To run the Python client, do

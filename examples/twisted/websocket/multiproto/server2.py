@@ -72,9 +72,10 @@ if __name__ == '__main__':
     # Establish a dummy root resource
     root = Data("", "text/plain")
 
-    # and our WebSocket servers under different paths ..
-    root.putChild("echo1", resource1)
-    root.putChild("echo2", resource2)
+    # and our WebSocket servers under different paths .. (note that
+    # Twisted uses bytes for URIs)
+    root.putChild(b"echo1", resource1)
+    root.putChild(b"echo2", resource2)
 
     # both under one Twisted Web Site
     site = Site(root)

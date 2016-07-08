@@ -37,7 +37,7 @@ setup(
     description='Autobahn WebSocket Echo Service',
     long_description=LONGDESC,
     author='Tavendo GmbH',
-    url='http://autobahn.ws/python',
+    url='http://crossbar.io/autobahn',
     platforms=('Any'),
     install_requires=['Twisted>=Twisted-12.2',
                       'Autobahn>=0.5.9'],

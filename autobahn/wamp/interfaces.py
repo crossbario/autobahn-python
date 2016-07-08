@@ -299,8 +299,10 @@ class ISession(object):
         """
         Actively close this WAMP session.
 
-        :param reason: An optional URI for the closing reason.
+        :param reason: An optional URI for the closing reason. If you
+            want to permanently log out, this should be `wamp.close.logout`
         :type reason: str
+
         :param message: An optional (human readable) closing message, intended for
                         logging purposes.
         :type message: str

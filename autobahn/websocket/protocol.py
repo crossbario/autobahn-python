@@ -74,6 +74,83 @@ __all__ = ("ConnectionRequest",
            "WebSocketClientFactory")
 
 
+def _url_to_origin(url):
+    """
+    Given an RFC6455 Origin URL, this returns the (scheme, host, port)
+    triple. If there's no port, and the scheme isn't http or https
+    then port will be None
+    """
+    if url.lower() == 'null':
+        return 'null'
+
+    res = urllib.parse.urlsplit(url)
+    scheme = res.scheme.lower()
+    if scheme == 'file':
+        # when browsing local files, Chrome sends file:// URLs,
+        # Firefox sends 'null'
+        return 'null'
+
+    host = res.hostname
+    port = res.port
+    if port is None:
+        try:
+            port = {'https': 443, 'http': 80}[scheme]
+        except KeyError:
+            port = None
+
+    if not host:
+        raise ValueError("No host part in Origin '{}'".format(url))
+    return scheme, host, port
+
+
+def _is_same_origin(websocket_origin, host_scheme, host_port, host_policy):
+    """
+    Internal helper. Returns True if the provided websocket_origin
+    triple should be considered valid given the provided policy and
+    expected host_port.
+
+    Currently, the policy is just the list of allowedOriginsPatterns
+    from the WebSocketProtocol instance. Schemes and ports are matched
+    first, and only if there is not a mismatch do we compare each
+    allowed-origin pattern against the host.
+    """
+
+    if websocket_origin == 'null':
+        # nothing is the same as the null origin
+        return False
+
+    if not isinstance(websocket_origin, tuple) or not len(websocket_origin) == 3:
+        raise ValueError("'websocket_origin' must be a 3-tuple")
+
+    (origin_scheme, origin_host, origin_port) = websocket_origin
+
+    # so, theoretically we should match on the 3-tuple of (scheme,
+    # origin, port) to follow the RFC. However, the existing API just
+    # allows you to pass a list of regular expressions that match
+    # against the Origin header -- so to keep that API working, we
+    # just match a reconstituted/sanitized Origin line against the
+    # regular expressions. We *do* explicitly match the scheme first,
+    # however!
+
+    # therefore, the default of "*" will still match everything (even
+    # if things are on weird ports). To be "actually secure" and pass
+    # explicit ports, you can put it in your matcher
+    # (e.g. "https://*.example.com:1234")
+
+    template = '{scheme}://{host}:{port}'
+    origin_header = template.format(
+        scheme=origin_scheme,
+        host=origin_host,
+        port=origin_port,
+    )
+    # so, this will be matching against e.g. "http://example.com:8080"
+    for origin_pattern in host_policy:
+        if origin_pattern.match(origin_header):
+            return True
+
+    return False
+
+
 class TrafficStats(object):
 
     def __init__(self):
@@ -453,6 +530,7 @@ class WebSocketProtocol(object):
                            'flashSocketPolicy',
                            'allowedOrigins',
                            'allowedOriginsPatterns',
+                           'allowNullOrigin',
                            'maxConnections']
     """
     Configuration attributes specific to servers.
@@ -469,6 +547,10 @@ class WebSocketProtocol(object):
     """
 
     log = txaio.make_logger()
+    _batched_timer = txaio.make_batched_timer(
+        bucket_seconds=0.200,
+        chunk_size=1000,
+    )
 
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
@@ -657,11 +739,10 @@ class WebSocketProtocol(object):
                 # When we are a client, the server should drop the TCP
                 # If that doesn't happen, we do. And that will set wasClean = False.
                 if self.serverConnectionDropTimeout > 0:
-                    call = txaio.call_later(
+                    self.serverConnectionDropTimeoutCall = txaio.call_later(
                         self.serverConnectionDropTimeout,
                         self.onServerConnectionDropTimeout,
                     )
-                    self.serverConnectionDropTimeoutCall = call
 
         elif self.state == WebSocketProtocol.STATE_OPEN:
             # The peer initiates a closing handshake, so we reply
@@ -969,13 +1050,16 @@ class WebSocketProtocol(object):
         self.openHandshakeTimeoutCall = None
         self.closeHandshakeTimeoutCall = None
 
-        # set opening handshake timeout handler
-        if self.openHandshakeTimeout > 0:
-            self.openHandshakeTimeoutCall = txaio.call_later(self.openHandshakeTimeout, self.onOpenHandshakeTimeout)
-
         self.autoPingTimeoutCall = None
         self.autoPingPending = None
         self.autoPingPendingCall = None
+
+        # set opening handshake timeout handler
+        if self.openHandshakeTimeout > 0:
+            self.openHandshakeTimeoutCall = self._batched_timer.call_later(
+                self.openHandshakeTimeout,
+                self.onOpenHandshakeTimeout,
+            )
 
     def _connectionLost(self, reason):
         """
@@ -1643,7 +1727,10 @@ class WebSocketProtocol(object):
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
-                            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+                            self.autoPingPendingCall = self._batched_timer.call_later(
+                                self.autoPingInterval,
+                                self._sendAutoPing,
+                            )
                     else:
                         self.log.debug("Auto ping/pong: received non-pending pong")
                 except:
@@ -1782,7 +1869,10 @@ class WebSocketProtocol(object):
                 "Expecting ping in {seconds} seconds for auto-ping/pong",
                 seconds=self.autoPingTimeout,
             )
-            self.autoPingTimeoutCall = txaio.call_later(self.autoPingTimeout, self.onAutoPingTimeout)
+            self.autoPingTimeoutCall = self._batched_timer.call_later(
+                self.autoPingTimeout,
+                self.onAutoPingTimeout,
+            )
 
     def sendPong(self, payload=None):
         """
@@ -1833,7 +1923,10 @@ class WebSocketProtocol(object):
 
             # drop connection when timeout on receiving close handshake reply
             if self.closedByMe and self.closeHandshakeTimeout > 0:
-                self.closeHandshakeTimeoutCall = txaio.call_later(self.closeHandshakeTimeout, self.onCloseHandshakeTimeout)
+                self.closeHandshakeTimeoutCall = self._batched_timer.call_later(
+                    self.closeHandshakeTimeout,
+                    self.onCloseHandshakeTimeout,
+                )
 
         else:
             raise Exception("logic error")
@@ -2447,11 +2540,11 @@ class WebSocketServerProtocol(WebSocketProtocol):
                     if 'redirect' in self.http_request_params and len(self.http_request_params['redirect']) > 0:
                         # To specify an URL for redirection, encode the URL, i.e. from JavaScript:
                         #
-                        # var url = encodeURIComponent("http://autobahn.ws/python");
+                        # var url = encodeURIComponent("http://crossbar.io/autobahn");
                         #
                         # and append the encoded string as a query parameter 'redirect'
                         #
-                        # http://localhost:9000?redirect=http%3A%2F%2Fautobahn.ws%2Fpython
+                        # http://localhost:9000?redirect=http%3A%2F%2Fcrossbar.io%2Fautobahn
                         # https://localhost:9000?redirect=https%3A%2F%2Ftwitter.com%2F
                         #
                         # This will perform an immediate HTTP-303 redirection. If you provide
@@ -2562,19 +2655,32 @@ class WebSocketServerProtocol(WebSocketProtocol):
                 if http_headers_cnt[websocket_origin_header_key] > 1:
                     return self.failHandshake("HTTP Origin header appears more than once in opening handshake request")
                 self.websocket_origin = self.http_headers[websocket_origin_header_key].strip()
+                try:
+                    origin_tuple = _url_to_origin(self.websocket_origin)
+                except ValueError as e:
+                    return self.failHandshake(
+                        "HTTP Origin header invalid: {}".format(e)
+                    )
+                have_origin = True
             else:
                 # non-browser clients are allowed to omit this header
-                pass
+                have_origin = False
 
-            # check allowed WebSocket origins
-            #
-            origin_is_allowed = False
-            for origin_pattern in self.allowedOriginsPatterns:
-                if origin_pattern.match(self.websocket_origin):
+            if have_origin:
+                if origin_tuple == 'null' and self.factory.allowNullOrigin:
                     origin_is_allowed = True
-                    break
-            if not origin_is_allowed:
-                return self.failHandshake("WebSocket connection denied: origin '{0}' not allowed".format(self.websocket_origin))
+                else:
+                    origin_is_allowed = _is_same_origin(
+                        origin_tuple,
+                        'https' if self.factory.isSecure else 'http',
+                        self.factory.externalPort or self.factory.port,
+                        self.allowedOriginsPatterns,
+                    )
+                if not origin_is_allowed:
+                    return self.failHandshake(
+                        "WebSocket connection denied: origin '{0}' "
+                        "not allowed".format(self.websocket_origin)
+                    )
 
             # Sec-WebSocket-Key
             #
@@ -2740,10 +2846,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
         #
         response = "HTTP/1.1 101 Switching Protocols\x0d\x0a"
 
-        if self.factory.server is not None and self.factory.server != "":
+        if self.factory.server:
             response += "Server: %s\x0d\x0a" % self.factory.server
-
-        response += "X-Powered-By: AutobahnPython/{0}\x0d\x0a".format(__version__)
 
         response += "Upgrade: WebSocket\x0d\x0a"
         response += "Connection: Upgrade\x0d\x0a"
@@ -2820,7 +2924,10 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # automatic ping/pong
         #
         if self.autoPingInterval:
-            self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+            self.autoPingPendingCall = self._batched_timer.call_later(
+                self.autoPingInterval,
+                self._sendAutoPing,
+            )
 
         # fire handler on derived class
         #
@@ -2917,7 +3024,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
       <p>
          For more information, please see:
          <ul>
-            <li><a href="http://autobahn.ws/python">AutobahnPython</a></li>
+            <li><a href="http://crossbar.io/autobahn">Autobahn</a></li>
          </ul>
       </p>
    </body>
@@ -3063,6 +3170,7 @@ class WebSocketServerFactory(WebSocketFactory):
         # check WebSocket origin against this list
         self.allowedOrigins = ["*"]
         self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
+        self.allowNullOrigin = True
 
         # maximum number of concurrent connections
         self.maxConnections = 0
@@ -3089,6 +3197,7 @@ class WebSocketServerFactory(WebSocketFactory):
                            serveFlashSocketPolicy=None,
                            flashSocketPolicy=None,
                            allowedOrigins=None,
+                           allowNullOrigin=False,
                            maxConnections=None):
         """
         Set WebSocket protocol options used as defaults for new protocol instances.
@@ -3136,8 +3245,13 @@ class WebSocketServerFactory(WebSocketFactory):
         :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
            and when Flash tried to connect to the destination port. It must end with a null character.
         :type flashSocketPolicy: str or None
+
         :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
         :type allowedOrigins: list or None
+
+        :param allowNullOrigin: if True, allow WebSocket connections whose `Origin:` is `"null"`.
+        :type allowNullOrigin: bool
+
         :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
         :type maxConnections: int or None
         """
@@ -3210,6 +3324,10 @@ class WebSocketServerFactory(WebSocketFactory):
         if allowedOrigins is not None and allowedOrigins != self.allowedOrigins:
             self.allowedOrigins = allowedOrigins
             self.allowedOriginsPatterns = wildcards2patterns(self.allowedOrigins)
+
+        if allowNullOrigin not in [True, False]:
+            raise ValueError('allowNullOrigin must be a bool')
+        self.allowNullOrigin = allowNullOrigin
 
         if maxConnections is not None and maxConnections != self.maxConnections:
             assert(type(maxConnections) in six.integer_types)
@@ -3627,7 +3745,10 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # automatic ping/pong
             #
             if self.autoPingInterval:
-                self.autoPingPendingCall = txaio.call_later(self.autoPingInterval, self._sendAutoPing)
+                self.autoPingPendingCall = self._batched_timer.call_later(
+                    self.autoPingInterval,
+                    self._sendAutoPing,
+                )
 
             # we handle this symmetrical to server-side .. that is, give the
             # client a chance to bail out .. i.e. on no subprotocol selected
@@ -3713,8 +3834,6 @@ class WebSocketClientFactory(WebSocketFactory):
         :type headers: dict
         :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
         :type proxy: dict or None
-        :param debug: Debug mode (default: `False`).
-        :type debug: bool
         """
         self.logOctets = False
         self.logFrames = False

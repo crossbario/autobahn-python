@@ -20,10 +20,6 @@ and open
 
 in your browser.
 
-To activate debug output on the server:
-
-    python server.py debug
-
 To run the Python client
 
     python client.py ws://127.0.0.1:9000
@@ -31,9 +27,3 @@ To run the Python client
 or
 
     python client_coroutines.py ws://127.0.0.1:9000
-
-To activate debug output on the client
-
-    python client.py ws://127.0.0.1:9000 debug
-
-

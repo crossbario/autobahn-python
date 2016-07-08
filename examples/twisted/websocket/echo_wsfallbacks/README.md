@@ -25,10 +25,6 @@ and open
 
 in your browser. Open the JS console to see if the WebSocket connection was successful.
 
-To activate debug output on the server, start it
-
-    python server.py debug
-
 
 Here is a typical browser log when the Flash implementation kicks in:
 

@@ -23,10 +23,6 @@ and open
 
 in your browser.
 
-To activate debug output on the server, start it
-
-    python server.py debug
-
 To use the Python client, do
 
     python client.py

@@ -42,7 +42,7 @@ if __name__ == '__main__':
         print("Need the WebSocket server address, i.e. ws://127.0.0.1:9000")
         sys.exit(1)
 
-    factory = WebSocketClientFactory(sys.argv[1], debug=True)
+    factory = WebSocketClientFactory(sys.argv[1])
     factory.protocol = WebSocketClientProtocol
     connectWS(factory)
 

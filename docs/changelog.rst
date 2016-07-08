@@ -5,6 +5,33 @@
 Changelog
 =========
 
+0.14.2
+------
+
+* fix: `#691 <https://github.com/crossbario/autobahn-python/issues/691>`_ (**security**) If the `allowedOrigins` websocket option was set, the resulting matching was insufficient and would allow more origins than intended
+
+0.14.1
+------
+
+`Published 2016-05-26 <https://pypi.python.org/pypi/autobahn/0.14.1>`_
+
+* fix: unpinned Twisted version again
+* fix: remove X-Powered-By header
+* fix: removed decrecated args to ApplicationRunner
+
+0.14.0
+------
+
+`Published 2016-05-01 <https://pypi.python.org/pypi/autobahn/0.14.0>`_
+
+* new: use of batched/chunked timers to massively reduce CPU load with WebSocket auto-ping/pong
+* new: support new UBJSON WAMP serialization format
+* new: publish universal wheels
+* fix: replaced `msgpack-python` with `u-msgpack-python`
+* fix: some glitches with `eligible / exlude` when used with `authid / authrole`
+* fix: some logging glitches
+* fix: pin Twisted at 16.1.1 (for now)
+
 0.13.1
 ------
 

@@ -30,7 +30,7 @@ Testee
 
 `Twisted <https://github.com/crossbario/autobahn-python/blob/master/examples/twisted/websocket/testee>`__  / `asyncio <https://github.com/crossbario/autobahn-python/blob/master/examples/asyncio/websocket/testee>`__
 
-The example implements a *testee* for testing against `Autobahn|Testsuite <http://autobahn.ws/testsuite>`_.
+The example implements a *testee* for testing against `Autobahn|Testsuite <http://crossbar.io/autobahn#testsuite>`_.
 
 -----------
 

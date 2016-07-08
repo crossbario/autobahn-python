@@ -63,8 +63,8 @@ class PingServerProtocol(WebSocketServerProtocol):
 
 class PingServerFactory(WebSocketServerFactory):
 
-    def __init__(self, uri, debug):
-        WebSocketServerFactory.__init__(self, uri, debug=debug)
+    def __init__(self, uri):
+        WebSocketServerFactory.__init__(self, uri)
         self.pingsSent = {}
         self.pongsReceived = {}
 
@@ -76,8 +76,7 @@ if __name__ == '__main__':
     contextFactory = ssl.DefaultOpenSSLContextFactory('keys/server.key',
                                                       'keys/server.crt')
 
-    factory = PingServerFactory(u"wss://127.0.0.1:9000",
-                                debug='debug' in sys.argv)
+    factory = PingServerFactory(u"wss://127.0.0.1:9000")
 
     factory.protocol = PingServerProtocol
     listenWS(factory, contextFactory)
@@ -85,7 +84,8 @@ if __name__ == '__main__':
     resource = WebSocketResource(factory)
 
     root = File(".")
-    root.putChild(u"ws", resource)
+    # note that Twisted uses bytes for URLs, which mostly affects Python3
+    root.putChild(b"ws", resource)
     site = Site(root)
 
     reactor.listenSSL(8080, site, contextFactory)

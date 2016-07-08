@@ -176,7 +176,7 @@ Additionally, install [SCons](http://scons.org/).
 
 #### Test
 
-To generate and publish the documentation to [here](http://autobahn.ws/python/):
+To generate and publish the documentation to [here](http://autobahn-python.readthedocs.io/en/latest/):
 
 ```
 cd ~/scm/autobahn/AutobahnPython
@@ -190,7 +190,7 @@ and open [http://localhost:8080](http://localhost:8080).
 
 #### Publish
 
-To generate and publish the documentation to [here](http://autobahn.ws/python/):
+To generate and publish the documentation to [here](http://autobahn-python.readthedocs.io/en/latest/):
 
 ```
 cd ~/scm/autobahn/AutobahnPython
@@ -204,7 +204,7 @@ make publish
 
 ### WebSocket Test Reports
 
-[AutobahnTestsuite](http://autobahn.ws/testsuite/) provides a fully automated test suite to verify client and server implementations of the WebSocket Protocol for specification conformance and implementation robustness.
+[AutobahnTestsuite](http://crossbar.io/autobahn#testsuite) provides a fully automated test suite to verify client and server implementations of the WebSocket Protocol for specification conformance and implementation robustness.
 
 We use that to test AutobahnPython at the WebSocket level, both client and server mode.
 
@@ -312,8 +312,8 @@ aws --region eu-west-1 s3 sync \
 
 After the upload has finished, check the live pages:
 
-* [Client Mode Reports](http://autobahn.ws/python/testreport/clients/index.html)
-* [Server Mode Reports](http://autobahn.ws/python/testreport/servers/index.html)
+* [Client Mode Reports](http://autobahn-python.readthedocs.io/en/latest/testreport/clients/index.html)
+* [Server Mode Reports](http://autobahn-python.readthedocs.io/en/latest/testreport/servers/index.html)
 
 
 ## Roadmap

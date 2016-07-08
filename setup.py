@@ -44,7 +44,7 @@ PY3 = sys.version_info >= (3,)
 PY33 = (3, 3) <= sys.version_info < (3, 4)
 
 # read version string
-with open('autobahn/__init__.py') as f:
+with open('autobahn/_version.py') as f:
     exec(f.read())  # defines __version__
 
 # read package long description
@@ -54,8 +54,8 @@ with open('README.rst') as f:
 # Twisted dependencies (be careful bumping these minimal versions,
 # as we make claims to support older Twisted!)
 extras_require_twisted = [
-    "zope.interface>=4.1.3", # Zope Public License
-    "Twisted>=15.5"          # MIT license
+    "zope.interface>=3.6.0",        # Zope Public License
+    "Twisted>=12.1.0"               # MIT license
 ]
 
 # asyncio dependencies
@@ -81,10 +81,6 @@ if CPY and sys.platform != 'win32':
     extras_require_accelerate = [
         "wsaccel>=0.6.2"            # Apache 2.0
     ]
-
-    # ujson is broken on Windows (https://github.com/esnme/ultrajson/issues/184)
-    if sys.platform != 'win32':
-        extras_require_accelerate.append("ujson>=1.33")     # BSD license
 else:
     extras_require_accelerate = []
 
@@ -99,36 +95,41 @@ extras_require_compress = [
 # non-JSON WAMP serialization support (namely MsgPack, CBOR and UBJSON)
 os.environ['PYUBJSON_NO_EXTENSION'] = '1'  # enforce use of pure Python py-ubjson (no Cython)
 extras_require_serialization = [
-    "msgpack-python>=0.4.6",    # Apache 2.0 license
-    "cbor>=0.1.24",             # Apache 2.0 license
-    "py-ubjson>=0.8.3"          # Apache 2.0 license
+    "u-msgpack-python>=2.1",    # MIT license
+    "cbor>=1.0.0",              # Apache 2.0 license
+    "py-ubjson>=0.8.4"          # Apache 2.0 license
 ]
 
 # payload encryption (required for WAMP-cryptosign support!)
 os.environ['SODIUM_INSTALL'] = 'bundled'  # enforce use of bundled libsodium
 extras_require_encryption = [
-    'pynacl>=1.0',              # Apache license
+    'pynacl>=1.0.1',            # Apache license
     'pytrie>=0.2',              # BSD license
     'pyqrcode>=1.1'             # BSD license
 ]
 
 # everything
 extras_require_all = extras_require_twisted + extras_require_asyncio + \
-    extras_require_accelerate + extras_require_serialization + extras_require_encryption
+    extras_require_accelerate + extras_require_compress + \
+    extras_require_serialization + extras_require_encryption
 
 # extras_require_all += extras_require_compress
 
 # development dependencies
 extras_require_dev = [
     # flake8 will install the version "it needs"
-    # "pep8>=1.6.2",          # MIT license
-    "pep8-naming>=0.3.3",   # MIT license
-    "flake8>=2.5.1",        # MIT license
-    "pyflakes>=1.0.0",      # MIT license
-    "mock>=1.3.0",          # BSD license
-    "pytest>=2.8.6",        # MIT license
-    "unittest2>=1.1.0",     # BSD license
-    "twine>=1.6.5",         # Apache 2.0
+    # "pep8>=1.6.2",                      # MIT license
+    "pep8-naming>=0.3.3",               # MIT license
+    "flake8>=2.5.1",                    # MIT license
+    "pyflakes>=1.0.0",                  # MIT license
+    "mock>=1.3.0",                      # BSD license
+    "pytest>=2.8.6",                    # MIT license
+    "unittest2>=1.1.0",                 # BSD license
+    "twine>=1.6.5",                     # Apache 2.0
+    'sphinx>=1.2.3',                    # BSD
+    'pyenchant>=1.6.6',                 # LGPL
+    'sphinxcontrib-spelling>=2.1.2',    # BSD
+    'sphinx_rtd_theme>=0.1.9',          # BSD
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
@@ -167,11 +168,11 @@ setup(
     license='MIT License',
     author='Tavendo GmbH',
     author_email='autobahnws@googlegroups.com',
-    url='http://autobahn.ws/python',
+    url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
-        'txaio>=2.3.1',     # MIT license
+        'txaio>=2.5.1',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
@@ -189,6 +190,7 @@ setup(
     },
     packages=[
         'autobahn',
+        'autobahn.test',
         'autobahn.wamp',
         'autobahn.wamp.test',
         'autobahn.websocket',
@@ -197,6 +199,7 @@ setup(
         'autobahn.twisted',
         'twisted.plugins'
     ],
+    package_data={'autobahn.asyncio': ['test/*']},
     zip_safe=False,
     # http://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=["License :: OSI Approved :: MIT License",
@@ -222,7 +225,7 @@ setup(
                  "Topic :: Software Development :: Libraries",
                  "Topic :: Software Development :: Libraries :: Python Modules",
                  "Topic :: Software Development :: Object Brokering"],
-    keywords='autobahn autobahn.ws websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
+    keywords='autobahn crossbar websocket realtime rfc6455 wamp rpc pubsub twisted asyncio'
 )
 
 
