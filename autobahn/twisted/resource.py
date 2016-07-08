@@ -164,6 +164,5 @@ class WebSocketResource(object):
                 data += "%s: %s\x0d\x0a" % (h[0], ",".join(h[1]))
             data += "\x0d\x0a"
         protocol.dataReceived(data)
-        transport.resumeProducing()
 
         return NOT_DONE_YET
