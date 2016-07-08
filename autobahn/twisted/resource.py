@@ -29,6 +29,7 @@ from __future__ import absolute_import
 
 from zope.interface import implementer
 
+from twisted.internet.interfaces import IPushProducer
 from twisted.protocols.policies import ProtocolWrapper
 try:
     # noinspection PyUnresolvedReferences
@@ -127,6 +128,13 @@ class WebSocketResource(object):
         # Take over the transport from Twisted Web
         #
         transport, request.transport = request.transport, None
+
+        # see https://github.com/crossbario/autobahn-python/issues/701
+        if not IPushProducer.providedBy(transport):
+            raise RuntimeError(
+                "Internal error: we cannot properly claim control of a"
+                " transport that doesn't implement IPushProducer"
+            )
 
         # Connect the transport to our protocol. Once #3204 is fixed, there
         # may be a cleaner way of doing this.
