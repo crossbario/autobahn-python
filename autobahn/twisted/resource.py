@@ -128,12 +128,6 @@ class WebSocketResource(object):
         #
         transport, request.channel.transport = request.channel.transport, None
 
-        # On Twisted 16.3.0+, the transport is paused whilst the existing
-        # request is served; there won't be any requests after us so we can
-        # just resume this ourselves.
-        if hasattr(transport, "resumeProducing"):
-            transport.resumeProducing()
-
         # Connect the transport to our protocol. Once #3204 is fixed, there
         # may be a cleaner way of doing this.
         # http://twistedmatrix.com/trac/ticket/3204
@@ -144,6 +138,12 @@ class WebSocketResource(object):
         else:
             transport.protocol = protocol
         protocol.makeConnection(transport)
+
+        # On Twisted 16.3.0+, the transport is paused whilst the existing
+        # request is served; there won't be any requests after us so we can
+        # just resume this ourselves.
+        if hasattr(transport, "resumeProducing"):
+            transport.resumeProducing()
 
         # We recreate the request and forward the raw data. This is somewhat
         # silly (since Twisted Web already did the HTTP request parsing
