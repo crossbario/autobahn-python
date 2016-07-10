@@ -144,18 +144,16 @@ Here are quick templates for you to copy/paste for creating and running a WAMP c
 **asyncio**:
 
 .. code-block:: python
-    :emphasize-lines: 2
+    :emphasize-lines: 1
 
-    from asyncio import coroutine
     from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
     class MyComponent(ApplicationSession):
-        @coroutine
-        def onJoin(self, details):
+        async def onJoin(self, details):
             print("session joined")
             # can do subscribes, registers here e.g.:
-            # yield from self.subscribe(...)
-            # yield from self.register(...)
+            # await self.subscribe(...)
+            # await self.register(...)
 
     if __name__ == '__main__':
         runner = ApplicationRunner(url=u"ws://localhost:8080/ws", realm=u"realm1")
@@ -248,21 +246,19 @@ Using **asyncio**, the example looks like this:
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 13
+    :emphasize-lines: 11
 
     from autobahn.asyncio.wamp import ApplicationSession
-    from asyncio import coroutine
 
     class MyComponent(ApplicationSession):
-        @coroutine
-        def onJoin(self, details):
+        async def onJoin(self, details):
             print("session ready")
 
             def add2(x, y):
                 return x + y
 
             try:
-                yield from self.register(add2, u'com.myapp.add2')
+                await self.register(add2, u'com.myapp.add2')
                 print("procedure registered")
             except Exception as e:
                 print("could not register procedure: {0}".format(e))
@@ -270,8 +266,8 @@ Using **asyncio**, the example looks like this:
 The differences compared with the Twisted variant are:
 
 * the ``import`` of ``ApplicationSession``
-* the use of ``@coroutine`` to decorate co-routines
-* the use of ``yield from`` instead of ``yield``
+* the use of ``async`` keyword to declare co-routines
+* the use of ``await`` instead of ``yield``
 
 
 .. _calling-procedures:
@@ -306,19 +302,17 @@ And here is the same done on **asyncio**
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 11
+    :emphasize-lines: 9
 
     from autobahn.asyncio.wamp import ApplicationSession
-    from asyncio import coroutine
 
 
     class MyComponent(ApplicationSession):
-        @coroutine
-        def onJoin(self, details):
+        async def onJoin(self, details):
             print("session ready")
 
             try:
-                res = yield from self.call(u'com.myapp.add2', 2, 3)
+                res = await self.call(u'com.myapp.add2', 2, 3)
                 print("call result: {}".format(res))
             except Exception as e:
                 print("call error: {0}".format(e))
@@ -383,22 +377,20 @@ The corresponding **asyncio** code looks like this
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 14
+    :emphasize-lines: 12
 
     from autobahn.asyncio.wamp import ApplicationSession
-    from asyncio import coroutine
 
 
     class MyComponent(ApplicationSession):
-       @coroutine
-       def onJoin(self, details):
+       async def onJoin(self, details):
            print("session ready")
 
            def oncounter(count):
                print("event received: {0}", count)
 
            try:
-               yield from self.subscribe(oncounter, u'com.myapp.oncounter')
+               await self.subscribe(oncounter, u'com.myapp.oncounter')
                print("subscribed to topic")
            except Exception as e:
                print("could not subscribe to topic: {0}".format(e))
@@ -441,23 +433,21 @@ The corresponding **asyncio** code looks like this
 
 .. code-block:: python
     :linenos:
-    :emphasize-lines: 13
+    :emphasize-lines: 11
 
     from autobahn.asyncio.wamp import ApplicationSession
     from asyncio import sleep
-    from asyncio import coroutine
 
 
     class MyComponent(ApplicationSession):
-        @coroutine
-        def onJoin(self, details):
+        async def onJoin(self, details):
             print("session ready")
 
             counter = 0
             while True:
                 self.publish(u'com.myapp.oncounter', counter)
                 counter += 1
-                yield from sleep(1)
+                await sleep(1)
 
 
 .. tip::

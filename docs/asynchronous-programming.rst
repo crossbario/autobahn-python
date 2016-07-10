@@ -272,7 +272,7 @@ Have a look at the highlighted lines - here is what we do:
 
 .. note::
 
-   The reason ``returnValue`` is necessary goes deep into implementation details of Twisted and Python. In short: co-routines in Python 2 with Twisted are simulated using exceptions. Only Python 3.3+ has gotten native support for co-routines using the new yield from statement.
+   The reason ``returnValue`` is necessary goes deep into implementation details of Twisted and Python. In short: co-routines in Python 2 with Twisted are simulated using exceptions. Only Python 3.3+ has gotten native support for co-routines using the new yield from statement, Python 3.5+ use await statement and it is the new recommended method.
 
 In above, we are using a little helper :func:`autobahn.twisted.util.sleep` for sleeping "inline". The helper is really trivial:
 
@@ -298,7 +298,7 @@ Asyncio Futures and Coroutines
 
 On the other hand, asyncio futures are quite different from Twisted Deferreds. One difference is that they have no built-in machinery for chaining.
 
-`Asyncio Coroutines <http://docs.python.org/3.4/library/asyncio-task.html#coroutines>`__ are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
+`Asyncio Coroutines <http://docs.python.org/3.5/library/asyncio-task.html#coroutines>`__ are (on a certain level) quite similar to Twisted inline callbacks. Here is the code corresponding to our example above:
 
 
 -------
@@ -355,19 +355,17 @@ Now, when converted to ``asyncio.coroutine``, the code becomes:
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 3,5,6
+   :emphasize-lines: 3,4,5
 
    import asyncio
 
-   @asyncio.coroutine
-   def slow_square(x):
-      yield from asyncio.sleep(1)
+   async def slow_square(x):
+      await asyncio.sleep(1)
       return x * x
 
 
-   @asyncio.coroutine
-   def test():
-      res = yield from slow_square(3)
+   async def test():
+      res = await slow_square(3)
       print(res)
 
    loop = asyncio.get_event_loop()
@@ -375,9 +373,9 @@ Now, when converted to ``asyncio.coroutine``, the code becomes:
 
 The main differences (on surface) are:
 
-1. The use of the decorator ``@asyncio.coroutine`` (line 3) in asyncio versus ``@defer.inlineCallbacks`` with Twisted
+1. The declaration of the function with ``async`` keyword (line 3) in asyncio versus the decorator ``@defer.inlineCallbacks`` with Twisted
 2. The use of ``defer.returnValue`` in Twisted for returning values whereas in asyncio, you can use plain returns (line 6)
-3. The use of ``yield from`` in asyncio, versus plain ``yield`` in Twisted (line 5)
+3. The use of ``await`` in asyncio, versus ``yield`` in Twisted (line 5)
 4. The auxiliary code to get the event loop started and stopped
 
 Most of the examples that follow will show code for both Twisted and asyncio, unless the conversion is trivial.
