@@ -15,7 +15,7 @@ For example, here is how you call a remote procedure that takes no arguments and
    print(now)
 
 
-This is using `yield`, which assumes the context in that you run this code is a *co-routine* (something decorated with `defer.inlineDeferred` in Twisted or `asyncio.coroutine` in asyncio).
+This is using `yield`, which assumes the context in that you run this code is a *co-routine* (something decorated with `defer.inlineDeferred` in Twisted or declared with `async def` in asyncio).
 
 The same call using plain Twisted Deferreds would look like:
 
@@ -183,7 +183,7 @@ The direct asyncio equivalent of above would be:
 
    import functools
 
-   def print_sales(product, future):
+   async def print_sales(product, future):
       sales = future.result()
       print("Sales {}: {}".format(product, sales))
 
@@ -192,7 +192,7 @@ The direct asyncio equivalent of above would be:
       f = session.call("com.myapp.sales_by_product", product)
       f.add_done_callback(functools.partial(print_sales, product))
       fl.append(f)
-   yield from asyncio.gather(*fl)
+   await asyncio.gather(*fl)
 
 > Note: Part of the verbosity stems from the fact that, different from Twisted's `addCallback`, asyncio's `add_done_callback` sadly does not take and forward `args` and `kwargs` to the callback added.
 >
@@ -201,12 +201,12 @@ However, there is a better way, if we restructure the code a litte:
 
 .. code-block:: python
 
-   def get_and_print_sales(product):
-      sales = yield from session.call("com.myapp.sales_by_product", product)
+   async def get_and_print_sales(product):
+      sales = await session.call("com.myapp.sales_by_product", product)
       print("Sales {}: {}".format(product, sales))
 
    tasks = [get_and_print_sales(product) for product in ["product2", "product3", "product5"]]
-   yield from asyncio.wait(tasks)
+   await asyncio.wait(tasks)
 
 Calls with complex results
 ..........................
@@ -248,7 +248,7 @@ Using asyncio coroutines (`asyncio.coroutine`):
 .. code-block:: python
 
    try:
-      res = yield from session.call("com.calculator.sqrt", -1)
+      res = await session.call("com.calculator.sqrt", -1)
    except ApplicationError as err:
       print("Error: {}".format(err))
    else:
@@ -480,7 +480,7 @@ In asyncio, use
 
 .. code-block:: python
 
-   registrations = yield from asyncio.gather(*session.register(calc))
+   registrations = await asyncio.gather(*session.register(calc))
 
 to yield a list of registrations.
 
