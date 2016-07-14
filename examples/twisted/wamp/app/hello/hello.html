@@ -3,12 +3,12 @@
    <body>
       <h1>Hello WAMP</h1>
       <p>Open JavaScript console to watch output.</p>
-      <script src="autobahn.min.js"></script>
 
+      <script src="https://autobahn.s3.amazonaws.com/autobahnjs/latest/autobahn.min.jgz"></script>
       <script>
          var connection = new autobahn.Connection({
             url: "ws://127.0.0.1:8080/ws",
-            realm: 'realm1'
+            realm: "crossbardemo"
          });
 
          connection.onopen = function (session) {
