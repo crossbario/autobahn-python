@@ -25,6 +25,7 @@
 ###############################################################################
 
 import six
+from os import environ
 
 from twisted.internet.defer import inlineCallbacks
 from twisted.internet.serialport import SerialPort
@@ -115,11 +116,12 @@ if __name__ == '__main__':
     parser.add_argument("--web", type=int, default=8000,
                         help='Web port to use for embedded Web server. Use 0 to disable.')
 
-    parser.add_argument("--router", type=six.text_type, default=u'ws://localhost:8080/ws',
-                        help='WAMP router URL (a WAMP-over-WebSocket endpoint, default: "ws://localhost:8080/ws")')
+    router_default = environ.get("AUTOBAHN_DEMO_ROUTER", u"ws://127.0.0.1:8080/ws")
+    parser.add_argument("--router", type=six.text_type, default=router_default,
+                        help='WAMP router URL (a WAMP-over-WebSocket endpoint, default: "{}")'.format(router_default))
 
-    parser.add_argument("--realm", type=six.text_type, default=u'realm1',
-                        help='WAMP realm to join (default: "realm1")')
+    parser.add_argument("--realm", type=six.text_type, default=u'crossbardemo',
+                        help='WAMP realm to join (default: "crossbardemo")')
 
     args = parser.parse_args()
 
