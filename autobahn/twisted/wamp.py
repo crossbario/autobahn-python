@@ -30,7 +30,8 @@ import inspect
 
 import six
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.application.internet import ClientService, backoffPolicy
+from twisted.internet.defer import inlineCallbacks, succeed
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
@@ -135,7 +136,7 @@ class ApplicationRunner(object):
         """
         Run the application component.
 
-        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+        :param make: A factory that produces instances of :class:`autobahn.twisted.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
 
@@ -186,6 +187,29 @@ class ApplicationRunner(object):
         # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
         transport_factory.noisy = False
 
+        # as the reactor shuts down, we wish to wait until we've sent
+        # out our "Goodbye" message; leave() returns a Deferred that
+        # fires when the transport gets to STATE_CLOSED
+        def cleanup(proto):
+            if hasattr(proto, '_session') and proto._session is not None:
+                if proto._session.is_attached():
+                    return proto._session.leave()
+                elif proto._session.is_connected():
+                    return proto._session.disconnect()
+
+        # when our proto was created and connected, make sure it's cleaned
+        # up properly later on when the reactor shuts down for whatever reason
+        def init_proto(proto):
+            reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
+            return proto
+
+        _buildProtocol = transport_factory.buildProtocol
+
+        def buildProtocol(addr):
+            proto = _buildProtocol(addr)
+            init_proto(proto)
+            return proto
+
         # if user passed ssl= but isn't using isSecure, we'll never
         # use the ssl argument which makes no sense.
         context_factory = None
@@ -213,54 +237,16 @@ class ApplicationRunner(object):
             from twisted.internet.endpoints import TCP4ClientEndpoint
             client = TCP4ClientEndpoint(reactor, host, port)
 
-        d = client.connect(transport_factory)
+        # https://twistedmatrix.com/documents/current/core/howto/endpoints.html#persistent-client-connections
+        # https://twistedmatrix.com/documents/current/api/twisted.application.internet.ClientService.html
+        retryPolicy = backoffPolicy(initialDelay=1.0, maxDelay=60.0, factor=1.5)
+        svc = ClientService(client, transport_factory, retryPolicy=retryPolicy)
+        svc.startService()
 
-        # as the reactor shuts down, we wish to wait until we've sent
-        # out our "Goodbye" message; leave() returns a Deferred that
-        # fires when the transport gets to STATE_CLOSED
-        def cleanup(proto):
-            if hasattr(proto, '_session') and proto._session is not None:
-                if proto._session.is_attached():
-                    return proto._session.leave()
-                elif proto._session.is_connected():
-                    return proto._session.disconnect()
-
-        # when our proto was created and connected, make sure it's cleaned
-        # up properly later on when the reactor shuts down for whatever reason
-        def init_proto(proto):
-            reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
-            return proto
-
-        # if we connect successfully, the arg is a WampWebSocketClientProtocol
-        d.addCallback(init_proto)
-
-        # if the user didn't ask us to start the reactor, then they
-        # get to deal with any connect errors themselves.
         if start_reactor:
-            # if an error happens in the connect(), we save the underlying
-            # exception so that after the event-loop exits we can re-raise
-            # it to the caller.
-
-            class ErrorCollector(object):
-                exception = None
-
-                def __call__(self, failure):
-                    self.exception = failure.value
-                    reactor.stop()
-            connect_error = ErrorCollector()
-            d.addErrback(connect_error)
-
-            # now enter the Twisted reactor loop
             reactor.run()
-
-            # if we exited due to a connection error, raise that to the
-            # caller
-            if connect_error.exception:
-                raise connect_error.exception
-
         else:
-            # let the caller handle any errors
-            return d
+            return svc.whenConnected()
 
 
 class _ApplicationSession(ApplicationSession):
