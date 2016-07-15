@@ -162,22 +162,25 @@ class ApplicationRunner(object):
 
         isSecure, host, port, resource, path, params = parse_url(self.url)
 
-        # factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            try:
-                session = make(cfg)
-            except Exception as e:
-                if start_reactor:
-                    # the app component could not be created .. fatal
-                    self.log.error("{err}", err=e)
-                    reactor.stop()
+        if callable(make):
+            # factory for use ApplicationSession
+            def create():
+                cfg = ComponentConfig(self.realm, self.extra)
+                try:
+                    session = make(cfg)
+                except Exception as e:
+                    if start_reactor:
+                        # the app component could not be created .. fatal
+                        self.log.error("{err}", err=e)
+                        reactor.stop()
+                    else:
+                        # if we didn't start the reactor, it's up to the
+                        # caller to deal with errors
+                        raise
                 else:
-                    # if we didn't start the reactor, it's up to the
-                    # caller to deal with errors
-                    raise
-            else:
-                return session
+                    return session
+        else:
+            create = make
 
         # create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
