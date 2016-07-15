@@ -415,8 +415,10 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
            :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
         """
-        assert(callable(factory))
-        self._factory = factory
+        if callable(factory):
+            self._factory = factory
+        else:
+            self._factory = lambda: factory
 
         if serializers is None:
             serializers = get_serializes()
@@ -444,8 +446,10 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
            :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializer: obj
         """
-        assert(callable(factory))
-        self._factory = factory
+        if callable(factory):
+            self._factory = factory
+        else:
+            self._factory = lambda: factory
 
         if serializer is None:
             serializers = get_serializes()

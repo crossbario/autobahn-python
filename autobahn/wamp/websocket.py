@@ -227,9 +227,10 @@ class WampWebSocketFactory(object):
            :class:`autobahn.wamp.interfaces.ISerializer`.
         :type serializers: list
         """
-        if not callable(factory):
-            raise Exception(u'factory must be a callable')
-        self._factory = factory
+        if callable(factory):
+            self._factory = factory
+        else:
+            self._factory = lambda: factory
 
         if serializers is None:
             serializers = []
