@@ -216,8 +216,6 @@ class ApplicationRunner(object):
             from twisted.internet.endpoints import TCP4ClientEndpoint
             client = TCP4ClientEndpoint(reactor, host, port)
 
-        d = client.connect(transport_factory)
-
         # as the reactor shuts down, we wish to wait until we've sent
         # out our "Goodbye" message; leave() returns a Deferred that
         # fires when the transport gets to STATE_CLOSED
@@ -233,6 +231,24 @@ class ApplicationRunner(object):
         def init_proto(proto):
             reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
             return proto
+
+        try:
+            # since Twisted 16.1.0
+            from twisted.application.internet import ClientService
+            use_service = True
+        except ImportError:
+            use_service = False
+
+        if use_service:
+            self.log.debug('using t.a.i.ClientService')
+            # this is automatically reconnecting
+            service = ClientService(client, transport_factory)
+            service.startService()
+            d = service. whenConnected()
+        else:
+            # this is only connecting once!
+            self.log.debug('using t.i.e.connect()')
+            d = client.connect(transport_factory)
 
         # if we connect successfully, the arg is a WampWebSocketClientProtocol
         d.addCallback(init_proto)
