@@ -59,7 +59,7 @@ class MyAppSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    txaio.start_logging(level='debug')
+    txaio.start_logging(level='info')
 
     # create a WAMP session object. this is reused across multiple
     # reconnects (if automatically reconnected)

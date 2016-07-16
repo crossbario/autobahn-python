@@ -26,6 +26,8 @@
 
 from __future__ import absolute_import
 
+import txaio
+
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
@@ -33,8 +35,6 @@ from twisted.internet.error import ConnectionDone
 from autobahn.twisted.util import peer2str, transport_channel_id
 from autobahn.util import _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-
-import txaio
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -62,6 +62,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.peer = "?"
         else:
             self.peer = peer2str(peer)
+
+        # a Future/Deferred that fires when we hit STATE_CLOSED
+        self.is_closed = txaio.create_future()
 
         # this will hold an ApplicationSession object
         # once the RawSocket opening handshake has been
@@ -98,6 +101,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
 
     def connectionLost(self, reason):
         self.log.info("WampRawSocketProtocol: connection lost: reason = '{reason}'", reason=reason)
+        txaio.resolve(self.is_closed, self)
         try:
             wasClean = isinstance(reason.value, ConnectionDone)
             self._session.onClose(wasClean)

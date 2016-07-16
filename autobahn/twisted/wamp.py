@@ -607,7 +607,7 @@ if service:
             """
             Setup the application component.
             """
-            is_secure, host, port, resource, path, params = parse_url(self.url)
+            is_secure, host, port, resource, path, params = parse_ws_url(self.url)
 
             # factory for use ApplicationSession
             def create():
