@@ -129,6 +129,3 @@ def parse_url(url):
         raise Exception("invalid port {}".format(port))
 
     return parsed.scheme == "rss", parsed.hostname, port
-
-
-print create_url('crossbar.io', 9000, True)

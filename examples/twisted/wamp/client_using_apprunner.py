@@ -65,5 +65,9 @@ if __name__ == '__main__':
     # reconnects (if automatically reconnected)
     session = MyAppSession(ComponentConfig(u'realm1', {}))
 
-    runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
+    if False:
+        runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
+    else:
+        runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
+
     runner.run(session, auto_reconnect=True)

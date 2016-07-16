@@ -195,6 +195,8 @@ setup(
         'autobahn.wamp.test',
         'autobahn.websocket',
         'autobahn.websocket.test',
+        'autobahn.rawsocket',
+        'autobahn.rawsocket.test',
         'autobahn.asyncio',
         'autobahn.twisted',
         'twisted.plugins'

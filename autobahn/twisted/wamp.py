@@ -34,8 +34,10 @@ from twisted.internet.defer import inlineCallbacks
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.websocket.util import parse_url
+from autobahn.websocket.util import parse_url as parse_ws_url
+from autobahn.rawsocket.util import parse_url as parse_rs_url
 from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
 # new API
 # from autobahn.twisted.connection import Connection
@@ -160,8 +162,6 @@ class ApplicationRunner(object):
             txaio.config.loop = reactor
             txaio.start_logging(level='info')
 
-        isSecure, host, port, resource, path, params = parse_url(self.url)
-
         if callable(make):
             # factory for use ApplicationSession
             def create():
@@ -182,8 +182,19 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
+        if self.url.startswith(u'rs'):
+            # try to parse RawSocket URL ..
+            isSecure, host, port = parse_rs_url(self.url)
+
+            # create a WAMP-over-RawSocket transport client factory
+            transport_factory = WampRawSocketClientFactory(create)
+
+        else:
+            # try to parse WebSocket URL ..
+            isSecure, host, port, resource, path, params = parse_ws_url(self.url)
+
+            # create a WAMP-over-WebSocket transport client factory
+            transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
 
         # supress pointless log noise like
         # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
