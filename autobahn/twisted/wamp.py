@@ -131,7 +131,7 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
-    def run(self, make, start_reactor=True):
+    def run(self, make, start_reactor=True, auto_reconnect=False):
         """
         Run the application component.
 
@@ -232,12 +232,14 @@ class ApplicationRunner(object):
             reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
             return proto
 
-        try:
-            # since Twisted 16.1.0
-            from twisted.application.internet import ClientService
-            use_service = True
-        except ImportError:
-            use_service = False
+        use_service = False
+        if auto_reconnect:
+            try:
+                # since Twisted 16.1.0
+                from twisted.application.internet import ClientService
+                use_service = True
+            except ImportError:
+                use_service = False
 
         if use_service:
             self.log.debug('using t.a.i.ClientService')
