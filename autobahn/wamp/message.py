@@ -2665,7 +2665,7 @@ class Register(Message):
         if u'concurrency' in options:
 
             options_concurrency = options[u'concurrency']
-            if type(concurrency) not in six.integer_types:
+            if type(options_concurrency) not in six.integer_types:
                 raise ProtocolError("invalid type {0} for 'concurrency' option in REGISTER".format(type(options_concurrency)))
 
             if options_concurrency < 1:
