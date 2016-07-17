@@ -14,6 +14,13 @@ For examples using RPC, you need to run the backend first, so that procedures ar
 
 ## The Examples
 
+### Clients
+
+The following examples show two alternative ways of connecting a WAMP client to a WAMP router. This code is also a good starting point for own apps.
+
+ * [WAMP clients using AppRunner](client_using_apprunner.py)
+ * [WAMP clients using Twisted ClientService](client_using_clientservice.py)
+
 ### Overview Examples
  * [LoopingCall](overview): shows an alternative way of publishing periodically
 

@@ -55,7 +55,7 @@ with open('README.rst') as f:
 # as we make claims to support older Twisted!)
 extras_require_twisted = [
     "zope.interface>=3.6.0",        # Zope Public License
-    "Twisted >= 12.1.0, <= 16.1.1"  # MIT license
+    "Twisted >= 12.1.0"             # MIT license
 ]
 
 # asyncio dependencies
@@ -195,6 +195,8 @@ setup(
         'autobahn.wamp.test',
         'autobahn.websocket',
         'autobahn.websocket.test',
+        'autobahn.rawsocket',
+        'autobahn.rawsocket.test',
         'autobahn.asyncio',
         'autobahn.twisted',
         'twisted.plugins'

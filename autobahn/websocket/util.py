@@ -123,10 +123,10 @@ def parse_url(url):
     :returns: tuple -- A tuple (isSecure, host, port, resource, path, params)
     """
     parsed = urlparse.urlparse(url)
+    if parsed.scheme not in ["ws", "wss"]:
+        raise Exception("invalid WebSocket URL: protocol scheme '{}' is not for WebSocket".format(parsed.scheme))
     if not parsed.hostname or parsed.hostname == "":
         raise Exception("invalid WebSocket URL: missing hostname")
-    if parsed.scheme not in ["ws", "wss"]:
-        raise Exception("invalid WebSocket URL: bogus protocol scheme '%s'" % parsed.scheme)
     if parsed.port is None or parsed.port == "":
         if parsed.scheme == "ws":
             port = 80

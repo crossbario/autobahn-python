@@ -26,6 +26,8 @@
 
 from __future__ import absolute_import
 
+import txaio
+
 from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
@@ -33,8 +35,6 @@ from twisted.internet.error import ConnectionDone
 from autobahn.twisted.util import peer2str, transport_channel_id
 from autobahn.util import _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
-
-import txaio
 
 __all__ = (
     'WampRawSocketServerProtocol',
@@ -62,6 +62,9 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.peer = "?"
         else:
             self.peer = peer2str(peer)
+
+        # a Future/Deferred that fires when we hit STATE_CLOSED
+        self.is_closed = txaio.create_future()
 
         # this will hold an ApplicationSession object
         # once the RawSocket opening handshake has been
@@ -94,10 +97,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.log.warn("WampRawSocketProtocol: ApplicationSession constructor / onOpen raised ({err})", err=e)
             self.abort()
         else:
-            self.log.info("ApplicationSession started.")
+            self.log.debug("ApplicationSession started.")
 
     def connectionLost(self, reason):
-        self.log.info("WampRawSocketProtocol: connection lost: reason = '{reason}'", reason=reason)
+        self.log.debug("WampRawSocketProtocol: connection lost: reason = '{reason}'", reason=reason)
+        txaio.resolve(self.is_closed, self)
         try:
             wasClean = isinstance(reason.value, ConnectionDone)
             self._session.onClose(wasClean)
@@ -107,10 +111,10 @@ class WampRawSocketProtocol(Int32StringReceiver):
         self._session = None
 
     def stringReceived(self, payload):
-        self.log.debug("WampRawSocketProtocol: RX octets: {octets}", octets=_LazyHexFormatter(payload))
+        self.log.trace("WampRawSocketProtocol: RX octets: {octets}", octets=_LazyHexFormatter(payload))
         try:
             for msg in self._serializer.unserialize(payload):
-                self.log.debug("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
+                self.log.trace("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
@@ -126,7 +130,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.debug("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
+            self.log.trace("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
@@ -134,7 +138,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 raise SerializationError("WampRawSocketProtocol: unable to serialize WAMP application payload ({0})".format(e))
             else:
                 self.sendString(payload)
-                self.log.debug("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
+                self.log.trace("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
         else:
             raise TransportLost()
 

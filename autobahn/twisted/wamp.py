@@ -26,23 +26,25 @@
 
 from __future__ import absolute_import
 
+import six
 import inspect
 
-import six
+import txaio
+txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks
 
+from autobahn.websocket.util import parse_url as parse_ws_url
+from autobahn.rawsocket.util import parse_url as parse_rs_url
+
+from autobahn.twisted.websocket import WampWebSocketClientFactory
+from autobahn.twisted.rawsocket import WampRawSocketClientFactory
+
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
+
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
-from autobahn.websocket.util import parse_url
-from autobahn.twisted.websocket import WampWebSocketClientFactory
-
-# new API
-# from autobahn.twisted.connection import Connection
-
-import txaio
-txaio.use_twisted()
-
 
 __all__ = [
     'ApplicationSession',
@@ -131,7 +133,7 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
-    def run(self, make, start_reactor=True):
+    def run(self, make, start_reactor=True, auto_reconnect=False):
         """
         Run the application component.
 
@@ -160,8 +162,6 @@ class ApplicationRunner(object):
             txaio.config.loop = reactor
             txaio.start_logging(level='info')
 
-        isSecure, host, port, resource, path, params = parse_url(self.url)
-
         if callable(make):
             # factory for use ApplicationSession
             def create():
@@ -182,11 +182,47 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        # create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
+        if self.url.startswith(u'rs'):
+            # try to parse RawSocket URL ..
+            isSecure, host, port = parse_rs_url(self.url)
 
-        # supress pointless log noise like
-        # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
+            # create a WAMP-over-RawSocket transport client factory
+            transport_factory = WampRawSocketClientFactory(create)
+
+        else:
+            # try to parse WebSocket URL ..
+            isSecure, host, port, resource, path, params = parse_ws_url(self.url)
+
+            # create a WAMP-over-WebSocket transport client factory
+            transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
+
+            # client WebSocket settings - similar to:
+            # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
+            # - http://crossbar.io/docs/WebSocket-Options/#production-settings
+
+            # The permessage-deflate extensions offered to the server ..
+            offers = [PerMessageDeflateOffer()]
+
+            # Function to accept permessage_delate responses from the server ..
+            def accept(response):
+                if isinstance(response, PerMessageDeflateResponse):
+                    return PerMessageDeflateResponseAccept(response)
+
+            # set WebSocket options for all client connections
+            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
+                                                 maxMessagePayloadSize=1048576,
+                                                 autoFragmentSize=65536,
+                                                 failByDrop=False,
+                                                 openHandshakeTimeout=2.5,
+                                                 closeHandshakeTimeout=1.,
+                                                 tcpNoDelay=True,
+                                                 autoPingInterval=10.,
+                                                 autoPingTimeout=5.,
+                                                 autoPingSize=4,
+                                                 perMessageCompressionOffers=offers,
+                                                 perMessageCompressionAccept=accept)
+
+        # supress pointless log noise
         transport_factory.noisy = False
 
         # if user passed ssl= but isn't using isSecure, we'll never
@@ -216,8 +252,6 @@ class ApplicationRunner(object):
             from twisted.internet.endpoints import TCP4ClientEndpoint
             client = TCP4ClientEndpoint(reactor, host, port)
 
-        d = client.connect(transport_factory)
-
         # as the reactor shuts down, we wish to wait until we've sent
         # out our "Goodbye" message; leave() returns a Deferred that
         # fires when the transport gets to STATE_CLOSED
@@ -233,6 +267,26 @@ class ApplicationRunner(object):
         def init_proto(proto):
             reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
             return proto
+
+        use_service = False
+        if auto_reconnect:
+            try:
+                # since Twisted 16.1.0
+                from twisted.application.internet import ClientService
+                use_service = True
+            except ImportError:
+                use_service = False
+
+        if use_service:
+            self.log.debug('using t.a.i.ClientService')
+            # this is automatically reconnecting
+            service = ClientService(client, transport_factory)
+            service.startService()
+            d = service. whenConnected()
+        else:
+            # this is only connecting once!
+            self.log.debug('using t.i.e.connect()')
+            d = client.connect(transport_factory)
 
         # if we connect successfully, the arg is a WampWebSocketClientProtocol
         d.addCallback(init_proto)
@@ -578,7 +632,7 @@ if service:
             """
             Setup the application component.
             """
-            is_secure, host, port, resource, path, params = parse_url(self.url)
+            is_secure, host, port, resource, path, params = parse_ws_url(self.url)
 
             # factory for use ApplicationSession
             def create():
