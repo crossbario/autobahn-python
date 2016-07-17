@@ -540,10 +540,11 @@ class RegisterOptions(object):
     __slots__ = (
         'match',
         'invoke',
+        'concurrency',
         'details_arg',
     )
 
-    def __init__(self, match=None, invoke=None, details_arg=None):
+    def __init__(self, match=None, invoke=None, concurrency=None, details_arg=None):
         """
 
         :param details_arg: When invoking the endpoint, provide call details
@@ -552,10 +553,12 @@ class RegisterOptions(object):
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
+        assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
         assert(details_arg is None or type(details_arg) == str)
 
         self.match = match
         self.invoke = invoke
+        self.concurrency = concurrency
         self.details_arg = details_arg
 
     def message_attr(self):
@@ -570,10 +573,13 @@ class RegisterOptions(object):
         if self.invoke is not None:
             options[u'invoke'] = self.invoke
 
+        if self.concurrency is not None:
+            options[u'concurrency'] = self.concurrency
+
         return options
 
     def __str__(self):
-        return "RegisterOptions(match={0}, invoke={1}, details_arg={2})".format(self.match, self.invoke, self.details_arg)
+        return "RegisterOptions(match={0}, invoke={1}, concurrency={2}, details_arg={3})".format(self.match, self.invoke, self.concurrency, self.details_arg)
 
 
 class CallDetails(object):
