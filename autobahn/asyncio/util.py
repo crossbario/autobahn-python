@@ -1,36 +1,48 @@
-import binascii
+###############################################################################
+#
+# The MIT License (MIT)
+#
+# Copyright (c) Tavendo GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+###############################################################################
 
+from __future__ import absolute_import
 
-class _LazyHexFormatter(object):
-    """
-    This is used to avoid calling binascii.hexlify() on data given to
-    log.debug() calls unless debug is active (for example). Like::
-
-        self.log.debug(
-            "Some data: {octets}",
-            octets=_LazyHexFormatter(os.urandom(32)),
-        )
-    """
-    __slots__ = ('obj',)
-
-    def __init__(self, obj):
-        self.obj = obj
-
-    def __str__(self):
-        return binascii.hexlify(self.obj).decode('ascii')
+__all = (
+    'sleep',
+    'peer2str',
+)
 
 
 def peer2str(peer):
     if isinstance(peer, tuple):
         ip_ver = 4 if len(peer) == 2 else 6
-        return "tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
+        return u"tcp{2}:{0}:{1}".format(peer[0], peer[1], ip_ver)
     elif isinstance(peer, str):
-        return "unix:{0}".format(peer)
+        return u"unix:{0}".format(peer)
     else:
-        return "?:{0}".format(peer)
+        return u"?:{0}".format(peer)
 
 
-def get_serializes():
+def get_serializers():
     from autobahn.wamp import serializer
 
     serializers = ['CBORSerializer', 'MsgPackSerializer', 'UBJSONSerializer', 'JsonSerializer']
