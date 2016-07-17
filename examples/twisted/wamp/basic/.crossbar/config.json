@@ -45,7 +45,6 @@
                             "type": "websocket",
                             "options": {
                                 "enable_webstatus": true,
-                                "enable_hixie76": false,
                                 "max_frame_size": 1048576,
                                 "max_message_size": 1048576,
                                 "auto_fragment_size": 65536,
@@ -77,7 +76,6 @@
                             "type": "websocket",
                                 "options": {
                                     "enable_webstatus": true,
-                                    "enable_hixie76": false,
                                     "max_frame_size": 1048576,
                                     "max_message_size": 1048576,
                                     "auto_fragment_size": 65536,

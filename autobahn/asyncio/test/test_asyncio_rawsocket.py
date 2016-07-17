@@ -11,14 +11,14 @@ except ImportError:
     from mock import Mock, call
 from autobahn.asyncio.rawsocket import PrefixProtocol, RawSocketClientProtocol, RawSocketServerProtocol, \
     WampRawSocketClientFactory, WampRawSocketServerFactory
-from autobahn.asyncio.util import get_serializes
+from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
 
 
 class Test(TestCase):
 
     def test_sers(self):
-        serializers = get_serializes()
+        serializers = get_serializers()
         self.assertTrue(len(serializers) > 0)
         m = serializers[0]().serialize(message.Abort(u'close'))
         print(m)
