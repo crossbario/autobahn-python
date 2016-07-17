@@ -26,25 +26,25 @@
 
 from __future__ import absolute_import
 
+import six
 import inspect
 
-import six
+import txaio
+txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks
 
-from autobahn.wamp import protocol
-from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
+
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
-# new API
-# from autobahn.twisted.connection import Connection
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
-import txaio
-txaio.use_twisted()
-
+from autobahn.wamp import protocol
+from autobahn.wamp.types import ComponentConfig
 
 __all__ = [
     'ApplicationSession',
@@ -196,8 +196,33 @@ class ApplicationRunner(object):
             # create a WAMP-over-WebSocket transport client factory
             transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
 
-        # supress pointless log noise like
-        # "Starting factory <autobahn.twisted.websocket.WampWebSocketClientFactory object at 0x2b737b480e10>""
+            # client WebSocket settings - similar to:
+            # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
+            # - http://crossbar.io/docs/WebSocket-Options/#production-settings
+
+            # The permessage-deflate extensions offered to the server ..
+            offers = [PerMessageDeflateOffer()]
+
+            # Function to accept permessage_delate responses from the server ..
+            def accept(response):
+                if isinstance(response, PerMessageDeflateResponse):
+                    return PerMessageDeflateResponseAccept(response)
+
+            # set WebSocket options for all client connections
+            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
+                                                 maxMessagePayloadSize=1048576,
+                                                 autoFragmentSize=65536,
+                                                 failByDrop=False,
+                                                 openHandshakeTimeout=2.5,
+                                                 closeHandshakeTimeout=1.,
+                                                 tcpNoDelay=True,
+                                                 autoPingInterval=10.,
+                                                 autoPingTimeout=5.,
+                                                 autoPingSize=4,
+                                                 perMessageCompressionOffers=offers,
+                                                 perMessageCompressionAccept=accept)
+
+        # supress pointless log noise
         transport_factory.noisy = False
 
         # if user passed ssl= but isn't using isSecure, we'll never

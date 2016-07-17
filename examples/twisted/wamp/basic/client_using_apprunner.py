@@ -59,13 +59,14 @@ class MyAppSession(ApplicationSession):
 
 
 if __name__ == '__main__':
-    txaio.start_logging(level='info')
+    txaio.start_logging(level='debug')
 
     # create a WAMP session object. this is reused across multiple
     # reconnects (if automatically reconnected)
     session = MyAppSession(ComponentConfig(u'realm1', {}))
 
-    if False:
+    if True:
+#        runner = ApplicationRunner(u'ws://localhost:8080/twws', u'realm1')
         runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
     else:
         runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
