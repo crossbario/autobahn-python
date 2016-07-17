@@ -97,10 +97,10 @@ class WampRawSocketProtocol(Int32StringReceiver):
             self.log.warn("WampRawSocketProtocol: ApplicationSession constructor / onOpen raised ({err})", err=e)
             self.abort()
         else:
-            self.log.info("ApplicationSession started.")
+            self.log.debug("ApplicationSession started.")
 
     def connectionLost(self, reason):
-        self.log.info("WampRawSocketProtocol: connection lost: reason = '{reason}'", reason=reason)
+        self.log.debug("WampRawSocketProtocol: connection lost: reason = '{reason}'", reason=reason)
         txaio.resolve(self.is_closed, self)
         try:
             wasClean = isinstance(reason.value, ConnectionDone)
@@ -111,10 +111,10 @@ class WampRawSocketProtocol(Int32StringReceiver):
         self._session = None
 
     def stringReceived(self, payload):
-        self.log.debug("WampRawSocketProtocol: RX octets: {octets}", octets=_LazyHexFormatter(payload))
+        self.log.trace("WampRawSocketProtocol: RX octets: {octets}", octets=_LazyHexFormatter(payload))
         try:
             for msg in self._serializer.unserialize(payload):
-                self.log.debug("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
+                self.log.trace("WampRawSocketProtocol: RX WAMP message: {msg}", msg=msg)
                 self._session.onMessage(msg)
 
         except ProtocolError as e:
@@ -130,7 +130,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         Implements :func:`autobahn.wamp.interfaces.ITransport.send`
         """
         if self.isOpen():
-            self.log.debug("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
+            self.log.trace("WampRawSocketProtocol: TX WAMP message: {msg}", msg=msg)
             try:
                 payload, _ = self._serializer.serialize(msg)
             except Exception as e:
@@ -138,7 +138,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
                 raise SerializationError("WampRawSocketProtocol: unable to serialize WAMP application payload ({0})".format(e))
             else:
                 self.sendString(payload)
-                self.log.debug("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
+                self.log.trace("WampRawSocketProtocol: TX octets: {octets}", octets=_LazyHexFormatter(payload))
         else:
             raise TransportLost()
 

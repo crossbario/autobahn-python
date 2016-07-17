@@ -33,7 +33,7 @@
             ],
             "transports": [
                 {
-                    "type": "unisocket",
+                    "type": "universal",
                     "endpoint": {
                         "type": "tcp",
                         "port": 8080
@@ -41,7 +41,7 @@
                     "rawsocket": {
                     },
                     "websocket": {
-                        "/ws": {
+                        "ws": {
                             "type": "websocket",
                             "options": {
                                 "enable_webstatus": true,

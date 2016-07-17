@@ -37,7 +37,7 @@ class MyAppSession(ApplicationSession):
         yield self.register(add2, u'com.example.add2')
 
         for i in range(10):
-            res = yield self.call(u'com.example.add2', 23, i)
+            res = yield self.call(u'com.example.add2', 23, i * self._countdown)
             self.log.info('result: {}'.format(res))
 
         yield self.leave()
@@ -65,10 +65,13 @@ if __name__ == '__main__':
     # reconnects (if automatically reconnected)
     session = MyAppSession(ComponentConfig(u'realm1', {}))
 
-    if True:
-#        runner = ApplicationRunner(u'ws://localhost:8080/twws', u'realm1')
-        runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
-    else:
-        runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
+    # use WAMP-over-RawSocket
+    runner = ApplicationRunner(u'rs://localhost:8080', u'realm1')
+
+    # alternatively, use WAMP-over-WebSocket plain (standalone, not hooked in under Twisted Web)
+    #runner = ApplicationRunner(u'ws://localhost:8080/ws', u'realm1')
+
+    # alternatively, use WAMP-over-WebSocket running under Twisted Web (as a web resource)
+    #runner = ApplicationRunner(u'ws://localhost:8080/twws', u'realm1')
 
     runner.run(session, auto_reconnect=True)
