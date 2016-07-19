@@ -5,9 +5,20 @@
 Changelog
 =========
 
-0.14.2
+0.15.0
 ------
 
+`Published 2016-07-19 <https://pypi.python.org/pypi/autobahn/0.15.0`_
+
+* new: WAMP AP option: register with maximum concurrency
+* new: automatic reconnect for WAMP clients ApplicationRunner on Twisted
+* new: RawSocket support in WAMP clients using ApplicationRunner on Twisted
+* new: Set WebSocket production settings on WAMP clients using ApplicationRunner on Twisted
+* fix: `#715 <https://github.com/crossbario/autobahn-python/issues/715>`_ Py2/Py3 issue with WebSocket traffic logging
+* new: allow WAMP factories to take classes OR instances of ApplicationSession
+* fix: make WebSocketResource working on Twisted 16.3
+* fix: remove some minified AutobahnJS from examples (makes distro packagers happy)
+* new: WAMP-RawSocket transport for asyncio
 * fix: `#691 <https://github.com/crossbario/autobahn-python/issues/691>`_ (**security**) If the `allowedOrigins` websocket option was set, the resulting matching was insufficient and would allow more origins than intended
 
 0.14.1
