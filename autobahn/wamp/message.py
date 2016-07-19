@@ -2570,7 +2570,7 @@ class Register(Message):
     INVOKE_RANDOM = u'random'
     INVOKE_ALL = u'all'
 
-    def __init__(self, request, procedure, match=None, invoke=None):
+    def __init__(self, request, procedure, match=None, invoke=None, concurrency=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -2581,6 +2581,8 @@ class Register(Message):
         :type match: unicode
         :param invoke: The procedure invocation policy to be used for the registration.
         :type invoke: unicode
+        :param concurrency: The (maximum) concurrency to be used for the registration.
+        :type concurrency: int
         """
         assert(type(request) in six.integer_types)
         assert(type(procedure) == six.text_type)
@@ -2588,12 +2590,14 @@ class Register(Message):
         assert(match is None or match in [Register.MATCH_EXACT, Register.MATCH_PREFIX, Register.MATCH_WILDCARD])
         assert(invoke is None or type(invoke) == six.text_type)
         assert(invoke is None or invoke in [Register.INVOKE_SINGLE, Register.INVOKE_FIRST, Register.INVOKE_LAST, Register.INVOKE_ROUNDROBIN, Register.INVOKE_RANDOM])
+        assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
 
         Message.__init__(self)
         self.request = request
         self.procedure = procedure
         self.match = match or Register.MATCH_EXACT
         self.invoke = invoke or Register.INVOKE_SINGLE
+        self.concurrency = concurrency
 
     @staticmethod
     def parse(wmsg):
@@ -2617,6 +2621,7 @@ class Register(Message):
 
         match = Register.MATCH_EXACT
         invoke = Register.INVOKE_SINGLE
+        concurrency = None
 
         if u'match' in options:
 
@@ -2657,7 +2662,18 @@ class Register(Message):
 
             invoke = option_invoke
 
-        obj = Register(request, procedure, match=match, invoke=invoke)
+        if u'concurrency' in options:
+
+            options_concurrency = options[u'concurrency']
+            if type(options_concurrency) not in six.integer_types:
+                raise ProtocolError("invalid type {0} for 'concurrency' option in REGISTER".format(type(options_concurrency)))
+
+            if options_concurrency < 1:
+                raise ProtocolError("invalid value {0} for 'concurrency' option in REGISTER".format(options_concurrency))
+
+            concurrency = options_concurrency
+
+        obj = Register(request, procedure, match=match, invoke=invoke, concurrency=concurrency)
 
         return obj
 
@@ -2675,13 +2691,16 @@ class Register(Message):
         if self.invoke and self.invoke != Register.INVOKE_SINGLE:
             options[u'invoke'] = self.invoke
 
+        if self.concurrency:
+            options[u'concurrency'] = self.concurrency
+
         return [Register.MESSAGE_TYPE, self.request, options, self.procedure]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Register(request={0}, procedure={1}, match={2}, invoke={3})".format(self.request, self.procedure, self.match, self.invoke)
+        return u"Register(request={0}, procedure={1}, match={2}, invoke={3}, concurrency={4})".format(self.request, self.procedure, self.match, self.invoke, self.concurrency)
 
 
 class Registered(Message):
