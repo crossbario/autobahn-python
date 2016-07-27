@@ -282,7 +282,7 @@ class ApplicationRunner(object):
             # this is automatically reconnecting
             service = ClientService(client, transport_factory)
             service.startService()
-            d = service. whenConnected()
+            d = service.whenConnected()
         else:
             # this is only connecting once!
             self.log.debug('using t.i.e.connect()')
