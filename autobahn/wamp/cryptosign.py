@@ -129,6 +129,63 @@ def _read_ssh_ed25519_pubkey(keydata):
     return key
 
 
+def _read_signify_ed25519_signature(signature_file):
+    """
+    Read a Ed25519 signature file created with OpenBSD signify.
+
+    http://man.openbsd.org/OpenBSD-current/man1/signify.1
+    """
+    with open(signature_file) as f:
+        # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 64 octets Ed25519 signature
+        sig = binascii.a2b_base64(f.read().splitlines()[1])[10:]
+        if len(sig) != 64:
+            raise Exception('bogus Ed25519 signature: raw signature length was {}, but expected 64'.format(len(sig)))
+        return sig
+
+
+def _read_signify_ed25519_pubkey(pubkey_file):
+    """
+    Read a public key from a Ed25519 key pair created with OpenBSD signify.
+
+    http://man.openbsd.org/OpenBSD-current/man1/signify.1
+    """
+    with open(pubkey_file) as f:
+        # signature file format: 2nd line is base64 of 'Ed' || 8 random octets || 32 octets Ed25519 public key
+        pubkey = binascii.a2b_base64(f.read().splitlines()[1])[10:]
+        if len(pubkey) != 32:
+            raise Exception('bogus Ed25519 public key: raw key length was {}, but expected 32'.format(len(pubkey)))
+        return pubkey
+
+
+def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
+    """
+    Verify a Ed25519 signature created with OpenBSD signify.
+
+    This will raise a `nacl.exceptions.BadSignatureError` if the signature is bad
+    and return silently when the signature is good.
+
+    Usage:
+
+    1. Create a signature:
+
+        signify-openbsd -S -s ~/.signify/crossbario-trustroot.sec -m .profile
+
+    2. Verify the signature
+
+        from autobahn.wamp import cryptosign
+
+        with open('.profile', 'rb') as f:
+            message = f.read()
+            cryptosign._verify_signify_ed25519_signature('.signify/crossbario-trustroot.pub', '.profile.sig', message)
+
+    http://man.openbsd.org/OpenBSD-current/man1/signify.1
+    """
+    pubkey = _read_signify_ed25519_pubkey(pubkey_file)
+    verify_key = signing.VerifyKey(pubkey)
+    sig = _read_signify_ed25519_signature(signature_file)
+    verify_key.verify(message, sig)
+
+
 # SigningKey from
 #   - raw byte string or file with raw bytes
 #   - SSH private key string or key file
