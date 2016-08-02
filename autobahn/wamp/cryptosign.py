@@ -157,6 +157,47 @@ def _read_signify_ed25519_pubkey(pubkey_file):
         return pubkey
 
 
+def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode='text'):
+    """
+
+    Usage:
+
+    1. Get the OpenBSD 5.7 release public key from here
+
+        http://cvsweb.openbsd.org/cgi-bin/cvsweb/src/etc/signify/Attic/openbsd-57-base.pub?rev=1.1
+
+    2. Generate QR Code and print to terminal
+
+        print(cryptosign._qrcode_from_signify_ed25519_pubkey('openbsd-57-base.pub'))
+
+    3. Compare to (scroll down) QR code here
+
+        https://www.openbsd.org/papers/bsdcan-signify.html
+    """
+    assert(mode in ['text', 'svg'])
+
+    import pyqrcode
+
+    with open(pubkey_file) as f:
+        pubkey = f.read().splitlines()[1]
+
+        qr = pyqrcode.create(pubkey, error='L', mode='binary')
+
+        if mode == 'text':
+            return qr.terminal()
+
+        elif mode == 'svg':
+            import io
+            data_buffer = io.BytesIO()
+
+            data.svg(data_buffer, omithw=True)
+
+            return data_buffer.getvalue()
+
+        else:
+            raise Exception('logic error')
+
+
 def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
     """
     Verify a Ed25519 signature created with OpenBSD signify.
