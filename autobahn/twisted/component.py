@@ -289,7 +289,7 @@ class Component(component.Component):
     # XXX think: is it okay to use inlineCallbacks (in this
     # twisted-only file) even though we're using txaio?
     @inlineCallbacks
-    def start(self, reactor):
+    def start(self, reactor=None):
         """
         This starts the Component, which means it will start connecting
         (and re-connecting) to its configured transports. A Component
@@ -356,11 +356,14 @@ class Component(component.Component):
                         # information."
                         for (lib, fn, reason) in e.args[0]:
                             self.log.error(u"TLS failure: {reason}", reason=reason)
-                            self.log.error(u"Marking this transport as failed")
-                            transport.failed()
+                        self.log.error(u"Marking this transport as failed")
+                        transport.failed()
                     else:
                         f = txaio.create_failure()
-                        self.log.error(u'Connection failed: {error}', error=txaio.failure_message(f))
+                        self.log.error(
+                            u'Connection failed: {error}',
+                            error=txaio.failure_message(f),
+                        )
                         # some types of errors should probably have
                         # stacktraces logged immediately at error
                         # level, e.g. SyntaxError?
