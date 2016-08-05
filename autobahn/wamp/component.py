@@ -380,7 +380,7 @@ class Component(ObservableMixin):
 
                 # listen on leave events
                 def on_leave(session, details):
-                    self.log.info("session on_leave: {details}", details=details)
+                    self.log.debug("session on_leave: {details}", details=details)
                     # this could be a "leave" that's expected e.g. our
                     # main() exited, or it could be an error
                     if not txaio.is_called(done):
