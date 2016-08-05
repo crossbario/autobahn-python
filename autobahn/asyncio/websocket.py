@@ -199,7 +199,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         try:
             res = self.onConnect(request)
             if yields(res):
-                res = yield from res
+                asyncio.async(res)
         except ConnectionDeny as e:
             self.failHandshake(e.reason, e.code)
         except Exception as e:
