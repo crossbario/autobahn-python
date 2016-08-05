@@ -231,7 +231,7 @@ class Component(ObservableMixin):
         :param config: Session configuration.
         :type config: None or dict
 
-        :param realm: the realm to join (XXX move to transport config? or config, above?)
+        :param realm: the realm to join
         :type realm: unicode
 
         """
@@ -283,8 +283,6 @@ class Component(ObservableMixin):
             self._transports.append(Transport(idx, transport))
             idx += 1
 
-        # XXX decide if 'realm' is part of the transport config, or a
-        # Component 'global' parameter
         self._realm = realm
         self._extra = None  # XXX FIXME
 
