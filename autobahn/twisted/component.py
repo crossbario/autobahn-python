@@ -286,8 +286,8 @@ class Component(component.Component):
         return transport_endpoint.connect(transport_factory)
 
 
-# XXX fixme we can't use inlineCallbacks, can we? or can we because
-# we're in a "twisted-only" class?
+    # XXX think: is it okay to use inlineCallbacks (in this
+    # twisted-only file) even though we're using txaio?
     @inlineCallbacks
     def start(self, reactor):
         """
