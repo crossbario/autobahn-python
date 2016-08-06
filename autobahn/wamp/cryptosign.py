@@ -190,7 +190,7 @@ def _qrcode_from_signify_ed25519_pubkey(pubkey_file, mode='text'):
             import io
             data_buffer = io.BytesIO()
 
-            data.svg(data_buffer, omithw=True)
+            qr.svg(data_buffer, omithw=True)
 
             return data_buffer.getvalue()
 
