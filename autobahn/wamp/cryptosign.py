@@ -133,6 +133,34 @@ def _read_ssh_ed25519_pubkey(keydata):
     return key, comment
 
 
+class _SSHPacketReader:
+    """
+    Read OpenSSH packet format which is used for key material.
+    """
+
+    def __init__(self, packet):
+        self._packet = packet
+        self._idx = 0
+        self._len = len(packet)
+
+    def get_remaining_payload(self):
+        return self._packet[self._idx:]
+
+    def get_bytes(self, size):
+        if self._idx + size > self._len:
+            raise Exception('incomplete packet')
+
+        value = self._packet[self._idx:self._idx + size]
+        self._idx += size
+        return value
+
+    def get_uint32(self):
+        return int.from_bytes(self.get_bytes(4), 'big')
+
+    def get_string(self):
+        return self.get_bytes(self.get_uint32())
+
+
 def _read_ssh_ed25519_privkey(keydata):
     """
     Parse an OpenSSH Ed25519 private key from a string into a raw private key.
@@ -162,7 +190,6 @@ def _read_ssh_ed25519_privkey(keydata):
     # https://github.com/jedisct1/libsodium/blob/master/src/libsodium/crypto_sign/ed25519/sign_ed25519_api.c#L27
     # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
     # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
-    from asyncssh.packet import SSHPacket
 
     SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
     SSH_END = u'-----END OPENSSH PRIVATE KEY-----'
@@ -177,7 +204,7 @@ def _read_ssh_ed25519_privkey(keydata):
     blob = binascii.a2b_base64(keydata)
 
     blob = blob[len(OPENSSH_KEY_V1):]
-    packet = SSHPacket(blob)
+    packet = _SSHPacketReader(blob)
 
     cipher_name = packet.get_string()
     kdf = packet.get_string()
@@ -201,7 +228,7 @@ def _read_ssh_ed25519_privkey(keydata):
     if mac:
         raise Exception('invalid OpenSSH private key (found remaining payload for mac)')
 
-    packet = SSHPacket(key_data)
+    packet = _SSHPacketReader(key_data)
 
     packet.get_uint32()  # check1
     packet.get_uint32()  # check2
