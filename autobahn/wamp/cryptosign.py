@@ -46,7 +46,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptosign
-    from nacl import public, encoding, signing
+    from nacl import public, encoding, signing, bindings
 except ImportError:
     HAS_CRYPTOSIGN = False
     HAS_CRYPTOSIGN_SSHAGENT = False
@@ -97,13 +97,17 @@ def _pack(keyparts):
 
 def _read_ssh_ed25519_pubkey(keydata):
     """
-    Parse a Ed25519 SSH public key from a string into a raw public key.
+    Parse an OpenSSH Ed25519 public key from a string into a raw public key.
 
-    :param keydata: The public Ed25519 SSH key to parse.
+    Example input:
+
+        ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJukDU5fqXv/yVhSirsDWsUFyOodZyCSLxyitPPzWJW9 oberstet@office-corei7
+
+    :param keydata: The OpenSSH Ed25519 public key data to parse.
     :type keydata: unicode
 
-    :returns: The raw public keys (32 bytes).
-    :rtype: binary
+    :returns: pair of raw public key (32 bytes) and comment
+    :rtype: tuple
     """
     if type(keydata) != six.text_type:
         raise Exception("invalid type {} for keydata".format(type(keydata)))
@@ -126,7 +130,108 @@ def _read_ssh_ed25519_pubkey(keydata):
     if len(key) != 32:
         raise Exception('invalid length {} for embedded raw key (must be 32 bytes)'.format(len(key)))
 
-    return key
+    return key, comment
+
+
+def _read_ssh_ed25519_privkey(keydata):
+    """
+    Parse an OpenSSH Ed25519 private key from a string into a raw private key.
+
+    Example input:
+
+        -----BEGIN OPENSSH PRIVATE KEY-----
+        b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+        QyNTUxOQAAACCbpA1OX6l7/8lYUoq7A1rFBcjqHWcgki8corTz81iVvQAAAKDWjZ0Y1o2d
+        GAAAAAtzc2gtZWQyNTUxOQAAACCbpA1OX6l7/8lYUoq7A1rFBcjqHWcgki8corTz81iVvQ
+        AAAEArodzIMjH9MOBz0X+HDvL06rEJOMYFhzGQ5zXPM7b7fZukDU5fqXv/yVhSirsDWsUF
+        yOodZyCSLxyitPPzWJW9AAAAFm9iZXJzdGV0QG9mZmljZS1jb3JlaTcBAgMEBQYH
+        -----END OPENSSH PRIVATE KEY-----
+
+
+    :param keydata: The OpenSSH Ed25519 private key data to parse.
+    :type keydata: unicode
+
+    :returns: pair of raw private key (32 bytes) and comment
+    :rtype: tuple
+    """
+
+    # Some pointers:
+    # https://github.com/ronf/asyncssh/blob/master/asyncssh/public_key.py
+    # https://github.com/ronf/asyncssh/blob/master/asyncssh/ed25519.py
+    # crypto_sign_ed25519_sk_to_seed
+    # https://github.com/jedisct1/libsodium/blob/master/src/libsodium/crypto_sign/ed25519/sign_ed25519_api.c#L27
+    # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
+    # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
+    from asyncssh.packet import SSHPacket
+
+    SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
+    SSH_END = u'-----END OPENSSH PRIVATE KEY-----'
+    OPENSSH_KEY_V1 = b'openssh-key-v1\0'
+
+    if not (keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END)):
+        raise Exception('invalid OpenSSH private key (does not start/end with OPENSSH preamble)')
+
+    ssh_end = keydata.find(SSH_END)
+    keydata = keydata[len(SSH_BEGIN):ssh_end]
+    keydata = u''.join([x.strip() for x in keydata.split()])
+    blob = binascii.a2b_base64(keydata)
+
+    blob = blob[len(OPENSSH_KEY_V1):]
+    packet = SSHPacket(blob)
+
+    cipher_name = packet.get_string()
+    kdf = packet.get_string()
+    packet.get_string()  # kdf_data
+    nkeys = packet.get_uint32()
+    packet.get_string()  # public_key
+    key_data = packet.get_string()
+    mac = packet.get_remaining_payload()
+
+    block_size = 8
+
+    if cipher_name != b'none':
+        raise Exception('encrypted private keys not supported (please remove the passphrase from your private key or use SSH agent)')
+
+    if kdf != b'none':
+        raise Exception('passphrase encrypted private keys not supported')
+
+    if nkeys != 1:
+        raise Exception('multiple private keys in a key file not supported (found {} keys)'.format(nkeys))
+
+    if mac:
+        raise Exception('invalid OpenSSH private key (found remaining payload for mac)')
+
+    packet = SSHPacket(key_data)
+
+    packet.get_uint32()  # check1
+    packet.get_uint32()  # check2
+
+    alg = packet.get_string()
+
+    if alg != b'ssh-ed25519':
+        raise Exception('invalid key type: we only support Ed25519 (found "{}")'.format(alg.decode('ascii')))
+
+    vk = packet.get_string()
+    sk = packet.get_string()
+
+    if len(vk) != bindings.crypto_sign_PUBLICKEYBYTES:
+        raise Exception('invalid public key length')
+
+    if len(sk) != bindings.crypto_sign_SECRETKEYBYTES:
+        raise Exception('invalid public key length')
+
+    comment = packet.get_string()                             # comment
+    pad = packet.get_remaining_payload()
+
+    if len(pad) >= block_size or pad != bytes(range(1, len(pad) + 1)):
+        raise Exception('invalid OpenSSH private key')
+
+    # secret key (64 octets) = 32 octets seed || 32 octets secret key derived of seed
+    seed = sk[:bindings.crypto_sign_SEEDBYTES]
+
+    comment = comment.decode('ascii')
+
+    return seed, comment
 
 
 def _read_signify_ed25519_signature(signature_file):
@@ -405,29 +510,21 @@ if HAS_CRYPTOSIGN:
             key (from a SSH private key file) or a (public) verification key (from a SSH
             public key file). A private key file must be passphrase-less.
             """
-            # https://tools.ietf.org/html/draft-bjh21-ssh-ed25519-02
-            # http://blog.oddbit.com/2011/05/08/converting-openssh-public-keys/
-
             SSH_BEGIN = u'-----BEGIN OPENSSH PRIVATE KEY-----'
-            SSH_END = u'-----END OPENSSH PRIVATE KEY-----'
 
             with open(filename, 'r') as f:
                 keydata = f.read().strip()
 
-            if keydata.startswith(SSH_BEGIN) and keydata.endswith(SSH_END):
-                # SSH private key
-                # ssh_end = keydata.find(SSH_END)
-                # keydata = keydata[len(SSH_BEGIN):ssh_end]
-                # keydata = u''.join([x.strip() for x in keydata.split()])
-                # blob = binascii.a2b_base64(keydata)
-                # prefix = 'openssh-key-v1\x00'
-                # data = unpack(blob[len(prefix):])
-                raise Exception("loading private keys not implemented")
+            if keydata.startswith(SSH_BEGIN):
+                # OpenSSH private key
+                keydata, comment = _read_ssh_ed25519_privkey(keydata)
+                key = signing.SigningKey(keydata, encoder=encoding.RawEncoder)
             else:
-                # SSH public key
-                keydata = _read_ssh_ed25519_pubkey(filename)
-                key = public.PublicKey(keydata)
-                return cls(key)
+                # OpenSSH public key
+                keydata, comment = _read_ssh_ed25519_pubkey(filename)
+                key = public.PublicKey(keydata, encoder=encoding.RawEncoder)
+
+            return cls(key, comment)
 
 
 if HAS_CRYPTOSIGN_SSHAGENT:
@@ -459,7 +556,7 @@ if HAS_CRYPTOSIGN_SSHAGENT:
             if not HAS_CRYPTOSIGN_SSHAGENT:
                 raise Exception("SSH agent integration is not supported on this platform")
 
-            pubkey = _read_ssh_ed25519_pubkey(pubkey)
+            pubkey, _ = _read_ssh_ed25519_pubkey(pubkey)
 
             if not reactor:
                 from twisted.internet import reactor
