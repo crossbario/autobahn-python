@@ -285,7 +285,6 @@ class Component(component.Component):
         transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
         return transport_endpoint.connect(transport_factory)
 
-
     # XXX think: is it okay to use inlineCallbacks (in this
     # twisted-only file) even though we're using txaio?
     @inlineCallbacks
