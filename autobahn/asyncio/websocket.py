@@ -198,8 +198,8 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         # noinspection PyBroadException
         try:
             res = self.onConnect(request)
-            # if yields(res):
-            #  res = yield from res
+            if yields(res):
+                asyncio.async(res)
         except ConnectionDeny as e:
             self.failHandshake(e.reason, e.code)
         except Exception as e:
