@@ -1,4 +1,5 @@
 {
+    "version": 2,
     "workers": [
         {
             "type": "router",
@@ -10,11 +11,19 @@
                             "name": "anonymous",
                             "permissions": [
                                 {
-                                    "uri": "*",
-                                    "publish": true,
-                                    "subscribe": true,
-                                    "call": true,
-                                    "register": true
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
                                 }
                             ]
                         }
@@ -63,11 +72,11 @@
                     "type": "websocket",
                     "endpoint": {
                         "type": "tcp",
-                        "interface": "127.0.0.1",
+                        "interface": "localhost",
                         "port": 8083,
                         "tls": {
-                            "key": "../../twisted/wamp/pubsub/tls/server.key",
-                            "certificate": "../../twisted/wamp/pubsub/tls/server.crt"
+                            "key": "server.key",
+                            "certificate": "server.crt"
                         }
                     }
                 }

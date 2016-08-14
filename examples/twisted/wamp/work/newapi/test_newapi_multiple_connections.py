@@ -1,30 +1,41 @@
-from twisted.internet import reactor
 import txaio
-from autobahn.twisted.wamp import Connection
+
+from twisted.internet import reactor
+from twisted.internet.defer import inlineCallbacks
+
+from autobahn.twisted.component import Component, run
+from autobahn.twisted.util import sleep
 
 
-def main1(connection):
-    print('main1 created', connection)
+@inlineCallbacks
+def setup_alice(session, details):
+    print('alice created', session)
 
-    def on_join(session):
-        print('main1 joined', session)
-        session.leave()
+    def on_join(session, details):
+        print('alice joined', session, details)
 
-    connection.on_join(on_join)
-
-
-def main2(connection):
-    print('main2 created', connection)
-
-    def on_join(session):
-        print('main2 joined', session)
-        session.leave()
-
-    connection.on_join(on_join)
+    session.on('join', on_join)
+    yield sleep(2)
+    print("alice done sleeping")
+    print("since we're a 'main' function we have to leave explicitly", session)
+    print("Doing that in 2 seconds...")
+    reactor.callLater(2, session.leave)
 
 
-def run(entry_points):
+@inlineCallbacks
+def setup_bob(reactor, session):
+    print('bob created', session)
 
+    def on_join(session, details):
+        print('bob joined', session, details)
+
+    session.on('join', on_join)
+    yield sleep(1)
+    print("bob done sleeping")
+#    session.leave()
+
+
+if __name__ == '__main__':
     transports = [
         {
             "type": "websocket",
@@ -32,24 +43,9 @@ def run(entry_points):
         }
     ]
 
-    done = []
-
-    for main in entry_points:
-        connection = Connection(main, realm=u'public',
-            transports=transports, reactor=reactor)
-        done.append(connection.connect())
-
-    # deferred that fires when all connections are done
-    done = txaio.gather(done)
-
-    def finish(res):
-        print("all connections done", res)
-        reactor.stop()
-
-    done.addBoth(finish)
-
-    reactor.run()
-
-
-if __name__ == '__main__':
-    return run([main1, main2])
+    component1 = Component(on_join=setup_alice, transports=transports, realm=u'crossbardemo')
+    component2 = Component(main=setup_bob, transports=transports, realm=u'crossbardemo')
+    #run([component1, component2], log_level='debug')
+    #run([component1, component2], log_level='info')
+    run([component1], log_level='info')
+    #run([component2], log_level='info')
