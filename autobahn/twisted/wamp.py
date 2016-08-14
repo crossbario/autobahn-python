@@ -133,7 +133,7 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
-    def run(self, make, start_reactor=True, auto_reconnect=False):
+    def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info'):
         """
         Run the application component.
 
@@ -160,7 +160,7 @@ class ApplicationRunner(object):
             from twisted.internet import reactor
             txaio.use_twisted()
             txaio.config.loop = reactor
-            txaio.start_logging(level='info')
+            txaio.start_logging(level=log_level)
 
         if callable(make):
             # factory for use ApplicationSession
@@ -663,9 +663,20 @@ if service:
 
 # new API
 class Session(ApplicationSession):
+    # shim that lets us present pep8 API for user-classes to override,
+    # but also backwards-compatible for existing code using
+    # ApplicationSession "directly".
+
+    # XXX note to self: if we release this as "the" API, then we can
+    # change all internal Autobahn calls to .on_join() etc, and make
+    # ApplicationSession a subclass of Session -- and it can then be
+    # separate deprecated and removed, ultimately, if desired.
 
     def onJoin(self, details):
         return self.on_join(details)
+
+    # XXX def onChallenge(self, )
+    # XXX def onOpen ??
 
     def onLeave(self, details):
         return self.on_leave(details)
@@ -673,7 +684,7 @@ class Session(ApplicationSession):
     def onDisconnect(self):
         return self.on_disconnect()
 
-    def on_join(self):
+    def on_join(self, details):
         pass
 
     def on_leave(self, details):

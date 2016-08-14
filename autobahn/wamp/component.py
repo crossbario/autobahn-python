@@ -27,57 +27,115 @@
 
 from __future__ import absolute_import
 
-import random
 import six
+import random
+from functools import wraps
 
 import txaio
 
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.exception import ApplicationError
+
 
 __all__ = ('Connection')
 
 
-def check_endpoint(endpoint, check_native_endpoint=None):
+def _normalize_endpoint(endpoint, check_native_endpoint=None):
     """
     Check a WAMP connecting endpoint configuration.
     """
-    if type(endpoint) != dict:
+    if check_native_endpoint:
         check_native_endpoint(endpoint)
-    else:
+    elif not isinstance(endpoint, dict):
+        raise ValueError(
+            "'endpoint' must be a dict"
+        )
+
+    # note, we're falling through here -- check_native_endpoint can
+    # disallow or allow dict-based config as it likes, but if it
+    # *does* allow a dict through, we want to check "base options"
+    # here so that both Twisted and asyncio don't have to check these
+    # things as well.
+    if isinstance(endpoint, dict):
+        # XXX what about filling in anything missing from the URL? Or
+        # is that only for when *nothing* is provided for endpoint?
         if 'type' not in endpoint:
-            raise RuntimeError('missing type in endpoint')
+            # could maybe just make tcp the default?
+            raise ValueError("'type' required in endpoint configuration")
         if endpoint['type'] not in ['tcp', 'unix']:
-            raise RuntimeError('invalid type "{}" in endpoint'.format(endpoint['type']))
+            raise ValueError('invalid type "{}" in endpoint'.format(endpoint['type']))
+
+        for k in endpoint.keys():
+            if k not in ['type', 'host', 'port', 'path', 'tls']:
+                raise ValueError(
+                    "Invalid key '{}' in endpoint configuration".format(k)
+                )
 
         if endpoint['type'] == 'tcp':
-            pass
+            for k in ['host', 'port']:
+                if k not in endpoint:
+                    raise ValueError(
+                        "'{}' required in 'tcp' endpoint config".format(k)
+                    )
+            for k in ['path']:
+                if k in endpoint:
+                    raise ValueError(
+                        "'{}' not valid in 'tcp' endpoint config".format(k)
+                    )
         elif endpoint['type'] == 'unix':
-            pass
+            for k in ['path']:
+                if k not in endpoint:
+                    raise ValueError(
+                        "'{}' required for 'tcp' endpoint config".format(k)
+                    )
+            for k in ['host', 'port', 'tls']:
+                if k in endpoint:
+                    raise ValueError(
+                        "'{}' not valid for in 'tcp' endpoint config".format(k)
+                    )
         else:
-            assert(False), 'should not arrive here'
+            assert False, 'should not arrive here'
 
 
-def check_transport(transport, check_native_endpoint=None):
+def _normalize_transport(transport, check_native_endpoint=None):
     """
-    Check a WAMP connecting transport configuration.
+    Check a WAMP connecting transport configuration, and add any
+    defaults that we can. These are:
+
+    - type: websocket
+    - endpoint: if not specified, fill in from URL
     """
     if type(transport) != dict:
         raise RuntimeError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
 
     if 'type' not in transport:
-        raise RuntimeError('missing type in transport')
+        transport['type'] = 'websocket'
 
     if transport['type'] not in ['websocket', 'rawsocket']:
         raise RuntimeError('invalid transport type {}'.format(transport['type']))
 
     if transport['type'] == 'websocket':
-        pass
+        if 'url' not in transport:
+            raise ValueError("Missing 'url' in transport")
+        if 'endpoint' not in transport:
+            is_secure, host, port, resource, path, params = parse_url(transport['url'])
+            transport['endpoint'] = {
+                'type': 'tcp',
+                'host': host,
+                'port': port,
+                'tls': False if not is_secure else dict(hostname=host),
+            }
+        _normalize_endpoint(transport['endpoint'], check_native_endpoint)
+        # XXX can/should we check e.g. serializers here?
+
     elif transport['type'] == 'rawsocket':
-        pass
+        if 'endpoint' not in transport:
+            raise ValueError("Missing 'endpoint' in transport")
+
     else:
-        assert(False), 'should not arrive here'
+        assert False, 'should not arrive here'
 
 
 class Transport(object):
@@ -89,8 +147,8 @@ class Transport(object):
                  initial_retry_delay=1.5, retry_delay_growth=1.5,
                  retry_delay_jitter=0.1):
         """
-
-        :param config: The transport configuration.
+        :param config: The transport configuration. Should already be
+            validated + normalized
         :type config: dict
         """
         self.idx = idx
@@ -102,6 +160,8 @@ class Transport(object):
         self.retry_delay_growth = retry_delay_growth
         self.retry_delay_jitter = retry_delay_jitter
 
+        self._permanent_failure = False
+
         self.reset()
 
     def reset(self):
@@ -110,7 +170,17 @@ class Transport(object):
         self.connect_failures = 0
         self.retry_delay = self.initial_retry_delay
 
+    def failed(self):
+        """
+        Mark this transport as failed, meaning we won't try to connect to
+        it any longer (can_reconnect() will always return False afer
+        calling this).
+        """
+        self._permanent_failure = True
+
     def can_reconnect(self):
+        if self._permanent_failure:
+            return False
         return self.connect_attempts < self.max_retries
 
     def next_delay(self):
@@ -129,11 +199,11 @@ class Transport(object):
 
 class Component(ObservableMixin):
     """
-    A WAMP application component. A component holds configuration for and knows how to create
-    transports and sessions.
+    A WAMP application component. A component holds configuration for
+    (and knows how to create) transports and sessions.
     """
 
-    session = None
+    session_factory = None
     """
     The factory of the session we will instantiate.
     """
@@ -141,7 +211,7 @@ class Component(ObservableMixin):
     TYPE_MAIN = 1
     TYPE_SETUP = 2
 
-    def __init__(self, main=None, setup=None, transports=None, config=None):
+    def __init__(self, main=None, setup=None, transports=None, config=None, realm=u'public'):
         """
 
         :param main: A callable that runs user code for the component. The component will be
@@ -157,16 +227,24 @@ class Component(ObservableMixin):
         :type setup: callable
         :param transports: Transport configurations for creating transports.
         :type transports: None or unicode or list
+
         :param config: Session configuration.
         :type config: None or dict
+
+        :param realm: the realm to join
+        :type realm: unicode
+
         """
-        ObservableMixin.__init__(self)
-
-        if main is None and setup is None:
-            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component')
-
-        if main is not None and setup is not None:
-            raise RuntimeError('either a "main" or "setup" procedure must be provided for a component (not both)')
+        self.set_valid_events(
+            [
+                'start',        # fired by base class
+                'connect',      # fired by ApplicationSession
+                'join',         # fired by ApplicationSession
+                'ready',        # fired by ApplicationSession
+                'leave',        # fired by ApplicationSession
+                'disconnect',   # fired by ApplicationSession
+            ]
+        )
 
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')
@@ -190,31 +268,23 @@ class Component(ObservableMixin):
         # allows to provide an URL instead of a list of transports
         if type(transports) == six.text_type:
             url = transports
-            is_secure, host, port, resource, path, params = parse_url(url)
+            # 'endpoint' will get filled in by parsing the 'url'
             transport = {
                 'type': 'websocket',
                 'url': url,
-                'endpoint': {
-                    'type': 'tcp',
-                    'host': host,
-                    'port': port
-                }
             }
-            if is_secure:
-                # FIXME
-                transport['endpoint']['tls'] = {}
             transports = [transport]
 
         # now check and save list of transports
         self._transports = []
         idx = 0
         for transport in transports:
-            check_transport(transport)
+            _normalize_transport(transport, self._check_native_endpoint)
             self._transports.append(Transport(idx, transport))
             idx += 1
 
-        self._realm = u'realm1'
-        self._extra = None
+        self._realm = realm
+        self._extra = None  # XXX FIXME
 
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left
@@ -226,13 +296,11 @@ class Component(ObservableMixin):
     def start(self, reactor):
         raise RuntimeError('not implemented')
 
-    def _connect_once(self, reactor, transport_config):
-
+    def _connect_once(self, reactor, transport):
         self.log.info(
-            'connecting once using transport type "{transport_type}" '
-            'over endpoint type "{endpoint_type}"',
-            transport_type=transport_config['type'],
-            endpoint_type=transport_config['endpoint']['type'],
+            'connecting to URL "{url}" with "{transport_type}" transport',
+            transport_type=transport.config['type'],
+            url=transport.config['url'],
         )
 
         done = txaio.create_future()
@@ -241,29 +309,45 @@ class Component(ObservableMixin):
         def create_session():
             cfg = ComponentConfig(self._realm, self._extra)
             try:
-                session = self.session(cfg)
-            except Exception:
+                session = self.session_factory(cfg)
+            except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
                 # let the reconnection logic deal with that
+                f = txaio.create_failure(e)
+                txaio.reject(done, f)
                 raise
             else:
                 # hook up the listener to the parent so we can bubble
-                # up events happning on the session onto the connection
+                # up events happning on the session onto the
+                # connection. This lets you do component.on('join',
+                # cb) which will work just as if you called
+                # session.on('join', cb) for every session created.
                 session._parent = self
 
+                # the only difference bewteen MAIN and SETUP-type
+                # entry-points is that we want to shut down the
+                # component when a MAIN-type entrypoint's Deferred is
+                # done.
                 if self._entry_type == Component.TYPE_MAIN:
 
                     def on_join(session, details):
                         self.log.debug("session on_join: {details}", details=details)
+                        transport.connect_sucesses += 1
+                        self.log.info(
+                            'Successfully connected to transport #{transport_idx}: url={url}',
+                            transport_idx=transport.idx,
+                            url=transport.config['url'],
+                        )
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def main_success(_):
                             self.log.debug("main_success")
-                            txaio.resolve(done, None)
+                            session.leave()
 
                         def main_error(err):
                             self.log.debug("main_error: {err}", err=err)
                             txaio.reject(done, err)
+                            # I guess .leave() here too...?
 
                         txaio.add_callbacks(d, main_success, main_error)
 
@@ -273,6 +357,11 @@ class Component(ObservableMixin):
 
                     def on_join(session, details):
                         self.log.debug("session on_join: {details}", details=details)
+                        self.log.info(
+                            'Successfully connected to transport #{transport_idx}: url={url}',
+                            transport_idx=transport.idx,
+                            url=transport.config['url'],
+                        )
                         d = txaio.as_future(self._entry, reactor, session)
 
                         def setup_success(_):
@@ -280,6 +369,7 @@ class Component(ObservableMixin):
 
                         def setup_error(err):
                             self.log.debug("setup_error: {err}", err=err)
+                            txaio.reject(done, err)
 
                         txaio.add_callbacks(d, setup_success, setup_error)
 
@@ -291,7 +381,13 @@ class Component(ObservableMixin):
                 # listen on leave events
                 def on_leave(session, details):
                     self.log.debug("session on_leave: {details}", details=details)
-
+                    # this could be a "leave" that's expected e.g. our
+                    # main() exited, or it could be an error
+                    if not txaio.is_called(done):
+                        if details.reason.startswith('wamp.error.'):
+                            txaio.reject(done, ApplicationError(details.reason, details.message))
+                        else:
+                            txaio.resolve(done, None)
                 session.on('leave', on_leave)
 
                 # listen on disconnect events
@@ -310,13 +406,27 @@ class Component(ObservableMixin):
                 # return the fresh session object
                 return session
 
-        d = self._connect_transport(reactor, transport_config, create_session)
+        transport.connect_attempts += 1
+        d = self._connect_transport(reactor, transport.config, create_session)
 
         def on_connect_sucess(proto):
-            # FIXME: leave / cleanup proto when reactor stops?
-            pass
+            # if e.g. an SSL handshake fails, we will have
+            # successfully connected (here) but need to listen for the
+            # "connectionLost" from the underlying protocol in case of
+            # handshake failure .. so we wrap it. Also, we don't
+            # increment transport.success_count here.
+            orig = proto.connectionLost
+
+            @wraps(orig)
+            def lost(fail):
+                rtn = orig(fail)
+                if not txaio.is_called(done):
+                    txaio.reject(done, fail)
+                return rtn
+            proto.connectionLost = lost
 
         def on_connect_failure(err):
+            transport.connect_failures += 1
             # failed to establish a connection in the first place
             done.errback(err)
 

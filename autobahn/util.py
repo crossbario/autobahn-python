@@ -701,8 +701,8 @@ class ObservableMixin(object):
         if self._listeners is None:
             self._listeners = dict()
         if event not in self._listeners:
-            self._listeners[event] = set()
-        self._listeners[event].add(handler)
+            self._listeners[event] = []
+        self._listeners[event].append(handler)
 
     def off(self, event=None, handler=None):
         """
@@ -748,7 +748,7 @@ class ObservableMixin(object):
 
         self._check_event(event)
         res = []
-        for handler in self._listeners.get(event, set()):
+        for handler in self._listeners.get(event, []):
             future = txaio.as_future(handler, *args, **kwargs)
             res.append(future)
         if self._parent is not None:
