@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.16.0
+------
+
+`Published 2016-08-14 <https://pypi.python.org/pypi/autobahn/0.16.0`_
+
+* new: new `autobahn.wamp.component` API in experimental stage
+* new: Ed25519 OpenSSH and OpenBSD signify key support
+* fix: allow Py2 and async user code in `onConnect` callback of asyncio
+
 0.15.0
 ------
 
