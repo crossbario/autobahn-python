@@ -377,7 +377,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
         """
-        return self._session_id is not None
+        return self._transport is not None and self._session_id is not None
 
     def onUserError(self, fail, msg):
         """
