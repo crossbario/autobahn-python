@@ -42,13 +42,12 @@ class Component(ApplicationSession):
     An application component registering RPC endpoints using decorators.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         # register all methods on this object decorated with "@wamp.register"
         # as a RPC endpoint
         ##
-        results = yield from self.register(self)
+        results = await self.register(self)
         for res in results:
             if isinstance(res, wamp.protocol.Registration):
                 # res is an Registration instance

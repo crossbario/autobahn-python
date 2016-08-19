@@ -43,8 +43,7 @@ class Component(ApplicationSession):
     with complex payloads every second.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         counter = 0
         while True:
             print("publish: com.myapp.heartbeat")
@@ -55,7 +54,7 @@ class Component(ApplicationSession):
             self.publish(u'com.myapp.topic2', random.randint(0, 100), 23, c="Hello", d=obj)
 
             counter += 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 
 if __name__ == '__main__':

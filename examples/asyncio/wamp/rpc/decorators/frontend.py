@@ -39,8 +39,7 @@ class Component(ApplicationSession):
     An application component calling the different backend procedures.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         procs = [u'com.mathservice.add2',
                  u'com.mathservice.mul2',
@@ -48,7 +47,7 @@ class Component(ApplicationSession):
 
         try:
             for proc in procs:
-                res = yield from self.call(proc, 2, 3)
+                res = await self.call(proc, 2, 3)
                 print("{}: {}".format(proc, res))
         except Exception as e:
             print("Something went wrong: {}".format(e))

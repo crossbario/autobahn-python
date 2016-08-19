@@ -42,13 +42,12 @@ class Component(ApplicationSession):
     stop after having received 5 events.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         self.received = 0
 
         # subscribe all methods on this object decorated with "@wamp.subscribe"
         # as PubSub event handlers
-        results = yield from self.subscribe(self)
+        results = await self.subscribe(self)
         for res in results:
             if isinstance(res, wamp.protocol.Subscription):
                 # res is an Subscription instance

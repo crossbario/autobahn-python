@@ -41,21 +41,20 @@ class Component(ApplicationSession):
     An application component that publishes an event every second.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def on_event(i):
             print("Got event: {}".format(i))
-        yield from self.subscribe(on_event, u'com.myapp.topic1')
+        await self.subscribe(on_event, u'com.myapp.topic1')
 
         counter = 0
         while True:
-            publication = yield from self.publish(u'com.myapp.topic1',
+            publication = await self.publish(u'com.myapp.topic1',
                                                   counter,
                                                   options=PublishOptions(acknowledge=True, exclude_me=False))
             print("Event published with publication ID {}".format(publication.id))
             counter += 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 
 if __name__ == '__main__':

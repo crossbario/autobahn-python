@@ -41,13 +41,12 @@ class Component(ApplicationSession):
     produce complex results and showing how to access those.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
-        res = yield from self.call(u'com.myapp.add_complex', 2, 3, 4, 5)
+        res = await self.call(u'com.myapp.add_complex', 2, 3, 4, 5)
         print("Result: {} + {}i".format(res.kwresults['c'], res.kwresults['ci']))
 
-        res = yield from self.call(u'com.myapp.split_name', 'Homer Simpson')
+        res = await self.call(u'com.myapp.split_name', 'Homer Simpson')
         print("Forname: {}, Surname: {}".format(res.results[0], res.results[1]))
 
         self.leave()

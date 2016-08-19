@@ -42,12 +42,10 @@ class Component(ApplicationSession):
     resubscribes for another run. Then it stops.
     """
 
-    @asyncio.coroutine
-    def test(self):
+    async def test(self):
         self.received = 0
 
-        @asyncio.coroutine
-        def on_event(i):
+        async def on_event(i):
             print("Got event: {}".format(i))
             self.received += 1
             if self.received > 5:
@@ -55,20 +53,19 @@ class Component(ApplicationSession):
                 if self.runs > 1:
                     self.leave()
                 else:
-                    yield from self.subscription.unsubscribe()
+                    await self.subscription.unsubscribe()
 
                     print("Unsubscribed .. continue in 5s ..")
                     # can't use loop.call_later() with a coroutine for some reason
-                    yield from asyncio.sleep(5)
-                    yield from self.test()
+                    await asyncio.sleep(5)
+                    await self.test()
 
-        self.subscription = yield from self.subscribe(on_event, u'com.myapp.topic1')
+        self.subscription = await self.subscribe(on_event, u'com.myapp.topic1')
         print("Subscribed with subscription ID {}".format(self.subscription.id))
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         self.runs = 0
-        yield from self.test()
+        await self.test()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()

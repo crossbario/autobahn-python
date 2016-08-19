@@ -40,8 +40,7 @@ class Component(ApplicationSession):
     of arguments.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def ping():
             return
@@ -59,11 +58,11 @@ class Component(ApplicationSession):
         def arglen(*args, **kwargs):
             return [len(args), len(kwargs)]
 
-        yield from self.register(ping, u'com.arguments.ping')
-        yield from self.register(add2, u'com.arguments.add2')
-        yield from self.register(stars, u'com.arguments.stars')
-        yield from self.register(orders, u'com.arguments.orders')
-        yield from self.register(arglen, u'com.arguments.arglen')
+        await self.register(ping, u'com.arguments.ping')
+        await self.register(add2, u'com.arguments.add2')
+        await self.register(stars, u'com.arguments.stars')
+        await self.register(orders, u'com.arguments.orders')
+        await self.register(arglen, u'com.arguments.arglen')
         print("Registered methods; ready for frontend.")
 
 

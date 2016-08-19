@@ -40,19 +40,18 @@ class Component(ApplicationSession):
     An application component calling the different backend procedures.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def on_event(val):
             print("Someone requested to square non-positive: {}".format(val))
 
-        yield from self.subscribe(on_event, u'com.myapp.square_on_nonpositive')
+        await self.subscribe(on_event, u'com.myapp.square_on_nonpositive')
 
         for val in [2, 0, -2]:
-            res = yield from self.call(u'com.myapp.square', val, options=CallOptions())
+            res = await self.call(u'com.myapp.square', val, options=CallOptions())
             print("Squared {} = {}".format(val, res))
 
-        yield from self.leave()
+        await self.leave()
 
     def onDisconnect(self):
         asyncio.get_event_loop().stop()

@@ -12,25 +12,24 @@ from autobahn.wamp import ApplicationError
 
 
 class MyComponent(ApplicationSession):
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         # listening for the corresponding message from the "backend"
         # (any session that .publish()es to this topic).
         def onevent(msg):
             log.info("Got event: {}".format(msg))
-        yield from self.subscribe(onevent, u'com.myapp.hello')
+        await self.subscribe(onevent, u'com.myapp.hello')
 
         # call a remote procedure.
         count = 0
         while True:
             try:
-                res = yield from self.call(u'com.myapp.add2', count, count+1)
+                res = await self.call(u'com.myapp.add2', count, count+1)
                 log.info("Got result: {}".format(res))
             except ApplicationError:
                 pass
             count += 1
 
-            yield from asyncio.sleep(2)
+            await asyncio.sleep(2)
 
 
 if __name__ == '__main__':

@@ -41,8 +41,7 @@ class Component(ApplicationSession):
     different kinds of arguments.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def square(val, details=None):
             print("square called from: {}".format(details.caller))
@@ -57,7 +56,7 @@ class Component(ApplicationSession):
                 self.publish(u'com.myapp.square_on_nonpositive', val, options=options)
             return val * val
 
-        yield from self.register(square, u'com.myapp.square', RegisterOptions(details_arg='details'))
+        await self.register(square, u'com.myapp.square', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':

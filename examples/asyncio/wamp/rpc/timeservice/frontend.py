@@ -41,10 +41,9 @@ class Component(ApplicationSession):
     An application component using the time service.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         try:
-            now = yield from self.call(u'com.timeservice.now')
+            now = await self.call(u'com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

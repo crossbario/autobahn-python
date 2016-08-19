@@ -41,14 +41,13 @@ class Component(ApplicationSession):
     A simple time service application component.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def utcnow():
             now = datetime.datetime.utcnow()
             return now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        yield from self.register(utcnow, u'com.timeservice.now')
+        await self.register(utcnow, u'com.timeservice.now')
 
 
 if __name__ == '__main__':

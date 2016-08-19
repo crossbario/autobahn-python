@@ -39,43 +39,42 @@ class Component(ApplicationSession):
     An application component calling the different backend procedures.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
-        yield from self.call(u'com.arguments.ping')
+        await self.call(u'com.arguments.ping')
         print("Pinged!")
 
-        res = yield from self.call(u'com.arguments.add2', 2, 3)
+        res = await self.call(u'com.arguments.add2', 2, 3)
         print("Add2: {}".format(res))
 
-        starred = yield from self.call(u'com.arguments.stars')
+        starred = await self.call(u'com.arguments.stars')
         print("Starred 1: {}".format(starred))
 
-        starred = yield from self.call(u'com.arguments.stars', nick=u'Homer')
+        starred = await self.call(u'com.arguments.stars', nick=u'Homer')
         print("Starred 2: {}".format(starred))
 
-        starred = yield from self.call(u'com.arguments.stars', stars=5)
+        starred = await self.call(u'com.arguments.stars', stars=5)
         print("Starred 3: {}".format(starred))
 
-        starred = yield from self.call(u'com.arguments.stars', nick=u'Homer', stars=5)
+        starred = await self.call(u'com.arguments.stars', nick=u'Homer', stars=5)
         print("Starred 4: {}".format(starred))
 
-        orders = yield from self.call(u'com.arguments.orders', u'coffee')
+        orders = await self.call(u'com.arguments.orders', u'coffee')
         print("Orders 1: {}".format(orders))
 
-        orders = yield from self.call(u'com.arguments.orders', u'coffee', limit=10)
+        orders = await self.call(u'com.arguments.orders', u'coffee', limit=10)
         print("Orders 2: {}".format(orders))
 
-        arglengths = yield from self.call(u'com.arguments.arglen')
+        arglengths = await self.call(u'com.arguments.arglen')
         print("Arglen 1: {}".format(arglengths))
 
-        arglengths = yield from self.call(u'com.arguments.arglen', 1, 2, 3)
+        arglengths = await self.call(u'com.arguments.arglen', 1, 2, 3)
         print("Arglen 1: {}".format(arglengths))
 
-        arglengths = yield from self.call(u'com.arguments.arglen', a=1, b=2, c=3)
+        arglengths = await self.call(u'com.arguments.arglen', a=1, b=2, c=3)
         print("Arglen 2: {}".format(arglengths))
 
-        arglengths = yield from self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
+        arglengths = await self.call(u'com.arguments.arglen', 1, 2, 3, a=1, b=2, c=3)
         print("Arglen 3: {}".format(arglengths))
 
         self.leave()

@@ -40,8 +40,7 @@ class Component(ApplicationSession):
     An application component that publishes an event every second.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         counter = 0
         while True:
             print("publish: com.myapp.topic1", counter)
@@ -50,7 +49,7 @@ class Component(ApplicationSession):
             print("publish: com.myapp.topic2 'Hello world.'")
             self.publish(u'com.myapp.topic2', "Hello world.")
             counter += 1
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
 
 if __name__ == '__main__':
