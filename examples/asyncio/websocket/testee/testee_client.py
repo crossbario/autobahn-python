@@ -105,11 +105,7 @@ if __name__ == '__main__':
 
     txaio.start_logging(level='info')
 
-    try:
-        import asyncio
-    except ImportError:
-        # Trollius >= 0.3 was renamed
-        import trollius as asyncio
+    import asyncio
 
     factory = TesteeClientFactory(u"ws://127.0.0.1:9001")
 

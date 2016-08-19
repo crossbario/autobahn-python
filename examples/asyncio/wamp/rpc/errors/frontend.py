@@ -27,12 +27,7 @@
 from os import environ
 import math
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner

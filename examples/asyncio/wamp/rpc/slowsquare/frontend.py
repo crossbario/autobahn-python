@@ -27,12 +27,7 @@
 from os import environ
 import time
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from functools import partial
 
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner

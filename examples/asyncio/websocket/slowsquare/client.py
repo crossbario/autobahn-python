@@ -51,12 +51,7 @@ class SlowSquareClientProtocol(WebSocketClientProtocol):
 
 
 if __name__ == '__main__':
-
-    try:
-        import asyncio
-    except ImportError:
-        # Trollius >= 0.3 was renamed
-        import trollius as asyncio
+    import asyncio
 
     factory = WebSocketClientFactory(u"ws://127.0.0.1:9000")
     factory.protocol = SlowSquareClientProtocol

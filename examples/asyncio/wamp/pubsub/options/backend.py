@@ -26,12 +26,7 @@
 
 from os import environ
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn.wamp.types import PublishOptions, EventDetails, SubscribeOptions
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
