@@ -108,27 +108,13 @@ class ApplicationRunner(object):
         self.serializers = serializers
         self.ssl = ssl
 
-    def run(self, make):
+    def ssl_check(self, isSecure=None):
         """
-        Run the application component.
+        Check the ssl parameters to avoid conflicting values and return it.
 
-        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
-           when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
-        :type make: callable
+        :param isSecure: value extracted from url.
         """
-        # 1) factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            try:
-                session = make(cfg)
-            except Exception:
-                self.log.failure("App session could not be created! ")
-                asyncio.get_event_loop().stop()
-            else:
-                return session
-
-        isSecure, host, port, resource, path, params = parse_url(self.url)
-
+        ssl = None
         if self.ssl is None:
             ssl = isSecure
         else:
@@ -138,19 +124,70 @@ class ApplicationRunner(object):
                     'prefix of the url argument. Did you mean to use "wss:"?' %
                     self.__class__.__name__)
             ssl = self.ssl
+        return ssl
+
+    def create_endpoint(self, make, loop):
+        """
+        Create the wamp endpoint to interact with the component.
+
+        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+           when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
+        :param loop: The evnt loop instance that runs the component
+        :type make: callable
+        :type loop: :class:`asyncio.BaseEventLoop`
+        """
+        self.loop = loop
+
+        # 1) factory for use ApplicationSession
+        def create():
+            cfg = ComponentConfig(self.realm, self.extra)
+            try:
+                session = make(cfg)
+            except Exception:
+                self.log.failure("App session could not be created! ")
+                raise
+            else:
+                return session
+
+        isSecure, host, port, resource, path, params = parse_url(self.url)
+
+        ssl = self.ssl_check(isSecure)
 
         # 2) create a WAMP-over-WebSocket transport client factory
         transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers)
 
-        # 3) start the client
-        loop = asyncio.get_event_loop()
         txaio.use_asyncio()
-        txaio.config.loop = loop
-        coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
-        (transport, protocol) = loop.run_until_complete(coro)
-
         # start logging
         txaio.start_logging(level='info')
+        txaio.config.loop = self.loop
+        coro = self.loop.create_connection(transport_factory, host, port,
+                                           ssl=ssl)
+        return(coro)
+
+    def cleanup(self, protocol, loop):
+        """
+        Send a goodbye message if there is still a session.
+
+        :param protocol: An instance of :class:`autobahn.wamp.protocol.ApplicationSession`
+        :param loop: An instance of :class:`asyncio.BaseEventLoop`
+        """
+
+        if protocol._session:
+            loop.run_until_complete(protocol._session.leave())
+
+    def run(self, make):
+        """
+        Run the application component.
+
+        :param make: A factory that produces instances of
+                     :class:`autobahn.asyncio.wamp.ApplicationSession` when
+                     called with an instance of
+                     :class:`autobahn.wamp.types.ComponentConfig`.
+        :type make: callable
+        """
+        loop = asyncio.get_event_loop()
+        connect_coro = self.create_endpoint(make, loop)
+        (transport, protocol) = loop.run_until_complete(connect_coro)
 
         try:
             loop.add_signal_handler(signal.SIGTERM, loop.stop)
@@ -168,7 +205,12 @@ class ApplicationRunner(object):
 
         # give Goodbye message a chance to go through, if we still
         # have an active session
-        if protocol._session:
-            loop.run_until_complete(protocol._session.leave())
-
+        self.cleanup(protocol, loop)
+        pending = asyncio.Task.all_tasks()
+        for task in pending:
+            task.cancel()
+            try:
+                loop.run_until_complete(task)
+            except asyncio.CancelledError:
+                pass
         loop.close()
