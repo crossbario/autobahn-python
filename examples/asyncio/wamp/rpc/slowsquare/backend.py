@@ -24,12 +24,7 @@
 #
 ###############################################################################
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from os import environ
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -39,20 +34,18 @@ class Component(ApplicationSession):
     A math service application component.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def square(x):
             return x * x
 
-        yield from self.register(square, u'com.math.square')
+        await self.register(square, u'com.math.square')
 
-        @asyncio.coroutine
-        def slowsquare(x, delay=1):
-            yield from asyncio.sleep(delay)
+        async def slowsquare(x, delay=1):
+            await asyncio.sleep(delay)
             return x * x
 
-        yield from self.register(slowsquare, u'com.math.slowsquare')
+        await self.register(slowsquare, u'com.math.slowsquare')
         print("Registered com.math.slowsquare")
 
 

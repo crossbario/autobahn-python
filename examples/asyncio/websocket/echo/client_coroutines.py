@@ -38,15 +38,14 @@ class MyClientProtocol(WebSocketClientProtocol):
     def onConnect(self, response):
         print("Server connected: {0}".format(response.peer))
 
-    @asyncio.coroutine
-    def onOpen(self):
+    async def onOpen(self):
         print("WebSocket connection open.")
 
         # start sending messages every second ..
         while True:
             self.sendMessage(u"Hello, world!".encode('utf8'))
             self.sendMessage(b"\x00\x01\x03\x04", isBinary=True)
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
 
     def onMessage(self, payload, isBinary):
         if isBinary:

@@ -4,16 +4,15 @@ from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
 class MyComponent(ApplicationSession):
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         # listening for the corresponding message from the "backend"
         # (any session that .publish()es to this topic).
         def onevent(msg):
             print("Got event: {}".format(msg))
-        yield from self.subscribe(onevent, u'com.myapp.hello')
+        await self.subscribe(onevent, u'com.myapp.hello')
 
         # call a remote procedure.
-        res = yield from self.call(u'com.myapp.add2', 2, 3)
+        res = await self.call(u'com.myapp.add2', 2, 3)
         print("Got result: {}".format(res))
 
 

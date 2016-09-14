@@ -24,12 +24,7 @@
 #
 ###############################################################################
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from os import environ
 from autobahn.wamp.types import CallOptions, RegisterOptions
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
@@ -40,13 +35,12 @@ class Component(ApplicationSession):
     Application component that consumes progressive results.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def on_progress(i):
             print("Progress: {}".format(i))
 
-        res = yield from self.call(u'com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
+        res = await self.call(u'com.myapp.longop', 3, options=CallOptions(on_progress=on_progress))
 
         print("Final: {}".format(res))
 

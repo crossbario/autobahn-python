@@ -27,12 +27,7 @@
 from os import environ
 import time
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from functools import partial
 
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
@@ -43,8 +38,7 @@ class Component(ApplicationSession):
     An application component using the time service.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def got(started, msg, f):
             res = f.result()
@@ -59,7 +53,7 @@ class Component(ApplicationSession):
         d2 = self.call(u'com.math.square', 3)
         d2.add_done_callback(partial(got, t2, "Quick Square"))
 
-        yield from asyncio.gather(d1, d2)
+        await asyncio.gather(d1, d2)
         print("All finished.")
         self.leave()
 

@@ -24,12 +24,7 @@
 #
 ###############################################################################
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from os import environ
 from autobahn.wamp.types import CallOptions, RegisterOptions
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
@@ -40,20 +35,18 @@ class Component(ApplicationSession):
     Application component that produces progressive results.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
-        @asyncio.coroutine
-        def longop(n, details=None):
+        async def longop(n, details=None):
             if details.progress:
                 for i in range(n):
                     details.progress(i)
-                    yield from asyncio.sleep(1)
+                    await asyncio.sleep(1)
             else:
-                yield from asyncio.sleep(1 * n)
+                await asyncio.sleep(1 * n)
             return n
 
-        yield from self.register(longop, u'com.myapp.longop', RegisterOptions(details_arg='details'))
+        await self.register(longop, u'com.myapp.longop', RegisterOptions(details_arg='details'))
 
 
 if __name__ == '__main__':

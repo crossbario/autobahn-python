@@ -26,30 +26,24 @@
 
 from autobahn.asyncio.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
-
-try:
-    import asyncio
-except ImportError:
-    import trollius as asyncio
+import asyncio
 import json
 
 
 class SlowSquareServerProtocol(WebSocketServerProtocol):
 
-    @asyncio.coroutine
-    def slowsquare(self, x):
+    async def slowsquare(self, x):
         if x > 5:
             raise Exception("number too large")
         else:
-            yield from asyncio.sleep(1)
+            await asyncio.sleep(1)
             return x * x
 
-    @asyncio.coroutine
-    def onMessage(self, payload, isBinary):
+    async def onMessage(self, payload, isBinary):
         if not isBinary:
             x = json.loads(payload.decode('utf8'))
             try:
-                res = yield from self.slowsquare(x)
+                res = await self.slowsquare(x)
             except Exception as e:
                 self.sendClose(1000, "Exception raised: {0}".format(e))
             else:

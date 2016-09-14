@@ -27,12 +27,7 @@
 from os import environ
 import math
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn import wamp
 from autobahn.wamp.exception import ApplicationError
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
@@ -51,8 +46,7 @@ class Component(ApplicationSession):
     Example WAMP application backend that raised exceptions.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         # raising standard exceptions
         ##
@@ -63,7 +57,7 @@ class Component(ApplicationSession):
                 # this also will raise, if x < 0
                 return math.sqrt(x)
 
-        yield from self.register(sqrt, u'com.myapp.sqrt')
+        await self.register(sqrt, u'com.myapp.sqrt')
 
         # raising WAMP application exceptions
         ##
@@ -79,7 +73,7 @@ class Component(ApplicationSession):
                 # forward keyword arguments in exceptions
                 raise ApplicationError(u"com.myapp.error.invalid_length", min=3, max=10)
 
-        yield from self.register(checkname, u'com.myapp.checkname')
+        await self.register(checkname, u'com.myapp.checkname')
 
         # defining and automapping WAMP application exceptions
         ##
@@ -89,7 +83,7 @@ class Component(ApplicationSession):
             if a < b:
                 raise AppError1(b - a)
 
-        yield from self.register(compare, u'com.myapp.compare')
+        await self.register(compare, u'com.myapp.compare')
 
 
 if __name__ == '__main__':

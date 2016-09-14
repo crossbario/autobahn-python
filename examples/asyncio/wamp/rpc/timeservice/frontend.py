@@ -27,12 +27,7 @@
 from os import environ
 import datetime
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 
@@ -41,10 +36,9 @@ class Component(ApplicationSession):
     An application component using the time service.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         try:
-            now = yield from self.call(u'com.timeservice.now')
+            now = await self.call(u'com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

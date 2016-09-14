@@ -25,13 +25,7 @@
 ###############################################################################
 
 import datetime
-
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn.asyncio.wamp import ApplicationSession
 
 
@@ -47,12 +41,11 @@ class Component(ApplicationSession):
         ApplicationSession.__init__(self, config)
         self.count = 0
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         print("Realm joined (WAMP session started).")
 
         try:
-            now = yield from self.call(u'com.timeservice.now')
+            now = await self.call(u'com.timeservice.now')
         except Exception as e:
             print("Error: {}".format(e))
         else:

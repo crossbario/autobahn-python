@@ -27,12 +27,7 @@
 import random
 from os import environ
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn.wamp.types import SubscribeOptions
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -43,19 +38,18 @@ class Component(ApplicationSession):
     payload and of complex payload, and stops after 5 seconds.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
         self.received = 0
 
         def on_heartbeat(details=None):
             print("Got heartbeat (publication ID {})".format(details.publication))
 
-        yield from self.subscribe(on_heartbeat, u'com.myapp.heartbeat', options=SubscribeOptions(details_arg='details'))
+        await self.subscribe(on_heartbeat, u'com.myapp.heartbeat', options=SubscribeOptions(details_arg='details'))
 
         def on_topic2(a, b, c=None, d=None):
             print("Got event: {} {} {} {}".format(a, b, c, d))
 
-        yield from self.subscribe(on_topic2, u'com.myapp.topic2')
+        await self.subscribe(on_topic2, u'com.myapp.topic2')
         asyncio.get_event_loop().call_later(5, self.leave)
 
     def onDisconnect(self):

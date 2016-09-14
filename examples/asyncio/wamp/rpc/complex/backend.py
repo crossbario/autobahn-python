@@ -24,12 +24,7 @@
 #
 ###############################################################################
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from os import environ
 from autobahn.wamp.types import CallResult
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
@@ -41,19 +36,18 @@ class Component(ApplicationSession):
     return complex results.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         def add_complex(a, ai, b, bi):
             return CallResult(c=a + b, ci=ai + bi)
 
-        yield from self.register(add_complex, u'com.myapp.add_complex')
+        await self.register(add_complex, u'com.myapp.add_complex')
 
         def split_name(fullname):
             forename, surname = fullname.split()
             return CallResult(forename, surname)
 
-        yield from self.register(split_name, u'com.myapp.split_name')
+        await self.register(split_name, u'com.myapp.split_name')
 
 
 if __name__ == '__main__':

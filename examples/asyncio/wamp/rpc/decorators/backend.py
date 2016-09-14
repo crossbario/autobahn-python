@@ -27,12 +27,7 @@
 from os import environ
 import datetime
 
-try:
-    import asyncio
-except ImportError:
-    # Trollius >= 0.3 was renamed
-    import trollius as asyncio
-
+import asyncio
 from autobahn import wamp
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -42,13 +37,12 @@ class Component(ApplicationSession):
     An application component registering RPC endpoints using decorators.
     """
 
-    @asyncio.coroutine
-    def onJoin(self, details):
+    async def onJoin(self, details):
 
         # register all methods on this object decorated with "@wamp.register"
         # as a RPC endpoint
         ##
-        results = yield from self.register(self)
+        results = await self.register(self)
         for res in results:
             if isinstance(res, wamp.protocol.Registration):
                 # res is an Registration instance
