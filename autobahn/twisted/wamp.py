@@ -169,14 +169,10 @@ class ApplicationRunner(object):
                 try:
                     session = make(cfg)
                 except Exception as e:
-                    if start_reactor:
-                        # the app component could not be created .. fatal
-                        self.log.error("{err}", err=e)
+                    self.log.failure('ApplicationSession could not be instantiated: {log_failure.value}')
+                    if start_reactor and reactor.running:
                         reactor.stop()
-                    else:
-                        # if we didn't start the reactor, it's up to the
-                        # caller to deal with errors
-                        raise
+                    raise
                 else:
                     return session
         else:
