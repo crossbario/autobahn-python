@@ -78,6 +78,8 @@ class ApplicationRunner(object):
     connecting to a WAMP router.
     """
 
+    log = txaio.make_logger()
+
     def __init__(self, url, realm, extra=None, serializers=None, ssl=None):
         """
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -121,9 +123,12 @@ class ApplicationRunner(object):
             cfg = ComponentConfig(self.realm, self.extra)
             try:
                 session = make(cfg)
-            except Exception:
-                self.log.failure("App session could not be created! ")
-                asyncio.get_event_loop().stop()
+            except Exception as e:
+                self.log.error('ApplicationSession could not be instantiated: {}'.format(e))
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.stop()
+                raise
             else:
                 return session
 
