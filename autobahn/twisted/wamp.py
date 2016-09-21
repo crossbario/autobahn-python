@@ -168,7 +168,7 @@ class ApplicationRunner(object):
                 cfg = ComponentConfig(self.realm, self.extra)
                 try:
                     session = make(cfg)
-                except Exception as e:
+                except Exception:
                     self.log.failure('ApplicationSession could not be instantiated: {log_failure.value}')
                     if start_reactor and reactor.running:
                         reactor.stop()
