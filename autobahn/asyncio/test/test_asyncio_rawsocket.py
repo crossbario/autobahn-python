@@ -1,9 +1,6 @@
 import pytest
 import os
 
-if not os.environ.get('USE_ASYNCIO', False):
-    raise pytest.skip("Only for asyncio")
-
 from unittest import TestCase, main
 try:
     from unittest.mock import Mock, call
@@ -15,6 +12,7 @@ from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
 
 
+@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False), reason="Only for asyncio")
 class Test(TestCase):
 
     def test_sers(self):
