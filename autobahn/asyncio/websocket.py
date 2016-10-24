@@ -194,18 +194,21 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     def _onConnect(self, request):
         # onConnect() will return the selected subprotocol or None
         # or a pair (protocol, headers) or raise an HttpException
-        ##
-        # noinspection PyBroadException
-        try:
-            res = self.onConnect(request)
-            if yields(res):
-                asyncio.async(res)
-        except ConnectionDeny as e:
-            self.failHandshake(e.reason, e.code)
-        except Exception as e:
-            self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.INTERNAL_SERVER_ERROR)
+        fut = txaio.as_future(self.onConnect, request)
+        fut.add_done_callback(self._on_connect_callback)
+
+    def _on_connect_callback(self, fut):
+        if fut.cancelled():
+            self.failHandshake("Cancel connection", ConnectionDeny.INTERNAL_SERVER_ERROR)
         else:
-            self.succeedHandshake(res)
+            e = fut.exception()
+            if e:
+                if isinstance(e, ConnectionDeny):
+                    self.failHandshake(e.reason, e.code)
+                else:
+                    self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.INTERNAL_SERVER_ERROR)
+            else:
+                self.succeedHandshake(fut.result())
 
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
