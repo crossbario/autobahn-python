@@ -224,7 +224,7 @@ def derive_key(secret, salt, iterations=1000, keylen=32):
     :type salt: bytes or unicode
     :param iterations: Number of iterations of derivation algorithm to run.
     :type iterations: int
-    :param keylen: Length of the key to derive in bits.
+    :param keylen: Length of the key to derive in bytes.
     :type keylen: int
 
     :return: The derived key in Base64 encoding.
