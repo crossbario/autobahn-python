@@ -97,6 +97,10 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 
     def connection_lost(self, exc):
         self._connectionLost(exc)
+        # according to asyncio docs, connection_lost(None) is called
+        # if something else called transport.close()
+        if exc is not None:
+            self.transport.close()
         self.transport = None
 
     def _consume(self):
