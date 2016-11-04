@@ -104,7 +104,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         self.transport = None
 
     def _consume(self):
-        self.waiter = Future()
+        self.waiter = Future(loop=self.factory.loop or txaio.config.loop)
 
         def process(_):
             while len(self.receive_queue):
@@ -242,6 +242,8 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
     """
     Base class for asyncio-based WebSocket server factories.
     """
+
+    protocol = WebSocketServerProtocol
 
     def __init__(self, *args, **kwargs):
         """
