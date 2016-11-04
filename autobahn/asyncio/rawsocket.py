@@ -69,14 +69,14 @@ class PrefixProtocol(asyncio.Protocol):
         self.log.debug('RawSocker Asyncio: Connection made with peer {peer}', peer=self.peer)
         self._buffer = b''
         self._header = None
-        self._wait_closed = asyncio.Future()
+        self._wait_closed = txaio.create_future()
 
     @property
     def is_closed(self):
         if hasattr(self, '_wait_closed'):
             return self._wait_closed
         else:
-            f = asyncio.Future()
+            f = txaio.create_future()
             f.set_result(True)
             return f
 
