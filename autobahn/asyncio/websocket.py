@@ -239,6 +239,8 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
     Base class for asyncio-based WebSocket server factories.
     """
 
+    protocol = WebSocketServerProtocol
+
     def __init__(self, *args, **kwargs):
         """
         In addition to all arguments to the constructor of
