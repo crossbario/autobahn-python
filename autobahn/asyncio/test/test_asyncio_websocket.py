@@ -2,13 +2,17 @@ import pytest
 import os
 
 # because py.test tries to collect it as a test-case
-from asyncio.test_utils import TestLoop as AsyncioTestLoop
-from unittest import TestCase
+try:
+    from asyncio.test_utils import TestLoop as AsyncioTestLoop
+except ImportError:
+    from trollius.test_utils import TestLoop as AsyncioTestLoop
 try:
     from unittest.mock import Mock
 except ImportError:
     from mock import Mock
+
 from autobahn.asyncio.websocket import WebSocketServerFactory
+from unittest import TestCase
 
 
 @pytest.mark.usefixtures("event_loop")  # ensure we have pytest_asyncio installed
