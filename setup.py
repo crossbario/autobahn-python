@@ -130,12 +130,13 @@ extras_require_dev = [
     'pyenchant>=1.6.6',                 # LGPL
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
+    'pytest_asyncio',
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
 test_requirements = [
     "pytest>=2.8.6",        # MIT license
-    "mock>=1.3.0"           # BSD license
+    "mock>=1.3.0",          # BSD license
 ]
 
 
