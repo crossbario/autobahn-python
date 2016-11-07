@@ -200,8 +200,6 @@ cd doc
 make publish
 ```
 
-> The docs are published to the Autobahn Web site, which is hosted on a AWS S3 bucket is owned by Tavendo, and hence the publish can only be done by Tavendo.
-
 ### WebSocket Test Reports
 
 [AutobahnTestsuite](http://crossbar.io/autobahn#testsuite) provides a fully automated test suite to verify client and server implementations of the WebSocket Protocol for specification conformance and implementation robustness.
@@ -307,8 +305,6 @@ aws --region eu-west-1 s3 sync \
     --delete \
     --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
 ```
-
-> The above S3 bucket is owned by Tavendo, and hence the upload can only be done by Tavendo.
 
 After the upload has finished, check the live pages:
 

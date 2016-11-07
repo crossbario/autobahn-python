@@ -133,6 +133,3 @@ find_windows_files:
 # on Windows (Git Bash), check for files with Unix lines endings
 find_unix_files:
 	find . -name "*" -exec dos2unix -tv {} \; 2>&1 | grep "Unix"
-
-find_tavendo:
-	find . -path ./.git -prune -o -type f -exec grep -Hi "tavendo" {} \; | grep -v "Copyright (c) Tavendo"

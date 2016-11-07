@@ -289,8 +289,3 @@ def compute_wcs(key, challenge):
         challenge = challenge.encode('utf8')
     sig = hmac.new(key, challenge, hashlib.sha256).digest()
     return binascii.b2a_base64(sig).strip()
-
-
-if __name__ == '__main__':
-    with open('test.svg', 'w') as f:
-        f.write(qrcode_from_totp(u'CACKN3GRF3KQZMEK', u'tobias1', u'Tavendo'))

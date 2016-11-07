@@ -167,13 +167,12 @@ setup(
     description='WebSocket client & server library, WAMP real-time framework',
     long_description=docstr,
     license='MIT License',
-    author='Tavendo GmbH',
-    author_email='autobahnws@googlegroups.com',
+    author='Crossbar.io Technologies GmbH',
     url='http://crossbar.io/autobahn',
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
-        'txaio>=2.5.1',     # MIT license
+        'txaio>=2.5.2',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
