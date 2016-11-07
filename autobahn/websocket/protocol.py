@@ -783,15 +783,14 @@ class WebSocketProtocol(object):
         So we drop the connection, but set self.wasClean = False.
         """
         self.serverConnectionDropTimeoutCall = None
+
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.log.debug("timeout: server did not drop TCP connection (in time)")
             self.wasClean = False
-            self.wasNotCleanReason = u'server did not drop TCP connection (in time)'
+            self.wasNotCleanReason = u'WebSocket closing handshake timeout (server did not drop TCP connection in time)'
             self.wasServerConnectionDropTimeout = True
             self.dropConnection(abort=True)
         else:
-            # ok, connection is already closed!
-            pass
+            self.log.debug("skipping closing handshake timeout: server did indeed drop the connection in time")
 
     def onOpenHandshakeTimeout(self):
         """
@@ -800,18 +799,16 @@ class WebSocketProtocol(object):
         So we drop the connection, but set self.wasClean = False.
         """
         self.openHandshakeTimeoutCall = None
+
         if self.state in [WebSocketProtocol.STATE_CONNECTING, WebSocketProtocol.STATE_PROXY_CONNECTING]:
-            self.log.debug("opening handshake timeout: peer did not finish (in time) the opening handshake")
             self.wasClean = False
-            self.wasNotCleanReason = u'peer did not finish (in time) the opening handshake'
+            self.wasNotCleanReason = u'WebSocket opening handshake timeout (peer did not finish the opening handshake in time)'
             self.wasOpenHandshakeTimeout = True
             self.dropConnection(abort=True)
         elif self.state == WebSocketProtocol.STATE_OPEN:
             self.log.debug("skipping opening handshake timeout: WebSocket connection is open (opening handshake already finished)")
-
         elif self.state == WebSocketProtocol.STATE_CLOSING:
             self.log.debug("skipping opening handshake timeout: WebSocket connection is already closing ..")
-
         elif self.state == WebSocketProtocol.STATE_CLOSED:
             self.log.debug("skipping opening handshake timeout: WebSocket connection is already closed")
         else:
@@ -825,22 +822,22 @@ class WebSocketProtocol(object):
         So we drop the connection, but set self.wasClean = False.
         """
         self.closeHandshakeTimeoutCall = None
+
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.log.debug("closing handshake timeout: peer did not finish (in time) the closing handshake")
             self.wasClean = False
-            self.wasNotCleanReason = u'peer did not respond (in time) in closing handshake'
+            self.wasNotCleanReason = u'WebSocket closing handshake timeout (peer did not finish the opening handshake in time)'
             self.wasCloseHandshakeTimeout = True
             self.dropConnection(abort=True)
         else:
-            self.log.debug("skipping closing handshake timeout: WebSocket connection is already closed")
+            self.log.debug('skipping closing handshake timeout: WebSocket connection is already closed')
 
     def onAutoPingTimeout(self):
         """
         When doing automatic ping/pongs to detect broken connection, the peer
         did not reply in time to our ping. We drop the connection.
         """
-        self.log.debug("Auto ping/pong: onAutoPingTimeout fired")
-
+        self.wasClean = False
+        self.wasNotCleanReason = u'WebSocket ping timeout (peer did not respond with pong in time)'
         self.autoPingTimeoutCall = None
         self.dropConnection(abort=True)
 
@@ -849,7 +846,12 @@ class WebSocketProtocol(object):
         Drop the underlying TCP connection.
         """
         if self.state != WebSocketProtocol.STATE_CLOSED:
-            self.log.debug("dropping connection: {reason}", reason=self.wasNotCleanReason)
+
+            if self.wasClean:
+                self.log.debug('dropping connection to peer {peer} with abort={abort}', peer=self.peer, abort=abort)
+            else:
+                self.log.warn('dropping connection to peer {peer} with abort={abort}: {reason}', peer=self.peer, abort=abort, reason=self.wasNotCleanReason)
+
             self.droppedByMe = True
 
             # this code-path will be hit (*without* hitting
@@ -860,7 +862,7 @@ class WebSocketProtocol(object):
 
             self._closeConnection(abort)
         else:
-            self.log.debug("skipping dropConnection since connection is already closed")
+            self.log.debug('dropping connection to peer {peer} skipped - connection already closed', peer=self.peer)
 
     def _fail_connection(self, code=CLOSE_STATUS_CODE_GOING_AWAY, reason=u'going away'):
         """
