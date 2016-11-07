@@ -3,7 +3,7 @@ Autobahn\|Python
 
 WebSocket & WAMP for Python on Twisted and asyncio.
 
-| |Version| |Downloads| |Build Status| |Coverage| |Docs|
+| |Version| |Build Status| |Coverage| |Docs|
 
 --------------
 
@@ -127,12 +127,6 @@ Above code will work on Twisted and asyncio by changing a single line
 
 .. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn
-
-.. |Downloads| image:: https://img.shields.io/pypi/dm/autobahn.svg
-   :target: https://pypi.python.org/pypi/autobahn
-
-.. |GitHub Stars| image:: https://img.shields.io/github/stars/crossbario/autobahn-python.svg?style=social&label=Star
-   :target: https://github.com/crossbario/autobahn-python
 
 .. |Master Branch| image:: https://img.shields.io/badge/branch-master-orange.svg
    :target: https://travis-ci.org/crossbario/autobahn-python.svg?branch=master

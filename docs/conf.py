@@ -113,12 +113,12 @@ master_doc = 'contents'
 
 # General information about the project.
 project = u'autobahn'
-author = u'Tavendo'
+author = u'Crossbar.io Project'
 this_year = u'{0}'.format(time.strftime('%Y'))
 if this_year != u'2012':
-    copyright = u'2012-{0}, Tavendo GmbH'.format(this_year)
+    copyright = u'2012-{0}, Crossbar.io Technologies GmbH'.format(this_year)
 else:
-    copyright = u'2012, Tavendo GmbH'
+    copyright = u'2012, Crossbar.io Technologies GmbH'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

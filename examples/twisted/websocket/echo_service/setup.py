@@ -2,7 +2,7 @@
 #
 # The MIT License (MIT)
 #
-# Copyright (c) Tavendo GmbH
+# Copyright (c) Crossbar.io Technologies GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ setup(
     version='0.1.0',
     description='Autobahn WebSocket Echo Service',
     long_description=LONGDESC,
-    author='Tavendo GmbH',
+    author='Crossbar.io Technologies GmbH',
     url='http://crossbar.io/autobahn',
     platforms=('Any'),
     install_requires=['Twisted>=Twisted-12.2',

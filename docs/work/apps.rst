@@ -113,7 +113,7 @@ lines in the same function. In that case, you should not `return`, but use
    @app.signal('onjoin')
    def entry_point():
       # Calling statuscode
-      url = "http://tavendo.com"
+      url = "http://crossbar.io"
       code = yield app.session.call('statuscode', url)
       print("GET on '%s' returned status '%s'" % (url, code))
 
@@ -127,4 +127,4 @@ Now, in a Terminal:
 
    $ python script.py
    Running on 'ws://localhost:8080'
-   GET on 'http://tavendo.com' returned status '200'
+   GET on 'http://crossbar.io' returned status '200'

@@ -10,29 +10,29 @@ env:
   - TOX_ENV=py27-tw121
   - TOX_ENV=py27-tw132
   - TOX_ENV=py27-tw154
-  - TOX_ENV=py27-tw162
+  - TOX_ENV=py27-tw165
   - TOX_ENV=py27-twtrunk
   - TOX_ENV=py27-asyncio
 
   - TOX_ENV=pypy-tw121
   - TOX_ENV=pypy-tw132
   - TOX_ENV=pypy-tw154
-  - TOX_ENV=pypy-tw162
+  - TOX_ENV=pypy-tw165
   - TOX_ENV=pypy-twtrunk
   - TOX_ENV=pypy-asyncio
 
   - TOX_ENV=py33-tw154
-  - TOX_ENV=py33-tw162
+  - TOX_ENV=py33-tw165
   - TOX_ENV=py33-twtrunk
   - TOX_ENV=py33-asyncio
 
   - TOX_ENV=py34-tw154
-  - TOX_ENV=py34-tw162
+  - TOX_ENV=py34-tw165
   - TOX_ENV=py34-twtrunk
   - TOX_ENV=py34-asyncio
 
   #- TOX_ENV=py35-tw154
-  #- TOX_ENV=py35-tw162
+  #- TOX_ENV=py35-tw165
   #- TOX_ENV=py35-twtrunk
   #- TOX_ENV=py35-asyncio
 
@@ -53,7 +53,7 @@ matrix:
 
     - python: 3.5
       env:
-      - TOX_ENV=py35-tw162
+      - TOX_ENV=py35-tw165
 
     - python: 3.5
       env:

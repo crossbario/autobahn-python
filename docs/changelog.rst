@@ -5,6 +5,17 @@
 Changelog
 =========
 
+0.16.1
+------
+
+`Published 2016-11-07 <https://pypi.python.org/pypi/autobahn/0.16.1`_
+
+* fix: inconsistency between `PublishOptions` and `Publish` message
+* new: improve logging with dropped connections (eg due to timeouts)
+* fix: various smaller asyncio fixes
+* new: rewrite all examples for new Python 3.5 async/await syntax
+* fix: copyrights transferred from Tavendo GmbH to Crossbar.io Technologies GmbH
+
 0.16.0
 ------
 
