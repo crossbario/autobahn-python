@@ -577,7 +577,7 @@ class TestEventMessage(unittest.TestCase):
         self.assertNotEqual(msg.retained, True)
         self.assertEqual(msg.marshal(), wmsg)
 
-    def test_retained_explicit_false(self):
+    def test_retained_explicit_true(self):
         wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {u'retained': True}]
         msg = message.Event.parse(wmsg)
         self.assertIsInstance(msg, message.Event)
