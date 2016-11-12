@@ -1116,7 +1116,8 @@ class Publish(Message):
                  eligible_authrole=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None):
+                 enc_serializer=None,
+                 retain=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1156,6 +1157,8 @@ class Publish(Message):
         :type enc_key: unicode or binary
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
+        :param retain: If ``True``, request the broker retain this event.
+        :type retain: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
@@ -1226,6 +1229,9 @@ class Publish(Message):
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
 
+        # event retention
+        self.retain = retain
+
     @staticmethod
     def parse(wmsg):
         """
@@ -1291,6 +1297,8 @@ class Publish(Message):
         eligible = None
         eligible_authid = None
         eligible_authrole = None
+
+        retain = None
 
         if u'acknowledge' in options:
 
@@ -1380,6 +1388,11 @@ class Publish(Message):
 
             eligible_authrole = option_eligible_authrole
 
+        if u'retain' in options:
+            retain = options[u'retain']
+            if type(retain) != bool:
+                raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
+
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1395,7 +1408,8 @@ class Publish(Message):
                       eligible_authrole=eligible_authrole,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
-                      enc_serializer=enc_serializer)
+                      enc_serializer=enc_serializer,
+                      retain=retain)
 
         return obj
 
@@ -1424,6 +1438,8 @@ class Publish(Message):
             options[u'eligible_authid'] = self.eligible_authid
         if self.eligible_authrole is not None:
             options[u'eligible_authrole'] = self.eligible_authrole
+        if self.retain is not None:
+            options[u'retain'] = self.retain
 
         if self.payload:
             if self.enc_algo is not None:
@@ -1445,7 +1461,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, exclude_authid={7}, exclude_authrole={8}, eligible={9}, eligible_authid={10}, eligible_authrole={11}, enc_algo={12}, enc_key={13}, enc_serializer={14}, payload={15})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, exclude_authid={7}, exclude_authrole={8}, eligible={9}, eligible_authid={10}, eligible_authrole={11}, enc_algo={12}, enc_key={13}, enc_serializer={14}, payload={15}, retain={16})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.retain)
 
 
 class Published(Message):
@@ -1530,7 +1546,7 @@ class Subscribe(Message):
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
 
-    def __init__(self, request, topic, match=None):
+    def __init__(self, request, topic, match=None, get_retained=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1539,16 +1555,20 @@ class Subscribe(Message):
         :type topic: unicode
         :param match: The topic matching method to be used for the subscription.
         :type match: unicode
+        :param get_retained: Whether the client wants the retained message we may have along with the subscription.
+        :type get_retained: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(match is None or type(match) == six.text_type)
         assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
+        assert(get_retained is None or type(get_retained) is bool)
 
         Message.__init__(self)
         self.request = request
         self.topic = topic
         self.match = match or Subscribe.MATCH_EXACT
+        self.get_retained = get_retained
 
     @staticmethod
     def parse(wmsg):
@@ -1572,6 +1592,7 @@ class Subscribe(Message):
         topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allow_empty_components=True)
 
         match = Subscribe.MATCH_EXACT
+        get_retained = None
 
         if u'match' in options:
 
@@ -1584,7 +1605,13 @@ class Subscribe(Message):
 
             match = option_match
 
-        obj = Subscribe(request, topic, match=match)
+        if u'get_retained' in options:
+            get_retained = options[u'get_retained']
+
+            if type(get_retained) != bool:
+                raise ProtocolError("invalid type {0} for 'get_retained' option in SUBSCRIBE".format(type(get_retained)))
+
+        obj = Subscribe(request, topic, match=match, get_retained=get_retained)
 
         return obj
 
@@ -1599,13 +1626,16 @@ class Subscribe(Message):
         if self.match and self.match != Subscribe.MATCH_EXACT:
             options[u'match'] = self.match
 
+        if self.get_retained is not None:
+            options[u'get_retained'] = self.get_retained
+
         return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Subscribe(request={0}, topic={1}, match={2})".format(self.request, self.topic, self.match)
+        return u"Subscribe(request={0}, topic={1}, match={2}, get_retained={3})".format(self.request, self.topic, self.match, self.get_retained)
 
 
 class Subscribed(Message):
@@ -1858,7 +1888,7 @@ class Event(Message):
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 enc_algo=None, enc_key=None, enc_serializer=None, retained=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1887,6 +1917,8 @@ class Event(Message):
         :type enc_key: unicode or binary
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
+        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
+        :type retained: bool or None
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
@@ -1904,6 +1936,7 @@ class Event(Message):
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
+        assert(retained is None or type(retained) == bool)
 
         Message.__init__(self)
         self.subscription = subscription
@@ -1920,6 +1953,9 @@ class Event(Message):
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
+
+        # event retention
+        self.retained = retained
 
     @staticmethod
     def parse(wmsg):
@@ -1948,6 +1984,7 @@ class Event(Message):
         enc_algo = None
         enc_key = None
         enc_serializer = None
+        retained = None
 
         if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
 
@@ -2012,6 +2049,11 @@ class Event(Message):
 
             topic = detail_topic
 
+        if u'retained' in details:
+            retained = details[u'retained']
+            if type(retained) != bool:
+                raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
+
         obj = Event(subscription,
                     publication,
                     args=args,
@@ -2023,7 +2065,8 @@ class Event(Message):
                     topic=topic,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer)
+                    enc_serializer=enc_serializer,
+                    retained=retained)
 
         return obj
 
@@ -2047,6 +2090,9 @@ class Event(Message):
         if self.topic is not None:
             details[u'topic'] = self.topic
 
+        if self.retained is not None:
+            details[u'retained'] = self.retained
+
         if self.payload:
             if self.enc_algo is not None:
                 details[u'enc_algo'] = self.enc_algo
@@ -2067,7 +2113,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, publisher_authid={5}, publisher_authrole={6}, topic={7}, enc_algo={8}, enc_key={9}, enc_serializer={9}, payload={10})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, publisher_authid={5}, publisher_authrole={6}, topic={7}, enc_algo={8}, enc_key={9}, enc_serializer={9}, payload={10}, retained={11})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), retained)
 
 
 class Call(Message):

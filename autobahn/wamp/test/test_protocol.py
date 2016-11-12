@@ -187,6 +187,9 @@ if os.environ.get('USE_TWISTED', False):
             publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300]))
             self.assertEqual(publication, None)
 
+            publication = yield handler.publish(u'com.myapp.topic1', 1, 2, 3, foo=23, bar='hello', options=types.PublishOptions(exclude_me=False, exclude=[100, 200, 300], retain=True))
+            self.assertEqual(publication, None)
+
         @inlineCallbacks
         def test_publish_acknowledged(self):
             handler = ApplicationSession()
@@ -277,6 +280,9 @@ if os.environ.get('USE_TWISTED', False):
             self.assertTrue(type(subscription.id) in (int, long))
 
             subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard'))
+            self.assertTrue(type(subscription.id) in (int, long))
+
+            subscription = yield handler.subscribe(on_event, u'com.myapp.topic1', options=types.SubscribeOptions(match=u'wildcard', get_retained=True))
             self.assertTrue(type(subscription.id) in (int, long))
 
         @inlineCallbacks

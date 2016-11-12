@@ -262,6 +262,38 @@ class TestSubscribeMessage(unittest.TestCase):
         self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
         self.assertEqual(msg.marshal(), wmsg)
 
+    def test_get_retained_default_false(self):
+        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {u'match': u'prefix'}, u'com.myapp.topic1']
+        msg = message.Subscribe.parse(wmsg)
+        self.assertIsInstance(msg, message.Subscribe)
+        self.assertEqual(msg.request, 123456)
+        self.assertEqual(msg.topic, u'com.myapp.topic1')
+        self.assertEqual(msg.get_retained, None)
+        self.assertNotEqual(msg.get_retained, True)
+        self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_get_retained_explicit_false(self):
+        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {u'match': u'prefix', u'get_retained': False}, u'com.myapp.topic1']
+        msg = message.Subscribe.parse(wmsg)
+        self.assertIsInstance(msg, message.Subscribe)
+        self.assertEqual(msg.request, 123456)
+        self.assertEqual(msg.topic, u'com.myapp.topic1')
+        self.assertEqual(msg.get_retained, False)
+        self.assertNotEqual(msg.get_retained, True)
+        self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_get_retained_explicit_true(self):
+        wmsg = [message.Subscribe.MESSAGE_TYPE, 123456, {u'match': u'prefix', u'get_retained': True}, u'com.myapp.topic1']
+        msg = message.Subscribe.parse(wmsg)
+        self.assertIsInstance(msg, message.Subscribe)
+        self.assertEqual(msg.request, 123456)
+        self.assertEqual(msg.topic, u'com.myapp.topic1')
+        self.assertEqual(msg.get_retained, True)
+        self.assertEqual(msg.match, message.Subscribe.MATCH_PREFIX)
+        self.assertEqual(msg.marshal(), wmsg)
+
 
 class TestSubscribedMessage(unittest.TestCase):
 
@@ -416,6 +448,39 @@ class TestPublishMessage(unittest.TestCase):
         self.assertEqual(msg.eligible, [100, 200, 300])
         self.assertEqual(msg.marshal(), wmsg)
 
+    def test_retain_default_false(self):
+        """
+        Retain, when not specified, is False-y by default.
+        """
+        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {u'exclude_me': False, u'exclude': [300], u'eligible': [100, 200, 300]}, u'com.myapp.topic1']
+        msg = message.Publish.parse(wmsg)
+        self.assertIsInstance(msg, message.Publish)
+        self.assertEqual(msg.retain, None)
+        self.assertIsNot(msg.retain, True)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_retain_explicit_false(self):
+        """
+        Retain, when specified as False, shows up in the message.
+        """
+        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {u'exclude_me': False, u'retain': False, u'exclude': [300], u'eligible': [100, 200, 300]}, u'com.myapp.topic1']
+        msg = message.Publish.parse(wmsg)
+        self.assertIsInstance(msg, message.Publish)
+        self.assertEqual(msg.retain, False)
+        self.assertIsNot(msg.retain, True)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_retain_explicit_true(self):
+        """
+        Retain, when specified as True, shows up in the message.
+        """
+        wmsg = [message.Publish.MESSAGE_TYPE, 123456, {u'exclude_me': False, u'retain': True, u'exclude': [300], u'eligible': [100, 200, 300]}, u'com.myapp.topic1']
+        msg = message.Publish.parse(wmsg)
+        self.assertIsInstance(msg, message.Publish)
+        self.assertEqual(msg.retain, True)
+        self.assertIs(msg.retain, True)
+        self.assertEqual(msg.marshal(), wmsg)
+
 
 class TestPublishedMessage(unittest.TestCase):
 
@@ -494,6 +559,29 @@ class TestEventMessage(unittest.TestCase):
         self.assertEqual(msg.args, None)
         self.assertEqual(msg.kwargs, None)
         self.assertEqual(msg.publisher, 300)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_retained_default_false(self):
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {}]
+        msg = message.Event.parse(wmsg)
+        self.assertIsInstance(msg, message.Event)
+        self.assertEqual(msg.retained, None)
+        self.assertNotEqual(msg.retained, True)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_retained_explicit_false(self):
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {u'retained': False}]
+        msg = message.Event.parse(wmsg)
+        self.assertIsInstance(msg, message.Event)
+        self.assertEqual(msg.retained, False)
+        self.assertNotEqual(msg.retained, True)
+        self.assertEqual(msg.marshal(), wmsg)
+
+    def test_retained_explicit_false(self):
+        wmsg = [message.Event.MESSAGE_TYPE, 123456, 789123, {u'retained': True}]
+        msg = message.Event.parse(wmsg)
+        self.assertIsInstance(msg, message.Event)
+        self.assertEqual(msg.retained, True)
         self.assertEqual(msg.marshal(), wmsg)
 
 
