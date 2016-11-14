@@ -396,11 +396,11 @@ class EventDetails(object):
         'publisher_authid',
         'publisher_authrole',
         'topic',
-        'enc_algo',
         'retained',
+        'enc_algo',
     )
 
-    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, enc_algo=None, retained=None):
+    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
         """
 
         :param publication: The publication ID of the event (always present).
@@ -417,30 +417,30 @@ class EventDetails(object):
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
             Only filled for pattern-based subscriptions.
         :type topic: None or unicode
+        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
+        :type retained: bool or None
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: None or unicode
-        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
-        :type retained: bool or None
         """
         assert(type(publication) in six.integer_types)
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
-        assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
         assert(retained is None or type(retained) is bool)
+        assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
 
         self.publication = publication
         self.publisher = publisher
         self.publisher_authid = publisher_authid
         self.publisher_authrole = publisher_authrole
         self.topic = topic
-        self.enc_algo = enc_algo
         self.retained = retained
+        self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication={0}, publisher={1}, publisher_authid={2}, publisher_authrole={3}, topic=<{4}>, enc_algo={5}, retained={6})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.retained)
+        return "EventDetails(publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
 
 
 class PublishOptions(object):
