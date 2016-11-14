@@ -1114,10 +1114,10 @@ class Publish(Message):
                  eligible=None,
                  eligible_authid=None,
                  eligible_authrole=None,
+                 retain=None,
                  enc_algo=None,
                  enc_key=None,
-                 enc_serializer=None,
-                 retain=None):
+                 enc_serializer=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1151,14 +1151,14 @@ class Publish(Message):
         :type eligible_authid: list of unicode or None
         :param eligible_authrole: List of WAMP authroles eligible to receive this event.
         :type eligible_authrole: list of unicode or None
+        :param retain: If ``True``, request the broker retain this event.
+        :type retain: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
-        :param retain: If ``True``, request the broker retain this event.
-        :type retain: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
@@ -1167,6 +1167,7 @@ class Publish(Message):
         assert(payload is None or type(payload) in [six.text_type, six.binary_type])
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
+        assert(retain is None or type(retain) == bool)
 
         # publisher exlusion and black-/whitelisting
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -1224,13 +1225,13 @@ class Publish(Message):
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
 
+        # event retention
+        self.retain = retain
+
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
-
-        # event retention
-        self.retain = retain
 
     @staticmethod
     def parse(wmsg):
@@ -1406,10 +1407,10 @@ class Publish(Message):
                       eligible=eligible,
                       eligible_authid=eligible_authid,
                       eligible_authrole=eligible_authrole,
+                      retain=retain,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
-                      enc_serializer=enc_serializer,
-                      retain=retain)
+                      enc_serializer=enc_serializer)
 
         return obj
 
@@ -1461,7 +1462,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, exclude_authid={7}, exclude_authrole={8}, eligible={9}, eligible_authid={10}, eligible_authrole={11}, enc_algo={12}, enc_key={13}, enc_serializer={14}, payload={15}, retain={16})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.retain)
+        return u"Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me=5}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Published(Message):
@@ -1888,7 +1889,7 @@ class Event(Message):
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None, retained=None):
+                 retained=None, enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1911,14 +1912,14 @@ class Event(Message):
         :type publisher_authrole: None or unicode
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
+        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
+        :type retained: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
-        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
-        :type retained: bool or None
         """
         assert(type(subscription) in six.integer_types)
         assert(type(publication) in six.integer_types)
@@ -1930,13 +1931,13 @@ class Event(Message):
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
+        assert(retained is None or type(retained) == bool)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
-        assert(retained is None or type(retained) == bool)
 
         Message.__init__(self)
         self.subscription = subscription
@@ -1948,14 +1949,12 @@ class Event(Message):
         self.publisher_authid = publisher_authid
         self.publisher_authrole = publisher_authrole
         self.topic = topic
+        self.retained = retained
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
         self.enc_key = enc_key
         self.enc_serializer = enc_serializer
-
-        # event retention
-        self.retained = retained
 
     @staticmethod
     def parse(wmsg):
@@ -1984,7 +1983,6 @@ class Event(Message):
         enc_algo = None
         enc_key = None
         enc_serializer = None
-        retained = None
 
         if len(wmsg) == 5 and type(wmsg[4]) in [six.text_type, six.binary_type]:
 
@@ -2016,6 +2014,7 @@ class Event(Message):
         publisher_authid = None
         publisher_authrole = None
         topic = None
+        retained = None
 
         if u'publisher' in details:
 
@@ -2063,10 +2062,10 @@ class Event(Message):
                     publisher_authid=publisher_authid,
                     publisher_authrole=publisher_authrole,
                     topic=topic,
+                    retained=retained,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
-                    enc_serializer=enc_serializer,
-                    retained=retained)
+                    enc_serializer=enc_serializer)
 
         return obj
 
@@ -2113,7 +2112,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, publisher_authid={5}, publisher_authrole={6}, topic={7}, enc_algo={8}, enc_key={9}, enc_serializer={9}, payload={10}, retained={11})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload), self.retained)
+        return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Call(Message):
