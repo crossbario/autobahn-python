@@ -1114,6 +1114,7 @@ class Publish(Message):
                  eligible=None,
                  eligible_authid=None,
                  eligible_authrole=None,
+                 retain=None,
                  enc_algo=None,
                  enc_key=None,
                  enc_serializer=None):
@@ -1150,6 +1151,8 @@ class Publish(Message):
         :type eligible_authid: list of unicode or None
         :param eligible_authrole: List of WAMP authroles eligible to receive this event.
         :type eligible_authrole: list of unicode or None
+        :param retain: If ``True``, request the broker retain this event.
+        :type retain: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -1164,6 +1167,7 @@ class Publish(Message):
         assert(payload is None or type(payload) in [six.text_type, six.binary_type])
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
+        assert(retain is None or type(retain) == bool)
 
         # publisher exlusion and black-/whitelisting
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -1220,6 +1224,9 @@ class Publish(Message):
         self.eligible = eligible
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
+
+        # event retention
+        self.retain = retain
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -1291,6 +1298,8 @@ class Publish(Message):
         eligible = None
         eligible_authid = None
         eligible_authrole = None
+
+        retain = None
 
         if u'acknowledge' in options:
 
@@ -1380,6 +1389,11 @@ class Publish(Message):
 
             eligible_authrole = option_eligible_authrole
 
+        if u'retain' in options:
+            retain = options[u'retain']
+            if type(retain) != bool:
+                raise ProtocolError("invalid type {0} for 'retain' option in PUBLISH".format(type(retain)))
+
         obj = Publish(request,
                       topic,
                       args=args,
@@ -1393,6 +1407,7 @@ class Publish(Message):
                       eligible=eligible,
                       eligible_authid=eligible_authid,
                       eligible_authrole=eligible_authrole,
+                      retain=retain,
                       enc_algo=enc_algo,
                       enc_key=enc_key,
                       enc_serializer=enc_serializer)
@@ -1424,6 +1439,8 @@ class Publish(Message):
             options[u'eligible_authid'] = self.eligible_authid
         if self.eligible_authrole is not None:
             options[u'eligible_authrole'] = self.eligible_authrole
+        if self.retain is not None:
+            options[u'retain'] = self.retain
 
         if self.payload:
             if self.enc_algo is not None:
@@ -1445,7 +1462,7 @@ class Publish(Message):
         """
         Returns string representation of this message.
         """
-        return u"Publish(request={0}, topic={1}, args={2}, kwargs={3}, acknowledge={4}, exclude_me={5}, exclude={6}, exclude_authid={7}, exclude_authrole={8}, eligible={9}, eligible_authid={10}, eligible_authrole={11}, enc_algo={12}, enc_key={13}, enc_serializer={14}, payload={15})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Publish(request={}, topic={}, args={}, kwargs={}, acknowledge={}, exclude_me=5}, exclude={}, exclude_authid={}, exclude_authrole={}, eligible={}, eligible_authid={}, eligible_authrole={}, retain={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.request, self.topic, self.args, self.kwargs, self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Published(Message):
@@ -1530,7 +1547,7 @@ class Subscribe(Message):
     MATCH_PREFIX = u'prefix'
     MATCH_WILDCARD = u'wildcard'
 
-    def __init__(self, request, topic, match=None):
+    def __init__(self, request, topic, match=None, get_retained=None):
         """
 
         :param request: The WAMP request ID of this request.
@@ -1539,16 +1556,20 @@ class Subscribe(Message):
         :type topic: unicode
         :param match: The topic matching method to be used for the subscription.
         :type match: unicode
+        :param get_retained: Whether the client wants the retained message we may have along with the subscription.
+        :type get_retained: bool or None
         """
         assert(type(request) in six.integer_types)
         assert(type(topic) == six.text_type)
         assert(match is None or type(match) == six.text_type)
         assert(match is None or match in [Subscribe.MATCH_EXACT, Subscribe.MATCH_PREFIX, Subscribe.MATCH_WILDCARD])
+        assert(get_retained is None or type(get_retained) is bool)
 
         Message.__init__(self)
         self.request = request
         self.topic = topic
         self.match = match or Subscribe.MATCH_EXACT
+        self.get_retained = get_retained
 
     @staticmethod
     def parse(wmsg):
@@ -1572,6 +1593,7 @@ class Subscribe(Message):
         topic = check_or_raise_uri(wmsg[3], u"'topic' in SUBSCRIBE", allow_empty_components=True)
 
         match = Subscribe.MATCH_EXACT
+        get_retained = None
 
         if u'match' in options:
 
@@ -1584,7 +1606,13 @@ class Subscribe(Message):
 
             match = option_match
 
-        obj = Subscribe(request, topic, match=match)
+        if u'get_retained' in options:
+            get_retained = options[u'get_retained']
+
+            if type(get_retained) != bool:
+                raise ProtocolError("invalid type {0} for 'get_retained' option in SUBSCRIBE".format(type(get_retained)))
+
+        obj = Subscribe(request, topic, match=match, get_retained=get_retained)
 
         return obj
 
@@ -1599,13 +1627,16 @@ class Subscribe(Message):
         if self.match and self.match != Subscribe.MATCH_EXACT:
             options[u'match'] = self.match
 
+        if self.get_retained is not None:
+            options[u'get_retained'] = self.get_retained
+
         return [Subscribe.MESSAGE_TYPE, self.request, options, self.topic]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Subscribe(request={0}, topic={1}, match={2})".format(self.request, self.topic, self.match)
+        return u"Subscribe(request={0}, topic={1}, match={2}, get_retained={3})".format(self.request, self.topic, self.match, self.get_retained)
 
 
 class Subscribed(Message):
@@ -1858,7 +1889,7 @@ class Event(Message):
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
-                 enc_algo=None, enc_key=None, enc_serializer=None):
+                 retained=None, enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1881,6 +1912,8 @@ class Event(Message):
         :type publisher_authrole: None or unicode
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
+        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
+        :type retained: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -1898,6 +1931,7 @@ class Event(Message):
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
+        assert(retained is None or type(retained) == bool)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
@@ -1915,6 +1949,7 @@ class Event(Message):
         self.publisher_authid = publisher_authid
         self.publisher_authrole = publisher_authrole
         self.topic = topic
+        self.retained = retained
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -1979,6 +2014,7 @@ class Event(Message):
         publisher_authid = None
         publisher_authrole = None
         topic = None
+        retained = None
 
         if u'publisher' in details:
 
@@ -2012,6 +2048,11 @@ class Event(Message):
 
             topic = detail_topic
 
+        if u'retained' in details:
+            retained = details[u'retained']
+            if type(retained) != bool:
+                raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
+
         obj = Event(subscription,
                     publication,
                     args=args,
@@ -2021,6 +2062,7 @@ class Event(Message):
                     publisher_authid=publisher_authid,
                     publisher_authrole=publisher_authrole,
                     topic=topic,
+                    retained=retained,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
                     enc_serializer=enc_serializer)
@@ -2047,6 +2089,9 @@ class Event(Message):
         if self.topic is not None:
             details[u'topic'] = self.topic
 
+        if self.retained is not None:
+            details[u'retained'] = self.retained
+
         if self.payload:
             if self.enc_algo is not None:
                 details[u'enc_algo'] = self.enc_algo
@@ -2067,7 +2112,7 @@ class Event(Message):
         """
         Returns string representation of this message.
         """
-        return u"Event(subscription={0}, publication={1}, args={2}, kwargs={3}, publisher={4}, publisher_authid={5}, publisher_authrole={6}, topic={7}, enc_algo={8}, enc_key={9}, enc_serializer={9}, payload={10})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+        return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
 
 
 class Call(Message):

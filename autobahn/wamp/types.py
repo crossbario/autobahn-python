@@ -344,9 +344,10 @@ class SubscribeOptions(object):
     __slots__ = (
         'match',
         'details_arg',
+        'get_retained',
     )
 
-    def __init__(self, match=None, details_arg=None):
+    def __init__(self, match=None, details_arg=None, get_retained=None):
         """
 
         :param match: The topic matching method to be used for the subscription.
@@ -354,12 +355,16 @@ class SubscribeOptions(object):
         :param details_arg: When invoking the handler, provide event details
           in this keyword argument to the callable.
         :type details_arg: str
+        :param get_retained: Whether the client wants the retained message we may have along with the subscription.
+        :type get_retained: bool or None
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(details_arg is None or type(details_arg) == str)
+        assert(get_retained is None or type(get_retained) is bool)
 
         self.match = match
         self.details_arg = details_arg
+        self.get_retained = get_retained
 
     def message_attr(self):
         """
@@ -370,10 +375,13 @@ class SubscribeOptions(object):
         if self.match is not None:
             options[u'match'] = self.match
 
+        if self.get_retained is not None:
+            options[u'get_retained'] = self.get_retained
+
         return options
 
     def __str__(self):
-        return "SubscribeOptions(match={0}, details_arg={1})".format(self.match, self.details_arg)
+        return "SubscribeOptions(match={0}, details_arg={1}, get_retained={2})".format(self.match, self.details_arg, self.get_retained)
 
 
 class EventDetails(object):
@@ -388,10 +396,11 @@ class EventDetails(object):
         'publisher_authid',
         'publisher_authrole',
         'topic',
+        'retained',
         'enc_algo',
     )
 
-    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, enc_algo=None):
+    def __init__(self, publication, publisher=None, publisher_authid=None, publisher_authrole=None, topic=None, retained=None, enc_algo=None):
         """
 
         :param publication: The publication ID of the event (always present).
@@ -408,6 +417,8 @@ class EventDetails(object):
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
             Only filled for pattern-based subscriptions.
         :type topic: None or unicode
+        :param retained: Whether the message was retained by the broker on the topic, rather than just published.
+        :type retained: bool or None
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
         :type enc_algo: None or unicode
@@ -417,6 +428,7 @@ class EventDetails(object):
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
+        assert(retained is None or type(retained) is bool)
         assert(enc_algo is None or (type(enc_algo) == six.text_type and enc_algo in [u'cryptobox']))
 
         self.publication = publication
@@ -424,10 +436,11 @@ class EventDetails(object):
         self.publisher_authid = publisher_authid
         self.publisher_authrole = publisher_authrole
         self.topic = topic
+        self.retained = retained
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication={0}, publisher={1}, publisher_authid={2}, publisher_authrole={3}, topic=<{4}>, enc_algo={5})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.enc_algo)
+        return "EventDetails(publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
 
 
 class PublishOptions(object):
@@ -445,6 +458,7 @@ class PublishOptions(object):
         'eligible',
         'eligible_authid',
         'eligible_authrole',
+        'retain',
     )
 
     def __init__(self,
@@ -455,7 +469,8 @@ class PublishOptions(object):
                  exclude_authrole=None,
                  eligible=None,
                  eligible_authid=None,
-                 eligible_authrole=None):
+                 eligible_authrole=None,
+                 retain=None):
         """
 
         :param acknowledge: If ``True``, acknowledge the publication with a success or
@@ -476,6 +491,8 @@ class PublishOptions(object):
         :type eligible_authid: unicode or list of unicode or None
         :param eligible_authrole: A single WAMP authrole or a list thereof eligible to receive this event.
         :type eligible_authrole: unicode or list of unicode or None
+        :param retain: If ``True``, request the broker retain this event.
+        :type retain: bool or None
         """
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(exclude_me is None or type(exclude_me) == bool)
@@ -485,6 +502,7 @@ class PublishOptions(object):
         assert(eligible is None or type(eligible) in six.integer_types or (type(eligible) == list and all(type(x) in six.integer_types for x in eligible)))
         assert(eligible_authid is None or type(eligible_authid) == six.text_type or (type(eligible_authid) == list and all(type(x) == six.text_type for x in eligible_authid)))
         assert(eligible_authrole is None or type(eligible_authrole) == six.text_type or (type(eligible_authrole) == list and all(type(x) == six.text_type for x in eligible_authrole)))
+        assert(retain is None or type(retain) == bool)
 
         self.acknowledge = acknowledge
         self.exclude_me = exclude_me
@@ -494,6 +512,7 @@ class PublishOptions(object):
         self.eligible = eligible
         self.eligible_authid = eligible_authid
         self.eligible_authrole = eligible_authrole
+        self.retain = retain
 
     def message_attr(self):
         """
@@ -525,10 +544,13 @@ class PublishOptions(object):
         if self.eligible_authrole is not None:
             options[u'eligible_authrole'] = self.eligible_authrole if type(self.eligible_authrole) == list else [self.eligible_authrole]
 
+        if self.retain is not None:
+            options[u'retain'] = self.retain
+
         return options
 
     def __str__(self):
-        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole)
+        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7}, retain={8})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
 
 
 class RegisterOptions(object):

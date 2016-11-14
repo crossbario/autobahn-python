@@ -89,6 +89,7 @@ class RoleBrokerFeatures(RoleFeatures):
                  event_history=None,
                  payload_transparency=None,
                  payload_encryption_cryptobox=None,
+                 event_retention=None,
                  **kwargs):
         self.publisher_identification = publisher_identification
         self.publication_trustlevels = publication_trustlevels
@@ -101,6 +102,7 @@ class RoleBrokerFeatures(RoleFeatures):
         self.event_history = event_history
         self.payload_transparency = payload_transparency
         self.payload_encryption_cryptobox = payload_encryption_cryptobox
+        self.event_retention = event_retention
         self._check_all_bool()
 
 
