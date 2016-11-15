@@ -215,6 +215,7 @@ class Test(TestCase):
         self.assertTrue(server.onMessage.called)
         self.assertTrue(isinstance(server.onMessage.call_args[0][0], message.Abort))
 
+
 if __name__ == "__main__":
     # import sys;sys.argv = ['', 'Test.test_prefix']
     main()
