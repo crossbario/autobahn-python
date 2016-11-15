@@ -205,6 +205,7 @@ class RawSocketProtocol(PrefixProtocol):
                 if data:
                     PrefixProtocol.data_received(self, data)
 
+
 ERR_SERIALIZER_UNSUPPORTED = 1
 
 ERRMAP = {
