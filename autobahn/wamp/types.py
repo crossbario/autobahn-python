@@ -287,15 +287,24 @@ class SessionDetails(object):
         'authmethod',
         'authprovider',
         'authextra',
+        'resumed',
+        'resumable'
+        'resume_token',
     )
 
-    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None):
+    def __init__(self, realm, session, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None):
         """
 
         :param realm: The realm this WAMP session is attached to.
         :type realm: unicode
         :param session: WAMP session ID of this session.
         :type session: int
+        :param resumed: Whether the session is a resumed one.
+        :type resumed: bool or None
+        :param resumable: Whether this session can be resumed later.
+        :type resumable: bool or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         """
         assert(type(realm) == six.text_type)
         assert(type(session) in six.integer_types)
@@ -304,6 +313,9 @@ class SessionDetails(object):
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(resumed is None or type(resumed) == bool)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_token is None or type(resume_token) == six.text_type)
 
         self.realm = realm
         self.session = session
@@ -312,9 +324,12 @@ class SessionDetails(object):
         self.authmethod = authmethod
         self.authprovider = authprovider
         self.authextra = authextra
+        self.resumed = resumed
+        self.resumable = resumable
+        self.resume_token = resume_token
 
     def __str__(self):
-        return "SessionDetails(realm=<{0}>, session={1}, authid=<{2}>, authrole=<{3}>, authmethod={4}, authprovider={5}, authextra={6})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return "SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
 
 class CloseDetails(object):
