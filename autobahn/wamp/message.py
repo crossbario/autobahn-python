@@ -272,7 +272,7 @@ class Hello(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None):
+    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
@@ -287,6 +287,12 @@ class Hello(Message):
         :type authrole: unicode or None
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+        :param resumable: Whether the client wants this to be a session that can be later resumed.
+        :type resumable: bool or None
+        :param resume_session: The session the client would like to resume.
+        :type resume_session: int or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         """
         assert(realm is None or type(realm) == six.text_type)
         assert(type(roles) == dict)
@@ -301,6 +307,9 @@ class Hello(Message):
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_session is None or type(resume_session) == int)
+        assert(resume_token is None or type(resume_token) == six.text_type)
 
         Message.__init__(self)
         self.realm = realm
@@ -309,6 +318,9 @@ class Hello(Message):
         self.authid = authid
         self.authrole = authrole
         self.authextra = authextra
+        self.resumable = resumable
+        self.resume_session = resume_session
+        self.resume_token = resume_token
 
     @staticmethod
     def parse(wmsg):
@@ -394,7 +406,28 @@ class Hello(Message):
 
             authextra = details_authextra
 
-        obj = Hello(realm, roles, authmethods, authid, authrole, authextra)
+        resumable = None
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if type(resumable) != bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in HELLO".format(type(resumable)))
+
+        resume_session = None
+        if u'resume-session' in details:
+            resume_session = details[u'resume-session']
+            if type(resume_session) != int:
+                raise ProtocolError("invalid type {0} for 'resume-session' detail in HELLO".format(type(resume_session)))
+
+        resume_token = None
+        if u'resume-token' in details:
+            resume_token = details[u'resume-token']
+            if type(resume_token) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'resume-token' detail in HELLO".format(type(resume_token)))
+        else:
+            if resume_session:
+                raise ProtocolError("resume-token must be provided if resume-session is provided in HELLO")
+
+        obj = Hello(realm, roles, authmethods, authid, authrole, authextra, resumable, resume_session, resume_token)
 
         return obj
 
@@ -425,13 +458,22 @@ class Hello(Message):
         if self.authextra:
             details[u'authextra'] = self.authextra
 
+        if self.resumable is not None:
+            details[u'resumable'] = self.resumable
+
+        if self.resume_session:
+            details[u'resume-session'] = self.resume_session
+
+        if self.resume_token:
+            details[u'resume-token'] = self.resume_token
+
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
     def __str__(self):
         """
         Return a string representation of this message.
         """
-        return u"Hello(realm={0}, roles={1}, authmethods={2}, authid={3}, authrole={4}, authextra={5})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra)
+        return u"Hello(realm={}, roles={}, authmethods={}, authid={}, authrole={}, authextra={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra, self.resumable, self.resume_session, self.resume_token)
 
 
 class Welcome(Message):

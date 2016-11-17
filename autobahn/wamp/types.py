@@ -218,9 +218,12 @@ class HelloDetails(object):
         'authextra',
         'session_roles',
         'pending_session',
+        'resumable',
+        'resume_session',
+        'resume_token',
     )
 
-    def __init__(self, realm=None, authmethods=None, authid=None, authrole=None, authextra=None, session_roles=None, pending_session=None):
+    def __init__(self, realm=None, authmethods=None, authid=None, authrole=None, authextra=None, session_roles=None, pending_session=None, resumable=None, resume_session=None, resume_token=None):
         """
 
         :param realm: The realm the client wants to join.
@@ -237,6 +240,11 @@ class HelloDetails(object):
         :type session_roles: dict or None
         :param pending_session: The session ID the session will get once successfully attached.
         :type pending_session: int or None
+        :type resumable: bool or None
+        :param resume_session: The session the client would like to resume.
+        :type resume_session: int or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         """
         assert(realm is None or type(realm) == six.text_type)
         assert(authmethods is None or (type(authmethods) == list and all(type(x) == six.text_type for x in authmethods)))
@@ -245,6 +253,9 @@ class HelloDetails(object):
         assert(authextra is None or type(authextra) == dict)
         # assert(session_roles is None or ...)  # FIXME
         assert(pending_session is None or type(pending_session) in six.integer_types)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_session is None or type(resume_session) == int)
+        assert(resume_token is None or type(resume_token) == six.text_type)
 
         self.realm = realm
         self.authmethods = authmethods
@@ -253,9 +264,12 @@ class HelloDetails(object):
         self.authextra = authextra
         self.session_roles = session_roles
         self.pending_session = pending_session
+        self.resumable = resumable
+        self.resume_session = resume_session
+        self.resume_token = resume_token
 
     def __str__(self):
-        return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session)
+        return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
 
 
 class SessionDetails(object):
