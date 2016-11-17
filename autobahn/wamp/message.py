@@ -488,7 +488,7 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, custom=None):
+    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None, custom=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -507,6 +507,12 @@ class Welcome(Message):
         :type authprovider: unicode or None
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+        :param resumed: Whether the session is a resumed one.
+        :type resumed: bool or None
+        :param resumable: Whether this session can be resumed later.
+        :type resumable: bool or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
         """
@@ -522,6 +528,9 @@ class Welcome(Message):
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(resumed is None or type(resumed) == bool)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_token is None or type(resume_token) == six.text_type)
         assert(custom is None or type(custom) == dict)
         if custom:
             for k in custom:
@@ -536,6 +545,9 @@ class Welcome(Message):
         self.authmethod = authmethod
         self.authprovider = authprovider
         self.authextra = authextra
+        self.resumed = resumed
+        self.resumable = resumable
+        self.resume_token = resume_token
         self.custom = custom or {}
 
     @staticmethod
@@ -565,6 +577,26 @@ class Welcome(Message):
         authmethod = details.get(u'authmethod', None)
         authprovider = details.get(u'authprovider', None)
         authextra = details.get(u'authextra', None)
+
+        resumed = None
+        if u'resumed' in details:
+            resumed = details[u'resumed']
+            if not type(resumed) == bool:
+                raise ProtocolError("invalid type {0} for 'resumed' detail in WELCOME".format(type(resumed)))
+
+        resumable = None
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if not type(resumable) == bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in WELCOME".format(type(resumable)))
+
+        resume_token = None
+        if u'resume_token' in details:
+            resume_token = details[u'resume_token']
+            if not type(resume_token) == six.text_type:
+                raise ProtocolError("invalid type {0} for 'resume_token' detail in WELCOME".format(type(resume_token)))
+        elif resumable:
+            raise ProtocolError("resume_token required when resumable is given in WELCOME")
 
         roles = {}
 
@@ -599,7 +631,7 @@ class Welcome(Message):
             if _CUSTOM_ATTRIBUTE.match(k):
                 custom[k] = details[k]
 
-        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, authextra, custom)
+        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, authextra, resumed, resumable, resume_token, custom)
 
         return obj
 
@@ -630,6 +662,15 @@ class Welcome(Message):
         if self.authextra:
             details[u'authextra'] = self.authextra
 
+        if self.resumed:
+            details[u'resumed'] = self.resumed
+
+        if self.resumable:
+            details[u'resumable'] = self.resumable
+
+        if self.resume_token:
+            details[u'resume_token'] = self.resume_token
+
         details[u'roles'] = {}
         for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
@@ -645,7 +686,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return u"Welcome(session={0}, roles={1}, realm={2}, authid={3}, authrole={4}, authmethod={5}, authprovider={6}, authextra={7})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return u"Welcome(session={}, roles={}, realm={}, authid={}, authrole={}, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
 
 class Abort(Message):
