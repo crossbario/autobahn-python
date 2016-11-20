@@ -924,20 +924,24 @@ class Goodbye(Message):
     Default WAMP closing reason.
     """
 
-    def __init__(self, reason=DEFAULT_REASON, message=None):
+    def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
         :type reason: unicode
         :param message: Optional human-readable closing message, e.g. for logging purposes.
         :type message: unicode or None
+        :param resumable: From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
+        :type resumable: bool or None
         """
         assert(type(reason) == six.text_type)
         assert(message is None or type(message) == six.text_type)
+        assert(resumable is None or type(resumable) == bool)
 
         Message.__init__(self)
         self.reason = reason
         self.message = message
+        self.resumable = resumable
 
     @staticmethod
     def parse(wmsg):
@@ -969,7 +973,14 @@ class Goodbye(Message):
 
             message = details_message
 
-        obj = Goodbye(reason, message)
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if type(resumable) != bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in GOODBYE".format(type(resumable)))
+
+        obj = Goodbye(reason=reason,
+                      message=message,
+                      resumable=resumable)
 
         return obj
 
@@ -983,13 +994,16 @@ class Goodbye(Message):
         if self.message:
             details[u'message'] = self.message
 
+        if self.resumable:
+            details[u'resumable'] = self.resumable
+
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Goodbye(message={0}, reason={1})".format(self.message, self.reason)
+        return u"Goodbye(message={}, reason={}, resumable={})".format(self.message, self.reason, self.resumable)
 
 
 class Error(Message):
