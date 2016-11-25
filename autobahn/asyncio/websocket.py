@@ -202,14 +202,19 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         # noinspection PyBroadException
         try:
             res = self.onConnect(request)
-            if yields(res):
-                asyncio.async(res)
         except ConnectionDeny as e:
             self.failHandshake(e.reason, e.code)
         except Exception as e:
             self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.INTERNAL_SERVER_ERROR)
         else:
-            self.succeedHandshake(res)
+            if yields(res):
+                # if onConnect was an async method, we need to await
+                # the actual result before calling succeedHandshake
+                asyncio.async(res).add_done_callback(
+                    lambda res: self.succeedHandshake(res.result())
+                )
+            else:
+                self.succeedHandshake(res)
 
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
