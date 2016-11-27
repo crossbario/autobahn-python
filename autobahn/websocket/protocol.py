@@ -1797,6 +1797,12 @@ class WebSocketProtocol(object):
         if mask or (not self.factory.isServer and self.maskClientFrames) or (self.factory.isServer and self.maskServerFrames):
             b1 |= 1 << 7
             if not mask:
+                # note: the RFC mentions "cryptographic randomness"
+                # for the masks, which *does* make sense for browser
+                # implementations, but not in this case -- for
+                # example, a user of this library could just
+                # monkey-patch os.urandom (or getrandbits) and predict
+                # the masks easily. See issue 758 for more.
                 mask = struct.pack("!I", random.getrandbits(32))
                 mv = mask
             else:
@@ -2011,6 +2017,7 @@ class WebSocketProtocol(object):
             # - client-to-server masking (if not deactivated)
             # - server-to-client masking (if activated)
             #
+            # see note above about getrandbits
             self.send_message_frame_mask = struct.pack("!I", random.getrandbits(32))
 
         else:
@@ -2315,6 +2322,7 @@ class PreparedMessage(object):
         #
         if applyMask:
             b1 = 1 << 7
+            # see note above about getrandbits
             mask = struct.pack("!I", random.getrandbits(32))
             if l == 0:
                 plm = payload
