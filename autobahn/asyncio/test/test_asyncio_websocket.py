@@ -13,6 +13,7 @@ except ImportError:
 
 from autobahn.asyncio.websocket import WebSocketServerFactory
 from unittest import TestCase
+import txaio
 
 
 @pytest.mark.usefixtures("event_loop")  # ensure we have pytest_asyncio installed
@@ -43,8 +44,10 @@ class Test(TestCase):
             return f
 
         values = []
+
         def on_connect(req):
             f = txaio.create_future()
+
             def cb(x):
                 f = foo(42)
                 f.add_callbacks(f, lambda v: values.append(v), None)
