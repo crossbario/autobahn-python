@@ -36,13 +36,21 @@ class Test(TestCase):
     def test_async_on_connect_server(self):
         # see also issue 757
 
-        async def foo(x):
-            return x * x
+        # for python 3.5, this can be "async def foo"
+        def foo(x):
+            f = txaio.create_future()
+            txaio.resolve(f, x * x)
+            return f
 
         values = []
-        async def on_connect(req):
-            x = await foo(42)
-            values.append(x)
+        def on_connect(req):
+            f = txaio.create_future()
+            def cb(x):
+                f = foo(42)
+                f.add_callbacks(f, lambda v: values.append(v), None)
+                return f
+            txaio.add_callbacks(f, cb, None)
+            return f
 
         factory = WebSocketServerFactory()
         server = factory()
