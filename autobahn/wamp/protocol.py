@@ -603,7 +603,7 @@ class ApplicationSession(BaseSession):
 
                 # Acknowledged Events -- only if we got the details header and
                 # the broker advertised it
-                if msg.x_acknowledged_event_delivery and self._router_roles["broker"].x_acknowledged_event_delivery:
+                if msg.x_acknowledged_delivery and self._router_roles["broker"].x_acknowledged_event_delivery:
                     response = message.EventReceived(msg.publication)
                     self._transport.send(response)
 
