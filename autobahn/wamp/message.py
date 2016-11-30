@@ -1889,7 +1889,8 @@ class Event(Message):
 
     def __init__(self, subscription, publication, args=None, kwargs=None, payload=None,
                  publisher=None, publisher_authid=None, publisher_authrole=None, topic=None,
-                 retained=None, enc_algo=None, enc_key=None, enc_serializer=None):
+                 retained=None, x_acknowledged_delivery=None,
+                 enc_algo=None, enc_key=None, enc_serializer=None):
         """
 
         :param subscription: The subscription ID this event is dispatched under.
@@ -1914,6 +1915,8 @@ class Event(Message):
         :type topic: unicode or None
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
+        :param x_acknowledged_delivery: Whether this Event should be acknowledged.
+        :type x_acknowledged_delivery: bool or None
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
         :param enc_key: If using payload encryption, the message encryption key.
@@ -1932,6 +1935,7 @@ class Event(Message):
         assert(publisher_authrole is None or type(publisher_authrole) == six.text_type)
         assert(topic is None or type(topic) == six.text_type)
         assert(retained is None or type(retained) == bool)
+        assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
 
         # end-to-end app payload encryption
         assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
@@ -1950,6 +1954,7 @@ class Event(Message):
         self.publisher_authrole = publisher_authrole
         self.topic = topic
         self.retained = retained
+        self.x_acknowledged_delivery = x_acknowledged_delivery
 
         # end-to-end app payload encryption
         self.enc_algo = enc_algo
@@ -2053,6 +2058,11 @@ class Event(Message):
             if type(retained) != bool:
                 raise ProtocolError("invalid type {0} for 'retained' detail in EVENT".format(type(retained)))
 
+        if u'x_acknowledged_delivery' in details:
+            x_acknowledged_delivery = details[u'x_acknowledged_delivery']
+            if type(x_acknowledged_delivery) != bool:
+                raise ProtocolError("invalid type {0} for 'x_acknowledged_delivery' detail in EVENT".format(type(x_acknowledged_delivery)))
+
         obj = Event(subscription,
                     publication,
                     args=args,
@@ -2063,6 +2073,7 @@ class Event(Message):
                     publisher_authrole=publisher_authrole,
                     topic=topic,
                     retained=retained,
+                    x_acknowledged_delivery=x_acknowledged_delivery,
                     enc_algo=enc_algo,
                     enc_key=enc_key,
                     enc_serializer=enc_serializer)
@@ -2092,6 +2103,9 @@ class Event(Message):
         if self.retained is not None:
             details[u'retained'] = self.retained
 
+        if self.x_acknowledged_delivery is not None:
+            details[u'x_acknowledged_delivery'] = self.x_acknowledged_delivery
+
         if self.payload:
             if self.enc_algo is not None:
                 details[u'enc_algo'] = self.enc_algo
@@ -2113,6 +2127,68 @@ class Event(Message):
         Returns string representation of this message.
         """
         return u"Event(subscription={}, publication={}, args={}, kwargs={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic={}, retained={}, enc_algo={}, enc_key={}, enc_serializer={}, payload={})".format(self.subscription, self.publication, self.args, self.kwargs, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo, self.enc_key, self.enc_serializer, b2a(self.payload))
+
+
+class EventReceived(Message):
+    """
+    A WAMP ``EVENT_RECEIVED`` message.
+
+    Format: ``[EVENT_RECEIVED, EVENT.Publication|id]``
+    """
+
+    # NOTE: Implementation-specific message! Should be 37 on ratification.
+    MESSAGE_TYPE = 337
+    """
+    The WAMP message code for this type of message.
+    """
+
+    def __init__(self, publication):
+        """
+
+        :param publication: The publication ID for the sent event.
+        :type publication: int
+        """
+        assert(type(publication) in six.integer_types)
+
+        Message.__init__(self)
+        self.publication = publication
+
+    @staticmethod
+    def parse(wmsg):
+        """
+        Verifies and parses an unserialized raw message into an actual WAMP message instance.
+
+        :param wmsg: The unserialized raw message.
+        :type wmsg: list
+
+        :returns: An instance of this class.
+        """
+        # this should already be verified by WampSerializer.unserialize
+        #
+        assert(len(wmsg) > 0 and wmsg[0] == EventReceived.MESSAGE_TYPE)
+
+        if len(wmsg) != 2:
+            raise ProtocolError("invalid message length {0} for EVENT_RECEIVED".format(len(wmsg)))
+
+        publication = check_or_raise_id(wmsg[1], u"'publication' in EVENT_RECEIVED")
+
+        obj = EventReceived(publication)
+
+        return obj
+
+    def marshal(self):
+        """
+        Marshal this object into a raw message for subsequent serialization to bytes.
+
+        :returns: list -- The serialized raw message.
+        """
+        return [EventReceived.MESSAGE_TYPE, self.publication]
+
+    def __str__(self):
+        """
+        Returns string representation of this message.
+        """
+        return u"EventReceived(publication={})".format(self.publication)
 
 
 class Call(Message):
