@@ -441,6 +441,7 @@ class ApplicationSession(BaseSession):
                     self._realm = msg.realm
 
                 self._session_id = msg.session
+                self._router_roles = msg.roles
 
                 details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod, msg.authprovider, msg.authextra)
                 # firing 'join' *before* running onJoin, so that the
@@ -599,6 +600,12 @@ class ApplicationSession(BaseSession):
 
                 else:
                     raise ProtocolError("EVENT received for non-subscribed subscription ID {0}".format(msg.subscription))
+
+                # Acknowledged Events -- only if we got the details header and
+                # the broker advertised it
+                if msg.x_acknowledged_delivery and self._router_roles["broker"].x_acknowledged_event_delivery:
+                    response = message.EventReceived(msg.publication)
+                    self._transport.send(response)
 
             elif isinstance(msg, message.Published):
 
