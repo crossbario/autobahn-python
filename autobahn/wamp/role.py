@@ -176,6 +176,7 @@ class RoleDealerFeatures(RoleFeatures):
                  progressive_call_results=None,
                  registration_revocation=None,
                  payload_transparency=None,
+                 testament_meta_api=None,
                  payload_encryption_cryptobox=None,
                  **kwargs):
         self.caller_identification = caller_identification
@@ -189,6 +190,7 @@ class RoleDealerFeatures(RoleFeatures):
         self.progressive_call_results = progressive_call_results
         self.registration_revocation = registration_revocation
         self.payload_transparency = payload_transparency
+        self.testament_meta_api = testament_meta_api
         self.payload_encryption_cryptobox = payload_encryption_cryptobox
         self._check_all_bool()
 
