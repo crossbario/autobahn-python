@@ -176,7 +176,7 @@ class RoleDealerFeatures(RoleFeatures):
                  progressive_call_results=None,
                  registration_revocation=None,
                  payload_transparency=None,
-                 testament_meta_api=None
+                 testament_meta_api=None,
                  payload_encryption_cryptobox=None,
                  **kwargs):
         self.caller_identification = caller_identification
