@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.17.0
+------
+
+`Published 2016-11-30 <https://pypi.python.org/pypi/autobahn/0.17.0`_
+
+* new: WAMP PubSub event retention
+* new: WAMP PubSub last will / testament
+* new: WAMP PubSub acknowledged delivery
+* fix: WAMP Session lifecycle - properly handle asynchronous `ApplicationSession.onConnect` for asyncio
+
 0.16.1
 ------
 
