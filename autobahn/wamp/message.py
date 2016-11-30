@@ -2020,6 +2020,7 @@ class Event(Message):
         publisher_authrole = None
         topic = None
         retained = None
+        x_acknowledged_delivery = None
 
         if u'publisher' in details:
 
