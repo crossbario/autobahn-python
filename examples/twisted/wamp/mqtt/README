@@ -1,0 +1,17 @@
+This demonstrates the use of the MQTT bridge now included in
+Crossbar.io
+
+You need to install "paho-mqtt" to run the MQTT client which you can
+do via pip:
+
+   pip install paho-mqtt
+
+Then, with the crossbar router running from "examples/router" dir you
+can start up either the WAMP or MQTT client first (ideally in
+different shells):
+
+   python wamp-client.py
+   python mqtt-client.py
+
+They both subscribe to "mqtt.test_topic" and then publish some data to
+that same topic (so try starting them in different orders etc).
