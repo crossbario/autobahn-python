@@ -35,7 +35,6 @@ from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
 from twisted.internet.error import ReactorNotRunning
-from twisted.internet.task import react
 
 try:
     _TLS = True
@@ -112,18 +111,12 @@ def _create_transport_serializer(serializer_id):
     raise RuntimeError('could not create serializer for "{}"'.format(serializer_id))
 
 
-def _create_transport_serializers(transport_config):
+def _create_transport_serializers(transport):
     """
     Create a list of serializers to use with a WAMP protocol factory.
     """
-    if u'serializers' in transport_config:
-        serializer_ids = _unique_list(transport_config[u'serializers'])
-    else:
-        serializer_ids = [u'msgpack', u'json']
-
     serializers = []
-
-    for serializer_id in serializer_ids:
+    for serializer_id in transport.serializers:
         if serializer_id == u'msgpack':
             # try MsgPack WAMP serializer
             try:
@@ -152,18 +145,18 @@ def _create_transport_serializers(transport_config):
     return serializers
 
 
-def _create_transport_factory(reactor, transport_config, session_factory):
+def _create_transport_factory(reactor, transport, session_factory):
     """
     Create a WAMP-over-XXX transport factory.
     """
-    if transport_config['type'] == 'websocket':
+    if transport.type == 'websocket':
         # FIXME: forward WebSocket options
-        serializers = _create_transport_serializers(transport_config)
-        return WampWebSocketClientFactory(session_factory, url=transport_config['url'], serializers=serializers)
+        serializers = _create_transport_serializers(transport)
+        return WampWebSocketClientFactory(session_factory, url=transport.url, serializers=serializers)
 
-    elif transport_config['type'] == 'rawsocket':
+    elif transport.type == 'rawsocket':
         # FIXME: forward RawSocket options
-        serializer = _create_transport_serializer(transport_config.get('serializer', u'json'))
+        serializer = _create_transport_serializer(transport.serializer)
         return WampRawSocketClientFactory(session_factory, serializer=serializer)
 
     else:
@@ -277,12 +270,12 @@ class Component(component.Component):
                 " provider"
             )
 
-    def _connect_transport(self, reactor, transport_config, session_factory):
+    def _connect_transport(self, reactor, transport, session_factory):
         """
         Create and connect a WAMP-over-XXX transport.
         """
-        transport_factory = _create_transport_factory(reactor, transport_config, session_factory)
-        transport_endpoint = _create_transport_endpoint(reactor, transport_config['endpoint'])
+        transport_factory = _create_transport_factory(reactor, transport, session_factory)
+        transport_endpoint = _create_transport_endpoint(reactor, transport.endpoint)
         return transport_endpoint.connect(transport_factory)
 
     # XXX think: is it okay to use inlineCallbacks (in this
@@ -330,14 +323,16 @@ class Component(component.Component):
                 )
                 yield sleep(delay)
                 try:
+                    transport.connect_attempts += 1
                     yield self._connect_once(reactor, transport)
-                    self.log.info('Component completed successfully')
-
+                    transport.connect_sucesses += 1
                 except Exception as e:
-                    # need concept of "fatal errors", for which a
-                    # connection is *never* going to work. Might want
-                    # to also add, for example, things like
-                    # SyntaxError
+                    transport.connect_failures += 1
+                    f = txaio.create_failure()
+                    self.log.error(u'component failed: {error}', error=txaio.failure_message(f))
+                    self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
+                    # If this is a "fatal error" that will never work,
+                    # we bail out now
                     if isinstance(e, ApplicationError):
                         if e.error in [u'wamp.error.no_such_realm']:
                             reconnect = False
@@ -428,4 +423,6 @@ def _run(reactor, components):
 
 
 def run(components):
+    # only for Twisted > 12
+    from twisted.internet.task import react
     react(_run, [components])
