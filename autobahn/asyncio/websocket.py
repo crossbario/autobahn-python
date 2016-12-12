@@ -49,7 +49,7 @@ from autobahn.websocket.types import ConnectionDeny
 
 if hasattr(asyncio, 'ensure_future'):
     ensure_future = asyncio.ensure_future
-else: # Deprecated since Python 3.4.4
+else:  # Deprecated since Python 3.4.4
     ensure_future = asyncio.async
 
 __all__ = (
