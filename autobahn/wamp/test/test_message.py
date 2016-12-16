@@ -1024,12 +1024,20 @@ class TestHelloMessage(unittest.TestCase):
         self.assertEqual(msg[1], u"realm1")
         self.assertEqual(msg[2], {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}})
 
+        e = message.Hello(u"realm1", {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)}, resumable=True)
+        msg = e.marshal()
+        self.assertEqual(len(msg), 3)
+        self.assertEqual(msg[0], message.Hello.MESSAGE_TYPE)
+        self.assertEqual(msg[1], u"realm1")
+        self.assertEqual(msg[2], {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}, u'resumable': True})
+
     def test_parse_and_marshal(self):
         wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}}]
         msg = message.Hello.parse(wmsg)
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, u"realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.resumable, None)
         self.assertEqual(msg.marshal(), wmsg)
 
         wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {u'features': {u'subscriber_blackwhite_listing': True}}}}]
@@ -1037,6 +1045,24 @@ class TestHelloMessage(unittest.TestCase):
         self.assertIsInstance(msg, message.Hello)
         self.assertEqual(msg.realm, u"realm1")
         self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures(subscriber_blackwhite_listing=True)})
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}, u'resumable': False}]
+        msg = message.Hello.parse(wmsg)
+        self.assertIsInstance(msg, message.Hello)
+        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.resumable, False)
+        self.assertEqual(msg.marshal(), wmsg)
+
+        wmsg = [message.Hello.MESSAGE_TYPE, u"realm1", {u'roles': {u'publisher': {}}, u'resumable': True, u'resume-session': 1234, u'resume-token': u"dsjgsg"}]
+        msg = message.Hello.parse(wmsg)
+        self.assertIsInstance(msg, message.Hello)
+        self.assertEqual(msg.realm, u"realm1")
+        self.assertEqual(msg.roles, {u'publisher': role.RolePublisherFeatures()})
+        self.assertEqual(msg.resumable, True)
+        self.assertEqual(msg.resume_session, 1234)
+        self.assertEqual(msg.resume_token, u"dsjgsg")
         self.assertEqual(msg.marshal(), wmsg)
 
     def test_str(self):

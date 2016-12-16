@@ -272,7 +272,7 @@ class Hello(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None):
+    def __init__(self, realm, roles, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
         """
 
         :param realm: The URI of the WAMP realm to join.
@@ -287,6 +287,12 @@ class Hello(Message):
         :type authrole: unicode or None
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+        :param resumable: Whether the client wants this to be a session that can be later resumed.
+        :type resumable: bool or None
+        :param resume_session: The session the client would like to resume.
+        :type resume_session: int or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         """
         assert(realm is None or type(realm) == six.text_type)
         assert(type(roles) == dict)
@@ -301,6 +307,9 @@ class Hello(Message):
         assert(authid is None or type(authid) == six.text_type)
         assert(authrole is None or type(authrole) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_session is None or type(resume_session) == int)
+        assert(resume_token is None or type(resume_token) == six.text_type)
 
         Message.__init__(self)
         self.realm = realm
@@ -309,6 +318,9 @@ class Hello(Message):
         self.authid = authid
         self.authrole = authrole
         self.authextra = authextra
+        self.resumable = resumable
+        self.resume_session = resume_session
+        self.resume_token = resume_token
 
     @staticmethod
     def parse(wmsg):
@@ -394,7 +406,28 @@ class Hello(Message):
 
             authextra = details_authextra
 
-        obj = Hello(realm, roles, authmethods, authid, authrole, authextra)
+        resumable = None
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if type(resumable) != bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in HELLO".format(type(resumable)))
+
+        resume_session = None
+        if u'resume-session' in details:
+            resume_session = details[u'resume-session']
+            if type(resume_session) != int:
+                raise ProtocolError("invalid type {0} for 'resume-session' detail in HELLO".format(type(resume_session)))
+
+        resume_token = None
+        if u'resume-token' in details:
+            resume_token = details[u'resume-token']
+            if type(resume_token) != six.text_type:
+                raise ProtocolError("invalid type {0} for 'resume-token' detail in HELLO".format(type(resume_token)))
+        else:
+            if resume_session:
+                raise ProtocolError("resume-token must be provided if resume-session is provided in HELLO")
+
+        obj = Hello(realm, roles, authmethods, authid, authrole, authextra, resumable, resume_session, resume_token)
 
         return obj
 
@@ -425,13 +458,22 @@ class Hello(Message):
         if self.authextra:
             details[u'authextra'] = self.authextra
 
+        if self.resumable is not None:
+            details[u'resumable'] = self.resumable
+
+        if self.resume_session:
+            details[u'resume-session'] = self.resume_session
+
+        if self.resume_token:
+            details[u'resume-token'] = self.resume_token
+
         return [Hello.MESSAGE_TYPE, self.realm, details]
 
     def __str__(self):
         """
         Return a string representation of this message.
         """
-        return u"Hello(realm={0}, roles={1}, authmethods={2}, authid={3}, authrole={4}, authextra={5})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra)
+        return u"Hello(realm={}, roles={}, authmethods={}, authid={}, authrole={}, authextra={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.roles, self.authmethods, self.authid, self.authrole, self.authextra, self.resumable, self.resume_session, self.resume_token)
 
 
 class Welcome(Message):
@@ -446,7 +488,7 @@ class Welcome(Message):
     The WAMP message code for this type of message.
     """
 
-    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, custom=None):
+    def __init__(self, session, roles, realm=None, authid=None, authrole=None, authmethod=None, authprovider=None, authextra=None, resumed=None, resumable=None, resume_token=None, custom=None):
         """
 
         :param session: The WAMP session ID the other peer is assigned.
@@ -465,6 +507,12 @@ class Welcome(Message):
         :type authprovider: unicode or None
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+        :param resumed: Whether the session is a resumed one.
+        :type resumed: bool or None
+        :param resumable: Whether this session can be resumed later.
+        :type resumable: bool or None
+        :param resume_token: The secure authorisation token to resume the session.
+        :type resume_token: unicode or None
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
         """
@@ -480,6 +528,9 @@ class Welcome(Message):
         assert(authmethod is None or type(authmethod) == six.text_type)
         assert(authprovider is None or type(authprovider) == six.text_type)
         assert(authextra is None or type(authextra) == dict)
+        assert(resumed is None or type(resumed) == bool)
+        assert(resumable is None or type(resumable) == bool)
+        assert(resume_token is None or type(resume_token) == six.text_type)
         assert(custom is None or type(custom) == dict)
         if custom:
             for k in custom:
@@ -494,6 +545,9 @@ class Welcome(Message):
         self.authmethod = authmethod
         self.authprovider = authprovider
         self.authextra = authextra
+        self.resumed = resumed
+        self.resumable = resumable
+        self.resume_token = resume_token
         self.custom = custom or {}
 
     @staticmethod
@@ -523,6 +577,26 @@ class Welcome(Message):
         authmethod = details.get(u'authmethod', None)
         authprovider = details.get(u'authprovider', None)
         authextra = details.get(u'authextra', None)
+
+        resumed = None
+        if u'resumed' in details:
+            resumed = details[u'resumed']
+            if not type(resumed) == bool:
+                raise ProtocolError("invalid type {0} for 'resumed' detail in WELCOME".format(type(resumed)))
+
+        resumable = None
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if not type(resumable) == bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in WELCOME".format(type(resumable)))
+
+        resume_token = None
+        if u'resume_token' in details:
+            resume_token = details[u'resume_token']
+            if not type(resume_token) == six.text_type:
+                raise ProtocolError("invalid type {0} for 'resume_token' detail in WELCOME".format(type(resume_token)))
+        elif resumable:
+            raise ProtocolError("resume_token required when resumable is given in WELCOME")
 
         roles = {}
 
@@ -557,7 +631,7 @@ class Welcome(Message):
             if _CUSTOM_ATTRIBUTE.match(k):
                 custom[k] = details[k]
 
-        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, authextra, custom)
+        obj = Welcome(session, roles, realm, authid, authrole, authmethod, authprovider, authextra, resumed, resumable, resume_token, custom)
 
         return obj
 
@@ -588,6 +662,15 @@ class Welcome(Message):
         if self.authextra:
             details[u'authextra'] = self.authextra
 
+        if self.resumed:
+            details[u'resumed'] = self.resumed
+
+        if self.resumable:
+            details[u'resumable'] = self.resumable
+
+        if self.resume_token:
+            details[u'resume_token'] = self.resume_token
+
         details[u'roles'] = {}
         for role in self.roles.values():
             details[u'roles'][role.ROLE] = {}
@@ -603,7 +686,7 @@ class Welcome(Message):
         """
         Returns string representation of this message.
         """
-        return u"Welcome(session={0}, roles={1}, realm={2}, authid={3}, authrole={4}, authmethod={5}, authprovider={6}, authextra={7})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return u"Welcome(session={}, roles={}, realm={}, authid={}, authrole={}, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.session, self.roles, self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
 
 class Abort(Message):
@@ -841,20 +924,24 @@ class Goodbye(Message):
     Default WAMP closing reason.
     """
 
-    def __init__(self, reason=DEFAULT_REASON, message=None):
+    def __init__(self, reason=DEFAULT_REASON, message=None, resumable=None):
         """
 
         :param reason: Optional WAMP or application error URI for closing reason.
         :type reason: unicode
         :param message: Optional human-readable closing message, e.g. for logging purposes.
         :type message: unicode or None
+        :param resumable: From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
+        :type resumable: bool or None
         """
         assert(type(reason) == six.text_type)
         assert(message is None or type(message) == six.text_type)
+        assert(resumable is None or type(resumable) == bool)
 
         Message.__init__(self)
         self.reason = reason
         self.message = message
+        self.resumable = resumable
 
     @staticmethod
     def parse(wmsg):
@@ -886,7 +973,14 @@ class Goodbye(Message):
 
             message = details_message
 
-        obj = Goodbye(reason, message)
+        if u'resumable' in details:
+            resumable = details[u'resumable']
+            if type(resumable) != bool:
+                raise ProtocolError("invalid type {0} for 'resumable' detail in GOODBYE".format(type(resumable)))
+
+        obj = Goodbye(reason=reason,
+                      message=message,
+                      resumable=resumable)
 
         return obj
 
@@ -900,13 +994,16 @@ class Goodbye(Message):
         if self.message:
             details[u'message'] = self.message
 
+        if self.resumable:
+            details[u'resumable'] = self.resumable
+
         return [Goodbye.MESSAGE_TYPE, details, self.reason]
 
     def __str__(self):
         """
         Returns string representation of this message.
         """
-        return u"Goodbye(message={0}, reason={1})".format(self.message, self.reason)
+        return u"Goodbye(message={}, reason={}, resumable={})".format(self.message, self.reason, self.resumable)
 
 
 class Error(Message):
