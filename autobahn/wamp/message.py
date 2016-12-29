@@ -964,6 +964,7 @@ class Goodbye(Message):
         reason = check_or_raise_uri(wmsg[2], u"'reason' in GOODBYE")
 
         message = None
+        resumable = None
 
         if u'message' in details:
 
