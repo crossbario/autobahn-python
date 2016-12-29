@@ -42,7 +42,7 @@ from autobahn.wamp.exception import ApplicationError
 __all__ = ('Connection')
 
 
-def _normalize_endpoint(endpoint, check_native_endpoint=None):
+def _validate_endpoint(endpoint, check_native_endpoint=None):
     """
     Check a WAMP connecting endpoint configuration.
     """
@@ -99,60 +99,130 @@ def _normalize_endpoint(endpoint, check_native_endpoint=None):
             assert False, 'should not arrive here'
 
 
-def _normalize_transport(transport, check_native_endpoint=None):
+def _create_transport(index, transport, check_native_endpoint=None):
     """
-    Check a WAMP connecting transport configuration, and add any
-    defaults that we can. These are:
+    Internal helper to insert defaults and create _Transport instances.
 
-    - type: websocket
-    - endpoint: if not specified, fill in from URL
+    :param transport: a (possibly valid) transport configuration
+    :type transport: dict
+
+    :returns: a _Transport instance
+
+    :raises: ValueError on invalid configuration
     """
     if type(transport) != dict:
-        raise RuntimeError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
+        raise ValueError('invalid type {} for transport configuration - must be a dict'.format(type(transport)))
 
-    if 'type' not in transport:
-        transport['type'] = 'websocket'
+    valid_transport_keys = ['type', 'url', 'endpoint', 'serializer', 'serializers']
+    for k in transport.keys():
+        if k not in valid_transport_keys:
+            raise ValueError(
+                "'{}' is not a valid configuration item".format(k)
+            )
 
-    if transport['type'] not in ['websocket', 'rawsocket']:
-        raise RuntimeError('invalid transport type {}'.format(transport['type']))
+    kind = 'websocket'
+    if 'type' in transport:
+        if transport['type'] not in ['websocket', 'rawsocket']:
+            raise ValueError('Invalid transport type {}'.format(transport['type']))
+        kind = transport['type']
 
-    if transport['type'] == 'websocket':
-        if 'url' not in transport:
-            raise ValueError("Missing 'url' in transport")
+    if kind == 'websocket':
+        for key in ['url']:
+            if key not in transport:
+                raise ValueError("Transport requires '{}' key".format(key))
+        # endpoint not required; we will deduce from URL if it's not provided
+        # XXX not in the branch I rebased; can this go away? (is it redundant??)
         if 'endpoint' not in transport:
             is_secure, host, port, resource, path, params = parse_url(transport['url'])
-            transport['endpoint'] = {
+            endpoint_config = {
                 'type': 'tcp',
                 'host': host,
                 'port': port,
                 'tls': False if not is_secure else dict(hostname=host),
             }
-        _normalize_endpoint(transport['endpoint'], check_native_endpoint)
-        # XXX can/should we check e.g. serializers here?
+        else:
+            # note: we're avoiding mutating the incoming "configuration"
+            # dict, so this should avoid that too...
+            endpoint_config = transport['endpoint']
+            _validate_endpoint(endpoint_config, check_native_endpoint)
 
-    elif transport['type'] == 'rawsocket':
+        if 'serializer' in transport:
+            raise ValueError("'serializer' is only for rawsocket; use 'serializers'")
+        if 'serializers' in transport:
+            if not isinstance(transport['serializers'], (list, tuple)):
+                raise ValueError("'serializers' must be a list of strings")
+            if not all([
+                    isinstance(s, (six.text_type, str))
+                    for s in transport['serializers']]):
+                raise ValueError("'serializers' must be a list of strings")
+            valid_serializers = ('msgpack', 'json')
+            for serial in transport['serializers']:
+                if serial not in valid_serializers:
+                    raise ValueError(
+                        "Invalid serializer '{}' (expected one of: {})".format(
+                            serial,
+                            ', '.join([repr(s) for s in valid_serializers]),
+                        )
+                    )
+        serializer_config = transport.get('serializers', [u'msgpack', u'json'])
+
+    elif kind == 'rawsocket':
         if 'endpoint' not in transport:
             raise ValueError("Missing 'endpoint' in transport")
+        endpoint_config = transport['endpoint']
+        if 'serializers' in transport:
+            raise ValueError("'serializers' is only for websocket; use 'serializer'")
+        # always a list; len == 1 for rawsocket
+        if 'serializer' in transport:
+            if not isinstance(transport['serializer'], (six.text_type, str)):
+                raise ValueError("'serializer' must be a string")
+            serializer_config = [transport['serializer']]
+        else:
+            serializer_config = [u'msgpack']
 
     else:
         assert False, 'should not arrive here'
 
+    kw = {}
+    for key in ['max_retries', 'max_retry_delay', 'initial_retry_delay',
+                'retry_delay_growth', 'retry_delay_jitter']:
+        if key in transport:
+            kw[key] = transport[key]
 
-class Transport(object):
+    return _Transport(
+        index,
+        kind=kind,
+        url=transport['url'],
+        endpoint=endpoint_config,
+        serializers=serializer_config,
+        **kw
+    )
+
+
+class _Transport(object):
     """
     Thin-wrapper for WAMP transports used by a Connection.
     """
 
-    def __init__(self, idx, config, max_retries=15, max_retry_delay=300,
-                 initial_retry_delay=1.5, retry_delay_growth=1.5,
+    def __init__(self, idx, kind, url, endpoint, serializers,
+                 max_retries=15,
+                 max_retry_delay=300,
+                 initial_retry_delay=1.5,
+                 retry_delay_growth=1.5,
                  retry_delay_jitter=0.1):
         """
-        :param config: The transport configuration. Should already be
-            validated + normalized
-        :type config: dict
         """
         self.idx = idx
-        self.config = config
+
+        self.type = kind
+        self.url = url
+        self.endpoint = endpoint
+
+        self.serializers = serializers
+        if self.type == 'rawsocket' and len(serializers) != 1:
+            raise ValueError(
+                "'rawsocket' transport requires exactly one serializer"
+            )
 
         self.max_retries = max_retries
         self.max_retry_delay = max_retry_delay
@@ -160,11 +230,16 @@ class Transport(object):
         self.retry_delay_growth = retry_delay_growth
         self.retry_delay_jitter = retry_delay_jitter
 
+        # used via can_reconnect() and failed() to record this
+        # transport is never going to work
         self._permanent_failure = False
 
         self.reset()
 
     def reset(self):
+        """
+        set connection failure rates and retry-delay to initial values
+        """
         self.connect_attempts = 0
         self.connect_sucesses = 0
         self.connect_failures = 0
@@ -173,8 +248,8 @@ class Transport(object):
     def failed(self):
         """
         Mark this transport as failed, meaning we won't try to connect to
-        it any longer (can_reconnect() will always return False afer
-        calling this).
+        it any longer (that is: can_reconnect() will always return
+        False afer calling this).
         """
         self._permanent_failure = True
 
@@ -196,6 +271,18 @@ class Transport(object):
                 self.retry_delay = self.max_retry_delay
             return self.retry_delay
 
+    def describe_endpoint(self):
+        """
+        returns a human-readable description of the endpoint
+        """
+        if isinstance(self.endpoint, dict):
+            return self.endpoint['type']
+        return repr(self.endpoint)
+
+
+# this could probably implement twisted.application.service.IService
+# if we wanted; or via an adapter...which just adds a startService()
+# and stopService() [latter can be async]
 
 class Component(ObservableMixin):
     """
@@ -225,15 +312,31 @@ class Component(ObservableMixin):
             which signals that the component is now "ready". The component will continue to run until
             it explicitly closes the session or the underlying transport closes.
         :type setup: callable
-        :param transports: Transport configurations for creating transports.
-        :type transports: None or unicode or list
 
-        :param config: Session configuration.
+        :param transports: Transport configurations for creating
+            transports. Each transport can be a WAMP URL, or a dict
+            containing the following configuration keys:
+
+                - ``type`` (optional): ``websocket`` (default) or ``rawsocket``
+                - ``url``: the WAMP URL
+                - ``endpoint`` (optional, derived from URL if not provided):
+                    - ``type``: "tcp" or "unix"
+                    - ``host``, ``port``: only for TCP
+                    - ``path``: only for unix
+                    - ``timeout``: in seconds
+                    - ``tls``: ``True`` or (under Twisted) an
+                      ``twisted.internet.ssl.IOpenSSLClientComponentCreator``
+                      instance (such as returned from
+                      ``twisted.internet.ssl.optionsForClientTLS``) or
+                      ``CertificateOptions`` instance.
+
+        :type transports: None or unicode or list of dicts
+
+        :param config: Session configuration (currently unused?)
         :type config: None or dict
 
         :param realm: the realm to join
         :type realm: unicode
-
         """
         self.set_valid_events(
             [
@@ -275,13 +378,20 @@ class Component(ObservableMixin):
             }
             transports = [transport]
 
+        # allows a single transport instead of a list (convenience)
+        elif isinstance(transports, dict):
+            transports = [transports]
+
+        # XXX do we want to be able to provide an infinite iterable of
+        # transports here? e.g. a generator that makes new transport
+        # to try?
+
         # now check and save list of transports
         self._transports = []
-        idx = 0
-        for transport in transports:
-            _normalize_transport(transport, self._check_native_endpoint)
-            self._transports.append(Transport(idx, transport))
-            idx += 1
+        for idx, transport in enumerate(transports):
+            self._transports.append(
+                _create_transport(idx, transport, self._check_native_endpoint)
+            )
 
         self._realm = realm
         self._extra = None  # XXX FIXME
@@ -298,9 +408,10 @@ class Component(ObservableMixin):
 
     def _connect_once(self, reactor, transport):
         self.log.info(
-            'connecting to URL "{url}" with "{transport_type}" transport',
-            transport_type=transport.config['type'],
-            url=transport.config['url'],
+            'connecting once using transport type "{transport_type}" '
+            'over endpoint "{endpoint_desc}"',
+            transport_type=transport.type,
+            endpoint_desc=transport.describe_endpoint(),
         )
 
         done = txaio.create_future()
@@ -336,7 +447,7 @@ class Component(ObservableMixin):
                         self.log.info(
                             'Successfully connected to transport #{transport_idx}: url={url}',
                             transport_idx=transport.idx,
-                            url=transport.config['url'],
+                            url=transport.url,
                         )
                         d = txaio.as_future(self._entry, reactor, session)
 
@@ -360,7 +471,7 @@ class Component(ObservableMixin):
                         self.log.info(
                             'Successfully connected to transport #{transport_idx}: url={url}',
                             transport_idx=transport.idx,
-                            url=transport.config['url'],
+                            url=transport.url,
                         )
                         d = txaio.as_future(self._entry, reactor, session)
 
@@ -407,7 +518,7 @@ class Component(ObservableMixin):
                 return session
 
         transport.connect_attempts += 1
-        d = self._connect_transport(reactor, transport.config, create_session)
+        d = self._connect_transport(reactor, transport, create_session)
 
         def on_connect_sucess(proto):
             # if e.g. an SSL handshake fails, we will have
