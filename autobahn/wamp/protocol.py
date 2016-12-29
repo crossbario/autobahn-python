@@ -358,7 +358,7 @@ class ApplicationSession(BaseSession):
 
         # send HELLO message to router
         msg = message.Hello(realm=realm,
-                            role=role.DEFAULT_CLIENT_ROLES,
+                            roles=role.DEFAULT_CLIENT_ROLES,
                             authmethods=authmethods,
                             authid=authid,
                             authrole=authrole,
