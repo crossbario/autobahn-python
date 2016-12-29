@@ -288,7 +288,7 @@ class SessionDetails(object):
         'authprovider',
         'authextra',
         'resumed',
-        'resumable'
+        'resumable',
         'resume_token',
     )
 
