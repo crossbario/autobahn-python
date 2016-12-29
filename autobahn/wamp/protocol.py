@@ -334,7 +334,7 @@ class ApplicationSession(BaseSession):
         """
         self.join(self.config.realm)
 
-    def join(self, realm, authmethods=None, authid=None, authrole=None, authextra=None):
+    def join(self, realm, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
@@ -357,7 +357,15 @@ class ApplicationSession(BaseSession):
         self._goodbye_sent = False
 
         # send HELLO message to router
-        msg = message.Hello(realm, role.DEFAULT_CLIENT_ROLES, authmethods, authid, authrole, authextra)
+        msg = message.Hello(realm=realm,
+                            roles=role.DEFAULT_CLIENT_ROLES,
+                            authmethods=authmethods,
+                            authid=authid,
+                            authrole=authrole,
+                            authextra=authextra,
+                            resumable=resumable,
+                            resume_session=resume_session,
+                            resume_token=resume_token)
         self._transport.send(msg)
 
     def disconnect(self):
@@ -443,7 +451,16 @@ class ApplicationSession(BaseSession):
                 self._session_id = msg.session
                 self._router_roles = msg.roles
 
-                details = SessionDetails(self._realm, self._session_id, msg.authid, msg.authrole, msg.authmethod, msg.authprovider, msg.authextra)
+                details = SessionDetails(realm=self._realm,
+                                         session=self._session_id,
+                                         authid=msg.authid,
+                                         authrole=msg.authrole,
+                                         authmethod=msg.authmethod,
+                                         authprovider=msg.authprovider,
+                                         authextra=msg.authextra,
+                                         resumed=msg.resumed,
+                                         resumable=msg.resumable,
+                                         resume_token=msg.resume_token)
                 # firing 'join' *before* running onJoin, so that the
                 # idiom where you "do stuff" in onJoin -- possibly
                 # including self.leave() -- works properly. Besides,
