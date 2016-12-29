@@ -5,6 +5,16 @@
 Changelog
 =========
 
+0.17.1
+------
+
+`Published 2016-12-29 <https://pypi.python.org/pypi/autobahn/0.17.1`_
+
+* new: demo MQTT and WAMP clients interoperating via Crossbar.io
+* new: WAMP message attributes for message resumption
+* new: improvements to experimental WAMP components API
+* fix: Python 3.4.4+ when using asyncio
+
 0.17.0
 ------
 
