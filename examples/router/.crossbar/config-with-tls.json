@@ -32,6 +32,17 @@
             ],
             "transports": [
                 {
+                    "type": "mqtt",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 1883
+                    },
+                    "options": {
+                        "realm": "crossbardemo",
+                        "role": "anonymous"
+                    }
+                },
+                {
                     "type": "web",
                     "endpoint": {
                         "type": "tcp",

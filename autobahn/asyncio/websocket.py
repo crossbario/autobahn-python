@@ -47,6 +47,10 @@ except ImportError:
 
 from autobahn.websocket.types import ConnectionDeny
 
+if hasattr(asyncio, 'ensure_future'):
+    ensure_future = asyncio.ensure_future
+else:  # Deprecated since Python 3.4.4
+    ensure_future = asyncio.async
 
 __all__ = (
     'WebSocketAdapterProtocol',
@@ -127,57 +131,57 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
     def _onOpen(self):
         res = self.onOpen()
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageBegin(self, isBinary):
         res = self.onMessageBegin(isBinary)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageFrameBegin(self, length):
         res = self.onMessageFrameBegin(length)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageFrameData(self, payload):
         res = self.onMessageFrameData(payload)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageFrameEnd(self):
         res = self.onMessageFrameEnd()
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageFrame(self, payload):
         res = self.onMessageFrame(payload)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessageEnd(self):
         res = self.onMessageEnd()
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onMessage(self, payload, isBinary):
         res = self.onMessage(payload, isBinary)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onPing(self, payload):
         res = self.onPing(payload)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onPong(self, payload):
         res = self.onPong(payload)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def _onClose(self, wasClean, code, reason):
         res = self.onClose(wasClean, code, reason)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def get_channel_id(self):
         """
@@ -210,7 +214,7 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
             if yields(res):
                 # if onConnect was an async method, we need to await
                 # the actual result before calling succeedHandshake
-                asyncio.async(res).add_done_callback(
+                ensure_future(res).add_done_callback(
                     lambda res: self.succeedHandshake(res.result())
                 )
             else:
@@ -225,7 +229,7 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     def _onConnect(self, response):
         res = self.onConnect(response)
         if yields(res):
-            asyncio.async(res)
+            ensure_future(res)
 
     def startTLS(self):
         raise Exception("WSS over explicit proxies not implemented")
