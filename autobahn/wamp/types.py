@@ -57,10 +57,11 @@ class ComponentConfig(object):
         'realm',
         'extra',
         'keyring',
-        'controller'
+        'controller',
+        'shared'
     )
 
-    def __init__(self, realm=None, extra=None, keyring=None, controller=None):
+    def __init__(self, realm=None, extra=None, keyring=None, controller=None, shared=None):
         """
 
         :param realm: The realm the session should join.
@@ -78,8 +79,15 @@ class ComponentConfig(object):
             private key. In both cases, the key for the longest matching URI is used.
         :type keyring: obj implementing IKeyRing or None
         :param controller: A WAMP ApplicationSession instance that holds a session to
-            a controlling entity.
+            a controlling entity. This optional feature needs to be supported by a WAMP
+            component hosting run-time.
         :type controller: instance of ApplicationSession or None
+        :param shared: A dict object to exchange user information or hold user objects shared
+            between components run under the same controlling entity. This optional feature
+            needs to be supported by a WAMP component hosting run-time. Use with caution, as using
+            this feature can introduce coupling between components. A valid use case would be
+            to hold a shared database connection pool.
+        :type shared: dict or None
         """
         assert(realm is None or type(realm) == six.text_type)
         # assert(keyring is None or ...) # FIXME
@@ -88,9 +96,10 @@ class ComponentConfig(object):
         self.extra = extra
         self.keyring = keyring
         self.controller = controller
+        self.shared = shared
 
     def __str__(self):
-        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3})".format(self.realm, self.extra, self.keyring, self.controller)
+        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3}, shared={4})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
 
 
 class HelloReturn(object):
