@@ -139,10 +139,14 @@ class WebSocketResource(object):
             transport.protocol = protocol
         protocol.makeConnection(transport)
 
-        # On Twisted 16.3.0+, the transport is paused whilst the existing
-        # request is served; there won't be any requests after us so we can
-        # just resume this ourselves.
-        if hasattr(transport, "resumeProducing"):
+        # On Twisted 16+, the transport is paused whilst the existing
+        # request is served; there won't be any requests after us so
+        # we can just resume this ourselves.
+        # 17.1 version
+        if hasattr(transport, "_networkProducer"):
+            transport._networkProducer.resumeProducing()
+        # 16.x version
+        elif hasattr(transport, "resumeProducing"):
             transport.resumeProducing()
 
         # We recreate the request and forward the raw data. This is somewhat
