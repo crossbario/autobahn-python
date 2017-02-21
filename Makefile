@@ -16,6 +16,7 @@ install:
 	export SODIUM_INSTALL=bundled
 	pip install --upgrade -e .[all,dev]
 
+# upload to our internal deployment system
 upload: clean
 	python setup.py bdist_wheel
 	aws s3 cp dist/*.whl s3://fabric-deploy/

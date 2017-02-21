@@ -130,7 +130,8 @@ extras_require_dev = [
     'pyenchant>=1.6.6',                 # LGPL
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
-    'pytest_asyncio',
+    'pytest_asyncio',                   # Apache 2.0
+    'awscli',                           # Apache 2.0
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
