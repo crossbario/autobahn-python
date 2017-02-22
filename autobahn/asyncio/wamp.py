@@ -110,7 +110,7 @@ class ApplicationRunner(object):
         self.serializers = serializers
         self.ssl = ssl
 
-    def run(self, make):
+    def run(self, make, start_loop=True):
         """
         Run the application component.
 
@@ -118,19 +118,21 @@ class ApplicationRunner(object):
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
         """
-        # 1) factory for use ApplicationSession
-        def create():
-            cfg = ComponentConfig(self.realm, self.extra)
-            try:
-                session = make(cfg)
-            except Exception as e:
-                self.log.error('ApplicationSession could not be instantiated: {}'.format(e))
-                loop = asyncio.get_event_loop()
-                if loop.is_running():
-                    loop.stop()
-                raise
-            else:
-                return session
+        if callable(make):
+            def create():
+                cfg = ComponentConfig(self.realm, self.extra)
+                try:
+                    session = make(cfg)
+                except Exception as e:
+                    self.log.error('ApplicationSession could not be instantiated: {}'.format(e))
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.stop()
+                    raise
+                else:
+                    return session
+        else:
+            create = make
 
         isSecure, host, port, resource, path, params = parse_url(self.url)
 
@@ -154,26 +156,32 @@ class ApplicationRunner(object):
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
         (transport, protocol) = loop.run_until_complete(coro)
 
-        # start logging
-        txaio.start_logging(level='info')
+        if not start_loop:
 
-        try:
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
-        except NotImplementedError:
-            # signals are not available on Windows
-            pass
+            return protocol
 
-        # 4) now enter the asyncio event loop
-        try:
-            loop.run_forever()
-        except KeyboardInterrupt:
-            # wait until we send Goodbye if user hit ctrl-c
-            # (done outside this except so SIGTERM gets the same handling)
-            pass
+        else:
 
-        # give Goodbye message a chance to go through, if we still
-        # have an active session
-        if protocol._session:
-            loop.run_until_complete(protocol._session.leave())
+            # start logging
+            txaio.start_logging(level='info')
 
-        loop.close()
+            try:
+                loop.add_signal_handler(signal.SIGTERM, loop.stop)
+            except NotImplementedError:
+                # signals are not available on Windows
+                pass
+
+            # 4) now enter the asyncio event loop
+            try:
+                loop.run_forever()
+            except KeyboardInterrupt:
+                # wait until we send Goodbye if user hit ctrl-c
+                # (done outside this except so SIGTERM gets the same handling)
+                pass
+
+            # give Goodbye message a chance to go through, if we still
+            # have an active session
+            if protocol._session:
+                loop.run_until_complete(protocol._session.leave())
+
+            loop.close()
