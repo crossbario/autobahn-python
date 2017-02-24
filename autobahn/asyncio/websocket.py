@@ -187,7 +187,7 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
         """
-        self.log.warn('FIXME: transport channel binding not implemented for asyncio (autobahn-python issue #729)')
+        self.log.debug('FIXME: transport channel binding not implemented for asyncio (autobahn-python issue #729)')
         return None
 
     def registerProducer(self, producer, streaming):
