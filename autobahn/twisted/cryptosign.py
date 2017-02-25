@@ -56,7 +56,6 @@ if HAS_CRYPTOSIGN_SSHAGENT:
     from nacl import signing
     from autobahn.wamp.cryptosign import _read_ssh_ed25519_pubkey, _unpack, _pack
 
-
     class SSHAgentSigningKey(SigningKey):
         """
         A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
