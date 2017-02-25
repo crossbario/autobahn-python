@@ -26,22 +26,17 @@
 
 from __future__ import absolute_import
 
-import os
 import binascii
 import struct
 
 import six
-
-from txaio import create_future_success
+import txaio
 
 from autobahn import util
 from autobahn.wamp.types import Challenge
 
-from twisted.internet.defer import inlineCallbacks, returnValue
-
 __all__ = [
     'HAS_CRYPTOSIGN',
-    'HAS_CRYPTOSIGN_SSHAGENT'
 ]
 
 try:
@@ -49,22 +44,9 @@ try:
     from nacl import public, encoding, signing, bindings
 except ImportError:
     HAS_CRYPTOSIGN = False
-    HAS_CRYPTOSIGN_SSHAGENT = False
 else:
     HAS_CRYPTOSIGN = True
     __all__.append('SigningKey')
-    try:
-        # WAMP-cryptosign support for SSH agent is currently
-        # only available on Twisted (on Python 2)
-        from twisted.internet.protocol import Factory
-        from twisted.internet.endpoints import UNIXClientEndpoint
-        from twisted.conch.ssh.agent import SSHAgentClient
-    except ImportError:
-        # twisted.conch is not yet fully ported to Python 3
-        HAS_CRYPTOSIGN_SSHAGENT = False
-    else:
-        HAS_CRYPTOSIGN_SSHAGENT = True
-        __all__.append('SSHAgentSigningKey')
 
 
 def _unpack(keydata):
@@ -453,9 +435,8 @@ if HAS_CRYPTOSIGN:
             # it get coerced into the concatenation of message + signature
             # not sure which order, but we don't want that. we only want
             # the signature
-            return create_future_success(sig.signature)
+            return txaio.create_future_success(sig.signature)
 
-        @inlineCallbacks
         def sign_challenge(self, session, challenge):
             """
             Sign WAMP-cryptosign challenge.
@@ -487,16 +468,25 @@ if HAS_CRYPTOSIGN:
                 data = challenge_raw
 
             # a raw byte string is signed, and the signature is also a raw byte string
-            signature_raw = yield self.sign(data)
+            d1 = self.sign(data)
 
-            # convert the raw signature into a hex encode value (unicode string)
-            signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
+            # asyncio lacks callback chaining (and we cannot use co-routines, since we want
+            # to support older Pythons), hence we need d2
+            d2 = txaio.create_future()
 
-            # we return the concatenation of the signature and the message signed (96 bytes)
-            data_hex = binascii.b2a_hex(data).decode('ascii')
+            def process(signature_raw):
+                # convert the raw signature into a hex encode value (unicode string)
+                signature_hex = binascii.b2a_hex(signature_raw).decode('ascii')
 
-            # we always return a future/deferred, so handling is uniform
-            returnValue(signature_hex + data_hex)
+                # we return the concatenation of the signature and the message signed (96 bytes)
+                data_hex = binascii.b2a_hex(data).decode('ascii')
+
+                sig = signature_hex + data_hex
+                txaio.resolve(d2, sig)
+
+            txaio.add_callbacks(d1, process, None)
+
+            return d2
 
         @classmethod
         def from_raw_key(cls, filename, comment=None):
@@ -552,103 +542,3 @@ if HAS_CRYPTOSIGN:
                 key = public.PublicKey(keydata, encoder=encoding.RawEncoder)
 
             return cls(key, comment)
-
-
-if HAS_CRYPTOSIGN_SSHAGENT:
-
-    class SSHAgentSigningKey(SigningKey):
-        """
-        A WAMP-cryptosign signing key that is a proxy to a private Ed25510 key
-        actually held in SSH agent.
-
-        An instance of this class must be create via the class method new().
-        The instance only holds the public key part, whereas the private key
-        counterpart is held in SSH agent.
-        """
-
-        def __init__(self, key, comment=None, reactor=None):
-            SigningKey.__init__(self, key, comment)
-            if not reactor:
-                from twisted.internet import reactor
-            self._reactor = reactor
-
-        @classmethod
-        def new(cls, pubkey=None, reactor=None):
-            """
-            Create a proxy for a key held in SSH agent.
-
-            :param pubkey: A string with a public Ed25519 key in SSH format.
-            :type pubkey: unicode
-            """
-            if not HAS_CRYPTOSIGN_SSHAGENT:
-                raise Exception("SSH agent integration is not supported on this platform")
-
-            pubkey, _ = _read_ssh_ed25519_pubkey(pubkey)
-
-            if not reactor:
-                from twisted.internet import reactor
-
-            if "SSH_AUTH_SOCK" not in os.environ:
-                raise Exception("no ssh-agent is running!")
-
-            factory = Factory()
-            factory.noisy = False
-            factory.protocol = SSHAgentClient
-            endpoint = UNIXClientEndpoint(reactor, os.environ["SSH_AUTH_SOCK"])
-            d = endpoint.connect(factory)
-
-            @inlineCallbacks
-            def on_connect(agent):
-                keys = yield agent.requestIdentities()
-
-                # if the key is found in ssh-agent, the raw public key (32 bytes), and the
-                # key comment as returned from ssh-agent
-                key_data = None
-                key_comment = None
-
-                for blob, comment in keys:
-                    raw = _unpack(blob)
-                    algo = raw[0]
-                    if algo == u'ssh-ed25519':
-                        algo, _pubkey = raw
-                        if _pubkey == pubkey:
-                            key_data = _pubkey
-                            key_comment = comment.decode('utf8')
-                            break
-
-                agent.transport.loseConnection()
-
-                if key_data:
-                    key = signing.VerifyKey(key_data)
-                    returnValue(cls(key, key_comment, reactor))
-                else:
-                    raise Exception("Ed25519 key not held in ssh-agent")
-
-            return d.addCallback(on_connect)
-
-        def sign(self, challenge):
-            if "SSH_AUTH_SOCK" not in os.environ:
-                raise Exception("no ssh-agent is running!")
-
-            factory = Factory()
-            factory.noisy = False
-            factory.protocol = SSHAgentClient
-            endpoint = UNIXClientEndpoint(self._reactor, os.environ["SSH_AUTH_SOCK"])
-            d = endpoint.connect(factory)
-
-            @inlineCallbacks
-            def on_connect(agent):
-                # we are now connected to the locally running ssh-agent
-                # that agent might be the openssh-agent, or eg on Ubuntu 14.04 by
-                # default the gnome-keyring / ssh-askpass-gnome application
-                blob = _pack(['ssh-ed25519', self.public_key(binary=True)])
-
-                # now ask the agent
-                signature_blob = yield agent.signData(blob, challenge)
-                algo, signature = _unpack(signature_blob)
-
-                agent.transport.loseConnection()
-
-                returnValue(signature)
-
-            return d.addCallback(on_connect)

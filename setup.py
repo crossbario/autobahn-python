@@ -130,7 +130,8 @@ extras_require_dev = [
     'pyenchant>=1.6.6',                 # LGPL
     'sphinxcontrib-spelling>=2.1.2',    # BSD
     'sphinx_rtd_theme>=0.1.9',          # BSD
-    'pytest_asyncio',
+    'pytest_asyncio',                   # Apache 2.0
+    'awscli',                           # Apache 2.0
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
@@ -172,7 +173,7 @@ setup(
     platforms='Any',
     install_requires=[
         'six>=1.10.0',      # MIT license
-        'txaio>=2.5.2',     # MIT license
+        'txaio>=2.6.1',     # MIT license
     ],
     extras_require={
         'all': extras_require_all,
@@ -217,6 +218,7 @@ setup(
                  "Programming Language :: Python :: 3.3",
                  "Programming Language :: Python :: 3.4",
                  "Programming Language :: Python :: 3.5",
+                 "Programming Language :: Python :: 3.6",
                  "Programming Language :: Python :: Implementation :: CPython",
                  "Programming Language :: Python :: Implementation :: PyPy",
                  "Programming Language :: Python :: Implementation :: Jython",

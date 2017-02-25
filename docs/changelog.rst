@@ -5,6 +5,15 @@
 Changelog
 =========
 
+0.17.2
+------
+
+`Published 2017-02-25 <https://pypi.python.org/pypi/autobahn/0.17.2`_
+
+* new: WAMP-cryptosign elliptic curve based authentication support for asyncio
+* new: CI testing on Twisted 17.1
+* new: controller/shared attributes on ComponentConfig
+
 0.17.1
 ------
 
