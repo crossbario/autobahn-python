@@ -27,7 +27,7 @@
 
 from __future__ import absolute_import, print_function
 
-from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN
+from autobahn.wamp.cryptosign import HAS_CRYPTOSIGN, SigningKey
 
 from twisted.internet.defer import inlineCallbacks, returnValue
 
