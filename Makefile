@@ -19,7 +19,9 @@ install:
 # upload to our internal deployment system
 upload: clean
 	python setup.py bdist_wheel
-	aws s3 cp dist/*.whl s3://fabric-deploy/
+	aws s3 cp --acl public-read \
+		dist/autobahn-*.whl \
+		s3://fabric-deploy/autobahn/
 
 # cleanup everything
 clean:

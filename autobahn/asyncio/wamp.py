@@ -102,7 +102,7 @@ class ApplicationRunner(object):
         :type ssl: :class:`ssl.SSLContext` or bool
         """
         assert(type(url) == six.text_type)
-        assert(type(realm) == six.text_type)
+        assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
         self.url = url
         self.realm = realm
