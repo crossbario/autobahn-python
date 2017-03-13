@@ -133,6 +133,16 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
+
+        self._client_service = None
+
+    def stop(self):
+        self.log.debug('{klass}.stop()', klass=self.__class__.__name__)
+        if self._client_service:
+            return self._client_service.stopService()
+        else:
+            return succeed(None)
+
     def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info'):
         """
         Run the application component.
@@ -276,9 +286,9 @@ class ApplicationRunner(object):
         if use_service:
             self.log.debug('using t.a.i.ClientService')
             # this is automatically reconnecting
-            service = ClientService(client, transport_factory)
-            service.startService()
-            d = service.whenConnected()
+            self._client_service = ClientService(client, transport_factory)
+            self._client_service.startService()
+            d = self._client_service.whenConnected()
         else:
             # this is only connecting once!
             self.log.debug('using t.i.e.connect()')
