@@ -32,7 +32,7 @@ import inspect
 import txaio
 txaio.use_twisted()  # noqa
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks, succeed
 
 from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
@@ -133,8 +133,10 @@ class ApplicationRunner(object):
         self.proxy = proxy
         self.headers = headers
 
-
+        # this if for auto-reconnection when Twisted ClientService is avail
         self._client_service = None
+        # total number of successful connections
+        self._connect_successes = 0
 
     def stop(self):
         self.log.debug('{klass}.stop()', klass=self.__class__.__name__)
@@ -271,6 +273,7 @@ class ApplicationRunner(object):
         # when our proto was created and connected, make sure it's cleaned
         # up properly later on when the reactor shuts down for whatever reason
         def init_proto(proto):
+            self._connect_successes += 1
             reactor.addSystemEventTrigger('before', 'shutdown', cleanup, proto)
             return proto
 
@@ -279,19 +282,38 @@ class ApplicationRunner(object):
             try:
                 # since Twisted 16.1.0
                 from twisted.application.internet import ClientService
+                from twisted.application.internet import backoffPolicy
                 use_service = True
             except ImportError:
                 use_service = False
 
         if use_service:
+            # this code path is automatically reconnecting ..
             self.log.debug('using t.a.i.ClientService')
-            # this is automatically reconnecting
-            self._client_service = ClientService(client, transport_factory)
+
+            default_retry = backoffPolicy()
+
+            if False:
+                # retry policy that will only try to reconnect if we connected
+                # successfully at least once before (so it fails on host unreachable etc ..)
+                def retry(failed_attempts):
+                    if self._connect_successes > 0:
+                        return default_retry(failed_attempts)
+                    else:
+                        self.stop()
+                        return 100000000000000
+            else:
+                retry = default_retry
+
+            self._client_service = ClientService(client, transport_factory, retryPolicy=retry)
             self._client_service.startService()
+
             d = self._client_service.whenConnected()
+
         else:
-            # this is only connecting once!
+            # this code path is only connecting once!
             self.log.debug('using t.i.e.connect()')
+
             d = client.connect(transport_factory)
 
         # if we connect successfully, the arg is a WampWebSocketClientProtocol
