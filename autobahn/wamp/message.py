@@ -1529,8 +1529,8 @@ class Publish(Message):
             options[u'exclude'] = self.exclude
         if self.exclude_authid is not None:
             options[u'exclude_authid'] = self.exclude_authid
-        if self.eligible_authrole is not None:
-            options[u'eligible_authrole'] = self.eligible_authrole
+        if self.exclude_authrole is not None:
+            options[u'exclude_authrole'] = self.exclude_authrole
         if self.eligible is not None:
             options[u'eligible'] = self.eligible
         if self.eligible_authid is not None:
