@@ -449,6 +449,11 @@ The corresponding **asyncio** code looks like this
                 counter += 1
                 await sleep(1)
 
+When publishing, you can pass an `options=` kwarg which is an instance of :class:`PublishOptions <autobahn.wamp.types.PublishOptions>`. Many of the options require support from the router.
+
+ - whitelisting and blacklisting (all the `eligible*` and `exclude*` options) can affect which subscribers receive the publish; see `crossbar documentation <http://crossbar.io/docs/Subscriber-Black-and-Whitelisting/>`_ for more information;
+ - `retain=` asks the router to retain the message;
+ - `acknowledge=` asks the router to notify you it received the publish (note that this does *not* wait for every subscriber to have received the publish).
 
 .. tip::
    By default, a publisher will not receive an event it publishes even when the publisher is *itself* subscribed to the topic subscribed to. This behavior can be overridden; see :class:`PublishOptions <autobahn.wamp.types.PublishOptions>` and ``exclude_me=False``.
