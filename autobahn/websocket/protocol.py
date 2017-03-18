@@ -46,7 +46,7 @@ from autobahn.websocket.interfaces import IWebSocketChannel, \
     IWebSocketChannelFrameApi, \
     IWebSocketChannelStreamingApi
 
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 
 from autobahn.util import Stopwatch, newid, wildcards2patterns, encode_truncate
 from autobahn.util import _LazyHexFormatter
@@ -2747,10 +2747,22 @@ class WebSocketServerProtocol(WebSocketProtocol):
                                             self.websocket_origin,
                                             self.websocket_protocols,
                                             self.websocket_extensions)
-                # Now fire onConnect() on derived class, to give that class a chance to accept or deny
-                # the connection. onConnect() may throw, in which case the connection is denied, or it
-                # may return a protocol from the protocols provided by client or None.
-                self._onConnect(request)
+
+                # The user's onConnect() handler must do one of the following:
+                #   - return the subprotocol to be spoken
+                #   - return None to continue with no subprotocol
+                #   - return a pair (subprotocol, headers)
+                #   - raise a ConnectionDeny to dismiss the client
+                f = txaio.as_future(self.onConnect, request)
+
+                def forward_error(err):
+                    if isinstance(err.value, ConnectionDeny):
+                        self.failHandshake(err.value.reason, err.value.code)
+                    else:
+                        self.log.debug("Unexpected exception in onConnect ['{err.value}']", err=err)
+                        return self.failHandshake("Internal server error: {}".format(err.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
+
+                txaio.add_callbacks(f, self.succeedHandshake, forward_error)
 
         elif self.serveFlashSocketPolicy:
             flash_policy_file_request = self.data.find(b"<policy-file-request/>\x00")
