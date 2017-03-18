@@ -5,6 +5,17 @@
 Changelog
 =========
 
+0.17.3
+------
+
+`Published 2017-03-18 <https://pypi.python.org/pypi/autobahn/0.17.3`_
+
+* fix: docs for publisher black-/whitelisting based on authid/authrole
+* fix: serialization for publisher black-/whitelisting based on authid/authrole
+* new: allow to stop auto-reconnecting for Twisted ApplicationRunner
+* fix: allow empty realms (router decides) for asyncio ApplicationRunner
+
+
 0.17.2
 ------
 

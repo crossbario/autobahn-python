@@ -375,7 +375,8 @@ if HAS_CRYPTOSIGN:
             self._can_sign = isinstance(key, signing.SigningKey)
 
         def __str__(self):
-            return u'Key(can_sign={}, comment="{}", public_key={})'.format(self.can_sign(), self.comment(), self.public_key())
+            comment = u'"{}"'.format(self.comment()) if self.comment() else None
+            return u'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
 
         def can_sign(self):
             """
