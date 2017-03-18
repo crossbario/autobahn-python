@@ -7,7 +7,7 @@ WebSocket & WAMP for Python on Twisted and asyncio.
 
 --------------
 
-| **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <https://autobahn-python.readthedocs.io/en/latest/>`__ - `WebSocket Examples <https://autobahn-python.readthedocs.io/en/latest/websocket/examples.html>`__ - `WAMP Examples <https://autobahn-python.readthedocs.io/en/latest/wamp/examples.html>`__
+| **Quick Links**: `Source Code <https://github.com/crossbario/autobahn-python>`__ - `Documentation <https://autobahn.readthedocs.io/en/latest/>`__ - `WebSocket Examples <https://autobahn.readthedocs.io/en/latest/websocket/examples.html>`__ - `WAMP Examples <https://autobahn.readthedocs.io/en/latest/wamp/examples.html>`__
 | **Community**: `Mailing list <http://groups.google.com/group/autobahnws>`__ - `StackOverflow <http://stackoverflow.com/questions/tagged/autobahn>`__ - `Twitter <https://twitter.com/autobahnws>`__ - `IRC #autobahn/chat.freenode.net <https://webchat.freenode.net/>`__
 | **Companion Projects**: `Autobahn|JS <https://github.com/crossbario/autobahn-js/>`__ - `Autobahn|Cpp <https://github.com/crossbario/autobahn-cpp>`__ - `Autobahn|Testsuite <https://github.com/crossbario/autobahn-testsuite>`__ - `Crossbar.io <http://crossbar.io>`__ - `WAMP <http://wamp-proto.org>`__
 
@@ -80,7 +80,7 @@ message received:
         def onClose(self, wasClean, code, reason):
             print("WebSocket connection closed: {}".format(reason))
 
-To actually run above server protocol, you need some lines of `boilerplate <https://autobahn-python.readthedocs.io/en/latest/websocket/programming.html#running-a-server>`__.
+To actually run above server protocol, you need some lines of `boilerplate <https://autobahn.readthedocs.io/en/latest/websocket/programming.html#running-a-server>`__.
 
 WAMP Application Component
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -123,7 +123,7 @@ actions that WAMP provides:
             print("Got result: {}".format(res))
 
 Above code will work on Twisted and asyncio by changing a single line
-(the base class of ``MyComponent``). To actually run above application component, you need some lines of `boilerplate <https://autobahn-python.readthedocs.io/en/latest/wamp/programming.html#running-components>`__ and a `WAMP Router <https://autobahn-python.readthedocs.io/en/latest/wamp/programming.html#running-a-wamp-router>`__.
+(the base class of ``MyComponent``). To actually run above application component, you need some lines of `boilerplate <https://autobahn.readthedocs.io/en/latest/wamp/programming.html#running-components>`__ and a `WAMP Router <https://autobahn.readthedocs.io/en/latest/wamp/programming.html#running-a-wamp-router>`__.
 
 .. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn
@@ -138,4 +138,4 @@ Above code will work on Twisted and asyncio by changing a single line
    :target: https://codecov.io/github/crossbario/autobahn-python
 
 .. |Docs| image:: https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat
-   :target: https://autobahn-python.readthedocs.io/en/latest/
+   :target: https://autobahn.readthedocs.io/en/latest/
