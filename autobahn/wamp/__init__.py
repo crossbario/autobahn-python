@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 from autobahn.wamp.types import \
+    ComponentConfig, \
     SessionDetails, \
     CloseDetails, \
     RegisterOptions, \
@@ -57,6 +58,7 @@ from autobahn.wamp.uri import \
 
 
 __all__ = (
+    'ComponentConfig',
     'SessionDetails',
     'CloseDetails',
     'RegisterOptions',

@@ -5,10 +5,10 @@
 Changelog
 =========
 
-0.17.3
+0.18.0
 ------
 
-`Published 2017-03-18 <https://pypi.python.org/pypi/autobahn/0.17.3>`__
+`Published 2017-03-19 <https://pypi.python.org/pypi/autobahn/0.18.0>`__
 
 * fix: docs for publisher black-/whitelisting based on authid/authrole
 * fix: serialization for publisher black-/whitelisting based on authid/authrole

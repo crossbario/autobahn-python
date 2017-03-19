@@ -41,7 +41,6 @@ autobahn.wamp.protocol
 
 .. automodule:: autobahn.wamp.protocol
     :members:
-    :undoc-members:
     :show-inheritance:
 
 autobahn.wamp.role

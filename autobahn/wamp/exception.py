@@ -216,16 +216,26 @@ class ApplicationError(Error):
     exclusion of (any) *Callee* providing the procedure (WAMP AP).
     """
 
-    # application payload end-to-end encryption related errors
     ENC_NO_KEYRING_ACTIVE = u"wamp.error.encryption.no_keyring_active"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
+
     ENC_TRUSTED_URI_MISMATCH = u"wamp.error.encryption.trusted_uri_mismatch"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
+
     ENC_DECRYPT_ERROR = u"wamp.error.encryption.decrypt_error"
+    """
+    WAMP-cryptobox application payload end-to-end encryption error.
+    """
 
     def __init__(self, error, *args, **kwargs):
         """
 
         :param error: The URI of the error that occurred, e.g. ``wamp.error.not_authorized``.
-        :type error: unicode
+        :type error: str
         """
         Exception.__init__(self, *args)
         self.kwargs = kwargs
@@ -237,7 +247,8 @@ class ApplicationError(Error):
         """
         Get the error message of this exception.
 
-        :return: unicode
+        :returns: The error message.
+        :rtype: str
         """
         return u'{0}: {1}'.format(
             self.error,

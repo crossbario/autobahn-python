@@ -86,7 +86,7 @@ def _read_ssh_ed25519_pubkey(keydata):
         ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJukDU5fqXv/yVhSirsDWsUFyOodZyCSLxyitPPzWJW9 oberstet@office-corei7
 
     :param keydata: The OpenSSH Ed25519 public key data to parse.
-    :type keydata: unicode
+    :type keydata: str
 
     :returns: pair of raw public key (32 bytes) and comment
     :rtype: tuple
@@ -159,7 +159,7 @@ def _read_ssh_ed25519_privkey(keydata):
 
 
     :param keydata: The OpenSSH Ed25519 private key data to parse.
-    :type keydata: unicode
+    :type keydata: str
 
     :returns: pair of raw private key (32 bytes) and comment
     :rtype: tuple
@@ -395,7 +395,7 @@ if HAS_CRYPTOSIGN:
             Get the key comment (if any).
 
             :returns: The comment (if any) from the key.
-            :rtype: unicode or None
+            :rtype: str or None
             """
             return self._comment
 
@@ -405,7 +405,7 @@ if HAS_CRYPTOSIGN:
             Returns the public key part of a signing key or the (public) verification key.
 
             :returns: The public key in Hex encoding.
-            :rtype: unicode or None
+            :rtype: str or None
             """
             if isinstance(self._key, signing.SigningKey):
                 key = self._key.verify_key
@@ -452,7 +452,7 @@ if HAS_CRYPTOSIGN:
             :type challenge: instance of autobahn.wamp.types.Challenge
 
             :returns: A Deferred/Future that resolves to the computed signature.
-            :rtype: unicode
+            :rtype: str
             """
             if not isinstance(challenge, Challenge):
                 raise Exception("challenge must be instance of autobahn.wamp.types.Challenge, not {}".format(type(challenge)))
@@ -509,9 +509,9 @@ if HAS_CRYPTOSIGN:
                 dd if=/dev/urandom of=client02.key bs=1 count=32
 
             :param filename: Filename of the key.
-            :type filename: unicode
+            :type filename: str
             :param comment: Comment for key (optional).
-            :type comment: unicode or None
+            :type comment: str or None
             """
             if not (comment is None or type(comment) == six.text_type):
                 raise Exception("invalid type {} for comment".format(type(comment)))

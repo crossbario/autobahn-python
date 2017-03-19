@@ -2424,6 +2424,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
     Protocol base class for WebSocket servers.
     """
 
+    log = txaio.make_logger()
+
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_SERVER
 
     def onConnect(self, request):
@@ -3058,6 +3060,8 @@ class WebSocketServerFactory(WebSocketFactory):
     A protocol factory for WebSocket servers.
     """
 
+    log = txaio.make_logger()
+
     protocol = WebSocketServerProtocol
     """
     The protocol to be spoken. Must be derived from :class:`autobahn.websocket.protocol.WebSocketServerProtocol`.
@@ -3373,6 +3377,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
     """
     Protocol base class for WebSocket clients.
     """
+
+    log = txaio.make_logger()
 
     CONFIG_ATTRS = WebSocketProtocol.CONFIG_ATTRS_COMMON + WebSocketProtocol.CONFIG_ATTRS_CLIENT
 
@@ -3821,6 +3827,8 @@ class WebSocketClientFactory(WebSocketFactory):
     """
     A protocol factory for WebSocket clients.
     """
+
+    log = txaio.make_logger()
 
     protocol = WebSocketClientProtocol
     """
