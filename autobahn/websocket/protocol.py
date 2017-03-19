@@ -2757,9 +2757,12 @@ class WebSocketServerProtocol(WebSocketProtocol):
 
                 def forward_error(err):
                     if isinstance(err.value, ConnectionDeny):
+                        # the user handler explicitly denies the connection
                         self.failHandshake(err.value.reason, err.value.code)
                     else:
-                        self.log.debug("Unexpected exception in onConnect ['{err.value}']", err=err)
+                        # the user handler ran into an unexpected error (and hence, user code needs fixing!)
+                        self.log.warn("Unexpected exception in onConnect ['{err.value}']", err=err)
+                        self.log.warn("{tb}", tb=txaio.failure_format_traceback(err))
                         return self.failHandshake("Internal server error: {}".format(err.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
 
                 txaio.add_callbacks(f, self.succeedHandshake, forward_error)
