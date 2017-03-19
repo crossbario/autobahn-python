@@ -34,14 +34,12 @@ import txaio
 txaio.use_twisted()
 
 import twisted.internet.protocol
-from twisted.internet.defer import maybeDeferred
 from twisted.internet.interfaces import ITransport
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
 from autobahn.wamp import websocket
-from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, \
-    ConnectionDeny
+from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
 from autobahn.twisted.util import peer2str, transport_channel_id
 
@@ -187,22 +185,6 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
     Base class for Twisted-based WebSocket server protocols.
     """
-
-    def _onConnect(self, request):
-        # onConnect() will return the selected subprotocol or None
-        # or a pair (protocol, headers) or raise an HttpException
-        res = maybeDeferred(self.onConnect, request)
-
-        res.addCallback(self.succeedHandshake)
-
-        def forwardError(failure):
-            if failure.check(ConnectionDeny):
-                return self.failHandshake(failure.value.reason, failure.value.code)
-            else:
-                self.log.debug("Unexpected exception in onConnect ['{failure.value}']", failure=failure)
-                return self.failHandshake("Internal server error: {}".format(failure.value), ConnectionDeny.INTERNAL_SERVER_ERROR)
-
-        res.addErrback(forwardError)
 
     def get_channel_id(self, channel_id_type=u'tls-unique'):
         """

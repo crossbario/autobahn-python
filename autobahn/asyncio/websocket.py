@@ -45,8 +45,6 @@ except ImportError:
     from trollius import iscoroutine
     from trollius import Future
 
-from autobahn.websocket.types import ConnectionDeny
-
 if hasattr(asyncio, 'ensure_future'):
     ensure_future = asyncio.ensure_future
 else:  # Deprecated since Python 3.4.4
@@ -198,27 +196,6 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
     Base class for asyncio-based WebSocket server protocols.
     """
-
-    def _onConnect(self, request):
-        # onConnect() will return the selected subprotocol or None
-        # or a pair (protocol, headers) or raise an HttpException
-        ##
-        # noinspection PyBroadException
-        try:
-            res = self.onConnect(request)
-        except ConnectionDeny as e:
-            self.failHandshake(e.reason, e.code)
-        except Exception as e:
-            self.failHandshake("Internal server error: {}".format(e), ConnectionDeny.INTERNAL_SERVER_ERROR)
-        else:
-            if yields(res):
-                # if onConnect was an async method, we need to await
-                # the actual result before calling succeedHandshake
-                ensure_future(res).add_done_callback(
-                    lambda res: self.succeedHandshake(res.result())
-                )
-            else:
-                self.succeedHandshake(res)
 
 
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
