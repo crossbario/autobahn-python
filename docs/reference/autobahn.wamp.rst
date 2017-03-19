@@ -69,6 +69,20 @@ These are plain value-holding classes used in the public WAMP API of Autobahn.
     :members:
     :undoc-members:
 
+autobahn.wamp.cryptobox
+-----------------------
+
+.. automodule:: autobahn.wamp.cryptobox
+    :members:
+    :undoc-members:
+
+autobahn.wamp.cryptosign
+------------------------
+
+.. automodule:: autobahn.wamp.cryptosign
+    :members:
+    :undoc-members:
+
 autobahn.wamp.uri
 -----------------
 

@@ -67,6 +67,10 @@ def _warn_node(self, msg, node, **kwargs):
 
 sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
+try:
+    from qualname import qualname
+except ImportError:
+    qualname = None
 
 # http://stackoverflow.com/a/21449475/884770
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#event-autodoc-skip-member
@@ -77,11 +81,13 @@ sphinx.environment.BuildEnvironment.warn_node = _warn_node
 def autodoc_skip_member(app, what, name, obj, skip, options):
     # skip everything that isn't decorated with @autobahn.public or ..
     if hasattr(obj, '_is_public') and obj._is_public:
+        if qualname:
+            print('public API: {}.{}'.format(obj.__module__, qualname(obj)))
         return False
     else:
         return True
 
-def setup2(app):
+def setup(app):
     # wire up our custom checker to skip member
     app.connect('autodoc-skip-member', autodoc_skip_member)
 

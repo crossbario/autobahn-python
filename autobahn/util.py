@@ -44,7 +44,8 @@ import six
 import txaio
 
 
-__all__ = ("xor",
+__all__ = ("public",
+           "xor",
            "utcnow",
            "utcstr",
            "id",
@@ -72,6 +73,7 @@ def public(obj):
     return obj
 
 
+@public
 def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     """
     Given a string, return a truncated version of the string such that
@@ -117,6 +119,7 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
         return text
 
 
+@public
 def xor(d1, d2):
     """
     XOR two binary strings of arbitrary (equal) length.
@@ -148,6 +151,7 @@ def xor(d1, d2):
         return d1.tostring()
 
 
+@public
 def utcstr(ts=None):
     """
     Format UTC timestamp in ISO 8601 format.
@@ -167,6 +171,7 @@ def utcstr(ts=None):
     return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
+@public
 def utcnow():
     """
     Get current time in UTC as ISO 8601 string.
@@ -334,6 +339,7 @@ Delta" and telephone operators' "Is that 'd' as in 'dog'?".
 """
 
 
+@public
 def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_case=False):
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
@@ -389,14 +395,17 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
         return token_value
 
 
+@public
 def generate_activation_code():
     return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
+@public
 def generate_user_password():
     return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
 
 
+@public
 def generate_serial_number():
     return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 

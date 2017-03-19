@@ -8,7 +8,7 @@ Changelog
 0.17.3
 ------
 
-`Published 2017-03-18 <https://pypi.python.org/pypi/autobahn/0.17.3`__
+`Published 2017-03-18 <https://pypi.python.org/pypi/autobahn/0.17.3>`__
 
 * fix: docs for publisher black-/whitelisting based on authid/authrole
 * fix: serialization for publisher black-/whitelisting based on authid/authrole
@@ -19,7 +19,7 @@ Changelog
 0.17.2
 ------
 
-`Published 2017-02-25 <https://pypi.python.org/pypi/autobahn/0.17.2`__
+`Published 2017-02-25 <https://pypi.python.org/pypi/autobahn/0.17.2>`__
 
 * new: WAMP-cryptosign elliptic curve based authentication support for asyncio
 * new: CI testing on Twisted 17.1
@@ -28,7 +28,7 @@ Changelog
 0.17.1
 ------
 
-`Published 2016-12-29 <https://pypi.python.org/pypi/autobahn/0.17.1`__
+`Published 2016-12-29 <https://pypi.python.org/pypi/autobahn/0.17.1>`__
 
 * new: demo MQTT and WAMP clients interoperating via Crossbar.io
 * new: WAMP message attributes for message resumption
@@ -38,7 +38,7 @@ Changelog
 0.17.0
 ------
 
-`Published 2016-11-30 <https://pypi.python.org/pypi/autobahn/0.17.0`__
+`Published 2016-11-30 <https://pypi.python.org/pypi/autobahn/0.17.0>`__
 
 * new: WAMP PubSub event retention
 * new: WAMP PubSub last will / testament
@@ -48,7 +48,7 @@ Changelog
 0.16.1
 ------
 
-`Published 2016-11-07 <https://pypi.python.org/pypi/autobahn/0.16.1`__
+`Published 2016-11-07 <https://pypi.python.org/pypi/autobahn/0.16.1>`__
 
 * fix: inconsistency between `PublishOptions` and `Publish` message
 * new: improve logging with dropped connections (eg due to timeouts)
@@ -59,7 +59,7 @@ Changelog
 0.16.0
 ------
 
-`Published 2016-08-14 <https://pypi.python.org/pypi/autobahn/0.16.0`__
+`Published 2016-08-14 <https://pypi.python.org/pypi/autobahn/0.16.0>`__
 
 * new: new `autobahn.wamp.component` API in experimental stage
 * new: Ed25519 OpenSSH and OpenBSD signify key support
@@ -68,7 +68,7 @@ Changelog
 0.15.0
 ------
 
-`Published 2016-07-19 <https://pypi.python.org/pypi/autobahn/0.15.0`__
+`Published 2016-07-19 <https://pypi.python.org/pypi/autobahn/0.15.0>`__
 
 * new: WAMP AP option: register with maximum concurrency
 * new: automatic reconnect for WAMP clients ApplicationRunner on Twisted

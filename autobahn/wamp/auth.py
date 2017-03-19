@@ -38,6 +38,7 @@ import random
 from struct import Struct
 from operator import xor
 from itertools import starmap
+from autobahn.util import public
 
 __all__ = (
     'pbkdf2',
@@ -48,6 +49,7 @@ __all__ = (
     'compute_wcs')
 
 
+@public
 def generate_totp_secret(length=10):
     """
     Generates a new Base32 encoded, random secret.
@@ -65,6 +67,7 @@ def generate_totp_secret(length=10):
     return base64.b32encode(os.urandom(length)).decode('ascii')
 
 
+@public
 def compute_totp(secret, offset=0):
     """
     Computes the current TOTP code.
@@ -92,6 +95,7 @@ def compute_totp(secret, offset=0):
     return u'{0:06d}'.format(token)
 
 
+@public
 def check_totp(secret, ticket):
     """
     Check a TOTP value received from a principal trying to authenticate against
@@ -117,6 +121,7 @@ def check_totp(secret, ticket):
     return False
 
 
+@public
 def qrcode_from_totp(secret, label, issuer):
     if type(secret) != six.text_type:
         raise Exception('secret must be of type unicode, not {}'.format(type(secret)))
@@ -184,6 +189,7 @@ else:
         return ''.join(map(chr, buf))[:keylen]
 
 
+@public
 def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     """
     Returns a binary digest for the PBKDF2 hash algorithm of ``data``
@@ -212,6 +218,7 @@ def pbkdf2(data, salt, iterations=1000, keylen=32, hashfunc=None):
     return _pbkdf2(data, salt, iterations, keylen, hashfunc or hashlib.sha256)
 
 
+@public
 def derive_key(secret, salt, iterations=1000, keylen=32):
     """
     Computes a derived cryptographic key from a password according to PBKDF2.
@@ -248,6 +255,7 @@ The characters from which :func:`autobahn.wamp.auth.generate_wcs` generates secr
 """
 
 
+@public
 def generate_wcs(length=14):
     """
     Generates a new random secret for use with WAMP-CRA.
@@ -268,6 +276,7 @@ def generate_wcs(length=14):
     return u"".join([random.choice(WCS_SECRET_CHARSET) for _ in range(length)]).encode('ascii')
 
 
+@public
 def compute_wcs(key, challenge):
     """
     Compute an WAMP-CRA authentication signature from an authentication

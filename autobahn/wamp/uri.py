@@ -30,6 +30,7 @@ from __future__ import absolute_import
 import re
 import six
 
+from autobahn.util import public
 from autobahn.wamp.types import SubscribeOptions
 
 __all__ = (
@@ -88,6 +89,7 @@ def convert_starred_uri(uri):
     return uri, match
 
 
+@public
 class Pattern(object):
     """
     A WAMP URI Pattern.
@@ -205,6 +207,7 @@ class Pattern(object):
         self._uri = uri
         self._target = target
 
+    @public
     def uri(self):
         """
         Returns the original URI (pattern) for this pattern.
@@ -246,6 +249,7 @@ class Pattern(object):
             else:
                 raise Exception("no match")
 
+    @public
     def is_endpoint(self):
         """
         Check if this pattern is for a procedure endpoint.
@@ -255,6 +259,7 @@ class Pattern(object):
         """
         return self._target == Pattern.URI_TARGET_ENDPOINT
 
+    @public
     def is_handler(self):
         """
         Check if this pattern is for an event handler.
@@ -264,6 +269,7 @@ class Pattern(object):
         """
         return self._target == Pattern.URI_TARGET_HANDLER
 
+    @public
     def is_exception(self):
         """
         Check if this pattern is for an exception.
@@ -274,6 +280,7 @@ class Pattern(object):
         return self._target == Pattern.URI_TARGET_EXCEPTION
 
 
+@public
 def register(uri):
     """
     Decorator for WAMP procedure endpoints.
@@ -287,6 +294,7 @@ def register(uri):
     return decorate
 
 
+@public
 def subscribe(uri):
     """
     Decorator for WAMP event handlers.
@@ -300,6 +308,7 @@ def subscribe(uri):
     return decorate
 
 
+@public
 def error(uri):
     """
     Decorator for WAMP error classes.

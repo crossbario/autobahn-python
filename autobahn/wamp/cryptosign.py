@@ -352,6 +352,7 @@ def _verify_signify_ed25519_signature(pubkey_file, signature_file, message):
 
 if HAS_CRYPTOSIGN:
 
+    @util.public
     class SigningKey(object):
         """
         A cryptosign private key for signing, and hence usable for authentication or a
@@ -378,6 +379,7 @@ if HAS_CRYPTOSIGN:
             comment = u'"{}"'.format(self.comment()) if self.comment() else None
             return u'Key(can_sign={}, comment={}, public_key={})'.format(self.can_sign(), comment, self.public_key())
 
+        @util.public
         def can_sign(self):
             """
             Check if the key can be used to sign.
@@ -387,6 +389,7 @@ if HAS_CRYPTOSIGN:
             """
             return self._can_sign
 
+        @util.public
         def comment(self):
             """
             Get the key comment (if any).
@@ -396,6 +399,7 @@ if HAS_CRYPTOSIGN:
             """
             return self._comment
 
+        @util.public
         def public_key(self, binary=False):
             """
             Returns the public key part of a signing key or the (public) verification key.
@@ -413,6 +417,7 @@ if HAS_CRYPTOSIGN:
             else:
                 return key.encode(encoder=encoding.HexEncoder).decode('ascii')
 
+        @util.public
         def sign(self, data):
             """
             Sign some data.
@@ -438,6 +443,7 @@ if HAS_CRYPTOSIGN:
             # the signature
             return txaio.create_future_success(sig.signature)
 
+        @util.public
         def sign_challenge(self, session, challenge):
             """
             Sign WAMP-cryptosign challenge.
@@ -489,6 +495,7 @@ if HAS_CRYPTOSIGN:
 
             return d2
 
+        @util.public
         @classmethod
         def from_raw_key(cls, filename, comment=None):
             """
@@ -521,6 +528,7 @@ if HAS_CRYPTOSIGN:
             key = signing.SigningKey(keydata)
             return cls(key, comment)
 
+        @util.public
         @classmethod
         def from_ssh_key(cls, filename):
             """

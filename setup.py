@@ -132,6 +132,7 @@ extras_require_dev = [
     'sphinx_rtd_theme>=0.1.9',          # BSD
     'pytest_asyncio',                   # Apache 2.0
     'awscli',                           # Apache 2.0
+    'qualname',                         # BSD
 ]
 
 # for testing by users with "python setup.py test" (not Tox, which we use)
