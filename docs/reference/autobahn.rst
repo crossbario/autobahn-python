@@ -17,6 +17,7 @@ Subpackages
     autobahn.twisted
     autobahn.wamp
     autobahn.websocket
+    autobahn.rawsocket
 
 Submodules
 ----------

@@ -31,6 +31,7 @@ from collections import deque
 import txaio
 txaio.use_asyncio()
 
+from autobahn.util import public
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 
@@ -192,16 +193,22 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         raise Exception("not implemented")
 
 
+@public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
     Base class for asyncio-based WebSocket server protocols.
     """
 
+    log = txaio.make_logger()
 
+
+@public
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for asyncio-based WebSocket client protocols.
     """
+
+    log = txaio.make_logger()
 
     def _onConnect(self, response):
         res = self.onConnect(response)
@@ -224,6 +231,7 @@ class WebSocketAdapterFactory(object):
         return proto
 
 
+@public
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
     """
     Base class for asyncio-based WebSocket server factories.
@@ -244,6 +252,7 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
     """
     Base class for asyncio-baseed WebSocket client factories.
@@ -262,12 +271,14 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
     Base class for asyncio-based WAMP-over-WebSocket server protocols.
     """
 
 
+@public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
     Base class for asyncio-based WAMP-over-WebSocket server factories.
@@ -287,12 +298,14 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
     Base class for asyncio-based WAMP-over-WebSocket client protocols.
     """
 
 
+@public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
     Base class for asyncio-based WAMP-over-WebSocket client factories.

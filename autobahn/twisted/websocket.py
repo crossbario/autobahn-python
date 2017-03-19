@@ -186,6 +186,8 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     Base class for Twisted-based WebSocket server protocols.
     """
 
+    log = txaio.make_logger()
+
     def get_channel_id(self, channel_id_type=u'tls-unique'):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransport.get_channel_id`
@@ -197,6 +199,8 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     """
     Base class for Twisted-based WebSocket client protocols.
     """
+
+    log = txaio.make_logger()
 
     def _onConnect(self, response):
         self.onConnect(response)

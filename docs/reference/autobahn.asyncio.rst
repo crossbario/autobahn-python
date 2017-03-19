@@ -1,30 +1,32 @@
 autobahn.asyncio
 ================
 
-Submodules
-----------
+Autobahn asyncio specific classes. These are used when asyncio is run as the underlying networking framework.
+
 
 autobahn.asyncio.wamp
 ---------------------
 
+WAMP on asyncio.
+
 .. automodule:: autobahn.asyncio.wamp
     :members:
-    :undoc-members:
     :show-inheritance:
+
 
 autobahn.asyncio.websocket
 --------------------------
 
+WebSocket on asyncio.
+
 .. automodule:: autobahn.asyncio.websocket
     :members:
-    :undoc-members:
-    :show-inheritance:
 
 
-Module contents
----------------
+autobahn.asyncio.rawsocket
+--------------------------
 
-.. automodule:: autobahn.asyncio
+RawSocket on asyncio.
+
+.. automodule:: autobahn.asyncio.rawsocket
     :members:
-    :undoc-members:
-    :show-inheritance:

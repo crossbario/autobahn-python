@@ -32,6 +32,7 @@ from twisted.internet.protocol import Factory
 from twisted.protocols.basic import Int32StringReceiver
 from twisted.internet.error import ConnectionDone
 
+from autobahn.util import public
 from autobahn.twisted.util import peer2str, transport_channel_id
 from autobahn.util import _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
@@ -258,6 +259,7 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
         return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
+@public
 class WampRawSocketClientProtocol(WampRawSocketProtocol):
     """
     Base class for Twisted-based WAMP-over-RawSocket client protocols.

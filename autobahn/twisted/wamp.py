@@ -70,6 +70,8 @@ class ApplicationSession(protocol.ApplicationSession):
     WAMP application session for Twisted-based applications.
     """
 
+    log = txaio.make_logger()
+
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
@@ -80,6 +82,8 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     """
     The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
     """
+
+    log = txaio.make_logger()
 
 
 class ApplicationRunner(object):

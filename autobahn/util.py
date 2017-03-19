@@ -62,6 +62,16 @@ __all__ = ("xor",
            "generate_user_password")
 
 
+def public(obj):
+    """
+    The public user API of Autobahn is marked using this decorator.
+    Everything that is not decorated @public is library internal, can
+    change at any time and should not be used in user program code.
+    """
+    obj._is_public = True
+    return obj
+
+
 def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     """
     Given a string, return a truncated version of the string such that

@@ -28,6 +28,8 @@ from __future__ import absolute_import
 
 import six
 
+from autobahn.util import public
+
 # The Python urlparse module currently does not contain the rs/rss
 # schemes, so we add those dynamically (which is a hack of course).
 # Since the urllib from six.moves does not seem to expose the stuff
@@ -56,6 +58,7 @@ __all__ = (
 )
 
 
+@public
 def create_url(hostname, port=None, isSecure=False):
     """
     Create a RawSocket URL from components.
@@ -64,13 +67,14 @@ def create_url(hostname, port=None, isSecure=False):
     :type hostname: str
 
     :param port: RawSocket service port or None (to select default
-        ports 80/443 depending on isSecure).
+        ports ``80`` or ``443`` depending on ``isSecure``.
     :type port: int
 
-    :param isSecure: Set True for secure RawSocket ("rss" scheme).
+    :param isSecure: Set ``True`` for secure RawSocket (``rss`` scheme).
     :type isSecure: bool
 
-    :returns: str -- Constructed RawSocket URL.
+    :returns: Constructed RawSocket URL.
+    :rtype: str
     """
     if port is not None:
         netloc = "%s:%d" % (hostname, port)
@@ -86,19 +90,21 @@ def create_url(hostname, port=None, isSecure=False):
     return u"{}://{}".format(scheme, netloc)
 
 
+@public
 def parse_url(url):
     """
     Parses as RawSocket URL into it's components and returns a tuple (isSecure, host, port).
 
-     - ``isSecure`` is a flag which is True for rss URLs.
+     - ``isSecure`` is a flag which is ``True`` for ``rss`` URLs.
      - ``host`` is the hostname or IP from the URL.
      - ``port`` is the port from the URL or standard port derived from
-       scheme (rs = 80, rss = 443).
+       scheme (``rs`` => ``80``, ``rss`` => ``443``).
 
     :param url: A valid RawSocket URL, i.e. ``rs://localhost:9000``
     :type url: str
 
-    :returns: tuple -- A tuple (isSecure, host, port)
+    :returns: A tuple ``(isSecure, host, port)``.
+    :rtype: tuple
     """
     parsed = urlparse.urlparse(url)
 

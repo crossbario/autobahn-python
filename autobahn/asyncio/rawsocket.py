@@ -33,7 +33,8 @@ except ImportError:
     import trollius as asyncio
 import struct
 import math
-from autobahn.util import _LazyHexFormatter
+
+from autobahn.util import public, _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 from autobahn.asyncio.util import peer2str, get_serializers
 import txaio
@@ -327,7 +328,7 @@ class WampRawSocketMixinGeneral(object):
 
 
 # this is asyncio dependent part of WAMP protocol
-class WampRawSocketMixinAsyncio():
+class WampRawSocketMixinAsyncio(object):
     """
     Base class for asyncio-based WAMP-over-RawSocket protocols.
     """
@@ -364,9 +365,10 @@ class WampRawSocketMixinAsyncio():
             raise TransportLost()
 
 
+@public
 class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketServerProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server protocols.
+    Base class for asyncio-based WAMP-over-RawSocket server protocols.
     """
 
     def supports_serializer(self, ser_id):
@@ -394,9 +396,10 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
         # return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
+@public
 class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketClientProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client protocols.
+    Base class for asyncio-based WAMP-over-RawSocket client protocols.
     """
     @property
     def serializer_id(self):
@@ -417,17 +420,19 @@ class WampRawSocketFactory(object):
     Adapter class for asyncio-based WebSocket client and server factories.def dataReceived(self, data):
     """
 
-    log = txaio.make_logger()  # @UndefinedVariable
+    log = txaio.make_logger()
 
+    @public
     def __call__(self):
         proto = self.protocol()
         proto.factory = self
         return proto
 
 
+@public
 class WampRawSocketServerFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server factories.
+    Base class for asyncio-based WAMP-over-RawSocket server factories.
     """
     protocol = WampRawSocketServerProtocol
 
@@ -458,9 +463,10 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         self._serializers = {ser.RAWSOCKET_SERIALIZER_ID: ser for ser in serializers}
 
 
+@public
 class WampRawSocketClientFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client factories.
+    Base class for asyncio-based WAMP-over-RawSocket client factories.
     """
     protocol = WampRawSocketClientProtocol
 

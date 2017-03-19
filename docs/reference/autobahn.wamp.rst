@@ -63,10 +63,11 @@ autobahn.wamp.serializer
 autobahn.wamp.types
 -------------------
 
+These are plain value-holding classes used in the public WAMP API of Autobahn.
+
 .. automodule:: autobahn.wamp.types
     :members:
     :undoc-members:
-    :show-inheritance:
 
 autobahn.wamp.uri
 -----------------

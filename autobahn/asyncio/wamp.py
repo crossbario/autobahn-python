@@ -29,6 +29,7 @@ import signal
 
 import six
 
+from autobahn.util import public
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.util import parse_url
@@ -51,10 +52,13 @@ __all__ = (
 )
 
 
+@public
 class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for asyncio-based applications.
     """
+
+    log = txaio.make_logger()
 
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
@@ -68,7 +72,10 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
     """
 
+    log = txaio.make_logger()
 
+
+@public
 class ApplicationRunner(object):
     """
     This class is a convenience tool mainly for development and quick hosting
@@ -110,6 +117,7 @@ class ApplicationRunner(object):
         self.serializers = serializers
         self.ssl = ssl
 
+    @public
     def run(self, make, start_loop=True):
         """
         Run the application component.

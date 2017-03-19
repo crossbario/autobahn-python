@@ -546,12 +546,6 @@ class WebSocketProtocol(object):
     Configuration attributes specific to clients.
     """
 
-    log = txaio.make_logger()
-    _batched_timer = txaio.make_batched_timer(
-        bucket_seconds=0.200,
-        chunk_size=1000,
-    )
-
     def __init__(self):
         #: a Future/Deferred that fires when we hit STATE_CLOSED
         self.is_closed = txaio.create_future()
@@ -1058,7 +1052,7 @@ class WebSocketProtocol(object):
 
         # set opening handshake timeout handler
         if self.openHandshakeTimeout > 0:
-            self.openHandshakeTimeoutCall = self._batched_timer.call_later(
+            self.openHandshakeTimeoutCall = self.factory._batched_timer.call_later(
                 self.openHandshakeTimeout,
                 self.onOpenHandshakeTimeout,
             )
@@ -1729,7 +1723,7 @@ class WebSocketProtocol(object):
                         self.autoPingTimeoutCall = None
 
                         if self.autoPingInterval:
-                            self.autoPingPendingCall = self._batched_timer.call_later(
+                            self.autoPingPendingCall = self.factory._batched_timer.call_later(
                                 self.autoPingInterval,
                                 self._sendAutoPing,
                             )
@@ -1877,7 +1871,7 @@ class WebSocketProtocol(object):
                 "Expecting ping in {seconds} seconds for auto-ping/pong",
                 seconds=self.autoPingTimeout,
             )
-            self.autoPingTimeoutCall = self._batched_timer.call_later(
+            self.autoPingTimeoutCall = self.factory._batched_timer.call_later(
                 self.autoPingTimeout,
                 self.onAutoPingTimeout,
             )
@@ -1931,7 +1925,7 @@ class WebSocketProtocol(object):
 
             # drop connection when timeout on receiving close handshake reply
             if self.closedByMe and self.closeHandshakeTimeout > 0:
-                self.closeHandshakeTimeoutCall = self._batched_timer.call_later(
+                self.closeHandshakeTimeoutCall = self.factory._batched_timer.call_later(
                     self.closeHandshakeTimeout,
                     self.onCloseHandshakeTimeout,
                 )
@@ -2387,6 +2381,42 @@ class WebSocketFactory(object):
         """
         applyMask = not self.isServer
         return PreparedMessage(payload, isBinary, applyMask, doNotCompress)
+
+
+_SERVER_STATUS_TEMPLATE = """<!DOCTYPE html>
+<html>
+   <head>
+      %s
+      <style>
+         body {
+            color: #fff;
+            background-color: #027eae;
+            font-family: "Segoe UI", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 16px;
+         }
+
+         a, a:visited, a:hover {
+            color: #fff;
+         }
+      </style>
+   </head>
+   <body>
+      <h1>AutobahnPython %s</h1>
+      <p>
+         I am not Web server, but a <b>WebSocket Endpoint</b>.
+      </p>
+      <p>
+         You can talk to me using the <a href="http://tools.ietf.org/html/rfc6455">WebSocket</a> protocol.
+      </p>
+      <p>
+         For more information, please see:
+         <ul>
+            <li><a href="http://crossbar.io/autobahn">Autobahn</a></li>
+         </ul>
+      </p>
+   </body>
+</html>
+"""
 
 
 class WebSocketServerProtocol(WebSocketProtocol):
@@ -2949,7 +2979,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
         # automatic ping/pong
         #
         if self.autoPingInterval:
-            self.autoPingPendingCall = self._batched_timer.call_later(
+            self.autoPingPendingCall = self.factory._batched_timer.call_later(
                 self.autoPingInterval,
                 self._sendAutoPing,
             )
@@ -3020,42 +3050,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             redirect = """<meta http-equiv="refresh" content="%d;URL='%s'">""" % (redirectAfter, redirectUrl)
         else:
             redirect = ""
-        html = """
-<!DOCTYPE html>
-<html>
-   <head>
-      %s
-      <style>
-         body {
-            color: #fff;
-            background-color: #027eae;
-            font-family: "Segoe UI", "Lucida Grande", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 16px;
-         }
-
-         a, a:visited, a:hover {
-            color: #fff;
-         }
-      </style>
-   </head>
-   <body>
-      <h1>AutobahnPython %s</h1>
-      <p>
-         I am not Web server, but a <b>WebSocket Endpoint</b>.
-      </p>
-      <p>
-         You can talk to me using the <a href="http://tools.ietf.org/html/rfc6455">WebSocket</a> protocol.
-      </p>
-      <p>
-         For more information, please see:
-         <ul>
-            <li><a href="http://crossbar.io/autobahn">Autobahn</a></li>
-         </ul>
-      </p>
-   </body>
-</html>
-""" % (redirect, __version__)
-        self.sendHtml(html)
+        self.sendHtml(_SERVER_STATUS_TEMPLATE.format(redirect, __version__))
 
 
 class WebSocketServerFactory(WebSocketFactory):
@@ -3098,6 +3093,12 @@ class WebSocketServerFactory(WebSocketFactory):
         self.logOctets = False
         self.logFrames = False
         self.trackTimings = False
+
+        # batch up and chunk timers ("call_later")
+        self._batched_timer = txaio.make_batched_timer(
+            bucket_seconds=0.200,
+            chunk_size=1000,
+        )
 
         # seed RNG which is used for WS frame masks generation
         random.seed()
@@ -3770,7 +3771,7 @@ class WebSocketClientProtocol(WebSocketProtocol):
             # automatic ping/pong
             #
             if self.autoPingInterval:
-                self.autoPingPendingCall = self._batched_timer.call_later(
+                self.autoPingPendingCall = self.factory._batched_timer.call_later(
                     self.autoPingInterval,
                     self._sendAutoPing,
                 )
@@ -3863,6 +3864,12 @@ class WebSocketClientFactory(WebSocketFactory):
         self.logOctets = False
         self.logFrames = False
         self.trackTimings = False
+
+        # batch up and chunk timers ("call_later")
+        self._batched_timer = txaio.make_batched_timer(
+            bucket_seconds=0.200,
+            chunk_size=1000,
+        )
 
         # seed RNG which is used for WS opening handshake key and WS frame masks generation
         random.seed()
