@@ -1,62 +1,23 @@
 autobahn.websocket
 ==================
 
-Submodules
-----------
-
-autobahn.websocket.compress
+WebSocket Channel Interface
 ---------------------------
 
-.. automodule:: autobahn.websocket.compress
+.. autoclass:: autobahn.websocket.IWebSocketChannel
     :members:
-    :show-inheritance:
 
-autobahn.websocket.compress_base
---------------------------------
 
-.. automodule:: autobahn.websocket.compress_base
+WebSocket Messages
+------------------
+
+.. autoclass:: autobahn.websocket.Message
     :members:
+
+.. autoclass:: autobahn.websocket.IncomingMessage
     :show-inheritance:
-
-autobahn.websocket.compress_deflate
------------------------------------
-
-.. automodule:: autobahn.websocket.compress_deflate
     :members:
+
+.. autoclass:: autobahn.websocket.OutgoingMessage
     :show-inheritance:
-
-autobahn.websocket.interfaces
------------------------------
-
-.. automodule:: autobahn.websocket.interfaces
     :members:
-    :show-inheritance:
-
-autobahn.websocket.protocol
----------------------------
-
-.. automodule:: autobahn.websocket.protocol
-    :members:
-    :show-inheritance:
-
-autobahn.websocket.utf8validator
---------------------------------
-
-.. automodule:: autobahn.websocket.utf8validator
-    :members:
-    :show-inheritance:
-
-autobahn.websocket.xormasker
-----------------------------
-
-.. automodule:: autobahn.websocket.xormasker
-    :members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: autobahn.websocket
-    :members:
-    :show-inheritance:

@@ -82,7 +82,12 @@ def autodoc_skip_member(app, what, name, obj, skip, options):
     # skip everything that isn't decorated with @autobahn.public or ..
     if hasattr(obj, '_is_public') and obj._is_public:
         if qualname:
-            print('public API: {}.{}'.format(obj.__module__, qualname(obj)))
+            try:
+                qn = qualname(obj)
+            except AttributeError as e:
+                print(e)
+                qn = name
+            print('public API: {}.{}'.format(obj.__module__, qn))
         return False
     else:
         return True
@@ -329,4 +334,4 @@ rst_prolog = """
 autoclass_content = 'both'
 
 # http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
-# autodoc_member_order = 'bysource'
+autodoc_member_order = 'bysource'

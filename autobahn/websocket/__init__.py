@@ -33,11 +33,9 @@ from autobahn.websocket.interfaces import IWebSocketChannel
 
 __all__ = (
     'IWebSocketChannel',
-
     'Message',
     'IncomingMessage',
     'OutgoingMessage',
-
     'ConnectionRequest',
     'ConnectionResponse',
     'ConnectionAccept',

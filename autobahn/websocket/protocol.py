@@ -63,10 +63,7 @@ if six.PY3:
     # noinspection PyShadowingBuiltins
     xrange = range
 
-__all__ = ("ConnectionRequest",
-           "ConnectionResponse",
-           "Timings",
-           "WebSocketProtocol",
+__all__ = ("WebSocketProtocol",
            "WebSocketFactory",
            "WebSocketServerProtocol",
            "WebSocketServerFactory",

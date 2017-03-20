@@ -27,6 +27,8 @@
 import abc
 import six
 
+from autobahn.util import public
+
 __all__ = (
     'IObjectSerializer',
     'ISerializer',
@@ -37,6 +39,7 @@ __all__ = (
 )
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class IObjectSerializer(object):
     """
@@ -45,6 +48,7 @@ class IObjectSerializer(object):
     :class:`autobahn.wamp.interfaces.ISerializer`.
     """
 
+    @public
     @abc.abstractproperty
     def BINARY(self):
         """
@@ -52,6 +56,7 @@ class IObjectSerializer(object):
         transport or if UTF8 transparency is sufficient.
         """
 
+    @public
     @abc.abstractmethod
     def serialize(self, obj):
         """
@@ -63,6 +68,7 @@ class IObjectSerializer(object):
         :returns: bytes -- Serialized byte string.
         """
 
+    @public
     @abc.abstractmethod
     def unserialize(self, payload):
         """
@@ -75,24 +81,28 @@ class IObjectSerializer(object):
         """
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class ISerializer(object):
     """
     WAMP message serialization and deserialization.
     """
 
+    @public
     @abc.abstractproperty
     def MESSAGE_TYPE_MAP(self):
         """
         Mapping of WAMP message type codes to WAMP message classes.
         """
 
+    @public
     @abc.abstractproperty
     def SERIALIZER_ID(self):
         """
         The WAMP serialization format ID.
         """
 
+    @public
     @abc.abstractmethod
     def serialize(self, message):
         """
@@ -104,6 +114,7 @@ class ISerializer(object):
         :returns: tuple -- A pair ``(payload, is_binary)``.
         """
 
+    @public
     @abc.abstractmethod
     def unserialize(self, payload, is_binary):
         """
@@ -119,6 +130,7 @@ class ISerializer(object):
         """
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class ITransport(object):
     """
@@ -126,6 +138,7 @@ class ITransport(object):
     message-based channel.
     """
 
+    @public
     @abc.abstractmethod
     def send(self, message):
         """
@@ -141,6 +154,7 @@ class ITransport(object):
         :returns: obj -- A Deferred/Future
         """
 
+    @public
     @abc.abstractmethod
     def is_open(self):
         """
@@ -149,6 +163,7 @@ class ITransport(object):
         :returns: bool -- ``True``, if the transport is open.
         """
 
+    @public
     @abc.abstractmethod
     def close(self):
         """
@@ -157,6 +172,7 @@ class ITransport(object):
         application initiated closing.
         """
 
+    @public
     @abc.abstractmethod
     def abort(self):
         """
@@ -166,6 +182,7 @@ class ITransport(object):
         detected attacks.
         """
 
+    @public
     @abc.abstractmethod
     def get_channel_id(self):
         """
@@ -211,9 +228,11 @@ class ITransport(object):
         """
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class ITransportHandler(object):
 
+    @public
     @abc.abstractproperty
     def transport(self):
         """
@@ -222,6 +241,7 @@ class ITransportHandler(object):
         is gone, this property is set to None.
         """
 
+    @public
     @abc.abstractmethod
     def on_open(self, transport):
         """
@@ -233,6 +253,7 @@ class ITransportHandler(object):
         :type transport: obj
         """
 
+    @public
     @abc.abstractmethod
     def on_message(self, message):
         """
@@ -244,6 +265,7 @@ class ITransportHandler(object):
         :type message: obj
         """
 
+    @public
     @abc.abstractmethod
     def on_close(self, was_clean):
         """
@@ -254,24 +276,28 @@ class ITransportHandler(object):
         """
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class ISession(object):
     """
     Base interface for WAMP sessions.
     """
 
+    @public
     @abc.abstractmethod
     def on_connect(self):
         """
         Callback fired when the transport this session will run over has been established.
         """
 
+    @public
     @abc.abstractmethod
     def join(self, realm):
         """
         Attach the session to the given realm. A session is open as soon as it is attached to a realm.
         """
 
+    @public
     @abc.abstractmethod
     def on_challenge(self, challenge):
         """
@@ -283,6 +309,7 @@ class ISession(object):
         :type challenge: Instance of :class:`autobahn.wamp.types.Challenge`.
         """
 
+    @public
     @abc.abstractmethod
     def on_join(self, details):
         """
@@ -294,6 +321,7 @@ class ISession(object):
         :type details: Instance of :class:`autobahn.wamp.types.SessionDetails`.
         """
 
+    @public
     @abc.abstractmethod
     def leave(self, reason=None, message=None):
         """
@@ -310,6 +338,7 @@ class ISession(object):
         :return: may return a Future/Deferred that fires when we've disconnected
         """
 
+    @public
     @abc.abstractmethod
     def on_leave(self, details):
         """
@@ -319,24 +348,28 @@ class ISession(object):
         :type details: Instance of :class:`autobahn.wamp.types.CloseDetails`.
         """
 
+    @public
     @abc.abstractmethod
     def disconnect(self):
         """
         Close the underlying transport.
         """
 
+    @public
     @abc.abstractmethod
     def is_connected(self):
         """
         Check if the underlying transport is connected.
         """
 
+    @public
     @abc.abstractmethod
     def is_attached(self):
         """
         Check if the session has currently joined a realm.
         """
 
+    @public
     @abc.abstractmethod
     def on_disconnect(self):
         """
@@ -344,6 +377,7 @@ class ISession(object):
         """
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class IApplicationSession(ISession):
     """
@@ -351,6 +385,7 @@ class IApplicationSession(ISession):
     WAMP roles (caller, callee, publisher, subscriber).
     """
 
+    @public
     @abc.abstractmethod
     def define(self, exception, error=None):
         """
@@ -363,6 +398,7 @@ class IApplicationSession(ISession):
         :type error: str
         """
 
+    @public
     @abc.abstractmethod
     def call(self, procedure, *args, **kwargs):
         """
@@ -397,6 +433,7 @@ class IApplicationSession(ISession):
         :rtype: instance of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
+    @public
     @abc.abstractmethod
     def register(self, endpoint, procedure=None, options=None):
         """
@@ -430,6 +467,7 @@ class IApplicationSession(ISession):
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
+    @public
     @abc.abstractmethod
     def publish(self, topic, *args, **kwargs):
         """
@@ -464,6 +502,7 @@ class IApplicationSession(ISession):
         :rtype: ``None`` or instance of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
 
+    @public
     @abc.abstractmethod
     def subscribe(self, handler, topic=None, options=None):
         """

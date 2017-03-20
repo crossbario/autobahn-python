@@ -27,11 +27,14 @@
 import abc
 import six
 
+from autobahn.util import public
+
 __all__ = ('IWebSocketChannel',
            'IWebSocketChannelFrameApi',
            'IWebSocketChannelStreamingApi')
 
 
+@public
 @six.add_metaclass(abc.ABCMeta)
 class IWebSocketChannel(object):
     """
@@ -42,6 +45,7 @@ class IWebSocketChannel(object):
     and methods.
     """
 
+    @public
     @abc.abstractmethod
     def on_connect(self, request_or_response):
         """
@@ -62,6 +66,7 @@ class IWebSocketChannel(object):
            You can also return a Deferred/Future that resolves/rejects to the above.
         """
 
+    @public
     @abc.abstractmethod
     def on_open(self):
         """
@@ -69,6 +74,7 @@ class IWebSocketChannel(object):
         You now can send and receive WebSocket messages.
         """
 
+    @public
     @abc.abstractmethod
     def send_message(self, message):
         """
@@ -78,6 +84,7 @@ class IWebSocketChannel(object):
         :type message: Instance of :class:`autobahn.websocket.types.OutgoingMessage`
         """
 
+    @public
     @abc.abstractmethod
     def on_message(self, message):
         """
@@ -87,6 +94,7 @@ class IWebSocketChannel(object):
         :type message: :class:`autobahn.websocket.types.IncomingMessage`
         """
 
+    @public
     @abc.abstractmethod
     def send_close(self, code=None, reason=None):
         """
@@ -100,6 +108,7 @@ class IWebSocketChannel(object):
         :type reason: unicode
         """
 
+    @public
     @abc.abstractmethod
     def on_close(self, was_clean, code, reason):
         """
@@ -114,6 +123,7 @@ class IWebSocketChannel(object):
         :type reason: unicode or None
         """
 
+    @public
     @abc.abstractmethod
     def sendPreparedMessage(self, preparedMsg):
         """
@@ -123,6 +133,7 @@ class IWebSocketChannel(object):
         :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
         """
 
+    @public
     @abc.abstractmethod
     def send_ping(self, payload=None):
         """
@@ -135,6 +146,7 @@ class IWebSocketChannel(object):
         :type payload: bytes or None
         """
 
+    @public
     @abc.abstractmethod
     def on_ping(self, payload):
         """
@@ -145,6 +157,7 @@ class IWebSocketChannel(object):
         :type payload: bytes
         """
 
+    @public
     @abc.abstractmethod
     def send_pong(self, payload=None):
         """
@@ -157,6 +170,7 @@ class IWebSocketChannel(object):
         :type payload: bytes
         """
 
+    @public
     @abc.abstractmethod
     def on_pong(self, payload):
         """
