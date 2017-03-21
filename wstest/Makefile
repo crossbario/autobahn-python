@@ -44,6 +44,11 @@ setup_pypy3:
 	./pypy3/bin/pip install virtualenv
 	./pypy3/bin/python -V
 
+setup_cpy2:
+	mkdir -p ./cpy2_build
+	tar xvf ./downloads/Python-2.7.13.tar.xz --strip-components=1 -C ./cpy2_build
+	cd ./cpy2_build && ./configure --prefix=../cpy2 && make && make install
+
 setup_pypy2_tx_client:
 	./pypy2/bin/virtualenv ./venv_pypy2_tx_client
 	./venv_pypy2_tx_client/bin/pip install -e ..[twisted]
