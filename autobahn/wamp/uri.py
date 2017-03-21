@@ -136,7 +136,8 @@ class Pattern(object):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
-        :type uri: unicode
+        :type uri: str
+
         :param target: The target for this pattern: a procedure endpoint (a callable),
            an event handler (a callable) or an exception (a class).
         :type target: callable or obj
@@ -213,7 +214,7 @@ class Pattern(object):
         Returns the original URI (pattern) for this pattern.
 
         :returns: The URI (pattern), e.g. ``"com.myapp.product.<product:int>.update"``.
-        :rtype: unicode
+        :rtype: str
         """
         return self._uri
 
@@ -229,7 +230,7 @@ class Pattern(object):
         and return extracted args and kwargs.
 
         :param uri: The URI to match, e.g. ``"com.myapp.product.123456.update"``.
-        :type uri: unicode
+        :type uri: str
 
         :returns: A tuple ``(args, kwargs)``
         :rtype: tuple

@@ -271,7 +271,6 @@ class ApplicationError(Error):
             return self.__unicode__().encode('utf8')
 
 
-@public
 @error(ApplicationError.NOT_AUTHORIZED)
 class NotAuthorized(Exception):
     """
@@ -279,7 +278,6 @@ class NotAuthorized(Exception):
     """
 
 
-@public
 @error(ApplicationError.INVALID_URI)
 class InvalidUri(Exception):
     """
@@ -287,7 +285,6 @@ class InvalidUri(Exception):
     """
 
 
-@public
 @error(ApplicationError.INVALID_PAYLOAD)
 class InvalidPayload(Exception):
     """

@@ -227,6 +227,7 @@ class WampWebSocketFactory(object):
         :param factory: A callable that produces instances that implement
            :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
+
         :param serializers: A list of WAMP serializers to use (or None for default
            serializers). Serializers must implement
            :class:`autobahn.wamp.interfaces.ISerializer`.

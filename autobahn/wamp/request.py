@@ -33,11 +33,9 @@ __all__ = (
     'Handler',
     'Registration',
     'Endpoint',
-
     'PublishRequest',
     'SubscribeRequest',
     'UnsubscribeRequest',
-
     'CallRequest',
     'InvocationRequest',
     'RegisterRequest',
@@ -54,6 +52,14 @@ class Publication(object):
     __slots__ = ('id', 'was_encrypted')
 
     def __init__(self, publication_id, was_encrypted):
+        """
+
+        :param publication_id: The publication ID of the published event.
+        :type publication_id: int
+
+        :param was_encrypted: Flag indicating whether the app payload was encrypted.
+        :type was_encrypted: bool
+        """
         self.id = publication_id
         self.was_encrypted = was_encrypted
 
@@ -70,6 +76,18 @@ class Subscription(object):
 
     def __init__(self, subscription_id, topic, session, handler):
         """
+
+        :param subscription_id: The subscription ID.
+        :type subscription_id: int
+
+        :param topic: The subscription URI or URI pattern.
+        :type topic: str
+
+        :param session: The ApplicationSession this subscription is living on.
+        :type session: instance of ApplicationSession
+
+        :param handler: The user event callback.
+        :type handler: callable
         """
         self.id = subscription_id
         self.topic = topic
@@ -79,6 +97,7 @@ class Subscription(object):
 
     def unsubscribe(self):
         """
+        Unsubscribe this subscription.
         """
         if self.active:
             return self.session._unsubscribe(self)
@@ -101,8 +120,10 @@ class Handler(object):
 
         :param fn: The event handler function to be called.
         :type fn: callable
+
         :param obj: The (optional) object upon which to call the function.
         :type obj: obj or None
+
         :param details_arg: The keyword argument under which event details should be provided.
         :type details_arg: str or None
         """
@@ -119,6 +140,20 @@ class Registration(object):
     __slots__ = ('id', 'active', 'session', 'procedure', 'endpoint')
 
     def __init__(self, session, registration_id, procedure, endpoint):
+        """
+
+        :param id: The registration ID.
+        :type id: int
+
+        :param active: Flag indicating whether this registration is active.
+        :type active: bool
+
+        :param procedure: The procedure URI or URI pattern.
+        :type procedure: callable
+
+        :param endpoint: The user callback.
+        :type endpoint: callable
+        """
         self.id = registration_id
         self.active = True
         self.session = session
@@ -146,8 +181,10 @@ class Endpoint(object):
 
         :param fn: The endpoint procedure to be called.
         :type fn: callable
+
         :param obj: The (optional) object upon which to call the function.
         :type obj: obj or None
+
         :param details_arg: The keyword argument under which call details should be provided.
         :type details_arg: str or None
         """
@@ -169,6 +206,7 @@ class Request(object):
 
         :param request_id: The WAMP request ID.
         :type request_id: int
+
         :param on_reply: The Deferred/Future to be fired when the request returns.
         :type on_reply: Deferred/Future
         """
@@ -184,6 +222,17 @@ class PublishRequest(Request):
     __slots__ = ('was_encrypted')
 
     def __init__(self, request_id, on_reply, was_encrypted):
+        """
+
+        :param request_id: The WAMP request ID.
+        :type request_id: int
+
+        :param on_reply: The Deferred/Future to be fired when the request returns.
+        :type on_reply: Deferred/Future
+
+        :param was_encrypted: Flag indicating whether the app payload was encrypted.
+        :type was_encrypted: bool
+        """
         Request.__init__(self, request_id, on_reply)
         self.was_encrypted = was_encrypted
 
@@ -200,10 +249,13 @@ class SubscribeRequest(Request):
 
         :param request_id: The WAMP request ID.
         :type request_id: int
+
         :param topic: The topic URI being subscribed to.
         :type topic: unicode
+
         :param on_reply: The Deferred/Future to be fired when the request returns.
         :type on_reply: Deferred/Future
+
         :param handler: WAMP call options that are in use for this call.
         :type handler: callable
         """
@@ -217,7 +269,11 @@ class UnsubscribeRequest(Request):
     Object representing an outstanding request to unsubscribe a subscription.
     """
 
+    __slots__ = ('subscription_id',)
+
     def __init__(self, request_id, on_reply, subscription_id):
+        """
+        """
         Request.__init__(self, request_id, on_reply)
         self.subscription_id = subscription_id
 
@@ -234,8 +290,10 @@ class CallRequest(Request):
 
         :param request_id: The WAMP request ID.
         :type request_id: int
+
         :param on_reply: The Deferred/Future to be fired when the request returns.
         :type on_reply: Deferred/Future
+
         :param options: WAMP call options that are in use for this call.
         :type options: dict
         """
@@ -255,7 +313,11 @@ class RegisterRequest(Request):
     Object representing an outstanding request to register a procedure.
     """
 
+    __slots__ = ('procedure', 'endpoint',)
+
     def __init__(self, request_id, on_reply, procedure, endpoint):
+        """
+        """
         Request.__init__(self, request_id, on_reply)
         self.procedure = procedure
         self.endpoint = endpoint
@@ -266,6 +328,10 @@ class UnregisterRequest(Request):
     Object representing an outstanding request to unregister a registration.
     """
 
+    __slots__ = ('registration_id',)
+
     def __init__(self, request_id, on_reply, registration_id):
+        """
+        """
         Request.__init__(self, request_id, on_reply)
         self.registration_id = registration_id
