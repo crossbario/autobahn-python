@@ -1,0 +1,4 @@
+*.bz2
+./reports
+./venv*
+./wstest

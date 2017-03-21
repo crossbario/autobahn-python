@@ -567,7 +567,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                    accept.no_context_takeover if accept.no_context_takeover is not None else accept.response.client_no_context_takeover,
                    accept.response.server_max_window_bits,
                    accept.window_bits if accept.window_bits is not None else accept.response.client_max_window_bits,
-                   accept.memLevel)
+                   accept.mem_level)
         return pmce
 
     @classmethod
@@ -578,7 +578,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
                    accept.request_no_context_takeover,
                    accept.window_bits if accept.window_bits is not None else accept.offer.requestMaxWindowBits,
                    accept.requestMaxWindowBits,
-                   accept.memLevel)
+                   accept.mem_level)
         return pmce
 
     def __init__(self,
@@ -614,7 +614,7 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         return "PerMessageDeflate(is_server = %s, server_no_context_takeover = %s, client_no_context_takeover = %s, server_max_window_bits = %s, client_max_window_bits = %s, mem_level = %s)" % (self._is_server, self.server_no_context_takeover, self.client_no_context_takeover, self.server_max_window_bits, self.client_max_window_bits, self.mem_level)
 
     def start_compress_message(self):
-        # compressobj([level[, method[, wbits[, memlevel[, strategy]]]]])
+        # compressobj([level[, method[, wbits[, mem_level[, strategy]]]]])
         # http://bugs.python.org/issue19278
         # http://hg.python.org/cpython/rev/c54c8e71b79a
         if self._is_server:

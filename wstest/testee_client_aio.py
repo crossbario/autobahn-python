@@ -27,6 +27,11 @@
 import txaio
 txaio.use_asyncio()
 
+try:
+    import asyncio
+except ImportError:
+    import trollius as asyncio
+
 import autobahn
 
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
@@ -104,8 +109,6 @@ class TesteeClientFactory(WebSocketClientFactory):
 if __name__ == '__main__':
 
     txaio.start_logging(level='info')
-
-    import asyncio
 
     factory = TesteeClientFactory(u"ws://127.0.0.1:9001")
 
