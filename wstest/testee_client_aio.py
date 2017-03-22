@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import argparse
+
 import txaio
 txaio.use_asyncio()
 
@@ -33,6 +35,8 @@ except ImportError:
     import trollius as asyncio
 
 import autobahn
+
+from autobahn.websocket.util import parse_url
 
 from autobahn.asyncio.websocket import WebSocketClientProtocol, \
     WebSocketClientFactory
@@ -60,14 +64,17 @@ class TesteeClientProtocol(WebSocketClientProtocol):
         else:
             self.sendMessage(msg, binary)
 
+    def onClose(self, wasClean, code, reason):
+        txaio.resolve(self.factory._done, None)
+
 
 class TesteeClientFactory(WebSocketClientFactory):
 
     protocol = TesteeClientProtocol
 
-    def __init__(self, url):
-        self.agent = autobahn.asyncio.__ident__
-        WebSocketClientFactory.__init__(self, url, useragent=self.agent)
+    def __init__(self, url, agent):
+        self.agent = agent
+        WebSocketClientFactory.__init__(self, url, useragent=agent)
 
         self.setProtocolOptions(failByDrop=False)  # spec conformance
 
@@ -81,39 +88,42 @@ class TesteeClientFactory(WebSocketClientFactory):
 
         self.setProtocolOptions(perMessageCompressionAccept=accept)
 
-        # setup client testee stuff
-        self.endCaseId = None
-        self.currentCaseId = 0
-        self.updateReports = True
-        self.resource = "/getCaseCount"
-
-    # FIXME: port to asyncio
-    def clientConnectionLost(self, connector, reason):
-        self.currentCaseId += 1
-        if self.currentCaseId <= self.endCaseId:
-            self.resource = "/runCase?case={}&agent={}".format(self.currentCaseId, self.agent)
-            connector.connect()
-        elif self.updateReports:
-            self.resource = "/updateReports?agent={}".format(self.agent)
-            self.updateReports = False
-            connector.connect()
-        else:
-            reactor.stop()
-
-    # FIXME: port to asyncio
-    def clientConnectionFailed(self, connector, reason):
-        self.log.info("Connection to {url} failed: {error_message}", url=self.url, error_message=reason.getErrorMessage())
-        reactor.stop()
-
 
 if __name__ == '__main__':
 
-    txaio.start_logging(level='info')
+    parser = argparse.ArgumentParser(description='Autobahn Testee Client (Twisted)')
+    parser.add_argument('--url', dest='url', type=str, default=u'ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
+    parser.add_argument('--loglevel', dest='loglevel', type=str, default=u'info', help='Log level, eg "info" or "debug".')
 
-    factory = TesteeClientFactory(u"ws://127.0.0.1:9001")
+    options = parser.parse_args()
+
+    txaio.start_logging(level=options.loglevel)
+
+    factory = TesteeClientFactory(options.url, autobahn.asyncio.__ident__)
+
+    _, host, port, _, _, _ = parse_url(options.url)
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_connection(factory, '127.0.0.1', 9001)
-    loop.run_until_complete(coro)
-    loop.run_forever()
+
+    factory.resource = u'/getCaseCount'
+    factory.endCaseId = None
+    factory.currentCaseId = 0
+    factory.updateReports = True
+
+    while True:
+
+        factory._done = txaio.create_future()
+        coro = loop.create_connection(factory, host, port)
+        loop.run_until_complete(coro)
+        loop.run_until_complete(factory._done)
+
+        factory.currentCaseId += 1
+        if factory.currentCaseId <= factory.endCaseId:
+            factory.resource = u"/runCase?case={}&agent={}".format(factory.currentCaseId, factory.agent)
+        elif factory.updateReports:
+            factory.resource = u"/updateReports?agent={}".format(factory.agent)
+            factory.updateReports = False
+        else:
+            break
+
     loop.close()

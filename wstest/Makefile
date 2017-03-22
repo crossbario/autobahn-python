@@ -6,7 +6,7 @@ default:
 
 clean:
 	-rm -rf ./reports
-	-rm -rf ./downloads
+	#-rm -rf ./downloads
 	-rm -rf ./venv*
 	-rm -rf ./wstest
 
@@ -33,7 +33,7 @@ build_wstest:
 build_pypy2:
 	mkdir -p ./pypy2
 	tar xvf ./downloads/pypy2-v5.7.0-linux64.tar.bz2 --strip-components=1 -C ./pypy2
-	cd ./pypy2/bin && ln -s pypy python && cd ../..
+	#cd ./pypy2/bin && ln -s pypy python && cd ../..
 	./pypy2/bin/python ./downloads/get-pip.py
 	./pypy2/bin/pip install virtualenv
 	./pypy2/bin/python -V
@@ -41,7 +41,7 @@ build_pypy2:
 build_pypy3:
 	mkdir -p ./pypy3
 	tar xvf ./downloads/pypy3-v5.7.0-linux64.tar.bz2 --strip-components=1 -C ./pypy3
-	cd ./pypy3/bin && ln -s pypy3 python && cd ../..
+	#cd ./pypy3/bin && ln -s pypy3 python && cd ../..
 	./pypy3/bin/python ./downloads/get-pip.py
 	./pypy3/bin/pip install virtualenv
 	./pypy3/bin/python -V
@@ -70,6 +70,13 @@ build: build_wstest \
 	   build_pypy3 \
 	   build_cpy2 \
 	   build_cpy3
+
+
+versions:
+	./cpy2/bin/python -V
+	./cpy3/bin/python -V
+	./pypy2/bin/python -V
+	./pypy3/bin/python -V
 
 
 setup_pypy2_tx:
@@ -154,3 +161,7 @@ test_aio_client: \
 	test_pypy3_aio_client \
 	test_cpy2_aio_client \
 	test_cpy3_aio_client
+
+test_client: \
+	test_tx_client \
+	test_aio_client
