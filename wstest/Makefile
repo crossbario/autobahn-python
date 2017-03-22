@@ -104,10 +104,14 @@ setup_cpy3_aio:
 	./cpy3/bin/virtualenv ./venv_cpy3_aio
 	./venv_cpy3_aio/bin/pip install -e ..[asyncio]
 
-setup: setup_pypy2_tx setup_pypy2_aio \
-	   setup_pypy3_tx setup_pypy3_aio \
-	   setup_cpy2_tx setup_cpy3_aio \
-	   setup_cpy3_tx setup_cpy3_aio
+setup: setup_pypy2_tx \
+	   setup_pypy2_aio \
+	   setup_pypy3_tx \
+	   setup_pypy3_aio \
+	   setup_cpy2_tx \
+	   setup_cpy2_aio \
+	   setup_cpy3_tx \
+	   setup_cpy3_aio
 
 
 wstest_server:
