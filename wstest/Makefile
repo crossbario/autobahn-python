@@ -13,6 +13,10 @@ clean:
 clean_reports:
 	-rm -rf ./reports
 
+upload_reports:
+	./wstest/bin/aws s3 sync reports s3://autobahn.ws/testsuite/reports \
+		--delete --acl public-read --region=eu-central-1
+
 
 downloads:
 	mkdir -p downloads
@@ -28,6 +32,7 @@ build_wstest:
 	tar xvf ./downloads/pypy2-v5.7.0-linux64.tar.bz2 --strip-components=1 -C ./wstest
 	./wstest/bin/pypy ./downloads/get-pip.py
 	./wstest/bin/pip install autobahntestsuite
+	./wstest/bin/pip install awscli
 
 
 build_pypy2:
@@ -168,30 +173,58 @@ test_client: \
 
 
 start_cpy2_tx_server:
-	./venv_cpy2_tx/bin/python testee_server_tx.py --url ws://localhost:9010 &
+	./venv_cpy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9010 &
 
 start_cpy3_tx_server:
-	./venv_cpy3_tx/bin/python testee_server_tx.py --url ws://localhost:9011 &
+	./venv_cpy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9011 &
 
 start_pypy2_tx_server:
-	./venv_pypy2_tx/bin/python testee_server_tx.py --url ws://localhost:9012 &
+	./venv_pypy2_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9012 &
 
 start_pypy3_tx_server:
-	./venv_pypy3_tx/bin/python testee_server_tx.py --url ws://localhost:9013 &
+	./venv_pypy3_tx/bin/python testee_server_tx.py --url ws://127.0.0.1:9013 &
 
 
 start_cpy2_aio_server:
-	./venv_cpy2_aio/bin/python testee_server_aio.py --url ws://localhost:9014 &
+	./venv_cpy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9014 &
 
 start_cpy3_aio_server:
-	./venv_cpy3_aio/bin/python testee_server_aio.py --url ws://localhost:9015 &
+	./venv_cpy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9015 &
 
 start_pypy2_aio_server:
-	./venv_pypy2_aio/bin/python testee_server_aio.py --url ws://localhost:9016 &
+	./venv_pypy2_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9016 &
 
 start_pypy3_aio_server:
-	./venv_pypy3_aio/bin/python testee_server_aio.py --url ws://localhost:9017 &
+	./venv_pypy3_aio/bin/python testee_server_aio.py --url ws://127.0.0.1:9017 &
+
+
+start_tx_server: \
+	start_cpy2_tx_server \
+	start_cpy3_tx_server \
+	start_pypy2_tx_server \
+	start_pypy3_tx_server
+
+start_aio_server: \
+	start_cpy2_aio_server \
+	start_cpy3_aio_server \
+	start_pypy2_aio_server \
+	start_pypy3_aio_server
+
+start_server: \
+	start_tx_server \
+	start_aio_server
 
 
 stop_testee_server:
 	pkill -f "testee_server*"
+
+
+wstest_client:
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9010
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9011
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9012
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9013
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9014
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9015
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9016
+	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9017
