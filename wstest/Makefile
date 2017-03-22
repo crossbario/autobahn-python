@@ -165,3 +165,33 @@ test_aio_client: \
 test_client: \
 	test_tx_client \
 	test_aio_client
+
+
+start_cpy2_tx_server:
+	./venv_cpy2_tx/bin/python testee_server_tx.py --url ws://localhost:9010 &
+
+start_cpy3_tx_server:
+	./venv_cpy3_tx/bin/python testee_server_tx.py --url ws://localhost:9011 &
+
+start_pypy2_tx_server:
+	./venv_pypy2_tx/bin/python testee_server_tx.py --url ws://localhost:9012 &
+
+start_pypy3_tx_server:
+	./venv_pypy3_tx/bin/python testee_server_tx.py --url ws://localhost:9013 &
+
+
+start_cpy2_aio_server:
+	./venv_cpy2_aio/bin/python testee_server_aio.py --url ws://localhost:9014 &
+
+start_cpy3_aio_server:
+	./venv_cpy3_aio/bin/python testee_server_aio.py --url ws://localhost:9015 &
+
+start_pypy2_aio_server:
+	./venv_pypy2_aio/bin/python testee_server_aio.py --url ws://localhost:9016 &
+
+start_pypy3_aio_server:
+	./venv_pypy3_aio/bin/python testee_server_aio.py --url ws://localhost:9017 &
+
+
+stop_testee_server:
+	pkill -f "testee_server*"

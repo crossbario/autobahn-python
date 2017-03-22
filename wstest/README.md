@@ -27,3 +27,10 @@ Python 3.5.3 (b16a4363e930, Mar 20 2017, 16:13:46)
 make setup
 ```
 
+
+
+make wstest_server
+
+make test_tx_client
+
+make test_aio_client
