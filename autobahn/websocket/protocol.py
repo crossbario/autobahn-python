@@ -3049,7 +3049,7 @@ class WebSocketServerProtocol(WebSocketProtocol):
             redirect = """<meta http-equiv="refresh" content="%d;URL='%s'">""" % (redirectAfter, redirectUrl)
         else:
             redirect = ""
-        self.sendHtml(_SERVER_STATUS_TEMPLATE.format(redirect, __version__))
+        self.sendHtml(_SERVER_STATUS_TEMPLATE % (redirect, __version__))
 
 
 class WebSocketServerFactory(WebSocketFactory):
