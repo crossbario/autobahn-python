@@ -75,7 +75,7 @@ if __name__ == '__main__':
     offers1 = [PerMessageDeflateOffer(acceptNoContextTakeover=True,
                                       acceptMaxWindowBits=True,
                                       requestNoContextTakeover=False,
-                                      requestMaxWindowBits=0)]
+                                      request_max_window_bits=0)]
 
     # request the server to use a sliding window of 2^8 bytes
     offers2 = [PerMessageDeflateOffer(True, True, False, 8)]

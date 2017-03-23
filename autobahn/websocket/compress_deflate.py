@@ -576,8 +576,8 @@ class PerMessageDeflate(PerMessageCompress, PerMessageDeflateMixin):
         pmce = cls(is_server,
                    accept.no_context_takeover if accept.no_context_takeover is not None else accept.offer.request_no_context_takeover,
                    accept.request_no_context_takeover,
-                   accept.window_bits if accept.window_bits is not None else accept.offer.requestMaxWindowBits,
-                   accept.requestMaxWindowBits,
+                   accept.window_bits if accept.window_bits is not None else accept.offer.request_max_window_bits,
+                   accept.request_max_window_bits,
                    accept.mem_level)
         return pmce
 
