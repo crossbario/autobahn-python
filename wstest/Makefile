@@ -215,7 +215,7 @@ start_server: \
 	start_aio_server
 
 
-stop_testee_server:
+stop_server:
 	-pkill -f "testee_server*"
 
 

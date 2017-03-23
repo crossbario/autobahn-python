@@ -32,14 +32,14 @@ Features
 --------
 
 -  framework for `WebSocket <http://tools.ietf.org/html/rfc6455>`__ and `WAMP <http://wamp-proto.org/>`__ clients and servers
--  compatible with Python 2.6, 2.7, 3.3 and 3.4
+-  compatible with Python 2.7 and 3.3 or later
 -  runs on `CPython <http://python.org/>`__, `PyPy <http://pypy.org/>`__ and `Jython <http://jython.org/>`__
 -  runs under `Twisted <http://twistedmatrix.com/>`__ and `asyncio <http://docs.python.org/3.4/library/asyncio.html>`__ - implements WebSocket
    `RFC6455 <http://tools.ietf.org/html/rfc6455>`__ and Draft Hybi-10+
 -  implements `WebSocket compression <http://tools.ietf.org/html/draft-ietf-hybi-permessage-compression>`__
 -  implements `WAMP <http://wamp-proto.org/>`__, the Web Application Messaging Protocol
 -  high-performance, fully asynchronous implementation
--  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://crossbar.io/autobahn#testsuite>`__)
+-  best-in-class standards conformance (100% strict passes with `Autobahn Testsuite <http://crossbar.io/autobahn#testsuite>`__: `Client <http://autobahn.ws/testsuite/reports/clients/index.html>__` `Server <http://autobahn.ws/testsuite/reports/servers/index.html>`__)
 -  message-, frame- and streaming-APIs for WebSocket
 -  supports TLS (secure WebSocket) and proxies
 -  Open-source (`MIT license <https://github.com/crossbario/autobahn-python/blob/master/LICENSE>`__)
