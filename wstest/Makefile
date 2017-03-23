@@ -216,15 +216,63 @@ start_server: \
 
 
 stop_testee_server:
-	pkill -f "testee_server*"
+	-pkill -f "testee_server*"
 
 
-wstest_client:
+# test individual server flavor - note that this will only
+# produce a single report each, and it cannot be combined into
+# a single report! here is the comment from wstest.py
+
+# allow overriding servers from command line option, providing 1 server
+# this is semi-useful, as you cannot accumulate a combined report for
+# multiple servers by running wstest over and over again. the generated
+# report is only for the last invocation - it would require a massive
+# code restructering / rewriting to change that. no time for that unfort.
+
+test_cpy2_tx_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9010
+
+test_cpy3_tx_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9011
+
+test_pypy2_tx_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9012
+
+test_pypy3_tx_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9013
+
+
+test_cpy2_aio_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9014
+
+test_cpy3_aio_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9015
+
+test_pypy2_aio_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9016
+
+test_pypy3_aio_server:
 	./wstest/bin/wstest -m fuzzingclient -w ws://127.0.0.1:9017
+
+
+test_tx_server: \
+	test_cpy2_tx_server \
+	test_cpy3_tx_server \
+	test_pypy2_tx_server \
+	test_pypy3_tx_server
+
+test_aio_server: \
+	test_cpy2_aio_server \
+	test_cpy3_aio_server \
+	test_pypy2_aio_server \
+	test_pypy3_aio_server
+
+# THIS DOES NOT WORK TO PRODUCE THE FINAL COMBINED REPORT FOR ALL SERVERS!
+# see above.
+#test_server: \
+#	test_tx_server \
+#	test_aio_server
+
+
+test_server:
+	./wstest/bin/wstest -m fuzzingclient
