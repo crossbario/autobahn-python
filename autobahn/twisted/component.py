@@ -30,7 +30,8 @@ from __future__ import absolute_import, print_function
 import itertools
 from functools import partial
 
-from twisted.internet.defer import inlineCallbacks
+from twisted.internet.defer import inlineCallbacks  # XXX FIXME?
+from twisted.python.failure import Failure
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
@@ -52,10 +53,10 @@ import txaio
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
-from autobahn.wamp import component
+from autobahn.wamp import component, types
 
 from autobahn.twisted.util import sleep
-from autobahn.twisted.wamp import ApplicationSession
+from autobahn.twisted.wamp import Session
 from autobahn.wamp.exception import ApplicationError
 
 
@@ -156,7 +157,7 @@ def _create_transport_factory(reactor, transport, session_factory):
 
     elif transport.type == 'rawsocket':
         # FIXME: forward RawSocket options
-        serializer = _create_transport_serializer(transport.serializer)
+        serializer = _create_transport_serializer(transport.serializers[0])
         return WampRawSocketClientFactory(session_factory, serializer=serializer)
 
     else:
@@ -242,7 +243,7 @@ class Component(component.Component):
 
     log = txaio.make_logger()
 
-    session_factory = ApplicationSession
+    session_factory = Session
     """
     The factory of the session we will instantiate.
     """
@@ -337,8 +338,13 @@ class Component(component.Component):
                         if e.error in [u'wamp.error.no_such_realm']:
                             reconnect = False
                             self.log.error(u"Fatal error, not reconnecting")
+                            # The thinking here is that we really do
+                            # want to 'raise' (and thereby fail the
+                            # entire "start" / reconnect loop) because
+                            # if the realm isn't valid, we're "never"
+                            # going to succeed...
                             raise
-                        # self.log.error(u"{error}: {message}", error=e.error, message=e.message)
+                        self.log.error(u"{msg}", msg=e.error_message())
                     elif _is_ssl_error(e):
                         # Quoting pyOpenSSL docs: "Whenever
                         # [SSL.Error] is raised directly, it has a
@@ -362,8 +368,8 @@ class Component(component.Component):
                         # stacktraces logged immediately at error
                         # level, e.g. SyntaxError?
                         self.log.debug(u'{tb}', tb=txaio.failure_format_traceback(f))
-                        raise
                 else:
+                    self.log.debug(u"Not reconnecting")
                     reconnect = False
             else:
                 # check if there is any transport left we can use
@@ -372,8 +378,21 @@ class Component(component.Component):
                     self.log.info("No remaining transports to try")
                     reconnect = False
 
+    def stop(self):
+        return self._session.leave()
 
+
+# XXX this should move to autobahn/wamp/component.py or somewhere
+# generic as this same implementation will work for asyncio
 def _run(reactor, components):
+    """
+    Internal helper. Use "run" method.
+
+    This is called by react() so any errors coming out of this should
+    be handled properly. Logging will already be started.
+    """
+    # let user pass a single component to run, too
+    # XXX probably want IComponent? only demand it, here and below?
     if isinstance(components, Component):
         components = [components]
 
@@ -390,39 +409,80 @@ def _run(reactor, components):
                 'item of type {0}'.format(type(c))
             )
 
+    # validation complete; proceed with startup
     log = txaio.make_logger()
 
-    def component_success(c, arg):
-        log.debug("Component {c} successfully completed: {arg}", c=c, arg=arg)
+    def component_success(comp, arg):
+        log.debug("Component '{c}' successfully completed: {arg}", c=comp, arg=arg)
         return arg
 
-    def component_failure(f):
-        log.error("Component error: {msg}", msg=txaio.failure_message(f))
+    def component_failure(comp, f):
+        log.error("Component '{c}' error: {msg}", c=comp, msg=txaio.failure_message(f))
         log.debug("Component error: {tb}", tb=txaio.failure_format_traceback(f))
+        # double-check: is a component-failure still fatal to the
+        # startup process (because we passed consume_exception=False
+        # to gather() below?)
         return None
 
-    # all components are started in parallel
+    def component_start(comp):
+        # the future from start() errbacks if we fail, or callbacks
+        # when the component is considered "done" (so maybe never)
+        d = comp.start(reactor)
+        txaio.add_callbacks(
+            d,
+            partial(component_success, comp),
+            partial(component_failure, comp),
+        )
+        return d
+
+    # note that these are started in parallel -- maybe we want to add
+    # a "connected" signal to components so we could start them in the
+    # order they're given to run() as "a" solution to dependencies.
     dl = []
-    for c in components:
-        # a component can be of type MAIN or SETUP
-        d = c.start(reactor)
-        txaio.add_callbacks(d, partial(component_success, c), component_failure)
+    for comp in components:
+        d = component_start(comp)
         dl.append(d)
-    d = txaio.gather(dl, consume_exceptions=False)
+    done_d = txaio.gather(dl, consume_exceptions=False)
 
     def all_done(arg):
         log.debug("All components ended; stopping reactor")
+        if isinstance(arg, Failure):
+            log.error("Something went wrong: {log_failure}", failure=arg)
         try:
             reactor.stop()
         except ReactorNotRunning:
             pass
-
-    txaio.add_callbacks(d, all_done, all_done)
-
-    return d
+    txaio.add_callbacks(done_d, all_done, all_done)
+    return done_d
 
 
-def run(components):
+def run(components, log_level='info'):
+    """
+    High-level API to run a series of components.
+
+    This will only return once all the components have stopped
+    (including, possibly, after all re-connections have failed if you
+    have re-connections enabled). Under the hood, this calls
+    :meth:`twisted.internet.reactor.run` -- if you wish to manage the
+    reactor loop yourself, use the
+    :meth:`autobahn.twisted.component.Component.start` method to start
+    each component yourself.
+
+    :param components: the Component(s) you wish to run
+    :type components: Component or list of Components
+
+    :param log_level: a valid log-level (or None to avoid calling start_logging)
+    :type log_level: string
+    """
     # only for Twisted > 12
+    # ...so this isn't in all Twisted versions we test against -- need
+    # to do "something else" if we can't import .. :/ (or drop some
+    # support)
     from twisted.internet.task import react
-    react(_run, [components])
+
+    # actually, should we even let people "not start" the logging? I'm
+    # not sure that's wise... (double-check: if they already called
+    # txaio.start_logging() what happens if we call it again?)
+    if log_level is not None:
+        txaio.start_logging(level=log_level)
+    react(_run, (components, ))

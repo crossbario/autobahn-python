@@ -681,9 +681,10 @@ class ObservableMixin(object):
         """
         if self._valid_events and event not in self._valid_events:
             raise RuntimeError(
-                "Invalid event '{event}'. Expected one of: {events}",
-                event=event,
-                events=', '.join(self._valid_events),
+                "Invalid event '{event}'. Expected one of: {events}".format(
+                    event=event,
+                    events=', '.join(self._valid_events),
+                )
             )
 
     def on(self, event, handler):

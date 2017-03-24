@@ -36,7 +36,7 @@ import txaio
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
 from autobahn.wamp.types import ComponentConfig
-from autobahn.wamp.exception import ApplicationError
+from autobahn.wamp.exception import SessionNotReady
 
 
 __all__ = ('Connection')
@@ -125,6 +125,8 @@ def _create_transport(index, transport, check_native_endpoint=None):
         if transport['type'] not in ['websocket', 'rawsocket']:
             raise ValueError('Invalid transport type {}'.format(transport['type']))
         kind = transport['type']
+    else:
+        transport['type'] = 'websocket'
 
     if kind == 'websocket':
         for key in ['url']:
@@ -295,23 +297,17 @@ class Component(ObservableMixin):
     The factory of the session we will instantiate.
     """
 
-    TYPE_MAIN = 1
-    TYPE_SETUP = 2
-
-    def __init__(self, main=None, setup=None, transports=None, config=None, realm=u'public'):
+    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None):
         """
+        :param main: After a transport has been connected and a session
+            has been established and joined to a realm, this (async)
+            procedure will be run until it finishes -- which signals that
+            the component has run to completion. In this case, it usually
+            doesn't make sense to use the ``on_*`` kwargs. If you do not
+            pass a main() procedure, the session will not be closed
+            (unless you arrange for .leave() to be called).
 
-        :param main: A callable that runs user code for the component. The component will be
-            started with a "main-like" procedure. When a transport has been connected and
-            a session has been established and joined a realm, the user code will be run until it finishes
-            which signals that the component has run to completion.
-        :type main: callable
-        :param setup: A callable that runs user code for the component. The component will be
-            started with a "setup-like" procedure. When a transport has been connected and
-            a session has been established and joined a realm, the user code will be run until it finishes
-            which signals that the component is now "ready". The component will continue to run until
-            it explicitly closes the session or the underlying transport closes.
-        :type setup: callable
+        :type main: callable taking 2 args: reactor, ISession
 
         :param transports: Transport configurations for creating
             transports. Each transport can be a WAMP URL, or a dict
@@ -352,24 +348,14 @@ class Component(ObservableMixin):
         if main is not None and not callable(main):
             raise RuntimeError('"main" must be a callable if given')
 
-        if setup is not None and not callable(setup):
-            raise RuntimeError('"setup" must be a callable if given')
-
-        if setup:
-            self._entry = setup
-            self._entry_type = Component.TYPE_SETUP
-        elif main:
-            self._entry = main
-            self._entry_type = Component.TYPE_MAIN
-        else:
-            assert(False), 'logic error'
+        self._entry = main
 
         # use WAMP-over-WebSocket to localhost when no transport is specified at all
         if transports is None:
             transports = u'ws://127.0.0.1:8080/ws'
 
         # allows to provide an URL instead of a list of transports
-        if type(transports) == six.text_type:
+        if isinstance(transports, (six.text_type, str)):
             url = transports
             # 'endpoint' will get filled in by parsing the 'url'
             transport = {
@@ -394,7 +380,7 @@ class Component(ObservableMixin):
             )
 
         self._realm = realm
-        self._extra = None  # XXX FIXME
+        self._extra = extra
 
     def _can_reconnect(self):
         # check if any of our transport has any reconnect attempt left
@@ -403,10 +389,14 @@ class Component(ObservableMixin):
                 return True
         return False
 
-    def start(self, reactor):
+    def start(self, reactor_or_loop):
+        raise RuntimeError('not implemented')
+
+    def stop(self):
         raise RuntimeError('not implemented')
 
     def _connect_once(self, reactor, transport):
+
         self.log.info(
             'connecting once using transport type "{transport_type}" '
             'over endpoint "{endpoint_desc}"',
@@ -435,83 +425,59 @@ class Component(ObservableMixin):
                 # session.on('join', cb) for every session created.
                 session._parent = self
 
-                # the only difference bewteen MAIN and SETUP-type
-                # entry-points is that we want to shut down the
-                # component when a MAIN-type entrypoint's Deferred is
-                # done.
-                if self._entry_type == Component.TYPE_MAIN:
-
-                    def on_join(session, details):
-                        self.log.debug("session on_join: {details}", details=details)
-                        transport.connect_sucesses += 1
-                        self.log.info(
-                            'Successfully connected to transport #{transport_idx}: url={url}',
-                            transport_idx=transport.idx,
-                            url=transport.url,
-                        )
-                        d = txaio.as_future(self._entry, reactor, session)
-
-                        def main_success(_):
-                            self.log.debug("main_success")
-                            session.leave()
-
-                        def main_error(err):
-                            self.log.debug("main_error: {err}", err=err)
-                            txaio.reject(done, err)
-                            # I guess .leave() here too...?
-
-                        txaio.add_callbacks(d, main_success, main_error)
-
-                    session.on('join', on_join)
-
-                elif self._entry_type == Component.TYPE_SETUP:
-
-                    def on_join(session, details):
-                        self.log.debug("session on_join: {details}", details=details)
-                        self.log.info(
-                            'Successfully connected to transport #{transport_idx}: url={url}',
-                            transport_idx=transport.idx,
-                            url=transport.url,
-                        )
-                        d = txaio.as_future(self._entry, reactor, session)
-
-                        def setup_success(_):
-                            self.log.debug("setup_success")
-
-                        def setup_error(err):
-                            self.log.debug("setup_error: {err}", err=err)
-                            txaio.reject(done, err)
-
-                        txaio.add_callbacks(d, setup_success, setup_error)
-
-                    session.on('join', on_join)
-
-                else:
-                    assert(False), 'logic error'
-
-                # listen on leave events
+                # listen on leave events; if we get errors
+                # (e.g. no_such_realm), an on_leave can happen without
+                # an on_join before
                 def on_leave(session, details):
-                    self.log.debug("session on_leave: {details}", details=details)
-                    # this could be a "leave" that's expected e.g. our
-                    # main() exited, or it could be an error
-                    if not txaio.is_called(done):
-                        if details.reason.startswith('wamp.error.'):
-                            txaio.reject(done, ApplicationError(details.reason, details.message))
-                        else:
-                            txaio.resolve(done, None)
+                    self.log.info(
+                        "session leaving '{details.reason}'",
+                        details=details,
+                    )
+                    if self._entry:
+                        txaio.resolve(done, None)
                 session.on('leave', on_leave)
 
-                # listen on disconnect events
+                # if we were given a "main" procedure, we run through
+                # it completely (i.e. until its Deferred fires) and
+                # then disconnect this session
+                def on_join(session, details):
+                    self.log.debug("session on_join: {details}", details=details)
+                    d = txaio.as_future(self._entry, reactor, session)
+
+                    def main_success(_):
+                        self.log.debug("main_success")
+
+                        def leave():
+                            try:
+                                session.leave()
+                            except SessionNotReady:
+                                # someone may have already called
+                                # leave()
+                                pass
+                        txaio.call_later(0, leave)
+
+                    def main_error(err):
+                        self.log.debug("main_error: {err}", err=err)
+                        txaio.reject(done, err)
+                    txaio.add_callbacks(d, main_success, main_error)
+                if self._entry is not None:
+                    session.on('join', on_join)
+
+                # listen on disconnect events. Note that in case we
+                # had a "main" procedure, we could have already
+                # resolve()'d our "done" future
                 def on_disconnect(session, was_clean):
-                    self.log.debug("session on_disconnect: {was_clean}", was_clean=was_clean)
-
-                    if was_clean:
-                        # eg the session has left the realm, and the transport was properly
-                        # shut down. successfully finish the connection
-                        txaio.resolve(done, None)
-                    else:
-                        txaio.reject(done, RuntimeError('transport closed uncleanly'))
-
+                    self.log.debug(
+                        "session on_disconnect: was_clean={was_clean}",
+                        was_clean=was_clean,
+                    )
+                    if not txaio.is_called(done):
+                        if was_clean:
+                            # eg the session has left the realm, and the transport was properly
+                            # shut down. successfully finish the connection
+                            txaio.resolve(done, None)
+                        else:
+                            txaio.reject(done, RuntimeError('transport closed uncleanly'))
                 session.on('disconnect', on_disconnect)
 
                 # return the fresh session object
@@ -522,10 +488,11 @@ class Component(ObservableMixin):
 
         def on_connect_sucess(proto):
             # if e.g. an SSL handshake fails, we will have
-            # successfully connected (here) but need to listen for the
-            # "connectionLost" from the underlying protocol in case of
-            # handshake failure .. so we wrap it. Also, we don't
-            # increment transport.success_count here.
+            # successfully connected (i.e. get here) but need to
+            # 'listen' for the "connectionLost" from the underlying
+            # protocol in case of handshake failure .. so we wrap
+            # it. Also, we don't increment transport.success_count
+            # here on purpose (because we might not succeed).
             orig = proto.connectionLost
 
             @wraps(orig)
@@ -541,6 +508,7 @@ class Component(ObservableMixin):
             # failed to establish a connection in the first place
             done.errback(err)
 
-        txaio.add_callbacks(d, on_connect_sucess, on_connect_failure)
+        txaio.add_callbacks(d, on_connect_sucess, None)
+        txaio.add_callbacks(d, None, on_connect_failure)
 
         return done
