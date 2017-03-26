@@ -22,8 +22,8 @@ Base classes for WebSocket clients and servers using asyncio.
     :members:
 
 
-WAMP-WebSocket Protocols and Factories
---------------------------------------
+WAMP-over-WebSocket Protocols and Factories
+-------------------------------------------
 
 Base classes for WAMP-WebSocket clients and servers using asyncio.
 
@@ -40,8 +40,8 @@ Base classes for WAMP-WebSocket clients and servers using asyncio.
     :members:
 
 
-WAMP-WebSocket Protocols and Factories
---------------------------------------
+WAMP-over-RawSocket Protocols and Factories
+-------------------------------------------
 
 Base classes for WAMP-RawSocket clients and servers using asyncio.
 

@@ -70,7 +70,11 @@ def public(obj):
     Everything that is not decorated @public is library internal, can
     change at any time and should not be used in user program code.
     """
-    obj._is_public = True
+    try:
+        obj._is_public = True
+    except AttributeError:
+        # FIXME: exceptions.AttributeError: 'staticmethod' object has no attribute '_is_public'
+        pass
     return obj
 
 
