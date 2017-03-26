@@ -28,14 +28,11 @@
 from __future__ import absolute_import, print_function
 
 import itertools
-from functools import partial
 
 from twisted.internet.defer import inlineCallbacks  # XXX FIXME?
-from twisted.python.failure import Failure
 from twisted.internet.interfaces import IStreamClientEndpoint
 from twisted.internet.endpoints import UNIXClientEndpoint
 from twisted.internet.endpoints import TCP4ClientEndpoint
-from twisted.internet.error import ReactorNotRunning
 
 try:
     _TLS = True
@@ -382,80 +379,6 @@ class Component(component.Component):
         return self._session.leave()
 
 
-# XXX this should move to autobahn/wamp/component.py or somewhere
-# generic as this same implementation will work for asyncio
-def _run(reactor, components):
-    """
-    Internal helper. Use "run" method.
-
-    This is called by react() so any errors coming out of this should
-    be handled properly. Logging will already be started.
-    """
-    # let user pass a single component to run, too
-    # XXX probably want IComponent? only demand it, here and below?
-    if isinstance(components, Component):
-        components = [components]
-
-    if type(components) != list:
-        raise ValueError(
-            '"components" must be a list of Component objects - encountered'
-            ' {0}'.format(type(components))
-        )
-
-    for c in components:
-        if not isinstance(c, Component):
-            raise ValueError(
-                '"components" must be a list of Component objects - encountered'
-                'item of type {0}'.format(type(c))
-            )
-
-    # validation complete; proceed with startup
-    log = txaio.make_logger()
-
-    def component_success(comp, arg):
-        log.debug("Component '{c}' successfully completed: {arg}", c=comp, arg=arg)
-        return arg
-
-    def component_failure(comp, f):
-        log.error("Component '{c}' error: {msg}", c=comp, msg=txaio.failure_message(f))
-        log.debug("Component error: {tb}", tb=txaio.failure_format_traceback(f))
-        # double-check: is a component-failure still fatal to the
-        # startup process (because we passed consume_exception=False
-        # to gather() below?)
-        return None
-
-    def component_start(comp):
-        # the future from start() errbacks if we fail, or callbacks
-        # when the component is considered "done" (so maybe never)
-        d = comp.start(reactor)
-        txaio.add_callbacks(
-            d,
-            partial(component_success, comp),
-            partial(component_failure, comp),
-        )
-        return d
-
-    # note that these are started in parallel -- maybe we want to add
-    # a "connected" signal to components so we could start them in the
-    # order they're given to run() as "a" solution to dependencies.
-    dl = []
-    for comp in components:
-        d = component_start(comp)
-        dl.append(d)
-    done_d = txaio.gather(dl, consume_exceptions=False)
-
-    def all_done(arg):
-        log.debug("All components ended; stopping reactor")
-        if isinstance(arg, Failure):
-            log.error("Something went wrong: {log_failure}", failure=arg)
-        try:
-            reactor.stop()
-        except ReactorNotRunning:
-            pass
-    txaio.add_callbacks(done_d, all_done, all_done)
-    return done_d
-
-
 def run(components, log_level='info'):
     """
     High-level API to run a series of components.
@@ -485,4 +408,4 @@ def run(components, log_level='info'):
     # txaio.start_logging() what happens if we call it again?)
     if log_level is not None:
         txaio.start_logging(level=log_level)
-    react(_run, (components, ))
+    react(component._run, (components, ))
