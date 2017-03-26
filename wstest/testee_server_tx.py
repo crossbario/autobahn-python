@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import argparse
+
 import sys
 import platform
 
@@ -33,6 +35,8 @@ txaio.use_twisted()
 from twisted.internet import reactor
 
 import autobahn
+
+from autobahn.websocket.util import parse_url
 
 from autobahn.twisted.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
@@ -107,9 +111,17 @@ class TesteeServerFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
 
-    txaio.start_logging(level='info')
+    parser = argparse.ArgumentParser(description='Autobahn Testee Server (Twisted)')
+    parser.add_argument('--url', dest='url', type=str, default=u'ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
+    parser.add_argument('--loglevel', dest='loglevel', type=str, default=u'info', help='Log level, eg "info" or "debug".')
 
-    factory = TesteeServerFactory(u"ws://127.0.0.1:9001")
+    options = parser.parse_args()
 
-    reactor.listenTCP(9001, factory)
+    txaio.start_logging(level=options.loglevel)
+
+    factory = TesteeServerFactory(options.url)
+
+    _, _, port, _, _, _ = parse_url(options.url)
+
+    reactor.listenTCP(port, factory)
     reactor.run()

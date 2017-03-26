@@ -5,21 +5,21 @@
 Changelog
 =========
 
-0.17.3
+0.18.0
 ------
 
-`Published 2017-03-18 <https://pypi.python.org/pypi/autobahn/0.17.3`_
+`Published 2017-03-26 <https://pypi.python.org/pypi/autobahn/0.18.0>`__
 
+* fix: big docs cleanup and polish
 * fix: docs for publisher black-/whitelisting based on authid/authrole
 * fix: serialization for publisher black-/whitelisting based on authid/authrole
 * new: allow to stop auto-reconnecting for Twisted ApplicationRunner
 * fix: allow empty realms (router decides) for asyncio ApplicationRunner
 
-
 0.17.2
 ------
 
-`Published 2017-02-25 <https://pypi.python.org/pypi/autobahn/0.17.2`_
+`Published 2017-02-25 <https://pypi.python.org/pypi/autobahn/0.17.2>`__
 
 * new: WAMP-cryptosign elliptic curve based authentication support for asyncio
 * new: CI testing on Twisted 17.1
@@ -28,7 +28,7 @@ Changelog
 0.17.1
 ------
 
-`Published 2016-12-29 <https://pypi.python.org/pypi/autobahn/0.17.1`_
+`Published 2016-12-29 <https://pypi.python.org/pypi/autobahn/0.17.1>`__
 
 * new: demo MQTT and WAMP clients interoperating via Crossbar.io
 * new: WAMP message attributes for message resumption
@@ -38,7 +38,7 @@ Changelog
 0.17.0
 ------
 
-`Published 2016-11-30 <https://pypi.python.org/pypi/autobahn/0.17.0`_
+`Published 2016-11-30 <https://pypi.python.org/pypi/autobahn/0.17.0>`__
 
 * new: WAMP PubSub event retention
 * new: WAMP PubSub last will / testament
@@ -48,7 +48,7 @@ Changelog
 0.16.1
 ------
 
-`Published 2016-11-07 <https://pypi.python.org/pypi/autobahn/0.16.1`_
+`Published 2016-11-07 <https://pypi.python.org/pypi/autobahn/0.16.1>`__
 
 * fix: inconsistency between `PublishOptions` and `Publish` message
 * new: improve logging with dropped connections (eg due to timeouts)
@@ -59,7 +59,7 @@ Changelog
 0.16.0
 ------
 
-`Published 2016-08-14 <https://pypi.python.org/pypi/autobahn/0.16.0`_
+`Published 2016-08-14 <https://pypi.python.org/pypi/autobahn/0.16.0>`__
 
 * new: new `autobahn.wamp.component` API in experimental stage
 * new: Ed25519 OpenSSH and OpenBSD signify key support
@@ -68,7 +68,7 @@ Changelog
 0.15.0
 ------
 
-`Published 2016-07-19 <https://pypi.python.org/pypi/autobahn/0.15.0`_
+`Published 2016-07-19 <https://pypi.python.org/pypi/autobahn/0.15.0>`__
 
 * new: WAMP AP option: register with maximum concurrency
 * new: automatic reconnect for WAMP clients ApplicationRunner on Twisted
@@ -84,7 +84,7 @@ Changelog
 0.14.1
 ------
 
-`Published 2016-05-26 <https://pypi.python.org/pypi/autobahn/0.14.1>`_
+`Published 2016-05-26 <https://pypi.python.org/pypi/autobahn/0.14.1>`__
 
 * fix: unpinned Twisted version again
 * fix: remove X-Powered-By header
@@ -93,7 +93,7 @@ Changelog
 0.14.0
 ------
 
-`Published 2016-05-01 <https://pypi.python.org/pypi/autobahn/0.14.0>`_
+`Published 2016-05-01 <https://pypi.python.org/pypi/autobahn/0.14.0>`__
 
 * new: use of batched/chunked timers to massively reduce CPU load with WebSocket auto-ping/pong
 * new: support new UBJSON WAMP serialization format
@@ -106,7 +106,7 @@ Changelog
 0.13.1
 ------
 
-`Published 2016-04-09 <https://pypi.python.org/pypi/autobahn/0.13.1>`_
+`Published 2016-04-09 <https://pypi.python.org/pypi/autobahn/0.13.1>`__
 
 * moved helper funs for WebSocket URL handling to ``autobahn.websocket.util``
 * fix: marshal WAMP options only when needed
@@ -115,7 +115,7 @@ Changelog
 0.13.0
 ------
 
-`Published 2016-03-15 <https://pypi.python.org/pypi/autobahn/0.13.0>`_
+`Published 2016-03-15 <https://pypi.python.org/pypi/autobahn/0.13.0>`__
 
 * fix: better traceback logging (`#613 <https://github.com/crossbario/autobahn-python/pull/613>`_)
 * fix: unicode handling in debug messages (`#606 <https://github.com/crossbario/autobahn-python/pull/606>`_)

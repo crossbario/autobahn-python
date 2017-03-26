@@ -1,7 +1,7 @@
 |AbL|
 =====
 
-| |Version| |Downloads| |Build Status| |Coverage| |Docs|
+| |Version| |Build Status| |Coverage| |Docs|
 
 --------------
 
@@ -13,24 +13,6 @@
 * `The Web Application Messaging Protocol (WAMP) <http://wamp.ws/>`__
 
 in Python 2 and 3, running on `Twisted`_ **or** `asyncio`_.
-
-Documentation Overview
-----------------------
-
-See :ref:`site_contents` for a full site-map. Top-level pages available:
-
-.. toctree::
-   :maxdepth: 1
-
-   installation
-   asynchronous-programming
-   wamp/programming
-   wamp/examples
-   websocket/programming
-   websocket/examples
-   reference/autobahn
-   contribute
-   changelog
 
 -----
 
@@ -193,8 +175,8 @@ For **WAMP developers**, :doc:`wamp/programming` gives an introduction for progr
 :doc:`wamp/examples` lists WAMP code examples covering all features of WAMP.
 
 
-Community
----------
+Get in touch
+------------
 
 Development of |ab| takes place on the GitHub `source repository <https://github.com/crossbario/autobahn-python>`_.
 
@@ -217,24 +199,36 @@ You can also reach users and developers on **IRC** channel ``#autobahn`` at `fre
 Finally, we are on `Twitter <https://twitter.com/autobahnws>`_.
 
 
-.. toctree::
-   :hidden:
+Contributing
+------------
 
-   installation
-   asynchronous-programming
-   websocket/programming
-   wamp/programming
-   websocket/examples
-   wamp/examples
-   reference/autobahn
-   contribute
-   changelog
+|ab| is an open source project, and hosted on GitHub. The `GitHub repository <https://github.com/crossbario/autobahn-python>`_ includes the documentation.
+
+We're looking for all kinds of contributions - from simple fixes of typos in the code or documentation to implementation of new features and additions of tutorials.
+
+If you want to contribute to the code or the documentation: we use the Fork & Pull Model.
+
+This means that you fork the repo, make changes to your fork, and then make a pull request here on the main repo.
+
+This `article on GitHub <https://help.github.com/articles/using-pull-requests>`_ gives more detailed information on how the process works.
+
+In order to run the unit-tests, we use `Tox <http://tox.readthedocs.org/en/latest/>`_ to build the various test-environments. To run them all, simply run ``tox`` from the top-level directory of the clone.
+
+For test-coverage, see the Makefile target ``test_coverage``, which deletes the coverage data and then runs the test suite with various tox test-environments before outputting HTML annotated coverage to ``./htmlcov/index.html`` and a coverage report to the terminal.
+
+There are two environment variables the tests use: ``USE_TWISTED=1`` or ``USE_ASYNCIO=1`` control whether to run unit-tests that are specific to one framework or the other.
+
+See ``tox.ini`` for details on how to run in the different environments.
+
+
+Sitemap
+-------
+
+Please see :ref:`site_contents` for a full site-map.
+
 
 
 .. |Version| image:: https://img.shields.io/pypi/v/autobahn.svg
-   :target: https://pypi.python.org/pypi/autobahn
-
-.. |Downloads| image:: https://img.shields.io/pypi/dm/autobahn.svg
    :target: https://pypi.python.org/pypi/autobahn
 
 .. |GitHub Stars| image:: https://img.shields.io/github/stars/crossbario/autobahn-python.svg?style=social&label=Star

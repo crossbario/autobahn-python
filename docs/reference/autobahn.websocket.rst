@@ -1,70 +1,37 @@
-autobahn.websocket
-==================
+Module ``autobahn.websocket``
+=============================
 
-Submodules
-----------
+WebSocket Interfaces
+--------------------
 
-autobahn.websocket.compress
----------------------------
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannel
+    :members:
+
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketServerChannelFactory
+    :members:
+
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketClientChannelFactory
+    :members:
+
+
+WebSocket Types
+---------------
+
+.. automodule:: autobahn.websocket.types
+    :members:
+
+
+WebSocket Compression
+---------------------
 
 .. automodule:: autobahn.websocket.compress
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.websocket.compress_base
---------------------------------
 
-.. automodule:: autobahn.websocket.compress_base
+WebSocket Utilities
+-------------------
+
+WebSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).
+
+.. automodule:: autobahn.websocket.util
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.compress_deflate
------------------------------------
-
-.. automodule:: autobahn.websocket.compress_deflate
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.interfaces
------------------------------
-
-.. automodule:: autobahn.websocket.interfaces
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.protocol
----------------------------
-
-.. automodule:: autobahn.websocket.protocol
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.utf8validator
---------------------------------
-
-.. automodule:: autobahn.websocket.utf8validator
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.websocket.xormasker
-----------------------------
-
-.. automodule:: autobahn.websocket.xormasker
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: autobahn.websocket
-    :members:
-    :undoc-members:
-    :show-inheritance:

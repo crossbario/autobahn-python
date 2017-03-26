@@ -24,6 +24,8 @@
 #
 ###############################################################################
 
+import argparse
+
 import txaio
 txaio.use_twisted()
 
@@ -103,9 +105,15 @@ class TesteeClientFactory(WebSocketClientFactory):
 
 if __name__ == '__main__':
 
-    txaio.start_logging(level='info')
+    parser = argparse.ArgumentParser(description='Autobahn Testee Client (Twisted)')
+    parser.add_argument('--url', dest='url', type=str, default=u'ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
+    parser.add_argument('--loglevel', dest='loglevel', type=str, default=u'info', help='Log level, eg "info" or "debug".')
 
-    factory = TesteeClientFactory(u"ws://127.0.0.1:9001")
+    options = parser.parse_args()
+
+    txaio.start_logging(level=options.loglevel)
+
+    factory = TesteeClientFactory(options.url)
 
     connectWS(factory)
     reactor.run()

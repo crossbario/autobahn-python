@@ -31,6 +31,7 @@ from collections import deque
 import txaio
 txaio.use_asyncio()
 
+from autobahn.util import public
 from autobahn.wamp import websocket
 from autobahn.websocket import protocol
 
@@ -51,10 +52,8 @@ else:  # Deprecated since Python 3.4.4
     ensure_future = asyncio.async
 
 __all__ = (
-    'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
     'WebSocketClientProtocol',
-    'WebSocketAdapterFactory',
     'WebSocketServerFactory',
     'WebSocketClientFactory',
     'WampWebSocketServerProtocol',
@@ -192,16 +191,30 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
         raise Exception("not implemented")
 
 
+@public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
     Base class for asyncio-based WebSocket server protocols.
+
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
 
+    log = txaio.make_logger()
 
+
+@public
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for asyncio-based WebSocket client protocols.
+
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
+
+    log = txaio.make_logger()
 
     def _onConnect(self, response):
         res = self.onConnect(response)
@@ -224,19 +237,25 @@ class WebSocketAdapterFactory(object):
         return proto
 
 
+@public
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
     """
     Base class for asyncio-based WebSocket server factories.
+
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     protocol = WebSocketServerProtocol
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-        you can supply a ``loop`` keyword argument to specify the
-        asyncio event loop to be used.
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`,
+            you can supply a ``loop`` keyword argument to specify the
+            asyncio event loop to be used.
         """
         loop = kwargs.pop('loop', None)
         self.loop = loop or asyncio.get_event_loop()
@@ -244,17 +263,24 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
     """
-    Base class for asyncio-baseed WebSocket client factories.
+    Base class for asyncio-based WebSocket client factories.
+
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-        you can supply a ``loop`` keyword argument to specify the
-        asyncio event loop to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`,
+            you can supply a ``loop`` keyword argument to specify the
+            asyncio event loop to be used.
         """
         loop = kwargs.pop('loop', None)
         self.loop = loop or asyncio.get_event_loop()
@@ -262,20 +288,37 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
         protocol.WebSocketClientFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
-    Base class for asyncio-based WAMP-over-WebSocket server protocols.
+    asyncio-based WAMP-over-WebSocket server protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
+@public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
-    Base class for asyncio-based WAMP-over-WebSocket server factories.
+    asyncio-based WAMP-over-WebSocket server factory.
     """
 
     protocol = WampWebSocketServerProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 
@@ -287,20 +330,37 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
-    Base class for asyncio-based WAMP-over-WebSocket client protocols.
+    asyncio-based WAMP-over-WebSocket client protocols.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
+@public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
-    Base class for asyncio-based WAMP-over-WebSocket client factories.
+    asyncio-based WAMP-over-WebSocket client factory.
     """
 
     protocol = WampWebSocketClientProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 

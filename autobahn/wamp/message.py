@@ -117,18 +117,23 @@ def check_or_raise_uri(value, message=u"WAMP message invalid", strict=False, all
 
     :param value: The value to check.
     :type value: unicode or None
+
     :param message: Prefix for message in exception raised when value is invalid.
     :type message: unicode
+
     :param strict: If ``True``, do a strict check on the URI (the WAMP spec SHOULD behavior).
     :type strict: bool
+
     :param allow_empty_components: If ``True``, allow empty URI components (for pattern based
        subscriptions and registrations).
     :type allow_empty_components: bool
+
     :param allow_none: If ``True``, allow ``None`` for URIs.
     :type allow_none: bool
 
     :returns: The URI value (if valid).
     :rtype: unicode
+
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if value is None:
@@ -171,11 +176,13 @@ def check_or_raise_id(value, message=u"WAMP message invalid"):
 
     :param value: The value to check.
     :type value: int
+
     :param message: Prefix for message in exception raised when value is invalid.
     :type message: unicode
 
     :returns: The ID value (if valid).
     :rtype: int
+
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) not in six.integer_types:
@@ -196,11 +203,13 @@ def check_or_raise_extra(value, message=u"WAMP message invalid"):
 
     :param value: The value to check.
     :type value: dict
+
     :param message: Prefix for message in exception raised when value is invalid.
     :type message: unicode
 
     :returns: The extra dictionary (if valid).
     :rtype: dict
+
     :raises: instance of :class:`autobahn.wamp.exception.ProtocolError`
     """
     if type(value) != dict:
@@ -277,20 +286,28 @@ class Hello(Message):
 
         :param realm: The URI of the WAMP realm to join.
         :type realm: unicode
+
         :param roles: The WAMP session roles and features to announce.
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
+
         :param authmethods: The authentication methods to announce.
         :type authmethods: list of unicode or None
+
         :param authid: The authentication ID to announce.
         :type authid: unicode or None
+
         :param authrole: The authentication role to announce.
         :type authrole: unicode or None
+
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+
         :param resumable: Whether the client wants this to be a session that can be later resumed.
         :type resumable: bool or None
+
         :param resume_session: The session the client would like to resume.
         :type resume_session: int or None
+
         :param resume_token: The secure authorisation token to resume the session.
         :type resume_token: unicode or None
         """
@@ -333,7 +350,6 @@ class Hello(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Hello.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -493,26 +509,37 @@ class Welcome(Message):
 
         :param session: The WAMP session ID the other peer is assigned.
         :type session: int
+
         :param roles: The WAMP roles to announce.
         :type roles: dict of :class:`autobahn.wamp.role.RoleFeatures`
+
         :param realm: The effective realm the session is joined on.
         :type realm: unicode or None
+
         :param authid: The authentication ID assigned.
         :type authid: unicode or None
+
         :param authrole: The authentication role assigned.
         :type authrole: unicode or None
+
         :param authmethod: The authentication method in use.
         :type authmethod: unicode or None
+
         :param authprovider: The authentication provided in use.
         :type authprovider: unicode or None
+
         :param authextra: Application-specific "extra data" to be forwarded to the client.
         :type authextra: arbitrary or None
+
         :param resumed: Whether the session is a resumed one.
         :type resumed: bool or None
+
         :param resumable: Whether this session can be resumed later.
         :type resumable: bool or None
+
         :param resume_token: The secure authorisation token to resume the session.
         :type resume_token: unicode or None
+
         :param custom: Implementation-specific "custom attributes" (`x_my_impl_attribute`) to be set.
         :type custom: dict or None
         """
@@ -561,7 +588,6 @@ class Welcome(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Welcome.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -706,6 +732,7 @@ class Abort(Message):
 
         :param reason: WAMP or application error URI for aborting reason.
         :type reason: unicode
+
         :param message: Optional human-readable closing message, e.g. for logging purposes.
         :type message: unicode or None
         """
@@ -727,7 +754,6 @@ class Abort(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
         assert(len(wmsg) > 0 and wmsg[0] == Abort.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -786,6 +812,7 @@ class Challenge(Message):
 
         :param method: The authentication method.
         :type method: unicode
+
         :param extra: Authentication method specific information.
         :type extra: dict or None
         """
@@ -807,7 +834,6 @@ class Challenge(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
         assert(len(wmsg) > 0 and wmsg[0] == Challenge.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -855,6 +881,7 @@ class Authenticate(Message):
 
         :param signature: The signature for the authentication challenge.
         :type signature: unicode
+
         :param extra: Authentication method specific information.
         :type extra: dict or None
         """
@@ -876,7 +903,6 @@ class Authenticate(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Authenticate.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -929,8 +955,10 @@ class Goodbye(Message):
 
         :param reason: Optional WAMP or application error URI for closing reason.
         :type reason: unicode
+
         :param message: Optional human-readable closing message, e.g. for logging purposes.
         :type message: unicode or None
+
         :param resumable: From the server: Whether the session is able to be resumed (true) or destroyed (false). From the client: Whether it should be resumable (true) or destroyed (false).
         :type resumable: bool or None
         """
@@ -954,7 +982,6 @@ class Goodbye(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        ##
         assert(len(wmsg) > 0 and wmsg[0] == Goodbye.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1030,22 +1057,30 @@ class Error(Message):
 
         :param request_type: The WAMP message type code for the original request.
         :type request_type: int
+
         :param request: The WAMP request ID of the original request (`Call`, `Subscribe`, ...) this error occurred for.
         :type request: int
+
         :param error: The WAMP or application error URI for the error that occurred.
         :type error: unicode
+
         :param args: Positional values for application-defined exception.
            Must be serializable using any serializers in use.
         :type args: list or None
+
         :param kwargs: Keyword values for application-defined exception.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -1081,7 +1116,6 @@ class Error(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Error.MESSAGE_TYPE)
 
         if len(wmsg) not in (5, 6, 7):
@@ -1220,41 +1254,57 @@ class Publish(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param topic: The WAMP or application URI of the PubSub topic the event should
            be published to.
         :type topic: unicode
+
         :param args: Positional values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param acknowledge: If True, acknowledge the publication with a success or
            error response.
         :type acknowledge: bool or None
+
         :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
         :type exclude_me: bool or None
+
         :param exclude: List of WAMP session IDs to exclude from receiving this event.
         :type exclude: list of int or None
+
         :param exclude_authid: List of WAMP authids to exclude from receiving this event.
         :type exclude_authid: list of unicode or None
+
         :param exclude_authrole: List of WAMP authroles to exclude from receiving this event.
         :type exclude_authrole: list of unicode or None
+
         :param eligible: List of WAMP session IDs eligible to receive this event.
         :type eligible: list of int or None
+
         :param eligible_authid: List of WAMP authids eligible to receive this event.
         :type eligible_authid: list of unicode or None
+
         :param eligible_authrole: List of WAMP authroles eligible to receive this event.
         :type eligible_authrole: list of unicode or None
+
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -1342,7 +1392,6 @@ class Publish(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Publish.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -1580,6 +1629,7 @@ class Published(Message):
 
         :param request: The request ID of the original `PUBLISH` request.
         :type request: int
+
         :param publication: The publication ID for the published event.
         :type publication: int
         """
@@ -1601,7 +1651,6 @@ class Published(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Published.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1650,10 +1699,13 @@ class Subscribe(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param topic: The WAMP or application URI of the PubSub topic to subscribe to.
         :type topic: unicode
+
         :param match: The topic matching method to be used for the subscription.
         :type match: unicode
+
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
         """
@@ -1680,7 +1732,6 @@ class Subscribe(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Subscribe.MESSAGE_TYPE)
 
         if len(wmsg) != 4:
@@ -1754,6 +1805,7 @@ class Subscribed(Message):
 
         :param request: The request ID of the original ``SUBSCRIBE`` request.
         :type request: int
+
         :param subscription: The subscription ID for the subscribed topic (or topic pattern).
         :type subscription: int
         """
@@ -1775,7 +1827,6 @@ class Subscribed(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Subscribed.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1820,6 +1871,7 @@ class Unsubscribe(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param subscription: The subscription ID for the subscription to unsubscribe from.
         :type subscription: int
         """
@@ -1841,7 +1893,6 @@ class Unsubscribe(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribe.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -1890,9 +1941,11 @@ class Unsubscribed(Message):
         :param request: The request ID of the original ``UNSUBSCRIBE`` request or
             ``0`` is router triggered unsubscribe ("router revocation signaling").
         :type request: int
+
         :param subscription: If unsubscribe was actively triggered by router, the ID
             of the subscription revoked.
         :type subscription: int or None
+
         :param reason: The reason (an URI) for revocation.
         :type reason: unicode or None.
         """
@@ -1917,7 +1970,6 @@ class Unsubscribed(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Unsubscribed.MESSAGE_TYPE)
 
         if len(wmsg) not in [2, 3]:
@@ -1993,32 +2045,45 @@ class Event(Message):
 
         :param subscription: The subscription ID this event is dispatched under.
         :type subscription: int
+
         :param publication: The publication ID of the dispatched event.
         :type publication: int
+
         :param args: Positional values for application-defined exception.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined exception.
            Must be serializable using any serializers in use.
+        :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
-        :type kwargs: dict or None
+
         :param publisher: The WAMP session ID of the pubisher. Only filled if pubisher is disclosed.
         :type publisher: None or int
+
         :param publisher_authid: The WAMP authid of the pubisher. Only filled if pubisher is disclosed.
         :type publisher_authid: None or unicode
+
         :param publisher_authrole: The WAMP authrole of the pubisher. Only filled if pubisher is disclosed.
         :type publisher_authrole: None or unicode
+
         :param topic: For pattern-based subscriptions, the event MUST contain the actual topic published to.
         :type topic: unicode or None
+
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
+
         :param x_acknowledged_delivery: Whether this Event should be acknowledged.
         :type x_acknowledged_delivery: bool or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -2263,7 +2328,6 @@ class EventReceived(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == EventReceived.MESSAGE_TYPE)
 
         if len(wmsg) != 2:
@@ -2322,26 +2386,35 @@ class Call(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param procedure: The WAMP or application URI of the procedure which should be called.
         :type procedure: unicode
+
         :param args: Positional values for application-defined call arguments.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined call arguments.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param timeout: If present, let the callee automatically cancel
            the call after this ms.
         :type timeout: int or None
+
         :param receive_progress: If ``True``, indicates that the caller wants to receive
            progressive call results.
         :type receive_progress: bool or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -2385,7 +2458,6 @@ class Call(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Call.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -2522,6 +2594,7 @@ class Cancel(Message):
 
         :param request: The WAMP request ID of the original `CALL` to cancel.
         :type request: int
+
         :param mode: Specifies how to cancel the call (``"skip"``, ``"abort"`` or ``"kill"``).
         :type mode: unicode or None
         """
@@ -2544,7 +2617,6 @@ class Cancel(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Cancel.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -2615,21 +2687,28 @@ class Result(Message):
 
         :param request: The request ID of the original `CALL` request.
         :type request: int
+
         :param args: Positional values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param progress: If ``True``, this result is a progressive call result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -2669,7 +2748,6 @@ class Result(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Result.MESSAGE_TYPE)
 
         if len(wmsg) not in (3, 4, 5):
@@ -2795,12 +2873,16 @@ class Register(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param procedure: The WAMP or application URI of the RPC endpoint provided.
         :type procedure: unicode
+
         :param match: The procedure matching policy to be used for the registration.
         :type match: unicode
+
         :param invoke: The procedure invocation policy to be used for the registration.
         :type invoke: unicode
+
         :param concurrency: The (maximum) concurrency to be used for the registration.
         :type concurrency: int
         """
@@ -2830,7 +2912,6 @@ class Register(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Register.MESSAGE_TYPE)
 
         if len(wmsg) != 4:
@@ -2940,6 +3021,7 @@ class Registered(Message):
 
         :param request: The request ID of the original ``REGISTER`` request.
         :type request: int
+
         :param registration: The registration ID for the registered procedure (or procedure pattern).
         :type registration: int
         """
@@ -2961,7 +3043,6 @@ class Registered(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Registered.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -3006,6 +3087,7 @@ class Unregister(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param registration: The registration ID for the registration to unregister.
         :type registration: int
         """
@@ -3027,7 +3109,6 @@ class Unregister(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Unregister.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -3075,9 +3156,11 @@ class Unregistered(Message):
 
         :param request: The request ID of the original ``UNREGISTER`` request.
         :type request: int
+
         :param registration: If unregister was actively triggered by router, the ID
             of the registration revoked.
         :type registration: int or None
+
         :param reason: The reason (an URI) for revocation.
         :type reason: unicode or None.
         """
@@ -3102,7 +3185,6 @@ class Unregistered(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Unregistered.MESSAGE_TYPE)
 
         if len(wmsg) not in [2, 3]:
@@ -3189,33 +3271,46 @@ class Invocation(Message):
 
         :param request: The WAMP request ID of this request.
         :type request: int
+
         :param registration: The registration ID of the endpoint to be invoked.
         :type registration: int
+
         :param args: Positional values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param timeout: If present, let the callee automatically cancels
            the invocation after this ms.
         :type timeout: int or None
+
         :param receive_progress: Indicates if the callee should produce progressive results.
         :type receive_progress: bool or None
+
         :param caller: The WAMP session ID of the caller. Only filled if caller is disclosed.
         :type caller: None or int
+
         :param caller_authid: The WAMP authid of the caller. Only filled if caller is disclosed.
         :type caller_authid: None or unicode
+
         :param caller_authrole: The WAMP authrole of the caller. Only filled if caller is disclosed.
         :type caller_authrole: None or unicode
+
         :param procedure: For pattern-based registrations, the invocation MUST include the actual procedure being called.
         :type procedure: unicode or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -3267,7 +3362,6 @@ class Invocation(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Invocation.MESSAGE_TYPE)
 
         if len(wmsg) not in (4, 5, 6):
@@ -3455,6 +3549,7 @@ class Interrupt(Message):
 
         :param request: The WAMP request ID of the original ``INVOCATION`` to interrupt.
         :type request: int
+
         :param mode: Specifies how to interrupt the invocation (``"abort"`` or ``"kill"``).
         :type mode: unicode or None
         """
@@ -3477,7 +3572,6 @@ class Interrupt(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Interrupt.MESSAGE_TYPE)
 
         if len(wmsg) != 3:
@@ -3548,21 +3642,28 @@ class Yield(Message):
 
         :param request: The WAMP request ID of the original call.
         :type request: int
+
         :param args: Positional values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type args: list or tuple or None
+
         :param kwargs: Keyword values for application-defined event payload.
            Must be serializable using any serializers in use.
         :type kwargs: dict or None
+
         :param payload: Alternative, transparent payload. If given, `args` and `kwargs` must be left unset.
         :type payload: unicode or bytes
+
         :param progress: If ``True``, this result is a progressive invocation result, and subsequent
            results (or a final error) will follow.
         :type progress: bool or None
+
         :param enc_algo: If using payload encryption, the algorithm used (currently, only "cryptobox" is valid).
         :type enc_algo: unicode
+
         :param enc_key: If using payload encryption, the message encryption key.
         :type enc_key: unicode or binary
+
         :param enc_serializer: If using payload encryption, the encrypted payload object serializer.
         :type enc_serializer: unicode
         """
@@ -3602,7 +3703,6 @@ class Yield(Message):
         :returns: An instance of this class.
         """
         # this should already be verified by WampSerializer.unserialize
-        #
         assert(len(wmsg) > 0 and wmsg[0] == Yield.MESSAGE_TYPE)
 
         if len(wmsg) not in (3, 4, 5):

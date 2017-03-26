@@ -33,7 +33,8 @@ except ImportError:
     import trollius as asyncio
 import struct
 import math
-from autobahn.util import _LazyHexFormatter
+
+from autobahn.util import public, _LazyHexFormatter
 from autobahn.wamp.exception import ProtocolError, SerializationError, TransportLost
 from autobahn.asyncio.util import peer2str, get_serializers
 import txaio
@@ -153,7 +154,8 @@ class PrefixProtocol(asyncio.Protocol):
 
 class RawSocketProtocol(PrefixProtocol):
 
-    def __init__(self, max_size=None):
+    def __init__(self):
+        max_size = None
         if max_size:
             exp = int(math.ceil(math.log(max_size, 2))) - 9
             if exp > 15:
@@ -224,9 +226,6 @@ class HandshakeError(Exception):
 
 class RawSocketClientProtocol(RawSocketProtocol):
 
-    def __init__(self, max_size=None):
-        RawSocketProtocol.__init__(self, max_size=max_size)
-
     def check_serializer(self, ser_id):
         return True
 
@@ -253,9 +252,6 @@ class RawSocketClientProtocol(RawSocketProtocol):
 
 
 class RawSocketServerProtocol(RawSocketProtocol):
-
-    def __init__(self, max_size=None):
-        RawSocketProtocol.__init__(self, max_size=max_size)
 
     def supports_serializer(self, ser_id):
         raise NotImplementedError()
@@ -327,7 +323,7 @@ class WampRawSocketMixinGeneral(object):
 
 
 # this is asyncio dependent part of WAMP protocol
-class WampRawSocketMixinAsyncio():
+class WampRawSocketMixinAsyncio(object):
     """
     Base class for asyncio-based WAMP-over-RawSocket protocols.
     """
@@ -364,9 +360,14 @@ class WampRawSocketMixinAsyncio():
             raise TransportLost()
 
 
+@public
 class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketServerProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server protocols.
+    asyncio-based WAMP-over-RawSocket server protocol.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
     def supports_serializer(self, ser_id):
@@ -394,10 +395,16 @@ class WampRawSocketServerProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinA
         # return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
+@public
 class WampRawSocketClientProtocol(WampRawSocketMixinGeneral, WampRawSocketMixinAsyncio, RawSocketClientProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client protocols.
+    asyncio-based WAMP-over-RawSocket client protocol.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransport`
     """
+
     @property
     def serializer_id(self):
         if not hasattr(self, '_serializer'):
@@ -417,17 +424,19 @@ class WampRawSocketFactory(object):
     Adapter class for asyncio-based WebSocket client and server factories.def dataReceived(self, data):
     """
 
-    log = txaio.make_logger()  # @UndefinedVariable
+    log = txaio.make_logger()
 
+    @public
     def __call__(self):
         proto = self.protocol()
         proto.factory = self
         return proto
 
 
+@public
 class WampRawSocketServerFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server factories.
+    asyncio-based WAMP-over-RawSocket server protocol factory.
     """
     protocol = WampRawSocketServerProtocol
 
@@ -437,10 +446,11 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         :param factory: A callable that produces instances that implement
             :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
-        :param serializers: A list of WAMP serializers to use (or None for default
-           serializers). Serializers must implement
-           :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializers: list
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
         """
         if callable(factory):
             self._factory = factory
@@ -458,9 +468,10 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         self._serializers = {ser.RAWSOCKET_SERIALIZER_ID: ser for ser in serializers}
 
 
+@public
 class WampRawSocketClientFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client factories.
+    asyncio-based WAMP-over-RawSocket client factory.
     """
     protocol = WampRawSocketClientProtocol
 
@@ -470,10 +481,11 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
         :param factory: A callable that produces instances that implement
             :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
-        :param serializer: The WAMP serializer to use (or None for default
-           serializer). Serializers must implement
-           :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializer: obj
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
         """
         if callable(factory):
             self._factory = factory

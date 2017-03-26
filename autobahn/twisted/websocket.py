@@ -38,6 +38,7 @@ from twisted.internet.interfaces import ITransport
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
+from autobahn.util import public
 from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
@@ -181,10 +182,15 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         self.transport.registerProducer(producer, streaming)
 
 
+@public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
     Base class for Twisted-based WebSocket server protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
+
+    log = txaio.make_logger()
 
     def get_channel_id(self, channel_id_type=u'tls-unique'):
         """
@@ -193,10 +199,15 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
+@public
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for Twisted-based WebSocket client protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
+
+    log = txaio.make_logger()
 
     def _onConnect(self, response):
         self.onConnect(response)
@@ -218,17 +229,22 @@ class WebSocketAdapterFactory(object):
     """
 
 
+@public
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
     """
     Base class for Twisted-based WebSocket server factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-        you can supply a `reactor` keyword argument to specify the
-        Twisted reactor to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`,
+            you can supply a ``reactor`` keyword argument to specify the
+            Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
         reactor = kwargs.pop('reactor', None)
@@ -239,17 +255,22 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
     """
     Base class for Twisted-based WebSocket client factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-        you can supply a `reactor` keyword argument to specify the
-        Twisted reactor to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`,
+            you can supply a ``reactor`` keyword argument to specify the
+            Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
         reactor = kwargs.pop('reactor', None)
@@ -477,6 +498,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
         return proto
 
 
+@public
 def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     """
     Establish WebSocket connection to a server. The connection parameters like target
@@ -484,10 +506,13 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
 
     :param factory: The WebSocket protocol factory to be used for creating client protocol instances.
     :type factory: An :class:`autobahn.websocket.WebSocketClientFactory` instance.
+
     :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
     :type contextFactory: A `twisted.internet.ssl.ClientContextFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.ssl.ClientContextFactory.html>`_ instance.
+
     :param timeout: Number of seconds to wait before assuming the connection has failed.
     :type timeout: int
+
     :param bindAddress: A (host, port) tuple of local address to bind to, or None.
     :type bindAddress: tuple
 
@@ -517,6 +542,7 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     return conn
 
 
+@public
 def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     """
     Listen for incoming WebSocket connections from clients. The connection parameters like
@@ -524,10 +550,13 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
 
     :param factory: The WebSocket protocol factory to be used for creating server protocol instances.
     :type factory: An :class:`autobahn.websocket.WebSocketServerFactory` instance.
+
     :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
     :type contextFactory: A twisted.internet.ssl.ContextFactory.
+
     :param backlog: Size of the listen queue.
     :type backlog: int
+
     :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
     :type interface: str
 
@@ -549,20 +578,37 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     return listener
 
 
+@public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
-    Base class for Twisted-based WAMP-over-WebSocket server protocols.
+    Twisted-based WAMP-over-WebSocket server protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
+@public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
-    Base class for Twisted-based WAMP-over-WebSocket server factories.
+    Twisted-based WAMP-over-WebSocket server protocol factory.
     """
 
     protocol = WampWebSocketServerProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 
@@ -574,20 +620,37 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
-    Base class for Twisted-based WAMP-over-WebSocket client protocols.
+    Twisted-based WAMP-over-WebSocket client protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
+@public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
-    Base class for Twisted-based WAMP-over-WebSocket client factories.
+    Twisted-based WAMP-over-WebSocket client protocol factory.
     """
 
     protocol = WampWebSocketClientProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 

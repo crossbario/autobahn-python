@@ -1,70 +1,70 @@
-autobahn.twisted
-================
+Module ``autobahn.twisted``
+===========================
+
+Autobahn Twisted specific classes. These are used when Twisted is run as the underlying networking framework.
 
 
-Submodules
-----------
+WebSocket Protocols and Factories
+---------------------------------
 
-autobahn.twisted.choosereactor
-------------------------------
+Classes for WebSocket clients and servers using Twisted.
 
-.. automodule:: autobahn.twisted.choosereactor
+.. autoclass:: autobahn.twisted.websocket.WebSocketServerProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.forwarder
---------------------------
-
-.. automodule:: autobahn.twisted.forwarder
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.rawsocket
---------------------------
-
-.. automodule:: autobahn.twisted.rawsocket
+.. autoclass:: autobahn.twisted.websocket.WebSocketServerFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.resource
--------------------------
-
-.. automodule:: autobahn.twisted.resource
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.util
----------------------
 
-.. automodule:: autobahn.twisted.util
+WAMP-over-WebSocket Protocols and Factories
+-------------------------------------------
+
+Classes for WAMP-WebSocket clients and servers using Twisted.
+
+.. autoclass:: autobahn.twisted.websocket.WampWebSocketServerProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.wamp
----------------------
-
-.. automodule:: autobahn.twisted.wamp
+.. autoclass:: autobahn.twisted.websocket.WampWebSocketClientProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.websocket
---------------------------
-
-.. automodule:: autobahn.twisted.websocket
+.. autoclass:: autobahn.twisted.websocket.WampWebSocketServerFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-Module contents
----------------
-
-.. automodule:: autobahn.twisted
+.. autoclass:: autobahn.twisted.websocket.WampWebSocketClientFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
+
+
+WAMP-over-RawSocket Protocols and Factories
+-------------------------------------------
+
+Classes for WAMP-RawSocket clients and servers using Twisted.
+
+.. autoclass:: autobahn.twisted.rawsocket.WampRawSocketServerProtocol
+    :members:
+
+.. autoclass:: autobahn.twisted.rawsocket.WampRawSocketClientProtocol
+    :members:
+
+.. autoclass:: autobahn.twisted.rawsocket.WampRawSocketServerFactory
+    :members:
+
+.. autoclass:: autobahn.twisted.rawsocket.WampRawSocketClientFactory
+    :members:
+
+
+WAMP Sessions
+-------------
+
+Classes for WAMP sessions using Twisted.
+
+.. autoclass:: autobahn.twisted.wamp.ApplicationSession
+    :members:
+
+.. autoclass:: autobahn.twisted.wamp.ApplicationRunner
+    :members:

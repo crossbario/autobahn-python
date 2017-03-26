@@ -28,6 +28,8 @@ from __future__ import absolute_import
 
 import six
 
+from autobahn.util import public
+
 __all__ = (
     'ComponentConfig',
     'HelloReturn',
@@ -47,6 +49,7 @@ __all__ = (
 )
 
 
+@public
 class ComponentConfig(object):
     """
     WAMP application component configuration. An instance of this class is
@@ -64,24 +67,29 @@ class ComponentConfig(object):
     def __init__(self, realm=None, extra=None, keyring=None, controller=None, shared=None):
         """
 
-        :param realm: The realm the session should join.
-        :type realm: unicode
+        :param realm: The realm the session would like to join or ``None`` to let the router
+            auto-decide the realm (if the router is configured and allowing to do so).
+        :type realm: str
+
         :param extra: Optional user-supplied object with extra configuration.
             This can be any object you like, and is accessible in your
             `ApplicationSession` subclass via `self.config.extra`. `dict` is
             a good default choice. Important: if the component is to be hosted
             by Crossbar.io, the supplied value must be JSON serializable.
         :type extra: arbitrary
+
         :param keyring: A mapper from WAMP URIs to "from"/"to" Ed25519 keys. When using
             WAMP end-to-end encryption, application payload is encrypted using a
             symmetric message key, which in turn is encrypted using the "to" URI (topic being
             published to or procedure being called) public key and the "from" URI
             private key. In both cases, the key for the longest matching URI is used.
         :type keyring: obj implementing IKeyRing or None
+
         :param controller: A WAMP ApplicationSession instance that holds a session to
             a controlling entity. This optional feature needs to be supported by a WAMP
             component hosting run-time.
         :type controller: instance of ApplicationSession or None
+
         :param shared: A dict object to exchange user information or hold user objects shared
             between components run under the same controlling entity. This optional feature
             needs to be supported by a WAMP component hosting run-time. Use with caution, as using
@@ -99,15 +107,17 @@ class ComponentConfig(object):
         self.shared = shared
 
     def __str__(self):
-        return "ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3}, shared={4})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
+        return u"ComponentConfig(realm=<{0}>, extra={1}, keyring={2}, controller={3}, shared={4})".format(self.realm, self.extra, self.keyring, self.controller, self.shared)
 
 
+@public
 class HelloReturn(object):
     """
     Base class for ``HELLO`` return information.
     """
 
 
+@public
 class Accept(HelloReturn):
     """
     Information to accept a ``HELLO``.
@@ -126,15 +136,20 @@ class Accept(HelloReturn):
         """
 
         :param realm: The realm the client is joined to.
-        :type realm: unicode
+        :type realm: str
+
         :param authid: The authentication ID the client is assigned, e.g. ``"joe"`` or ``"joe@example.com"``.
-        :type authid: unicode
+        :type authid: str
+
         :param authrole: The authentication role the client is assigned, e.g. ``"anonymous"``, ``"user"`` or ``"com.myapp.user"``.
-        :type authrole: unicode
+        :type authrole: str
+
         :param authmethod: The authentication method that was used to authenticate the client, e.g. ``"cookie"`` or ``"wampcra"``.
-        :type authmethod: unicode
+        :type authmethod: str
+
         :param authprovider: The authentication provider that was used to authenticate the client, e.g. ``"mozilla-persona"``.
-        :type authprovider: unicode
+        :type authprovider: str
+
         :param authextra: Application-specific authextra to be forwarded to the client in `WELCOME.details.authextra`.
         :type authextra: dict
         """
@@ -153,9 +168,10 @@ class Accept(HelloReturn):
         self.authextra = authextra
 
     def __str__(self):
-        return "Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4}, authextra={5})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
+        return u"Accept(realm=<{0}>, authid=<{1}>, authrole=<{2}>, authmethod={3}, authprovider={4}, authextra={5})".format(self.realm, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra)
 
 
+@public
 class Deny(HelloReturn):
     """
     Information to deny a ``HELLO``.
@@ -166,13 +182,14 @@ class Deny(HelloReturn):
         'message',
     )
 
-    def __init__(self, reason=u"wamp.error.not_authorized", message=None):
+    def __init__(self, reason, message=None):
         """
 
-        :param reason: The reason of denying the authentication (an URI, e.g. ``wamp.error.not_authorized``)
-        :type reason: unicode
+        :param reason: The reason of denying the authentication (an URI, e.g. ``u'wamp.error.not_authorized'``)
+        :type reason: str
+
         :param message: A human readable message (for logging purposes).
-        :type message: unicode
+        :type message: str
         """
         assert(type(reason) == six.text_type)
         assert(message is None or type(message) == six.text_type)
@@ -181,9 +198,10 @@ class Deny(HelloReturn):
         self.message = message
 
     def __str__(self):
-        return "Deny(reason=<{0}>, message='{1}')".format(self.reason, self.message)
+        return u"Deny(reason=<{0}>, message='{1}')".format(self.reason, self.message)
 
 
+@public
 class Challenge(HelloReturn):
     """
     Information to challenge the client upon ``HELLO``.
@@ -198,7 +216,7 @@ class Challenge(HelloReturn):
         """
 
         :param method: The authentication method for the challenge (e.g. ``"wampcra"``).
-        :type method: unicode
+        :type method: str
 
         :param extra: Any extra information for the authentication challenge. This is
            specific to the authentication method.
@@ -211,9 +229,10 @@ class Challenge(HelloReturn):
         self.extra = extra or {}
 
     def __str__(self):
-        return "Challenge(method={0}, extra={1})".format(self.method, self.extra)
+        return u"Challenge(method={0}, extra={1})".format(self.method, self.extra)
 
 
+@public
 class HelloDetails(object):
     """
     Provides details of a WAMP session while still attaching.
@@ -236,24 +255,34 @@ class HelloDetails(object):
         """
 
         :param realm: The realm the client wants to join.
-        :type realm: unicode or None
+        :type realm: str or None
+
         :param authmethods: The authentication methods the client is willing to perform.
-        :type authmethods: list of unicode or None
+        :type authmethods: list of str or None
+
         :param authid: The authid the client wants to authenticate as.
-        :type authid: unicode or None
+        :type authid: str or None
+
         :param authrole: The authrole the client wants to authenticate as.
-        :type authrole: unicode or None
+        :type authrole: str or None
+
         :param authextra: Any extra information the specific authentication method requires the client to send.
         :type authextra: arbitrary or None
+
         :param session_roles: The WAMP session roles and features by the connecting client.
         :type session_roles: dict or None
+
         :param pending_session: The session ID the session will get once successfully attached.
         :type pending_session: int or None
+
+        :param resumable:
         :type resumable: bool or None
+
         :param resume_session: The session the client would like to resume.
         :type resume_session: int or None
+
         :param resume_token: The secure authorisation token to resume the session.
-        :type resume_token: unicode or None
+        :type resume_token: str or None
         """
         assert(realm is None or type(realm) == six.text_type)
         assert(authmethods is None or (type(authmethods) == list and all(type(x) == six.text_type for x in authmethods)))
@@ -278,9 +307,10 @@ class HelloDetails(object):
         self.resume_token = resume_token
 
     def __str__(self):
-        return "HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
+        return u"HelloDetails(realm=<{}>, authmethods={}, authid=<{}>, authrole=<{}>, authextra={}, session_roles={}, pending_session={}, resumable={}, resume_session={}, resume_token={})".format(self.realm, self.authmethods, self.authid, self.authrole, self.authextra, self.session_roles, self.pending_session, self.resumable, self.resume_session, self.resume_token)
 
 
+@public
 class SessionDetails(object):
     """
     Provides details for a WAMP session upon open.
@@ -305,15 +335,19 @@ class SessionDetails(object):
         """
 
         :param realm: The realm this WAMP session is attached to.
-        :type realm: unicode
+        :type realm: str
+
         :param session: WAMP session ID of this session.
         :type session: int
+
         :param resumed: Whether the session is a resumed one.
         :type resumed: bool or None
+
         :param resumable: Whether this session can be resumed later.
         :type resumable: bool or None
+
         :param resume_token: The secure authorisation token to resume the session.
-        :type resume_token: unicode or None
+        :type resume_token: str or None
         """
         assert(type(realm) == six.text_type)
         assert(type(session) in six.integer_types)
@@ -338,9 +372,10 @@ class SessionDetails(object):
         self.resume_token = resume_token
 
     def __str__(self):
-        return "SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
+        return u"SessionDetails(realm=<{}>, session={}, authid=<{}>, authrole=<{}>, authmethod={}, authprovider={}, authextra={}, resumed={}, resumable={}, resume_token={})".format(self.realm, self.session, self.authid, self.authrole, self.authmethod, self.authprovider, self.authextra, self.resumed, self.resumable, self.resume_token)
 
 
+@public
 class CloseDetails(object):
     """
     Provides details for a WAMP session upon close.
@@ -359,9 +394,10 @@ class CloseDetails(object):
         """
 
         :param reason: The close reason (an URI, e.g. ``wamp.close.normal``)
-        :type reason: unicode
+        :type reason: str
+
         :param message: Closing log message.
-        :type message: unicode
+        :type message: str
         """
         assert(reason is None or type(reason) == six.text_type)
         assert(message is None or type(message) == six.text_type)
@@ -370,9 +406,10 @@ class CloseDetails(object):
         self.message = message
 
     def __str__(self):
-        return "CloseDetails(reason=<{0}>, message='{1}')".format(self.reason, self.message)
+        return u"CloseDetails(reason=<{0}>, message='{1}')".format(self.reason, self.message)
 
 
+@public
 class SubscribeOptions(object):
     """
     Used to provide options for subscribing in
@@ -389,15 +426,17 @@ class SubscribeOptions(object):
         """
 
         :param match: The topic matching method to be used for the subscription.
-        :type match: unicode
+        :type match: str
+
         :param details_arg: When invoking the handler, provide event details
           in this keyword argument to the callable.
         :type details_arg: str
+
         :param get_retained: Whether the client wants the retained message we may have along with the subscription.
         :type get_retained: bool or None
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
-        assert(details_arg is None or type(details_arg) == str)
+        assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
 
         self.match = match
@@ -419,9 +458,10 @@ class SubscribeOptions(object):
         return options
 
     def __str__(self):
-        return "SubscribeOptions(match={0}, details_arg={1}, get_retained={2})".format(self.match, self.details_arg, self.get_retained)
+        return u"SubscribeOptions(match={0}, details_arg={1}, get_retained={2})".format(self.match, self.details_arg, self.get_retained)
 
 
+@public
 class EventDetails(object):
     """
     Provides details on an event when calling an event handler
@@ -443,23 +483,29 @@ class EventDetails(object):
 
         :param publication: The publication ID of the event (always present).
         :type publication: int
+
         :param publisher: The WAMP session ID of the original publisher of this event.
             Only filled when publisher is disclosed.
         :type publisher: None or int
+
         :param publisher_authid: The WAMP authid of the original publisher of this event.
             Only filled when publisher is disclosed.
-        :type publisher_authid: None or unicode
+        :type publisher_authid: None or str
+
         :param publisher_authrole: The WAMP authrole of the original publisher of this event.
             Only filled when publisher is disclosed.
-        :type publisher_authrole: None or unicode
+        :type publisher_authrole: None or str
+
         :param topic: For pattern-based subscriptions, the actual topic URI being published to.
             Only filled for pattern-based subscriptions.
-        :type topic: None or unicode
+        :type topic: None or str
+
         :param retained: Whether the message was retained by the broker on the topic, rather than just published.
         :type retained: bool or None
+
         :param enc_algo: Payload encryption algorithm that
-            was in use (currently, either `None` or `"cryptobox"`).
-        :type enc_algo: None or unicode
+            was in use (currently, either ``None`` or ``u'cryptobox'``).
+        :type enc_algo: None or str
         """
         assert(type(publication) in six.integer_types)
         assert(publisher is None or type(publisher) in six.integer_types)
@@ -478,9 +524,10 @@ class EventDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "EventDetails(publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
+        return u"EventDetails(publication={}, publisher={}, publisher_authid={}, publisher_authrole={}, topic=<{}>, retained={}, enc_algo={})".format(self.publication, self.publisher, self.publisher_authid, self.publisher_authrole, self.topic, self.retained, self.enc_algo)
 
 
+@public
 class PublishOptions(object):
     """
     Used to provide options for subscribing in
@@ -514,21 +561,29 @@ class PublishOptions(object):
         :param acknowledge: If ``True``, acknowledge the publication with a success or
            error response.
         :type acknowledge: bool
+
         :param exclude_me: If ``True``, exclude the publisher from receiving the event, even
            if he is subscribed (and eligible).
         :type exclude_me: bool or None
+
         :param exclude: A single WAMP session ID or a list thereof to exclude from receiving this event.
         :type exclude: int or list of int or None
+
         :param exclude_authid: A single WAMP authid or a list thereof to exclude from receiving this event.
-        :type exclude_authid: unicode or list of unicode or None
+        :type exclude_authid: str or list of str or None
+
         :param exclude_authrole: A single WAMP authrole or a list thereof to exclude from receiving this event.
-        :type exclude_authrole: list of unicode or None
+        :type exclude_authrole: list of str or None
+
         :param eligible: A single WAMP session ID or a list thereof eligible to receive this event.
         :type eligible: int or list of int or None
+
         :param eligible_authid: A single WAMP authid or a list thereof eligible to receive this event.
-        :type eligible_authid: unicode or list of unicode or None
+        :type eligible_authid: str or list of str or None
+
         :param eligible_authrole: A single WAMP authrole or a list thereof eligible to receive this event.
-        :type eligible_authrole: unicode or list of unicode or None
+        :type eligible_authrole: str or list of str or None
+
         :param retain: If ``True``, request the broker retain this event.
         :type retain: bool or None
         """
@@ -588,9 +643,10 @@ class PublishOptions(object):
         return options
 
     def __str__(self):
-        return "PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7}, retain={8})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
+        return u"PublishOptions(acknowledge={0}, exclude_me={1}, exclude={2}, exclude_authid={3}, exclude_authrole={4}, eligible={5}, eligible_authid={6}, eligible_authrole={7}, retain={8})".format(self.acknowledge, self.exclude_me, self.exclude, self.exclude_authid, self.exclude_authrole, self.eligible, self.eligible_authid, self.eligible_authrole, self.retain)
 
 
+@public
 class RegisterOptions(object):
     """
     Used to provide options for registering in
@@ -614,7 +670,7 @@ class RegisterOptions(object):
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
-        assert(details_arg is None or type(details_arg) == str)
+        assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
 
         self.match = match
         self.invoke = invoke
@@ -639,9 +695,10 @@ class RegisterOptions(object):
         return options
 
     def __str__(self):
-        return "RegisterOptions(match={0}, invoke={1}, concurrency={2}, details_arg={3})".format(self.match, self.invoke, self.concurrency, self.details_arg)
+        return u"RegisterOptions(match={0}, invoke={1}, concurrency={2}, details_arg={3})".format(self.match, self.invoke, self.concurrency, self.details_arg)
 
 
+@public
 class CallDetails(object):
     """
     Provides details on a call when an endpoint previously
@@ -662,20 +719,25 @@ class CallDetails(object):
 
         :param progress: A callable that will receive progressive call results.
         :type progress: callable
+
         :param caller: The WAMP session ID of the caller, if the latter is disclosed.
             Only filled when caller is disclosed.
         :type caller: int
+
         :param caller_authid: The WAMP authid of the original caller of this event.
             Only filled when caller is disclosed.
-        :type caller_authid: None or unicode
+        :type caller_authid: None or str
+
         :param caller_authrole: The WAMP authrole of the original caller of this event.
             Only filled when caller is disclosed.
-        :type caller_authrole: None or unicode
+        :type caller_authrole: None or str
+
         :param procedure: For pattern-based registrations, the actual procedure URI being called.
-        :type procedure: None or unicode
+        :type procedure: None or str
+
         :param enc_algo: Payload encryption algorithm that
             was in use (currently, either `None` or `"cryptobox"`).
-        :type enc_algo: None or string
+        :type enc_algo: None or str
         """
         assert(progress is None or callable(progress))
         assert(caller is None or type(caller) in six.integer_types)
@@ -692,9 +754,10 @@ class CallDetails(object):
         self.enc_algo = enc_algo
 
     def __str__(self):
-        return "CallDetails(progress={0}, caller={1}, caller_authid={2}, caller_authrole={3}, procedure=<{4}>, enc_algo={5})".format(self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
+        return u"CallDetails(progress={0}, caller={1}, caller_authid={2}, caller_authrole={3}, procedure=<{4}>, enc_algo={5})".format(self.progress, self.caller, self.caller_authid, self.caller_authrole, self.procedure, self.enc_algo)
 
 
+@public
 class CallOptions(object):
     """
     Used to provide options for calling with :func:`autobahn.wamp.interfaces.ICaller.call`.
@@ -713,6 +776,7 @@ class CallOptions(object):
         :param on_progress: A callback that will be called when the remote endpoint
            called yields interim call progress results.
         :type on_progress: callable
+
         :param timeout: Time in seconds after which the call should be automatically canceled.
         :type timeout: float
         """
@@ -737,13 +801,14 @@ class CallOptions(object):
         return options
 
     def __str__(self):
-        return "CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
+        return u"CallOptions(on_progress={0}, timeout={1})".format(self.on_progress, self.timeout)
 
 
+@public
 class CallResult(object):
     """
     Wrapper for remote procedure call results that contain multiple positional
-    return values or keyword return values.
+    return values or keyword-based return values.
     """
 
     __slots__ = (
@@ -757,6 +822,7 @@ class CallResult(object):
 
         :param results: The positional result values.
         :type results: list
+
         :param kwresults: The keyword result values.
         :type kwresults: dict
         """
@@ -768,7 +834,7 @@ class CallResult(object):
         self.kwresults = kwresults
 
     def __str__(self):
-        return "CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
+        return u"CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
 
 
 class IPublication(object):

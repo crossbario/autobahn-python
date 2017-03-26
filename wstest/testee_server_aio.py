@@ -24,12 +24,19 @@
 #
 ###############################################################################
 
+import argparse
+
 import txaio
 txaio.use_asyncio()
 
-import asyncio
+try:
+    import asyncio
+except ImportError:
+    import trollius as asyncio
 
 import autobahn
+
+from autobahn.websocket.util import parse_url
 
 from autobahn.asyncio.websocket import WebSocketServerProtocol, \
     WebSocketServerFactory
@@ -104,12 +111,20 @@ class TesteeServerFactory(WebSocketServerFactory):
 
 if __name__ == '__main__':
 
-    txaio.start_logging(level='info')
+    parser = argparse.ArgumentParser(description='Autobahn Testee Server (Twisted)')
+    parser.add_argument('--url', dest='url', type=str, default=u'ws://127.0.0.1:9001', help='The WebSocket fuzzing server URL.')
+    parser.add_argument('--loglevel', dest='loglevel', type=str, default=u'info', help='Log level, eg "info" or "debug".')
 
-    factory = TesteeServerFactory(u"ws://127.0.0.1:9001")
+    options = parser.parse_args()
+
+    txaio.start_logging(level=options.loglevel)
+
+    factory = TesteeServerFactory(options.url)
+
+    _, _, port, _, _, _ = parse_url(options.url)
 
     loop = asyncio.get_event_loop()
-    coro = loop.create_server(factory, port=9001)
+    coro = loop.create_server(factory, port=port)
     server = loop.run_until_complete(coro)
 
     try:

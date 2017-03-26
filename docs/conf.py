@@ -67,6 +67,35 @@ def _warn_node(self, msg, node, **kwargs):
 
 sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
+try:
+    from qualname import qualname
+except ImportError:
+    qualname = None
+
+# http://stackoverflow.com/a/21449475/884770
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html#event-autodoc-skip-member
+
+# app, what, name, obj, skip, options:
+# <sphinx.application.Sphinx object at 0x2b0192ab2f90> class __module__ autobahn.asyncio.websocket True {'show-inheritance': True, 'members': <object object at 0x2b018c791710>, 'undoc-members': True}
+#
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    # skip everything that isn't decorated with @autobahn.public or ..
+    if hasattr(obj, '_is_public') and obj._is_public:
+        if qualname:
+            try:
+                qn = qualname(obj)
+            except AttributeError as e:
+                print(e)
+                qn = name
+            print('public API: {}.{}'.format(obj.__module__, qn))
+        return False
+    else:
+        return True
+
+def setup(app):
+    # wire up our custom checker to skip member
+    app.connect('autodoc-skip-member', autodoc_skip_member)
+
 
 # -- General configuration ------------------------------------------------
 
@@ -272,8 +301,8 @@ htmlhelp_basename = 'autobahndoc'
 
 # http://sphinx-doc.org/ext/intersphinx.html
 intersphinx_mapping = {
-   'py2': ('http://docs.python.org/2', None),
-   'py3': ('http://docs.python.org/3', None),
+   'py2': ('https://docs.python.org/2', None),
+   'py3': ('https://docs.python.org/3', None),
    'six': ('https://pythonhosted.org/six/', None),
 }
 
@@ -300,3 +329,9 @@ rst_epilog = """
 
 rst_prolog = """
 """
+
+# http://stackoverflow.com/questions/5599254/how-to-use-sphinxs-autodoc-to-document-a-classs-init-self-method
+autoclass_content = 'both'
+
+# http://www.sphinx-doc.org/en/stable/ext/autodoc.html#confval-autodoc_member_order
+autodoc_member_order = 'bysource'

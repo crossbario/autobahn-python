@@ -44,7 +44,9 @@ import six
 import txaio
 
 
-__all__ = ("xor",
+__all__ = ("public",
+           "encode_truncate",
+           "xor",
            "utcnow",
            "utcstr",
            "id",
@@ -62,6 +64,21 @@ __all__ = ("xor",
            "generate_user_password")
 
 
+def public(obj):
+    """
+    The public user API of Autobahn is marked using this decorator.
+    Everything that is not decorated @public is library internal, can
+    change at any time and should not be used in user program code.
+    """
+    try:
+        obj._is_public = True
+    except AttributeError:
+        # FIXME: exceptions.AttributeError: 'staticmethod' object has no attribute '_is_public'
+        pass
+    return obj
+
+
+@public
 def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     """
     Given a string, return a truncated version of the string such that
@@ -71,13 +88,18 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
     points that encode to multi-byte encodings which must not be truncated
     in the middle.
 
-    :param text: The Unicode string to truncate.
-    :type text: unicode
+    :param text: The (Unicode) string to truncate.
+    :type text: str
     :param limit: The number of bytes to limit the UTF8 encoding to.
     :type limit: int
+    :param encoding: Truncate the string in this encoding (default is ``utf-8``).
+    :type encoding: str
+    :param return_encoded: If ``True``, return the string encoded into bytes
+        according to the specified encoding, else return the string as a string.
+    :type return_encoded: bool
 
-    :returns: The truncated Unicode string.
-    :rtype: unicode
+    :returns: The truncated string.
+    :rtype: str or bytes
     """
     assert(text is None or type(text) == six.text_type)
     assert(type(limit) in six.integer_types)
@@ -107,6 +129,7 @@ def encode_truncate(text, limit, encoding='utf8', return_encoded=True):
         return text
 
 
+@public
 def xor(d1, d2):
     """
     XOR two binary strings of arbitrary (equal) length.
@@ -116,8 +139,8 @@ def xor(d1, d2):
     :param d2: The second binary string.
     :type d2: binary
 
-    :returns: XOR(d1, d2)
-    :rtype: binary
+    :returns: XOR of the binary strings (``XOR(d1, d2)``)
+    :rtype: bytes
     """
     if type(d1) != six.binary_type:
         raise Exception("invalid type {} for d1 - must be binary".format(type(d1)))
@@ -138,6 +161,7 @@ def xor(d1, d2):
         return d1.tostring()
 
 
+@public
 def utcstr(ts=None):
     """
     Format UTC timestamp in ISO 8601 format.
@@ -146,10 +170,10 @@ def utcstr(ts=None):
     module instead (e.g. ``iso8601.parse_date("2014-05-23T13:03:44.123Z")``).
 
     :param ts: The timestamp to format.
-    :type ts: instance of :py:class:`datetime.datetime` or None
+    :type ts: instance of :py:class:`datetime.datetime` or ``None``
 
     :returns: Timestamp formatted in ISO 8601 format.
-    :rtype: unicode
+    :rtype: str
     """
     assert(ts is None or isinstance(ts, datetime))
     if ts is None:
@@ -157,12 +181,13 @@ def utcstr(ts=None):
     return u"{0}Z".format(ts.strftime(u"%Y-%m-%dT%H:%M:%S.%f")[:-3])
 
 
+@public
 def utcnow():
     """
     Get current time in UTC as ISO 8601 string.
 
     :returns: Current time as string in ISO 8601 format.
-    :rtype: unicode
+    :rtype: str
     """
     return utcstr()
 
@@ -291,7 +316,7 @@ def newid(length=16):
     :type length: int
 
     :returns: A random string ID.
-    :rtype: unicode
+    :rtype: str
     """
     l = int(math.ceil(float(length) * 6. / 8.))
     return base64.b64encode(os.urandom(l))[:length].decode('ascii')
@@ -309,8 +334,6 @@ Default set of characters to create rtokens from.
 
 DEFAULT_ZBASE32_CHARS = u'13456789abcdefghijkmnopqrstuwxyz'
 """
-http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
-
 Our choice of confusing characters to eliminate is: `0', `l', `v', and `2'.  Our
 reasoning is that `0' is potentially mistaken for `o', that `l' is potentially
 mistaken for `1' or `i', that `v' is potentially mistaken for `u' or `r'
@@ -321,48 +344,59 @@ Note that we choose to focus on typed and written transcription more than on
 vocal, since humans already have a well-established system of disambiguating
 spoken alphanumerics, such as the United States military's "Alpha Bravo Charlie
 Delta" and telephone operators' "Is that 'd' as in 'dog'?".
+
+* http://philzimmermann.com/docs/human-oriented-base-32-encoding.txt
 """
 
 
+@public
 def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_case=False):
     """
     Generate cryptographically strong tokens, which are strings like `M6X5-YO5W-T5IK`.
     These can be used e.g. for used-only-once activation tokens or the like.
 
-    The returned token has an entropy of:
+    The returned token has an entropy of
+    ``math.log(len(chars), 2.) * chars_per_group * char_groups``
+    bits.
 
-       math.log(len(chars), 2.) * chars_per_group * char_groups
+    With the default charset and 4 characters per group, ``generate_token()`` produces
+    strings with the following entropy:
 
-    bits. With the default charset and 4 characters per group, rtoken() produces
-    tokens with the following entropy:
+    ================   ===================  ========================================
+    character groups    entropy (at least)  recommended use
+    ================   ===================  ========================================
+    2                    38 bits
+    3                    57 bits            one-time activation or pairing code
+    4                    76 bits            secure user password
+    5                    95 bits
+    6                   114 bits            globally unique serial / product code
+    7                   133 bits
+    ================   ===================  ========================================
 
-        character groups    entropy (at least)  recommended use
+    Here are some examples:
 
-        2                    38 bits
-        3                    57 bits            one-time activation or pairing code
-        4                    76 bits            secure user password
-        5                    95 bits
-        6                   114 bits            globally unique serial / product code
-        7                   133 bits
-
-    Here are 3 examples:
-
-        * token(3): 9QXT-UXJW-7R4H
-        * token(4): LPNN-JMET-KWEP-YK45
-        * token(6): NXW9-74LU-6NUH-VLPV-X6AG-QUE3
+    * token(3): ``9QXT-UXJW-7R4H``
+    * token(4): ``LPNN-JMET-KWEP-YK45``
+    * token(6): ``NXW9-74LU-6NUH-VLPV-X6AG-QUE3``
 
     :param char_groups: Number of character groups (or characters if chars_per_group == 1).
     :type char_groups: int
+
     :param chars_per_group: Number of characters per character group (or 1 to return a token with no grouping).
     :type chars_per_group: int
+
     :param chars: Characters to choose from. Default is 27 character subset
-        of the ISO basic Latin alphabet (see: DEFAULT_TOKEN_CHARS).
-    :type chars: unicode or None
+        of the ISO basic Latin alphabet (see: ``DEFAULT_TOKEN_CHARS``).
+    :type chars: str or None
+
     :param sep: When separating groups in the token, the separater string.
-    :type sep: unicode
+    :type sep: str
+
+    :param lower_case: If ``True``, generate token in lower-case.
+    :type lower_case: bool
 
     :returns: The generated token.
-    :rtype: unicode
+    :rtype: str
     """
     assert(type(char_groups) in six.integer_types)
     assert(type(chars_per_group) in six.integer_types)
@@ -379,15 +413,39 @@ def generate_token(char_groups, chars_per_group, chars=None, sep=None, lower_cas
         return token_value
 
 
+@public
 def generate_activation_code():
+    """
+    Generate a one-time activation code or token of the form ``u'W97F-96MJ-YGJL'``.
+    The generated value is cryptographically strong and has (at least) 57 bits of entropy.
+
+    :returns: The generated activation code.
+    :rtype: str
+    """
     return generate_token(char_groups=3, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
+@public
 def generate_user_password():
+    """
+    Generate a secure, random user password of the form ``u'kgojzi61dn5dtb6d'``.
+    The generated value is cryptographically strong and has (at least) 76 bits of entropy.
+
+    :returns: The generated password.
+    :rtype: str
+    """
     return generate_token(char_groups=16, chars_per_group=1, chars=DEFAULT_ZBASE32_CHARS, sep=u'-', lower_case=True)
 
 
+@public
 def generate_serial_number():
+    """
+    Generate a globally unique serial / product code of the form ``u'YRAC-EL4X-FQQE-AW4T-WNUV-VN6T'``.
+    The generated value is cryptographically strong and has (at least) 114 bits of entropy.
+
+    :returns: The generated serial number / product code.
+    :rtype: str
+    """
     return generate_token(char_groups=6, chars_per_group=4, chars=DEFAULT_TOKEN_CHARS, sep=u'-', lower_case=False)
 
 
@@ -409,14 +467,16 @@ else:
     _rtime = time.time
 
 
-rtime = _rtime
-"""
-Precise wallclock time.
+@public
+def rtime():
+    """
+    Precise, fast wallclock time.
 
-:returns: The current wallclock in seconds. Returned values are only guaranteed
-   to be meaningful relative to each other.
-:rtype: float
-"""
+    :returns: The current wallclock in seconds. Returned values are only guaranteed
+       to be meaningful relative to each other.
+    :rtype: float
+    """
+    return _rtime()
 
 
 class Stopwatch(object):
@@ -430,6 +490,7 @@ class Stopwatch(object):
 
     def __init__(self, start=True):
         """
+
         :param start: If ``True``, immediately start the stopwatch.
         :type start: bool
         """

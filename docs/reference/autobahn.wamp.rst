@@ -1,93 +1,36 @@
-autobahn.wamp
-=============
+Module ``autobahn.wamp``
+========================
 
-Submodules
-----------
-
-autobahn.wamp.auth
-------------------
-
-.. automodule:: autobahn.wamp.auth
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.exception
------------------------
-
-.. automodule:: autobahn.wamp.exception
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.interfaces
-------------------------
+WAMP Interfaces
+---------------
 
 .. automodule:: autobahn.wamp.interfaces
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.wamp.message
----------------------
 
-.. automodule:: autobahn.wamp.message
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.protocol
-----------------------
-
-.. automodule:: autobahn.wamp.protocol
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.role
-------------------
-
-.. automodule:: autobahn.wamp.role
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.serializer
-------------------------
-
-.. automodule:: autobahn.wamp.serializer
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.types
--------------------
+WAMP Types
+----------
 
 .. automodule:: autobahn.wamp.types
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.wamp.uri
------------------
 
-.. automodule:: autobahn.wamp.uri
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.wamp.websocket
------------------------
-
-.. automodule:: autobahn.wamp.websocket
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Module contents
+WAMP Exceptions
 ---------------
 
-.. automodule:: autobahn.wamp
+.. automodule:: autobahn.wamp.exception
     :members:
-    :undoc-members:
+
+
+WAMP Authentication and Encryption
+----------------------------------
+
+.. automodule:: autobahn.wamp.auth
+    :members:
     :show-inheritance:
+
+.. automodule:: autobahn.wamp.cryptosign
+    :members:
+
+.. automodule:: autobahn.wamp.cryptobox
+    :members:

@@ -51,13 +51,13 @@ class PerMessageBzip2Mixin(object):
 
     EXTENSION_NAME = "permessage-bzip2"
     """
-   Name of this WebSocket extension.
-   """
+    Name of this WebSocket extension.
+    """
 
     COMPRESS_LEVEL_PERMISSIBLE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     """
-   Permissible value for compression level parameter.
-   """
+    Permissible value for compression level parameter.
+    """
 
 
 class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
@@ -77,13 +77,10 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
         :returns: object -- A new instance of :class:`autobahn.compress.PerMessageBzip2Offer`.
         """
         # extension parameter defaults
-        ##
-        acceptMaxCompressLevel = False
-        requestMaxCompressLevel = 0
+        accept_max_compress_level = False
+        request_max_compress_level = 0
 
-        ##
         # verify/parse client ("client-to-server direction") parameters of permessage-bzip2 offer
-        ##
         for p in params:
 
             if len(params[p]) > 1:
@@ -96,7 +93,7 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                 if val is not True:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
-                    acceptMaxCompressLevel = True
+                    accept_max_compress_level = True
 
             elif p == 'server_max_compress_level':
                 try:
@@ -106,66 +103,69 @@ class PerMessageBzip2Offer(PerMessageCompressOffer, PerMessageBzip2Mixin):
                 if val not in PerMessageBzip2Mixin.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
                     raise Exception("illegal extension parameter value '%s' for parameter '%s' of extension '%s'" % (val, p, cls.EXTENSION_NAME))
                 else:
-                    requestMaxCompressLevel = val
+                    request_max_compress_level = val
 
             else:
                 raise Exception("illegal extension parameter '%s' for extension '%s'" % (p, cls.EXTENSION_NAME))
 
-        offer = cls(acceptMaxCompressLevel,
-                    requestMaxCompressLevel)
+        offer = cls(accept_max_compress_level,
+                    request_max_compress_level)
         return offer
 
     def __init__(self,
-                 acceptMaxCompressLevel=True,
-                 requestMaxCompressLevel=0):
+                 accept_max_compress_level=True,
+                 request_max_compress_level=0):
         """
         Constructor.
 
-        :param acceptMaxCompressLevel: Iff true, client accepts "maximum compression level" parameter.
-        :type acceptMaxCompressLevel: bool
-        :param requestMaxCompressLevel: Iff non-zero, client requests given "maximum compression level" - must be 1-9.
-        :type requestMaxCompressLevel: int
+        :param accept_max_compress_level: Iff true, client accepts "maximum compression level" parameter.
+        :type accept_max_compress_level: bool
+        :param request_max_compress_level: Iff non-zero, client requests given "maximum compression level" - must be 1-9.
+        :type request_max_compress_level: int
         """
-        if type(acceptMaxCompressLevel) != bool:
-            raise Exception("invalid type %s for acceptMaxCompressLevel" % type(acceptMaxCompressLevel))
+        if type(accept_max_compress_level) != bool:
+            raise Exception("invalid type %s for accept_max_compress_level" % type(accept_max_compress_level))
 
-        self.acceptMaxCompressLevel = acceptMaxCompressLevel
+        self.accept_max_compress_level = accept_max_compress_level
 
-        if requestMaxCompressLevel != 0 and requestMaxCompressLevel not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
-            raise Exception("invalid value %s for requestMaxCompressLevel - permissible values %s" % (requestMaxCompressLevel, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
+        if request_max_compress_level != 0 and request_max_compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for request_max_compress_level - permissible values %s" % (request_max_compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
-        self.requestMaxCompressLevel = requestMaxCompressLevel
+        self.request_max_compress_level = request_max_compress_level
 
-    def getExtensionString(self):
+    def get_extension_string(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
 
-        :returns: str -- PMCE configuration string.
+        :returns: PMCE configuration string.
+        :rtype: str
         """
-        pmceString = self.EXTENSION_NAME
-        if self.acceptMaxCompressLevel:
-            pmceString += "; client_max_compress_level"
-        if self.requestMaxCompressLevel != 0:
-            pmceString += "; server_max_compress_level=%d" % self.requestMaxCompressLevel
-        return pmceString
+        pmce_string = self.EXTENSION_NAME
+        if self.accept_max_compress_level:
+            pmce_string += "; client_max_compress_level"
+        if self.request_max_compress_level != 0:
+            pmce_string += "; server_max_compress_level=%d" % self.request_max_compress_level
+        return pmce_string
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
-                'acceptMaxCompressLevel': self.acceptMaxCompressLevel,
-                'requestMaxCompressLevel': self.requestMaxCompressLevel}
+                'accept_max_compress_level': self.accept_max_compress_level,
+                'request_max_compress_level': self.request_max_compress_level}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageBzip2Offer(acceptMaxCompressLevel = %s, requestMaxCompressLevel = %s)" % (self.acceptMaxCompressLevel, self.requestMaxCompressLevel)
+        return "PerMessageBzip2Offer(accept_max_compress_level = %s, request_max_compress_level = %s)" % (self.accept_max_compress_level, self.request_max_compress_level)
 
 
 class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2Mixin):
@@ -176,71 +176,74 @@ class PerMessageBzip2OfferAccept(PerMessageCompressOfferAccept, PerMessageBzip2M
 
     def __init__(self,
                  offer,
-                 requestMaxCompressLevel=0,
-                 compressLevel=None):
+                 request_max_compress_level=0,
+                 compress_level=None):
         """
         Constructor.
 
         :param offer: The offer being accepted.
         :type offer: Instance of :class:`autobahn.compress.PerMessageBzip2Offer`.
-        :param requestMaxCompressLevel: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
-        :type requestMaxCompressLevel: int
-        :param compressLevel: Override server ("server-to-client direction") compress level (this must be compatible with offer).
-        :type compressLevel: int
+        :param request_max_compress_level: Iff non-zero, server requests given "maximum compression level" - must be 1-9.
+        :type request_max_compress_level: int
+        :param compress_level: Override server ("server-to-client direction") compress level (this must be compatible with offer).
+        :type compress_level: int
         """
         if not isinstance(offer, PerMessageBzip2Offer):
             raise Exception("invalid type %s for offer" % type(offer))
 
         self.offer = offer
 
-        if requestMaxCompressLevel != 0 and requestMaxCompressLevel not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
-            raise Exception("invalid value %s for requestMaxCompressLevel - permissible values %s" % (requestMaxCompressLevel, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
+        if request_max_compress_level != 0 and request_max_compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
+            raise Exception("invalid value %s for request_max_compress_level - permissible values %s" % (request_max_compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
-        if requestMaxCompressLevel != 0 and not offer.acceptMaxCompressLevel:
-            raise Exception("invalid value %s for requestMaxCompressLevel - feature unsupported by client" % requestMaxCompressLevel)
+        if request_max_compress_level != 0 and not offer.accept_max_compress_level:
+            raise Exception("invalid value %s for request_max_compress_level - feature unsupported by client" % request_max_compress_level)
 
-        self.requestMaxCompressLevel = requestMaxCompressLevel
+        self.request_max_compress_level = request_max_compress_level
 
-        if compressLevel is not None:
-            if compressLevel not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
-                raise Exception("invalid value %s for compressLevel - permissible values %s" % (compressLevel, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
+        if compress_level is not None:
+            if compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
+                raise Exception("invalid value %s for compress_level - permissible values %s" % (compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
-            if offer.requestMaxCompressLevel != 0 and compressLevel > offer.requestMaxCompressLevel:
-                raise Exception("invalid value %s for compressLevel - client requested lower maximum value" % compressLevel)
+            if offer.request_max_compress_level != 0 and compress_level > offer.request_max_compress_level:
+                raise Exception("invalid value %s for compress_level - client requested lower maximum value" % compress_level)
 
-        self.compressLevel = compressLevel
+        self.compress_level = compress_level
 
-    def getExtensionString(self):
+    def get_extension_string(self):
         """
         Returns the WebSocket extension configuration string as sent to the server.
 
-        :returns: str -- PMCE configuration string.
+        :returns: PMCE configuration string.
+        :rtype: str
         """
-        pmceString = self.EXTENSION_NAME
-        if self.offer.requestMaxCompressLevel != 0:
-            pmceString += "; server_max_compress_level=%d" % self.offer.requestMaxCompressLevel
-        if self.requestMaxCompressLevel != 0:
-            pmceString += "; client_max_compress_level=%d" % self.requestMaxCompressLevel
-        return pmceString
+        pmce_string = self.EXTENSION_NAME
+        if self.offer.request_max_compress_level != 0:
+            pmce_string += "; server_max_compress_level=%d" % self.offer.request_max_compress_level
+        if self.request_max_compress_level != 0:
+            pmce_string += "; client_max_compress_level=%d" % self.request_max_compress_level
+        return pmce_string
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'offer': self.offer.__json__(),
-                'requestMaxCompressLevel': self.requestMaxCompressLevel,
-                'compressLevel': self.compressLevel}
+                'request_max_compress_level': self.request_max_compress_level,
+                'compress_level': self.compress_level}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageBzip2Accept(offer = %s, requestMaxCompressLevel = %s, compressLevel = %s)" % (self.offer.__repr__(), self.requestMaxCompressLevel, self.compressLevel)
+        return "PerMessageBzip2Accept(offer = %s, request_max_compress_level = %s, compress_level = %s)" % (self.offer.__repr__(), self.request_max_compress_level, self.compress_level)
 
 
 class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
@@ -256,7 +259,8 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         :param params: Output from :func:`autobahn.websocket.WebSocketProtocol._parseExtensionsHeader`.
         :type params: list
 
-        :returns: object -- A new instance of :class:`autobahn.compress.PerMessageBzip2Response`.
+        :returns: A new instance of :class:`autobahn.compress.PerMessageBzip2Response`.
+        :rtype: obj
         """
         client_max_compress_level = 0
         server_max_compress_level = 0
@@ -305,7 +309,8 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'client_max_compress_level': self.client_max_compress_level,
@@ -315,7 +320,8 @@ class PerMessageBzip2Response(PerMessageCompressResponse, PerMessageBzip2Mixin):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
         return "PerMessageBzip2Response(client_max_compress_level = %s, server_max_compress_level = %s)" % (self.client_max_compress_level, self.server_max_compress_level)
 
@@ -328,46 +334,47 @@ class PerMessageBzip2ResponseAccept(PerMessageCompressResponseAccept, PerMessage
 
     def __init__(self,
                  response,
-                 compressLevel=None):
+                 compress_level=None):
         """
-        Constructor.
 
         :param response: The response being accepted.
         :type response: Instance of :class:`autobahn.compress.PerMessageBzip2Response`.
-        :param compressLevel: Override client ("client-to-server direction") compress level (this must be compatible with response).
-        :type compressLevel: int
+        :param compress_level: Override client ("client-to-server direction") compress level (this must be compatible with response).
+        :type compress_level: int
         """
         if not isinstance(response, PerMessageBzip2Response):
             raise Exception("invalid type %s for response" % type(response))
 
         self.response = response
 
-        if compressLevel is not None:
-            if compressLevel not in self.WINDOW_SIZE_PERMISSIBLE_VALUES:
-                raise Exception("invalid value %s for compressLevel - permissible values %s" % (compressLevel, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
+        if compress_level is not None:
+            if compress_level not in self.COMPRESS_LEVEL_PERMISSIBLE_VALUES:
+                raise Exception("invalid value %s for compress_level - permissible values %s" % (compress_level, self.COMPRESS_LEVEL_PERMISSIBLE_VALUES))
 
-            if response.client_max_compress_level != 0 and compressLevel > response.client_max_compress_level:
-                raise Exception("invalid value %s for compressLevel - server requested lower maximum value" % compressLevel)
+            if response.client_max_compress_level != 0 and compress_level > response.client_max_compress_level:
+                raise Exception("invalid value %s for compress_level - server requested lower maximum value" % compress_level)
 
-        self.compressLevel = compressLevel
+        self.compress_level = compress_level
 
     def __json__(self):
         """
         Returns a JSON serializable object representation.
 
-        :returns: object -- JSON serializable representation.
+        :returns: JSON serializable representation.
+        :rtype: dict
         """
         return {'extension': self.EXTENSION_NAME,
                 'response': self.response.__json__(),
-                'compressLevel': self.compressLevel}
+                'compress_level': self.compress_level}
 
     def __repr__(self):
         """
         Returns Python object representation that can be eval'ed to reconstruct the object.
 
-        :returns: str -- Python string representation.
+        :returns: Python string representation.
+        :rtype: str
         """
-        return "PerMessageBzip2ResponseAccept(response = %s, compressLevel = %s)" % (self.response.__repr__(), self.compressLevel)
+        return "PerMessageBzip2ResponseAccept(response = %s, compress_level = %s)" % (self.response.__repr__(), self.compress_level)
 
 
 class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
@@ -377,24 +384,24 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
     DEFAULT_COMPRESS_LEVEL = 9
 
     @classmethod
-    def createFromResponseAccept(cls, isServer, accept):
-        pmce = cls(isServer,
+    def create_from_response_accept(cls, is_server, accept):
+        pmce = cls(is_server,
                    accept.response.server_max_compress_level,
-                   accept.compressLevel if accept.compressLevel is not None else accept.response.client_max_compress_level)
+                   accept.compress_level if accept.compress_level is not None else accept.response.client_max_compress_level)
         return pmce
 
     @classmethod
-    def createFromOfferAccept(cls, isServer, accept):
-        pmce = cls(isServer,
-                   accept.compressLevel if accept.compressLevel is not None else accept.offer.requestMaxCompressLevel,
-                   accept.requestMaxCompressLevel)
+    def create_from_offer_accept(cls, is_server, accept):
+        pmce = cls(is_server,
+                   accept.compress_level if accept.compress_level is not None else accept.offer.request_max_compress_level,
+                   accept.request_max_compress_level)
         return pmce
 
     def __init__(self,
-                 isServer,
+                 is_server,
                  server_max_compress_level,
                  client_max_compress_level):
-        self._isServer = isServer
+        self._isServer = is_server
         self._compressor = None
         self._decompressor = None
 
@@ -410,7 +417,7 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
     def __repr__(self):
         return "PerMessageBzip2(isServer = %s, server_max_compress_level = %s, client_max_compress_level = %s)" % (self._isServer, self.server_max_compress_level, self.client_max_compress_level)
 
-    def startCompressMessage(self):
+    def start_compress_message(self):
         if self._isServer:
             if self._compressor is None:
                 self._compressor = bz2.BZ2Compressor(self.server_max_compress_level)
@@ -418,10 +425,10 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
             if self._compressor is None:
                 self._compressor = bz2.BZ2Compressor(self.client_max_compress_level)
 
-    def compressMessageData(self, data):
+    def compress_message_data(self, data):
         return self._compressor.compress(data)
 
-    def endCompressMessage(self):
+    def end_compress_message(self):
         data = self._compressor.flush()
 
         # there seems to be no "flush without close stream", and after
@@ -430,12 +437,12 @@ class PerMessageBzip2(PerMessageCompress, PerMessageBzip2Mixin):
 
         return data
 
-    def startDecompressMessage(self):
+    def start_decompress_message(self):
         if self._decompressor is None:
             self._decompressor = bz2.BZ2Decompressor()
 
-    def decompressMessageData(self, data):
+    def decompress_message_data(self, data):
         return self._decompressor.decompress(data)
 
-    def endDecompressMessage(self):
+    def end_decompress_message(self):
         self._decompressor = None

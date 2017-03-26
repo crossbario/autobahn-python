@@ -101,7 +101,7 @@ if __name__ == '__main__':
         for offer in offers:
             if isinstance(offer, PerMessageDeflateOffer):
                 if offer.acceptMaxWindowBits:
-                    return PerMessageDeflateOfferAccept(offer, requestMaxWindowBits=8)
+                    return PerMessageDeflateOfferAccept(offer, request_max_window_bits=8)
 
 
 #   factory.setProtocolOptions(perMessageCompressionAccept = accept0)

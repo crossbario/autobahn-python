@@ -27,6 +27,7 @@
 from __future__ import absolute_import
 
 from autobahn.wamp.types import \
+    ComponentConfig, \
     SessionDetails, \
     CloseDetails, \
     RegisterOptions, \
@@ -46,9 +47,7 @@ from autobahn.wamp.exception import \
     ApplicationError, \
     InvalidUri
 
-from autobahn.wamp.interfaces import \
-    ISession, \
-    IApplicationSession
+from autobahn.wamp.interfaces import ISession
 
 from autobahn.wamp.uri import \
     error, \
@@ -57,6 +56,7 @@ from autobahn.wamp.uri import \
 
 
 __all__ = (
+    'ComponentConfig',
     'SessionDetails',
     'CloseDetails',
     'RegisterOptions',
@@ -76,7 +76,6 @@ __all__ = (
     'InvalidUri',
 
     'ISession',
-    'IApplicationSession',
 
     'error',
     'register',

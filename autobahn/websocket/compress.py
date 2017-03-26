@@ -44,22 +44,22 @@ from autobahn.websocket.compress_deflate import \
 # this must be a list (not tuple), since we dynamically
 # extend it ..
 __all__ = [
-    "PerMessageCompressOffer",
-    "PerMessageCompressOfferAccept",
-    "PerMessageCompressResponse",
-    "PerMessageCompressResponseAccept",
-    "PerMessageCompress",
-    "PerMessageDeflateOffer",
-    "PerMessageDeflateOfferAccept",
-    "PerMessageDeflateResponse",
-    "PerMessageDeflateResponseAccept",
-    "PerMessageDeflate",
-    "PERMESSAGE_COMPRESSION_EXTENSION"
+    'PerMessageCompressOffer',
+    'PerMessageCompressOfferAccept',
+    'PerMessageCompressResponse',
+    'PerMessageCompressResponseAccept',
+    'PerMessageCompress',
+    'PerMessageDeflateOffer',
+    'PerMessageDeflateOfferAccept',
+    'PerMessageDeflateResponse',
+    'PerMessageDeflateResponseAccept',
+    'PerMessageDeflate',
+    'PERMESSAGE_COMPRESSION_EXTENSION'
 ]
 
-# class for "permessage-deflate" is always available
-#
+# map of available compression extensions
 PERMESSAGE_COMPRESSION_EXTENSION = {
+    # class for 'permessage-deflate' is always available
     PerMessageDeflateMixin.EXTENSION_NAME: {
         'Offer': PerMessageDeflateOffer,
         'OfferAccept': PerMessageDeflateOfferAccept,
@@ -70,8 +70,7 @@ PERMESSAGE_COMPRESSION_EXTENSION = {
 }
 
 
-# include "permessage-bzip2" classes if bzip2 is available
-#
+# include 'permessage-bzip2' classes if bzip2 is available
 try:
     import bz2
 except ImportError:
@@ -94,15 +93,14 @@ else:
     }
     PERMESSAGE_COMPRESSION_EXTENSION[PerMessageBzip2Mixin.EXTENSION_NAME] = PMCE
 
-    __all__.extend(["PerMessageBzip2Offer",
-                    "PerMessageBzip2OfferAccept",
-                    "PerMessageBzip2Response",
-                    "PerMessageBzip2ResponseAccept",
-                    "PerMessageBzip2"])
+    __all__.extend(['PerMessageBzip2Offer',
+                    'PerMessageBzip2OfferAccept',
+                    'PerMessageBzip2Response',
+                    'PerMessageBzip2ResponseAccept',
+                    'PerMessageBzip2'])
 
 
-# include "permessage-snappy" classes if Snappy is available
-#
+# include 'permessage-snappy' classes if Snappy is available
 try:
     # noinspection PyPackageRequirements
     import snappy
@@ -126,8 +124,8 @@ else:
     }
     PERMESSAGE_COMPRESSION_EXTENSION[PerMessageSnappyMixin.EXTENSION_NAME] = PMCE
 
-    __all__.extend(["PerMessageSnappyOffer",
-                    "PerMessageSnappyOfferAccept",
-                    "PerMessageSnappyResponse",
-                    "PerMessageSnappyResponseAccept",
-                    "PerMessageSnappy"])
+    __all__.extend(['PerMessageSnappyOffer',
+                    'PerMessageSnappyOfferAccept',
+                    'PerMessageSnappyResponse',
+                    'PerMessageSnappyResponseAccept',
+                    'PerMessageSnappy'])

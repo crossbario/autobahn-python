@@ -29,6 +29,7 @@ import signal
 
 import six
 
+from autobahn.util import public
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
 from autobahn.websocket.util import parse_url
@@ -51,10 +52,18 @@ __all__ = (
 )
 
 
+@public
 class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for asyncio-based applications.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransportHandler`
+        * :class:`autobahn.wamp.interfaces.ISession`
     """
+
+    log = txaio.make_logger()
 
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
@@ -68,7 +77,10 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     Defaults to :class:`autobahn.asyncio.wamp.ApplicationSession`.
     """
 
+    log = txaio.make_logger()
 
+
+@public
 class ApplicationRunner(object):
     """
     This class is a convenience tool mainly for development and quick hosting
@@ -82,11 +94,12 @@ class ApplicationRunner(object):
 
     def __init__(self, url, realm, extra=None, serializers=None, ssl=None):
         """
+
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-        :type url: unicode
+        :type url: str
 
         :param realm: The WAMP realm to join the application session to.
-        :type realm: unicode
+        :type realm: str
 
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
@@ -97,8 +110,8 @@ class ApplicationRunner(object):
 
         :param ssl: An (optional) SSL context instance or a bool. See
            the documentation for the `loop.create_connection` asyncio
-           method, to which this value is passed as the ``ssl=``
-           kwarg.
+           method, to which this value is passed as the ``ssl``
+           keyword parameter.
         :type ssl: :class:`ssl.SSLContext` or bool
         """
         assert(type(url) == six.text_type)
@@ -110,6 +123,7 @@ class ApplicationRunner(object):
         self.serializers = serializers
         self.ssl = ssl
 
+    @public
     def run(self, make, start_loop=True):
         """
         Run the application component.
@@ -117,6 +131,10 @@ class ApplicationRunner(object):
         :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
+
+        :param start_loop: When ``True`` (the default) this method
+            start a new asyncio loop.
+        :type start_loop: bool
         """
         if callable(make):
             def create():

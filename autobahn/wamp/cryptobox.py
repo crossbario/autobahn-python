@@ -30,6 +30,8 @@ import json
 
 import six
 
+from autobahn.util import public
+
 __all__ = [
     'HAS_CRYPTOBOX',
     'EncryptedPayload'
@@ -62,6 +64,7 @@ class EncryptedPayload(object):
 
 if HAS_CRYPTOBOX:
 
+    @public
     class Key(object):
         """
         Holds originator and responder keys for an URI.
@@ -117,6 +120,7 @@ if HAS_CRYPTOBOX:
             if not (self.originator_box or self.responder_box):
                 raise Exception("insufficient keys provided for at least originator or responder role")
 
+    @public
     class KeyRing(object):
         """
         A keyring holds (cryptobox) public-private key pairs for use with WAMP-cryptobox payload
@@ -135,6 +139,7 @@ if HAS_CRYPTOBOX:
                 default_key = Key(originator_priv=default_key, responder_priv=default_key)
             self._default_key = default_key
 
+        @public
         def generate_key(self):
             """
             Generate a new private key and return a pair with the base64 encodings
@@ -145,6 +150,7 @@ if HAS_CRYPTOBOX:
             pub_key = key.public_key.encode(encoder=Base64Encoder)
             return (u'{}'.format(priv_key), u''.format(pub_key))
 
+        @public
         def set_key(self, uri, key):
             """
             Add a key set for a given URI.

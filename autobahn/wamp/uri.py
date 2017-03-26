@@ -30,6 +30,7 @@ from __future__ import absolute_import
 import re
 import six
 
+from autobahn.util import public
 from autobahn.wamp.types import SubscribeOptions
 
 __all__ = (
@@ -88,6 +89,7 @@ def convert_starred_uri(uri):
     return uri, match
 
 
+@public
 class Pattern(object):
     """
     A WAMP URI Pattern.
@@ -134,7 +136,8 @@ class Pattern(object):
         """
 
         :param uri: The URI or URI pattern, e.g. ``"com.myapp.product.<product:int>.update"``.
-        :type uri: unicode
+        :type uri: str
+
         :param target: The target for this pattern: a procedure endpoint (a callable),
            an event handler (a callable) or an exception (a class).
         :type target: callable or obj
@@ -205,12 +208,13 @@ class Pattern(object):
         self._uri = uri
         self._target = target
 
+    @public
     def uri(self):
         """
         Returns the original URI (pattern) for this pattern.
 
         :returns: The URI (pattern), e.g. ``"com.myapp.product.<product:int>.update"``.
-        :rtype: unicode
+        :rtype: str
         """
         return self._uri
 
@@ -226,7 +230,7 @@ class Pattern(object):
         and return extracted args and kwargs.
 
         :param uri: The URI to match, e.g. ``"com.myapp.product.123456.update"``.
-        :type uri: unicode
+        :type uri: str
 
         :returns: A tuple ``(args, kwargs)``
         :rtype: tuple
@@ -246,6 +250,7 @@ class Pattern(object):
             else:
                 raise Exception("no match")
 
+    @public
     def is_endpoint(self):
         """
         Check if this pattern is for a procedure endpoint.
@@ -255,6 +260,7 @@ class Pattern(object):
         """
         return self._target == Pattern.URI_TARGET_ENDPOINT
 
+    @public
     def is_handler(self):
         """
         Check if this pattern is for an event handler.
@@ -264,6 +270,7 @@ class Pattern(object):
         """
         return self._target == Pattern.URI_TARGET_HANDLER
 
+    @public
     def is_exception(self):
         """
         Check if this pattern is for an exception.
@@ -274,6 +281,7 @@ class Pattern(object):
         return self._target == Pattern.URI_TARGET_EXCEPTION
 
 
+@public
 def register(uri):
     """
     Decorator for WAMP procedure endpoints.
@@ -287,6 +295,7 @@ def register(uri):
     return decorate
 
 
+@public
 def subscribe(uri):
     """
     Decorator for WAMP event handlers.
@@ -300,6 +309,7 @@ def subscribe(uri):
     return decorate
 
 
+@public
 def error(uri):
     """
     Decorator for WAMP error classes.

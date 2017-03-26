@@ -31,14 +31,14 @@ import txaio
 import inspect
 
 from autobahn import wamp
-from autobahn.util import IdGenerator, ObservableMixin
+from autobahn.util import public, IdGenerator, ObservableMixin
 from autobahn.wamp import uri
 from autobahn.wamp import message
 from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import IApplicationSession  # noqa
+from autobahn.wamp.interfaces import ISession  # noqa
 from autobahn.wamp.types import SessionDetails
 from autobahn.wamp.cryptobox import EncryptedPayload
 from autobahn.wamp.request import \
@@ -269,16 +269,15 @@ class BaseSession(ObservableMixin):
         return exc
 
 
+@public
 class ApplicationSession(BaseSession):
     """
     WAMP endpoint session.
     """
 
-    log = txaio.make_logger()
-
     def __init__(self, config=None):
         """
-        Constructor.
+        Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
         self.config = config or types.ComponentConfig(realm=u"default")
@@ -307,11 +306,14 @@ class ApplicationSession(BaseSession):
         # incoming invocations
         self._invocations = {}
 
+    @public
     def set_keyring(self, keyring):
         """
+        Implements :func:`autobahn.wamp.interfaces.ISession.set_keyring`
         """
         self._keyring = keyring
 
+    @public
     def onOpen(self, transport):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onOpen`
@@ -328,23 +330,34 @@ class ApplicationSession(BaseSession):
             None,
         )
 
+    @public
     def onConnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onConnect`
         """
         self.join(self.config.realm)
 
-    def join(self, realm, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
+    @public
+    def join(self,
+             realm,
+             authmethods=None,
+             authid=None,
+             authrole=None,
+             authextra=None,
+             resumable=None,
+             resume_session=None,
+             resume_token=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
-        # FIXME
-        if six.PY2 and type(realm) == str:
-            realm = six.u(realm)
-        if six.PY2 and type(authid) == str:
-            authid = six.u(authid)
-        if six.PY2 and type(authrole) == str:
-            authrole = six.u(authrole)
+        assert(realm is None or type(realm) == six.text_type)
+        assert(authmethods is None or type(authmethods) == list)
+        if type(authmethods) == list:
+            for authmethod in authmethods:
+                assert(type(authmethod) == six.text_type)
+        assert(authid is None or type(authid) == six.text_type)
+        assert(authrole is None or type(authrole) == six.text_type)
+        assert(authextra is None or type(authextra) == dict)
 
         if self._session_id:
             raise Exception("already joined")
@@ -368,6 +381,7 @@ class ApplicationSession(BaseSession):
                             resume_token=resume_token)
         self._transport.send(msg)
 
+    @public
     def disconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.disconnect`
@@ -375,33 +389,24 @@ class ApplicationSession(BaseSession):
         if self._transport:
             self._transport.close()
 
+    @public
     def is_connected(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_connected`
         """
         return self._transport is not None
 
+    @public
     def is_attached(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.is_attached`
         """
         return self._transport is not None and self._session_id is not None
 
+    @public
     def onUserError(self, fail, msg):
         """
-        This is called when we try to fire a callback, but get an
-        exception from user code -- for example, a registered publish
-        callback or a registered method. By default, this prints the
-        current stack-trace and then error-message to stdout.
-
-        ApplicationSession-derived objects may override this to
-        provide logging if they prefer. The Twisted implemention does
-        this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
-
-        :param fail: instance implementing txaio.IFailedFuture
-
-        :param msg: an informative message from the library. It is
-            suggested you log this immediately after the exception.
+        Implements :func:`autobahn.wamp.interfaces.ISession.onUserError`
         """
         if isinstance(fail.value, exception.ApplicationError):
             # silence on errors raised explicitly from the app
@@ -1042,7 +1047,7 @@ class ApplicationSession(BaseSession):
 
                 raise ProtocolError("Unexpected message {0}".format(msg.__class__))
 
-    # noinspection PyUnusedLocal
+    @public
     def onClose(self, wasClean):
         """
         Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onClose`
@@ -1079,17 +1084,20 @@ class ApplicationSession(BaseSession):
             return self._swallow_error(e, "While firing onDisconnect")
         txaio.add_callbacks(d, None, _error)
 
+    @public
     def onChallenge(self, challenge):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onChallenge`
         """
         raise Exception("received authentication challenge, but onChallenge not implemented")
 
+    @public
     def onJoin(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onJoin`
         """
 
+    @public
     def onLeave(self, details):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onLeave`
@@ -1101,7 +1109,8 @@ class ApplicationSession(BaseSession):
             self.disconnect()
         # do we ever call onLeave with a valid transport?
 
-    def leave(self, reason=None, log_message=None):
+    @public
+    def leave(self, reason=None, message=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.leave`
         """
@@ -1111,7 +1120,7 @@ class ApplicationSession(BaseSession):
         if not self._goodbye_sent:
             if not reason:
                 reason = u"wamp.close.normal"
-            msg = wamp.message.Goodbye(reason=reason, message=log_message)
+            msg = wamp.message.Goodbye(reason=reason, message=message)
             self._transport.send(msg)
             self._goodbye_sent = True
             # deferred that fires when transport actually hits CLOSED
@@ -1120,18 +1129,18 @@ class ApplicationSession(BaseSession):
         else:
             raise SessionNotReady(u"session was alread requested to leave")
 
+    @public
     def onDisconnect(self):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
         pass  # return self.fire('disconnect', self, True)
 
+    @public
     def publish(self, topic, *args, **kwargs):
         """
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
-        if six.PY2 and type(topic) == str:
-            topic = six.u(topic)
         assert(type(topic) == six.text_type)
 
         if not self._transport:
@@ -1200,13 +1209,12 @@ class ApplicationSession(BaseSession):
 
         return on_reply
 
+    @public
     def subscribe(self, handler, topic=None, options=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
         assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
-        if topic and six.PY2 and type(topic) == str:
-            topic = six.u(topic)
         assert(topic is None or type(topic) == six.text_type)
         assert(options is None or isinstance(options, types.SubscribeOptions))
 
@@ -1281,13 +1289,12 @@ class ApplicationSession(BaseSession):
             # there are still handlers active on the subscription!
             return txaio.create_future_success(scount)
 
+    @public
     def call(self, procedure, *args, **kwargs):
         """
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
-        if six.PY2 and type(procedure) == str:
-            procedure = six.u(procedure)
-        assert(isinstance(procedure, six.text_type))
+        assert(type(procedure) == six.text_type)
 
         if not self._transport:
             raise exception.TransportLost()
@@ -1357,13 +1364,12 @@ class ApplicationSession(BaseSession):
 
         return on_reply
 
+    @public
     def register(self, endpoint, procedure=None, options=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
-        if procedure and six.PY2 and type(procedure) == str:
-            procedure = six.u(procedure)
         assert(procedure is None or type(procedure) == six.text_type)
         assert(options is None or isinstance(options, types.RegisterOptions))
 
@@ -1426,8 +1432,8 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-# IApplicationSession.register collides with the abc.ABCMeta.register method
-# IApplicationSession.register(ApplicationSession)
+# ISession.register collides with the abc.ABCMeta.register method
+# ISession.register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):
@@ -1437,8 +1443,8 @@ class ApplicationSessionFactory(object):
 
     session = ApplicationSession
     """
-   WAMP application session class to be used in this factory.
-   """
+    WAMP application session class to be used in this factory.
+    """
 
     def __init__(self, config=None):
         """

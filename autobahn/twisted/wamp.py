@@ -34,6 +34,8 @@ txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks, succeed
 
+from autobahn.util import public
+
 from autobahn.websocket.util import parse_url as parse_ws_url
 from autobahn.rawsocket.util import parse_url as parse_rs_url
 
@@ -65,10 +67,18 @@ except (ImportError, SyntaxError):
     __all__.pop(__all__.index('Service'))
 
 
+@public
 class ApplicationSession(protocol.ApplicationSession):
     """
     WAMP application session for Twisted-based applications.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransportHandler`
+        * :class:`autobahn.wamp.interfaces.ISession`
     """
+
+    log = txaio.make_logger()
 
 
 class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
@@ -81,7 +91,10 @@ class ApplicationSessionFactory(protocol.ApplicationSessionFactory):
     The application session class this application session factory will use. Defaults to :class:`autobahn.twisted.wamp.ApplicationSession`.
     """
 
+    log = txaio.make_logger()
 
+
+@public
 class ApplicationRunner(object):
     """
     This class is a convenience tool mainly for development and quick hosting
@@ -97,10 +110,10 @@ class ApplicationRunner(object):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
-        :type url: unicode
+        :type url: str
 
         :param realm: The WAMP realm to join the application session to.
-        :type realm: unicode
+        :type realm: str
 
         :param extra: Optional extra configuration to forward to the application component.
         :type extra: dict
@@ -145,15 +158,16 @@ class ApplicationRunner(object):
         else:
             return succeed(None)
 
+    @public
     def run(self, make, start_reactor=True, auto_reconnect=False, log_level='info'):
         """
         Run the application component.
 
-        :param make: A factory that produces instances of :class:`autobahn.asyncio.wamp.ApplicationSession`
+        :param make: A factory that produces instances of :class:`autobahn.twisted.wamp.ApplicationSession`
            when called with an instance of :class:`autobahn.wamp.types.ComponentConfig`.
         :type make: callable
 
-        :param start_reactor: if True (the default) this method starts
+        :param start_reactor: When ``True`` (the default) this method starts
            the Twisted reactor and doesn't return until the reactor
            stops. If there are any problems starting the reactor or
            connect()-ing, we stop the reactor and raise the exception
