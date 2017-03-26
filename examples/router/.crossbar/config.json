@@ -1,1 +1,115 @@
-config-with-tls.json
+{
+    "version": 2,
+    "workers": [
+        {
+            "type": "router",
+            "realms": [
+                {
+                    "name": "crossbardemo",
+                    "roles": [
+                        {
+                            "name": "anonymous",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        },
+                        {
+                            "name": "authenticated",
+                            "permissions": [
+                                {
+                                    "uri": "",
+                                    "match": "prefix",
+                                    "allow": {
+                                        "call": true,
+                                        "register": true,
+                                        "publish": true,
+                                        "subscribe": true
+                                    },
+                                    "disclose": {
+                                        "caller": false,
+                                        "publisher": false
+                                    },
+                                    "cache": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "transports": [
+                {
+                    "type": "mqtt",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 1883
+                    },
+                    "options": {
+                        "realm": "crossbardemo",
+                        "role": "anonymous"
+                    }
+                },
+                {
+                    "type": "universal",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 8080
+                    },
+                    "rawsocket": {
+                    },
+                    "websocket": {
+                        "ws": {
+                            "type": "websocket"
+                        },
+                        "auth_ws": {
+                            "type": "websocket",
+                            "auth": {
+                                "wampcra": {
+                                    "type": "static",
+                                    "users": {
+                                        "username": {
+                                            "secret": "p4ssw0rd",
+                                            "role": "authenticated"
+                                        }
+                                    }
+                                },
+                                "anonymous": {
+                                    "type": "static",
+                                    "role": "anonymous"
+                                }
+                            }
+                        }
+                    },
+                    "web": {
+                        "paths": {
+                            "/": {
+                                "type": "static",
+                                "directory": "../..",
+                                "options": {
+                                    "enable_directory_listing": true,
+                                    "mime_types": {
+                                        ".md": "text/plain",
+                                        ".py": "text/plain"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

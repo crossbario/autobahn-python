@@ -133,11 +133,15 @@ class ApplicationRunner(object):
 
         :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
         :type proxy: dict or None
+
+        :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
+        :type headers: dict
         """
         assert(type(url) == six.text_type)
         assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
-        assert(proxy is None or type(proxy) == dict)
+        assert(headers is None or type(proxy) == dict)
+        assert(proxy is None or type(headers) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()

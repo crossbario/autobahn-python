@@ -94,7 +94,7 @@ class CrossbarProcessProtocol(ProcessProtocol):
 def start_crossbar():
     finished = Deferred()
     launched = Deferred()
-    protocol = CrossbarProcessProtocol(finished, launched, Fore.RED)
+    protocol = CrossbarProcessProtocol(finished, launched, Fore.YELLOW)
     exe = 'crossbar'
     args = [exe, 'start', '--cbdir', './router/.crossbar']
 
@@ -194,10 +194,10 @@ def main(reactor):
 
         print_banner("Running example: " + exdir)
         print("  starting backend")
-        back_proto = yield start_example(backend, Fore.BLUE, ' backend: ', exe=py)
+        back_proto = yield start_example(backend, Fore.GREEN, ' backend: ', exe=py)
         yield sleep(1)
         print("  starting frontend")
-        front_proto = yield start_example(frontend, Fore.YELLOW, 'frontend: ', exe=py)
+        front_proto = yield start_example(frontend, Fore.BLUE, 'frontend: ', exe=py)
         yield sleep(3)
 
         for p in [back_proto, front_proto]:
