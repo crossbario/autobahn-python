@@ -56,7 +56,8 @@ __all__ = [
     'Service',
 
     # new API
-    'Session'
+    'Session',
+    # 'run',  # should probably move this method to here? instead of component
 ]
 
 try:
