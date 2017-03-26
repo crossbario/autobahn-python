@@ -26,6 +26,8 @@
 
 from __future__ import absolute_import
 
+from autobahn.util import public
+
 import six
 from six.moves import urllib
 # The Python urlparse module currently does not contain the ws/wss
@@ -56,6 +58,7 @@ __all__ = (
 )
 
 
+@public
 def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     """
     Create a WebSocket URL from components.
@@ -103,6 +106,7 @@ def create_url(hostname, port=None, isSecure=False, path=None, params=None):
     return urllib.parse.urlunparse((scheme, netloc, ppath, None, query, None))
 
 
+@public
 def parse_url(url):
     """
     Parses as WebSocket URL into it's components and returns a tuple (isSecure, host, port, resource, path, params).

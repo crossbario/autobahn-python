@@ -29,9 +29,350 @@ import six
 
 from autobahn.util import public
 
-__all__ = ('IWebSocketChannel',
+__all__ = ('IWebSocketServerChannelFactory',
+           'IWebSocketClientChannelFactory',
+           'IWebSocketChannel',
            'IWebSocketChannelFrameApi',
            'IWebSocketChannelStreamingApi')
+
+
+@public
+@six.add_metaclass(abc.ABCMeta)
+class IWebSocketServerChannelFactory(object):
+    """
+    WebSocket server protocol factories implement this interface, and create
+    protocol instances which in turn implement
+    :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
+    """
+
+    @abc.abstractmethod
+    def __init__(url=None,
+                 protocols=None,
+                 server=None,
+                 headers=None,
+                 externalPort=None):
+        """
+
+        :param url: The WebSocket URL this factory is working for, e.g. ``ws://myhost.com/somepath``.
+                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+                    This will use an implicit URL of ``ws://localhost``.
+        :type url: str
+
+        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
+        :type protocols: list of str
+
+        :param server: Server as announced in HTTP response header during opening handshake.
+        :type server: str
+
+        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+        :type headers: dict
+
+        :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+        :type externalPort: int
+        """
+
+    @public
+    @abc.abstractmethod
+    def setSessionParameters(url=None,
+                             protocols=None,
+                             server=None,
+                             headers=None,
+                             externalPort=None):
+        """
+        Set WebSocket session parameters.
+
+        :param url: The WebSocket URL this factory is working for, e.g. ``ws://myhost.com/somepath``.
+                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+                    This will use an implicit URL of ``ws://localhost``.
+        :type url: str
+
+        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
+        :type protocols: list of str
+
+        :param server: Server as announced in HTTP response header during opening handshake.
+        :type server: str
+
+        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+        :type headers: dict
+
+        :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
+        :type externalPort: int
+        """
+
+    @public
+    @abc.abstractmethod
+    def setProtocolOptions(versions=None,
+                           webStatus=None,
+                           utf8validateIncoming=None,
+                           maskServerFrames=None,
+                           requireMaskedClientFrames=None,
+                           applyMask=None,
+                           maxFramePayloadSize=None,
+                           maxMessagePayloadSize=None,
+                           autoFragmentSize=None,
+                           failByDrop=None,
+                           echoCloseCodeReason=None,
+                           openHandshakeTimeout=None,
+                           closeHandshakeTimeout=None,
+                           tcpNoDelay=None,
+                           perMessageCompressionAccept=None,
+                           autoPingInterval=None,
+                           autoPingTimeout=None,
+                           autoPingSize=None,
+                           serveFlashSocketPolicy=None,
+                           flashSocketPolicy=None,
+                           allowedOrigins=None,
+                           allowNullOrigin=False,
+                           maxConnections=None):
+        """
+        Set WebSocket protocol options used as defaults for new protocol instances.
+
+        :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
+        :type versions: list of ints or None
+
+        :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
+        :type webStatus: bool or None
+
+        :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
+        :type utf8validateIncoming: bool or None
+
+        :param maskServerFrames: Mask server-to-client frames (default: `False`).
+        :type maskServerFrames: bool or None
+
+        :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: `True`).
+        :type requireMaskedClientFrames: bool or None
+
+        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
+        :type applyMask: bool or None
+
+        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :type maxFramePayloadSize: int or None
+
+        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :type maxMessagePayloadSize: int or None
+
+        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
+        :type autoFragmentSize: int or None
+
+        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
+        :type failbyDrop: bool or None
+
+        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
+        :type echoCloseCodeReason: bool or None
+
+        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
+        :type openHandshakeTimeout: float or None
+
+        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
+        :type closeHandshakeTimeout: float or None
+
+        :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: `True`).
+        :type tcpNoDelay: bool or None
+
+        :param perMessageCompressionAccept: Acceptor function for offers.
+        :type perMessageCompressionAccept: callable or None
+
+        :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
+           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+        :type autoPingInterval: float or None
+
+        :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
+           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+        :type autoPingTimeout: float or None
+
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+        :type autoPingSize: int or None
+
+        :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
+        :type serveFlashSocketPolicy: bool or None
+
+        :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
+           and when Flash tried to connect to the destination port. It must end with a null character.
+        :type flashSocketPolicy: str or None
+
+        :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
+        :type allowedOrigins: list or None
+
+        :param allowNullOrigin: if True, allow WebSocket connections whose `Origin:` is `"null"`.
+        :type allowNullOrigin: bool
+
+        :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
+        :type maxConnections: int or None
+        """
+
+    @public
+    @abc.abstractmethod
+    def resetProtocolOptions(self):
+        """
+        Reset all WebSocket protocol options to defaults.
+        """
+
+
+@public
+@six.add_metaclass(abc.ABCMeta)
+class IWebSocketClientChannelFactory(object):
+    """
+    WebSocket client protocol factories implement this interface, and create
+    protocol instances which in turn implement
+    :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
+    """
+
+    @abc.abstractmethod
+    def __init__(url=None,
+                 origin=None,
+                 protocols=None,
+                 useragent=None,
+                 headers=None,
+                 proxy=None):
+        """
+
+        Note that you MUST provide URL either here or set using
+        :meth:`autobahn.websocket.WebSocketClientFactory.setSessionParameters`
+        *before* the factory is started.
+
+        :param url: WebSocket URL this factory will connect to, e.g. ``ws://myhost.com/somepath?param1=23``.
+                    For non-TCP transports like pipes or Unix domain sockets, provide ``None``.
+                    This will use an implicit URL of ``ws://localhost``.
+        :type url: str
+
+        :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
+        :type origin: str
+
+        :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: `[]`).
+        :type protocols: list of strings
+
+        :param useragent: User agent as announced in HTTP request header or None (default: `AutobahnWebSocket/?.?.?`).
+        :type useragent: str
+
+        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+        :type headers: dict
+
+        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
+        :type proxy: dict or None
+        """
+
+    @public
+    @abc.abstractmethod
+    def setSessionParameters(url=None,
+                             origin=None,
+                             protocols=None,
+                             useragent=None,
+                             headers=None,
+                             proxy=None):
+        """
+        Set WebSocket session parameters.
+
+        :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
+                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
+                    This will use an implicit URL of `ws://localhost`.
+        :type url: str
+
+        :param origin: The origin to be sent in opening handshake.
+        :type origin: str
+
+        :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
+        :type protocols: list of strings
+
+        :param useragent: User agent as announced in HTTP request header during opening handshake.
+        :type useragent: str
+
+        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
+        :type headers: dict
+
+        :param proxy: (Optional) a dict with ``host`` and ``port`` keys specifying a proxy to use
+        :type proxy: dict or None
+        """
+
+    @public
+    @abc.abstractmethod
+    def setProtocolOptions(version=None,
+                           utf8validateIncoming=None,
+                           acceptMaskedServerFrames=None,
+                           maskClientFrames=None,
+                           applyMask=None,
+                           maxFramePayloadSize=None,
+                           maxMessagePayloadSize=None,
+                           autoFragmentSize=None,
+                           failByDrop=None,
+                           echoCloseCodeReason=None,
+                           serverConnectionDropTimeout=None,
+                           openHandshakeTimeout=None,
+                           closeHandshakeTimeout=None,
+                           tcpNoDelay=None,
+                           perMessageCompressionOffers=None,
+                           perMessageCompressionAccept=None,
+                           autoPingInterval=None,
+                           autoPingTimeout=None,
+                           autoPingSize=None):
+        """
+        Set WebSocket protocol options used as defaults for _new_ protocol instances.
+
+        :param version: The WebSocket protocol spec (draft) version to be used (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
+        :type version: int
+
+        :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
+        :type utf8validateIncoming: bool
+
+        :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: `False`).
+        :type acceptMaskedServerFrames: bool
+
+        :param maskClientFrames: Mask client-to-server frames (default: `True`).
+        :type maskClientFrames: bool
+
+        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
+        :type applyMask: bool
+
+        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :type maxFramePayloadSize: int
+
+        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
+        :type maxMessagePayloadSize: int
+
+        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
+        :type autoFragmentSize: int
+
+        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
+        :type failbyDrop: bool
+
+        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
+        :type echoCloseCodeReason: bool
+
+        :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: `1`).
+        :type serverConnectionDropTimeout: float
+
+        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
+        :type openHandshakeTimeout: float
+
+        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
+        :type closeHandshakeTimeout: float
+
+        :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: `True`).
+        :type tcpNoDelay: bool
+
+        :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
+        :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
+
+        :param perMessageCompressionAccept: Acceptor function for responses.
+        :type perMessageCompressionAccept: callable
+
+        :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
+           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
+        :type autoPingInterval: float or None
+
+        :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
+           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
+        :type autoPingTimeout: float or None
+
+        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
+        :type autoPingSize: int
+        """
+
+    @public
+    @abc.abstractmethod
+    def resetProtocolOptions(self):
+        """
+        Reset all WebSocket protocol options to defaults.
+        """
 
 
 @public
@@ -47,7 +388,7 @@ class IWebSocketChannel(object):
 
     @public
     @abc.abstractmethod
-    def on_connect(self, request_or_response):
+    def onConnect(self, request_or_response):
         """
         Callback fired during WebSocket opening handshake when a client connects (to a server with
         request from client) or when server connection established (by a client with response from
@@ -68,7 +409,7 @@ class IWebSocketChannel(object):
 
     @public
     @abc.abstractmethod
-    def on_open(self):
+    def onOpen(self):
         """
         Callback fired when the initial WebSocket opening handshake was completed.
         You now can send and receive WebSocket messages.
@@ -76,27 +417,35 @@ class IWebSocketChannel(object):
 
     @public
     @abc.abstractmethod
-    def send_message(self, message):
+    def sendMessage(self, payload, isBinary):
         """
         Send a WebSocket message over the connection to the peer.
 
-        :param message: The WebSocket message to be sent.
-        :type message: Instance of :class:`autobahn.websocket.types.OutgoingMessage`
+        :param payload: The WebSocket message to be sent.
+        :type payload: bytes
+
+        :param isBinary: Flag indicating whether payload is binary or
+            UTF-8 encoded text.
+        :type isBinary: bool
         """
 
     @public
     @abc.abstractmethod
-    def on_message(self, message):
+    def onMessage(self, payload, isBinary):
         """
         Callback fired when a complete WebSocket message was received.
 
-        :param message: The WebSocket message received.
-        :type message: :class:`autobahn.websocket.types.IncomingMessage`
+        :param payload: The WebSocket message received.
+        :type payload: bytes
+
+        :param isBinary: Flag indicating whether payload is binary or
+            UTF-8 encoded text.
+        :type isBinary: bool
         """
 
     @public
     @abc.abstractmethod
-    def send_close(self, code=None, reason=None):
+    def sendClose(self, code=None, reason=None):
         """
         Starts a WebSocket closing handshake tearing down the WebSocket connection.
 
@@ -105,37 +454,28 @@ class IWebSocketChannel(object):
         :type code: int
         :param reason: An optional close reason (a string that when present, a status
            code MUST also be present).
-        :type reason: unicode
+        :type reason: str
         """
 
     @public
     @abc.abstractmethod
-    def on_close(self, was_clean, code, reason):
+    def onClose(self, wasClean, code, reason):
         """
         Callback fired when the WebSocket connection has been closed (WebSocket closing
         handshake has been finished or the connection was closed uncleanly).
 
         :param wasClean: ``True`` iff the WebSocket connection was closed cleanly.
         :type wasClean: bool
+
         :param code: Close status code as sent by the WebSocket peer.
         :type code: int or None
+
         :param reason: Close reason as sent by the WebSocket peer.
-        :type reason: unicode or None
+        :type reason: str or None
         """
 
-    @public
     @abc.abstractmethod
-    def sendPreparedMessage(self, preparedMsg):
-        """
-        Send a message that was previously prepared with :func:`autobahn.websocket.protocol.WebSocketFactory.prepareMessage`.
-
-        :param prepareMessage: A previously prepared message.
-        :type prepareMessage: Instance of :class:`autobahn.websocket.protocol.PreparedMessage`.
-        """
-
-    @public
-    @abc.abstractmethod
-    def send_ping(self, payload=None):
+    def sendPing(self, payload=None):
         """
         Send a WebSocket ping to the peer.
 
@@ -146,9 +486,8 @@ class IWebSocketChannel(object):
         :type payload: bytes or None
         """
 
-    @public
     @abc.abstractmethod
-    def on_ping(self, payload):
+    def onPing(self, payload):
         """
         Callback fired when a WebSocket ping was received. A default implementation responds
         by sending a WebSocket pong.
@@ -157,9 +496,8 @@ class IWebSocketChannel(object):
         :type payload: bytes
         """
 
-    @public
     @abc.abstractmethod
-    def send_pong(self, payload=None):
+    def sendPong(self, payload=None):
         """
         Send a WebSocket pong to the peer.
 
@@ -170,9 +508,8 @@ class IWebSocketChannel(object):
         :type payload: bytes
         """
 
-    @public
     @abc.abstractmethod
-    def on_pong(self, payload):
+    def onPong(self, payload):
         """
         Callback fired when a WebSocket pong was received. A default implementation does nothing.
 

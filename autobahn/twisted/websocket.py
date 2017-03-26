@@ -38,6 +38,7 @@ from twisted.internet.interfaces import ITransport
 from twisted.internet.error import ConnectionDone, ConnectionAborted, \
     ConnectionLost
 
+from autobahn.util import public
 from autobahn.wamp import websocket
 from autobahn.websocket.types import ConnectionRequest, ConnectionResponse, ConnectionDeny
 from autobahn.websocket import protocol
@@ -181,9 +182,12 @@ class WebSocketAdapterProtocol(twisted.internet.protocol.Protocol):
         self.transport.registerProducer(producer, streaming)
 
 
+@public
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
     Base class for Twisted-based WebSocket server protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     log = txaio.make_logger()
@@ -195,9 +199,12 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
         return transport_channel_id(self.transport, is_server=True, channel_id_type=channel_id_type)
 
 
+@public
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for Twisted-based WebSocket client protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     log = txaio.make_logger()
@@ -222,17 +229,22 @@ class WebSocketAdapterFactory(object):
     """
 
 
+@public
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory, twisted.internet.protocol.ServerFactory):
     """
     Base class for Twisted-based WebSocket server factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-        you can supply a `reactor` keyword argument to specify the
-        Twisted reactor to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`,
+            you can supply a ``reactor`` keyword argument to specify the
+            Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
         reactor = kwargs.pop('reactor', None)
@@ -243,17 +255,22 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
         protocol.WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory, twisted.internet.protocol.ClientFactory):
     """
     Base class for Twisted-based WebSocket client factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-        you can supply a `reactor` keyword argument to specify the
-        Twisted reactor to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`,
+            you can supply a ``reactor`` keyword argument to specify the
+            Twisted reactor to be used.
         """
         # lazy import to avoid reactor install upon module import
         reactor = kwargs.pop('reactor', None)
@@ -481,6 +498,7 @@ class WrappingWebSocketClientFactory(WebSocketClientFactory):
         return proto
 
 
+@public
 def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     """
     Establish WebSocket connection to a server. The connection parameters like target
@@ -521,6 +539,7 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
     return conn
 
 
+@public
 def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     """
     Listen for incoming WebSocket connections from clients. The connection parameters like
@@ -553,12 +572,14 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
     return listener
 
 
+@public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
     Base class for Twisted-based WAMP-over-WebSocket server protocols.
     """
 
 
+@public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
     Base class for Twisted-based WAMP-over-WebSocket server factories.
@@ -578,12 +599,14 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
         WebSocketServerFactory.__init__(self, *args, **kwargs)
 
 
+@public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
     Base class for Twisted-based WAMP-over-WebSocket client protocols.
     """
 
 
+@public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
     Base class for Twisted-based WAMP-over-WebSocket client factories.

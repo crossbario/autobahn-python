@@ -1,23 +1,35 @@
-autobahn.websocket
-==================
+Module ``autobahn.websocket``
+=============================
 
-WebSocket Channel Interface
----------------------------
+WebSocket Interfaces
+--------------------
 
-.. autoclass:: autobahn.websocket.IWebSocketChannel
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketChannel
+    :members:
+
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketServerChannelFactory
+    :members:
+
+.. autoclass:: autobahn.websocket.interfaces.IWebSocketClientChannelFactory
     :members:
 
 
-WebSocket Messages
-------------------
+WebSocket Types
+---------------
 
-.. autoclass:: autobahn.websocket.Message
+.. automodule:: autobahn.websocket.types
     :members:
 
-.. autoclass:: autobahn.websocket.IncomingMessage
-    :show-inheritance:
+
+WebSocket Compression
+---------------------
+
+.. automodule:: autobahn.websocket.compress
     :members:
 
-.. autoclass:: autobahn.websocket.OutgoingMessage
-    :show-inheritance:
+
+WebSocket Utils
+---------------
+
+.. automodule:: autobahn.websocket.util
     :members:

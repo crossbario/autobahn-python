@@ -197,6 +197,8 @@ class WebSocketAdapterProtocol(asyncio.Protocol):
 class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServerProtocol):
     """
     Base class for asyncio-based WebSocket server protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     log = txaio.make_logger()
@@ -206,6 +208,8 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
 class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClientProtocol):
     """
     Base class for asyncio-based WebSocket client protocols.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
     """
 
     log = txaio.make_logger()
@@ -235,16 +239,19 @@ class WebSocketAdapterFactory(object):
 class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFactory):
     """
     Base class for asyncio-based WebSocket server factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     protocol = WebSocketServerProtocol
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketServerFactory`,
-        you can supply a ``loop`` keyword argument to specify the
-        asyncio event loop to be used.
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`,
+            you can supply a ``loop`` keyword argument to specify the
+            asyncio event loop to be used.
         """
         loop = kwargs.pop('loop', None)
         self.loop = loop or asyncio.get_event_loop()
@@ -255,15 +262,19 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
 @public
 class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFactory):
     """
-    Base class for asyncio-baseed WebSocket client factories.
+    Base class for asyncio-based WebSocket client factories.
+
+    Implements :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
         """
-        In addition to all arguments to the constructor of
-        :class:`autobahn.websocket.protocol.WebSocketClientFactory`,
-        you can supply a ``loop`` keyword argument to specify the
-        asyncio event loop to be used.
+
+        .. note::
+            In addition to all arguments to the constructor of
+            :meth:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`,
+            you can supply a ``loop`` keyword argument to specify the
+            asyncio event loop to be used.
         """
         loop = kwargs.pop('loop', None)
         self.loop = loop or asyncio.get_event_loop()

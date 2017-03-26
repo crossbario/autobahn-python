@@ -1,70 +1,20 @@
-autobahn.twisted
-================
+Module ``autobahn.twisted``
+===========================
+
+Autobahn Twisted specific classes. These are used when Twisted is run as the underlying networking framework.
 
 
-Submodules
-----------
+WebSocket Protocols and Factories
+---------------------------------
 
-autobahn.twisted.choosereactor
-------------------------------
-
-.. automodule:: autobahn.twisted.choosereactor
+.. autoclass:: autobahn.twisted.websocket.WebSocketServerProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.forwarder
---------------------------
-
-.. automodule:: autobahn.twisted.forwarder
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientProtocol
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.rawsocket
---------------------------
-
-.. automodule:: autobahn.twisted.rawsocket
+.. autoclass:: autobahn.twisted.websocket.WebSocketServerFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
 
-autobahn.twisted.resource
--------------------------
-
-.. automodule:: autobahn.twisted.resource
+.. autoclass:: autobahn.twisted.websocket.WebSocketClientFactory
     :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.twisted.util
----------------------
-
-.. automodule:: autobahn.twisted.util
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.twisted.wamp
----------------------
-
-.. automodule:: autobahn.twisted.wamp
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-autobahn.twisted.websocket
---------------------------
-
-.. automodule:: autobahn.twisted.websocket
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: autobahn.twisted
-    :members:
-    :undoc-members:
-    :show-inheritance:

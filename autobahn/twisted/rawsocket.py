@@ -172,6 +172,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
             raise TransportLost()
 
 
+@public
 class WampRawSocketServerProtocol(WampRawSocketProtocol):
     """
     Base class for Twisted-based WAMP-over-RawSocket server protocols.
@@ -350,6 +351,7 @@ class WampRawSocketFactory(Factory):
     """
 
 
+@public
 class WampRawSocketServerFactory(WampRawSocketFactory):
     """
     Base class for Twisted-based WAMP-over-RawSocket server factories.
@@ -415,6 +417,7 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
             self._serializers[ser.RAWSOCKET_SERIALIZER_ID] = ser
 
 
+@public
 class WampRawSocketClientFactory(WampRawSocketFactory):
     """
     Base class for Twisted-based WAMP-over-RawSocket client factories.

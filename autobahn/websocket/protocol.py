@@ -3055,6 +3055,8 @@ class WebSocketServerProtocol(WebSocketProtocol):
 class WebSocketServerFactory(WebSocketFactory):
     """
     A protocol factory for WebSocket servers.
+
+    Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     log = txaio.make_logger()
@@ -3076,20 +3078,7 @@ class WebSocketServerFactory(WebSocketFactory):
                  headers=None,
                  externalPort=None):
         """
-        Create instance of WebSocket server factory.
-
-        :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
-                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
-                    This will use an implicit URL of `ws://localhost`.
-        :type url: str
-        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
-        :type protocols: list of strings
-        :param server: Server as announced in HTTP response header during opening handshake or None (default: `AutobahnWebSocket/?.?.?`).
-        :type server: str
-        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
-        :type headers: dict
-        :param externalPort: Optionally, the external visible port this factory will be reachable under (i.e. when running behind a L2/L3 forwarding device).
-        :type externalPort: int
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory.__init__`
         """
         self.logOctets = False
         self.logFrames = False
@@ -3123,21 +3112,9 @@ class WebSocketServerFactory(WebSocketFactory):
                              headers=None,
                              externalPort=None):
         """
-        Set WebSocket session parameters.
-
-        :param url: The WebSocket URL this factory is working for, e.g. `ws://myhost.com/somepath`.
-                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
-                    This will use an implicit URL of `ws://localhost`.
-        :type url: str
-        :param protocols: List of subprotocols the server supports. The subprotocol used is the first from the list of subprotocols announced by the client that is contained in this list.
-        :type protocols: list of strings
-        :param server: Server as announced in HTTP response header during opening handshake.
-        :type server: str
-        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
-        :type headers: dict
-        :param externalPort: Optionally, the external visible port this server will be reachable under (i.e. when running behind a L2/L3 forwarding device).
-        :type externalPort: int
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory.setSessionParameters`
         """
+
         # parse WebSocket URI into components
         (isSecure, host, port, resource, path, params) = parse_url(url or "ws://localhost")
         if len(params) > 0:
@@ -3163,7 +3140,7 @@ class WebSocketServerFactory(WebSocketFactory):
 
     def resetProtocolOptions(self):
         """
-        Reset all WebSocket protocol options to defaults.
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory.resetProtocolOptions`
         """
         self.versions = WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS
         self.webStatus = True
@@ -3227,60 +3204,7 @@ class WebSocketServerFactory(WebSocketFactory):
                            allowNullOrigin=False,
                            maxConnections=None):
         """
-        Set WebSocket protocol options used as defaults for new protocol instances.
-
-        :param versions: The WebSocket protocol versions accepted by the server (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
-        :type versions: list of ints or None
-        :param webStatus: Return server status/version on HTTP/GET without WebSocket upgrade header (default: `True`).
-        :type webStatus: bool or None
-        :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
-        :type utf8validateIncoming: bool or None
-        :param maskServerFrames: Mask server-to-client frames (default: `False`).
-        :type maskServerFrames: bool or None
-        :param requireMaskedClientFrames: Require client-to-server frames to be masked (default: `True`).
-        :type requireMaskedClientFrames: bool or None
-        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
-        :type applyMask: bool or None
-        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
-        :type maxFramePayloadSize: int or None
-        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
-        :type maxMessagePayloadSize: int or None
-        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
-        :type autoFragmentSize: int or None
-        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
-        :type failbyDrop: bool or None
-        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
-        :type echoCloseCodeReason: bool or None
-        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
-        :type openHandshakeTimeout: float or None
-        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
-        :type closeHandshakeTimeout: float or None
-        :param tcpNoDelay: TCP NODELAY ("Nagle") socket option (default: `True`).
-        :type tcpNoDelay: bool or None
-        :param perMessageCompressionAccept: Acceptor function for offers.
-        :type perMessageCompressionAccept: callable or None
-        :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
-        :type autoPingInterval: float or None
-        :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
-        :type autoPingTimeout: float or None
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
-        :type autoPingSize: int or None
-        :param serveFlashSocketPolicy: Serve the Flash Socket Policy when we receive a policy file request on this protocol. (default: `False`).
-        :type serveFlashSocketPolicy: bool or None
-        :param flashSocketPolicy: The flash socket policy to be served when we are serving the Flash Socket Policy on this protocol
-           and when Flash tried to connect to the destination port. It must end with a null character.
-        :type flashSocketPolicy: str or None
-
-        :param allowedOrigins: A list of allowed WebSocket origins (with '*' as a wildcard character).
-        :type allowedOrigins: list or None
-
-        :param allowNullOrigin: if True, allow WebSocket connections whose `Origin:` is `"null"`.
-        :type allowNullOrigin: bool
-
-        :param maxConnections: Maximum number of concurrent connections. Set to `0` to disable (default: `0`).
-        :type maxConnections: int or None
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory.setProtocolOptions`
         """
         if versions is not None:
             for v in versions:
@@ -3823,6 +3747,8 @@ class WebSocketClientProtocol(WebSocketProtocol):
 class WebSocketClientFactory(WebSocketFactory):
     """
     A protocol factory for WebSocket clients.
+
+    Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     log = txaio.make_logger()
@@ -3845,26 +3771,7 @@ class WebSocketClientFactory(WebSocketFactory):
                  headers=None,
                  proxy=None):
         """
-        Create instance of WebSocket client factory.
-
-        Note that you MUST provide URL either here or set using
-        :meth:`autobahn.websocket.WebSocketClientFactory.setSessionParameters`
-        *before* the factory is started.
-
-        :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
-                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
-                    This will use an implicit URL of `ws://localhost`.
-        :type url: str
-        :param origin: The origin to be sent in WebSocket opening handshake or None (default: `None`).
-        :type origin: str
-        :param protocols: List of subprotocols the client should announce in WebSocket opening handshake (default: `[]`).
-        :type protocols: list of strings
-        :param useragent: User agent as announced in HTTP request header or None (default: `AutobahnWebSocket/?.?.?`).
-        :type useragent: str
-        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
-        :type headers: dict
-        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
-        :type proxy: dict or None
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory.__init__`
         """
         self.logOctets = False
         self.logFrames = False
@@ -3895,22 +3802,7 @@ class WebSocketClientFactory(WebSocketFactory):
                              headers=None,
                              proxy=None):
         """
-        Set WebSocket session parameters.
-
-        :param url: WebSocket URL this factory will connect to, e.g. `ws://myhost.com/somepath?param1=23`.
-                    For non-TCP transports like pipes or Unix domain sockets, provide `None`.
-                    This will use an implicit URL of `ws://localhost`.
-        :type url: str
-        :param origin: The origin to be sent in opening handshake.
-        :type origin: str
-        :param protocols: List of WebSocket subprotocols the client should announce in opening handshake.
-        :type protocols: list of strings
-        :param useragent: User agent as announced in HTTP request header during opening handshake.
-        :type useragent: str
-        :param headers: An optional mapping of additional HTTP headers to send during the WebSocket opening handshake.
-        :type headers: dict
-        :param proxy: (Optional) a dict with ``host`` and ``port`` keys specifying a proxy to use
-        :type proxy: dict or None
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory.setSessionParameters`
         """
         # parse WebSocket URI into components
         (isSecure, host, port, resource, path, params) = parse_url(url or "ws://localhost")
@@ -3931,7 +3823,7 @@ class WebSocketClientFactory(WebSocketFactory):
 
     def resetProtocolOptions(self):
         """
-        Reset all WebSocket protocol options to defaults.
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory.resetProtocolOptions`
         """
         self.version = WebSocketProtocol.DEFAULT_SPEC_VERSION
         self.utf8validateIncoming = True
@@ -3980,47 +3872,7 @@ class WebSocketClientFactory(WebSocketFactory):
                            autoPingTimeout=None,
                            autoPingSize=None):
         """
-        Set WebSocket protocol options used as defaults for _new_ protocol instances.
-
-        :param version: The WebSocket protocol spec (draft) version to be used (default: :func:`autobahn.websocket.protocol.WebSocketProtocol.SUPPORTED_PROTOCOL_VERSIONS`).
-        :param utf8validateIncoming: Validate incoming UTF-8 in text message payloads (default: `True`).
-        :type utf8validateIncoming: bool
-        :param acceptMaskedServerFrames: Accept masked server-to-client frames (default: `False`).
-        :type acceptMaskedServerFrames: bool
-        :param maskClientFrames: Mask client-to-server frames (default: `True`).
-        :type maskClientFrames: bool
-        :param applyMask: Actually apply mask to payload when mask it present. Applies for outgoing and incoming frames (default: `True`).
-        :type applyMask: bool
-        :param maxFramePayloadSize: Maximum frame payload size that will be accepted when receiving or `0` for unlimited (default: `0`).
-        :type maxFramePayloadSize: int
-        :param maxMessagePayloadSize: Maximum message payload size (after reassembly of fragmented messages) that will be accepted when receiving or `0` for unlimited (default: `0`).
-        :type maxMessagePayloadSize: int
-        :param autoFragmentSize: Automatic fragmentation of outgoing data messages (when using the message-based API) into frames with payload length `<=` this size or `0` for no auto-fragmentation (default: `0`).
-        :type autoFragmentSize: int
-        :param failByDrop: Fail connections by dropping the TCP connection without performing closing handshake (default: `True`).
-        :type failbyDrop: bool
-        :param echoCloseCodeReason: Iff true, when receiving a close, echo back close code/reason. Otherwise reply with `code == 1000, reason = ""` (default: `False`).
-        :type echoCloseCodeReason: bool
-        :param serverConnectionDropTimeout: When the client expects the server to drop the TCP, timeout in seconds (default: `1`).
-        :type serverConnectionDropTimeout: float
-        :param openHandshakeTimeout: Opening WebSocket handshake timeout, timeout in seconds or `0` to deactivate (default: `0`).
-        :type openHandshakeTimeout: float
-        :param closeHandshakeTimeout: When we expect to receive a closing handshake reply, timeout in seconds (default: `1`).
-        :type closeHandshakeTimeout: float
-        :param tcpNoDelay: TCP NODELAY ("Nagle"): bool socket option (default: `True`).
-        :type tcpNoDelay: bool
-        :param perMessageCompressionOffers: A list of offers to provide to the server for the permessage-compress WebSocket extension. Must be a list of instances of subclass of PerMessageCompressOffer.
-        :type perMessageCompressionOffers: list of instance of subclass of PerMessageCompressOffer
-        :param perMessageCompressionAccept: Acceptor function for responses.
-        :type perMessageCompressionAccept: callable
-        :param autoPingInterval: Automatically send WebSocket pings every given seconds. When the peer does not respond
-           in `autoPingTimeout`, drop the connection. Set to `0` to disable. (default: `0`).
-        :type autoPingInterval: float or None
-        :param autoPingTimeout: Wait this many seconds for the peer to respond to automatically sent pings. If the
-           peer does not respond in time, drop the connection. Set to `0` to disable. (default: `0`).
-        :type autoPingTimeout: float or None
-        :param autoPingSize: Payload size for automatic pings/pongs. Must be an integer from `[4, 125]`. (default: `4`).
-        :type autoPingSize: int
+        Implements :func:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory.setProtocolOptions`
         """
         if version is not None:
             if version not in WebSocketProtocol.SUPPORTED_SPEC_VERSIONS:

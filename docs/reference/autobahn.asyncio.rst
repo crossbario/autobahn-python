@@ -1,32 +1,20 @@
-autobahn.asyncio
-================
+Module ``autobahn.asyncio``
+===========================
 
 Autobahn asyncio specific classes. These are used when asyncio is run as the underlying networking framework.
 
 
-autobahn.asyncio.wamp
----------------------
+WebSocket Protocols and Factories
+---------------------------------
 
-WAMP on asyncio.
-
-.. automodule:: autobahn.asyncio.wamp
-    :members:
-    :show-inheritance:
-
-
-autobahn.asyncio.websocket
---------------------------
-
-WebSocket on asyncio.
-
-.. automodule:: autobahn.asyncio.websocket
+.. autoclass:: autobahn.asyncio.websocket.WebSocketServerProtocol
     :members:
 
+.. autoclass:: autobahn.asyncio.websocket.WebSocketClientProtocol
+    :members:
 
-autobahn.asyncio.rawsocket
---------------------------
+.. autoclass:: autobahn.asyncio.websocket.WebSocketServerFactory
+    :members:
 
-RawSocket on asyncio.
-
-.. automodule:: autobahn.asyncio.rawsocket
+.. autoclass:: autobahn.asyncio.websocket.WebSocketClientFactory
     :members:

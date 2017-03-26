@@ -283,7 +283,6 @@ class ConnectionDeny(Exception):
         self.reason = reason
 
 
-@public
 class Message(object):
     """
     Abstract base class for WebSocket messages.
@@ -292,7 +291,6 @@ class Message(object):
     __slots__ = ()
 
 
-@public
 class IncomingMessage(Message):
     """
     An incoming WebSocket message.
@@ -318,7 +316,6 @@ class IncomingMessage(Message):
         self.is_binary = is_binary
 
 
-@public
 class OutgoingMessage(Message):
     """
     An outgoing WebSocket message.
@@ -352,7 +349,6 @@ class OutgoingMessage(Message):
         self.skip_compress = skip_compress
 
 
-@public
 class Ping(object):
     """
     A WebSocket ping message.
