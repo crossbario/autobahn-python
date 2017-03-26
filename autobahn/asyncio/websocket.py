@@ -52,10 +52,8 @@ else:  # Deprecated since Python 3.4.4
     ensure_future = asyncio.async
 
 __all__ = (
-    'WebSocketAdapterProtocol',
     'WebSocketServerProtocol',
     'WebSocketClientProtocol',
-    'WebSocketAdapterFactory',
     'WebSocketServerFactory',
     'WebSocketClientFactory',
     'WampWebSocketServerProtocol',

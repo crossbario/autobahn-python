@@ -47,9 +47,7 @@ from autobahn.wamp.exception import \
     ApplicationError, \
     InvalidUri
 
-from autobahn.wamp.interfaces import \
-    ISession, \
-    IApplicationSession
+from autobahn.wamp.interfaces import ISession
 
 from autobahn.wamp.uri import \
     error, \
@@ -78,7 +76,6 @@ __all__ = (
     'InvalidUri',
 
     'ISession',
-    'IApplicationSession',
 
     'error',
     'register',

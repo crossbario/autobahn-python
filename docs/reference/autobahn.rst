@@ -12,6 +12,7 @@ The following is a API reference of |Ab| generated from Python source code and d
 
     autobahn.util
     autobahn.websocket
+    autobahn.rawsocket
     autobahn.wamp
     autobahn.twisted
     autobahn.asyncio

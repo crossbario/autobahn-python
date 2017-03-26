@@ -38,7 +38,7 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import IApplicationSession  # noqa
+from autobahn.wamp.interfaces import ISession  # noqa
 from autobahn.wamp.types import SessionDetails
 from autobahn.wamp.cryptobox import EncryptedPayload
 from autobahn.wamp.request import \
@@ -277,7 +277,7 @@ class ApplicationSession(BaseSession):
 
     def __init__(self, config=None):
         """
-        Constructor.
+        Implements :func:`autobahn.wamp.interfaces.ISession`
         """
         BaseSession.__init__(self)
         self.config = config or types.ComponentConfig(realm=u"default")
@@ -309,6 +309,7 @@ class ApplicationSession(BaseSession):
     @public
     def set_keyring(self, keyring):
         """
+        Implements :func:`autobahn.wamp.interfaces.ISession.set_keyring`
         """
         self._keyring = keyring
 
@@ -337,7 +338,15 @@ class ApplicationSession(BaseSession):
         self.join(self.config.realm)
 
     @public
-    def join(self, realm, authmethods=None, authid=None, authrole=None, authextra=None, resumable=None, resume_session=None, resume_token=None):
+    def join(self,
+             realm,
+             authmethods=None,
+             authid=None,
+             authrole=None,
+             authextra=None,
+             resumable=None,
+             resume_session=None,
+             resume_token=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
@@ -396,19 +405,7 @@ class ApplicationSession(BaseSession):
     @public
     def onUserError(self, fail, msg):
         """
-        This is called when we try to fire a callback, but get an
-        exception from user code -- for example, a registered publish
-        callback or a registered method. By default, this prints the
-        current stack-trace and then error-message to stdout.
-
-        ApplicationSession-derived objects may override this to
-        provide logging if they prefer. The Twisted implemention does
-        this. (See :class:`autobahn.twisted.wamp.ApplicationSession`)
-
-        :param fail: instance implementing txaio.IFailedFuture
-
-        :param msg: an informative message from the library. It is
-            suggested you log this immediately after the exception.
+        Implements :func:`autobahn.wamp.interfaces.ISession.onUserError`
         """
         if isinstance(fail.value, exception.ApplicationError):
             # silence on errors raised explicitly from the app
@@ -1112,7 +1109,7 @@ class ApplicationSession(BaseSession):
         # do we ever call onLeave with a valid transport?
 
     @public
-    def leave(self, reason=None, log_message=None):
+    def leave(self, reason=None, message=None):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.leave`
         """
@@ -1122,7 +1119,7 @@ class ApplicationSession(BaseSession):
         if not self._goodbye_sent:
             if not reason:
                 reason = u"wamp.close.normal"
-            msg = wamp.message.Goodbye(reason=reason, message=log_message)
+            msg = wamp.message.Goodbye(reason=reason, message=message)
             self._transport.send(msg)
             self._goodbye_sent = True
             # deferred that fires when transport actually hits CLOSED
@@ -1442,8 +1439,8 @@ class ApplicationSession(BaseSession):
         return on_reply
 
 
-# IApplicationSession.register collides with the abc.ABCMeta.register method
-# IApplicationSession.register(ApplicationSession)
+# ISession.register collides with the abc.ABCMeta.register method
+# ISession.register(ApplicationSession)
 
 
 class ApplicationSessionFactory(object):

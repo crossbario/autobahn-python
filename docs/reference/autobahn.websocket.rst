@@ -28,8 +28,10 @@ WebSocket Compression
     :members:
 
 
-WebSocket Utils
----------------
+WebSocket Utilities
+-------------------
+
+WebSocket utilities that do not depend on the specific networking framework being used (Twisted or asyncio).
 
 .. automodule:: autobahn.websocket.util
     :members:
