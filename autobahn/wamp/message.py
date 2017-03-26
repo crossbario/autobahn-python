@@ -311,7 +311,7 @@ class Hello(Message):
         :param resume_token: The secure authorisation token to resume the session.
         :type resume_token: unicode or None
         """
-        assert(realm is None or type(realm) == six.text_type)
+        assert(realm is None or isinstance(realm, six.text_type))
         assert(type(roles) == dict)
         assert(len(roles) > 0)
         for role in roles:
@@ -462,25 +462,25 @@ class Hello(Message):
                         details[u'roles'][role.ROLE] = {u'features': {}}
                     details[u'roles'][role.ROLE][u'features'][six.u(feature)] = getattr(role, feature)
 
-        if self.authmethods:
+        if self.authmethods is not None:
             details[u'authmethods'] = self.authmethods
 
-        if self.authid:
+        if self.authid is not None:
             details[u'authid'] = self.authid
 
-        if self.authrole:
+        if self.authrole is not None:
             details[u'authrole'] = self.authrole
 
-        if self.authextra:
+        if self.authextra is not None:
             details[u'authextra'] = self.authextra
 
         if self.resumable is not None:
             details[u'resumable'] = self.resumable
 
-        if self.resume_session:
+        if self.resume_session is not None:
             details[u'resume-session'] = self.resume_session
 
-        if self.resume_token:
+        if self.resume_token is not None:
             details[u'resume-token'] = self.resume_token
 
         return [Hello.MESSAGE_TYPE, self.realm, details]

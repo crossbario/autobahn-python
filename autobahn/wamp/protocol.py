@@ -509,8 +509,15 @@ class ApplicationSession(BaseSession):
 
                 def success(arg):
                     # XXX also: handle async
-                    self.fire('leave', self, details)
-                    return arg
+                    d = self.fire('leave', self, details)
+
+                    def return_arg(_):
+                        return arg
+
+                    def _error(e):
+                        return self._swallow_error(e, "While firing 'leave' event")
+                    txaio.add_callbacks(d, return_arg, _error)
+                    return d
 
                 def _error(e):
                     return self._swallow_error(e, "While firing onLeave")
@@ -1082,7 +1089,7 @@ class ApplicationSession(BaseSession):
 
         def _error(e):
             return self._swallow_error(e, "While firing onDisconnect")
-        txaio.add_callbacks(d, None, _error)
+        txaio.add_callbacks(d, success, _error)
 
     @public
     def onChallenge(self, challenge):
@@ -1134,7 +1141,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onDisconnect`
         """
-        pass  # return self.fire('disconnect', self, True)
+        pass
 
     @public
     def publish(self, topic, *args, **kwargs):
