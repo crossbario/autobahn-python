@@ -32,6 +32,7 @@ from autobahn.util import public
 __all__ = (
     'IObjectSerializer',
     'ISerializer',
+    'IMessage',
     'ITransport',
     'ITransportHandler',
     'ISession',
@@ -109,10 +110,10 @@ class ISerializer(object):
         """
         Serializes a WAMP message to bytes for sending over a transport.
 
-        :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-        :type message: obj
+        :param message: The WAMP message to be serialized.
+        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
 
-        :returns: A pair ``(payload, is_binary)``.
+        :returns: A pair ``(payload, isBinary)``.
         :rtype: tuple
         """
 
@@ -158,7 +159,8 @@ class IMessage(object):
         :func:`autobahn.interfaces.ISerializer.unserialize`) into an instance
         of this class.
 
-        :returns: obj -- An instance of this class.
+        :returns: The parsed WAMP message.
+        :rtype: object implementing :class:`autobahn.wamp.interfaces.IMessage`
         """
 
     @public
@@ -170,7 +172,7 @@ class IMessage(object):
         serializer, return the cached representation directly.
 
         :param serializer: The wire level serializer to use.
-        :type serializer: instance of :class:`autobahn.wamp.interfaces.ISerializer`
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
 
         :returns: The serialized bytes.
         :rtype: bytes
@@ -180,7 +182,7 @@ class IMessage(object):
     @abc.abstractmethod
     def uncache():
         """
-        Resets the serialization cache.
+        Resets the serialization cache for this message.
         """
 
 
@@ -202,8 +204,8 @@ class ITransport(object):
         messages may be sent. When send() is called while a previous deferred/future
         has not yet fired, the send will fail immediately.
 
-        :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-        :type message: obj
+        :param message: The WAMP message to send over the transport.
+        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
 
         :returns: obj -- A Deferred/Future
         """
@@ -214,7 +216,8 @@ class ITransport(object):
         """
         Check if the transport is open for messaging.
 
-        :returns: bool -- ``True``, if the transport is open.
+        :returns: ``True``, if the transport is open.
+        :rtype: bool
         """
 
     @public
@@ -303,8 +306,8 @@ class ITransportHandler(object):
         is considered running and is_open() would return true, as soon as this callback
         has completed successfully.
 
-        :param transport: An instance that implements :class:`autobahn.wamp.interfaces.ITransport`
-        :type transport: obj
+        :param transport: The WAMP transport.
+        :type transport: object implementing :class:`autobahn.wamp.interfaces.ITransport`
         """
 
     @public
@@ -315,8 +318,8 @@ class ITransportHandler(object):
         should return or fire the returned deferred/future when it's done processing the message.
         In particular, an implementation of this callback must not access the message afterwards.
 
-        :param message: An instance that implements :class:`autobahn.wamp.interfaces.IMessage`
-        :type message: obj
+        :param message: The WAMP message received.
+        :type message: object implementing :class:`autobahn.wamp.interfaces.IMessage`
         """
 
     @public

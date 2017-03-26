@@ -436,7 +436,7 @@ class SubscribeOptions(object):
         :type get_retained: bool or None
         """
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
-        assert(details_arg is None or type(details_arg) == str)
+        assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
         assert(get_retained is None or type(get_retained) is bool)
 
         self.match = match
@@ -670,7 +670,7 @@ class RegisterOptions(object):
         assert(match is None or (type(match) == six.text_type and match in [u'exact', u'prefix', u'wildcard']))
         assert(invoke is None or (type(invoke) == six.text_type and invoke in [u'single', u'first', u'last', u'roundrobin', u'random']))
         assert(concurrency is None or (type(concurrency) in six.integer_types and concurrency > 0))
-        assert(details_arg is None or type(details_arg) == str)
+        assert(details_arg is None or type(details_arg) == str)  # yes, "str" is correct here, since this is about Python identifiers!
 
         self.match = match
         self.invoke = invoke

@@ -350,13 +350,14 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.join`
         """
-        # FIXME
-        if six.PY2 and type(realm) == str:
-            realm = six.u(realm)
-        if six.PY2 and type(authid) == str:
-            authid = six.u(authid)
-        if six.PY2 and type(authrole) == str:
-            authrole = six.u(authrole)
+        assert(realm is None or type(realm) == six.text_type)
+        assert(authmethods is None or type(authmethods) == list)
+        if type(authmethods) == list:
+            for authmethod in authmethods:
+                assert(type(authmethod) == six.text_type)
+        assert(authid is None or type(authid) == six.text_type)
+        assert(authrole is None or type(authrole) == six.text_type)
+        assert(authextra is None or type(authextra) == dict)
 
         if self._session_id:
             raise Exception("already joined")
@@ -1140,8 +1141,6 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.IPublisher.publish`
         """
-        if six.PY2 and type(topic) == str:
-            topic = six.u(topic)
         assert(type(topic) == six.text_type)
 
         if not self._transport:
@@ -1216,8 +1215,6 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
         """
         assert((callable(handler) and topic is not None) or hasattr(handler, '__class__'))
-        if topic and six.PY2 and type(topic) == str:
-            topic = six.u(topic)
         assert(topic is None or type(topic) == six.text_type)
         assert(options is None or isinstance(options, types.SubscribeOptions))
 
@@ -1297,9 +1294,7 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ICaller.call`
         """
-        if six.PY2 and type(procedure) == str:
-            procedure = six.u(procedure)
-        assert(isinstance(procedure, six.text_type))
+        assert(type(procedure) == six.text_type)
 
         if not self._transport:
             raise exception.TransportLost()
@@ -1375,8 +1370,6 @@ class ApplicationSession(BaseSession):
         Implements :func:`autobahn.wamp.interfaces.ICallee.register`
         """
         assert((callable(endpoint) and procedure is not None) or hasattr(endpoint, '__class__'))
-        if procedure and six.PY2 and type(procedure) == str:
-            procedure = six.u(procedure)
         assert(procedure is None or type(procedure) == six.text_type)
         assert(options is None or isinstance(options, types.RegisterOptions))
 
