@@ -7,7 +7,7 @@ Autobahn Twisted specific classes. These are used when Twisted is run as the und
 WebSocket Protocols and Factories
 ---------------------------------
 
-Base classes for WebSocket clients and servers using Twisted.
+Classes for WebSocket clients and servers using Twisted.
 
 .. autoclass:: autobahn.twisted.websocket.WebSocketServerProtocol
     :members:
@@ -25,7 +25,7 @@ Base classes for WebSocket clients and servers using Twisted.
 WAMP-over-WebSocket Protocols and Factories
 -------------------------------------------
 
-Base classes for WAMP-WebSocket clients and servers using Twisted.
+Classes for WAMP-WebSocket clients and servers using Twisted.
 
 .. autoclass:: autobahn.twisted.websocket.WampWebSocketServerProtocol
     :members:
@@ -43,7 +43,7 @@ Base classes for WAMP-WebSocket clients and servers using Twisted.
 WAMP-over-RawSocket Protocols and Factories
 -------------------------------------------
 
-Base classes for WAMP-RawSocket clients and servers using Twisted.
+Classes for WAMP-RawSocket clients and servers using Twisted.
 
 .. autoclass:: autobahn.twisted.rawsocket.WampRawSocketServerProtocol
     :members:
@@ -55,4 +55,16 @@ Base classes for WAMP-RawSocket clients and servers using Twisted.
     :members:
 
 .. autoclass:: autobahn.twisted.rawsocket.WampRawSocketClientFactory
+    :members:
+
+
+WAMP Sessions
+-------------
+
+Classes for WAMP sessions using Twisted.
+
+.. autoclass:: autobahn.twisted.wamp.ApplicationSession
+    :members:
+
+.. autoclass:: autobahn.twisted.wamp.ApplicationRunner
     :members:

@@ -196,7 +196,9 @@ class WebSocketServerProtocol(WebSocketAdapterProtocol, protocol.WebSocketServer
     """
     Base class for asyncio-based WebSocket server protocols.
 
-    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
 
     log = txaio.make_logger()
@@ -207,7 +209,9 @@ class WebSocketClientProtocol(WebSocketAdapterProtocol, protocol.WebSocketClient
     """
     Base class for asyncio-based WebSocket client protocols.
 
-    Implements :class:`autobahn.websocket.interfaces.IWebSocketChannel`.
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketChannel`
     """
 
     log = txaio.make_logger()
@@ -238,7 +242,9 @@ class WebSocketServerFactory(WebSocketAdapterFactory, protocol.WebSocketServerFa
     """
     Base class for asyncio-based WebSocket server factories.
 
-    Implements :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketServerChannelFactory`
     """
 
     protocol = WebSocketServerProtocol
@@ -262,7 +268,9 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
     """
     Base class for asyncio-based WebSocket client factories.
 
-    Implements :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
+    Implements:
+
+    * :class:`autobahn.websocket.interfaces.IWebSocketClientChannelFactory`
     """
 
     def __init__(self, *args, **kwargs):
@@ -283,19 +291,34 @@ class WebSocketClientFactory(WebSocketAdapterFactory, protocol.WebSocketClientFa
 @public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
-    Base class for asyncio-based WAMP-over-WebSocket server protocols.
+    asyncio-based WAMP-over-WebSocket server protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
 @public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
-    Base class for asyncio-based WAMP-over-WebSocket server factories.
+    asyncio-based WAMP-over-WebSocket server factory.
     """
 
     protocol = WampWebSocketServerProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 
@@ -310,19 +333,34 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 @public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
-    Base class for asyncio-based WAMP-over-WebSocket client protocols.
+    asyncio-based WAMP-over-WebSocket client protocols.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
 @public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
-    Base class for asyncio-based WAMP-over-WebSocket client factories.
+    asyncio-based WAMP-over-WebSocket client factory.
     """
 
     protocol = WampWebSocketClientProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 

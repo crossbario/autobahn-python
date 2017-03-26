@@ -85,7 +85,7 @@ class WampRawSocketProtocol(Int32StringReceiver):
         #
         self._handshake_bytes = b''
 
-        # Clinet requested maximum length of serialized messages.
+        # Client requested maximum length of serialized messages.
         #
         self._max_len_send = None
 
@@ -175,7 +175,11 @@ class WampRawSocketProtocol(Int32StringReceiver):
 @public
 class WampRawSocketServerProtocol(WampRawSocketProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server protocols.
+    Twisted-based WAMP-over-RawSocket server protocol.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
     def dataReceived(self, data):
@@ -263,7 +267,11 @@ class WampRawSocketServerProtocol(WampRawSocketProtocol):
 @public
 class WampRawSocketClientProtocol(WampRawSocketProtocol):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client protocols.
+    Twisted-based WAMP-over-RawSocket client protocol.
+
+    Implements:
+
+        * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
     def connectionMade(self):
@@ -354,8 +362,9 @@ class WampRawSocketFactory(Factory):
 @public
 class WampRawSocketServerFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket server factories.
+    Twisted-based WAMP-over-RawSocket server protocol factory.
     """
+
     protocol = WampRawSocketServerProtocol
 
     def __init__(self, factory, serializers=None):
@@ -364,10 +373,11 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
         :param factory: A callable that produces instances that implement
             :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
-        :param serializers: A list of WAMP serializers to use (or None for default
-           serializers). Serializers must implement
-           :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializers: list
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
         """
         if callable(factory):
             self._factory = factory
@@ -420,8 +430,9 @@ class WampRawSocketServerFactory(WampRawSocketFactory):
 @public
 class WampRawSocketClientFactory(WampRawSocketFactory):
     """
-    Base class for Twisted-based WAMP-over-RawSocket client factories.
+    Twisted-based WAMP-over-RawSocket client protocol factory.
     """
+
     protocol = WampRawSocketClientProtocol
 
     def __init__(self, factory, serializer=None):
@@ -430,10 +441,11 @@ class WampRawSocketClientFactory(WampRawSocketFactory):
         :param factory: A callable that produces instances that implement
             :class:`autobahn.wamp.interfaces.ITransportHandler`
         :type factory: callable
-        :param serializer: The WAMP serializer to use (or None for default
-           serializer). Serializers must implement
-           :class:`autobahn.wamp.interfaces.ISerializer`.
-        :type serializer: obj
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
         """
         if callable(factory):
             self._factory = factory

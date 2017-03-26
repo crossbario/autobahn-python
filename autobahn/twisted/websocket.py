@@ -506,10 +506,13 @@ def connectWS(factory, contextFactory=None, timeout=30, bindAddress=None):
 
     :param factory: The WebSocket protocol factory to be used for creating client protocol instances.
     :type factory: An :class:`autobahn.websocket.WebSocketClientFactory` instance.
+
     :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
     :type contextFactory: A `twisted.internet.ssl.ClientContextFactory <http://twistedmatrix.com/documents/current/api/twisted.internet.ssl.ClientContextFactory.html>`_ instance.
+
     :param timeout: Number of seconds to wait before assuming the connection has failed.
     :type timeout: int
+
     :param bindAddress: A (host, port) tuple of local address to bind to, or None.
     :type bindAddress: tuple
 
@@ -547,10 +550,13 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
 
     :param factory: The WebSocket protocol factory to be used for creating server protocol instances.
     :type factory: An :class:`autobahn.websocket.WebSocketServerFactory` instance.
+
     :param contextFactory: SSL context factory, required for secure WebSocket connections ("wss").
     :type contextFactory: A twisted.internet.ssl.ContextFactory.
+
     :param backlog: Size of the listen queue.
     :type backlog: int
+
     :param interface: The interface (derived from hostname given) to bind to, defaults to '' (all).
     :type interface: str
 
@@ -575,19 +581,34 @@ def listenWS(factory, contextFactory=None, backlog=50, interface=''):
 @public
 class WampWebSocketServerProtocol(websocket.WampWebSocketServerProtocol, WebSocketServerProtocol):
     """
-    Base class for Twisted-based WAMP-over-WebSocket server protocols.
+    Twisted-based WAMP-over-WebSocket server protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
 @public
 class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocketServerFactory):
     """
-    Base class for Twisted-based WAMP-over-WebSocket server factories.
+    Twisted-based WAMP-over-WebSocket server protocol factory.
     """
 
     protocol = WampWebSocketServerProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializers: A list of WAMP serializers to use (or ``None``
+            for all available serializers).
+        :type serializers: list of objects implementing
+            :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 
@@ -602,19 +623,34 @@ class WampWebSocketServerFactory(websocket.WampWebSocketServerFactory, WebSocket
 @public
 class WampWebSocketClientProtocol(websocket.WampWebSocketClientProtocol, WebSocketClientProtocol):
     """
-    Base class for Twisted-based WAMP-over-WebSocket client protocols.
+    Twisted-based WAMP-over-WebSocket client protocol.
+
+    Implements:
+
+    * :class:`autobahn.wamp.interfaces.ITransport`
     """
 
 
 @public
 class WampWebSocketClientFactory(websocket.WampWebSocketClientFactory, WebSocketClientFactory):
     """
-    Base class for Twisted-based WAMP-over-WebSocket client factories.
+    Twisted-based WAMP-over-WebSocket client protocol factory.
     """
 
     protocol = WampWebSocketClientProtocol
 
     def __init__(self, factory, *args, **kwargs):
+        """
+
+        :param factory: A callable that produces instances that implement
+            :class:`autobahn.wamp.interfaces.ITransportHandler`
+        :type factory: callable
+
+        :param serializer: The WAMP serializer to use (or ``None`` for
+           "best" serializer, chosen as the first serializer available from
+           this list: CBOR, MessagePack, UBJSON, JSON).
+        :type serializer: object implementing :class:`autobahn.wamp.interfaces.ISerializer`
+        """
 
         serializers = kwargs.pop('serializers', None)
 

@@ -7,7 +7,7 @@ Autobahn asyncio specific classes. These are used when asyncio is run as the und
 WebSocket Protocols and Factories
 ---------------------------------
 
-Base classes for WebSocket clients and servers using asyncio.
+Classes for WebSocket clients and servers using asyncio.
 
 .. autoclass:: autobahn.asyncio.websocket.WebSocketServerProtocol
     :members:
@@ -25,7 +25,7 @@ Base classes for WebSocket clients and servers using asyncio.
 WAMP-over-WebSocket Protocols and Factories
 -------------------------------------------
 
-Base classes for WAMP-WebSocket clients and servers using asyncio.
+Classes for WAMP-WebSocket clients and servers using asyncio.
 
 .. autoclass:: autobahn.asyncio.websocket.WampWebSocketServerProtocol
     :members:
@@ -43,7 +43,7 @@ Base classes for WAMP-WebSocket clients and servers using asyncio.
 WAMP-over-RawSocket Protocols and Factories
 -------------------------------------------
 
-Base classes for WAMP-RawSocket clients and servers using asyncio.
+Classes for WAMP-RawSocket clients and servers using asyncio.
 
 .. autoclass:: autobahn.asyncio.rawsocket.WampRawSocketServerProtocol
     :members:
@@ -55,4 +55,16 @@ Base classes for WAMP-RawSocket clients and servers using asyncio.
     :members:
 
 .. autoclass:: autobahn.asyncio.rawsocket.WampRawSocketClientFactory
+    :members:
+
+
+WAMP Sessions
+-------------
+
+Classes for WAMP sessions using asyncio.
+
+.. autoclass:: autobahn.asyncio.wamp.ApplicationSession
+    :members:
+
+.. autoclass:: autobahn.asyncio.wamp.ApplicationRunner
     :members:
