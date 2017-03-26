@@ -50,7 +50,7 @@ import txaio
 from autobahn.twisted.websocket import WampWebSocketClientFactory
 from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 
-from autobahn.wamp import component, types
+from autobahn.wamp import component
 
 from autobahn.twisted.util import sleep
 from autobahn.twisted.wamp import Session
