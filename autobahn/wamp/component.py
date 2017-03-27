@@ -38,7 +38,7 @@ import txaio
 
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
-from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady
 
 
@@ -313,7 +313,7 @@ class Component(ObservableMixin):
             def topic(*args, **kw):
                 print("some.topic({}, {}): event received".format(args, kw))
         """
-        assert options is None or isinstance(options, types.SubscribeOptions)
+        assert options is None or isinstance(options, SubscribeOptions)
 
         def decorator(fn):
 
@@ -335,7 +335,7 @@ class Component(ObservableMixin):
             def add(*args, **kw):
                 print("add({}, {}): event received".format(args, kw))
         """
-        assert options is None or isinstance(options, types.RegisterOptions)
+        assert options is None or isinstance(options, RegisterOptions)
 
         def decorator(fn):
 
