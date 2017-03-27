@@ -221,6 +221,18 @@ There are two environment variables the tests use: ``USE_TWISTED=1`` or ``USE_AS
 See ``tox.ini`` for details on how to run in the different environments.
 
 
+Release Testing
+---------------
+
+Before pushing a new release, three levels of tests need to pass:
+
+1. the unit tests (see above)
+2. the [WebSocket level tests](wstest/README.md)
+3. the [WAMP level tests](examples/README.md) (*)
+
+> (*): these will launch a Crossbar.io router for testing
+
+
 Sitemap
 -------
 

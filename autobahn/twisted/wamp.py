@@ -141,8 +141,8 @@ class ApplicationRunner(object):
         assert(type(url) == six.text_type)
         assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
-        assert(headers is None or type(proxy) == dict)
-        assert(proxy is None or type(headers) == dict)
+        assert(headers is None or type(headers) == dict)
+        assert(proxy is None or type(proxy) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
