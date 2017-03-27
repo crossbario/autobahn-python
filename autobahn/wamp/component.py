@@ -430,7 +430,7 @@ class Component(ObservableMixin):
             )
 
         # XXX should have some checkconfig support
-        self._authentication = authentication or []
+        self._authentication = authentication or {}
 
         self._realm = realm
         self._extra = extra
