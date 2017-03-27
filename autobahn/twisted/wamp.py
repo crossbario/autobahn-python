@@ -28,11 +28,13 @@ from __future__ import absolute_import
 
 import six
 import inspect
+import binascii
 
 import txaio
 txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks, succeed
+from zope.interface import Interface, implementer
 
 from autobahn.util import public
 
@@ -733,17 +735,116 @@ class Session(ApplicationSession):
     # ApplicationSession a subclass of Session -- and it can then be
     # separate deprecated and removed, ultimately, if desired.
 
+    #: name -> IAuthenticator
+    _authenticators = None
+
     def onJoin(self, details):
         return self.on_join(details)
 
-    # XXX def onChallenge(self, )
-    # XXX def onOpen ??
+    def onConnect(self):
+        if self._authenticators:
+            # authid, authrole *must* match across all authenticators
+            # (checked in add_authenticator) so these lists are either
+            # [None] or [None, 'some_authid']
+            authid = [x._args.get('authid', None) for x in self._authenticators.values()][-1]
+            authrole = [x._args.get('authrole', None) for x in self._authenticators.values()][-1]
+            authextra = self._merged_authextra()
+            self.join(
+                self.config.realm,
+                authmethods=self._authenticators.keys(),
+                authid=authid or u'public',
+                authrole=authrole or u'default',
+                authextra=authextra,
+            )
+        else:
+            super(Session, self).onConnect()
+
+    def onChallenge(self, challenge):
+        try:
+            authenticator = self._authenticators[challenge.method]
+        except KeyError:
+            raise RuntimeError(
+                "Received challenge for unknown authmethod '{}'".format(
+                    challenge.method
+                )
+            )
+        return authenticator.on_challenge(self, challenge)
 
     def onLeave(self, details):
         return self.on_leave(details)
 
     def onDisconnect(self):
         return self.on_disconnect()
+
+    # experimental authentication API
+
+    def add_authenticator(self, name, **kw):
+        if self._authenticators is None:
+            self._authenticators = {}
+        try:
+            auth = {
+                'cryptosign': AuthCryptoSign,
+            }[name](**kw)
+        except KeyError:
+            raise RuntimeError(
+                "Unknown authenticator '{}'".format(name)
+            )
+
+        # all authids must match
+        unique_authids = set([
+            a['authid']
+            for a in self._authenticators.values()
+            if 'authid' in a
+        ])
+        if len(unique_authids) > 1:
+            raise ValueError(
+                "Inconsistent authids: {}".format(
+                    ' '.join(unique_authids),
+                )
+            )
+
+        # all authroles must match
+        unique_authroles = set([
+            a['authrole']
+            for a in self._authenticators.values()
+            if 'authrole' in a
+        ])
+        if len(unique_authroles) > 1:
+            raise ValueError(
+                "Inconsistent authroles: '{}' vs '{}'".format(
+                    ' '.join(unique_authroles),
+                )
+            )
+
+        # can we do anything else other than merge all authextra keys?
+        # here we check that any duplicate keys have the same values
+        authextra = kw.get('authextra', {})
+        merged = self._merged_authextra()
+        for k, v in merged:
+            if k in authextra and authextra[k] != v:
+                raise ValueError(
+                    "Inconsistent authextra values for '{}': '{}' vs '{}'".format(
+                        k, v, authextra[k],
+                    )
+                )
+
+        # validation complete, add it
+        self._authenticators[name] = auth
+
+    def _merged_authextra(self):
+        authextras = [a._args.get('authextra', {}) for a in self._authenticators.values()]
+        # for all existing _authenticators, we've already checked that
+        # if they contain a key it has the same value as all others.
+        return {
+            k: v
+            for k, v in zip(
+                reduce(lambda x, y: x | set(y.keys()), authextras, set()),
+                reduce(lambda x, y: x | set(y.values()), authextras, set())
+            )
+        }
+
+    # these are the actual "new API" methods (i.e. snake_case)
+    #
 
     def on_join(self, details):
         pass
@@ -753,3 +854,52 @@ class Session(ApplicationSession):
 
     def on_disconnect(self):
         pass
+
+
+# experimental authentication API
+class IAuthenticator(Interface):
+
+    def on_challenge(session, challenge):
+        """
+        """
+
+
+@implementer(IAuthenticator)
+class AuthCryptoSign(object):
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'privkey']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'privkey', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for cryptosign".format(key)
+                )
+        for key in kw.get('authextra', dict()):
+            if key not in [u'pubkey']:
+                raise ValueError(
+                    "Unexpected key '{}' in 'authextra'".format(key)
+                )
+
+        from autobahn.wamp.cryptosign import SigningKey
+        self._privkey = SigningKey.from_key_bytes(
+            binascii.a2b_hex(kw[u'privkey'])
+        )
+
+        if u'pubkey' in kw.get(u'authextra', dict()):
+            pubkey = kw[u'authextra'][u'pubkey']
+            if pubkey != self._privkey.public_key():
+                raise ValueError(
+                    "Public key doesn't correspond to private key"
+                )
+        else:
+            kw[u'authextra'] = kw.get(u'authextra', dict())
+            kw[u'authextra'][u'pubkey'] = self._privkey.public_key()
+        self._args = kw
+
+    def on_challenge(self, session, challenge):
+        return self._privkey.sign_challenge(session, challenge)
