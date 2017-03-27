@@ -5,6 +5,17 @@
 Changelog
 =========
 
+0.18.1
+------
+
+`Published 2017-03-28 <https://pypi.python.org/pypi/autobahn/0.18.1>`__
+
+* new: allow configuration of RawSocket serializer
+* new: test all examples on both WebSocket and RawSocket
+* fix: revert to default arg for Deny reason
+* new: WAMP-RawSocket and WebSocket default settings for asyncio
+* new: experimental component based API and new WAMP Session class
+
 0.18.0
 ------
 
