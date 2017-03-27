@@ -99,7 +99,14 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, url, realm, extra=None, serializers=None, ssl=None, proxy=None, headers=None):
+    def __init__(self,
+                 url,
+                 realm=None,
+                 extra=None,
+                 serializers=None,
+                 ssl=None,
+                 proxy=None,
+                 headers=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -141,6 +148,13 @@ class ApplicationRunner(object):
         self.headers = headers
 
     @public
+    def stop(self):
+        """
+        Stop reconnecting, if auto-reconnecting was enabled.
+        """
+        raise NotImplementedError()
+
+    @public
     def run(self, make, start_loop=True):
         """
         Run the application component.
@@ -173,8 +187,11 @@ class ApplicationRunner(object):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 
+            # use the first configured serializer if any (which means, auto-choose "best")
+            serializer = self.serializers[0] if self.serializers else None
+
             # create a WAMP-over-RawSocket transport client factory
-            transport_factory = WampRawSocketClientFactory(create)
+            transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
 
         else:
             # try to parse WebSocket URL ..
