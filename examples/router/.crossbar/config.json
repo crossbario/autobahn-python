@@ -72,7 +72,31 @@
                     },
                     "websocket": {
                         "ws": {
-                            "type": "websocket"
+                            "type": "websocket",
+                            "serializers": [
+                                "cbor", "msgpack", "ubjson", "json"
+                            ],
+                            "options": {
+                                "enable_webstatus": true,
+                                "max_frame_size": 1048576,
+                                "max_message_size": 1048576,
+                                "auto_fragment_size": 65536,
+                                "fail_by_drop": true,
+                                "open_handshake_timeout": 2500,
+                                "close_handshake_timeout": 1000,
+                                "auto_ping_interval": 10000,
+                                "auto_ping_timeout": 5000,
+                                "auto_ping_size": 4,
+                                "compression": {
+                                    "deflate": {
+                                        "request_no_context_takeover": false,
+                                        "request_max_window_bits": 13,
+                                        "no_context_takeover": false,
+                                        "max_window_bits": 13,
+                                        "memory_level": 5
+                                    }
+                                }
+                            }
                         },
                         "auth_ws": {
                             "type": "websocket",
