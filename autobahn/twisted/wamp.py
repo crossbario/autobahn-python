@@ -214,7 +214,9 @@ class ApplicationRunner(object):
             isSecure, host, port = parse_rs_url(self.url)
 
             # create a WAMP-over-RawSocket transport client factory
-            transport_factory = WampRawSocketClientFactory(create)
+            # use the first configured serializer if any (which means, auto-choose "best")
+            serializer = self.serializers[0] if self.serializers else None
+            transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
 
         else:
             # try to parse WebSocket URL ..
