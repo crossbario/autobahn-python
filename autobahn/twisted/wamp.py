@@ -107,7 +107,14 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, url, realm, extra=None, serializers=None, ssl=None, proxy=None, headers=None):
+    def __init__(self,
+                 url,
+                 realm=None,
+                 extra=None,
+                 serializers=None,
+                 ssl=None,
+                 proxy=None,
+                 headers=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -134,10 +141,14 @@ class ApplicationRunner(object):
 
         :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
         :type proxy: dict or None
+
+        :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
+        :type headers: dict
         """
         assert(type(url) == six.text_type)
         assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
+        assert(headers is None or type(headers) == dict)
         assert(proxy is None or type(proxy) == dict)
         self.url = url
         self.realm = realm
@@ -152,7 +163,11 @@ class ApplicationRunner(object):
         # total number of successful connections
         self._connect_successes = 0
 
+    @public
     def stop(self):
+        """
+        Stop reconnecting, if auto-reconnecting was enabled.
+        """
         self.log.debug('{klass}.stop()', klass=self.__class__.__name__)
         if self._client_service:
             return self._client_service.stopService()
@@ -209,8 +224,11 @@ class ApplicationRunner(object):
             # try to parse RawSocket URL ..
             isSecure, host, port = parse_rs_url(self.url)
 
+            # use the first configured serializer if any (which means, auto-choose "best")
+            serializer = self.serializers[0] if self.serializers else None
+
             # create a WAMP-over-RawSocket transport client factory
-            transport_factory = WampRawSocketClientFactory(create)
+            transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
 
         else:
             # try to parse WebSocket URL ..

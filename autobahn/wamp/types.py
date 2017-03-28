@@ -182,7 +182,7 @@ class Deny(HelloReturn):
         'message',
     )
 
-    def __init__(self, reason, message=None):
+    def __init__(self, reason=u'wamp.error.not_authorized', message=None):
         """
 
         :param reason: The reason of denying the authentication (an URI, e.g. ``u'wamp.error.not_authorized'``)

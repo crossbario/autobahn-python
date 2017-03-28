@@ -29,12 +29,6 @@ import signal
 
 import six
 
-from autobahn.util import public
-from autobahn.wamp import protocol
-from autobahn.wamp.types import ComponentConfig
-from autobahn.websocket.util import parse_url
-from autobahn.asyncio.websocket import WampWebSocketClientFactory
-
 try:
     import asyncio
 except ImportError:
@@ -43,7 +37,20 @@ except ImportError:
     import trollius as asyncio
 
 import txaio
-txaio.use_asyncio()
+txaio.use_asyncio()  # noqa
+
+from autobahn.util import public
+from autobahn.wamp import protocol
+from autobahn.wamp.types import ComponentConfig
+
+from autobahn.websocket.util import parse_url as parse_ws_url
+from autobahn.rawsocket.util import parse_url as parse_rs_url
+
+from autobahn.asyncio.websocket import WampWebSocketClientFactory
+from autobahn.asyncio.rawsocket import WampRawSocketClientFactory
+
+from autobahn.websocket.compress import PerMessageDeflateOffer, \
+    PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
 __all__ = (
     'ApplicationSession',
@@ -92,7 +99,14 @@ class ApplicationRunner(object):
 
     log = txaio.make_logger()
 
-    def __init__(self, url, realm, extra=None, serializers=None, ssl=None):
+    def __init__(self,
+                 url,
+                 realm=None,
+                 extra=None,
+                 serializers=None,
+                 ssl=None,
+                 proxy=None,
+                 headers=None):
         """
 
         :param url: The WebSocket URL of the WAMP router to connect to (e.g. `ws://somehost.com:8090/somepath`)
@@ -113,15 +127,32 @@ class ApplicationRunner(object):
            method, to which this value is passed as the ``ssl``
            keyword parameter.
         :type ssl: :class:`ssl.SSLContext` or bool
+
+        :param proxy: Explicit proxy server to use; a dict with ``host`` and ``port`` keys
+        :type proxy: dict or None
+
+        :param headers: Additional headers to send (only applies to WAMP-over-WebSocket).
+        :type headers: dict
         """
         assert(type(url) == six.text_type)
         assert(realm is None or type(realm) == six.text_type)
         assert(extra is None or type(extra) == dict)
+        assert(headers is None or type(headers) == dict)
+        assert(proxy is None or type(proxy) == dict)
         self.url = url
         self.realm = realm
         self.extra = extra or dict()
         self.serializers = serializers
         self.ssl = ssl
+        self.proxy = proxy
+        self.headers = headers
+
+    @public
+    def stop(self):
+        """
+        Stop reconnecting, if auto-reconnecting was enabled.
+        """
+        raise NotImplementedError()
 
     @public
     def run(self, make, start_loop=True):
@@ -152,8 +183,49 @@ class ApplicationRunner(object):
         else:
             create = make
 
-        isSecure, host, port, resource, path, params = parse_url(self.url)
+        if self.url.startswith(u'rs'):
+            # try to parse RawSocket URL ..
+            isSecure, host, port = parse_rs_url(self.url)
 
+            # use the first configured serializer if any (which means, auto-choose "best")
+            serializer = self.serializers[0] if self.serializers else None
+
+            # create a WAMP-over-RawSocket transport client factory
+            transport_factory = WampRawSocketClientFactory(create, serializer=serializer)
+
+        else:
+            # try to parse WebSocket URL ..
+            isSecure, host, port, resource, path, params = parse_ws_url(self.url)
+
+            # create a WAMP-over-WebSocket transport client factory
+            transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers, proxy=self.proxy, headers=self.headers)
+
+            # client WebSocket settings - similar to:
+            # - http://crossbar.io/docs/WebSocket-Compression/#production-settings
+            # - http://crossbar.io/docs/WebSocket-Options/#production-settings
+
+            # The permessage-deflate extensions offered to the server ..
+            offers = [PerMessageDeflateOffer()]
+
+            # Function to accept permessage_delate responses from the server ..
+            def accept(response):
+                if isinstance(response, PerMessageDeflateResponse):
+                    return PerMessageDeflateResponseAccept(response)
+
+            # set WebSocket options for all client connections
+            transport_factory.setProtocolOptions(maxFramePayloadSize=1048576,
+                                                 maxMessagePayloadSize=1048576,
+                                                 autoFragmentSize=65536,
+                                                 failByDrop=False,
+                                                 openHandshakeTimeout=2.5,
+                                                 closeHandshakeTimeout=1.,
+                                                 tcpNoDelay=True,
+                                                 autoPingInterval=10.,
+                                                 autoPingTimeout=5.,
+                                                 autoPingSize=4,
+                                                 perMessageCompressionOffers=offers,
+                                                 perMessageCompressionAccept=accept)
+        # SSL context for client connection
         if self.ssl is None:
             ssl = isSecure
         else:
@@ -164,22 +236,17 @@ class ApplicationRunner(object):
                     self.__class__.__name__)
             ssl = self.ssl
 
-        # 2) create a WAMP-over-WebSocket transport client factory
-        transport_factory = WampWebSocketClientFactory(create, url=self.url, serializers=self.serializers)
-
-        # 3) start the client
+        # start the client connection
         loop = asyncio.get_event_loop()
         txaio.use_asyncio()
         txaio.config.loop = loop
         coro = loop.create_connection(transport_factory, host, port, ssl=ssl)
         (transport, protocol) = loop.run_until_complete(coro)
 
+        # start a asyncio loop
         if not start_loop:
-
             return protocol
-
         else:
-
             # start logging
             txaio.start_logging(level='info')
 

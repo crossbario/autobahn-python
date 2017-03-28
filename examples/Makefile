@@ -22,5 +22,10 @@ flake8:
 pylint:
 	pylint -d line-too-long,invalid-name .
 
-examples:
-	python run-all-examples.py
+examples_rawsocket:
+	AUTOBAHN_DEMO_ROUTER=rs://127.0.0.1:8080 python run-all-examples.py
+
+examples_websocket:
+	AUTOBAHN_DEMO_ROUTER=ws://127.0.0.1:8080/ws python run-all-examples.py
+
+examples: examples_websocket examples_rawsocket
