@@ -10,6 +10,8 @@ Changelog
 
 `Published 2017-03-28 <https://pypi.python.org/pypi/autobahn/0.18.1>`__
 
+* fix: errback all user handlers for all WAMP requests still outstanding when session/transport is closed/lost
+* fix: allow WebSocketServerProtocol.onConnect to return a Future/Deferred
 * new: allow configuration of RawSocket serializer
 * new: test all examples on both WebSocket and RawSocket
 * fix: revert to default arg for Deny reason
