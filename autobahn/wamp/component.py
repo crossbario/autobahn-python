@@ -38,7 +38,7 @@ import txaio
 
 from autobahn.util import ObservableMixin
 from autobahn.websocket.util import parse_url
-from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp.types import ComponentConfig, SubscribeOptions, RegisterOptions
 from autobahn.wamp.exception import SessionNotReady
 
 
@@ -299,6 +299,50 @@ class Component(ObservableMixin):
     """
     The factory of the session we will instantiate.
     """
+
+    def subscribe(self, topic, options=None):
+        """
+        A decorator as a shortcut for subscribing during on-join
+
+        For example::
+
+            @component.subscribe(
+                u"some.topic",
+                options=SubscribeOptions(match=u'prefix'),
+            )
+            def topic(*args, **kw):
+                print("some.topic({}, {}): event received".format(args, kw))
+        """
+        assert options is None or isinstance(options, SubscribeOptions)
+
+        def decorator(fn):
+
+            def do_subscription(session, details):
+                return session.subscribe(fn, topic=topic, options=options)
+            self.on('join', do_subscription)
+        return decorator
+
+    def register(self, uri, options=None):
+        """
+        A decorator as a shortcut for registering during on-join
+
+        For example::
+
+            @component.register(
+                u"com.example.add",
+                options=RegisterOptions(invoke='round_robin'),
+            )
+            def add(*args, **kw):
+                print("add({}, {}): event received".format(args, kw))
+        """
+        assert options is None or isinstance(options, RegisterOptions)
+
+        def decorator(fn):
+
+            def do_registration(session, details):
+                return session.register(fn, procedure=uri, options=options)
+            self.on('join', do_registration)
+        return decorator
 
     def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None):
         """
