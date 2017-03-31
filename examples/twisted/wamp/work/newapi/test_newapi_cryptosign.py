@@ -25,10 +25,5 @@ def join(session, details):
     print("Session {} joined: {}".format(details.session, details))
 
 
-@component.on_leave
-def leave(session, reason):
-    print("leaving", session, reason)
-
-
 if __name__ == '__main__':
     run(component)
