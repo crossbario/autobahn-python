@@ -135,6 +135,17 @@
                             }
                         }
                     }
+                },
+                {
+                    "type": "websocket",
+                    "endpoint": {
+                        "type": "tcp",
+                        "port": 8083,
+                        "tls": {
+                            "key": "server.key",
+                            "certificate": "server.crt"
+                        }
+                    }
                 }
             ]
         }

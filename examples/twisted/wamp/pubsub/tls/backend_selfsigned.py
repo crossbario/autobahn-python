@@ -27,6 +27,7 @@
 from __future__ import print_function
 
 from os import environ
+from os.path import join, split
 import six
 
 from autobahn.twisted.util import sleep
@@ -55,9 +56,11 @@ class Component(ApplicationSession):
 
 if __name__ == '__main__':
     # load the self-signed cert the server is using
+    examples_dir = join(split(__file__)[0], '..', '..', '..', '..')
+    cert_fname = join(examples_dir, 'router', '.crossbar', 'server.crt')
     cert = crypto.load_certificate(
         crypto.FILETYPE_PEM,
-        six.u(open('./server.crt', 'r').read())
+        six.u(open(cert_fname, 'r').read())
     )
     # tell Twisted to use just the one certificate we loaded to verify connections
     options = CertificateOptions(
