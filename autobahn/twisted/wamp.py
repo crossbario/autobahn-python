@@ -49,6 +49,8 @@ from autobahn.websocket.compress import PerMessageDeflateOffer, \
 
 from autobahn.wamp import protocol
 from autobahn.wamp.types import ComponentConfig
+from autobahn.wamp import auth
+
 
 __all__ = [
     'ApplicationSession',
@@ -784,6 +786,7 @@ class Session(ApplicationSession):
         try:
             auth = {
                 'cryptosign': AuthCryptoSign,
+                'wampcra': AuthWampCra,
             }[name](**kw)
         except KeyError:
             raise RuntimeError(
@@ -903,3 +906,33 @@ class AuthCryptoSign(object):
 
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
+
+
+@implementer(IAuthenticator)
+class AuthWampCra(object):
+
+    def __init__(self, **kw):
+        # should put in checkconfig or similar
+        for key in kw.keys():
+            if key not in [u'authextra', u'authid', u'authrole', u'secret']:
+                raise ValueError(
+                    "Unexpected key '{}' for {}".format(key, self.__class__.__name__)
+                )
+        for key in [u'secret', u'authid']:
+            if key not in kw:
+                raise ValueError(
+                    "Must provide '{}' for wampcra".format(key)
+                )
+
+        self._args = kw
+        self._secret = kw.pop(u'secret')
+        if not isinstance(self._secret, six.text_type):
+            challenge = self._secret.decode('utf8')
+
+    def on_challenge(self, session, challenge):
+        signature = auth.compute_wcs(
+            self._secret.encode('utf8'),
+            challenge.extra['challenge'].encode('utf8')
+        )
+        return signature.decode('ascii')
+

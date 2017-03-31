@@ -382,7 +382,7 @@ class Component(ObservableMixin):
         :type realm: unicode
 
         :param authentication: configuration of authenticators
-        :type authentication: dict or list of dicts
+        :type authentication: dict mapping auth_type to dict
         """
         self.set_valid_events(
             [
