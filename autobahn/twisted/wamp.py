@@ -897,6 +897,8 @@ class AuthCryptoSign(object):
 
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
+
+
 IAuthenticator.register(AuthCryptoSign)
 
 
@@ -918,7 +920,7 @@ class AuthWampCra(object):
         self._args = kw
         self._secret = kw.pop(u'secret')
         if not isinstance(self._secret, six.text_type):
-            challenge = self._secret.decode('utf8')
+            self._secret = self._secret.decode('utf8')
 
     def on_challenge(self, session, challenge):
         signature = auth.compute_wcs(
@@ -926,4 +928,6 @@ class AuthWampCra(object):
             challenge.extra['challenge'].encode('utf8')
         )
         return signature.decode('ascii')
+
+
 IAuthenticator.register(AuthWampCra)
