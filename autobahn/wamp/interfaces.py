@@ -637,3 +637,13 @@ class ISession(object):
         :returns: A single Deferred/Future or a list of such objects
         :rtype: instance(s) of :tx:`twisted.internet.defer.Deferred` / :py:class:`asyncio.Future`
         """
+
+
+# experimental authentication API
+@six.add_metaclass(abc.ABCMeta)
+class IAuthenticator(object):
+
+    @abc.abstractmethod
+    def on_challenge(session, challenge):
+        """
+        """

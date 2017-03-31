@@ -34,7 +34,6 @@ import txaio
 txaio.use_twisted()  # noqa
 
 from twisted.internet.defer import inlineCallbacks, succeed
-from zope.interface import Interface, implementer
 
 from autobahn.util import public
 
@@ -47,9 +46,9 @@ from autobahn.twisted.rawsocket import WampRawSocketClientFactory
 from autobahn.websocket.compress import PerMessageDeflateOffer, \
     PerMessageDeflateResponse, PerMessageDeflateResponseAccept
 
-from autobahn.wamp import protocol
+from autobahn.wamp import protocol, auth
+from autobahn.wamp.interfaces import IAuthenticator
 from autobahn.wamp.types import ComponentConfig
-from autobahn.wamp import auth
 
 
 __all__ = [
@@ -860,14 +859,6 @@ class Session(ApplicationSession):
 
 
 # experimental authentication API
-class IAuthenticator(Interface):
-
-    def on_challenge(session, challenge):
-        """
-        """
-
-
-@implementer(IAuthenticator)
 class AuthCryptoSign(object):
 
     def __init__(self, **kw):
@@ -906,9 +897,9 @@ class AuthCryptoSign(object):
 
     def on_challenge(self, session, challenge):
         return self._privkey.sign_challenge(session, challenge)
+IAuthenticator.register(AuthCryptoSign)
 
 
-@implementer(IAuthenticator)
 class AuthWampCra(object):
 
     def __init__(self, **kw):
@@ -935,4 +926,4 @@ class AuthWampCra(object):
             challenge.extra['challenge'].encode('utf8')
         )
         return signature.decode('ascii')
-
+IAuthenticator.register(AuthWampCra)
