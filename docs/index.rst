@@ -42,6 +42,11 @@ Further, |AbL| is written with these goals:
 
 We do take those design and implementation goals quite serious. For example, |AbL| has 100% strict passes with `AutobahnTestsuite`_, the quasi industry standard of WebSocket protocol test suites we originally created only to test |AbL| ;)
 
+For (hopefully) current test reports from the Testsuite see
+
+* `WebSocket client functionality <http://autobahn.ws/reports/clients/>`_
+* `WebSocket server functionality <http://autobahn.ws/reports/servers/>`_
+
 .. note::
    In the following, we will just refer to |Ab| instead of the
    more precise term |AbL| and there is no
