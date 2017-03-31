@@ -116,6 +116,18 @@
                                 "anonymous": {
                                     "type": "static",
                                     "role": "anonymous"
+                                },
+                                "cryptosign": {
+                                    "type": "static",
+                                    "principals": {
+                                        "alice": {
+                                            "realm": "crossbardemo",
+                                            "role": "authenticated",
+                                            "authorized_keys": [
+                                                "020b13239ca0f10a1c65feaf26e8dfca6e84c81d2509a2b7b75a7e5ee5ce4b66"
+                                            ]
+                                        }
+                                    }
                                 }
                             }
                         }
