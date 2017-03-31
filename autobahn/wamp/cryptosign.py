@@ -497,6 +497,17 @@ if HAS_CRYPTOSIGN:
 
         @util.public
         @classmethod
+        def from_key_bytes(cls, keydata, comment=None):
+            if not (comment is None or type(comment) == six.text_type):
+                raise ValueError("invalid type {} for comment".format(type(comment)))
+
+            if len(keydata) != 32:
+                raise ValueError("invalid key length {}".format(len(keydata)))
+
+            key = signing.SigningKey(keydata)
+            return cls(key, comment)
+
+        @classmethod
         def from_raw_key(cls, filename, comment=None):
             """
             Load an Ed25519 (private) signing key (actually, the seed for the key) from a raw file of 32 bytes length.
@@ -522,11 +533,7 @@ if HAS_CRYPTOSIGN:
             with open(filename, 'rb') as f:
                 keydata = f.read()
 
-            if len(keydata) != 32:
-                raise Exception("invalid key length {}".format(len(keydata)))
-
-            key = signing.SigningKey(keydata)
-            return cls(key, comment)
+            return cls.from_key_bytes(keydata, comment=comment)
 
         @util.public
         @classmethod

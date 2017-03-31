@@ -344,7 +344,7 @@ class Component(ObservableMixin):
             self.on('join', do_registration)
         return decorator
 
-    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None):
+    def __init__(self, main=None, transports=None, config=None, realm=u'default', extra=None, authentication=None):
         """
         :param main: After a transport has been connected and a session
             has been established and joined to a realm, this (async)
@@ -380,6 +380,9 @@ class Component(ObservableMixin):
 
         :param realm: the realm to join
         :type realm: unicode
+
+        :param authentication: configuration of authenticators
+        :type authentication: dict mapping auth_type to dict
         """
         self.set_valid_events(
             [
@@ -426,6 +429,9 @@ class Component(ObservableMixin):
                 _create_transport(idx, transport, self._check_native_endpoint)
             )
 
+        # XXX should have some checkconfig support
+        self._authentication = authentication or {}
+
         self._realm = realm
         self._extra = extra
 
@@ -458,6 +464,9 @@ class Component(ObservableMixin):
             cfg = ComponentConfig(self._realm, self._extra)
             try:
                 session = self.session_factory(cfg)
+                for auth_name, auth_config in self._authentication.items():
+                    session.add_authenticator(auth_name, **auth_config)
+
             except Exception as e:
                 # couldn't instantiate session calls, which is fatal.
                 # let the reconnection logic deal with that
