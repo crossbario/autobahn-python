@@ -110,6 +110,13 @@
                                         "username": {
                                             "secret": "p4ssw0rd",
                                             "role": "authenticated"
+                                        },
+                                        "salted": {
+                                            "secret": "zFXAAAqW5nlonWfP6JLMq4KGLRYZAd8OSXWknEbckCQ=",
+                                            "role": "authenticated",
+                                            "salt": "salt123",
+                                            "iterations": 100,
+                                            "keylen": 32
                                         }
                                     }
                                 },
