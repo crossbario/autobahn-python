@@ -923,8 +923,17 @@ class AuthWampCra(object):
             self._secret = self._secret.decode('utf8')
 
     def on_challenge(self, session, challenge):
+        key = self._secret.encode('utf8')
+        if u'salt' in challenge.extra:
+            key = auth.derive_key(
+                key,
+                challenge.extra['salt'],
+                challenge.extra['iterations'],
+                challenge.extra['keylen']
+            )
+
         signature = auth.compute_wcs(
-            self._secret.encode('utf8'),
+            key,
             challenge.extra['challenge'].encode('utf8')
         )
         return signature.decode('ascii')
