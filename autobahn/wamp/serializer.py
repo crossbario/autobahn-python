@@ -136,73 +136,58 @@ class Serializer(object):
 
 
 # JSON serialization is always supported
-try:
-    # try import accelerated JSON implementation
-    #
-    import ujson
 
-    _json = ujson
+import json
 
-    def _loads(val):
-        return ujson.loads(val, precise_float=True)
+_json = json
+_loads = json.loads
 
-    def _dumps(obj):
-        return ujson.dumps(obj, double_precision=15, ensure_ascii=False)
 
-except ImportError:
-    # fallback to stdlib implementation
-    #
-    import json
+def _dumps(obj):
+    return json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
 
-    _json = json
 
-    _loads = json.loads
+class JsonObjectSerializer(object):
 
-    def _dumps(obj):
-        return json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
+    JSON_MODULE = _json
+    """
+    The JSON module used (either stdib builtin or ujson).
+    """
 
-finally:
-    class JsonObjectSerializer(object):
+    BINARY = False
 
-        JSON_MODULE = _json
+    def __init__(self, batched=False):
         """
-        The JSON module used (either stdib builtin or ujson).
+        Ctor.
+
+        :param batched: Flag that controls whether serializer operates in batched mode.
+        :type batched: bool
         """
+        self._batched = batched
 
-        BINARY = False
+    def serialize(self, obj):
+        """
+        Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
+        """
+        s = _dumps(obj)
+        if isinstance(s, six.text_type):
+            s = s.encode('utf8')
+        if self._batched:
+            return s + b'\30'
+        else:
+            return s
 
-        def __init__(self, batched=False):
-            """
-            Ctor.
-
-            :param batched: Flag that controls whether serializer operates in batched mode.
-            :type batched: bool
-            """
-            self._batched = batched
-
-        def serialize(self, obj):
-            """
-            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.serialize`
-            """
-            s = _dumps(obj)
-            if isinstance(s, six.text_type):
-                s = s.encode('utf8')
-            if self._batched:
-                return s + b'\30'
-            else:
-                return s
-
-        def unserialize(self, payload):
-            """
-            Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
-            """
-            if self._batched:
-                chunks = payload.split(b'\30')[:-1]
-            else:
-                chunks = [payload]
-            if len(chunks) == 0:
-                raise Exception("batch format error")
-            return [_loads(data.decode('utf8')) for data in chunks]
+    def unserialize(self, payload):
+        """
+        Implements :func:`autobahn.wamp.interfaces.IObjectSerializer.unserialize`
+        """
+        if self._batched:
+            chunks = payload.split(b'\30')[:-1]
+        else:
+            chunks = [payload]
+        if len(chunks) == 0:
+            raise Exception("batch format error")
+        return [_loads(data.decode('utf8')) for data in chunks]
 
 
 IObjectSerializer.register(JsonObjectSerializer)
