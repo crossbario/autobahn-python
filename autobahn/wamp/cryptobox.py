@@ -26,11 +26,11 @@
 
 from __future__ import absolute_import
 
-import json
-
 import six
 
 from autobahn.util import public
+from autobahn.wamp.serializer import _dumps as _json_dumps
+from autobahn.wamp.serializer import _loads as _json_loads
 
 __all__ = [
     'HAS_CRYPTOBOX',
@@ -39,7 +39,7 @@ __all__ = [
 
 try:
     # try to import everything we need for WAMP-cryptobox
-    from nacl.encoding import Base64Encoder
+    from nacl.encoding import Base64Encoder, RawEncoder
     from nacl.public import PrivateKey, PublicKey, Box
     from nacl.utils import random
     from pytrie import StringTrie
@@ -56,6 +56,8 @@ class EncryptedPayload(object):
     """
 
     def __init__(self, algo, pkey, serializer, payload):
+        """
+        """
         self.algo = algo
         self.pkey = pkey
         self.serializer = serializer
@@ -206,9 +208,14 @@ if HAS_CRYPTOBOX:
                 u'kwargs': kwargs
             }
             nonce = random(Box.NONCE_SIZE)
-            payload_ser = json.dumps(payload)
-            payload_encr = box.encrypt(payload_ser, nonce, encoder=Base64Encoder)
-            payload_bytes = payload_encr.encode().decode('ascii')
+            payload_ser = _json_dumps(payload).encode('utf8')
+
+            payload_encr = box.encrypt(payload_ser, nonce, encoder=RawEncoder)
+
+            # above returns an instance of http://pynacl.readthedocs.io/en/latest/utils/#nacl.utils.EncryptedMessage
+            # which is a bytes _subclass_! hence we apply bytes() to get at the underlying plain
+            # bytes "scalar", which is the concatenation of `payload_encr.nonce + payload_encr.ciphertext`
+            payload_bytes = bytes(payload_encr)
             payload_key = None
 
             return EncryptedPayload(u'cryptobox', payload_key, u'json', payload_bytes)
@@ -225,14 +232,14 @@ if HAS_CRYPTOBOX:
             if not box:
                 raise Exception("received encrypted payload, but can't find key!")
 
-            payload_ser = box.decrypt(encrypted_payload.payload, encoder=Base64Encoder)
+            payload_ser = box.decrypt(encrypted_payload.payload, encoder=RawEncoder)
 
             if encrypted_payload.serializer != u'json':
                 raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encrypted_payload.serializer))
 
-            payload = json.loads(payload_ser)
+            payload = _json_loads(payload_ser)
 
-            uri = payload[u'uri']
+            uri = payload.get(u'uri', None)
             args = payload.get(u'args', None)
             kwargs = payload.get(u'kwargs', None)
 
