@@ -14,7 +14,7 @@ all:
 install:
 	# enforce use of bundled libsodium
 	export SODIUM_INSTALL=bundled
-	pip install --upgrade -e .[all,dev]
+	pip install --upgrade -e .[twisted,asyncio,serialization,encryption,dev]
 
 # upload to our internal deployment system
 upload: clean
