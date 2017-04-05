@@ -1,4 +1,5 @@
 from os import environ
+from base64 import b64encode
 
 from autobahn.twisted.wamp import ApplicationSession
 from autobahn.twisted.wamp import ApplicationRunner
@@ -21,16 +22,10 @@ class Component(ApplicationSession):
         # are encoded into a JSON body as "the" MQTT message. Here we
         # also ask WAMP to send our message back to us.
         yield self.publish(
-            u"mqtt.test_topic", "some data via WAMP",
+            u"mqtt.test_topic", b64encode("some data via WAMP"),
+            mqtt_message=True,
+            mqtt_qos=1,
             options=PublishOptions(exclude_me=False),
-        )
-
-        # if you send *just* mqtt_qos and mqtt_message kwargs, and no
-        # args then it will take mqtt_message as "the" payload
-        yield self.publish(
-            u"mqtt.test_topic",
-            mqtt_qos=0,
-            mqtt_message="hello from WAMP",
         )
 
     def on_event(self, *args, **kw):
