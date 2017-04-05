@@ -408,10 +408,8 @@ class ApplicationSession(BaseSession):
         """
         Implements :func:`autobahn.wamp.interfaces.ISession.onUserError`
         """
-        if isinstance(fail.value, exception.ApplicationError):
-            # silence on errors raised explicitly from the app
-            # previous code: self.log.error(fail.value.error_message())
-            pass
+        if False and isinstance(fail.value, exception.ApplicationError):
+            self.log.error(fail.value.error_message())
         else:
             self.log.error(
                 u'{msg}: {traceback}',

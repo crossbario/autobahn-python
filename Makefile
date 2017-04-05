@@ -14,7 +14,7 @@ all:
 install:
 	# enforce use of bundled libsodium
 	export SODIUM_INSTALL=bundled
-	pip install --upgrade -e .[all,dev]
+	pip install --upgrade -e .[twisted,asyncio,serialization,encryption,dev]
 
 # upload to our internal deployment system
 upload: clean
@@ -71,6 +71,9 @@ test: flake8 test_twisted test_asyncio
 test_twisted:
 	USE_TWISTED=1 trial autobahn
 	#WAMP_ROUTER_URL="ws://127.0.0.1:8080/ws" USE_TWISTED=1 trial autobahn
+
+test_serializer:
+	USE_TWISTED=1 trial autobahn.wamp.test.test_serializer
 
 test_twisted_coverage:
 	-rm .coverage
