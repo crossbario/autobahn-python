@@ -150,12 +150,16 @@ class _WAMPJsonEncoder(json.JSONEncoder):
             return json.JSONEncoder.default(self, obj)
 
 
+#
+# the following is a hack. see http://bugs.python.org/issue29992
+#
+
 from json import scanner
 from json.decoder import scanstring
 
 
-def _parse_string(string, idx, strict):
-    s, idx = scanstring(string, idx, strict)
+def _parse_string(*args, **kwargs):
+    s, idx = scanstring(*args, **kwargs)
     if s and s[0] == u'\x00':
         s = base64.b64decode(s[1:])
     return s, idx
