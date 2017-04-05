@@ -36,6 +36,7 @@ __all__ = (
     'ITransport',
     'ITransportHandler',
     'ISession',
+    'IPayloadCodec'
 )
 
 
@@ -646,4 +647,54 @@ class IAuthenticator(object):
     @abc.abstractmethod
     def on_challenge(session, challenge):
         """
+        """
+
+
+@public
+@six.add_metaclass(abc.ABCMeta)
+class IPayloadCodec(object):
+
+    @abc.abstractmethod
+    def encode(is_originating, uri, args=None, kwargs=None):
+        """
+        Encodes application payload.
+
+        :param is_originating: Flag indicating whether the encoding
+            is to be done from an originator (a caller or publisher).
+        :type is_originating: bool
+
+        :param uri: The WAMP URI associated with the WAMP message for which
+            the payload is to be encoded (eg topic or procedure).
+        :type uri: str
+
+        :param args: Positional application payload.
+        :type args: list or None
+
+        :param kwargs: Keyword-based application payload.
+        :type kwargs: dict or None
+
+        :returns: The encoded application payload or None to
+            signal no encoding should be used.
+        :rtype: bytes or None
+        """
+
+    @abc.abstractmethod
+    def decode(is_originating, uri, payload):
+        """
+        Decode application payload.
+
+        :param is_originating: Flag indicating whether the encoding
+            is to be done from an originator (a caller or publisher).
+        :type is_originating: bool
+
+        :param uri: The WAMP URI associated with the WAMP message for which
+            the payload is to be encoded (eg topic or procedure).
+        :type uri: str
+
+        :param payload: The encoded application payload to be decoded.
+        :type payload: bytes
+
+        :returns: A tuple with the the decoded positional and keyword-based
+            application payload: ``(uri, args, kwargs)``
+        :rtype: tuple
         """
