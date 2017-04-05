@@ -138,20 +138,63 @@ class Serializer(object):
 # JSON serialization is always supported
 
 import json
+import base64
 
-_json = json
-_loads = json.loads
+
+class _WAMPJsonEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, six.binary_type):
+            return u'\x00' + base64.b64encode(obj).decode('ascii')
+        else:
+            return json.JSONEncoder.default(self, obj)
+
+
+from json import scanner
+from json.decoder import scanstring
+
+
+def _parse_string(string, idx, strict):
+    s, idx = scanstring(string, idx, strict)
+    if s and s[0] == u'\x00':
+        s = base64.b64decode(s[1:])
+    return s, idx
+
+
+class _WAMPJsonDecoder(json.JSONDecoder):
+
+    def __init__(self, *args, **kwargs):
+        json.JSONDecoder.__init__(self, *args, **kwargs)
+        self.parse_string = _parse_string
+
+        # we need to recreate the internal scan function ..
+        self.scan_once = scanner.py_make_scanner(self)
+
+        # .. and we have to explicitly use the Py version,
+        # not the C version, as the latter won't work
+        # self.scan_once = scanner.make_scanner(self)
+
+
+def _loads(s):
+    return json.loads(s, cls=_WAMPJsonDecoder)
 
 
 def _dumps(obj):
-    return json.dumps(obj, separators=(',', ':'), ensure_ascii=False)
+    return json.dumps(obj,
+                      separators=(',', ':'),
+                      ensure_ascii=False,
+                      sort_keys=False,
+                      cls=_WAMPJsonEncoder)
+
+
+_json = json
 
 
 class JsonObjectSerializer(object):
 
     JSON_MODULE = _json
     """
-    The JSON module used (either stdib builtin or ujson).
+    The JSON module used (now only stdlib).
     """
 
     BINARY = False

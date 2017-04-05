@@ -26,6 +26,7 @@
 
 from __future__ import absolute_import
 
+import os
 import unittest2 as unittest
 
 from autobahn.wamp import message
@@ -39,6 +40,8 @@ def generate_test_messages():
         message.Goodbye(),
         message.Yield(123456),
         message.Yield(123456, args=[1, 2, 3], kwargs={u'foo': 23, u'bar': u'hello'}),
+        message.Yield(123456, args=[u'hello']),
+        message.Yield(123456, args=[os.urandom(10)]),
         message.Yield(123456, progress=True),
         message.Interrupt(123456),
         message.Interrupt(123456, mode=message.Interrupt.KILL),
