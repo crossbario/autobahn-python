@@ -1120,7 +1120,7 @@ class Error(Message):
         assert(type(error) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
 
         Message.__init__(self)
@@ -1343,7 +1343,7 @@ class Publish(Message):
         assert(type(topic) == six.text_type)
         assert(args is None or type(args) in [list, tuple, six.text_type, six.binary_type])
         assert(kwargs is None or type(kwargs) in [dict, six.text_type, six.binary_type])
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(acknowledge is None or type(acknowledge) == bool)
         assert(retain is None or type(retain) == bool)
@@ -1382,7 +1382,7 @@ class Publish(Message):
                 assert(type(authrole) == six.text_type)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
@@ -1441,7 +1441,7 @@ class Publish(Message):
             payload = wmsg[4]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo != PAYLOAD_ENC_CRYPTO_BOX:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' option in PUBLISH".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
@@ -2122,7 +2122,7 @@ class Event(Message):
         assert(type(publication) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(publisher is None or type(publisher) in six.integer_types)
         assert(publisher_authid is None or type(publisher_authid) == six.text_type)
@@ -2132,7 +2132,7 @@ class Event(Message):
         assert(x_acknowledged_delivery is None or type(x_acknowledged_delivery) == bool)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
@@ -2453,13 +2453,13 @@ class Call(Message):
         assert(type(procedure) == six.text_type)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
@@ -2746,12 +2746,12 @@ class Result(Message):
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
@@ -3349,7 +3349,7 @@ class Invocation(Message):
         assert(type(registration) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(timeout is None or type(timeout) in six.integer_types)
         assert(receive_progress is None or type(receive_progress) == bool)
@@ -3359,7 +3359,7 @@ class Invocation(Message):
         assert(procedure is None or type(procedure) == six.text_type)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
@@ -3701,12 +3701,12 @@ class Yield(Message):
         assert(type(request) in six.integer_types)
         assert(args is None or type(args) in [list, tuple])
         assert(kwargs is None or type(kwargs) == dict)
-        assert(payload is None or type(payload) in [six.text_type, six.binary_type])
+        assert(payload is None or type(payload) == six.binary_type)
         assert(payload is None or (payload is not None and args is None and kwargs is None))
         assert(progress is None or type(progress) == bool)
 
         # end-to-end app payload encryption
-        assert(enc_algo is None or enc_algo in [PAYLOAD_ENC_CRYPTO_BOX])
+        assert(enc_algo is None or is_valid_enc_algo(enc_algo))
         assert(enc_key is None or type(enc_key) in [six.text_type, six.binary_type])
         assert(enc_serializer is None or enc_serializer in [u'json', u'msgpack', u'cbor', u'ubjson'])
         assert((enc_algo is None and enc_key is None and enc_serializer is None) or (enc_algo is not None and payload is not None))
