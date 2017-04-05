@@ -63,7 +63,10 @@ __all__ = ('Message',
            'Yield',
            'check_or_raise_uri',
            'check_or_raise_id',
-           'PAYLOAD_ENC_CRYPTO_BOX')
+           'is_valid_enc_algo',
+           'PAYLOAD_ENC_CRYPTO_BOX',
+           'PAYLOAD_ENC_MQTT',
+           'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
 
 
 # strict URI check allowing empty URI components
@@ -91,6 +94,34 @@ _CUSTOM_ATTRIBUTE = re.compile(r"^x_([a-z][0-9a-z_]+)?$")
 # is a scheme based on Curve25519, SHA512, Salsa20 and Poly1305.
 # See: http://cr.yp.to/highspeed/coolnacl-20120725.pdf
 PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
+
+# Payload transparency identifier for MQTT payloads (which are arbitrary binary).
+PAYLOAD_ENC_MQTT = u'mqtt'
+
+# Payload transparency identifiers from the WAMP spec.
+PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT]
+
+
+def is_valid_enc_algo(enc_algo):
+    """
+    For WAMP payload transparency mode, check if the provided ``enc_algo``
+    identifier in the WAMP message is a valid one.
+
+    Currently, the only standard defined identifier are
+
+    * ``u"cryptobox"``
+    * ``u"mqtt"``
+
+    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+
+    :param enc_algo: The payload transparency identifier to check.
+    :type enc_algo: str
+
+    :returns: Returns ``True`` if and only if the payload transparency
+        identifier is valid.
+    :rtype: bool
+    """
+    return type(enc_algo) == six.text_type and (enc_algo in PAYLOAD_ENC_STANDARD_IDENTIFIERS or enc_algo.startswith(u'x_'))
 
 
 def b2a(data, max_len=40):
@@ -1150,7 +1181,7 @@ class Error(Message):
             payload = wmsg[5]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
@@ -2157,7 +2188,7 @@ class Event(Message):
             payload = wmsg[4]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
@@ -2479,7 +2510,7 @@ class Call(Message):
             payload = wmsg[4]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
@@ -2768,7 +2799,7 @@ class Result(Message):
             payload = wmsg[3]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
@@ -3383,7 +3414,7 @@ class Invocation(Message):
             payload = wmsg[4]
 
             enc_algo = details.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = details.get(u'enc_key', None)
@@ -3723,7 +3754,7 @@ class Yield(Message):
             payload = wmsg[3]
 
             enc_algo = options.get(u'enc_algo', None)
-            if enc_algo and enc_algo not in [PAYLOAD_ENC_CRYPTO_BOX]:
+            if enc_algo and not is_valid_enc_algo(enc_algo):
                 raise ProtocolError("invalid value {0} for 'enc_algo' detail in EVENT".format(enc_algo))
 
             enc_key = options.get(u'enc_key', None)
