@@ -471,12 +471,47 @@ class ISession(object):
         """
 
     @public
+    @abc.abstractmethod
     def set_keyring(keyring):
         """
         Set the WAMP-cryptobox keyring to be used.
 
         :param keyring: The WAMP-cryptosign keyring.
         :type keyring: instance of :class:`autobahn.wamp.cryptobox.KeyRing`
+        """
+
+    @public
+    @abc.abstractmethod
+    def set_payload_codec(enc_algo, payload_codec):
+        """
+        Set a payload codec for the given payload encoding. To remove
+        a previously set payload codec for an encoding, set the codec to ``None``.
+
+        Payload codecs are used with WAMP payload transparency mode.
+
+        :param enc_algo: The encoding for which the payload codec should be set.
+        :type enc_algo: str
+
+        :param payload_codec: The payload codec that should process application
+            payload of the given encoding.
+        :type payload_codec: object
+            implementing :class:`autobahn.wamp.interfaces.IPayloadCodec` or ``None``
+        """
+
+    @public
+    @abc.abstractmethod
+    def get_payload_codec(enc_algo):
+        """
+        Get the current payload codec (if any) for the given encoding.
+
+        Payload codecs are used with WAMP payload transparency mode.
+
+        :param enc_algo: The WAMP-cryptosign keyring.
+        :type enc_algo: str
+
+        :returns: The current payload codec or ``None`` if no codec is active.
+        :rtype: object implementing
+            :class:`autobahn.wamp.interfaces.IPayloadCodec` or ``None``
         """
 
     @public
@@ -653,7 +688,23 @@ class IAuthenticator(object):
 @public
 @six.add_metaclass(abc.ABCMeta)
 class IPayloadCodec(object):
+    """
+    WAMP payload codecs are used with WAMP payload transparency mode.
 
+    In payload transparency mode, application payloads are transmitted "raw",
+    as binary strings, without any processing at the WAMP router.
+
+    Payload transparency can be used eg for these use cases:
+
+    * end-to-end encryption of application payloads (WAMP-cryptobox)
+    * using serializers with custom user types, where the serializer and
+      the serializer implementation has native support for serializing
+      custom types (such as CBOR)
+    * transmitting MQTT payloads within WAMP, when the WAMP router is
+      providing a MQTT-WAMP bridge
+    """
+
+    @public
     @abc.abstractmethod
     def encode(is_originating, uri, args=None, kwargs=None):
         """
@@ -678,6 +729,7 @@ class IPayloadCodec(object):
         :rtype: bytes or None
         """
 
+    @public
     @abc.abstractmethod
     def decode(is_originating, uri, payload):
         """
