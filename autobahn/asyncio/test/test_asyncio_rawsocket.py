@@ -84,7 +84,7 @@ class Test(TestCase):
 
     def test_raw_socket_server1(self):
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=True)
         on_hs = Mock()
         transport = Mock()
@@ -107,7 +107,7 @@ class Test(TestCase):
 
     def test_raw_socket_server_errors(self):
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=True)
         on_hs = Mock()
         transport = Mock()
@@ -120,7 +120,7 @@ class Test(TestCase):
         server.data_received(b'abcdef')
         transport.close.assert_called_once_with()
 
-        server = RawSocketServerProtocol(max_size=10000)
+        server = RawSocketServerProtocol()
         ser = Mock(return_value=False)
         on_hs = Mock()
         transport = Mock(spec_set=('close', 'write', 'get_extra_info'))
