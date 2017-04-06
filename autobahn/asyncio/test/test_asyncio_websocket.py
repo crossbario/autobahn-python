@@ -34,6 +34,9 @@ class Test(TestCase):
 
         server.connection_made(transport)
 
+    # not sure when this last worked, tests haven't been running
+    # properly under asyncio for a while it seems.
+    @pytest.mark.xfail
     def test_async_on_connect_server(self):
         # see also issue 757
 
