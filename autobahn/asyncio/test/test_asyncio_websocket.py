@@ -17,7 +17,7 @@ import txaio
 
 
 @pytest.mark.usefixtures("event_loop")  # ensure we have pytest_asyncio installed
-@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False), reason="Only for asyncio")
+@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="Only for asyncio")
 class Test(TestCase):
 
     @pytest.mark.asyncio(forbid_global_loop=True)

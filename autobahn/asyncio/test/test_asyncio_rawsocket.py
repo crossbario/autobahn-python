@@ -12,7 +12,7 @@ from autobahn.asyncio.util import get_serializers
 from autobahn.wamp import message
 
 
-@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False), reason="Only for asyncio")
+@pytest.mark.skipif(os.environ.get('USE_ASYNCIO', False) is False, reason="Only for asyncio")
 class Test(TestCase):
 
     def test_sers(self):
