@@ -472,16 +472,6 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def set_keyring(keyring):
-        """
-        Set the WAMP-cryptobox keyring to be used.
-
-        :param keyring: The WAMP-cryptosign keyring.
-        :type keyring: instance of :class:`autobahn.wamp.cryptobox.KeyRing`
-        """
-
-    @public
-    @abc.abstractmethod
     def set_payload_codec(enc_algo, payload_codec):
         """
         Set a payload codec for the given payload encoding. To remove
@@ -726,12 +716,12 @@ class IPayloadCodec(object):
 
         :returns: The encoded application payload or None to
             signal no encoding should be used.
-        :rtype: bytes or None
+        :rtype: instance of :class:`autobahn.wamp.types.EncodedPayload`
         """
 
     @public
     @abc.abstractmethod
-    def decode(is_originating, uri, payload):
+    def decode(is_originating, uri, encoded_payload):
         """
         Decode application payload.
 
@@ -744,9 +734,9 @@ class IPayloadCodec(object):
         :type uri: str
 
         :param payload: The encoded application payload to be decoded.
-        :type payload: bytes
+        :type payload: instance of :class:`autobahn.wamp.types.EncodedPayload`
 
-        :returns: A tuple with the the decoded positional and keyword-based
+        :returns: A tuple with the decoded positional and keyword-based
             application payload: ``(uri, args, kwargs)``
         :rtype: tuple
         """

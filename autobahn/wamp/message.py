@@ -64,6 +64,7 @@ __all__ = ('Message',
            'check_or_raise_uri',
            'check_or_raise_id',
            'is_valid_enc_algo',
+           'is_valid_enc_serializer',
            'PAYLOAD_ENC_CRYPTO_BOX',
            'PAYLOAD_ENC_MQTT',
            'PAYLOAD_ENC_STANDARD_IDENTIFIERS')
@@ -98,8 +99,11 @@ PAYLOAD_ENC_CRYPTO_BOX = u'cryptobox'
 # Payload transparency identifier for MQTT payloads (which are arbitrary binary).
 PAYLOAD_ENC_MQTT = u'mqtt'
 
-# Payload transparency identifiers from the WAMP spec.
+# Payload transparency algorithm identifiers from the WAMP spec.
 PAYLOAD_ENC_STANDARD_IDENTIFIERS = [PAYLOAD_ENC_CRYPTO_BOX, PAYLOAD_ENC_MQTT]
+
+# Payload transparency serializer identifiers from the WAMP spec.
+PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson']
 
 
 def is_valid_enc_algo(enc_algo):
@@ -114,21 +118,36 @@ def is_valid_enc_algo(enc_algo):
 
     Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
 
-    :param enc_algo: The payload transparency identifier to check.
+    :param enc_algo: The payload transparency algorithm identifier to check.
     :type enc_algo: str
 
     :returns: Returns ``True`` if and only if the payload transparency
-        identifier is valid.
+        algorithm identifier is valid.
     :rtype: bool
     """
     return type(enc_algo) == six.text_type and (enc_algo in PAYLOAD_ENC_STANDARD_IDENTIFIERS or _CUSTOM_ATTRIBUTE.match(enc_algo))
 
 
-PAYLOAD_ENC_STANDARD_SERIALIZERS = [u'json', u'msgpack', u'cbor', u'ubjson']
-
-
 def is_valid_enc_serializer(enc_serializer):
     """
+    For WAMP payload transparency mode, check if the provided ``enc_serializer``
+    identifier in the WAMP message is a valid one.
+
+    Currently, the only standard defined identifier are
+
+    * ``u"json"``
+    * ``u"msgpack"``
+    * ``u"cbor"``
+    * ``u"ubjson"``
+
+    Users can select arbitrary identifiers too, but these MUST start with ``u"x_"``.
+
+    :param enc_serializer: The payload transparency serializer identifier to check.
+    :type enc_serializer: str
+
+    :returns: Returns ``True`` if and only if the payload transparency
+        serializer identifier is valid.
+    :rtype: bool
     """
     return type(enc_serializer) == six.text_type and (enc_serializer in PAYLOAD_ENC_STANDARD_SERIALIZERS or _CUSTOM_ATTRIBUTE.match(enc_serializer))
 

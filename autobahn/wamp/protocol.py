@@ -38,9 +38,8 @@ from autobahn.wamp import types
 from autobahn.wamp import role
 from autobahn.wamp import exception
 from autobahn.wamp.exception import ApplicationError, ProtocolError, SessionNotReady, SerializationError
-from autobahn.wamp.interfaces import ISession  # noqa
-from autobahn.wamp.types import SessionDetails, CloseDetails
-from autobahn.wamp.cryptobox import EncryptedPayload
+from autobahn.wamp.interfaces import ISession, IPayloadCodec  # noqa
+from autobahn.wamp.types import SessionDetails, CloseDetails, EncodedPayload
 from autobahn.wamp.request import \
     Publication, \
     Subscription, \
@@ -100,8 +99,8 @@ class BaseSession(ObservableMixin):
         self._authmethod = None
         self._authprovider = None
 
-        # end-to-end encryption keyring
-        self._keyring = None
+        # payload transparency codec
+        self._payload_codec = None
 
         # generator for WAMP request IDs
         self._request_id_gen = IdGenerator()
@@ -125,15 +124,16 @@ class BaseSession(ObservableMixin):
 
         :param request_type: The request type this WAMP error message is for.
         :type request_type: int
+
         :param request: The request ID this WAMP error message is for.
         :type request: int
+
         :param exc: The exception.
         :type exc: Instance of :class:`Exception` or subclass thereof.
+
         :param tb: Optional traceback. If present, it'll be included with the WAMP error message.
         :type tb: list or None
         """
-        assert(enc_algo is None or enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX)
-
         args = None
         if hasattr(exc, 'args'):
             args = list(exc.args)  # make sure tuples are made into lists
@@ -156,18 +156,18 @@ class BaseSession(ObservableMixin):
             else:
                 error = u"wamp.error.runtime_error"
 
-        encrypted_payload = None
-        if self._keyring:
-            encrypted_payload = self._keyring.encrypt(False, error, args, kwargs)
+        encoded_payload = None
+        if self._payload_codec:
+            encoded_payload = self._payload_codec.encode(False, error, args, kwargs)
 
-        if encrypted_payload:
+        if encoded_payload:
             msg = message.Error(request_type,
                                 request,
                                 error,
-                                payload=encrypted_payload.payload,
-                                enc_algo=encrypted_payload.algo,
-                                enc_key=encrypted_payload.pkey,
-                                enc_serializer=encrypted_payload.serializer)
+                                payload=encoded_payload.payload,
+                                enc_algo=encoded_payload.enc_algo,
+                                enc_key=encoded_payload.enc_key,
+                                enc_serializer=encoded_payload.enc_serializer)
         else:
             msg = message.Error(request_type,
                                 request,
@@ -192,16 +192,16 @@ class BaseSession(ObservableMixin):
         exc = None
         enc_err = None
 
-        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+        if msg.enc_algo:
 
-            if not self._keyring:
-                log_msg = u"received encrypted payload, but no keyring active"
+            if not self._payload_codec:
+                log_msg = u"received encoded payload, but no payload codec active"
                 self.log.warn(log_msg)
-                enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg, enc_algo=msg.enc_algo)
+                enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg, enc_algo=msg.enc_algo)
             else:
                 try:
-                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                    decrypted_error, msg.args, msg.kwargs = self._keyring.decrypt(True, msg.error, encrypted_payload)
+                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                    decrypted_error, msg.args, msg.kwargs = self._payload_codec.decode(True, msg.error, encoded_payload)
                 except Exception as e:
                     self.log.warn("failed to decrypt application payload 1: {err}", err=e)
                     enc_err = ApplicationError(
@@ -307,11 +307,19 @@ class ApplicationSession(BaseSession):
         self._invocations = {}
 
     @public
-    def set_keyring(self, keyring):
+    def set_payload_codec(self, payload_codec):
         """
-        Implements :func:`autobahn.wamp.interfaces.ISession.set_keyring`
+        Implements :func:`autobahn.wamp.interfaces.ISession.set_payload_codec`
         """
-        self._keyring = keyring
+        assert(payload_codec is None or isinstance(payload_codec, IPayloadCodec))
+        self._payload_codec = payload_codec
+
+    @public
+    def get_payload_codec(self):
+        """
+        Implements :func:`autobahn.wamp.interfaces.ISession.get_payload_codec`
+        """
+        return self._payload_codec
 
     @public
     def onOpen(self, transport):
@@ -595,14 +603,14 @@ class ApplicationSession(BaseSession):
                         handler = subscription.handler
                         topic = msg.topic or subscription.topic
 
-                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                        if msg.enc_algo:
                             # FIXME: behavior in error cases (no keyring, decrypt issues, URI mismatch, ..)
-                            if not self._keyring:
-                                self.log.warn("received encrypted payload, but no keyring active - ignoring encrypted payload!")
+                            if not self._payload_codec:
+                                self.log.warn("received encoded payload, but no payload codec active - ignoring encrypted payload!")
                             else:
                                 try:
-                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_topic, msg.args, msg.kwargs = self._keyring.decrypt(False, topic, encrypted_payload)
+                                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    decrypted_topic, msg.args, msg.kwargs = self._payload_codec.decode(False, topic, encoded_payload)
                                 except Exception as e:
                                     self.log.warn("failed to decrypt application payload: {error}", error=e)
                                 else:
@@ -701,16 +709,16 @@ class ApplicationSession(BaseSession):
                     proc = call_request.procedure
                     enc_err = None
 
-                    if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
+                    if msg.enc_algo:
 
-                        if not self._keyring:
-                            log_msg = u"received encrypted payload, but no keyring active"
+                        if not self._payload_codec:
+                            log_msg = u"received encoded payload, but no payload codec active"
                             self.log.warn(log_msg)
-                            enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
+                            enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                         else:
                             try:
-                                encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(True, proc, encrypted_payload)
+                                encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                decrypted_proc, msg.args, msg.kwargs = self._payload_codec.decode(True, proc, encoded_payload)
                             except Exception as e:
                                 self.log.warn(
                                     "failed to decrypt application payload 1: {err}",
@@ -799,15 +807,15 @@ class ApplicationSession(BaseSession):
                         proc = msg.procedure or registration.procedure
                         enc_err = None
 
-                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                            if not self._keyring:
+                        if msg.enc_algo:
+                            if not self._payload_codec:
                                 log_msg = u"received encrypted INVOCATION payload, but no keyring active"
                                 self.log.warn(log_msg)
-                                enc_err = ApplicationError(ApplicationError.ENC_NO_KEYRING_ACTIVE, log_msg)
+                                enc_err = ApplicationError(ApplicationError.ENC_NO_PAYLOAD_CODEC, log_msg)
                             else:
                                 try:
-                                    encrypted_payload = EncryptedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
-                                    decrypted_proc, msg.args, msg.kwargs = self._keyring.decrypt(False, proc, encrypted_payload)
+                                    encoded_payload = EncodedPayload(msg.enc_algo, msg.enc_key, msg.enc_serializer, msg.payload)
+                                    decrypted_proc, msg.args, msg.kwargs = self._payload_codec.decode(False, proc, encoded_payload)
                                 except Exception as e:
                                     self.log.warn(
                                         "failed to decrypt INVOCATION payload: {err}",
@@ -853,19 +861,19 @@ class ApplicationSession(BaseSession):
                                 if msg.receive_progress:
 
                                     def progress(*args, **kwargs):
-                                        encrypted_payload = None
-                                        if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                                            if not self._keyring:
+                                        encoded_payload = None
+                                        if msg.enc_algo:
+                                            if not self._payload_codec:
                                                 raise Exception(u"trying to send encrypted payload, but no keyring active")
-                                            encrypted_payload = self._keyring.encrypt(False, proc, args, kwargs)
+                                            encoded_payload = self._payload_codec.encode(False, proc, args, kwargs)
 
-                                        if encrypted_payload:
+                                        if encoded_payload:
                                             progress_msg = message.Yield(msg.request,
-                                                                         payload=encrypted_payload.payload,
+                                                                         payload=encoded_payload.payload,
                                                                          progress=True,
-                                                                         enc_algo=encrypted_payload.algo,
-                                                                         enc_key=encrypted_payload.pkey,
-                                                                         enc_serializer=encrypted_payload.serializer)
+                                                                         enc_algo=encoded_payload.enc_algo,
+                                                                         enc_key=encoded_payload.enc_key,
+                                                                         enc_serializer=encoded_payload.enc_serializer)
                                         else:
                                             progress_msg = message.Yield(msg.request,
                                                                          args=args,
@@ -883,29 +891,29 @@ class ApplicationSession(BaseSession):
                             def success(res):
                                 del self._invocations[msg.request]
 
-                                encrypted_payload = None
-                                if msg.enc_algo == message.PAYLOAD_ENC_CRYPTO_BOX:
-                                    if not self._keyring:
+                                encoded_payload = None
+                                if msg.enc_algo:
+                                    if not self._payload_codec:
                                         log_msg = u"trying to send encrypted payload, but no keyring active"
                                         self.log.warn(log_msg)
                                     else:
                                         try:
                                             if isinstance(res, types.CallResult):
-                                                encrypted_payload = self._keyring.encrypt(False, proc, res.results, res.kwresults)
+                                                encoded_payload = self._payload_codec.encode(False, proc, res.results, res.kwresults)
                                             else:
-                                                encrypted_payload = self._keyring.encrypt(False, proc, [res])
+                                                encoded_payload = self._payload_codec.encode(False, proc, [res])
                                         except Exception as e:
                                             self.log.warn(
                                                 "failed to encrypt application payload: {err}",
                                                 err=e,
                                             )
 
-                                if encrypted_payload:
+                                if encoded_payload:
                                     reply = message.Yield(msg.request,
-                                                          payload=encrypted_payload.payload,
-                                                          enc_algo=encrypted_payload.algo,
-                                                          enc_key=encrypted_payload.pkey,
-                                                          enc_serializer=encrypted_payload.serializer)
+                                                          payload=encoded_payload.payload,
+                                                          enc_algo=encoded_payload.enc_algo,
+                                                          enc_key=encoded_payload.enc_key,
+                                                          enc_serializer=encoded_payload.enc_serializer)
                                 else:
                                     if isinstance(res, types.CallResult):
                                         reply = message.Yield(msg.request,
@@ -1182,26 +1190,26 @@ class ApplicationSession(BaseSession):
 
         request_id = self._request_id_gen.next()
 
-        encrypted_payload = None
-        if self._keyring:
-            encrypted_payload = self._keyring.encrypt(True, topic, args, kwargs)
+        encoded_payload = None
+        if self._payload_codec:
+            encoded_payload = self._payload_codec.encode(True, topic, args, kwargs)
 
-        if encrypted_payload:
+        if encoded_payload:
             if options:
                 msg = message.Publish(request_id,
                                       topic,
-                                      payload=encrypted_payload.payload,
-                                      enc_algo=encrypted_payload.algo,
-                                      enc_key=encrypted_payload.pkey,
-                                      enc_serializer=encrypted_payload.serializer,
+                                      payload=encoded_payload.payload,
+                                      enc_algo=encoded_payload.enc_algo,
+                                      enc_key=encoded_payload.enc_key,
+                                      enc_serializer=encoded_payload.enc_serializer,
                                       **options.message_attr())
             else:
                 msg = message.Publish(request_id,
                                       topic,
-                                      payload=encrypted_payload.payload,
-                                      enc_algo=encrypted_payload.algo,
-                                      enc_key=encrypted_payload.pkey,
-                                      enc_serializer=encrypted_payload.serializer)
+                                      payload=encoded_payload.payload,
+                                      enc_algo=encoded_payload.enc_algo,
+                                      enc_key=encoded_payload.enc_key,
+                                      enc_serializer=encoded_payload.enc_serializer)
         else:
             if options:
                 msg = message.Publish(request_id,
@@ -1218,7 +1226,7 @@ class ApplicationSession(BaseSession):
         if options and options.acknowledge:
             # only acknowledged publications expect a reply ..
             on_reply = txaio.create_future()
-            self._publish_reqs[request_id] = PublishRequest(request_id, on_reply, was_encrypted=(encrypted_payload is not None))
+            self._publish_reqs[request_id] = PublishRequest(request_id, on_reply, was_encrypted=(encoded_payload is not None))
         else:
             on_reply = None
 
@@ -1335,26 +1343,26 @@ class ApplicationSession(BaseSession):
 
         request_id = self._request_id_gen.next()
 
-        encrypted_payload = None
-        if self._keyring:
-            encrypted_payload = self._keyring.encrypt(True, procedure, args, kwargs)
+        encoded_payload = None
+        if self._payload_codec:
+            encoded_payload = self._payload_codec.encode(True, procedure, args, kwargs)
 
-        if encrypted_payload:
+        if encoded_payload:
             if options:
                 msg = message.Call(request_id,
                                    procedure,
-                                   payload=encrypted_payload.payload,
-                                   enc_algo=encrypted_payload.algo,
-                                   enc_key=encrypted_payload.pkey,
-                                   enc_serializer=encrypted_payload.serializer,
+                                   payload=encoded_payload.payload,
+                                   enc_algo=encoded_payload.enc_algo,
+                                   enc_key=encoded_payload.enc_key,
+                                   enc_serializer=encoded_payload.enc_serializer,
                                    **options.message_attr())
             else:
                 msg = message.Call(request_id,
                                    procedure,
-                                   payload=encrypted_payload.payload,
-                                   enc_algo=encrypted_payload.algo,
-                                   enc_key=encrypted_payload.pkey,
-                                   enc_serializer=encrypted_payload.serializer)
+                                   payload=encoded_payload.payload,
+                                   enc_algo=encoded_payload.enc_algo,
+                                   enc_key=encoded_payload.enc_key,
+                                   enc_serializer=encoded_payload.enc_serializer)
         else:
             if options:
                 msg = message.Call(request_id,

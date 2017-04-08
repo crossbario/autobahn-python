@@ -216,9 +216,10 @@ class ApplicationError(Error):
     exclusion of (any) *Callee* providing the procedure (WAMP AP).
     """
 
-    ENC_NO_KEYRING_ACTIVE = u"wamp.error.encryption.no_keyring_active"
+    ENC_NO_PAYLOAD_CODEC = u"wamp.error.no_payload_codec"
     """
-    WAMP-cryptobox application payload end-to-end encryption error.
+    WAMP message in payload transparency mode received, but no codec set
+    or codec did not decode the payload.
     """
 
     ENC_TRUSTED_URI_MISMATCH = u"wamp.error.encryption.trusted_uri_mismatch"

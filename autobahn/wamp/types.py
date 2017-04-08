@@ -29,6 +29,8 @@ from __future__ import absolute_import
 import six
 
 from autobahn.util import public
+from autobahn.wamp.message import is_valid_enc_algo, is_valid_enc_serializer
+
 
 __all__ = (
     'ComponentConfig',
@@ -46,6 +48,7 @@ __all__ = (
     'CallDetails',
     'CallOptions',
     'CallResult',
+    'EncodedPayload'
 )
 
 
@@ -835,6 +838,45 @@ class CallResult(object):
 
     def __str__(self):
         return u"CallResult(results={0}, kwresults={1}, enc_algo={2})".format(self.results, self.kwresults, self.enc_algo)
+
+
+@public
+class EncodedPayload(object):
+    """
+    Wrapper holding an encoded application payload when using WAMP payload transparency.
+    """
+
+    __slots__ = (
+        'payload',
+        'enc_algo',
+        'enc_serializer',
+        'enc_key'
+    )
+
+    def __init__(self, payload, enc_algo, enc_serializer, enc_key=None):
+        """
+
+        :param payload: The encoded application payload.
+        :type payload: bytes
+
+        :param enc_algo: The payload transparency algorithm identifier to check.
+        :type enc_algo: str
+
+        :param enc_serializer: The payload transparency serializer identifier to check.
+        :type enc_serializer: str
+
+        :param enc_key: If using payload transparency with an encryption algorithm, the payload encryption key.
+        :type enc_key: str or None
+        """
+        assert(type(payload) == six.binary_type)
+        assert(is_valid_enc_algo(enc_algo))
+        assert(is_valid_enc_serializer(enc_serializer))
+        assert(enc_key is None or type(enc_key) == six.text_type)
+
+        self.payload = payload
+        self.enc_algo = enc_algo
+        self.enc_serializer = enc_serializer
+        self.enc_key = enc_key
 
 
 class IPublication(object):

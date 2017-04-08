@@ -29,12 +29,14 @@ from __future__ import absolute_import
 import six
 
 from autobahn.util import public
+from autobahn.wamp.interfaces import IPayloadCodec
+from autobahn.wamp.types import EncodedPayload
 from autobahn.wamp.serializer import _dumps as _json_dumps
 from autobahn.wamp.serializer import _loads as _json_loads
 
 __all__ = [
     'HAS_CRYPTOBOX',
-    'EncryptedPayload'
+    'EncodedPayload'
 ]
 
 try:
@@ -48,20 +50,6 @@ except ImportError:
 else:
     HAS_CRYPTOBOX = True
     __all__.extend(['Key', 'KeyRing'])
-
-
-class EncryptedPayload(object):
-    """
-    Thin-wrapper holding encrypted application payloads.
-    """
-
-    def __init__(self, algo, pkey, serializer, payload):
-        """
-        """
-        self.algo = algo
-        self.pkey = pkey
-        self.serializer = serializer
-        self.payload = payload
 
 
 if HAS_CRYPTOBOX:
@@ -130,6 +118,7 @@ if HAS_CRYPTOBOX:
         for encrypting and decrypting WAMP message payloads.
         """
 
+        @public
         def __init__(self, default_key=None):
             """
 
@@ -170,7 +159,7 @@ if HAS_CRYPTOBOX:
                 else:
                     self._uri_to_key[uri] = key
 
-        def _get_box(self, is_originator, uri, match_exact=False):
+        def _get_box(self, is_originating, uri, match_exact=False):
             try:
                 if match_exact:
                     key = self._uri_to_key[uri]
@@ -182,25 +171,28 @@ if HAS_CRYPTOBOX:
                 else:
                     return None
 
-            if is_originator:
+            if is_originating:
                 return key.originator_box
             else:
                 return key.responder_box
 
-        def encrypt(self, is_originator, uri, args=None, kwargs=None):
+        @public
+        def encode(self, is_originating, uri, args=None, kwargs=None):
             """
-            Encrypt the given WAMP URI, args and kwargs into an EncryptedPayload instance, or None
+            Encrypt the given WAMP URI, args and kwargs into an EncodedPayload instance, or None
             if the URI should not be encrypted.
             """
+            assert(type(is_originating) == bool)
             assert(type(uri) == six.text_type)
-            assert(type(is_originator) == bool)
             assert(args is None or type(args) in (list, tuple))
             assert(kwargs is None or type(kwargs) == dict)
 
-            box = self._get_box(is_originator, uri)
+            box = self._get_box(is_originating, uri)
 
             if not box:
-                return
+                # if we didn't find a crypto box, then return None, which
+                # signals that the payload travel unencrypted (normal)
+                return None
 
             payload = {
                 u'uri': uri,
@@ -218,24 +210,26 @@ if HAS_CRYPTOBOX:
             payload_bytes = bytes(payload_encr)
             payload_key = None
 
-            return EncryptedPayload(u'cryptobox', payload_key, u'json', payload_bytes)
+            return EncodedPayload(payload_bytes, u'cryptobox', u'json', enc_key=payload_key)
 
-        def decrypt(self, is_originator, uri, encrypted_payload):
+        @public
+        def decode(self, is_originating, uri, encoded_payload):
             """
-            Decrypt the given WAMP URI and EncryptedPayload into a tuple (uri, args, kwargs).
+            Decrypt the given WAMP URI and EncodedPayload into a tuple ``(uri, args, kwargs)``.
             """
             assert(type(uri) == six.text_type)
-            assert(isinstance(encrypted_payload, EncryptedPayload))
+            assert(isinstance(encoded_payload, EncodedPayload))
+            assert(encoded_payload.enc_algo == u'cryptobox')
 
-            box = self._get_box(is_originator, uri)
+            box = self._get_box(is_originating, uri)
 
             if not box:
                 raise Exception("received encrypted payload, but can't find key!")
 
-            payload_ser = box.decrypt(encrypted_payload.payload, encoder=RawEncoder)
+            payload_ser = box.decrypt(encoded_payload.payload, encoder=RawEncoder)
 
-            if encrypted_payload.serializer != u'json':
-                raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encrypted_payload.serializer))
+            if encoded_payload.enc_serializer != u'json':
+                raise Exception("received encrypted payload, but don't know how to process serializer '{}'".format(encoded_payload.enc_serializer))
 
             payload = _json_loads(payload_ser)
 
@@ -244,3 +238,7 @@ if HAS_CRYPTOBOX:
             kwargs = payload.get(u'kwargs', None)
 
             return uri, args, kwargs
+
+    # A WAMP-cryptobox keyring can work as a codec for
+    # payload transparency
+    IPayloadCodec.register(KeyRing)
