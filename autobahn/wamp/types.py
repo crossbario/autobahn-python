@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import six
 
 from autobahn.util import public
-from autobahn.wamp.message import is_valid_enc_algo, is_valid_enc_serializer
 
 
 __all__ = (
@@ -869,8 +868,8 @@ class EncodedPayload(object):
         :type enc_key: str or None
         """
         assert(type(payload) == six.binary_type)
-        assert(is_valid_enc_algo(enc_algo))
-        assert(is_valid_enc_serializer(enc_serializer))
+        assert(type(enc_algo) == six.binary_type)
+        assert(type(enc_serializer) == six.binary_type)
         assert(enc_key is None or type(enc_key) == six.text_type)
 
         self.payload = payload
