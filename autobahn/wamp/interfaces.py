@@ -472,15 +472,12 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def set_payload_codec(enc_algo, payload_codec):
+    def set_payload_codec(payload_codec):
         """
-        Set a payload codec for the given payload encoding. To remove
-        a previously set payload codec for an encoding, set the codec to ``None``.
+        Set a payload codec on the session. To remove a previously set payload codec,
+        set the codec to ``None``.
 
         Payload codecs are used with WAMP payload transparency mode.
-
-        :param enc_algo: The encoding for which the payload codec should be set.
-        :type enc_algo: str
 
         :param payload_codec: The payload codec that should process application
             payload of the given encoding.
@@ -490,14 +487,11 @@ class ISession(object):
 
     @public
     @abc.abstractmethod
-    def get_payload_codec(enc_algo):
+    def get_payload_codec():
         """
-        Get the current payload codec (if any) for the given encoding.
+        Get the current payload codec (if any) for the session.
 
         Payload codecs are used with WAMP payload transparency mode.
-
-        :param enc_algo: The WAMP-cryptosign keyring.
-        :type enc_algo: str
 
         :returns: The current payload codec or ``None`` if no codec is active.
         :rtype: object implementing
