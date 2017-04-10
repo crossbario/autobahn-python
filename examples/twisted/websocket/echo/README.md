@@ -22,8 +22,8 @@ in your browser.
 
 To run the Python client
 
-    python client.py ws://127.0.0.1:9000
+    python client.py
 
 or
 
-    python client_coroutines.py ws://127.0.0.1:9000
+    python client_coroutines.py
